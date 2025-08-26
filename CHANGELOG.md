@@ -8,6 +8,7 @@ This page reports the main releases only and the main changes therein.
 ### Changes
 
 * fixed menu text
+* fixed crash multilayer module
 * code cleanup
 
 ---

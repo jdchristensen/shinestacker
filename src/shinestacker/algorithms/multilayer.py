@@ -186,7 +186,7 @@ class MultiLayer(JobBase, FrameMultiDirectory):
                 color_str(f"no input in {len(paths)} specified path" +
                           ('s' if len(paths) > 1 else '') + ": "
                           ", ".join([f"'{p}'" for p in paths]),
-                          constants.LOG_COLOR_LEVEL_ALERT),
+                          constants.LOG_COLOR_ALERT),
                 level=logging.WARNING)
             return
         self.print_message(color_str("merging frames in " + self.folder_list_str(),
