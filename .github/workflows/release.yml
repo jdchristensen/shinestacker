@@ -44,8 +44,8 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: shinestacker-${{ matrix.os }}
-          path: dist/shinestacker-release.zip
-
+          path: |
+            ${{ matrix.os == 'windows-latest' && 'dist/shinestacker-release.zip' || 'dist/shinestacker-release.tar.gz' }}
   create-release:
     needs: publish-release
     runs-on: ubuntu-latest
