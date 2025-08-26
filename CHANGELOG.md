@@ -2,6 +2,14 @@
 
 This page reports the main releases only and the main changes therein.
 
+## [v-.-.-] - 2025-08-26
+**Bug fixes**
+
+### Changes
+
+* extensions are treated in lower case (e.g.: both jpg and JPG)
+
+---
 ## [v1.0.3] - 2025-08-26
 **Bug fixes**
 

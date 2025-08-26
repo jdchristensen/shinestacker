@@ -8,25 +8,65 @@ from .. config.config import config
 from .. core.exceptions import ShapeError, BitDepthError
 
 
+def get_path_extension(path):
+    return os.path.splitext(path)[1].lstrip('.')
+
+
+EXTENSIONS_TIF = ['tif', 'tiff']
+EXTENSIONS_JPG = ['jpg', 'jpeg']
+EXTENSIONS_PNG = ['png']
+EXTENSIONS_PDF = ['pdf']
+
+
+def extension_in(path, exts):
+    return get_path_extension(path).lower() in exts
+
+
+def extension_tif(path):
+    return extension_in(path, EXTENSIONS_TIF)
+
+
+def extension_jpg(path):
+    return extension_in(path, EXTENSIONS_JPG)
+
+
+def extension_png(path):
+    return extension_in(path, EXTENSIONS_PNG)
+
+
+def extension_pdf(path):
+    return extension_in(path, EXTENSIONS_PDF)
+
+
+def extension_tif_jpg(path):
+    return extension_in(path, EXTENSIONS_TIF + EXTENSIONS_JPG)
+
+
+def extension_tif_png(path):
+    return extension_in(path, EXTENSIONS_TIF + EXTENSIONS_PNG)
+
+
+def extension_jpg_png(path):
+    return extension_in(path, EXTENSIONS_JPG + EXTENSIONS_PNG)
+
+
 def read_img(file_path):
     if not os.path.isfile(file_path):
         raise RuntimeError("File does not exist: " + file_path)
-    ext = file_path.split(".")[-1]
     img = None
-    if ext in ['jpeg', 'jpg']:
+    if extension_jpg(file_path):
         img = cv2.imread(file_path)
-    elif ext in ['tiff', 'tif', 'png']:
+    elif extension_tif_png(file_path):
         img = cv2.imread(file_path, cv2.IMREAD_UNCHANGED)
     return img
 
 
 def write_img(file_path, img):
-    ext = file_path.split(".")[-1]
-    if ext in ['jpeg', 'jpg']:
+    if extension_jpg(file_path):
         cv2.imwrite(file_path, img, [int(cv2.IMWRITE_JPEG_QUALITY), 100])
-    elif ext in ['tiff', 'tif']:
+    elif extension_tif(file_path):
         cv2.imwrite(file_path, img, [int(cv2.IMWRITE_TIFF_COMPRESSION), 1])
-    elif ext == 'png':
+    elif extension_png(file_path):
         cv2.imwrite(file_path, img)
 
 

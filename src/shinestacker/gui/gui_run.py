@@ -1,4 +1,5 @@
 # pylint: disable=C0114, C0115, C0116, E0611, R0903, R0915, R0914, R0917, R0913, R0902
+import os
 from PySide6.QtWidgets import (QWidget, QPushButton, QVBoxLayout, QHBoxLayout,
                                QMessageBox, QScrollArea, QSizePolicy, QFrame, QLabel, QComboBox)
 from PySide6.QtGui import QColor
@@ -7,6 +8,7 @@ from PySide6.QtCore import Signal, Slot
 from .. config.constants import constants
 from .. config.gui_constants import gui_constants
 from .colors import RED_BUTTON_STYLE, BLUE_BUTTON_STYLE, BLUE_COMBO_STYLE
+from .. algorithms.utils import extension_tif_jpg, extension_pdf
 from .gui_logging import LogWorker, QTextEditLogger
 from .gui_images import GuiPdfView, GuiImageView, GuiOpenApp
 from .colors import (
@@ -200,13 +202,12 @@ class RunWindow(QTextEditLogger):
         label = QLabel(name, self)
         label.setStyleSheet("QLabel {margin-top: 5px; font-weight: bold;}")
         self.image_layout.addWidget(label)
-        ext = path.split('.')[-1].lower()
-        if ext == 'pdf':
+        if extension_pdf(path):
             image_view = GuiPdfView(path, self)
-        elif ext in ['jpg', 'jpeg', 'tif', 'tiff', 'png']:
+        elif extension_tif_jpg(path):
             image_view = GuiImageView(path, self)
         else:
-            raise RuntimeError("Can't visualize file type {ext}.")
+            raise RuntimeError(f"Can't visualize file type {os.path.splitext(path)[1]}.")
         self.image_views.append(image_view)
         self.image_layout.addWidget(image_view)
         max_width = max(pv.size().width() for pv in self.image_views) if self.image_views else 0

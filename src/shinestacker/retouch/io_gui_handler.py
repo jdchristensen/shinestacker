@@ -56,9 +56,7 @@ class IOGuiHandler(QObject, LayerCollectionHandler):
         self.set_master_layer(master_layer)
         self.undo_manager.reset()
         self.blank_layer = np.zeros(master_layer.shape[:2])
-        self.finish_loading_setup(
-            stack, None, master_layer,
-            f"Loaded: {self.current_file_path()}")
+        self.finish_loading_setup(f"Loaded: {self.current_file_path()}")
 
     def on_file_error(self, error_msg):
         QApplication.restoreOverrideCursor()
@@ -151,11 +149,9 @@ class IOGuiHandler(QObject, LayerCollectionHandler):
             for img, label in zip(stack, labels):
                 self.add_layer_label(label)
                 self.add_layer(img)
-        self.finish_loading_setup(
-            stack, labels, master,
-            "Selected frames imported")
+        self.finish_loading_setup("Selected frames imported")
 
-    def finish_loading_setup(self, stack, labels, master, message):
+    def finish_loading_setup(self, message):
         self.display_manager.update_thumbnails()
         self.mark_as_modified_requested.emit(True)
         self.change_layer_requested.emit(0)

@@ -7,13 +7,12 @@ from PySide6.QtGui import QIcon
 from PySide6.QtCore import Qt
 from .. config.gui_constants import gui_constants
 from .. config.constants import constants
-from .. algorithms.utils import read_img
+from .. algorithms.utils import read_img, extension_tif_jpg
 from .. algorithms.stack import get_bunches
 from .select_path_widget import create_select_file_paths_widget
 from .base_form_dialog import BaseFormDialog
 
 DEFAULT_NO_COUNT_LABEL = " - "
-EXTENSIONS = ['jpg', 'jpeg', 'tif', 'tiff']
 
 
 class NewProjectDialog(BaseFormDialog):
@@ -133,10 +132,8 @@ class NewProjectDialog(BaseFormDialog):
                 return 0
             count = 0
             for filename in os.listdir(path):
-                if '.' in filename:
-                    ext = filename.lower().split('.')[-1]
-                    if ext in EXTENSIONS:
-                        count += 1
+                if extension_tif_jpg(filename):
+                    count += 1
             return count
 
         self.n_image_files = count_image_files(self.input_folder.text())
@@ -173,11 +170,9 @@ class NewProjectDialog(BaseFormDialog):
             file_path = None
             for filename in files:
                 full_path = os.path.join(path, filename)
-                if os.path.isfile(full_path):
-                    ext = full_path.split(".")[-1].lower()
-                    if ext in EXTENSIONS:
-                        file_path = full_path
-                        break
+                if extension_tif_jpg(full_path):
+                    file_path = full_path
+                    break
             if file_path is None:
                 QMessageBox.warning(
                     self, "Invalid input", "Could not find images now in the selected path")

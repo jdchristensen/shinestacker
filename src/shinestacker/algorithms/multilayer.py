@@ -13,6 +13,7 @@ from .. config.constants import constants
 from .. config.config import config
 from .. core.colors import color_str
 from .. core.framework import JobBase
+from .utils import EXTENSIONS_TIF, EXTENSIONS_JPG, EXTENSIONS_PNG
 from .stack_framework import FrameMultiDirectory
 from .exif import exif_extra_tags_for_tif, get_exif
 
@@ -27,13 +28,13 @@ def write_multilayer_tiff(input_files, output_file, labels=None, exif_path='', c
         msg = ", ".join(extensions)
         raise RuntimeError("All input files must have the same extension. "
                            f"Input list has the following extensions: {msg}.")
-    extension = extensions[0]
-    if extension in ('tif', 'tiff'):
+    extension = extensions[0].lower()
+    if extension in EXTENSIONS_TIF:
         images = [tifffile.imread(p) for p in input_files]
-    elif extension in ('jpg', 'jpeg'):
+    elif extension in EXTENSIONS_JPG:
         images = [cv2.imread(p) for p in input_files]
         images = [cv2.cvtColor(i, cv2.COLOR_BGR2RGB) for i in images]
-    elif extension == 'png':
+    elif extension in EXTENSIONS_PNG:
         images = [cv2.imread(p, cv2.IMREAD_UNCHANGED) for p in input_files]
         images = [cv2.cvtColor(i, cv2.COLOR_BGR2RGB) for i in images]
     if labels is None:

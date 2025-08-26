@@ -5,7 +5,7 @@ import numpy as np
 import cv2
 from psdtags import PsdChannelId
 from PySide6.QtCore import QThread, Signal
-from .. algorithms.utils import read_img
+from .. algorithms.utils import read_img, extension_tif, extension_jpg
 from .. algorithms.multilayer import read_multilayer_tiff
 
 
@@ -50,15 +50,14 @@ class FileLoader(QThread):
             raise RuntimeError(f"Path {path} does not exist.")
         if not os.path.isfile(path):
             raise RuntimeError(f"Path {path} is not a file.")
-        extension = path.split('.')[-1]
-        if extension in ['jpg', 'jpeg']:
+        if extension_jpg(path):
             try:
                 stack = np.array([cv2.cvtColor(read_img(path), cv2.COLOR_BGR2RGB)])
                 return stack, [path.split('/')[-1].split('.')[0]]
             except Exception as e:
                 traceback.print_tb(e.__traceback__)
                 return None, None
-        elif extension in ['tif', 'tiff']:
+        elif extension_tif(path):
             try:
                 psd_data = read_multilayer_tiff(path)
                 layers = []

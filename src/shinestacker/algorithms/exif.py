@@ -10,7 +10,7 @@ from PIL.TiffImagePlugin import IFDRational
 from PIL.ExifTags import TAGS
 import tifffile
 from .. config.constants import constants
-from .utils import write_img
+from .utils import write_img, extension_jpg, extension_tif, extension_png
 
 IMAGEWIDTH = 256
 IMAGELENGTH = 257
@@ -48,11 +48,10 @@ def extract_enclosed_data_for_jpg(data, head, foot):
 def get_exif(exif_filename):
     if not os.path.isfile(exif_filename):
         raise RuntimeError(f"File does not exist: {exif_filename}")
-    ext = exif_filename.split(".")[-1]
     image = Image.open(exif_filename)
-    if ext in ('tif', 'tiff'):
+    if extension_tif(exif_filename):
         return image.tag_v2 if hasattr(image, 'tag_v2') else image.getexif()
-    if ext in ('jpeg', 'jpg'):
+    if extension_jpg(exif_filename):
         exif_data = image.getexif()
         with open(exif_filename, 'rb') as f:
             data = extract_enclosed_data_for_jpg(f.read(), b'<?xpacket', b'<?xpacket end="w"?>')
@@ -158,42 +157,40 @@ def write_image_with_exif_data(exif, image, out_filename, verbose=False):
     if exif is None:
         write_img(out_filename, image)
         return None
-    ext = out_filename.split(".")[-1]
     if verbose:
         print_exif(exif)
-    if ext in ('jpeg', 'jpg'):
+    if extension_jpg(out_filename):
         cv2.imwrite(out_filename, image, [int(cv2.IMWRITE_JPEG_QUALITY), 100])
         add_exif_data_to_jpg_file(exif, out_filename, out_filename, verbose)
-    elif ext in ('tiff', 'tif'):
+    elif extension_tif(out_filename):
         metadata = {"description": f"image generated with {constants.APP_STRING} package"}
         extra_tags, exif_tags = exif_extra_tags_for_tif(exif)
         tifffile.imwrite(out_filename, image, metadata=metadata, compression='adobe_deflate',
                          extratags=extra_tags, **exif_tags)
-    elif ext == 'png':
+    elif extension_png(out_filename):
         image.save(out_filename, 'PNG', exif=exif, quality=100)
     return exif
 
 
 def save_exif_data(exif, in_filename, out_filename=None, verbose=False):
-    ext = in_filename.split(".")[-1]
     if out_filename is None:
         out_filename = in_filename
     if exif is None:
         raise RuntimeError('No exif data provided.')
     if verbose:
         print_exif(exif)
-    if ext in ('tiff', 'tif'):
+    if extension_tif(in_filename):
         image_new = tifffile.imread(in_filename)
     else:
         image_new = Image.open(in_filename)
-    if ext in ('jpeg', 'jpg'):
+    if extension_jpg(in_filename):
         add_exif_data_to_jpg_file(exif, in_filename, out_filename, verbose)
-    elif ext in ('tiff', 'tif'):
+    elif extension_tif(in_filename):
         metadata = {"description": f"image generated with {constants.APP_STRING} package"}
         extra_tags, exif_tags = exif_extra_tags_for_tif(exif)
         tifffile.imwrite(out_filename, image_new, metadata=metadata, compression='adobe_deflate',
                          extratags=extra_tags, **exif_tags)
-    elif ext == 'png':
+    elif extension_png(in_filename):
         image_new.save(out_filename, 'PNG', exif=exif, quality=100)
     return exif
 
