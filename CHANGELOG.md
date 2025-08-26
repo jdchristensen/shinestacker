@@ -2,13 +2,22 @@
 
 This page reports the main releases only and the main changes therein.
 
+## [v-.-.-] - 2025-08-26
+**Bug fixes**
+
+### Changes
+
+* fixed release build script changing format from zip to tar.gz for macOs and Linux
+
+---
+
 ## [v1.0.4] - 2025-08-26
 **Bug fixes**
 
 ### Changes
 
 * extensions are treated in lower case (e.g.: both jpg and JPG)
-* added retouch menu action: import frames from current project
+* added missing retouch menu action: import frames from current project
 
 ---
 ## [v1.0.3] - 2025-08-26

@@ -58,9 +58,9 @@ jobs:
       - name: Prepare release assets
         run: |
           mkdir -p release_assets
-          cp artifacts/shinestacker-ubuntu-latest/shinestacker-release.zip release_assets/shinestacker-ubuntu.zip
+          cp artifacts/shinestacker-ubuntu-latest/shinestacker-release.tar.gz release_assets/shinestacker-ubuntu.tar.gz
           cp artifacts/shinestacker-windows-latest/shinestacker-release.zip release_assets/shinestacker-windows.zip
-          cp artifacts/shinestacker-macos-latest/shinestacker-release.zip release_assets/shinestacker-macos.zip
+          cp artifacts/shinestacker-macos-latest/shinestacker-release.tar.gz release_assets/shinestacker-macos.tar.gz
           ls -la release_assets/
 
       - name: Create release
@@ -68,6 +68,6 @@ jobs:
         with:
           draft: true
           files: |
-            release_assets/shinestacker-ubuntu.zip
+            release_assets/shinestacker-ubuntu.tar.gz
             release_assets/shinestacker-windows.zip
-            release_assets/shinestacker-macos.zip
+            release_assets/shinestacker-macos.tar.gz

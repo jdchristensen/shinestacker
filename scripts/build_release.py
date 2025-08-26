@@ -1,5 +1,6 @@
 import os
 import shutil
+import tarfile
 import subprocess
 from pathlib import Path
 import platform
@@ -35,9 +36,19 @@ for project_file in ["complete-project.fsp", "stack-from-frames.fsp"]:
     shutil.copy(examples_dir / project_file, target_examples)
     shutil.copytree(examples_dir / 'input', target_examples / 'input', dirs_exist_ok=True)
 
-shutil.make_archive(
-    base_name=str(dist_dir / "shinestacker-release"),
-    format="zip",
-    root_dir=dist_dir,
-    base_dir=package_dir
-)
+if sys_name == 'windows':
+    shutil.make_archive(
+        base_name=str(dist_dir / "shinestacker-release"),
+        format="zip",
+        root_dir=dist_dir,
+        base_dir=package_dir
+    )
+else:
+    archive_path = dist_dir / "shinestacker-release.tar.gz"
+    with tarfile.open(archive_path, "w:gz") as tar:
+        tar.add(
+            dist_dir / package_dir,
+            arcname=package_dir,
+            recursive=True,
+            filter=lambda info: info
+        )
