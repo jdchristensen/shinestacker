@@ -38,6 +38,23 @@ The GUI has two main working areas:
 
 <img src='https://raw.githubusercontent.com/lucalista/shinestacker/main/img/gui-retouch.png' width="600" referrerpolicy="no-referrer">
 
+# Note for macOS users
+
+*The following note is only relevant if you download the application as compressed archive from the [release page](https://github.com/lucalista/shinestacker/releases).*
+
+The system security protection prevent to run applications downloaded from the web from developers that don't hold an Apple Developer Certificate. 
+
+In order to prevent this, follow the instructions below:
+
+1. Download the compressed archive ```shinestacker-macos.tar.gz``` in your ```Download``` folder.
+2. Double-click the archive to uncompress it. You will find a new folder ```shinestacker```.
+3. Open a terminal (**Applications > Utilities > Terminal**)
+4. Type the folliwng command on the terminal:
+```bash
+xattr -cr ~/Downloads/shinestacker/shinestacker.app
+```
+5. Now you can double-click the Sine Stacker icon app in the ```shiestacker``` folder and it should run.
+
 # Resources
 
  🌍 [Website on WordPress](https://shinestacker.wordpress.com) • 📖 [Main documentation](https://shinestacker.readthedocs.io) • 📝 [Changelog](https://github.com/lucalista/shinestacker/blob/main/CHANGELOG.md) 

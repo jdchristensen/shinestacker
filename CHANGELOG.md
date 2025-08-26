@@ -2,7 +2,7 @@
 
 This page reports the main releases only and the main changes therein.
 
-## [v-.-.-] - 2025-08-26
+## [v1.0.4.pre2] - 2025-08-26
 **Bug fixes**
 
 ### Changes
