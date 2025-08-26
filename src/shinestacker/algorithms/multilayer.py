@@ -177,7 +177,7 @@ class MultiLayer(JobBase, FrameMultiDirectory):
             raise RuntimeError("input_path option must contain a path or an array of paths")
         if len(paths) == 0:
             self.print_message(color_str("no input paths specified",
-                                         constants.LOG_COLOR_LEVEL_ALERT),
+                                         constants.LOG_COLOR_ALERT),
                                level=logging.WARNING)
             return
         files = self.folder_filelist()

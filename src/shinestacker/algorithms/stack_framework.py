@@ -92,7 +92,7 @@ class FramePaths:
                 ('' if self.working_path[-1] == '/' else '/') + self.plot_path
             if not os.path.exists(self.plot_path):
                 os.makedirs(self.plot_path)
-        if self.input_path == '':
+        if self.input_path in ['', []]:
             if len(job.paths) == 0:
                 raise RuntimeError(f"Job {job.name} does not have any configured path")
             self.input_path = job.paths[-1]

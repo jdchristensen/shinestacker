@@ -204,11 +204,12 @@ class ProjectController(QObject):
                     input_path.append("focus-stack-depth-map")
                 if dialog.get_bunch_stack():
                     input_path.append("bunches")
-                else:
-                    input_path.append(input_path)
-                multi_layer = ActionConfig(constants.ACTION_MULTILAYER,
-                                           {'name': 'multi-layer',
-                                            'input_path': ','.join(input_path)})
+                multi_layer = ActionConfig(
+                    constants.ACTION_MULTILAYER,
+                    {
+                        'name': 'multi-layer',
+                        'input_path': constants.PATH_SEPARATOR.join(input_path)
+                    })
                 job.add_sub_action(multi_layer)
             self.add_job_to_project(job)
             self.mark_as_modified(True)

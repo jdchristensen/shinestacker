@@ -278,7 +278,7 @@ class MainWindow(QMainWindow, LogManager):
         current_action = None
         if item:
             index = self.job_list().row(item)
-            current_action = self.get_job_at(index)
+            current_action = self.project_editor.get_job_at(index)
             self.set_current_job(index)
         item = self.action_list().itemAt(self.action_list().viewport().mapFrom(self, event.pos()))
         if item:
@@ -328,7 +328,7 @@ class MainWindow(QMainWindow, LogManager):
                 self.current_action_output_path = f"{self.current_action_working_path}/{op}"
                 if os.path.exists(self.current_action_output_path):
                     action_name = "Browse Output Path" + (f" > {name}" if name != '' else '')
-                    n_files = len(next(os.walk(op))[2])
+                    n_files = len(next(os.walk(self.current_action_output_path))[2])
                     s = "" if n_files == 1 else "s"
                     action_name += f" ({n_files} file{s})"
                     self.browse_output_path_action = QAction(action_name)
