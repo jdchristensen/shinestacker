@@ -40,7 +40,7 @@ The GUI has two main working areas:
 
 # Note for macOS users
 
-*The following note is only relevant if you download the application as compressed archive from the [release page](https://github.com/lucalista/shinestacker/releases).*
+**The following note is only relevant if you download the application as compressed archive from the [release page](https://github.com/lucalista/shinestacker/releases).**
 
 The system security protection prevent to run applications downloaded from the web from developers that don't hold an Apple Developer Certificate. 
 
@@ -48,7 +48,7 @@ In order to prevent this, follow the instructions below:
 
 1. Download the compressed archive ```shinestacker-macos.tar.gz``` in your ```Download``` folder.
 2. Double-click the archive to uncompress it. You will find a new folder ```shinestacker```.
-3. Open a terminal (**Applications > Utilities > Terminal**)
+3. Open a terminal (*Applications > Utilities > Terminal)
 4. Type the folliwng command on the terminal:
 ```bash
 xattr -cr ~/Downloads/shinestacker/shinestacker.app
