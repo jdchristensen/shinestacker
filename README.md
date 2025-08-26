@@ -42,7 +42,7 @@ The GUI has two main working areas:
 
 **The following note is only relevant if you download the application as compressed archive from the [release page](https://github.com/lucalista/shinestacker/releases).**
 
-The system security protection prevent to run applications downloaded from the web from developers that don't hold an Apple Developer Certificate. 
+The macOS system security protection prevent to run applications downloaded from the web that come from developers that don't hold an Apple Developer Certificate. 
 
 In order to prevent this, follow the instructions below:
 
@@ -54,6 +54,8 @@ In order to prevent this, follow the instructions below:
 xattr -cr ~/Downloads/shinestacker/shinestacker.app
 ```
 5. Now you can double-click the Sine Stacker icon app in the ```shiestacker``` folder and it should run.
+
+macOS adds a quarantine flag to all files downloaded from the internet. The above command removes that flag while preserving all other application functionality.
 
 # Resources
 
