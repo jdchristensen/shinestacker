@@ -2,13 +2,14 @@
 
 This page reports the main releases only and the main changes therein.
 
-## [v-.-.-] - 2025-08-25
-**Unreleased changes**
+## [v1.0.3] - 2025-08-26
+**Bug fixes**
 
 ### Changes
 
 * fixed menu text
 * fixed crash multilayer module
+* fixed multilayer module
 * code cleanup
 
 ---
