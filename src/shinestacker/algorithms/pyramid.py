@@ -1,4 +1,4 @@
-# pylint: disable=C0114, C0115, C0116, E1101
+# pylint: disable=C0114, C0115, C0116, E1101, R0913, R0917, R0902
 import numpy as np
 import cv2
 from .. config.constants import constants
@@ -8,11 +8,11 @@ from .base_stack_algo import BaseStackAlgo
 
 
 class PyramidBase(BaseStackAlgo):
-    def __init__(self, min_size=constants.DEFAULT_PY_MIN_SIZE,
+    def __init__(self, name, min_size=constants.DEFAULT_PY_MIN_SIZE,
                  kernel_size=constants.DEFAULT_PY_KERNEL_SIZE,
                  gen_kernel=constants.DEFAULT_PY_GEN_KERNEL,
                  float_type=constants.DEFAULT_PY_FLOAT):
-        super().__init__("pyramid", 2, float_type)
+        super().__init__(name, 2, float_type)
         self.min_size = min_size
         self.kernel_size = kernel_size
         self.pad_amount = (kernel_size - 1) // 2
@@ -20,6 +20,9 @@ class PyramidBase(BaseStackAlgo):
         kernel = np.array([0.25 - gen_kernel / 2.0, 0.25,
                            gen_kernel, 0.25, 0.25 - gen_kernel / 2.0])
         self.gen_kernel = np.outer(kernel, kernel)
+        self.dtype = None
+        self.num_pixel_values = None
+        self.max_pixel_value = None
 
     def convolve(self, image):
         return cv2.filter2D(image, -1, self.gen_kernel, borderType=cv2.BORDER_REFLECT101)
@@ -111,48 +114,9 @@ class PyramidBase(BaseStackAlgo):
             fused += np.where(best_d[:, :, np.newaxis] == layer, img, 0)
         return (fused / 2).astype(images.dtype)
 
-
-class PyramidStack(PyramidBase):
-    def __init__(self, min_size=constants.DEFAULT_PY_MIN_SIZE,
-                 kernel_size=constants.DEFAULT_PY_KERNEL_SIZE,
-                 gen_kernel=constants.DEFAULT_PY_GEN_KERNEL,
-                 float_type=constants.DEFAULT_PY_FLOAT):
-        super().__init__(min_size, kernel_size, gen_kernel, float_type)
-        self.offset = np.arange(-self.pad_amount, self.pad_amount + 1)
-        self.dtype = None
-        self.num_pixel_values = None
-        self.max_pixel_value = None
-
-    def process_single_image(self, img, levels):
-        pyramid = [img.astype(self.float_type)]
-        for _ in range(levels):
-            next_layer = self.reduce_layer(pyramid[-1])
-            if min(next_layer.shape[:2]) < 4:
-                break
-            pyramid.append(next_layer)
-        laplacian = [pyramid[-1]]
-        for level in range(len(pyramid) - 1, 0, -1):
-            expanded = self.expand_layer(pyramid[level])
-            pyr = pyramid[level - 1]
-            h, w = pyr.shape[:2]
-            expanded = expanded[:h, :w]
-            laplacian.append(pyr - expanded)
-        return laplacian[::-1]
-
-    def fuse_pyramids(self, all_laplacians):
-        fused = [self.get_fused_base(np.stack([p[-1] for p in all_laplacians], axis=0))]
-        for layer in range(len(all_laplacians[0]) - 2, -1, -1):
-            self.print_message(f': fusing pyramids, layer: {layer + 1}')
-            laplacians = np.stack([p[layer] for p in all_laplacians], axis=0)
-            fused.append(self.fuse_laplacian(laplacians))
-        self.print_message(': pyramids fusion completed')
-        return fused[::-1]
-
-    def focus_stack(self, filenames):
+    def focus_stack_validate(self, filenames, clean_callback=None):
         metadata = None
-        all_laplacians = []
         levels = None
-        n = len(filenames)
         for i, img_path in enumerate(filenames):
             self.print_message(f": validating file {img_path.split('/')[-1]}")
 
@@ -167,7 +131,53 @@ class PyramidStack(PyramidBase):
             if self.do_step_callback:
                 self.process.callback('after_step', self.process.id, self.process.name, i)
             if self.process.callback('check_running', self.process.id, self.process.name) is False:
+                if clean_callback is not None:
+                    clean_callback()
                 raise RunStopException(self.name)
+        return levels
+
+    def single_image_laplacian(self, img, levels):
+        pyramid = [img.astype(self.float_type)]
+        for _ in range(levels):
+            next_layer = self.reduce_layer(pyramid[-1])
+            if min(next_layer.shape[:2]) < 4:
+                break
+            pyramid.append(next_layer)
+        laplacian = [pyramid[-1]]
+        for level in range(len(pyramid) - 1, 0, -1):
+            expanded = self.expand_layer(pyramid[level])
+            pyr = pyramid[level - 1]
+            h, w = pyr.shape[:2]
+            expanded = expanded[:h, :w]
+            laplacian.append(pyr - expanded)
+        return laplacian
+
+
+class PyramidStack(PyramidBase):
+    def __init__(self, min_size=constants.DEFAULT_PY_MIN_SIZE,
+                 kernel_size=constants.DEFAULT_PY_KERNEL_SIZE,
+                 gen_kernel=constants.DEFAULT_PY_GEN_KERNEL,
+                 float_type=constants.DEFAULT_PY_FLOAT):
+        super().__init__("pyramid", min_size, kernel_size, gen_kernel, float_type)
+        self.offset = np.arange(-self.pad_amount, self.pad_amount + 1)
+
+    def process_single_image(self, img, levels):
+        laplacian = self.single_image_laplacian(img, levels)
+        return laplacian[::-1]
+
+    def fuse_pyramids(self, all_laplacians):
+        fused = [self.get_fused_base(np.stack([p[-1] for p in all_laplacians], axis=0))]
+        for layer in range(len(all_laplacians[0]) - 2, -1, -1):
+            self.print_message(f': fusing pyramids, layer: {layer + 1}')
+            laplacians = np.stack([p[layer] for p in all_laplacians], axis=0)
+            fused.append(self.fuse_laplacian(laplacians))
+        self.print_message(': pyramids fusion completed')
+        return fused[::-1]
+
+    def focus_stack(self, filenames):
+        n = len(filenames)
+        levels = self.focus_stack_validate(filenames)
+        all_laplacians = []
         for i, img_path in enumerate(filenames):
             self.print_message(f": processing file {img_path.split('/')[-1]}")
             img = read_img(img_path)

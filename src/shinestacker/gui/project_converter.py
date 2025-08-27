@@ -105,13 +105,16 @@ class ProjectConverter:
                                        constants.ACTION_FOCUSSTACKBUNCH):
             stacker = action_config.params.get('stacker', constants.STACK_ALGO_DEFAULT)
             if stacker == constants.STACK_ALGO_PYRAMID:
-                algo_dict, module_dict = self.filter_dict_keys(action_config.params, 'pyramid_')
+                algo_dict, module_dict = self.filter_dict_keys(
+                    action_config.params, 'pyramid_')
                 stack_algo = PyramidStack(**algo_dict)
             elif stacker == constants.STACK_ALGO_FAST_PYRAMID:
-                algo_dict, module_dict = self.filter_dict_keys(action_config.params, 'fast_pyramid_')
+                algo_dict, module_dict = self.filter_dict_keys(
+                    action_config.params, 'fast_pyramid_')
                 stack_algo = FastPyramidStack(**algo_dict)
             elif stacker == constants.STACK_ALGO_DEPTH_MAP:
-                algo_dict, module_dict = self.filter_dict_keys(action_config.params, 'depthmap_')
+                algo_dict, module_dict = self.filter_dict_keys(
+                    action_config.params, 'depthmap_')
                 stack_algo = DepthMapStack(**algo_dict)
             else:
                 raise InvalidOptionError('stacker', stacker, f"valid options are: "

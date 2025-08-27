@@ -24,8 +24,8 @@ class BaseStackAlgo:
     def name(self):
         return self._name
 
-    def steps_per_frame(self):
-        return self._steps_per_frame
+    def total_steps(self, n_frames):
+        return self._steps_per_frame * n_frames
 
     def print_message(self, msg):
         self.process.sub_message_r(color_str(msg, constants.LOG_COLOR_LEVEL_3))

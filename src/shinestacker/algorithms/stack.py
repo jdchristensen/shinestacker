@@ -105,7 +105,7 @@ class FocusStack(FocusStackBase):
     def run_core(self):
         self.set_filelist()
         self.callback('step_counts', self.id, self.name,
-                      self.stack_algo.steps_per_frame() * len(self.filenames))
+                      self.stack_algo.total_steps(len(self.filenames)))
         self.focus_stack(self.filenames)
 
     def init(self, job, _working_path=''):

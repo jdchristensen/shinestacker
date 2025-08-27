@@ -16,6 +16,7 @@ from .colors import (
     ACTION_RUNNING_COLOR, ACTION_COMPLETED_COLOR,
     ACTION_STOPPED_COLOR, ACTION_FAILED_COLOR)
 from .time_progress_bar import TimerProgressBar
+from .flow_layout import FlowLayout
 
 
 class ColorButton(QPushButton):
@@ -55,12 +56,12 @@ class RunWindow(QTextEditLogger):
             for label_row in labels:
                 self.color_widgets.append([])
                 row = QWidget(self)
-                h_layout = QHBoxLayout(row)
+                h_layout = FlowLayout(row)  # QHBoxLayout(row)
                 h_layout.setContentsMargins(0, 0, 0, 0)
                 h_layout.setSpacing(2)
                 for label, enabled in label_row:
                     widget = ColorButton(label, enabled)
-                    h_layout.addWidget(widget, stretch=1)
+                    h_layout.addWidget(widget)  # addWidget(widget, stretch=1)
                     self.color_widgets[-1].append(widget)
                 layout.addWidget(row)
         self.progress_bar = TimerProgressBar()
