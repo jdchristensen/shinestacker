@@ -55,6 +55,7 @@ class PyramidBase(BaseStackAlgo):
         return fused
 
     def collapse(self, pyramid):
+        self.print_message(': collapsing pyramid')
         img = pyramid[-1]
         for layer in pyramid[-2::-1]:
             expanded = self.expand_layer(img)
