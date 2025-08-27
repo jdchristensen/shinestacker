@@ -10,6 +10,7 @@ from .. algorithms.align import AlignFrames
 from .. algorithms.balance import BalanceFrames
 from .. algorithms.stack import FocusStack, FocusStackBunch
 from .. algorithms.pyramid import PyramidStack
+from .. algorithms.fast_pyramid import FastPyramidStack
 from .. algorithms.depth_map import DepthMapStack
 from .. algorithms.multilayer import MultiLayer
 from .project_model import Project, ActionConfig
@@ -106,19 +107,21 @@ class ProjectConverter:
             if stacker == constants.STACK_ALGO_PYRAMID:
                 algo_dict, module_dict = self.filter_dict_keys(action_config.params, 'pyramid_')
                 stack_algo = PyramidStack(**algo_dict)
+            elif stacker == constants.STACK_ALGO_FAST_PYRAMID:
+                algo_dict, module_dict = self.filter_dict_keys(action_config.params, 'fast_pyramid_')
+                stack_algo = FastPyramidStack(**algo_dict)
             elif stacker == constants.STACK_ALGO_DEPTH_MAP:
                 algo_dict, module_dict = self.filter_dict_keys(action_config.params, 'depthmap_')
                 stack_algo = DepthMapStack(**algo_dict)
             else:
                 raise InvalidOptionError('stacker', stacker, f"valid options are: "
                                          f"{constants.STACK_ALGO_PYRAMID}, "
+                                         f"{constants.STACK_ALGO_FAST_PYRAMID}, "
                                          f"{constants.STACK_ALGO_DEPTH_MAP}")
             if action_config.type_name == constants.ACTION_FOCUSSTACK:
                 return FocusStack(**module_dict, stack_algo=stack_algo)
             if action_config.type_name == constants.ACTION_FOCUSSTACKBUNCH:
                 return FocusStackBunch(**module_dict, stack_algo=stack_algo)
-            raise InvalidOptionError(
-                "stracker", stacker, details="valid values are: Pyramid, Depth map.")
         if action_config.type_name == constants.ACTION_MULTILAYER:
             input_path = list(filter(lambda p: p != '',
                               action_config.params.get('input_path', '').split(";")))

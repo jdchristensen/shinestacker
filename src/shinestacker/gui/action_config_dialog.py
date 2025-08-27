@@ -156,7 +156,7 @@ class FocusStackBaseConfigurator(DefaultActionConfigurator):
         combo = self.builder.add_field('stacker', FIELD_COMBO, 'Stacking algorithm', required=True,
                                        options=constants.STACK_ALGO_OPTIONS,
                                        default=constants.STACK_ALGO_DEFAULT)
-        q_pyramid, q_depthmap = QWidget(), QWidget()
+        q_pyramid, q_fast_pyramid, q_depthmap = QWidget(), QWidget(), QWidget()
         for q in [q_pyramid, q_depthmap]:
             layout = QFormLayout()
             layout.setFieldGrowthPolicy(QFormLayout.AllNonFixedFieldsGrow)
@@ -166,12 +166,15 @@ class FocusStackBaseConfigurator(DefaultActionConfigurator):
             q.setLayout(layout)
         stacked = QStackedWidget()
         stacked.addWidget(q_pyramid)
+        stacked.addWidget(q_fast_pyramid)
         stacked.addWidget(q_depthmap)
 
         def change():
             text = combo.currentText()
             if text == 'Pyramid':
                 stacked.setCurrentWidget(q_pyramid)
+            if text == 'Fast Pyramid':
+                stacked.setCurrentWidget(q_fast_pyramid)
             elif text == 'Depth map':
                 stacked.setCurrentWidget(q_depthmap)
         change()
@@ -187,6 +190,21 @@ class FocusStackBaseConfigurator(DefaultActionConfigurator):
                                    default=constants.DEFAULT_PY_GEN_KERNEL,
                                    min_val=0.0, max_val=2.0)
             self.builder.add_field('pyramid_float_type', FIELD_COMBO, 'Precision', required=False,
+                                   add_to_layout=q_pyramid.layout(),
+                                   options=self.FLOAT_OPTIONS, values=constants.VALID_FLOATS,
+                                   default=dict(zip(constants.VALID_FLOATS,
+                                                self.FLOAT_OPTIONS))[constants.DEFAULT_PY_FLOAT])
+            self.builder.add_field('fast_pyramid_min_size', FIELD_INT, 'Minimum size (px)',
+                                   required=False, add_to_layout=q_pyramid.layout(),
+                                   default=constants.DEFAULT_PY_MIN_SIZE, min_val=2, max_val=256)
+            self.builder.add_field('fast_pyramid_kernel_size', FIELD_INT, 'Kernel size (px)',
+                                   required=False, add_to_layout=q_pyramid.layout(),
+                                   default=constants.DEFAULT_PY_KERNEL_SIZE, min_val=3, max_val=21)
+            self.builder.add_field('fast_pyramid_gen_kernel', FIELD_FLOAT, 'Gen. kernel',
+                                   required=False, add_to_layout=q_pyramid.layout(),
+                                   default=constants.DEFAULT_PY_GEN_KERNEL,
+                                   min_val=0.0, max_val=2.0)
+            self.builder.add_field('fast_pyramid_float_type', FIELD_COMBO, 'Precision', required=False,
                                    add_to_layout=q_pyramid.layout(),
                                    options=self.FLOAT_OPTIONS, values=constants.VALID_FLOATS,
                                    default=dict(zip(constants.VALID_FLOATS,
