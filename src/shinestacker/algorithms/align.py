@@ -6,7 +6,7 @@ import cv2
 from .. config.constants import constants
 from .. core.exceptions import AlignmentError, InvalidOptionError
 from .. core.colors import color_str
-from .utils import img_8bit, img_bw_8bit, save_plot, get_img_metadata, validate_image, img_subsample
+from .utils import img_8bit, img_bw_8bit, save_plot, img_subsample
 from .stack_framework import SubAction
 
 _DEFAULT_FEATURE_CONFIG = {
@@ -161,7 +161,6 @@ def align_images(img_1, img_0, feature_config=None, matching_config=None, alignm
     except KeyError as e:
         raise InvalidOptionError("border_mode", alignment_config['border_mode']) from e
     min_matches = 4 if alignment_config['transform'] == constants.ALIGN_HOMOGRAPHY else 3
-    validate_image(img_0, *get_img_metadata(img_1))
     if callbacks and 'message' in callbacks:
         callbacks['message']()
     subsample = alignment_config['subsample']
