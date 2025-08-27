@@ -8,6 +8,8 @@ from .. core.exceptions import RunStopException
 from .utils import read_img
 from .base_stack_algo import BaseStackAlgo
 
+TILE_SIZE = 512
+
 
 class FastPyramidBase(BaseStackAlgo):
     def __init__(self, min_size=constants.DEFAULT_PY_MIN_SIZE,
@@ -139,13 +141,10 @@ class FastPyramidStack(FastPyramidBase):
             pyr = pyramid[level - 1]
             h, w = pyr.shape[:2]
             expanded = expanded[:h, :w]
-            laplacian.append(pyr - expanded)
-        
-        # Save each level to disk instead of keeping in memory
+            laplacian.append(pyr - expanded)        
         for i, level_data in enumerate(laplacian[::-1]):
             np.save(os.path.join(self.temp_dir.name, f'img_{img_index}_level_{i}.npy'), level_data)
-        
-        return len(laplacian)  # Return number of levels
+        return len(laplacian)
 
     def load_level(self, img_index, level):
         return np.load(os.path.join(self.temp_dir.name, f'img_{img_index}_level_{level}.npy'))
@@ -154,78 +153,55 @@ class FastPyramidStack(FastPyramidBase):
         self.temp_dir.cleanup()
 
     def fuse_pyramids(self, all_level_counts, num_images):
-        # Find the maximum number of levels
-        max_levels = max(all_level_counts)
-        
-        # Fuse from coarsest to finest level
+        max_levels = max(all_level_counts)        
         fused = []
         for level in range(max_levels-1, -1, -1):
-            self.print_message(f': fusing pyramids, layer: {level + 1}')
-            
-            # For the finest level, process in tiles to reduce memory usage
+            self.print_message(f': fusing pyramids, layer: {level + 1}')            
             if level == 0:
-                # Get dimensions of the finest level
                 sample_level = self.load_level(0, 0)
                 h, w = sample_level.shape[:2]
-                del sample_level
-                
-                # Process in tiles
-                tile_size = 512  # Adjust based on available memory
+                del sample_level                
                 fused_level = np.zeros((h, w, 3), dtype=self.float_type)
                 
-                for y in range(0, h, tile_size):
-                    for x in range(0, w, tile_size):
-                        y_end = min(y + tile_size, h)
-                        x_end = min(x + tile_size, w)
+                for y in range(0, h, TILE_SIZE):
+                    for x in range(0, w, TILE_SIZE):
+                        y_end = min(y + TILE_SIZE, h)
+                        x_end = min(x + TILE_SIZE, w)
                         self.print_message(f': fusing tile [{x}, {x_end}]×[{y}, {y_end}]')
-                        # Load only the needed tile from each image
                         laplacians = []
                         for img_index in range(num_images):
                             if level < all_level_counts[img_index]:
                                 full_laplacian = self.load_level(img_index, level)
                                 tile = full_laplacian[y:y_end, x:x_end]
                                 laplacians.append(tile)
-                                del full_laplacian
-                        
-                        # Fuse just this tile
+                                del full_laplacian                        
                         stacked = np.stack(laplacians, axis=0)
-                        fused_tile = self.fuse_laplacian(stacked)
-                        
-                        # Place the fused tile in the result
-                        fused_level[y:y_end, x:x_end] = fused_tile
-                        
-                        # Clean up memory
+                        fused_tile = self.fuse_laplacian(stacked)                        
+                        fused_level[y:y_end, x:x_end] = fused_tile                        
                         del laplacians, stacked, fused_tile
             else:
-                # For coarser levels, process normally
                 laplacians = []
                 for img_index in range(num_images):
                     if level < all_level_counts[img_index]:
                         laplacian = self.load_level(img_index, level)
                         laplacians.append(laplacian)
-                
-                if level == max_levels - 1:  # Coarsest level (base)
+                if level == max_levels - 1:
                     stacked = np.stack(laplacians, axis=0)
                     fused_level = self.get_fused_base(stacked)
                 else:
                     stacked = np.stack(laplacians, axis=0)
                     fused_level = self.fuse_laplacian(stacked)
-            
             fused.append(fused_level)
-            
         self.print_message(': pyramids fusion completed')
         return fused[::-1]
 
     def focus_stack(self, filenames):
         metadata = None
-        all_level_counts = []  # Store level count for each image
+        all_level_counts = []
         levels = None
-        n = len(filenames)
-        
-        # First pass: process all images and save pyramids to disk
+        n = len(filenames)        
         for i, img_path in enumerate(filenames):
             self.print_message(f": validating file {img_path.split('/')[-1]}")
-
             img, metadata, updated = self.read_image_and_update_metadata(img_path, metadata)
             if updated:
                 self.dtype = metadata[1]
@@ -234,33 +210,22 @@ class FastPyramidStack(FastPyramidBase):
                 self.max_pixel_value = constants.MAX_UINT8 \
                     if self.dtype == np.uint8 else constants.MAX_UINT16
                 levels = int(np.log2(min(img.shape[:2]) / self.min_size))
-            
             if self.do_step_callback:
                 self.process.callback('after_step', self.process.id, self.process.name, i)
             if self.process.callback('check_running', self.process.id, self.process.name) is False:
                 self.cleanup_temp_files()
-                raise RunStopException(self.name)
-        
-        # Process each image and save its pyramid to disk
+                raise RunStopException(self.name)        
         for i, img_path in enumerate(filenames):
             self.print_message(f": processing file {img_path.split('/')[-1]}")
             img = read_img(img_path)
             level_count = self.process_single_image(img, levels, i)
             all_level_counts.append(level_count)
-            
             if self.do_step_callback:
                 self.process.callback('after_step', self.process.id, self.process.name, i + n)
             if self.process.callback('check_running', self.process.id, self.process.name) is False:
                 self.cleanup_temp_files()
-                raise RunStopException(self.name)
-        
-        # Second pass: fuse pyramids level by level
-        fused_pyramid = self.fuse_pyramids(all_level_counts, n)
-        
-        # Final collapse
-        stacked_image = self.collapse(fused_pyramid)
-        
-        # Clean up temporary files
+                raise RunStopException(self.name)        
+        fused_pyramid = self.fuse_pyramids(all_level_counts, n)        
+        stacked_image = self.collapse(fused_pyramid)        
         self.cleanup_temp_files()
-        
         return stacked_image.astype(self.dtype)
