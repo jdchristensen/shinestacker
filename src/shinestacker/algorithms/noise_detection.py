@@ -11,7 +11,7 @@ from .. core.colors import color_str
 from .. core.exceptions import ImageLoadError
 from .. core.framework import JobBase
 from .. core.core_utils import make_tqdm_bar
-from .. core.exceptions import RunStopException
+from .. core.exceptions import RunStopException, ShapeError
 from .stack_framework import FrameMultiDirectory, SubAction
 from .utils import read_img, save_plot, get_img_metadata, validate_image
 
@@ -154,6 +154,7 @@ class MaskNoise(SubAction):
         self.method = method
         self.process = None
         self.noise_mask_img = None
+        self.expected_shape = None
 
     def begin(self, process):
         self.process = process
@@ -163,6 +164,7 @@ class MaskNoise(SubAction):
                 f': reading noisy pixel mask file: {self.noise_mask}',
                 constants.LOG_COLOR_LEVEL_3))
             self.noise_mask_img = cv2.imread(path, cv2.IMREAD_GRAYSCALE)
+            self.expected_shape = self.noise_mask_img.shape[:2]
             if self.noise_mask_img is None:
                 raise ImageLoadError(path, f"failed to load image file {self.noise_mask}.")
         else:
@@ -170,6 +172,9 @@ class MaskNoise(SubAction):
 
     def run_frame(self, _idx, _ref_idx, image):
         self.process.sub_message_r(color_str(': mask noisy pixels', constants.LOG_COLOR_LEVEL_3))
+        shape = image.shape[:2]
+        if shape != self.expected_shape:
+            raise ShapeError(self.expected_shape, shape)
         if len(image.shape) == 3:
             corrected = image.copy()
             for c in range(3):
