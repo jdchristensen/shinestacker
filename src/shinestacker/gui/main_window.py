@@ -406,8 +406,8 @@ class MainWindow(QMainWindow, LogManager):
         if self.job_list_count() == 0:
             self.menu_manager.add_action_entry_action.setEnabled(False)
             self.menu_manager.action_selector.setEnabled(False)
-            self.run_job_action.setEnabled(False)
-            self.run_all_jobs_action.setEnabled(False)
+            self.menu_manager.run_job_action.setEnabled(False)
+            self.menu_manager.run_all_jobs_action.setEnabled(False)
         else:
             self.menu_manager.add_action_entry_action.setEnabled(True)
             self.menu_manager.action_selector.setEnabled(True)

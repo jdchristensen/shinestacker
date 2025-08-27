@@ -290,6 +290,7 @@ class ProjectController(QObject):
             with open(file_path, 'w', encoding="utf-8") as f:
                 f.write(json_obj)
             self.mark_as_modified(False)
+            self.update_title_requested.emit()
         except Exception as e:
             QMessageBox.critical(self.parent, "Error", f"Cannot save file:\n{str(e)}")
 

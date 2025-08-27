@@ -110,6 +110,7 @@ class NewProjectDialog(BaseFormDialog):
             self.layout.addRow("Focus stack (depth map):", self.focus_stack_depth_map)
         else:
             self.layout.addRow("Focus stack:", self.focus_stack_pyramid)
+        if self.expert():
             self.layout.addRow("Save multi layer TIFF:", self.multi_layer)
         self.add_label("")
         self.add_bold_label("3️⃣ Push 🆗 for further options, then press ▶️ to run.")
