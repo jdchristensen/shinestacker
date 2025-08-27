@@ -2,6 +2,16 @@
 
 This page reports the main releases only and the main changes therein.
 
+## [v1.0.x] - 2025-08-27
+**Unreleased changes**
+
+### Changes
+
+* noisy pixel mask verifies that mask has the same shape as images
+* alignment module tolerates images of different shapes
+
+---
+
 ## [v1.0.4.pre2] - 2025-08-26
 **Bug fixes**
 
