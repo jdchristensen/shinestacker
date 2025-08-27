@@ -10,7 +10,7 @@ from .. algorithms.align import AlignFrames
 from .. algorithms.balance import BalanceFrames
 from .. algorithms.stack import FocusStack, FocusStackBunch
 from .. algorithms.pyramid import PyramidStack
-from .. algorithms.fast_pyramid import FastPyramidStack
+from .. algorithms.pyramid_tiles import PyramidTilesStack
 from .. algorithms.depth_map import DepthMapStack
 from .. algorithms.multilayer import MultiLayer
 from .project_model import Project, ActionConfig
@@ -108,10 +108,10 @@ class ProjectConverter:
                 algo_dict, module_dict = self.filter_dict_keys(
                     action_config.params, 'pyramid_')
                 stack_algo = PyramidStack(**algo_dict)
-            elif stacker == constants.STACK_ALGO_FAST_PYRAMID:
+            elif stacker == constants.STACK_ALGO_PYRAMID_TILES:
                 algo_dict, module_dict = self.filter_dict_keys(
-                    action_config.params, 'fast_pyramid_')
-                stack_algo = FastPyramidStack(**algo_dict)
+                    action_config.params, 'tiles_pyramid_')
+                stack_algo = PyramidTilesStack(**algo_dict)
             elif stacker == constants.STACK_ALGO_DEPTH_MAP:
                 algo_dict, module_dict = self.filter_dict_keys(
                     action_config.params, 'depthmap_')
@@ -119,7 +119,7 @@ class ProjectConverter:
             else:
                 raise InvalidOptionError('stacker', stacker, f"valid options are: "
                                          f"{constants.STACK_ALGO_PYRAMID}, "
-                                         f"{constants.STACK_ALGO_FAST_PYRAMID}, "
+                                         f"{constants.STACK_ALGO_PYRAMID_TILES}, "
                                          f"{constants.STACK_ALGO_DEPTH_MAP}")
             if action_config.type_name == constants.ACTION_FOCUSSTACK:
                 return FocusStack(**module_dict, stack_algo=stack_algo)

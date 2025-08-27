@@ -7,7 +7,7 @@ from .utils import read_img
 from .pyramid import PyramidBase
 
 
-class FastPyramidStack(PyramidBase):
+class PyramidTilesStack(PyramidBase):
     def __init__(self, min_size=constants.DEFAULT_PY_MIN_SIZE,
                  kernel_size=constants.DEFAULT_PY_KERNEL_SIZE,
                  gen_kernel=constants.DEFAULT_PY_GEN_KERNEL,

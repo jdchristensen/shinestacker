@@ -36,13 +36,16 @@ Arguments for the constructor of ```FocusStackBunch``` are:
 
 ```PyramidStack```, Laplacian pyramid focus stacking algorithm, optimized implementation
 
-### *Note:* an optimized version, ```FastPyramidStack```, is also provided, but still experimental.
-
 Arguments for the constructor are:
    * ```pyramid_min_size``` (optional, default: 32)
    * ```kernel_size``` (optional, default: 5)
    * ```gen_kernel``` (optional, default: 0.4)
    * ```float_type``` (optional, default: ```FLOAT_32```, possible values: ```FLOAT_32```, ```FLOAT_64```): precision for internal image representation
+
+```PyramidTilesStack```, Laplacian pyramid with tile pyramid merging to optimize memory usage for large files
+
+Arguments for the constructor are the same ad for ```PyramidStack``` plus:
+   * ```tile_size``` (optional, default: 512): size of the tile used for partial image merging
 
 ```DepthMapStack```, Depth map focus stacking algorithm
 

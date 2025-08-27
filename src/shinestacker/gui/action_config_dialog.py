@@ -156,8 +156,8 @@ class FocusStackBaseConfigurator(DefaultActionConfigurator):
         combo = self.builder.add_field('stacker', FIELD_COMBO, 'Stacking algorithm', required=True,
                                        options=constants.STACK_ALGO_OPTIONS,
                                        default=constants.STACK_ALGO_DEFAULT)
-        q_pyramid, q_fast_pyramid, q_depthmap = QWidget(), QWidget(), QWidget()
-        for q in [q_pyramid, q_fast_pyramid, q_depthmap]:
+        q_pyramid, q_pyramid_tiles, q_depthmap = QWidget(), QWidget(), QWidget()
+        for q in [q_pyramid, q_pyramid_tiles, q_depthmap]:
             layout = QFormLayout()
             layout.setFieldGrowthPolicy(QFormLayout.AllNonFixedFieldsGrow)
             layout.setRowWrapPolicy(QFormLayout.DontWrapRows)
@@ -166,15 +166,15 @@ class FocusStackBaseConfigurator(DefaultActionConfigurator):
             q.setLayout(layout)
         stacked = QStackedWidget()
         stacked.addWidget(q_pyramid)
-        stacked.addWidget(q_fast_pyramid)
+        stacked.addWidget(q_pyramid_tiles)
         stacked.addWidget(q_depthmap)
 
         def change():
             text = combo.currentText()
             if text == constants.STACK_ALGO_PYRAMID:
                 stacked.setCurrentWidget(q_pyramid)
-            if text == constants.STACK_ALGO_FAST_PYRAMID:
-                stacked.setCurrentWidget(q_fast_pyramid)
+            if text == constants.STACK_ALGO_PYRAMID_TILES:
+                stacked.setCurrentWidget(q_pyramid_tiles)
             elif text == constants.STACK_ALGO_DEPTH_MAP:
                 stacked.setCurrentWidget(q_depthmap)
         change()
@@ -194,23 +194,23 @@ class FocusStackBaseConfigurator(DefaultActionConfigurator):
                                    options=self.FLOAT_OPTIONS, values=constants.VALID_FLOATS,
                                    default=dict(zip(constants.VALID_FLOATS,
                                                 self.FLOAT_OPTIONS))[constants.DEFAULT_PY_FLOAT])
-            self.builder.add_field('fast_pyramid_min_size', FIELD_INT, 'Minimum size (px)',
-                                   required=False, add_to_layout=q_fast_pyramid.layout(),
+            self.builder.add_field('tiles_pyramid_min_size', FIELD_INT, 'Minimum size (px)',
+                                   required=False, add_to_layout=q_pyramid_tiles.layout(),
                                    default=constants.DEFAULT_PY_MIN_SIZE, min_val=2, max_val=256)
-            self.builder.add_field('fast_pyramid_kernel_size', FIELD_INT, 'Kernel size (px)',
-                                   required=False, add_to_layout=q_fast_pyramid.layout(),
+            self.builder.add_field('tiles_pyramid_kernel_size', FIELD_INT, 'Kernel size (px)',
+                                   required=False, add_to_layout=q_pyramid_tiles.layout(),
                                    default=constants.DEFAULT_PY_KERNEL_SIZE, min_val=3, max_val=21)
-            self.builder.add_field('fast_pyramid_gen_kernel', FIELD_FLOAT, 'Gen. kernel',
-                                   required=False, add_to_layout=q_fast_pyramid.layout(),
+            self.builder.add_field('tiles_pyramid_gen_kernel', FIELD_FLOAT, 'Gen. kernel',
+                                   required=False, add_to_layout=q_pyramid_tiles.layout(),
                                    default=constants.DEFAULT_PY_GEN_KERNEL,
                                    min_val=0.0, max_val=2.0)
-            self.builder.add_field('fast_pyramid_float_type', FIELD_COMBO, 'Precision',
-                                   required=False, add_to_layout=q_fast_pyramid.layout(),
+            self.builder.add_field('tiles_pyramid_float_type', FIELD_COMBO, 'Precision',
+                                   required=False, add_to_layout=q_pyramid_tiles.layout(),
                                    options=self.FLOAT_OPTIONS, values=constants.VALID_FLOATS,
                                    default=dict(zip(constants.VALID_FLOATS,
                                                 self.FLOAT_OPTIONS))[constants.DEFAULT_PY_FLOAT])
-            self.builder.add_field('fast_pyramid_tile_size', FIELD_INT, 'Tile size (px)',
-                                   required=False, add_to_layout=q_fast_pyramid.layout(),
+            self.builder.add_field('tiles_pyramid_tile_size', FIELD_INT, 'Tile size (px)',
+                                   required=False, add_to_layout=q_pyramid_tiles.layout(),
                                    default=constants.DEFAULT_PY_TILE_SIZE,
                                    min_val=128, max_val=2048)
         self.builder.add_field('depthmap_energy', FIELD_COMBO, 'Energy', required=False,
