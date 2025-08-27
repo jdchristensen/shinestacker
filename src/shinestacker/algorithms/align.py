@@ -293,7 +293,7 @@ class AlignFrames(SubAction):
             'ecc_message': lambda: self.sub_msg(": ecc refinement"),
             'blur_message': lambda: self.sub_msg(': blur borders'),
             'warning': lambda msg: self.sub_msg(
-                f': {msg}', constants.LOG_COLOR_ALERT),
+                f': {msg}', constants.LOG_COLOR_WARNING),
             'save_plot': lambda plot_path: self.process.callback(
                 'save_plot', self.process.id,
                 f"{self.process.name}: matches\nframe {idx_str}", plot_path)
