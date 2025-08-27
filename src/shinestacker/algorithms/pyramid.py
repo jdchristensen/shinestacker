@@ -2,7 +2,6 @@
 import numpy as np
 import cv2
 from .. config.constants import constants
-from .. core.exceptions import RunStopException
 from .utils import read_img
 from .base_stack_algo import BaseStackAlgo
 
@@ -16,13 +15,22 @@ class PyramidBase(BaseStackAlgo):
         self.min_size = min_size
         self.kernel_size = kernel_size
         self.pad_amount = (kernel_size - 1) // 2
-        self.do_step_callback = False
         kernel = np.array([0.25 - gen_kernel / 2.0, 0.25,
                            gen_kernel, 0.25, 0.25 - gen_kernel / 2.0])
         self.gen_kernel = np.outer(kernel, kernel)
         self.dtype = None
         self.num_pixel_values = None
         self.max_pixel_value = None
+        self.n_levels = 0
+        self.n_frames = 0
+
+    def init(self, filenames):
+        super().init(filenames)
+        self.n_levels = int(np.log2(min(self.shape) / self.min_size))
+
+    def total_steps(self, n_frames):
+        self.n_frames = n_frames
+        return self._steps_per_frame * n_frames + self.n_levels
 
     def convolve(self, image):
         return cv2.filter2D(image, -1, self.gen_kernel, borderType=cv2.BORDER_REFLECT101)
@@ -114,27 +122,20 @@ class PyramidBase(BaseStackAlgo):
             fused += np.where(best_d[:, :, np.newaxis] == layer, img, 0)
         return (fused / 2).astype(images.dtype)
 
-    def focus_stack_validate(self, filenames, clean_callback=None):
+    def focus_stack_validate(self, cleanup_callback=None):
         metadata = None
-        levels = None
-        for i, img_path in enumerate(filenames):
+        for i, img_path in enumerate(self.filenames):
             self.print_message(f": validating file {img_path.split('/')[-1]}")
 
-            img, metadata, updated = self.read_image_and_update_metadata(img_path, metadata)
+            _img, metadata, updated = self.read_image_and_update_metadata(img_path, metadata)
             if updated:
                 self.dtype = metadata[1]
                 self.num_pixel_values = constants.NUM_UINT8 \
                     if self.dtype == np.uint8 else constants.NUM_UINT16
                 self.max_pixel_value = constants.MAX_UINT8 \
                     if self.dtype == np.uint8 else constants.MAX_UINT16
-                levels = int(np.log2(min(img.shape[:2]) / self.min_size))
-            if self.do_step_callback:
-                self.process.callback('after_step', self.process.id, self.process.name, i)
-            if self.process.callback('check_running', self.process.id, self.process.name) is False:
-                if clean_callback is not None:
-                    clean_callback()
-                raise RunStopException(self.name)
-        return levels
+            self.after_step(i + 1)
+            self.check_running(cleanup_callback)
 
     def single_image_laplacian(self, img, levels):
         pyramid = [img.astype(self.float_type)]
@@ -167,24 +168,26 @@ class PyramidStack(PyramidBase):
 
     def fuse_pyramids(self, all_laplacians):
         fused = [self.get_fused_base(np.stack([p[-1] for p in all_laplacians], axis=0))]
+        count = 0
         for layer in range(len(all_laplacians[0]) - 2, -1, -1):
             self.print_message(f': fusing pyramids, layer: {layer + 1}')
             laplacians = np.stack([p[layer] for p in all_laplacians], axis=0)
             fused.append(self.fuse_laplacian(laplacians))
+            count += 1
+            self.after_step(self._steps_per_frame * self.n_frames + count)
+            self.check_running()
         self.print_message(': pyramids fusion completed')
         return fused[::-1]
 
-    def focus_stack(self, filenames):
-        n = len(filenames)
-        levels = self.focus_stack_validate(filenames)
+    def focus_stack(self):
+        n = len(self.filenames)
+        self.focus_stack_validate()
         all_laplacians = []
-        for i, img_path in enumerate(filenames):
+        for i, img_path in enumerate(self.filenames):
             self.print_message(f": processing file {img_path.split('/')[-1]}")
             img = read_img(img_path)
-            all_laplacians.append(self.process_single_image(img, levels))
-            if self.do_step_callback:
-                self.process.callback('after_step', self.process.id, self.process.name, i + n)
-            if self.process.callback('check_running', self.process.id, self.process.name) is False:
-                raise RunStopException(self.name)
+            all_laplacians.append(self.process_single_image(img, self.n_levels))
+            self.after_step(i + n + 1)
+            self.check_running()
         stacked_image = self.collapse(self.fuse_pyramids(all_laplacians))
         return stacked_image.astype(self.dtype)

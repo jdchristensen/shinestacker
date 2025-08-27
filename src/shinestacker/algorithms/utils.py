@@ -87,6 +87,11 @@ def img_bw(img):
     return cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 
 
+def get_img_file_shape(file_path):
+    img = read_img(file_path)
+    return img.shape[:2]
+
+
 def get_img_metadata(img):
     if img is None:
         return None, None

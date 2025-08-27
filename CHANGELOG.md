@@ -11,7 +11,7 @@ This page reports the main releases only and the main changes therein.
 * noisy pixel mask verifies that mask has the same shape as images
 * alignment module tolerates images of different shapes
 * tuned default alignment parameters
-* bug fixes in the GUI
+* bug fixes and improvements in the GUI
 
 ---
 

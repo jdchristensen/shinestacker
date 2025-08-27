@@ -2,7 +2,7 @@
 import numpy as np
 import cv2
 from .. config.constants import constants
-from .. core.exceptions import InvalidOptionError, RunStopException
+from .. core.exceptions import InvalidOptionError
 from .utils import read_img, img_bw
 from .base_stack_algo import BaseStackAlgo
 
@@ -61,19 +61,18 @@ class DepthMapStack(BaseStackAlgo):
         raise InvalidOptionError("map_type", self.map_type, details=f" valid values are "
                                  f"{constants.DM_MAP_AVERAGE} and {constants.DM_MAP_MAX}.")
 
-    def focus_stack(self, filenames):
+    def focus_stack(self):
         gray_images = []
         metadata = None
-        for i, img_path in enumerate(filenames):
+        for i, img_path in enumerate(self.filenames):
             self.print_message(f": reading file (1/2) {img_path.split('/')[-1]}")
 
             img, metadata, _updated = self.read_image_and_update_metadata(img_path, metadata)
 
             gray = img_bw(img)
             gray_images.append(gray)
-            self.process.callback('after_step', self.process.id, self.process.name, i)
-            if self.process.callback('check_running', self.process.id, self.process.name) is False:
-                raise RunStopException(self.name)
+            self.after_step(i)
+            self.check_running()
         dtype = metadata[1]
         gray_images = np.array(gray_images, dtype=self.float_type)
         if self.energy == constants.DM_ENERGY_SOBEL:
@@ -92,7 +91,7 @@ class DepthMapStack(BaseStackAlgo):
             energies = self.smooth_energy(energies)
         weights = self.get_focus_map(energies)
         blended_pyramid = None
-        for i, img_path in enumerate(filenames):
+        for i, img_path in enumerate(self.filenames):
             self.print_message(f": reading file (2/2) {img_path.split('/')[-1]}")
             img = read_img(img_path).astype(self.float_type)
             weight = weights[i]
@@ -110,10 +109,8 @@ class DepthMapStack(BaseStackAlgo):
                              for j in range(self.levels)]
             blended_pyramid = current_blend if blended_pyramid is None \
                 else [np.add(bp, cb) for bp, cb in zip(blended_pyramid, current_blend)]
-            self.process.callback('after_step', self.process.id,
-                                  self.process.name, i + len(filenames))
-            if self.process.callback('check_running', self.process.id, self.process.name) is False:
-                raise RunStopException(self.name)
+            self.after_step(i + len(self.filenames))
+            self.check_running()
         result = blended_pyramid[0]
         self.print_message(': blend levels')
         for j in range(1, self.levels):

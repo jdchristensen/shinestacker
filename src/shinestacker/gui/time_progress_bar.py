@@ -39,8 +39,8 @@ class TimerProgressBar(QProgressBar):
         """)
 
     def time_str(self, secs):
-        ss = int(secs)
-        x = secs - ss
+        x = secs % 1
+        ss = int(secs // 1)
         s = ss % 60
         mm = ss // 60
         m = mm % 60

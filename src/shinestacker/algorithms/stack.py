@@ -5,7 +5,7 @@ from .. config.constants import constants
 from .. core.framework import JobBase
 from .. core.colors import color_str
 from .. core.exceptions import InvalidOptionError
-from .utils import write_img
+from .utils import write_img, extension_tif_jpg
 from .stack_framework import FrameDirectory, ActionList
 from .exif import copy_exif_from_file_to_file
 from .denoise import denoise
@@ -25,8 +25,7 @@ class FocusStackBase(JobBase, FrameDirectory):
 
     def focus_stack(self, filenames):
         self.sub_message_r(color_str(': reading input files', constants.LOG_COLOR_LEVEL_3))
-        img_files = sorted([os.path.join(self.input_full_path, name) for name in filenames])
-        stacked_img = self.stack_algo.focus_stack(img_files)
+        stacked_img = self.stack_algo.focus_stack()
         in_filename = filenames[0].split(".")
         out_filename = f"{self.output_dir}/{self.prefix}{in_filename[0]}." + \
             '.'.join(in_filename[1:])
@@ -37,8 +36,7 @@ class FocusStackBase(JobBase, FrameDirectory):
         if self.exif_path != '' and stacked_img.dtype == np.uint8:
             self.sub_message_r(': copy exif data')
             _dirpath, _, fnames = next(os.walk(self.exif_path))
-            fnames = [name for name in fnames
-                      if os.path.splitext(name)[-1][1:].lower() in constants.EXTENSIONS]
+            fnames = [name for name in fnames if extension_tif_jpg(name)]
             exif_filename = f"{self.exif_path}/{fnames[0]}"
             copy_exif_from_file_to_file(exif_filename, out_filename)
             self.sub_message_r(' ' * 60)
@@ -52,6 +50,7 @@ class FocusStackBase(JobBase, FrameDirectory):
             self.frame_count += 1
 
     def init(self, job, working_path=''):
+        FrameDirectory.init(self, job)
         if self.exif_path is None:
             self.exif_path = job.paths[0]
         if self.exif_path != '':
@@ -79,7 +78,6 @@ class FocusStackBunch(ActionList, FocusStackBase):
                                      "overlap must be smaller than batch size")
 
     def init(self, job, _working_path=''):
-        FrameDirectory.init(self, job)
         FocusStackBase.init(self, job, self.working_path)
 
     def begin(self):
@@ -94,6 +92,9 @@ class FocusStackBunch(ActionList, FocusStackBase):
     def run_step(self):
         self.print_message_r(color_str(f"fusing bunch: {self.count + 1}/{self.counts}",
                                        constants.LOG_COLOR_LEVEL_2))
+        img_files = [os.path.join(self.input_full_path, name)
+                     for name in self._chunks[self.count - 1]]
+        self.stack_algo.init(img_files)
         self.focus_stack(self._chunks[self.count - 1])
 
 
@@ -101,13 +102,15 @@ class FocusStack(FocusStackBase):
     def __init__(self, name, stack_algo, enabled=True, **kwargs):
         super().__init__(name, stack_algo, enabled, **kwargs)
         self.stack_algo.do_step_callback = True
+        self.shape = None
 
     def run_core(self):
         self.set_filelist()
+        img_files = sorted([os.path.join(self.input_full_path, name) for name in self.filenames])
+        self.stack_algo.init(img_files)
         self.callback('step_counts', self.id, self.name,
                       self.stack_algo.total_steps(len(self.filenames)))
         self.focus_stack(self.filenames)
 
     def init(self, job, _working_path=''):
-        FrameDirectory.init(self, job)
         FocusStackBase.init(self, job, self.working_path)

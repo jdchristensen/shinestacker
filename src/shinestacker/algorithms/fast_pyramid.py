@@ -1,9 +1,8 @@
-# pylint: disable=C0114, C0115, C0116, E1101, R0914, R1702, R1732, R0913, R0917, R0912
+# pylint: disable=C0114, C0115, C0116, E1101, R0914, R1702, R1732, R0913, R0917, R0912, R0915
 import os
 import tempfile
 import numpy as np
 from .. config.constants import constants
-from .. core.exceptions import RunStopException
 from .utils import read_img
 from .pyramid import PyramidBase
 
@@ -21,6 +20,15 @@ class FastPyramidStack(PyramidBase):
         self.max_pixel_value = None
         self.tile_size = tile_size
         self.temp_dir = tempfile.TemporaryDirectory()
+        self.n_tiles = 0
+
+    def init(self, filenames):
+        super().init(filenames)
+        self.n_tiles = (self.shape[0] // self.tile_size + 1) * (self.shape[1] // self.tile_size + 1)
+
+    def total_steps(self, n_frames):
+        n_steps = super().total_steps(n_frames)
+        return n_steps + self.n_tiles
 
     def process_single_image(self, img, levels, img_index):
         laplacian = self.single_image_laplacian(img, levels)
@@ -37,6 +45,7 @@ class FastPyramidStack(PyramidBase):
     def fuse_pyramids(self, all_level_counts, num_images):
         max_levels = max(all_level_counts)
         fused = []
+        count = self._steps_per_frame * self.n_frames
         for level in range(max_levels - 1, -1, -1):
             self.print_message(f': fusing pyramids, layer: {level + 1}')
             if level == 0:
@@ -60,10 +69,9 @@ class FastPyramidStack(PyramidBase):
                         fused_tile = self.fuse_laplacian(stacked)
                         fused_level[y:y_end, x:x_end] = fused_tile
                         del laplacians, stacked, fused_tile
-                        if self.process.callback(
-                                'check_running', self.process.id, self.process.name) is False:
-                            self.cleanup_temp_files()
-                            raise RunStopException(self.name)
+                        self.after_step(count)
+                        self.check_running(self.cleanup_temp_files)
+                        count += 1
             else:
                 laplacians = []
                 for img_index in range(num_images):
@@ -76,28 +84,25 @@ class FastPyramidStack(PyramidBase):
                 else:
                     stacked = np.stack(laplacians, axis=0)
                     fused_level = self.fuse_laplacian(stacked)
-                    if self.process.callback(
-                            'check_running', self.process.id, self.process.name) is False:
-                        self.cleanup_temp_files()
-                        raise RunStopException(self.name)
+                    self.check_running(self.cleanup_temp_files)
             fused.append(fused_level)
+            count += 1
+            self.after_step(count)
+            self.check_running(self.cleanup_temp_files)
         self.print_message(': pyramids fusion completed')
         return fused[::-1]
 
-    def focus_stack(self, filenames):
-        n = len(filenames)
-        levels = self.focus_stack_validate(filenames, self.cleanup_temp_files)
+    def focus_stack(self):
+        n = len(self.filenames)
+        self.focus_stack_validate(self.cleanup_temp_files)
         all_level_counts = []
-        for i, img_path in enumerate(filenames):
+        for i, img_path in enumerate(self.filenames):
             self.print_message(f": processing file {img_path.split('/')[-1]}")
             img = read_img(img_path)
-            level_count = self.process_single_image(img, levels, i)
+            level_count = self.process_single_image(img, self.n_levels, i)
             all_level_counts.append(level_count)
-            if self.do_step_callback:
-                self.process.callback('after_step', self.process.id, self.process.name, i + n)
-            if self.process.callback('check_running', self.process.id, self.process.name) is False:
-                self.cleanup_temp_files()
-                raise RunStopException(self.name)
+            self.after_step(i + n + 1)
+            self.check_running(self.cleanup_temp_files)
         fused_pyramid = self.fuse_pyramids(all_level_counts, n)
         stacked_image = self.collapse(fused_pyramid)
         self.cleanup_temp_files()

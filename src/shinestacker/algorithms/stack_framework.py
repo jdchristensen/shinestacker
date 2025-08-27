@@ -7,7 +7,7 @@ from .. core.colors import color_str
 from .. core.framework import Job, ActionList
 from .. core.core_utils import check_path_exists
 from .. core.exceptions import ShapeError, BitDepthError, RunStopException
-from .utils import read_img, write_img
+from .utils import read_img, write_img, extension_tif_jpg
 
 
 class StackJob(Job):
@@ -50,8 +50,8 @@ class FramePaths:
 
     def set_filelist(self):
         self.filenames = self.folder_filelist()
-        file_list = self.input_full_path.replace(self.working_path, '').lstrip('/')
-        self.print_message(color_str(f": {len(self.filenames)} files in folder: {file_list}",
+        file_folder = self.input_full_path.replace(self.working_path, '').lstrip('/')
+        self.print_message(color_str(f": {len(self.filenames)} files in folder: {file_folder}",
                                      constants.LOG_COLOR_LEVEL_2))
 
     def init(self, job):
@@ -113,8 +113,7 @@ class FrameDirectory(FramePaths):
     def folder_filelist(self):
         src_contents = os.walk(self.input_full_path)
         _dirpath, _, filenames = next(src_contents)
-        filelist = [name for name in filenames
-                    if os.path.splitext(name)[-1][1:].lower() in constants.EXTENSIONS]
+        filelist = [name for name in filenames if extension_tif_jpg(name)]
         filelist.sort()
         if self.reverse_order:
             filelist.reverse()
@@ -159,9 +158,7 @@ class FrameMultiDirectory(FramePaths):
         for d, p in zip(dirs, paths):
             filelist = []
             for _dirpath, _, filenames in os.walk(d):
-                filelist = [p + "/" + name
-                            for name in filenames
-                            if os.path.splitext(name)[-1][1:].lower() in constants.EXTENSIONS]
+                filelist = [f"{p}/{name}" for name in filenames if extension_tif_jpg(name)]
                 if self.reverse_order:
                     filelist.reverse()
                 if self.resample > 1:

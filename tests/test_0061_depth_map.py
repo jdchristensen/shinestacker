@@ -43,7 +43,8 @@ def test_focus_stack_with_examples(example_images):
     dms.process = MagicMock()
     dms.process.callback.return_value = True  # Keep running
     dms.print_message = MagicMock()
-    result = dms.focus_stack(example_images[:3])
+    dms.init(example_images[:3])
+    result = dms.focus_stack()
     assert len(result.shape) == 3
     assert result.dtype == np.uint8
     first_input = cv2.imread(example_images[0], cv2.IMREAD_GRAYSCALE)
@@ -56,7 +57,8 @@ def test_performance_with_all_images(example_images):
     dms.process.callback.return_value = True
     import time
     start = time.time()
-    result = dms.focus_stack(example_images)
+    dms.init(example_images)
+    result = dms.focus_stack()
     elapsed = time.time() - start
     assert result.shape[0] > 0 and result.shape[1] > 0
     print(f"\nFocus stacking {n_images} images took {elapsed:.2f} seconds")
