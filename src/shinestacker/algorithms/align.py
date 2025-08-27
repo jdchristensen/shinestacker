@@ -163,6 +163,8 @@ def align_images(img_1, img_0, feature_config=None, matching_config=None, alignm
     min_matches = 4 if alignment_config['transform'] == constants.ALIGN_HOMOGRAPHY else 3
     if callbacks and 'message' in callbacks:
         callbacks['message']()
+    h_ref, w_ref = img_1.shape[:2]
+    h0, w0 = img_0.shape[:2]
     subsample = alignment_config['subsample']
     fast_subsampling = alignment_config['fast_subsampling']
     min_good_matches = alignment_config['min_good_matches']
@@ -206,12 +208,11 @@ def align_images(img_1, img_0, feature_config=None, matching_config=None, alignm
             plt.savefig(plot_path)
             if callbacks and 'save_plot' in callbacks:
                 callbacks['save_plot'](plot_path)
-        h, w = img_0.shape[:2]
         h_sub, w_sub = img_0_sub.shape[:2]
         if subsample > 1:
             if transform == constants.ALIGN_HOMOGRAPHY:
                 low_size = np.float32([[0, 0], [0, h_sub], [w_sub, h_sub], [w_sub, 0]])
-                high_size = np.float32([[0, 0], [0, h], [w, h], [w, 0]])
+                high_size = np.float32([[0, 0], [0, h0], [w0, h0], [w0, 0]])
                 scale_up = cv2.getPerspectiveTransform(low_size, high_size)
                 scale_down = cv2.getPerspectiveTransform(high_size, low_size)
                 m = scale_up @ m @ scale_down
@@ -229,17 +230,17 @@ def align_images(img_1, img_0, feature_config=None, matching_config=None, alignm
         img_mask = np.ones_like(img_0, dtype=np.uint8)
         if alignment_config['transform'] == constants.ALIGN_HOMOGRAPHY:
             img_warp = cv2.warpPerspective(
-                img_0, m, (w, h),
+                img_0, m, (w_ref, h_ref),
                 borderMode=cv2_border_mode, borderValue=alignment_config['border_value'])
             if alignment_config['border_mode'] == constants.BORDER_REPLICATE_BLUR:
-                mask = cv2.warpPerspective(img_mask, m, (w, h),
+                mask = cv2.warpPerspective(img_mask, m, (w_ref, h_ref),
                                            borderMode=cv2.BORDER_CONSTANT, borderValue=0)
         elif alignment_config['transform'] == constants.ALIGN_RIGID:
             img_warp = cv2.warpAffine(
-                img_0, m, (w, h),
+                img_0, m, (w_ref, h_ref),
                 borderMode=cv2_border_mode, borderValue=alignment_config['border_value'])
             if alignment_config['border_mode'] == constants.BORDER_REPLICATE_BLUR:
-                mask = cv2.warpAffine(img_mask, m, (w, h),
+                mask = cv2.warpAffine(img_mask, m, (w_ref, h_ref),
                                       borderMode=cv2.BORDER_CONSTANT, borderValue=0)
         if alignment_config['border_mode'] == constants.BORDER_REPLICATE_BLUR:
             if callbacks and 'blur_message' in callbacks:
@@ -314,7 +315,7 @@ class AlignFrames(SubAction):
         if n_good_matches < self.min_matches:
             self.process.sub_message(f": image not aligned, too few matches found: "
                                      f"{n_good_matches}", level=logging.CRITICAL)
-            raise AlignmentError(idx, f"too few matches found: "
+            raise AlignmentError(idx, f"Image not aligned, too few matches found: "
                                  f"{n_good_matches} < {self.min_matches}")
         return img
 
