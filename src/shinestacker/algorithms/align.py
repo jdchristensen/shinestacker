@@ -205,7 +205,7 @@ def align_images(img_1, img_0, feature_config=None, matching_config=None, alignm
                 flags=2), cv2.COLOR_BGR2RGB)
             plt.figure(figsize=(10, 5))
             plt.imshow(img_match, 'gray')
-            plt.savefig(plot_path)
+            save_plot(plot_path)
             if callbacks and 'save_plot' in callbacks:
                 callbacks['save_plot'](plot_path)
         h_sub, w_sub = img_0_sub.shape[:2]
