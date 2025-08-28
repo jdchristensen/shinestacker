@@ -407,13 +407,12 @@ class MainWindow(QMainWindow, LogManager):
             self.menu_manager.add_action_entry_action.setEnabled(False)
             self.menu_manager.action_selector.setEnabled(False)
             self.menu_manager.run_job_action.setEnabled(False)
-            self.menu_manager.run_all_jobs_action.setEnabled(False)
         else:
             self.menu_manager.add_action_entry_action.setEnabled(True)
             self.menu_manager.action_selector.setEnabled(True)
             self.menu_manager.delete_element_action.setEnabled(True)
             self.menu_manager.run_job_action.setEnabled(True)
-            self.menu_manager.run_all_jobs_action.setEnabled(True)
+        self.menu_manager.set_enabled_run_all_jobs(self.job_list_count() > 1)
 
     def quit(self):
         if self.project_controller.check_unsaved_changes():

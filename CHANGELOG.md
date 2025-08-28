@@ -2,8 +2,15 @@
 
 This page reports the main releases only and the main changes therein.
 
+## [v-.-.-] - 2025-08-29
+**Unreleased changes**
+
+* "Run all jobs" action enabled only if more than one job are present
+
+---
+
 ## [v1.1.0] - 2025-08-28
-**New Pyramids algorith, some improvements and more fixes**
+**New Pyramids algorithm, some improvements and more fixes**
 
 ### Changes
 

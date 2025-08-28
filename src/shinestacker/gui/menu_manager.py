@@ -113,7 +113,7 @@ class MenuManager:
         self.run_job_action.setEnabled(False)
         menu.addAction(self.run_job_action)
         self.run_all_jobs_action = self.action("Run All Jobs")
-        self.run_all_jobs_action.setEnabled(False)
+        self.set_enabled_run_all_jobs(False)
         menu.addAction(self.run_all_jobs_action)
 
     def add_actions_menu(self):
@@ -234,3 +234,11 @@ class MenuManager:
         self.sub_action_selector.setEnabled(enabled)
         for a in self.sub_action_menu_entries:
             a.setEnabled(enabled)
+
+    def set_enabled_run_all_jobs(self, enabled):
+        tooltip = self.tooltips["Run All Jobs"]
+        self.run_all_jobs_action.setEnabled(enabled)
+        if not enabled:
+            tooltip += " (requires more tha one job)"
+        self.run_all_jobs_action.setToolTip(tooltip)
+

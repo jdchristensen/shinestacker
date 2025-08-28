@@ -167,7 +167,9 @@ class ProjectController(QObject):
                                 'input_path': input_path})
             if dialog.get_noise_detection() or dialog.get_vignetting_correction() or \
                dialog.get_align_frames() or dialog.get_balance_frames():
-                combo_action = ActionConfig(constants.ACTION_COMBO, {'name': 'align'})
+                if dialog.get_align_frames():
+                    combo_name = 'align'
+                combo_action = ActionConfig(constants.ACTION_COMBO, {'name': combo_name})
                 if dialog.get_noise_detection():
                     mask_noise = ActionConfig(constants.ACTION_MASKNOISE, {'name': 'mask-noise'})
                     combo_action.add_sub_action(mask_noise)
