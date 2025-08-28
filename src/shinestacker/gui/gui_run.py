@@ -1,5 +1,6 @@
 # pylint: disable=C0114, C0115, C0116, E0611, R0903, R0915, R0914, R0917, R0913, R0902
 import os
+import traceback
 from PySide6.QtWidgets import (QWidget, QPushButton, QVBoxLayout, QHBoxLayout,
                                QMessageBox, QScrollArea, QSizePolicy, QFrame, QLabel, QComboBox)
 from PySide6.QtGui import QColor
@@ -203,23 +204,26 @@ class RunWindow(QTextEditLogger):
         label = QLabel(name, self)
         label.setStyleSheet("QLabel {margin-top: 5px; font-weight: bold;}")
         self.image_layout.addWidget(label)
-        if extension_pdf(path):
-            image_view = GuiPdfView(path, self)
-        elif extension_tif_jpg(path):
-            image_view = GuiImageView(path, self)
-        else:
-            raise RuntimeError(f"Can't visualize file type {os.path.splitext(path)[1]}.")
-        self.image_views.append(image_view)
-        self.image_layout.addWidget(image_view)
-        max_width = max(pv.size().width() for pv in self.image_views) if self.image_views else 0
-        needed_width = max_width + 20
-        self.right_area.setFixedWidth(needed_width)
-        self.image_area_widget.setFixedWidth(needed_width)
-        self.right_area.updateGeometry()
-        self.image_area_widget.updateGeometry()
-        QTimer.singleShot(
-            0, lambda: self.right_area.verticalScrollBar().setValue(
-                self.right_area.verticalScrollBar().maximum()))
+        try:
+            if extension_pdf(path):
+                image_view = GuiPdfView(path, self)
+            elif extension_tif_jpg(path):
+                image_view = GuiImageView(path, self)
+            else:
+                raise RuntimeError(f"Can't visualize file type {os.path.splitext(path)[1]}.")
+            self.image_views.append(image_view)
+            self.image_layout.addWidget(image_view)
+            max_width = max(pv.size().width() for pv in self.image_views) if self.image_views else 0
+            needed_width = max_width + 20
+            self.right_area.setFixedWidth(needed_width)
+            self.image_area_widget.setFixedWidth(needed_width)
+            self.right_area.updateGeometry()
+            self.image_area_widget.updateGeometry()
+            QTimer.singleShot(
+                0, lambda: self.right_area.verticalScrollBar().setValue(
+                    self.right_area.verticalScrollBar().maximum()))
+        except RuntimeError as e:
+            traceback.print_tb(e.__traceback__)
 
     @Slot(int, str, str, str)
     def handle_open_app(self, _run_id, name, app, path):
