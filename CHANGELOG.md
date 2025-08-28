@@ -2,17 +2,17 @@
 
 This page reports the main releases only and the main changes therein.
 
-## [v1.0.x] - 2025-08-27
-**Unreleased changes**
+## [v1.1.0] - 2025-08-28
+**New Pyramids algorith, some improvements and more fixes**
 
 ### Changes
 
-* added new optimized pyramid algorithm
-* noisy pixel mask verifies that mask has the same shape as images
-* alignment module tolerates images of different shapes
-* tuned default alignment parameters
-* bug fixes and improvements in the GUI
-
+* added Pyramids Tiles, that requires less RAM by fusing the image in tiles
+* the alignment module now tolerates images of different shapes
+* noisy pixel mask verifies that the mask has the same shape as input images
+* minor changes to default alignment parameters
+* some improvements to the GUI
+* some bug fixes
 ---
 
 ## [v1.0.4.pre2] - 2025-08-26
