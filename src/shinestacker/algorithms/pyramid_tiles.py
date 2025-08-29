@@ -21,6 +21,7 @@ class PyramidTilesStack(PyramidBase):
         self.tile_size = tile_size
         self.temp_dir = tempfile.TemporaryDirectory()
         self.n_tiles = 0
+        self.level_shapes = {}
 
     def init(self, filenames):
         super().init(filenames)
@@ -32,9 +33,31 @@ class PyramidTilesStack(PyramidBase):
 
     def process_single_image(self, img, levels, img_index):
         laplacian = self.single_image_laplacian(img, levels)
-        for i, level_data in enumerate(laplacian[::-1]):
-            np.save(os.path.join(self.temp_dir.name, f'img_{img_index}_level_{i}.npy'), level_data)
+        self.level_shapes[img_index] = [level.shape for level in laplacian[::-1]]
+        for level_idx, level_data in enumerate(laplacian[::-1]):
+            h, w = level_data.shape[:2]
+            if level_idx == 0:
+                for y in range(0, h, self.tile_size):
+                    for x in range(0, w, self.tile_size):
+                        y_end = min(y + self.tile_size, h)
+                        x_end = min(x + self.tile_size, w)
+                        tile = level_data[y:y_end, x:x_end]
+                        np.save(
+                            os.path.join(
+                                self.temp_dir.name,
+                                f'img_{img_index}_level_{level_idx}_tile_{y}_{x}.npy'),
+                            tile
+                        )
+            else:
+                np.save(
+                    os.path.join(self.temp_dir.name,
+                                 f'img_{img_index}_level_{level_idx}.npy'), level_data)
         return len(laplacian)
+
+    def load_level_tile(self, img_index, level, y, x):
+        return np.load(
+            os.path.join(self.temp_dir.name,
+                         f'img_{img_index}_level_{level}_tile_{y}_{x}.npy'))
 
     def load_level(self, img_index, level):
         return np.load(os.path.join(self.temp_dir.name, f'img_{img_index}_level_{level}.npy'))
@@ -49,9 +72,13 @@ class PyramidTilesStack(PyramidBase):
         for level in range(max_levels - 1, -1, -1):
             self.print_message(f': fusing pyramids, layer: {level + 1}')
             if level == 0:
-                sample_level = self.load_level(0, 0)
-                h, w = sample_level.shape[:2]
-                del sample_level
+                h, w = None, None
+                for img_index in range(num_images):
+                    if level < all_level_counts[img_index]:
+                        h, w = self.level_shapes[img_index][level][:2]
+                        break
+                if h is None or w is None:
+                    continue
                 fused_level = np.zeros((h, w, 3), dtype=self.float_type)
                 for y in range(0, h, self.tile_size):
                     for x in range(0, w, self.tile_size):
@@ -61,14 +88,15 @@ class PyramidTilesStack(PyramidBase):
                         laplacians = []
                         for img_index in range(num_images):
                             if level < all_level_counts[img_index]:
-                                full_laplacian = self.load_level(img_index, level)
-                                tile = full_laplacian[y:y_end, x:x_end]
-                                laplacians.append(tile)
-                                del full_laplacian
-                        stacked = np.stack(laplacians, axis=0)
-                        fused_tile = self.fuse_laplacian(stacked)
-                        fused_level[y:y_end, x:x_end] = fused_tile
-                        del laplacians, stacked, fused_tile
+                                try:
+                                    tile = self.load_level_tile(img_index, level, y, x)
+                                    laplacians.append(tile)
+                                except FileNotFoundError:
+                                    continue
+                        if laplacians:
+                            stacked = np.stack(laplacians, axis=0)
+                            fused_tile = self.fuse_laplacian(stacked)
+                            fused_level[y:y_end, x:x_end] = fused_tile
                         self.after_step(count)
                         self.check_running(self.cleanup_temp_files)
                         count += 1
@@ -84,7 +112,7 @@ class PyramidTilesStack(PyramidBase):
                 else:
                     stacked = np.stack(laplacians, axis=0)
                     fused_level = self.fuse_laplacian(stacked)
-                    self.check_running(self.cleanup_temp_files)
+                self.check_running(self.cleanup_temp_files)
             fused.append(fused_level)
             count += 1
             self.after_step(count)
@@ -97,7 +125,7 @@ class PyramidTilesStack(PyramidBase):
         self.focus_stack_validate(self.cleanup_temp_files)
         all_level_counts = []
         for i, img_path in enumerate(self.filenames):
-            self.print_message(f": processing file {img_path.split('/')[-1]}")
+            self.print_message(f": processing file {img_path.split('/')[-1]}, {i + 1}/{n}")
             img = read_img(img_path)
             level_count = self.process_single_image(img, self.n_levels, i)
             all_level_counts.append(level_count)

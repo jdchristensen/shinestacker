@@ -124,8 +124,9 @@ class PyramidBase(BaseStackAlgo):
 
     def focus_stack_validate(self, cleanup_callback=None):
         metadata = None
+        n = len(self.filenames)
         for i, img_path in enumerate(self.filenames):
-            self.print_message(f": validating file {img_path.split('/')[-1]}")
+            self.print_message(f": validating file {img_path.split('/')[-1]}, {i + 1}/{n}")
 
             _img, metadata, updated = self.read_image_and_update_metadata(img_path, metadata)
             if updated:
@@ -184,7 +185,7 @@ class PyramidStack(PyramidBase):
         self.focus_stack_validate()
         all_laplacians = []
         for i, img_path in enumerate(self.filenames):
-            self.print_message(f": processing file {img_path.split('/')[-1]}")
+            self.print_message(f": processing file {img_path.split('/')[-1]} ({i + 1}/{n})")
             img = read_img(img_path)
             all_laplacians.append(self.process_single_image(img, self.n_levels))
             self.after_step(i + n + 1)
