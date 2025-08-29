@@ -1,4 +1,4 @@
-# pylint: disable=C0114, C0115, C0116, E1101, R0914, R1702, R1732, R0913, R0917, R0912, R0915
+# pylint: disable=C0114, C0115, C0116, E1101, R0914, R1702, R1732, R0913, R0917, R0912, R0915, R0902
 import os
 import tempfile
 import numpy as np
@@ -12,20 +12,26 @@ class PyramidTilesStack(PyramidBase):
                  kernel_size=constants.DEFAULT_PY_KERNEL_SIZE,
                  gen_kernel=constants.DEFAULT_PY_GEN_KERNEL,
                  float_type=constants.DEFAULT_PY_FLOAT,
-                 tile_size=constants.DEFAULT_PY_TILE_SIZE):
+                 tile_size=constants.DEFAULT_PY_TILE_SIZE,
+                 n_tiled_layers=constants.DEFALUT_PY_N_TILED_LAYERS):
         super().__init__("fast_pyramid", min_size, kernel_size, gen_kernel, float_type)
         self.offset = np.arange(-self.pad_amount, self.pad_amount + 1)
         self.dtype = None
         self.num_pixel_values = None
         self.max_pixel_value = None
         self.tile_size = tile_size
+        self.n_tiled_layers = n_tiled_layers
         self.temp_dir = tempfile.TemporaryDirectory()
         self.n_tiles = 0
         self.level_shapes = {}
 
     def init(self, filenames):
         super().init(filenames)
-        self.n_tiles = (self.shape[0] // self.tile_size + 1) * (self.shape[1] // self.tile_size + 1)
+        self.n_tiles = 0
+        for layer in range(self.n_tiled_layers):
+            h = max(1, self.shape[0] // (2 ** layer))
+            w = max(1, self.shape[1] // (2 ** layer))
+            self.n_tiles += (h // self.tile_size + 1) * (w // self.tile_size + 1)
 
     def total_steps(self, n_frames):
         n_steps = super().total_steps(n_frames)
@@ -36,7 +42,7 @@ class PyramidTilesStack(PyramidBase):
         self.level_shapes[img_index] = [level.shape for level in laplacian[::-1]]
         for level_idx, level_data in enumerate(laplacian[::-1]):
             h, w = level_data.shape[:2]
-            if level_idx == 0:
+            if level_idx < self.n_tiled_layers:
                 for y in range(0, h, self.tile_size):
                     for x in range(0, w, self.tile_size):
                         y_end = min(y + self.tile_size, h)
@@ -71,7 +77,7 @@ class PyramidTilesStack(PyramidBase):
         count = self._steps_per_frame * self.n_frames
         for level in range(max_levels - 1, -1, -1):
             self.print_message(f': fusing pyramids, layer: {level + 1}')
-            if level == 0:
+            if level < self.n_tiled_layers:
                 h, w = None, None
                 for img_index in range(num_images):
                     if level < all_level_counts[img_index]:

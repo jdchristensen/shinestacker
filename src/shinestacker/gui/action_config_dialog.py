@@ -213,6 +213,10 @@ class FocusStackBaseConfigurator(DefaultActionConfigurator):
                                    required=False, add_to_layout=q_pyramid_tiles.layout(),
                                    default=constants.DEFAULT_PY_TILE_SIZE,
                                    min_val=128, max_val=2048)
+            self.builder.add_field('tiles_pyramid_n_tiled_layers', FIELD_INT, 'Num. tiled layers',
+                                   required=False, add_to_layout=q_pyramid_tiles.layout(),
+                                   default=constants.DEFALUT_PY_N_TILED_LAYERS,
+                                   min_val=0, max_val=6)
         self.builder.add_field('depthmap_energy', FIELD_COMBO, 'Energy', required=False,
                                add_to_layout=q_depthmap.layout(),
                                options=self.ENERGY_OPTIONS, values=constants.VALID_DM_ENERGY,
