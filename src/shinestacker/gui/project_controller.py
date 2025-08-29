@@ -136,6 +136,7 @@ class ProjectController(QObject):
             self.clear_job_list()
             self.clear_action_list()
             self.mark_as_modified(False)
+            self.project_editor.reset_undo()
 
     def new_project(self):
         if not self.check_unsaved_changes():
@@ -151,6 +152,7 @@ class ProjectController(QObject):
         dialog = NewProjectDialog(self.parent)
         if dialog.exec() == QDialog.Accepted:
             self.save_actions_set_enabled(True)
+            self.project_editor.reset_undo()
             input_folder = dialog.get_input_folder().split('/')
             working_path = '/'.join(input_folder[:-1])
             input_path = input_folder[-1]
@@ -231,6 +233,7 @@ class ProjectController(QObject):
                     raise RuntimeError(f"Project from file {file_path} produced a null project.")
                 self.set_project(project)
                 self.mark_as_modified(False)
+                self.project_editor.reset_undo()
                 self.refresh_ui(0, -1)
                 if self.job_list_count() > 0:
                     self.set_current_job(0)

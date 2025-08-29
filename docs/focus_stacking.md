@@ -34,7 +34,7 @@ Arguments for the constructor of ```FocusStackBunch``` are:
 
 ## Stack algorithms
 
-```PyramidStack```, Laplacian pyramid focus stacking algorithm, optimized implementation
+```PyramidStack```, Laplacian pyramid focus stacking algorithm
 
 Arguments for the constructor are:
    * ```pyramid_min_size``` (optional, default: 32)
@@ -42,7 +42,18 @@ Arguments for the constructor are:
    * ```gen_kernel``` (optional, default: 0.4)
    * ```float_type``` (optional, default: ```FLOAT_32```, possible values: ```FLOAT_32```, ```FLOAT_64```): precision for internal image representation
 
-```PyramidTilesStack```, Laplacian pyramid with tile pyramid merging to optimize memory usage for large files
+```PyramidTilesStack```, pyramid algorithn with I/O buffered tile pyramid merging to optimize memory usage for large files
+
+Arguments for the constructor are, in addition to the ones for ```PyramidStack```:
+   * ```tile_size``` (optional, default: 512): size of a time
+   * ```n_tiled_layers``` (optional, default: 2): number of layers that are tiled. Usually the last one or two are the ones that take more memory.
+
+
+```PyramidAutoStack```, pyramid algorithn with capability to automatically switch from all-in-memory to I/O buffered tiled.
+
+Arguments for the constructor are, in addition to the ones for ```PyramidTilesStack```:
+   * ```mode``` (optional, default: ```auto```): can be ```auto```, ```memory``` or ```tiled```.
+   * ```memory_limit``` (optional, default: 8×1024<sup>3</sup>sup>): memory limit to determine optimal running parameters
 
 Arguments for the constructor are the same ad for ```PyramidStack``` plus:
    * ```tile_size``` (optional, default: 512): size of the tile used for partial image merging

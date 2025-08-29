@@ -13,7 +13,7 @@ class PyramidTilesStack(PyramidBase):
                  gen_kernel=constants.DEFAULT_PY_GEN_KERNEL,
                  float_type=constants.DEFAULT_PY_FLOAT,
                  tile_size=constants.DEFAULT_PY_TILE_SIZE,
-                 n_tiled_layers=constants.DEFALUT_PY_N_TILED_LAYERS):
+                 n_tiled_layers=constants.DEFAULT_PY_N_TILED_LAYERS):
         super().__init__("fast_pyramid", min_size, kernel_size, gen_kernel, float_type)
         self.offset = np.arange(-self.pad_amount, self.pad_amount + 1)
         self.dtype = None

@@ -2,6 +2,7 @@ from shinestacker.algorithms.stack_framework import StackJob
 from shinestacker.algorithms.stack import FocusStack, FocusStackBunch
 from shinestacker.algorithms.pyramid import PyramidStack
 from shinestacker.algorithms.pyramid_tiles import PyramidTilesStack
+from shinestacker.algorithms.pyramid_auto import PyramidAutoStack
 from shinestacker.algorithms.depth_map import DepthMapStack
 
 
@@ -45,6 +46,16 @@ def test_jpg_pt():
         assert False
 
 
+def test_jpg_auto():
+    try:
+        job = StackJob("job", "examples", input_path="input/img-jpg")
+        job.add_action(FocusStack("stack-depthmap", PyramidAutoStack(),
+                                  output_path="output/img-jpg-stack", prefix='pyr_tiles_'))
+        job.run()
+    except Exception:
+        assert False
+
+
 def test_bunches():
     try:
         job = StackJob("job", "examples", input_path="input/img-jpg")
@@ -59,4 +70,6 @@ if __name__ == '__main__':
     test_jpg()
     test_tif()
     test_jpg_dm()
+    test_jpg_pt()
+    test_jpg_auto()
     test_bunches()

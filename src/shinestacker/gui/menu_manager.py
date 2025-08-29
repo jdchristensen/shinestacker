@@ -82,7 +82,10 @@ class MenuManager:
 
     def add_edit_menu(self):
         menu = self.menubar.addMenu("&Edit")
-        for name in ["&Undo", "&Cut", "Cop&y", "&Paste", "Duplicate"]:
+        self.undo_action = self.action("&Undo")
+        self.undo_action.setEnabled(False)
+        menu.addAction(self.undo_action)
+        for name in ["&Cut", "Cop&y", "&Paste", "Duplicate"]:
             menu.addAction(self.action(name))
         self.delete_element_action = self.action("Delete")
         self.delete_element_action.setEnabled(False)

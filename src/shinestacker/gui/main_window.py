@@ -135,6 +135,8 @@ class MainWindow(QMainWindow, LogManager):
         self.project_editor.refresh_ui_signal.connect(self.refresh_ui)
         self.project_editor.enable_delete_action_signal.connect(
             self.menu_manager.delete_element_action.setEnabled)
+        self.project_editor.undo_manager.set_enabled_undo_action_requested.connect(
+            self.menu_manager.undo_action.setEnabled)
         self.project_controller.update_title_requested.connect(self.update_title)
         self.project_controller.refresh_ui_requested.connect(self.refresh_ui)
         self.project_controller.activate_window_requested.connect(self.activateWindow)

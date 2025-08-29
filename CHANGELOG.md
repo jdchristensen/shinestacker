@@ -6,7 +6,7 @@ This page reports the main releases only and the main changes therein.
 **Unreleased changes**
 
 * implemented automatic subsample option, now default
-* optimized I/O in Pyramid Tiles algorithm
+* optimized I/O in Pyramid Tiles algorithm with automatic strategy selection
 * action "Run all jobs" enabled only if more than one job are present
 
 ---

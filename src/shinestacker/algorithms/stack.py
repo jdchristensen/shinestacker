@@ -20,7 +20,7 @@ class FocusStackBase(JobBase, FrameDirectory):
         self.prefix = kwargs.pop('prefix', constants.DEFAULT_STACK_PREFIX)
         self.denoise_amount = kwargs.pop('denoise_amount', 0)
         self.plot_stack = kwargs.pop('plot_stack', constants.DEFAULT_PLOT_STACK)
-        self.stack_algo.process = self
+        self.stack_algo.set_process(self)
         self.frame_count = -1
 
     def focus_stack(self, filenames):
@@ -72,7 +72,7 @@ class FocusStackBunch(ActionList, FocusStackBase):
         self.frames = kwargs.get('frames', constants.DEFAULT_FRAMES)
         self.overlap = kwargs.get('overlap', constants.DEFAULT_OVERLAP)
         self.denoise_amount = kwargs.get('denoise_amount', 0)
-        self.stack_algo.do_step_callback = False
+        self.stack_algo.set_do_step_callback(False)
         if self.overlap >= self.frames:
             raise InvalidOptionError("overlap", self.overlap,
                                      "overlap must be smaller than batch size")
@@ -101,7 +101,7 @@ class FocusStackBunch(ActionList, FocusStackBase):
 class FocusStack(FocusStackBase):
     def __init__(self, name, stack_algo, enabled=True, **kwargs):
         super().__init__(name, stack_algo, enabled, **kwargs)
-        self.stack_algo.do_step_callback = True
+        self.stack_algo.set_do_step_callback(True)
         self.shape = None
 
     def run_core(self):

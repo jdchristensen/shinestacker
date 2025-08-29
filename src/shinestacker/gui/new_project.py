@@ -201,14 +201,14 @@ class NewProjectDialog(BaseFormDialog):
                 msg.setWindowTitle("Too many frames")
                 msg.setText(f"You selected {self.n_image_files} images "
                             f"with resolution {width}×{height} pixels, {n_bits} bits depth. "
-                            "Processing may require a significant amount of memory.\n\n"
+                            "Processing may require a significant amount "
+                            "of memory or I/O buffering.\n\n"
                             "Continue anyway?")
                 msg.setInformativeText("You may consider to split the processing "
                                        " using a bunch stack to reduce memory usage.\n\n"
                                        '✅ Check the option "Bunch stack".\n\n'
-                                       "➡️ Alternatively, you can select as focus stack algorithm "
-                                       '"Pyramid Tiles" instead of the default "Pyramid", '
-                                       "which requires less memory."
+                                       "➡️ Check expert options for the stacking algorithm."
+                                       'Go to "View" > "Expert Options".'
                                        )
                 msg.setStandardButtons(QMessageBox.Ok | QMessageBox.Cancel)
                 msg.setDefaultButton(QMessageBox.Cancel)

@@ -28,6 +28,12 @@ class BaseStackAlgo:
     def name(self):
         return self._name
 
+    def set_process(self, process):
+        self.process = process
+
+    def set_do_step_callback(self, enable):
+        self.do_step_callback = enable
+
     def init(self, filenames):
         self.filenames = filenames
         first_img_file = ''

@@ -163,7 +163,7 @@ class Correction:
         else:
             h, w = image.shape[:2]
             img_res = (float(h) / 1000) * (float(w) / 1000)
-            target_res = constants.DEFALUT_BALANCE_RES_TARGET_MPX
+            target_res = constants.DEFAULT_BALANCE_RES_TARGET_MPX
             subsample = int(1 + math.floor(img_res / target_res))
         img_sub = image if self.subsample == 1 \
             else img_subsample(image, subsample, self.fast_subsampling)

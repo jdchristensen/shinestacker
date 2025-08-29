@@ -74,18 +74,29 @@ def new_row_after_clone(job, action_row, is_sub_action, cloned):
             for action in job.sub_actions[:job.sub_actions.index(cloned)])
 
 
-class ProjectUndoManager:
-    def __init__(self):
+class ProjectUndoManager(QObject):
+    set_enabled_undo_action_requested = Signal(bool)
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
         self._undo_buffer = []
 
     def add(self, item):
         self._undo_buffer.append(item)
+        self.set_enabled_undo_action_requested.emit(True)
 
     def pop(self):
-        return self._undo_buffer.pop()
+        last = self._undo_buffer.pop()
+        if len(self._undo_buffer) == 0:
+            self.set_enabled_undo_action_requested.emit(False)
+        return last
 
     def filled(self):
         return len(self._undo_buffer) != 0
+
+    def reset(self):
+        self._undo_buffer = []
+        self.set_enabled_undo_action_requested.emit(False)
 
 
 class ProjectEditor(QObject):
@@ -99,7 +110,7 @@ class ProjectEditor(QObject):
 
     def __init__(self, parent=None):
         super().__init__(parent)
-        self._undo_manager = ProjectUndoManager()
+        self.undo_manager = ProjectUndoManager()
         self._modified = False
         self._project = None
         self._copy_buffer = None
@@ -108,14 +119,17 @@ class ProjectEditor(QObject):
         self._action_list = QListWidget()
         self.dialog = None
 
+    def reset_undo(self):
+        self.undo_manager.reset()
+
     def add_undo(self, item):
-        self._undo_manager.add(item)
+        self.undo_manager.add(item)
 
     def pop_undo(self):
-        return self._undo_manager.pop()
+        return self.undo_manager.pop()
 
     def filled_undo(self):
-        return self._undo_manager.filled()
+        return self.undo_manager.filled()
 
     def mark_as_modified(self, modified=True):
         self._modified = modified

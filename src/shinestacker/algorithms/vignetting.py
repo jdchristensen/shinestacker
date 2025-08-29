@@ -54,7 +54,7 @@ def subsample_factor(subsample, image):
     if subsample == 0:
         h, w = image.shape[:2]
         img_res = (float(h) / 1000) * (float(w) / 1000)
-        target_res = constants.DEFALUT_BALANCE_RES_TARGET_MPX
+        target_res = constants.DEFAULT_BALANCE_RES_TARGET_MPX
         subsample = int(1 + math.floor(img_res / target_res))
     return subsample
 
