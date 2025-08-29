@@ -205,7 +205,11 @@ class NewProjectDialog(BaseFormDialog):
                             "Continue anyway?")
                 msg.setInformativeText("You may consider to split the processing "
                                        " using a bunch stack to reduce memory usage.\n\n"
-                                       '✅ Check the option "Bunch stack".')
+                                       '✅ Check the option "Bunch stack".\n\n'
+                                       "➡️ Alternatively, you can select as focus stack algorithm "
+                                       '"Pyramid Tiles" instead of the default "Pyramid", '
+                                       "which requires less memory."
+                                       )
                 msg.setStandardButtons(QMessageBox.Ok | QMessageBox.Cancel)
                 msg.setDefaultButton(QMessageBox.Cancel)
                 if msg.exec_() != QMessageBox.Ok:
