@@ -5,7 +5,8 @@ This page reports the main releases only and the main changes therein.
 ## [v-.-.-] - 2025-08-29
 **Unreleased changes**
 
-* "Run all jobs" action enabled only if more than one job are present
+* implemented automatic subsample option, now default
+* action "Run all jobs" enabled only if more than one job are present
 
 ---
 

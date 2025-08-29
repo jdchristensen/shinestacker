@@ -1,5 +1,6 @@
 # pylint: disable=C0114, C0115, C0116, E1101, R0914, R0913, R0917, R0912, R0915, R0902
 import logging
+import math
 import numpy as np
 import matplotlib.pyplot as plt
 import cv2
@@ -166,6 +167,10 @@ def align_images(img_1, img_0, feature_config=None, matching_config=None, alignm
     h_ref, w_ref = img_1.shape[:2]
     h0, w0 = img_0.shape[:2]
     subsample = alignment_config['subsample']
+    if subsample == 0:
+        img_res = (float(h0) / 1000) * (float(w0) / 1000)
+        target_res = constants.DEFALUT_ALIGN_RES_TARGET_MPX
+        subsample = int(1 + math.floor(img_res / target_res))
     fast_subsampling = alignment_config['fast_subsampling']
     min_good_matches = alignment_config['min_good_matches']
     while True:

@@ -241,4 +241,3 @@ class MenuManager:
         if not enabled:
             tooltip += " (requires more tha one job)"
         self.run_all_jobs_action.setToolTip(tooltip)
-

@@ -342,8 +342,10 @@ class VignettingConfigurator(DefaultActionConfigurator):
             self.builder.add_field('black_threshold', FIELD_INT, 'Black intensity threshold',
                                    required=False, default=constants.DEFAULT_BLACK_THRESHOLD,
                                    min_val=0, max_val=1000)
-            self.builder.add_field('subsample', FIELD_INT, 'Subsample factor', required=False,
-                                   default=constants.DEFAULT_VIGN_SUBSAMPLE, min_val=1, max_val=256)
+            self.builder.add_field('subsample', FIELD_COMBO, 'Subsample', required=False,
+                                   options=constants.FIELD_SUBSAMPLE_OPTIONS,
+                                   values=constants.FIELD_SUBSAMPLE_VALUES,
+                                   default=constants.FIELD_SUBSAMPLE_DEFAULT)
             self.builder.add_field('fast_subsampling', FIELD_BOOL, 'Fast subsampling',
                                    required=False, default=constants.DEFAULT_VIGN_FAST_SUBSAMPLING)
         self.builder.add_field('max_correction', FIELD_FLOAT, 'Max. correction', required=False,
@@ -507,16 +509,19 @@ class AlignFramesConfigurator(DefaultActionConfigurator):
                     max_iters.setEnabled(True)
             transform.currentIndexChanged.connect(change_transform)
             change_transform()
-            subsample = self.builder.add_field(
-                'subsample', FIELD_INT, 'Subsample factor', required=False,
-                default=constants.DEFAULT_ALIGN_SUBSAMPLE, min_val=1, max_val=256)
+            subsample = self.builder.add_field('subsample', FIELD_COMBO, 'Subsample',
+                                               required=False,
+                                               options=constants.FIELD_SUBSAMPLE_OPTIONS,
+                                               values=constants.FIELD_SUBSAMPLE_VALUES,
+                                               default=constants.FIELD_SUBSAMPLE_DEFAULT)
             fast_subsampling = self.builder.add_field(
                 'fast_subsampling', FIELD_BOOL, 'Fast subsampling', required=False,
                 default=constants.DEFAULT_ALIGN_FAST_SUBSAMPLING)
 
             def change_subsample():
-                fast_subsampling.setEnabled(subsample.value() > 1)
-            subsample.valueChanged.connect(change_subsample)
+                fast_subsampling.setEnabled(
+                    subsample.currentText() not in constants.FIELD_SUBSAMPLE_OPTIONS[:2])
+            subsample.currentTextChanged.connect(change_subsample)
             change_subsample()
             self.add_bold_label("Border:")
             self.builder.add_field('border_mode', FIELD_COMBO, 'Border mode', required=False,
@@ -569,9 +574,10 @@ class BalanceFramesConfigurator(DefaultActionConfigurator):
                                    default=[v for k, v in
                                             constants.DEFAULT_INTENSITY_INTERVAL.items()],
                                    labels=['min', 'max'], min_val=[-1] * 2, max_val=[65536] * 2)
-            self.builder.add_field('subsample', FIELD_INT, 'Subsample factor', required=False,
-                                   default=constants.DEFAULT_BALANCE_SUBSAMPLE,
-                                   min_val=1, max_val=256)
+            self.builder.add_field('subsample', FIELD_COMBO, 'Subsample', required=False,
+                                   options=constants.FIELD_SUBSAMPLE_OPTIONS,
+                                   values=constants.FIELD_SUBSAMPLE_VALUES,
+                                   default=constants.FIELD_SUBSAMPLE_DEFAULT)
             self.builder.add_field('fast_subsampling', FIELD_BOOL, 'Fast subsampling',
                                    required=False,
                                    default=constants.DEFAULT_BALANCE_FAST_SUBSAMPLING)

@@ -15,7 +15,7 @@ intensity_interval = {
 }
 ```
 Note that for 8-bit images the maximum intensity is 255, while for 16-bit images the maximum intensity is 65536.
-* ```subsample``` (optional, default: 8): extracts intensity histogram using every n-th pixel in each dimension in order to reduce processing time. By default, it takes one every 8 pixels in horizontal and vertical directions, i.e.: one every 100 pixels in total. This option is not ised if ```corr_map``` is equal to ```BALANCE_MATCH_HIST```.
+* ```subsample``` (optional, default: 0=automatic): extracts intensity histogram using every n-th pixel in each dimension in order to reduce processing time. This option is not ised if ```corr_map``` is equal to ```BALANCE_MATCH_HIST```.
 * ```fast_subsampling``` (optional, default: ```False```): perform fast image subsampling without interpolation. Used if ```subsample``` is set to ```True```.
 * ```corr_map``` (optional, default: ```BALANCE_LINEAR```, possible values: ```BALANCE_LINEAR```, ```BALANCE_GAMMA``` and ```MATCH_HIST```): specifies the type of intensity correction.
    * ```BALANCE_LINEAR```: a linear correction is applied in order to balance the average intensity of the corrected images to the reference image in the specified channels.

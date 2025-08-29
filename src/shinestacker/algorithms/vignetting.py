@@ -1,4 +1,5 @@
 # pylint: disable=C0114, C0115, C0116, R0902, E1101, W0718, W0640, R0913, R0917, R0914
+import math
 import traceback
 import logging
 import numpy as np
@@ -49,16 +50,30 @@ def fit_sigmoid(radii, intensities):
     return res
 
 
+def subsample_factor(subsample, image):
+    if subsample == 0:
+        h, w = image.shape[:2]
+        img_res = (float(h) / 1000) * (float(w) / 1000)
+        target_res = constants.DEFALUT_BALANCE_RES_TARGET_MPX
+        subsample = int(1 + math.floor(img_res / target_res))
+    return subsample
+
+
 def img_subsampled(image, subsample=constants.DEFAULT_VIGN_SUBSAMPLE,
                    fast_subsampling=constants.DEFAULT_VIGN_FAST_SUBSAMPLING):
     image_bw = cv2.cvtColor(img_8bit(image), cv2.COLOR_BGR2GRAY)
-    return image_bw if subsample == 1 else img_subsample(image_bw, subsample, fast_subsampling)
+    if subsample == 0:
+        subsample = subsample_factor(subsample, image)
+    img_sub = image_bw if subsample == 1 else img_subsample(image_bw, subsample, fast_subsampling)
+    return img_sub
 
 
 def compute_fit_parameters(
         image, r_steps, radii=None, intensities=None,
         subsample=constants.DEFAULT_VIGN_SUBSAMPLE,
         fast_subsampling=constants.DEFAULT_VIGN_FAST_SUBSAMPLING):
+    if subsample == 0:
+        subsample = subsample_factor(subsample, image)
     image_sub = img_subsampled(image, subsample, fast_subsampling)
     if radii is None and intensities is None:
         radii, intensities = radial_mean_intensity(image_sub, r_steps)
@@ -77,6 +92,8 @@ def correct_vignetting(
     if params is None:
         if r_steps is None:
             raise RuntimeError("Either r_steps or pars must not be None")
+        if subsample == 0:
+            subsample = subsample_factor(subsample, image)
         params = compute_fit_parameters(
             image, r_steps, subsample=subsample, fast_subsampling=fast_subsampling)
     if v0 is None:
@@ -121,11 +138,12 @@ class Vignetting(SubAction):
         h, w = img_0.shape[:2]
         self.w_2, self.h_2 = w / 2, h / 2
         self.r_max = np.sqrt((w / 2)**2 + (h / 2)**2)
-        image_sub = img_subsampled(img_0, self.subsample, self.fast_subsampling)
+        subsample = subsample_factor(self.subsample, img_0)
+        image_sub = img_subsampled(img_0, subsample, self.fast_subsampling)
         radii, intensities = radial_mean_intensity(image_sub, self.r_steps)
         try:
             params = compute_fit_parameters(
-                img_0, self.r_steps, radii, intensities, self.subsample, self.fast_subsampling)
+                img_0, self.r_steps, radii, intensities, subsample, self.fast_subsampling)
         except Exception as e:
             traceback.print_tb(e.__traceback__)
             self.process.sub_message(
@@ -144,7 +162,7 @@ class Vignetting(SubAction):
         if self.plot_correction:
             plt.figure(figsize=(10, 5))
             plt.plot(radii, intensities, label="image mean intensity")
-            plt.plot(radii, sigmoid_model(radii * self.subsample, *params), label="sigmoid fit")
+            plt.plot(radii, sigmoid_model(radii * subsample, *params), label="sigmoid fit")
             plt.xlabel('radius (pixels)')
             plt.ylabel('mean intensity')
             plt.legend()
@@ -165,7 +183,7 @@ class Vignetting(SubAction):
         self.process.sub_message_r(color_str(": correct vignetting", "cyan"))
         return correct_vignetting(
             img_0, self.max_correction, self.black_threshold, None, params, self.v0,
-            self.subsample, self.fast_subsampling)
+            subsample, self.fast_subsampling)
 
     def begin(self, process):
         self.process = process

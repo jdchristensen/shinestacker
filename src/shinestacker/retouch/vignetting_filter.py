@@ -1,6 +1,6 @@
 # pylint: disable=C0114, C0115, C0116, E0611, W0221, R0902
 from PySide6.QtCore import Qt
-from PySide6.QtWidgets import QSpinBox, QCheckBox, QLabel, QHBoxLayout, QSlider
+from PySide6.QtWidgets import QSpinBox, QCheckBox, QLabel, QHBoxLayout, QSlider, QComboBox
 from .. config.constants import constants
 from .. algorithms.vignetting import correct_vignetting
 from .base_filter import OneSliderBaseFilter
@@ -20,11 +20,15 @@ class VignettingFilter(OneSliderBaseFilter):
         self.threshold_initial_value = constants.DEFAULT_BLACK_THRESHOLD
         self.threshold_format = "{:.1f}"
 
+    def get_subsample_factor(self):
+        return constants.FIELD_SUBSAMPLE_VALUES[
+            constants.FIELD_SUBSAMPLE_OPTIONS.index(self.subsample_box.currentText())]
+
     def apply(self, image, strength):
         return correct_vignetting(image, max_correction=strength,
                                   black_threshold=self.threshold_slider.value(),
                                   r_steps=self.r_steps_box.value(),
-                                  subsample=self.subsample_box.value(),
+                                  subsample=self.get_subsample_factor(),
                                   fast_subsampling=True)
 
     def add_widgets(self, layout, dlg):
@@ -42,11 +46,10 @@ class VignettingFilter(OneSliderBaseFilter):
         layout.addLayout(threshold_layout)
         subsample_layout = QHBoxLayout()
         subsample_label = QLabel("Subsample:")
-        self.subsample_box = QSpinBox()
-        self.subsample_box.setFixedWidth(50)
-        self.subsample_box.setRange(1, 50)
-        self.subsample_box.setValue(constants.DEFAULT_VIGN_SUBSAMPLE)
-        self.subsample_box.valueChanged.connect(self.threshold_changed)
+        self.subsample_box = QComboBox()
+        self.subsample_box.addItems(constants.FIELD_SUBSAMPLE_OPTIONS)
+        self.subsample_box.setFixedWidth(150)
+        self.subsample_box.currentTextChanged.connect(self.threshold_changed)
         self.fast_subsampling_check = QCheckBox("Fast subsampling")
         self.fast_subsampling_check.setChecked(constants.DEFAULT_VIGN_FAST_SUBSAMPLING)
         r_steps_label = QLabel("Radial steps:")
@@ -64,6 +67,7 @@ class VignettingFilter(OneSliderBaseFilter):
         layout.addWidget(self.fast_subsampling_check)
 
     def threshold_changed(self, val):
-        float_val = self.threshold_max_value * float(val) / self.threshold_max_range
+        subsample = self.get_subsample_factor()
+        float_val = self.threshold_max_value * float(subsample) / self.threshold_max_range
         self.threshold_label.setText(self.threshold_format.format(float_val))
         self.param_changed(val)

@@ -1,4 +1,5 @@
-# pylint: disable=C0114, C0115, C0116, E1101, R0902, E1128, E0606, W0640, R0913, R0917
+# pylint: disable=C0114, C0115, C0116, E1101, R0902, E1128, E0606, W0640, R0913, R0917, R0914
+import math
 import numpy as np
 import cv2
 import matplotlib.pyplot as plt
@@ -122,14 +123,15 @@ class LinearMap(CorrectionMap):
 
 class Correction:
     def __init__(self, channels, mask_size=0, intensity_interval=None,
-                 subsample=-1, fast_subsampling=constants.DEFAULT_BALANCE_FAST_SUBSAMPLING,
+                 subsample=constants.DEFAULT_BALANCE_SUBSAMPLE,
+                 fast_subsampling=constants.DEFAULT_BALANCE_FAST_SUBSAMPLING,
                  corr_map=constants.DEFAULT_CORR_MAP,
                  plot_histograms=False, plot_summary=False):
         self.mask_size = mask_size
         self.intensity_interval = intensity_interval
         self.plot_histograms = plot_histograms
         self.plot_summary = plot_summary
-        self.subsample = constants.DEFAULT_BALANCE_SUBSAMPLE if subsample == -1 else subsample
+        self.subsample = subsample
         self.fast_subsampling = fast_subsampling
         self.corr_map = corr_map
         self.channels = channels
@@ -156,8 +158,15 @@ class Correction:
         self.corrections = np.ones((size, self.channels))
 
     def calc_hist_1ch(self, image):
+        if self.subsample > 0:
+            subsample = self.subsample
+        else:
+            h, w = image.shape[:2]
+            img_res = (float(h) / 1000) * (float(w) / 1000)
+            target_res = constants.DEFALUT_BALANCE_RES_TARGET_MPX
+            subsample = int(1 + math.floor(img_res / target_res))
         img_sub = image if self.subsample == 1 \
-            else img_subsample(image, self.subsample, self.fast_subsampling)
+            else img_subsample(image, subsample, self.fast_subsampling)
         if self.mask_size == 0:
             image_sel = img_sub
         else:

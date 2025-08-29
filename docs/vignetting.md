@@ -14,6 +14,7 @@ Arguments for the constructor of ```Vignetting``` are:
 * ```r_steps``` (optional, default: 100): number of radial steps to determine mean pixel luminosity.
 * ```black_threshold``` (optional, default: 1): apply correction only on pixels with luminosity greater than.
 * ```max_correction``` (optional, default: 1): if less than one, the correction is rescaled in order to be at most the specified valye.
+* ```subsample``` (optional, default: 0=automatic): extracts intensity histogram using every n-th pixel in each dimension in order to reduce processing time.
 * ```plot_correction```  (optional, default: ```False```): if ```True```, plot vignetting correction curve for each frame.
 * ```plot_summary```  (optional, default: ```False```): if ```True```, plot a summary histogram with the vignetting correction levels.
 * ```enabled``` (optional, default: ```True```): allows to switch on and off this module.

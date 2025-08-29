@@ -65,7 +65,7 @@ alignment_config = {
     'border_mode': constants.BORDER_REPLICATE_BLUR,
     'border_value': (0, 0, 0, 0),
     'border_blur': 50,
-    'subsample': 1,
+    'subsample': 0,
     'fast_subsampling': False,
     'min_good_matches': 100
 }
@@ -80,7 +80,7 @@ alignment_config = {
 * ```refine_iters``` (optional, default: 100): refinement iterations. Used only if ```transform=ALIGN_RIGID```.
 * ```align_confidence``` (optional, default: 99.9): alignment algorithm confidence (%). Used only if ```transform=ALIGN_RIGID```. 
 * ```max_iters``` (optional, default: 2000): maximum number of iterations. Used only if ```transform=ALIGN_HOMOGRAPHY```. 
-* ```subsample``` (optional, default: 1): subsample image for faster alignment. Faster, but alignment could be less accurate. It can save time, in particular for large images.
+* ```subsample``` (optional, default: 0=automatic): subsample image for faster alignment. Faster, but alignment could be less accurate if only a small portion of the image is focused. It can save time, in particular for large images.
 * ```fast_subsampling``` (optional, default: ```False```): perform fast image subsampling without interpolation. Used if ```subsample``` is set to ```True```.
 * ```min_good_matches``` (optional, default: 100): if ```subsample```>1 and the number of good matches is below ```min_good_matches```, the alignment is retried without subsampling. This improbes robustness in case a too large subsampling factor is specified. 
 * ```border_mode``` (optional, default: ```BORDER_REPLICATE_BLUR```): border mode. See [Adding borders to your images](https://docs.opencv.org/3.4/dc/da3/tutorial_copyMakeBorder.html) for more details.  Possible values are:
