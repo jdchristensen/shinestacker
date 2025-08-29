@@ -13,9 +13,11 @@ class PyramidAutoStack(BaseStackAlgo):
                  kernel_size=constants.DEFAULT_PY_KERNEL_SIZE,
                  gen_kernel=constants.DEFAULT_PY_GEN_KERNEL,
                  float_type=constants.DEFAULT_PY_FLOAT,
-                 tile_size=2048,
-                 n_tiled_layers=2,
+                 tile_size=constants.DEFAULT_PY_TILE_SIZE,
+                 n_tiled_layers=constants.DEFAULT_PY_N_TILED_LAYERS,
                  memory_limit=constants.DEFAULT_PY_MEMORY_LIMIT_GB,
+                 max_tile_size=2048,
+                 min_n_tiled_layers=1,
                  mode='auto'):
         super().__init__("auto_pyramid", 2, float_type)
         self.min_size = min_size
@@ -25,6 +27,8 @@ class PyramidAutoStack(BaseStackAlgo):
         self.tile_size = tile_size
         self.n_tiled_layers = n_tiled_layers
         self.memory_limit = memory_limit * 1024**3
+        self.max_tile_size = max_tile_size
+        self.min_n_tiled_layers = min_n_tiled_layers
         self.mode = mode
         self._implementation = None
         self.dtype = None
@@ -86,28 +90,21 @@ class PyramidAutoStack(BaseStackAlgo):
             h, w = max(1, h // 2), max(1, w // 2)
         return self.overhead * total_memory * self.n_frames
 
-    def _estimate_memory_tiles_with_params(self, tile_size, n_tiled_layers):
-        tile_memory = tile_size * tile_size * self.bytes_per_pixel * self.n_frames
-        h, w = self.shape[:2]
-        for _ in range(n_tiled_layers):
-            h, w = max(1, h // 2), max(1, w // 2)
-        layer_memory = h * w * self.bytes_per_pixel * self.n_frames
-        return self.overhead * max(tile_memory, layer_memory)
-
     def _find_optimal_tile_params(self):
         tile_size_max = int(np.sqrt(self.memory_limit /
                             (self.n_frames * self.bytes_per_pixel * self.overhead)))
-        tile_size = min(self.tile_size, tile_size_max, self.shape[0], self.shape[1])
-        best_params = {'tile_size': tile_size, 'n_tiled_layers': 1}
-        best_memory = self._estimate_memory_tiles_with_params(tile_size, 1)
-        for n_layers in range(2, self.n_levels):
-            memory_estimate = self._estimate_memory_tiles_with_params(tile_size, n_layers)
-            if memory_estimate < best_memory and memory_estimate <= self.memory_limit:
-                best_params = {'tile_size': tile_size, 'n_tiled_layers': n_layers}
-                best_memory = memory_estimate
-            if memory_estimate > self.memory_limit:
+        tile_size = min(self.max_tile_size, tile_size_max, self.shape[0], self.shape[1])
+        n_tiled_layers = 0
+        for layer in range(self.n_levels):
+            h = max(1, self.shape[0] // (2 ** layer))
+            w = max(1, self.shape[1] // (2 ** layer))
+            if h > tile_size or w > tile_size:
+                n_tiled_layers = layer + 1
+            else:
                 break
-        return best_params
+        n_tiled_layers = max(n_tiled_layers, self.min_n_tiled_layers)
+        n_tiled_layers = min(n_tiled_layers, self.n_levels)
+        return {'tile_size': tile_size, 'n_tiled_layers': n_tiled_layers}
 
     def set_process(self, process):
         super().set_process(process)
