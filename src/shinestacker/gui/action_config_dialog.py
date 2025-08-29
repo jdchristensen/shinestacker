@@ -333,32 +333,32 @@ class MaskNoiseConfigurator(DefaultActionConfigurator):
                                    options=['Mean', 'Median'], default='Mean')
 
 
-class VignettingConfigurator(DefaultActionConfigurator):
-    def create_form(self, layout, action):
-        super().create_form(layout, action)
-        if self.expert:
-            self.builder.add_field('r_steps', FIELD_INT, 'Radial steps', required=False,
-                                   default=constants.DEFAULT_R_STEPS, min_val=1, max_val=1000)
-            self.builder.add_field('black_threshold', FIELD_INT, 'Black intensity threshold',
-                                   required=False, default=constants.DEFAULT_BLACK_THRESHOLD,
-                                   min_val=0, max_val=1000)
-            self.builder.add_field('subsample', FIELD_COMBO, 'Subsample', required=False,
-                                   options=constants.FIELD_SUBSAMPLE_OPTIONS,
-                                   values=constants.FIELD_SUBSAMPLE_VALUES,
-                                   default=constants.FIELD_SUBSAMPLE_DEFAULT)
-            self.builder.add_field('fast_subsampling', FIELD_BOOL, 'Fast subsampling',
-                                   required=False, default=constants.DEFAULT_VIGN_FAST_SUBSAMPLING)
-        self.builder.add_field('max_correction', FIELD_FLOAT, 'Max. correction', required=False,
-                               default=constants.DEFAULT_MAX_CORRECTION,
-                               min_val=0, max_val=1, step=0.05)
-        self.add_bold_label("Miscellanea:")
-        self.builder.add_field('plot_correction', FIELD_BOOL, 'Plot correction', required=False,
-                               default=False)
-        self.builder.add_field('plot_summary', FIELD_BOOL, 'Plot summary', required=False,
-                               default=False)
+class SubsampleActionConfigurator(DefaultActionConfigurator):
+    def __init__(self, expert, current_wd):
+        super().__init__(expert, current_wd)
+        self.subsample_field = None
+        self.fast_subsampling_field = None
+
+    def add_subsample_fields(self):
+        self.subsample_field = self.builder.add_field(
+            'subsample', FIELD_COMBO, 'Subsample', required=False,
+            options=constants.FIELD_SUBSAMPLE_OPTIONS,
+            values=constants.FIELD_SUBSAMPLE_VALUES,
+            default=constants.FIELD_SUBSAMPLE_DEFAULT)
+        self.fast_subsampling_field = self.builder.add_field(
+            'fast_subsampling', FIELD_BOOL, 'Fast subsampling', required=False,
+            default=constants.DEFAULT_ALIGN_FAST_SUBSAMPLING)
+
+        self.subsample_field.currentTextChanged.connect(self.change_subsample)
+
+        self.change_subsample()
+
+    def change_subsample(self):
+        self.fast_subsampling_field.setEnabled(
+            self.subsample_field.currentText() not in constants.FIELD_SUBSAMPLE_OPTIONS[:2])
 
 
-class AlignFramesConfigurator(DefaultActionConfigurator):
+class AlignFramesConfigurator(SubsampleActionConfigurator):
     BORDER_MODE_OPTIONS = ['Constant', 'Replicate', 'Replicate and blur']
     TRANSFORM_OPTIONS = ['Rigid', 'Homography']
     METHOD_OPTIONS = ['Random Sample Consensus (RANSAC)', 'Least Median (LMEDS)']
@@ -509,20 +509,7 @@ class AlignFramesConfigurator(DefaultActionConfigurator):
                     max_iters.setEnabled(True)
             transform.currentIndexChanged.connect(change_transform)
             change_transform()
-            subsample = self.builder.add_field('subsample', FIELD_COMBO, 'Subsample',
-                                               required=False,
-                                               options=constants.FIELD_SUBSAMPLE_OPTIONS,
-                                               values=constants.FIELD_SUBSAMPLE_VALUES,
-                                               default=constants.FIELD_SUBSAMPLE_DEFAULT)
-            fast_subsampling = self.builder.add_field(
-                'fast_subsampling', FIELD_BOOL, 'Fast subsampling', required=False,
-                default=constants.DEFAULT_ALIGN_FAST_SUBSAMPLING)
-
-            def change_subsample():
-                fast_subsampling.setEnabled(
-                    subsample.currentText() not in constants.FIELD_SUBSAMPLE_OPTIONS[:2])
-            subsample.currentTextChanged.connect(change_subsample)
-            change_subsample()
+            self.add_subsample_fields()
             self.add_bold_label("Border:")
             self.builder.add_field('border_mode', FIELD_COMBO, 'Border mode', required=False,
                                    options=self.BORDER_MODE_OPTIONS,
@@ -560,7 +547,7 @@ class AlignFramesConfigurator(DefaultActionConfigurator):
         return super().update_params(params)
 
 
-class BalanceFramesConfigurator(DefaultActionConfigurator):
+class BalanceFramesConfigurator(SubsampleActionConfigurator):
     CORRECTION_MAP_OPTIONS = ['Linear', 'Gamma', 'Match histograms']
     CHANNEL_OPTIONS = ['Luminosity', 'RGB', 'HSV', 'HLS']
 
@@ -574,13 +561,7 @@ class BalanceFramesConfigurator(DefaultActionConfigurator):
                                    default=[v for k, v in
                                             constants.DEFAULT_INTENSITY_INTERVAL.items()],
                                    labels=['min', 'max'], min_val=[-1] * 2, max_val=[65536] * 2)
-            self.builder.add_field('subsample', FIELD_COMBO, 'Subsample', required=False,
-                                   options=constants.FIELD_SUBSAMPLE_OPTIONS,
-                                   values=constants.FIELD_SUBSAMPLE_VALUES,
-                                   default=constants.FIELD_SUBSAMPLE_DEFAULT)
-            self.builder.add_field('fast_subsampling', FIELD_BOOL, 'Fast subsampling',
-                                   required=False,
-                                   default=constants.DEFAULT_BALANCE_FAST_SUBSAMPLING)
+            self.add_subsample_fields()
         self.builder.add_field('corr_map', FIELD_COMBO, 'Correction map', required=False,
                                options=self.CORRECTION_MAP_OPTIONS, values=constants.VALID_BALANCE,
                                default='Linear')
@@ -593,3 +574,23 @@ class BalanceFramesConfigurator(DefaultActionConfigurator):
                                required=False, default=False)
         self.builder.add_field('plot_histograms', FIELD_BOOL, 'Plot histograms',
                                required=False, default=False)
+
+
+class VignettingConfigurator(SubsampleActionConfigurator):
+    def create_form(self, layout, action):
+        super().create_form(layout, action)
+        if self.expert:
+            self.builder.add_field('r_steps', FIELD_INT, 'Radial steps', required=False,
+                                   default=constants.DEFAULT_R_STEPS, min_val=1, max_val=1000)
+            self.builder.add_field('black_threshold', FIELD_INT, 'Black intensity threshold',
+                                   required=False, default=constants.DEFAULT_BLACK_THRESHOLD,
+                                   min_val=0, max_val=1000)
+            self.add_subsample_fields()
+        self.builder.add_field('max_correction', FIELD_FLOAT, 'Max. correction', required=False,
+                               default=constants.DEFAULT_MAX_CORRECTION,
+                               min_val=0, max_val=1, step=0.05)
+        self.add_bold_label("Miscellanea:")
+        self.builder.add_field('plot_correction', FIELD_BOOL, 'Plot correction', required=False,
+                               default=False)
+        self.builder.add_field('plot_summary', FIELD_BOOL, 'Plot summary', required=False,
+                               default=False)
