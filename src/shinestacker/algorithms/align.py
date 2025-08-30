@@ -30,6 +30,7 @@ _DEFAULT_ALIGNMENT_CONFIG = {
     'refine_iters': constants.DEFAULT_REFINE_ITERS,
     'align_confidence': constants.DEFAULT_ALIGN_CONFIDENCE,
     'max_iters': constants.DEFAULT_ALIGN_MAX_ITERS,
+    'abort_abnormal': constants.DEFAULT_ALIGN_ABORT_ABNORMAL,
     'border_mode': constants.DEFAULT_BORDER_MODE,
     'border_value': constants.DEFAULT_BORDER_VALUE,
     'border_blur': constants.DEFAULT_BORDER_BLUR,
@@ -321,14 +322,10 @@ def align_images(img_1, img_0, feature_config=None, matching_config=None, alignm
         reason = ""
         if transform_type == constants.ALIGN_RIGID:
             is_valid, reason = check_affine_matrix(
-                m, img_0.shape,
-                alignment_config.get('affine_thresholds', affine_thresholds)
-            )
+                m, img_0.shape, affine_thresholds)
         elif transform_type == constants.ALIGN_HOMOGRAPHY:
             is_valid, reason = check_homography_distortion(
-                m, img_0.shape,
-                alignment_config.get('homography_thresholds', homography_thresholds)
-            )
+                m, img_0.shape, homography_thresholds)
         if not is_valid:
             if callbacks and 'warning' in callbacks:
                 callbacks['warning'](f"invalid transformation: {reason}")
@@ -412,13 +409,21 @@ class AlignFrames(SubAction):
                 f"{self.process.name}-matches-{idx_str}.pdf"
         else:
             plot_path = None
+        if self.alignment_config['abort_abnormal']:
+            affine_thresholds = _AFFINE_THRESHOLDS
+            homography_thresholds = _HOMOGRAPHY_THRESHOLDS
+        else:
+            affine_thresholds = None
+            homography_thresholds = None
         n_good_matches, _m, img = align_images(
             img_1, img_0,
             feature_config=self.feature_config,
             matching_config=self.matching_config,
             alignment_config=self.alignment_config,
             plot_path=plot_path,
-            callbacks=callbacks
+            callbacks=callbacks,
+            affine_thresholds=affine_thresholds,
+            homography_thresholds=homography_thresholds
         )
         self.n_matches[idx] = n_good_matches
         if n_good_matches < self.min_matches:
