@@ -47,6 +47,7 @@ Arguments for the constructor are:
 Arguments for the constructor are, in addition to the ones for ```PyramidStack```:
    * ```tile_size``` (optional, default: 512): size of a time
    * ```n_tiled_layers``` (optional, default: 2): number of layers that are tiled. Usually the last one or two are the ones that take more memory.
+   * ```max_threads``` (optional, default: 8): maximum number of thread used for parallel processing. The actual number of threads does not exceed the number of available cores. 
 
 
 ```PyramidAutoStack```, pyramid algorithn with capability to automatically switch from all-in-memory to I/O buffered tiled.
@@ -54,6 +55,7 @@ Arguments for the constructor are, in addition to the ones for ```PyramidStack``
 Arguments for the constructor are, in addition to the ones for ```PyramidTilesStack```:
    * ```mode``` (optional, default: ```auto```): can be ```auto```, ```memory``` or ```tiled```.
    * ```memory_limit``` (optional, default: 8×1024<sup>3</sup>sup>): memory limit to determine optimal running parameters
+
 
 Arguments for the constructor are the same ad for ```PyramidStack``` plus:
    * ```tile_size``` (optional, default: 512): size of the tile used for partial image merging

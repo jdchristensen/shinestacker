@@ -2,15 +2,15 @@
 
 This page reports the main releases only and the main changes therein.
 
-## [v-.-.-] - 2025-08-29
+## [v-.-.-] - 2025-08-30
 **Improved pyramid algorithm**
 
-* implemented parallel processing on pyramid algorithm
-* optimized Pyramid algorithm: now there is a single algorithm that selects automatically the best strategy ensuring that all the processing stays approximately within a given memory budget. This avoids memory issues in case many pictures are selected and no manual configuration is done. Explicit configuration is also possible for specific needs
-* implemented automatic subsample option for alignment, balancing and vignetting, now default
-* action "Run all jobs" enabled only if more than one job are present
-* updated default module names for "new project" dialog
-* some GUI fixes
+* Implemented parallel processing for pyramid stacking algorithm
+* optimized Pyramid algorithm: now a single algorithm selects automatically the best strategy ensuring that all the processing stays approximately within a given memory budget; This avoids memory issues in case many pictures are selected. Explicit configuration is also possible for specific needs.
+* Implemented automatic subsample option for alignment, balancing and vignetting, now default.
+* "Run all jobs" action is enabled only if more than one job are present.
+* Updated default module names for "new project" dialog.
+* Some GUI fixes.
 
 ---
 
@@ -19,7 +19,7 @@ This page reports the main releases only and the main changes therein.
 
 ### Changes
 
-* added Pyramids Tiles, that requires less RAM by fusing the image in tiles
+* added Pyramids Tiles, that requires less RAM by fusing images in tiles
 * the alignment module now tolerates images of different shapes
 * noisy pixel mask verifies that the mask has the same shape as input images
 * minor changes to default alignment parameters
