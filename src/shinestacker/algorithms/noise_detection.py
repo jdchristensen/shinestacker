@@ -49,7 +49,7 @@ class NoiseDetection(JobBase, FrameMultiDirectory):
     def __init__(self, name="noise-map", enabled=True, **kwargs):
         FrameMultiDirectory.__init__(self, name, **kwargs)
         JobBase.__init__(self, name, enabled)
-        self.max_frames = kwargs.get('max_frames', -1)
+        self.max_frames = kwargs.get('max_frames', constants.DEFAULT_NOISE_MAX_FRAMES)
         self.blur_size = kwargs.get('blur_size', constants.DEFAULT_BLUR_SIZE)
         self.file_name = kwargs.get('file_name', constants.DEFAULT_NOISE_MAP_FILENAME)
         if self.file_name == '':

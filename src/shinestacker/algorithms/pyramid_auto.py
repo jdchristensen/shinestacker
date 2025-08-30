@@ -16,6 +16,7 @@ class PyramidAutoStack(BaseStackAlgo):
                  tile_size=constants.DEFAULT_PY_TILE_SIZE,
                  n_tiled_layers=constants.DEFAULT_PY_N_TILED_LAYERS,
                  memory_limit=constants.DEFAULT_PY_MEMORY_LIMIT_GB,
+                 max_threads=constants.DEFAULT_PY_MAX_THREADS,
                  max_tile_size=2048,
                  min_n_tiled_layers=1,
                  mode='auto'):
@@ -27,6 +28,9 @@ class PyramidAutoStack(BaseStackAlgo):
         self.tile_size = tile_size
         self.n_tiled_layers = n_tiled_layers
         self.memory_limit = memory_limit * 1024**3
+        self.max_threads = max_threads
+        available_cores = os.cpu_count() or 1
+        self.num_threads = min(max_threads, available_cores)
         self.max_tile_size = max_tile_size
         self.min_n_tiled_layers = min_n_tiled_layers
         self.mode = mode
@@ -70,11 +74,13 @@ class PyramidAutoStack(BaseStackAlgo):
                 gen_kernel=self.gen_kernel,
                 float_type=self.float_type,
                 tile_size=optimal_params['tile_size'],
-                n_tiled_layers=optimal_params['n_tiled_layers']
+                n_tiled_layers=optimal_params['n_tiled_layers'],
+                max_threads=self.num_threads
             )
             self.print_message(f": using tile-based pyramid stacking "
                                f"(tile_size: {optimal_params['tile_size']}, "
-                               f"n_tiled_layers: {optimal_params['n_tiled_layers']})")
+                               f"n_tiled_layers: {optimal_params['n_tiled_layers']}), "
+                               f"{self.num_threads} cores.")
         self._implementation.init(filenames)
         self._implementation.set_do_step_callback(self.do_step_callback)
         if self.process is not None:
@@ -92,7 +98,8 @@ class PyramidAutoStack(BaseStackAlgo):
 
     def _find_optimal_tile_params(self):
         tile_size_max = int(np.sqrt(self.memory_limit /
-                            (self.n_frames * self.bytes_per_pixel * self.overhead)))
+                            (self.num_threads * self.n_frames *
+                             self.bytes_per_pixel * self.overhead)))
         tile_size = min(self.max_tile_size, tile_size_max, self.shape[0], self.shape[1])
         n_tiled_layers = 0
         for layer in range(self.n_levels):

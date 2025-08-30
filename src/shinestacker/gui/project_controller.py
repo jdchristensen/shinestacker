@@ -157,61 +157,70 @@ class ProjectController(QObject):
             working_path = '/'.join(input_folder[:-1])
             input_path = input_folder[-1]
             if dialog.get_noise_detection():
-                job_noise = ActionConfig(constants.ACTION_JOB,
-                                         {'name': 'detect-noise', 'working_path': working_path,
-                                          'input_path': input_path})
+                job_noise = ActionConfig(
+                    constants.ACTION_JOB,
+                    {'name': f'{input_path}-detect-noise', 'working_path': working_path,
+                     'input_path': input_path})
                 noise_detection = ActionConfig(constants.ACTION_NOISEDETECTION,
-                                               {'name': 'detect-noise'})
+                                               {'name': f'{input_path}-detect-noise'})
                 job_noise.add_sub_action(noise_detection)
                 self.add_job_to_project(job_noise)
             job = ActionConfig(constants.ACTION_JOB,
-                               {'name': 'focus-stack', 'working_path': working_path,
+                               {'name': f'{input_path}-focus-stack',
+                                'working_path': working_path,
                                 'input_path': input_path})
             if dialog.get_noise_detection() or dialog.get_vignetting_correction() or \
                dialog.get_align_frames() or dialog.get_balance_frames():
-                combo_action = ActionConfig(constants.ACTION_COMBO, {'name': 'preprocess'})
+                combo_action = ActionConfig(
+                    constants.ACTION_COMBO, {'name': f'{input_path}-preprocess'})
                 if dialog.get_noise_detection():
-                    mask_noise = ActionConfig(constants.ACTION_MASKNOISE, {'name': 'mask-noise'})
+                    mask_noise = ActionConfig(
+                        constants.ACTION_MASKNOISE, {'name': 'mask-noise'})
                     combo_action.add_sub_action(mask_noise)
                 if dialog.get_vignetting_correction():
-                    vignetting = ActionConfig(constants.ACTION_VIGNETTING, {'name': 'vignetting'})
+                    vignetting = ActionConfig(
+                        constants.ACTION_VIGNETTING, {'name': 'vignetting'})
                     combo_action.add_sub_action(vignetting)
                 if dialog.get_align_frames():
-                    align = ActionConfig(constants.ACTION_ALIGNFRAMES, {'name': 'align'})
+                    align = ActionConfig(
+                        constants.ACTION_ALIGNFRAMES, {'name': 'align'})
                     combo_action.add_sub_action(align)
                 if dialog.get_balance_frames():
-                    balance = ActionConfig(constants.ACTION_BALANCEFRAMES, {'name': 'balance'})
+                    balance = ActionConfig(
+                        constants.ACTION_BALANCEFRAMES, {'name': 'balance'})
                     combo_action.add_sub_action(balance)
                 job.add_sub_action(combo_action)
             if dialog.get_bunch_stack():
-                bunch_stack = ActionConfig(constants.ACTION_FOCUSSTACKBUNCH,
-                                           {'name': 'bunches', 'frames': dialog.get_bunch_frames(),
-                                            'overlap': dialog.get_bunch_overlap()})
+                bunch_stack_name = f'{input_path}-bunches'
+                bunch_stack = ActionConfig(
+                    constants.ACTION_FOCUSSTACKBUNCH,
+                    {'name': bunch_stack_name, 'frames': dialog.get_bunch_frames(),
+                     'overlap': dialog.get_bunch_overlap()})
                 job.add_sub_action(bunch_stack)
             if dialog.get_focus_stack_pyramid():
+                focus_pyramid_name = f'{input_path}-focus-stack-pyramid'
                 focus_pyramid = ActionConfig(constants.ACTION_FOCUSSTACK,
-                                             {'name': 'focus-stack-pyramid',
+                                             {'name': focus_pyramid_name,
                                               'stacker': constants.STACK_ALGO_PYRAMID})
                 job.add_sub_action(focus_pyramid)
             if dialog.get_focus_stack_depth_map():
+                focus_depth_map_name = f'{input_path}-focus-stack-depth-map'
                 focus_depth_map = ActionConfig(constants.ACTION_FOCUSSTACK,
-                                               {'name': 'focus-stack-depth-map',
+                                               {'name': focus_depth_map_name,
                                                 'stacker': constants.STACK_ALGO_DEPTH_MAP})
                 job.add_sub_action(focus_depth_map)
             if dialog.get_multi_layer():
                 input_path = []
                 if dialog.get_focus_stack_pyramid():
-                    input_path.append("focus-stack-pyramid")
+                    input_path.append(focus_pyramid_name)
                 if dialog.get_focus_stack_depth_map():
-                    input_path.append("focus-stack-depth-map")
+                    input_path.append(focus_depth_map_name)
                 if dialog.get_bunch_stack():
-                    input_path.append("bunches")
+                    input_path.append(bunch_stack_name)
                 multi_layer = ActionConfig(
                     constants.ACTION_MULTILAYER,
-                    {
-                        'name': 'multi-layer',
-                        'input_path': constants.PATH_SEPARATOR.join(input_path)
-                    })
+                    {'name': f'{input_path}-multi-layer',
+                        'input_path': constants.PATH_SEPARATOR.join(input_path)})
                 job.add_sub_action(multi_layer)
             self.add_job_to_project(job)
             self.mark_as_modified(True)

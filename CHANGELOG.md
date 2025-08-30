@@ -3,11 +3,14 @@
 This page reports the main releases only and the main changes therein.
 
 ## [v-.-.-] - 2025-08-29
-**Unreleased changes**
+**Improved pyramid algorithm**
 
-* implemented automatic subsample option, now default
-* optimized I/O in Pyramid Tiles algorithm with automatic strategy selection
+* implemented parallel processing on pyramid algorithm
+* optimized Pyramid algorithm: now there is a single algorithm that selects automatically the best strategy ensuring that all the processing stays approximately within a given memory budget. This avoids memory issues in case many pictures are selected and no manual configuration is done. Explicit configuration is also possible for specific needs
+* implemented automatic subsample option for alignment, balancing and vignetting, now default
 * action "Run all jobs" enabled only if more than one job are present
+* updated default module names for "new project" dialog
+* some GUI fixes
 
 ---
 

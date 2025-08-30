@@ -109,8 +109,9 @@ class NoiseDetectionConfigurator(DefaultActionConfigurator):
                                f'Input path (separate by {constants.PATH_SEPARATOR})',
                                required=False, multiple_entries=True,
                                placeholder='relative to working path')
-        self.builder.add_field('max_frames', FIELD_INT, 'Max. num. of frames', required=False,
-                               default=-1, min_val=-1, max_val=1000)
+        self.builder.add_field('max_frames', FIELD_INT, 'Max. num. of frames (0 = All)',
+                               required=False,
+                               default=constants.DEFAULT_NOISE_MAX_FRAMES, min_val=0, max_val=1000)
         self.builder.add_field('channel_thresholds', FIELD_INT_TUPLE, 'Noise threshold',
                                required=False, size=3,
                                default=constants.DEFAULT_CHANNEL_THRESHOLDS,
@@ -203,6 +204,11 @@ class FocusStackBaseConfigurator(DefaultActionConfigurator):
                 required=False, add_to_layout=q_pyramid.layout(),
                 default=constants.DEFAULT_PY_MEMORY_LIMIT_GB,
                 min_val=1.0, max_val=64.0)
+            max_threads = self.builder.add_field(
+                'pyramid_max_threads', FIELD_INT, 'Max num. of cores',
+                required=False, add_to_layout=q_pyramid.layout(),
+                default=constants.DEFAULT_PY_MAX_THREADS,
+                min_val=1, max_val=64)
             tile_size = self.builder.add_field(
                 'pyramid_tile_size', FIELD_INT, 'Tile size (px)',
                 required=False, add_to_layout=q_pyramid.layout(),
@@ -220,6 +226,7 @@ class FocusStackBaseConfigurator(DefaultActionConfigurator):
                 tile_size.setEnabled(enabled)
                 n_tiled_layers.setEnabled(enabled)
                 memory_limit.setEnabled(text == self.MODE_OPTIONS[0])
+                max_threads.setEnabled(text != self.MODE_OPTIONS[1])
 
             mode.currentIndexChanged.connect(change_mode)
             change_mode()

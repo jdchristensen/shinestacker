@@ -1,6 +1,9 @@
-# pylint: disable=C0114, C0115, C0116, E1101, R0914, R1702, R1732, R0913, R0917, R0912, R0915, R0902
+
+# pylint: disable=C0114, C0115, C0116, E1101, R0914, R1702, R1732, R0913
+# pylint: disable=R0917, R0912, R0915, R0902, W0718
 import os
 import tempfile
+import concurrent.futures
 import numpy as np
 from .. config.constants import constants
 from .utils import read_img
@@ -13,7 +16,8 @@ class PyramidTilesStack(PyramidBase):
                  gen_kernel=constants.DEFAULT_PY_GEN_KERNEL,
                  float_type=constants.DEFAULT_PY_FLOAT,
                  tile_size=constants.DEFAULT_PY_TILE_SIZE,
-                 n_tiled_layers=constants.DEFAULT_PY_N_TILED_LAYERS):
+                 n_tiled_layers=constants.DEFAULT_PY_N_TILED_LAYERS,
+                 max_threads=constants.DEFAULT_PY_MAX_THREADS):
         super().__init__("fast_pyramid", min_size, kernel_size, gen_kernel, float_type)
         self.offset = np.arange(-self.pad_amount, self.pad_amount + 1)
         self.dtype = None
@@ -24,18 +28,26 @@ class PyramidTilesStack(PyramidBase):
         self.temp_dir = tempfile.TemporaryDirectory()
         self.n_tiles = 0
         self.level_shapes = {}
+        available_cores = os.cpu_count() or 1
+        self.num_threads = max(1, min(max_threads, available_cores))
 
     def init(self, filenames):
         super().init(filenames)
         self.n_tiles = 0
         for layer in range(self.n_tiled_layers):
-            h = max(1, self.shape[0] // (2 ** layer))
-            w = max(1, self.shape[1] // (2 ** layer))
+            h, w = max(1, self.shape[0] // (2 ** layer)), max(1, self.shape[1] // (2 ** layer))
             self.n_tiles += (h // self.tile_size + 1) * (w // self.tile_size + 1)
 
     def total_steps(self, n_frames):
         n_steps = super().total_steps(n_frames)
         return n_steps + self.n_tiles
+
+    def _process_single_image_wrapper(self, args):
+        img_path, img_index, _n = args
+        # self.print_message(f": processing file {img_path.split('/')[-1]}, {img_index + 1}/{n}")
+        img = read_img(img_path)
+        level_count = self.process_single_image(img, self.n_levels, img_index)
+        return img_index, level_count
 
     def process_single_image(self, img, levels, img_index):
         laplacian = self.single_image_laplacian(img, levels)
@@ -45,8 +57,7 @@ class PyramidTilesStack(PyramidBase):
             if level_idx < self.n_tiled_layers:
                 for y in range(0, h, self.tile_size):
                     for x in range(0, w, self.tile_size):
-                        y_end = min(y + self.tile_size, h)
-                        x_end = min(x + self.tile_size, w)
+                        y_end, x_end = min(y + self.tile_size, h), min(x + self.tile_size, w)
                         tile = level_data[y:y_end, x:x_end]
                         np.save(
                             os.path.join(
@@ -71,6 +82,72 @@ class PyramidTilesStack(PyramidBase):
     def cleanup_temp_files(self):
         self.temp_dir.cleanup()
 
+    def _fuse_level_tiles_serial(self, level, num_images, all_level_counts, h, w, count):
+        fused_level = np.zeros((h, w, 3), dtype=self.float_type)
+        for y in range(0, h, self.tile_size):
+            for x in range(0, w, self.tile_size):
+                y_end, x_end = min(y + self.tile_size, h), min(x + self.tile_size, w)
+                self.print_message(f': fusing tile [{x}, {x_end - 1}]×[{y}, {y_end - 1}]')
+                laplacians = []
+                for img_index in range(num_images):
+                    if level < all_level_counts[img_index]:
+                        try:
+                            tile = self.load_level_tile(img_index, level, y, x)
+                            laplacians.append(tile)
+                        except FileNotFoundError:
+                            continue
+                if laplacians:
+                    stacked = np.stack(laplacians, axis=0)
+                    fused_tile = self.fuse_laplacian(stacked)
+                    fused_level[y:y_end, x:x_end] = fused_tile
+                self.after_step(count)
+                self.check_running(self.cleanup_temp_files)
+                count += 1
+        return fused_level, count
+
+    def _fuse_level_tiles_parallel(self, level, num_images, all_level_counts, h, w, count):
+        fused_level = np.zeros((h, w, 3), dtype=self.float_type)
+        tiles = []
+        for y in range(0, h, self.tile_size):
+            for x in range(0, w, self.tile_size):
+                tiles.append((y, x))
+        self.print_message(f': starting parallel propcessging on {self.num_threads} cores')
+        with concurrent.futures.ThreadPoolExecutor(max_workers=self.num_threads) as executor:
+            future_to_tile = {
+                executor.submit(
+                    self._process_tile, level, num_images, all_level_counts, y, x, h, w): (y, x)
+                for y, x in tiles
+            }
+            for future in concurrent.futures.as_completed(future_to_tile):
+                y, x = future_to_tile[future]
+                try:
+                    fused_tile = future.result()
+                    if fused_tile is not None:
+                        y_end, x_end = min(y + self.tile_size, h), min(x + self.tile_size, w)
+                        fused_level[y:y_end, x:x_end] = fused_tile
+                        self.print_message(f': fused tile [{x}, {x_end - 1}]×[{y}, {y_end - 1}]')
+                except Exception as e:
+                    self.print_message(f"Error processing tile ({y}, {x}): {str(e)}")
+                self.after_step(count)
+                self.check_running(self.cleanup_temp_files)
+                count += 1
+        return fused_level, count
+
+    def _process_tile(self, level, num_images, all_level_counts, y, x, h, w):
+        laplacians = []
+        for img_index in range(num_images):
+            if level < all_level_counts[img_index]:
+                try:
+                    tile = self.load_level_tile(img_index, level, y, x)
+                    laplacians.append(tile)
+                except FileNotFoundError:
+                    continue
+        if laplacians:
+            stacked = np.stack(laplacians, axis=0)
+            return self.fuse_laplacian(stacked)
+        y_end, x_end = min(y + self.tile_size, h), min(x + self.tile_size, w)
+        return np.zeros((y_end - y, x_end - x, 3), dtype=self.float_type)
+
     def fuse_pyramids(self, all_level_counts, num_images):
         max_levels = max(all_level_counts)
         fused = []
@@ -85,27 +162,12 @@ class PyramidTilesStack(PyramidBase):
                         break
                 if h is None or w is None:
                     continue
-                fused_level = np.zeros((h, w, 3), dtype=self.float_type)
-                for y in range(0, h, self.tile_size):
-                    for x in range(0, w, self.tile_size):
-                        y_end = min(y + self.tile_size, h)
-                        x_end = min(x + self.tile_size, w)
-                        self.print_message(f': fusing tile [{x}, {x_end - 1}]×[{y}, {y_end - 1}]')
-                        laplacians = []
-                        for img_index in range(num_images):
-                            if level < all_level_counts[img_index]:
-                                try:
-                                    tile = self.load_level_tile(img_index, level, y, x)
-                                    laplacians.append(tile)
-                                except FileNotFoundError:
-                                    continue
-                        if laplacians:
-                            stacked = np.stack(laplacians, axis=0)
-                            fused_tile = self.fuse_laplacian(stacked)
-                            fused_level[y:y_end, x:x_end] = fused_tile
-                        self.after_step(count)
-                        self.check_running(self.cleanup_temp_files)
-                        count += 1
+                if self.num_threads > 1:
+                    fused_level, count = self._fuse_level_tiles_parallel(
+                        level, num_images, all_level_counts, h, w, count)
+                else:
+                    fused_level, count = self._fuse_level_tiles_serial(
+                        level, num_images, all_level_counts, h, w, count)
             else:
                 laplacians = []
                 for img_index in range(num_images):
@@ -129,14 +191,33 @@ class PyramidTilesStack(PyramidBase):
     def focus_stack(self):
         n = len(self.filenames)
         self.focus_stack_validate(self.cleanup_temp_files)
-        all_level_counts = []
-        for i, img_path in enumerate(self.filenames):
-            self.print_message(f": processing file {img_path.split('/')[-1]}, {i + 1}/{n}")
-            img = read_img(img_path)
-            level_count = self.process_single_image(img, self.n_levels, i)
-            all_level_counts.append(level_count)
-            self.after_step(i + n + 1)
-            self.check_running(self.cleanup_temp_files)
+        all_level_counts = [0] * n
+        if self.num_threads > 1:
+            self.print_message(f': starting parallel image processing on {self.num_threads} cores')
+            args_list = [(img_path, i, n) for i, img_path in enumerate(self.filenames)]
+            with concurrent.futures.ThreadPoolExecutor(max_workers=self.num_threads) as executor:
+                future_to_index = {
+                    executor.submit(self._process_single_image_wrapper, args): i
+                    for i, args in enumerate(args_list)
+                }
+                for future in concurrent.futures.as_completed(future_to_index):
+                    i = future_to_index[future]
+                    try:
+                        img_index, level_count = future.result()
+                        all_level_counts[img_index] = level_count
+                        self.print_message(f': completed processing image {img_index + 1}/{n}')
+                    except Exception as e:
+                        self.print_message(f"Error processing image {i + 1}: {str(e)}")
+                    self.after_step(i + n + 1)
+                    self.check_running(self.cleanup_temp_files)
+        else:
+            for i, file_path in enumerate(self.filenames):
+                self.print_message(f": processing file {file_path.split('/')[-1]}, {i + 1}/{n}")
+                img = read_img(file_path)
+                level_count = self.process_single_image(img, self.n_levels, i)
+                all_level_counts[i] = level_count
+                self.after_step(i + n + 1)
+                self.check_running(self.cleanup_temp_files)
         fused_pyramid = self.fuse_pyramids(all_level_counts, n)
         stacked_image = self.collapse(fused_pyramid)
         self.cleanup_temp_files()
