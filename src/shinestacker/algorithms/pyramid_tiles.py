@@ -200,12 +200,14 @@ class PyramidTilesStack(PyramidBase):
                     executor.submit(self._process_single_image_wrapper, args): i
                     for i, args in enumerate(args_list)
                 }
+                completed_count = 0
                 for future in concurrent.futures.as_completed(future_to_index):
                     i = future_to_index[future]
                     try:
                         img_index, level_count = future.result()
                         all_level_counts[img_index] = level_count
-                        self.print_message(f': completed processing image {img_index + 1}/{n}')
+                        completed_count += 1
+                        self.print_message(f': completed processing image {completed_count}/{n}')
                     except Exception as e:
                         self.print_message(f"Error processing image {i + 1}: {str(e)}")
                     self.after_step(i + n + 1)

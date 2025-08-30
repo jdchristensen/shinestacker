@@ -200,7 +200,7 @@ class FocusStackBaseConfigurator(DefaultActionConfigurator):
                 default=dict(zip(constants.PY_VALID_MODES,
                                  self.MODE_OPTIONS))[constants.DEFAULT_PY_MODE])
             memory_limit = self.builder.add_field(
-                'pyramid_memory_limit', FIELD_FLOAT, 'Memory limmit (GBytes)',
+                'pyramid_memory_limit', FIELD_FLOAT, 'Memory limit (approx., GBytes)',
                 required=False, add_to_layout=q_pyramid.layout(),
                 default=constants.DEFAULT_PY_MEMORY_LIMIT_GB,
                 min_val=1.0, max_val=64.0)

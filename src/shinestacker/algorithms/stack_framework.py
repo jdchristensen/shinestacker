@@ -51,8 +51,9 @@ class FramePaths:
     def set_filelist(self):
         self.filenames = self.folder_filelist()
         file_folder = self.input_full_path.replace(self.working_path, '').lstrip('/')
-        self.print_message(color_str(f": {len(self.filenames)} files in folder: {file_folder}",
+        self.print_message(color_str(f"{len(self.filenames)} files in folder: {file_folder}",
                                      constants.LOG_COLOR_LEVEL_2))
+        self.base_message = color_str(self.name, constants.LOG_COLOR_LEVEL_1, "bold")
 
     def init(self, job):
         if self.working_path == '':
