@@ -1,4 +1,4 @@
-# pylint: disable=C0114, C0115, C0116, E1101, R0914, R0913, R0917, R0912, R0915, R0902
+# pylint: disable=C0114, C0115, C0116, E1101, R0914, R0913, R0917, R0912, R0915, R0902, E1121, W0102
 import logging
 import math
 import numpy as np
@@ -44,6 +44,89 @@ _cv2_border_mode_map = {
     constants.BORDER_REPLICATE: cv2.BORDER_REPLICATE,
     constants.BORDER_REPLICATE_BLUR: cv2.BORDER_REPLICATE
 }
+
+_AFFINE_THRESHOLDS = {
+    'max_rotation': 10.0,  # degrees
+    'min_scale': 0.9,
+    'max_scale': 1.1,
+    'max_shear': 5.0,  # degrees
+    'max_translation_ratio': 0.1,  # 10% of image dimension
+}
+
+_HOMOGRAPHY_THRESHOLDS = {
+    'max_skew': 10.0,  # degrees
+    'max_scale_change': 1.5,  # max area change ratio
+    'max_aspect_ratio': 2.0,  # max aspect ratio change
+}
+
+
+def decompose_affine_matrix(m):
+    a, b, tx = m[0, 0], m[0, 1], m[0, 2]
+    c, d, ty = m[1, 0], m[1, 1], m[1, 2]
+    scale_x = math.sqrt(a**2 + b**2)
+    scale_y = math.sqrt(c**2 + d**2)
+    rotation = math.degrees(math.atan2(b, a))
+    shear = math.degrees(math.atan2(-c, d)) - rotation
+    shear = (shear + 180) % 360 - 180
+    return (scale_x, scale_y), rotation, shear, (tx, ty)
+
+
+def check_affine_matrix(m, img_shape, affine_thresholds=_AFFINE_THRESHOLDS):
+    if affine_thresholds is None:
+        return True, "No thresholds provided"
+    (scale_x, scale_y), rotation, shear, (tx, ty) = decompose_affine_matrix(m)
+    h, w = img_shape[:2]
+    reasons = []
+    if abs(rotation) > affine_thresholds['max_rotation']:
+        reasons.append(f"rotation too large ({rotation:.1f}°)")
+    if scale_x < affine_thresholds['min_scale'] or scale_x > affine_thresholds['max_scale']:
+        reasons.append(f"x-scale out of range ({scale_x:.2f})")
+    if scale_y < affine_thresholds['min_scale'] or scale_y > affine_thresholds['max_scale']:
+        reasons.append(f"y-scale out of range ({scale_y:.2f})")
+    if abs(shear) > affine_thresholds['max_shear']:
+        reasons.append(f"shear too large ({shear:.1f}°)")
+    max_tx = w * affine_thresholds['max_translation_ratio']
+    max_ty = h * affine_thresholds['max_translation_ratio']
+    if abs(tx) > max_tx:
+        reasons.append(f"x-translation too large (|{tx:.1f}| > {max_tx:.1f})")
+    if abs(ty) > max_ty:
+        reasons.append(f"y-translation too large (|{ty:.1f}| > {max_ty:.1f})")
+    if reasons:
+        return False, "; ".join(reasons)
+    return True, "Transformation within acceptable limits"
+
+
+def check_homography_distortion(m, img_shape, homography_thresholds=_HOMOGRAPHY_THRESHOLDS):
+    if homography_thresholds is None:
+        return True, "No thresholds provided"
+    h, w = img_shape[:2]
+    corners = np.array([[0, 0], [w, 0], [w, h], [0, h]], dtype=np.float32)
+    transformed = cv2.perspectiveTransform(corners.reshape(1, -1, 2), m).reshape(-1, 2)
+    reasons = []
+    area_orig = w * h
+    area_new = cv2.contourArea(transformed)
+    area_ratio = area_new / area_orig
+    if area_ratio > homography_thresholds['max_scale_change'] or \
+       area_ratio < 1.0 / homography_thresholds['max_scale_change']:
+        reasons.append(f"area change too large ({area_ratio:.2f})")
+    rect = cv2.minAreaRect(transformed.astype(np.float32))
+    (w_rect, h_rect) = rect[1]
+    aspect_ratio = max(w_rect, h_rect) / min(w_rect, h_rect)
+    if aspect_ratio > homography_thresholds['max_aspect_ratio']:
+        reasons.append(f"aspect ratio change too large ({aspect_ratio:.2f})")
+    angles = []
+    for i in range(4):
+        vec1 = transformed[(i + 1) % 4] - transformed[i]
+        vec2 = transformed[(i - 1) % 4] - transformed[i]
+        angle = np.degrees(np.arccos(np.dot(vec1, vec2) /
+                           (np.linalg.norm(vec1) * np.linalg.norm(vec2))))
+        angles.append(angle)
+    max_angle_dev = max(abs(angle - 90) for angle in angles)
+    if max_angle_dev > homography_thresholds['max_skew']:
+        reasons.append(f"angle distortion too large ({max_angle_dev:.1f}°)")
+    if reasons:
+        return False, "; ".join(reasons)
+    return True, "Transformation within acceptable limits"
 
 
 def get_good_matches(des_0, des_1, matching_config=None):
@@ -153,7 +236,9 @@ def find_transform(src_pts, dst_pts, transform=constants.DEFAULT_TRANSFORM,
 
 
 def align_images(img_1, img_0, feature_config=None, matching_config=None, alignment_config=None,
-                 plot_path=None, callbacks=None):
+                 plot_path=None, callbacks=None,
+                 affine_thresholds=_AFFINE_THRESHOLDS,
+                 homography_thresholds=_HOMOGRAPHY_THRESHOLDS):
     feature_config = {**_DEFAULT_FEATURE_CONFIG, **(feature_config or {})}
     matching_config = {**_DEFAULT_MATCHING_CONFIG, **(matching_config or {})}
     alignment_config = {**_DEFAULT_ALIGNMENT_CONFIG, **(alignment_config or {})}
@@ -230,6 +315,25 @@ def align_images(img_1, img_0, feature_config=None, matching_config=None, alignm
                 m[:, 2] = translation_fullres
             else:
                 raise InvalidOptionError("transform", transform)
+
+        transform_type = alignment_config['transform']
+        is_valid = True
+        reason = ""
+        if transform_type == constants.ALIGN_RIGID:
+            is_valid, reason = check_affine_matrix(
+                m, img_0.shape,
+                alignment_config.get('affine_thresholds', affine_thresholds)
+            )
+        elif transform_type == constants.ALIGN_HOMOGRAPHY:
+            is_valid, reason = check_homography_distortion(
+                m, img_0.shape,
+                alignment_config.get('homography_thresholds', homography_thresholds)
+            )
+        if not is_valid:
+            if callbacks and 'warning' in callbacks:
+                callbacks['warning'](f"invalid transformation: {reason}")
+            return n_good_matches, None, None
+
         if callbacks and 'align_message' in callbacks:
             callbacks['align_message']()
         img_mask = np.ones_like(img_0, dtype=np.uint8)

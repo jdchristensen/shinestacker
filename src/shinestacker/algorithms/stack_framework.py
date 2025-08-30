@@ -219,6 +219,7 @@ class FramesRefActions(ActionList, FrameDirectory):
         self.print_message_r(
             color_str(f"step {self.count + 1}/{ll}: process file: {self.filenames[self._idx]}, "
                       f"reference: {self.filenames[self._ref_idx]}", constants.LOG_COLOR_LEVEL_2))
+        self.base_message = color_str(self.name, constants.LOG_COLOR_LEVEL_1, "bold")
         self.run_frame(self._idx, self._ref_idx)
         if self._idx < ll:
             if self.step_process:
@@ -276,7 +277,7 @@ class CombinedActions(FramesRefActions):
         if img is None:
             raise RuntimeError(f"Invalid file: {self.input_full_path}/{filename}")
         if len(self._actions) == 0:
-            self.sub_message(color_str(": no actions specified.", constants.LOG_COLOR_ALERT),
+            self.sub_message(color_str(": no actions specified", constants.LOG_COLOR_ALERT),
                              level=logging.WARNING)
         for a in self._actions:
             if not a.enabled:
@@ -285,13 +286,19 @@ class CombinedActions(FramesRefActions):
             else:
                 if self.callback('check_running', self.id, self.name) is False:
                     raise RunStopException(self.name)
-                img = a.run_frame(idx, ref_idx, img)
+                if img is not None:
+                    img = a.run_frame(idx, ref_idx, img)
+                else:
+                    self.sub_message(
+                        color_str(": null input received, action skipped",
+                                  constants.LOG_COLOR_ALERT),
+                        level=logging.WARNING)
         self.sub_message_r(color_str(': write output image', constants.LOG_COLOR_LEVEL_3))
         if img is not None:
             write_img(self.output_dir + "/" + filename, img)
         else:
             self.print_message(color_str(
-                "No output file resulted from processing input file: "
+                "no output file resulted from processing input file: "
                 f"{self.input_full_path}/{filename}",
                 constants.LOG_COLOR_ALERT), level=logging.WARNING)
 
