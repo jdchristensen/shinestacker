@@ -2,7 +2,7 @@
 # pylint: disable=E0606, W0718, R1702, W0102, W0221
 import traceback
 from typing import Dict, Any
-from PySide6.QtWidgets import (QWidget, QPushButton, QHBoxLayout, QLabel,
+from PySide6.QtWidgets import (QWidget, QPushButton, QHBoxLayout, QLabel, QScrollArea,
                                QMessageBox, QStackedWidget, QFormLayout)
 from PySide6.QtCore import Qt, QTimer
 from .. config.constants import constants
@@ -21,8 +21,17 @@ class ActionConfigDialog(BaseFormDialog):
         super().__init__(f"Configure {action.type_name}", parent)
         self.current_wd = current_wd
         self.action = action
+        scroll_area = QScrollArea()
+        scroll_area.setWidgetResizable(True)
+        container_widget = QWidget()
+        self.container_layout = QFormLayout(container_widget)
+        self.container_layout.setFieldGrowthPolicy(QFormLayout.AllNonFixedFieldsGrow)
+        self.container_layout.setRowWrapPolicy(QFormLayout.DontWrapRows)
+        self.container_layout.setFormAlignment(Qt.AlignLeft | Qt.AlignTop)
+        self.container_layout.setLabelAlignment(Qt.AlignLeft)
         self.configurator = self.get_configurator(action.type_name)
-        self.configurator.create_form(self.layout, action)
+        self.configurator.create_form(self.container_layout, action)
+        scroll_area.setWidget(container_widget)
         button_box = QHBoxLayout()
         ok_button = QPushButton("OK")
         ok_button.setFocus()
@@ -32,9 +41,46 @@ class ActionConfigDialog(BaseFormDialog):
         button_box.addWidget(cancel_button)
         button_box.addWidget(reset_button)
         reset_button.clicked.connect(self.reset_to_defaults)
-        self.add_row_to_layout(button_box)
+        self.layout.addRow(scroll_area)
+        self.layout.addRow(button_box)
+        QTimer.singleShot(0, self.adjust_dialog_size)
         ok_button.clicked.connect(self.accept)
         cancel_button.clicked.connect(self.reject)
+
+    def adjust_dialog_size(self):
+        screen_geometry = self.screen().availableGeometry()
+        screen_height = screen_geometry.height()
+        screen_width = screen_geometry.width()
+        scroll_area = self.findChild(QScrollArea)
+        container_widget = scroll_area.widget()
+        container_size = container_widget.sizeHint()
+        container_height = container_size.height()
+        container_width = container_size.width()
+        button_row_height = 50  # Approx height of button row
+        margins_height = 40  # Approx. height of margins
+        total_height_needed = container_height + button_row_height + margins_height
+        if total_height_needed < screen_height * 0.8:
+            width = max(container_width + 40, 600)
+            height = total_height_needed
+            self.resize(width, height)
+            scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        else:
+            max_height = int(screen_height * 0.9)
+            width = max(container_width + 40, 600)
+            width = min(width, int(screen_width * 0.9))
+            self.resize(width, max_height)
+            self.setMaximumHeight(max_height)
+            scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+            self.setMinimumHeight(min(max_height, 500))
+            self.setMinimumWidth(width)
+        self.center_on_screen()
+
+    def center_on_screen(self):
+        screen_geometry = self.screen().availableGeometry()
+        center_point = screen_geometry.center()
+        frame_geometry = self.frameGeometry()
+        frame_geometry.moveCenter(center_point)
+        self.move(frame_geometry.topLeft())
 
     def get_configurator(self, action_type: str) -> ActionConfigurator:
         configurators = {
@@ -526,6 +572,9 @@ class AlignFramesConfigurator(SubsampleActionConfigurator):
                     max_iters.setEnabled(True)
             transform.currentIndexChanged.connect(change_transform)
             change_transform()
+            self.builder.add_field('abort_abnormal', FIELD_BOOL, 'Abort on abnormal transf.',
+                                   required=False,
+                                   default=constants.DEFAULT_ALIGN_ABORT_ABNORMAL)
             self.add_subsample_fields()
             self.add_bold_label("Border:")
             self.builder.add_field('border_mode', FIELD_COMBO, 'Border mode', required=False,
