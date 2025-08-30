@@ -34,6 +34,25 @@ def test_write_jpg():
         assert False
 
 
+def test_mem_warning():
+    err_msg = "memory error"
+    try:
+        output_dir = test_path
+        if not os.path.exists(output_dir):
+            os.makedirs(output_dir)
+        n = 100
+        filenames = ["examples/input/img-tif/0001.tif"] * n
+        labels = [f'Layer {i + 1}' for i in range(n)]
+        def mem_err(mem):
+            raise RuntimeError(f"{err_msg}: {mem:.2f} GBytes")
+        callbacks = {'memory_warning': mem_err}
+        write_multilayer_tiff(filenames, output_dir + test_file, labels=labels,
+                              callbacks=callbacks)
+        assert False
+    except RuntimeError as e:
+        assert str(e).startswith(err_msg)
+
+
 def test_read():
     try:
         input_dir = test_path
@@ -68,6 +87,7 @@ def test_tif():
 
 
 if __name__ == '__main__':
+    test_mem_warning()
     test_write_tif()
     test_write_jpg()
     test_read()

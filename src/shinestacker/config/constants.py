@@ -12,6 +12,7 @@ class _Constants:
     NUM_UINT16 = 65536
     MAX_UINT8 = 255
     MAX_UINT16 = 65535
+    ONE_GIGA = 1024**3
 
     LOG_FONTS = ['Monaco', 'Menlo', ' Lucida Console', 'Courier New', 'Courier', 'monospace']
     LOG_FONTS_STR = ", ".join(LOG_FONTS)
@@ -56,6 +57,7 @@ class _Constants:
 
     DEFAULT_FILE_REVERSE_ORDER = False
     DEFAULT_MULTILAYER_FILE_REVERSE_ORDER = True
+    MULTILAYER_WARNING_MEM_GB = 1
 
     DEFAULT_NOISE_MAP_FILENAME = "noise-map/hot_pixels.png"
     DEFAULT_NOISE_MAX_FRAMES = 10

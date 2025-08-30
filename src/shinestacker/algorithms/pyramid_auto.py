@@ -27,7 +27,7 @@ class PyramidAutoStack(BaseStackAlgo):
         self.float_type = float_type
         self.tile_size = tile_size
         self.n_tiled_layers = n_tiled_layers
-        self.memory_limit = memory_limit * 1024**3
+        self.memory_limit = memory_limit * constants.ONE_GIGA
         self.max_threads = max_threads
         available_cores = os.cpu_count() or 1
         self.num_threads = min(max_threads, available_cores)

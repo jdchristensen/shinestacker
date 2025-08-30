@@ -61,6 +61,13 @@ def write_multilayer_tiff_from_images(image_dict, output_file, exif_path='', cal
     if len(dtypes) > 1:
         raise RuntimeError("All input files must all have 8 bit or 16 bit depth.")
     dtype = dtypes[0]
+    bytes_per_pixel = 3 * np.dtype(dtype).itemsize
+    est_memory = shape[0] * shape[1] * bytes_per_pixel * len(image_dict)
+    if est_memory > constants.MULTILAYER_WARNING_MEM_GB * constants.ONE_GIGA:
+        if callbacks:
+            callback = callbacks.get('memory_warning', None)
+            if callback:
+                callback(float(est_memory) / constants.ONE_GIGA)
     max_pixel_value = constants.MAX_UINT16 if dtype == np.uint16 else constants.MAX_UINT8
     transp = np.full_like(list(image_dict.values())[0][..., 0], max_pixel_value)
     compression_type = PsdCompressionType.ZIP_PREDICTED
@@ -203,7 +210,10 @@ class MultiLayer(JobBase, FrameMultiDirectory):
             'exif_msg': lambda path: self.print_message(
                 color_str(f"copying exif data from path: {path}", constants.LOG_COLOR_LEVEL_2)),
             'write_msg': lambda path: self.print_message(
-                color_str(f"writing multilayer tiff file: {path}", constants.LOG_COLOR_LEVEL_2))
+                color_str(f"writing multilayer tiff file: {path}", constants.LOG_COLOR_LEVEL_2)),
+            'memory_warning': lambda mem: self.print_message(
+                color_str(f"warning: estimated file size: {mem:.2f} GBytes",
+                          constants.LOG_COLOR_WARNING))
         }
         write_multilayer_tiff(input_files, output_file, labels=None, exif_path=self.exif_path,
                               callbacks=callbacks)
