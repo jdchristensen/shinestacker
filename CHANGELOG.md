@@ -8,6 +8,7 @@ This page reports the main releases only and the main changes therein.
 * Implemented parallel processing for pyramid stacking algorithm
 * optimized Pyramid algorithm: now a single algorithm selects automatically the best strategy ensuring that all the processing stays approximately within a given memory budget; This avoids memory issues in case many pictures are selected. Explicit configuration is also possible for specific needs.
 * Implemented automatic subsample option for alignment, balancing and vignetting, now default.
+* Multilayer modules sends a warning if the estimated file size is > 1GB
 * "Run all jobs" action is enabled only if more than one job are present.
 * Updated default module names for "new project" dialog.
 * Some GUI fixes.

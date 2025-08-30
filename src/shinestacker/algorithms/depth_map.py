@@ -116,5 +116,5 @@ class DepthMapStack(BaseStackAlgo):
         for j in range(1, self.levels):
             size = (blended_pyramid[j].shape[1], blended_pyramid[j].shape[0])
             result = cv2.pyrUp(result, dstsize=size) + blended_pyramid[j]
-        n_values = 255 if dtype == np.uint8 else 65535
+        n_values = constants.MAX_UINT8 if dtype == np.uint8 else constants.MAX_UINT16
         return np.clip(np.absolute(result), 0, n_values).astype(dtype)
