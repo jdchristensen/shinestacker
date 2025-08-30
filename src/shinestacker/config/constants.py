@@ -1,6 +1,7 @@
 # pylint: disable=C0114, C0115, C0116, C0103, R0903
 import sys
 import re
+import os
 
 
 class _Constants:
@@ -176,7 +177,7 @@ class _Constants:
     DEFAULT_PY_TILE_SIZE = 512
     DEFAULT_PY_N_TILED_LAYERS = 2
     DEFAULT_PY_MEMORY_LIMIT_GB = 8
-    DEFAULT_PY_MAX_THREADS = 8
+    DEFAULT_PY_MAX_THREADS = min(os.cpu_count() or 4, 8)
     DEFAULT_PY_MODE = 'auto'
     PY_VALID_MODES = ['auto', 'memory', 'tiled']
     MIN_PY_TILE_SIZE = 256
