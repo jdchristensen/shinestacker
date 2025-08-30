@@ -2,10 +2,13 @@
 # pylint: disable=C0114, C0115, C0116, E1101, R0914, R1702, R1732, R0913
 # pylint: disable=R0917, R0912, R0915, R0902, W0718
 import os
+import time
+import shutil
 import tempfile
 import concurrent.futures
 import numpy as np
 from .. config.constants import constants
+from .. core.exceptions import RunStopException
 from .utils import read_img
 from .pyramid import PyramidBase
 
@@ -80,7 +83,13 @@ class PyramidTilesStack(PyramidBase):
         return np.load(os.path.join(self.temp_dir.name, f'img_{img_index}_level_{level}.npy'))
 
     def cleanup_temp_files(self):
-        self.temp_dir.cleanup()
+        try:
+            self.temp_dir.cleanup()
+        except Exception:
+            try:
+                shutil.rmtree(self.temp_dir.name, ignore_errors=True)
+            except Exception:
+                pass
 
     def _fuse_level_tiles_serial(self, level, num_images, all_level_counts, h, w, count):
         fused_level = np.zeros((h, w, 3), dtype=self.float_type)
@@ -180,11 +189,11 @@ class PyramidTilesStack(PyramidBase):
                 else:
                     stacked = np.stack(laplacians, axis=0)
                     fused_level = self.fuse_laplacian(stacked)
-                self.check_running(self.cleanup_temp_files)
+                self.check_running(lambda: None)
             fused.append(fused_level)
             count += 1
             self.after_step(count)
-            self.check_running(self.cleanup_temp_files)
+            self.check_running(lambda: None)
         self.print_message(': pyramids fusion completed')
         return fused[::-1]
 
@@ -194,8 +203,10 @@ class PyramidTilesStack(PyramidBase):
         all_level_counts = [0] * n
         if self.num_threads > 1:
             self.print_message(f': starting parallel image processing on {self.num_threads} cores')
-            args_list = [(img_path, i, n) for i, img_path in enumerate(self.filenames)]
-            with concurrent.futures.ThreadPoolExecutor(max_workers=self.num_threads) as executor:
+            args_list = [(file_path, i, n) for i, file_path in enumerate(self.filenames)]
+            executor = None
+            try:
+                executor = concurrent.futures.ThreadPoolExecutor(max_workers=self.num_threads)
                 future_to_index = {
                     executor.submit(self._process_single_image_wrapper, args): i
                     for i, args in enumerate(args_list)
@@ -211,7 +222,17 @@ class PyramidTilesStack(PyramidBase):
                     except Exception as e:
                         self.print_message(f"Error processing image {i + 1}: {str(e)}")
                     self.after_step(i + n + 1)
-                    self.check_running(self.cleanup_temp_files)
+                    self.check_running(lambda: None)
+            except RunStopException:
+                self.print_message(": stopping image processing...")
+                if executor:
+                    executor.shutdown(wait=False, cancel_futures=True)
+                    time.sleep(0.5)
+                    self._safe_cleanup()
+                raise
+            finally:
+                if executor:
+                    executor.shutdown(wait=True)
         else:
             for i, file_path in enumerate(self.filenames):
                 self.print_message(f": processing file {file_path.split('/')[-1]}, {i + 1}/{n}")
@@ -219,8 +240,25 @@ class PyramidTilesStack(PyramidBase):
                 level_count = self.process_single_image(img, self.n_levels, i)
                 all_level_counts[i] = level_count
                 self.after_step(i + n + 1)
-                self.check_running(self.cleanup_temp_files)
-        fused_pyramid = self.fuse_pyramids(all_level_counts, n)
-        stacked_image = self.collapse(fused_pyramid)
-        self.cleanup_temp_files()
-        return stacked_image.astype(self.dtype)
+                self.check_running(lambda: None)
+        try:
+            self.check_running(lambda: None)
+            fused_pyramid = self.fuse_pyramids(all_level_counts, n)
+            stacked_image = self.collapse(fused_pyramid)
+            return stacked_image.astype(self.dtype)
+        except RunStopException:
+            self.print_message(": stopping pyramid fusion...")
+            raise
+        finally:
+            self._safe_cleanup()
+
+    def _safe_cleanup(self):
+        try:
+            self.cleanup_temp_files()
+        except Exception as e:
+            self.print_message(f": warning during cleanup: {str(e)}")
+            time.sleep(1)
+            try:
+                self.cleanup_temp_files()
+            except Exception:
+                self.print_message(": could not fully clean up temporary files")

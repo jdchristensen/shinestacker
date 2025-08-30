@@ -41,6 +41,7 @@ class FramePaths:
         self.input_full_path = None
         self.enabled = None
         self.filenames = None
+        self.base_message = ''
 
     def folder_filelist(self):
         assert False, "this method should be overwritten"
