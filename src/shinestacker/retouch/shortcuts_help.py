@@ -10,7 +10,7 @@ class ShortcutsHelp(QDialog):
         super().__init__(parent)
         self.setWindowTitle("Shortcut Help")
         self.resize(600, self.height())
-        self.layout = QVBoxLayout(self)
+        self.main_layout = QVBoxLayout(self)
         main_widget = QWidget()
         main_layout = QHBoxLayout(main_widget)
         main_layout.setContentsMargins(0, 0, 0, 0)
@@ -28,14 +28,14 @@ class ShortcutsHelp(QDialog):
         right_layout.setLabelAlignment(Qt.AlignLeft)
         main_layout.addWidget(left_column)
         main_layout.addWidget(right_column)
-        self.layout.addWidget(main_widget)
+        self.main_layout.addWidget(main_widget)
         self.create_form(left_layout, right_layout)
         button_box = QHBoxLayout()
         ok_button = QPushButton("OK")
         ok_button.setFixedWidth(100)
         ok_button.setFocus()
         button_box.addWidget(ok_button)
-        self.layout.addLayout(button_box)
+        self.main_layout.addLayout(button_box)
         ok_button.clicked.connect(self.accept)
 
     def add_bold_label(self, layout, label):
@@ -44,7 +44,7 @@ class ShortcutsHelp(QDialog):
         layout.addRow(label)
 
     def create_form(self, left_layout, right_layout):
-        self.layout.insertWidget(0, icon_container())
+        self.main_layout.insertWidget(0, icon_container())
 
         shortcuts = {
             "M": "show master layer",

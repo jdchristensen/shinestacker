@@ -10,7 +10,6 @@ from PySide6.QtWidgets import (QPushButton, QHBoxLayout, QFileDialog, QLabel, QC
 from .. config.constants import constants
 from .select_path_widget import (create_select_file_paths_widget, create_layout_widget_no_margins,
                                  create_layout_widget_and_connect)
-from .project_model import ActionConfig
 
 FIELD_TEXT = 'text'
 FIELD_ABS_PATH = 'abs_path'
@@ -30,23 +29,23 @@ class ActionConfigurator(ABC):
         self.current_wd = current_wd
 
     @abstractmethod
-    def create_form(self, layout, action: ActionConfig, tag="Action"):
+    def create_form(self, layout, action, tag="Action"):
         pass
 
     @abstractmethod
-    def update_params(self, params: Dict[str, Any]) -> bool:
+    def update_params(self, params):
         pass
 
 
 class FieldBuilder:
     def __init__(self, layout, action, current_wd):
-        self.layout = layout
+        self.main_layout = layout
         self.action = action
         self.current_wd = current_wd
         self.fields = {}
 
-    def add_field(self, tag: str, field_type: str, label: str,
-                  required: bool = False, add_to_layout=None, **kwargs):
+    def add_field(self, tag, field_type, label,
+                  required=False, add_to_layout=None, **kwargs):
         if field_type == FIELD_TEXT:
             widget = self.create_text_field(tag, **kwargs)
         elif field_type == FIELD_ABS_PATH:
@@ -93,7 +92,7 @@ class FieldBuilder:
             **kwargs
         }
         if add_to_layout is None:
-            add_to_layout = self.layout
+            add_to_layout = self.main_layout
         add_to_layout.addRow(f"{label}:", widget)
         return widget
 

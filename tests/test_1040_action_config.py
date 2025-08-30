@@ -76,9 +76,9 @@ def test_action_config_dialog(qtbot, mock_action):
         dialog = ActionConfigDialog(mock_action, current_wd)
         qtbot.addWidget(dialog)
     assert dialog.windowTitle() == f"Configure {mock_action.type_name}"
-    assert dialog.layout is not None
+    assert dialog.form_layout is not None
     assert isinstance(dialog.configurator, DefaultActionConfigurator)
-    assert dialog.layout.count() > 0
+    assert dialog.form_layout.count() > 0
 
 
 def test_field_builder_update_params(form_layout, mock_action, tmp_path, qapp):

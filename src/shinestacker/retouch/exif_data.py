@@ -25,14 +25,14 @@ class ExifData(BaseFormDialog):
     def add_bold_label(self, label):
         label = QLabel(label)
         label.setStyleSheet("font-weight: bold")
-        self.layout.addRow(label)
+        self.form_layout.addRow(label)
 
     def create_form(self):
-        self.layout.addRow(icon_container())
+        self.form_layout.addRow(icon_container())
 
         spacer = QLabel("")
         spacer.setFixedHeight(10)
-        self.layout.addRow(spacer)
+        self.form_layout.addRow(spacer)
         self.add_bold_label("EXIF data")
         shortcuts = {}
         if self.exif is None:
@@ -47,6 +47,6 @@ class ExifData(BaseFormDialog):
                 else:
                     d = f"{d}"
                 if "<<<" not in d and k != 'IPTCNAA':
-                    self.layout.addRow(f"<b>{k}:</b>", QLabel(d))
+                    self.form_layout.addRow(f"<b>{k}:</b>", QLabel(d))
         else:
-            self.layout.addRow("-", QLabel("Empty EXIF dictionary"))
+            self.form_layout.addRow("-", QLabel("Empty EXIF dictionary"))

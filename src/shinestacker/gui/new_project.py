@@ -36,11 +36,11 @@ class NewProjectDialog(BaseFormDialog):
     def add_bold_label(self, label):
         label = QLabel(label)
         label.setStyleSheet("font-weight: bold")
-        self.layout.addRow(label)
+        self.form_layout.addRow(label)
 
     def add_label(self, label):
         label = QLabel(label)
-        self.layout.addRow(label)
+        self.form_layout.addRow(label)
 
     def create_form(self):
         icon_path = f"{os.path.dirname(__file__)}/ico/shinestacker.png"
@@ -49,10 +49,10 @@ class NewProjectDialog(BaseFormDialog):
         icon_label = QLabel()
         icon_label.setPixmap(icon_pixmap)
         icon_label.setAlignment(Qt.AlignCenter)
-        self.layout.addRow(icon_label)
+        self.form_layout.addRow(icon_label)
         spacer = QLabel("")
         spacer.setFixedHeight(10)
-        self.layout.addRow(spacer)
+        self.form_layout.addRow(spacer)
 
         self.input_folder, container = create_select_file_paths_widget(
             '', 'input files folder', 'input files folder')
@@ -92,26 +92,26 @@ class NewProjectDialog(BaseFormDialog):
         self.multi_layer.setChecked(gui_constants.NEW_PROJECT_MULTI_LAYER)
 
         self.add_bold_label("1️⃣ Select input folder, all images therein will be merged. ")
-        self.layout.addRow("Input folder:", container)
-        self.layout.addRow("Number of frames: ", self.frames_label)
+        self.form_layout.addRow("Input folder:", container)
+        self.form_layout.addRow("Number of frames: ", self.frames_label)
         self.add_label("")
         self.add_bold_label("2️⃣ Select basic options.")
         if self.expert():
-            self.layout.addRow("Automatic noise detection:", self.noise_detection)
-            self.layout.addRow("Vignetting correction:", self.vignetting_correction)
-        self.layout.addRow("Align layers:", self.align_frames)
-        self.layout.addRow("Balance layers:", self.balance_frames)
-        self.layout.addRow("Bunch stack:", self.bunch_stack)
-        self.layout.addRow("Bunch frames:", self.bunch_frames)
-        self.layout.addRow("Bunch overlap:", self.bunch_overlap)
-        self.layout.addRow("Number of bunches: ", self.bunches_label)
+            self.form_layout.addRow("Automatic noise detection:", self.noise_detection)
+            self.form_layout.addRow("Vignetting correction:", self.vignetting_correction)
+        self.form_layout.addRow("Align layers:", self.align_frames)
+        self.form_layout.addRow("Balance layers:", self.balance_frames)
+        self.form_layout.addRow("Bunch stack:", self.bunch_stack)
+        self.form_layout.addRow("Bunch frames:", self.bunch_frames)
+        self.form_layout.addRow("Bunch overlap:", self.bunch_overlap)
+        self.form_layout.addRow("Number of bunches: ", self.bunches_label)
         if self.expert():
-            self.layout.addRow("Focus stack (pyramid):", self.focus_stack_pyramid)
-            self.layout.addRow("Focus stack (depth map):", self.focus_stack_depth_map)
+            self.form_layout.addRow("Focus stack (pyramid):", self.focus_stack_pyramid)
+            self.form_layout.addRow("Focus stack (depth map):", self.focus_stack_depth_map)
         else:
-            self.layout.addRow("Focus stack:", self.focus_stack_pyramid)
+            self.form_layout.addRow("Focus stack:", self.focus_stack_pyramid)
         if self.expert():
-            self.layout.addRow("Save multi layer TIFF:", self.multi_layer)
+            self.form_layout.addRow("Save multi layer TIFF:", self.multi_layer)
         self.add_label("")
         self.add_bold_label("3️⃣ Push 🆗 for further options, then press ▶️ to run.")
         self.add_label("")
