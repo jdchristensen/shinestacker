@@ -43,8 +43,10 @@ def test_mem_warning():
         n = 100
         filenames = ["examples/input/img-tif/0001.tif"] * n
         labels = [f'Layer {i + 1}' for i in range(n)]
+
         def mem_err(mem):
             raise RuntimeError(f"{err_msg}: {mem:.2f} GBytes")
+
         callbacks = {'memory_warning': mem_err}
         write_multilayer_tiff(filenames, output_dir + test_file, labels=labels,
                               callbacks=callbacks)
