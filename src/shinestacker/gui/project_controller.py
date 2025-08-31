@@ -169,10 +169,12 @@ class ProjectController(QObject):
                                {'name': f'{input_path}-focus-stack',
                                 'working_path': working_path,
                                 'input_path': input_path})
+            preprocess_name = ''
             if dialog.get_noise_detection() or dialog.get_vignetting_correction() or \
                dialog.get_align_frames() or dialog.get_balance_frames():
+                preprocess_name = f'{input_path}-preprocess'
                 combo_action = ActionConfig(
-                    constants.ACTION_COMBO, {'name': f'{input_path}-preprocess'})
+                    constants.ACTION_COMBO, {'name': preprocess_name})
                 if dialog.get_noise_detection():
                     mask_noise = ActionConfig(
                         constants.ACTION_MASKNOISE, {'name': 'mask-noise'})
@@ -217,6 +219,8 @@ class ProjectController(QObject):
                     multi_input_path.append(focus_depth_map_name)
                 if dialog.get_bunch_stack():
                     multi_input_path.append(bunch_stack_name)
+                elif preprocess_name:
+                    multi_input_path.append(preprocess_name)
                 multi_layer = ActionConfig(
                     constants.ACTION_MULTILAYER,
                     {'name': f'{input_path}-multi-layer',
