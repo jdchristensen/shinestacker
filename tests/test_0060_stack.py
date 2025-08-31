@@ -36,7 +36,7 @@ def test_jpg_dm():
         assert False
 
 
-def test_jpg_pt():
+def test_jpg_pt_1():
     try:
         job = StackJob("job", "examples", input_path="input/img-jpg")
         job.add_action(FocusStack("stack-depthmap", PyramidTilesStack(),
@@ -45,11 +45,28 @@ def test_jpg_pt():
     except Exception:
         assert False
 
+def test_jpg_pt_2():
+    try:
+        job = StackJob("job", "examples", input_path="input/img-jpg")
+        job.add_action(FocusStack("stack-depthmap", PyramidTilesStack(max_threads=1),
+                                  output_path="output/img-jpg-stack", prefix='pyr_tiles_'))
+        job.run()
+    except Exception:
+        assert False
 
-def test_jpg_auto():
+def test_jpg_auto_1():
     try:
         job = StackJob("job", "examples", input_path="input/img-jpg")
         job.add_action(FocusStack("stack-depthmap", PyramidAutoStack(),
+                                  output_path="output/img-jpg-stack", prefix='pyr_tiles_'))
+        job.run()
+    except Exception:
+        assert False
+
+def test_jpg_auto_2():
+    try:
+        job = StackJob("job", "examples", input_path="input/img-jpg")
+        job.add_action(FocusStack("stack-depthmap", PyramidAutoStack(memory_limit=0.2),
                                   output_path="output/img-jpg-stack", prefix='pyr_tiles_'))
         job.run()
     except Exception:
@@ -70,6 +87,8 @@ if __name__ == '__main__':
     test_jpg()
     test_tif()
     test_jpg_dm()
-    test_jpg_pt()
-    test_jpg_auto()
+    test_jpg_pt_1()
+    test_jpg_pt_2()
+    test_jpg_auto_1()
+    test_jpg_auto_2()
     test_bunches()
