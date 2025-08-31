@@ -8,7 +8,8 @@ from scipy.interpolate import interp1d
 from .. config.constants import constants
 from .. core.exceptions import InvalidOptionError
 from .. core.colors import color_str
-from .utils import read_img, save_plot, img_subsample
+from .utils import (read_img, save_plot, img_subsample, bgr_to_hsv, bgr_to_hls,
+                    hsv_to_bgr, hls_to_bgr, bgr_to_lab, lab_to_bgr)
 from .stack_framework import SubAction
 
 
@@ -270,9 +271,6 @@ class CorrectionMap(CorrectionMapBase):
 
 
 class GammaMap(CorrectionMap):
-    def __init__(self, dtype, ref_hist, intensity_interval=None):
-        super().__init__(dtype, ref_hist, intensity_interval)
-
     def correction(self, hist):
         return [bisect(lambda x: self.mid_val(self.lut(x), h) - r, 0.1, 5)
                 for h, r in zip(hist, self.reference)]
@@ -285,9 +283,6 @@ class GammaMap(CorrectionMap):
 
 
 class LinearMap(CorrectionMap):
-    def __init__(self, dtype, ref_hist, intensity_interval=None):
-        super().__init__(dtype, ref_hist, intensity_interval)
-
     def lut(self, correction, _reference=None):
         ar = np.arange(0, self.num_pixel_values)
         return np.clip(ar * correction, 0, self.max_pixel_value).astype(self.dtype)
@@ -500,15 +495,10 @@ class SVCorrection(Ch2Correction):
         )
 
     def preprocess(self, image):
-        if image.dtype == np.uint16:
-            self.process.sub_message_r(
-                color_str(': HSV color space not supported for 16 bit images',
-                          constants.LOG_COLOR_ALERT))
-            raise NotImplementedError("HSV color space not supported for 16 bit images")
-        return cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
+        return bgr_to_hsv(image)
 
     def postprocess(self, image):
-        return cv2.cvtColor(image, cv2.COLOR_HSV2BGR)
+        return hsv_to_bgr(image)
 
 
 class LSCorrection(Ch2Correction):
@@ -530,15 +520,10 @@ class LSCorrection(Ch2Correction):
         )
 
     def preprocess(self, image):
-        if image.dtype == np.uint16:
-            self.process.sub_message_r(
-                color_str(': HLS color space not supported for 16 bit images',
-                          constants.LOG_COLOR_ALERT))
-            raise NotImplementedError("HLS color space not supported for 16 bit image_sel")
-        return cv2.cvtColor(image, cv2.COLOR_BGR2HLS)
+        return bgr_to_hls(image)
 
     def postprocess(self, image):
-        return cv2.cvtColor(image, cv2.COLOR_HLS2BGR)
+        return hls_to_bgr(image)
 
 
 class LABCorrection(Ch1Correction):
@@ -560,14 +545,10 @@ class LABCorrection(Ch1Correction):
         )
 
     def preprocess(self, image):
-        if image.dtype == np.uint16:
-            self.process.sub_message_r(
-                color_str(': HLS color space not supported for 16 bit images',
-                          constants.LOG_COLOR_ALERT))
-        return cv2.cvtColor(image, cv2.COLOR_BGR2LAB)
+        return bgr_to_lab(image)
 
     def postprocess(self, image):
-        return cv2.cvtColor(image, cv2.COLOR_LAB2BGR)
+        return lab_to_bgr(image)
 
 
 class BalanceFrames(SubAction):
