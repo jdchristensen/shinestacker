@@ -24,7 +24,7 @@ def vignetted_images():
 @pytest.fixture
 def vignetting_instance():
     process_mock = MagicMock()
-    process_mock.counts = n_images
+    process_mock.total_action_counts = n_images
     process_mock.plot_path = "plots"
     process_mock.working_path = "."
     process_mock.name = "test_vignetting"

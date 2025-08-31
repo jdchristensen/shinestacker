@@ -211,13 +211,13 @@ class FramesRefActions(ActionList, FrameDirectory):
         pass
 
     def run_step(self):
-        if self.count == 0:
+        if self.current_action_count == 0:
             self.current_idx = self.ref_idx if self.step_process else 0
             self.current_ref_idx = self.ref_idx
             self.current_idx_step = +1
         ll = len(self.filenames)
         self.print_message_r(
-            color_str(f"step {self.count + 1}/{ll}: process file: "
+            color_str(f"step {self.current_action_count + 1}/{ll}: process file: "
                       f"{self.filenames[self.current_idx]}, "
                       f"reference: {self.filenames[self.current_ref_idx]}",
                       constants.LOG_COLOR_LEVEL_2))

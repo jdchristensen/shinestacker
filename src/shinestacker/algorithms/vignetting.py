@@ -187,7 +187,7 @@ class Vignetting(SubAction):
 
     def begin(self, process):
         self.process = process
-        self.corrections = [np.full(self.process.counts, None, dtype=float)
+        self.corrections = [np.full(self.process.total_action_counts, None, dtype=float)
                             for p in self.percentiles]
 
     def end(self):

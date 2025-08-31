@@ -593,7 +593,7 @@ class BalanceFrames(SubAction):
         self.correction.process = process
         img = read_img(self.process.input_full_path + "/" + self.process.filenames[process.ref_idx])
         self.shape = img.shape
-        self.correction.begin(img, self.process.counts, process.ref_idx)
+        self.correction.begin(img, self.process.total_action_counts, process.ref_idx)
 
     def end(self):
         self.process.print_message(' ' * 60)

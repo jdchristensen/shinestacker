@@ -435,7 +435,7 @@ class AlignFrames(SubAction):
 
     def begin(self, process):
         self.process = process
-        self.n_matches = np.zeros(process.counts)
+        self.n_matches = np.zeros(process.total_action_counts)
 
     def end(self):
         if self.plot_summary:

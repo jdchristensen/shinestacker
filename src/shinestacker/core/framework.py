@@ -24,7 +24,7 @@ class TqdmCallbacks:
 
     def __init__(self):
         self.tbar = None
-        self.counts = -1
+        self.total_action_counts = -1
 
     @classmethod
     def instance(cls):
@@ -33,8 +33,8 @@ class TqdmCallbacks:
         return cls._instance
 
     def step_counts(self, name, counts):
-        self.counts = counts
-        self.tbar = make_tqdm_bar(name, self.counts)
+        self.total_action_counts = counts
+        self.tbar = make_tqdm_bar(name, self.total_action_counts)
 
     def begin_steps(self, name):
         pass
@@ -191,12 +191,12 @@ class Job(JobBase):
 class ActionList(JobBase):
     def __init__(self, name, enabled=True, **kwargs):
         JobBase.__init__(self, name, enabled, **kwargs)
-        self.counts = None
-        self.count = None
+        self.total_action_counts = None
+        self.current_action_count = None
 
     def set_counts(self, counts):
-        self.counts = counts
-        self.callback('step_counts', self.id, self.name, self.counts)
+        self.total_action_counts = counts
+        self.callback('step_counts', self.id, self.name, self.total_action_counts)
 
     def begin(self):
         self.callback('begin_steps', self.id, self.name)
@@ -205,17 +205,17 @@ class ActionList(JobBase):
         self.callback('end_steps', self.id, self.name)
 
     def __iter__(self):
-        self.count = 0
+        self.current_action_count = 0
         return self
 
     def run_step(self):
         pass
 
     def __next__(self):
-        if self.count < self.counts:
+        if self.current_action_count < self.total_action_counts:
             self.run_step()
-            x = self.count
-            self.count += 1
+            x = self.current_action_count
+            self.current_action_count += 1
             return x
         raise StopIteration
 
@@ -223,7 +223,7 @@ class ActionList(JobBase):
         self.print_message(color_str('begin run', constants.LOG_COLOR_LEVEL_2), end='\n')
         self.begin()
         for _ in iter(self):
-            self.callback('after_step', self.id, self.name, self.count)
+            self.callback('after_step', self.id, self.name, self.current_action_count)
             if self.callback('check_running', self.id, self.name) is False:
                 raise RunStopException(self.name)
         self.end()
