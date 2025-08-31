@@ -22,8 +22,8 @@ class Action2(JobBase):
 
 
 class MyActionList(ActionList):
-    def __init__(self, name):
-        ActionList.__init__(self, name)
+    def __init__(self, name, enabled=True):
+        ActionList.__init__(self, name, enabled=enabled)
 
     def begin(self):
         super().begin()
@@ -40,6 +40,8 @@ def test_run():
         job.add_action(Action1())
         job.add_action(Action2())
         job.add_action(MyActionList("my actions"))
+        a = MyActionList("my actions", enabled=False)
+        job.add_action(a)
         job.run()
     except Exception:
         assert False
