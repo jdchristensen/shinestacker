@@ -5,7 +5,7 @@ job.add_action(Actions("balance", [BalanceFrames(*options)])
 ```
   
 Arguments for the constructor of ```BalanceFrames``` are:
-*```channel``` (optional, default: BALANCE_LUMI): channels to be balanced. Possible values are: 
+* ```channel``` (optional, default: BALANCE_LUMI): channels to be balanced. Possible values are: 
    - ```BALANCE_LUMI``` (default): balance equally for R, G and B channels, should be reasonably fine for most of the cases;
    - ```BALANCE_RGB```: balance luminosity separately for R, G and B channels, it may be needed if some but not all of the images have a undesired color dominance;
    - ```BALANCE_HSV```: balance saturation and luminosity value in the HSV (Hue, Saturation, brightness Value) color space, it may be needed in cases of extreme luminosity variation that affects saturation (8 bit only);
