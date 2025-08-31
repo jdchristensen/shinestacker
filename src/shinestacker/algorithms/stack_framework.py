@@ -33,8 +33,7 @@ class FramePaths:
         self.working_path = working_path
         self.plot_path = plot_path
         self.input_path = input_path
-        self.output_path = output_path
-        self.output_dir = None
+        self.output_path = self.name if output_path == '' else output_path
         self.resample = resample
         self.reverse_order = reverse_order
         self.scratch_output_dir = scratch_output_dir
@@ -42,6 +41,12 @@ class FramePaths:
         self.enabled = None
         self.filenames = None
         self.base_message = ''
+        self._output_full_path = None
+
+    def output_full_path(self):
+        if self._output_full_path is None:
+            self._output_full_path = os.path.join(self.working_path, self.output_path)
+        return self._output_full_path
 
     def folder_filelist(self):
         assert False, "this method should be overwritten"
@@ -60,20 +65,16 @@ class FramePaths:
         if self.working_path == '':
             self.working_path = job.working_path
         check_path_exists(self.working_path)
-        if self.output_path == '':
-            self.output_path = self.name
-        self.output_dir = self.working_path + \
-            ('' if self.working_path[-1] == '/' else '/') + \
-            self.output_path
-        if not os.path.exists(self.output_dir):
-            os.makedirs(self.output_dir)
+        output_dir = self.output_full_path()
+        if not os.path.exists(output_dir):
+            os.makedirs(output_dir)
         else:
-            list_dir = os.listdir(self.output_dir)
+            list_dir = os.listdir(output_dir)
             if len(list_dir) > 0:
                 if self.scratch_output_dir:
                     if self.enabled:
                         for filename in list_dir:
-                            file_path = os.path.join(self.output_dir, filename)
+                            file_path = os.path.join(output_dir, filename)
                             if os.path.isfile(file_path):
                                 os.remove(file_path)
                         self.print_message(
@@ -260,8 +261,9 @@ class CombinedActions(FramesRefActions):
 
     def img_ref(self, idx):
         filename = self.filenames[idx]
-        img = read_img((self.output_dir
-                        if self.step_process else self.input_full_path) + f"/{filename}")
+        input_path = os.path.join(self.output_full_path()
+                                  if self.step_process else self.input_full_path, filename)
+        img = read_img(input_path)
         if img is None:
             raise RuntimeError(f"Invalid file: {self.input_full_path}/{filename}")
         self.dtype = img.dtype
@@ -297,7 +299,8 @@ class CombinedActions(FramesRefActions):
                         level=logging.WARNING)
         if img is not None:
             self.sub_message_r(color_str(': write output image', constants.LOG_COLOR_LEVEL_3))
-            write_img(self.output_dir + "/" + filename, img)
+            output_path = os.path.join(self.output_full_path(), filename)
+            write_img(output_path, img)
             return img
         self.print_message(color_str(
             "no output file resulted from processing input file: "

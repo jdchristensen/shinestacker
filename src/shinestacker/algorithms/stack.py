@@ -27,8 +27,9 @@ class FocusStackBase(JobBase, FrameDirectory):
         self.sub_message_r(color_str(': reading input files', constants.LOG_COLOR_LEVEL_3))
         stacked_img = self.stack_algo.focus_stack()
         in_filename = filenames[0].split(".")
-        out_filename = f"{self.output_dir}/{self.prefix}{in_filename[0]}." + \
-            '.'.join(in_filename[1:])
+        out_filename = os.path.join(
+            self.output_full_path(),
+            f"{self.prefix}{in_filename[0]}." + '.'.join(in_filename[1:]))
         if self.denoise_amount > 0:
             self.sub_message_r(': denoise image')
             stacked_img = denoise(stacked_img, self.denoise_amount, self.denoise_amount)
