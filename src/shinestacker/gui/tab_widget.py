@@ -12,10 +12,10 @@ class TabWidgetWithPlaceholder(QWidget):
 
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.layout = QVBoxLayout(self)
-        self.layout.setContentsMargins(0, 0, 0, 0)
+        self.main_layout = QVBoxLayout(self)
+        self.main_layout.setContentsMargins(0, 0, 0, 0)
         self.stacked_widget = QStackedWidget()
-        self.layout.addWidget(self.stacked_widget)
+        self.main_layout.addWidget(self.stacked_widget)
         self.tab_widget = QTabWidget()
         self.stacked_widget.addWidget(self.tab_widget)
         self.placeholder = QLabel()

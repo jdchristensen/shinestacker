@@ -208,7 +208,7 @@ class FramesRefActions(ActionList, FrameDirectory):
         ActionList.end(self)
 
     def run_frame(self, _idx, _ref_idx):
-        pass
+        return None
 
     def run_step(self):
         if self.current_action_count == 0:
@@ -222,9 +222,9 @@ class FramesRefActions(ActionList, FrameDirectory):
                       f"reference: {self.filenames[self.current_ref_idx]}",
                       constants.LOG_COLOR_LEVEL_2))
         self.base_message = color_str(self.name, constants.LOG_COLOR_LEVEL_1, "bold")
-        self.run_frame(self.current_idx, self.current_ref_idx)
+        success = self.run_frame(self.current_idx, self.current_ref_idx) is not None
         if self.current_idx < ll:
-            if self.step_process:
+            if self.step_process and success:
                 self.current_ref_idx = self.current_idx
             self.current_idx += self.current_idx_step
         if self.current_idx == ll:
@@ -284,7 +284,7 @@ class CombinedActions(FramesRefActions):
         for a in self._actions:
             if not a.enabled:
                 self.get_logger().warning(color_str(f"{self.base_message}: sub-action disabled",
-                                                    'red'))
+                                                    constants.LOG_COLOR_ALERT))
             else:
                 if self.callback('check_running', self.id, self.name) is False:
                     raise RunStopException(self.name)
@@ -295,14 +295,15 @@ class CombinedActions(FramesRefActions):
                         color_str(": null input received, action skipped",
                                   constants.LOG_COLOR_ALERT),
                         level=logging.WARNING)
-        self.sub_message_r(color_str(': write output image', constants.LOG_COLOR_LEVEL_3))
         if img is not None:
+            self.sub_message_r(color_str(': write output image', constants.LOG_COLOR_LEVEL_3))
             write_img(self.output_dir + "/" + filename, img)
-        else:
-            self.print_message(color_str(
-                "no output file resulted from processing input file: "
-                f"{self.input_full_path}/{filename}",
-                constants.LOG_COLOR_ALERT), level=logging.WARNING)
+            return img
+        self.print_message(color_str(
+            "no output file resulted from processing input file: "
+            f"{self.input_full_path}/{filename}",
+            constants.LOG_COLOR_ALERT), level=logging.WARNING)
+        return None
 
     def end(self):
         for a in self._actions:

@@ -67,13 +67,13 @@ class GuiImageView(QWidget):
         super().__init__(parent)
         self.file_path = file_path
         self.setFixedWidth(gui_constants.GUI_IMG_WIDTH)
-        self.layout = QVBoxLayout()
-        self.layout.setContentsMargins(0, 0, 0, 0)
-        self.layout.setSpacing(0)
+        self.main_layout = QVBoxLayout()
+        self.main_layout.setContentsMargins(0, 0, 0, 0)
+        self.main_layout.setSpacing(0)
         self.image_label = QLabel()
         self.image_label.setAlignment(Qt.AlignCenter)
-        self.layout.addWidget(self.image_label)
-        self.setLayout(self.layout)
+        self.main_layout.addWidget(self.image_label)
+        self.setLayout(self.main_layout)
         pixmap = QPixmap(file_path)
         if pixmap:
             scaled_pixmap = pixmap.scaledToWidth(
@@ -105,13 +105,13 @@ class GuiOpenApp(QWidget):
         self.file_path = file_path
         self.app = app
         self.setFixedWidth(gui_constants.GUI_IMG_WIDTH)
-        self.layout = QVBoxLayout()
-        self.layout.setContentsMargins(0, 0, 0, 0)
-        self.layout.setSpacing(0)
+        self.main_layout = QVBoxLayout()
+        self.main_layout.setContentsMargins(0, 0, 0, 0)
+        self.main_layout.setSpacing(0)
         self.image_label = QLabel()
         self.image_label.setAlignment(Qt.AlignCenter)
-        self.layout.addWidget(self.image_label)
-        self.setLayout(self.layout)
+        self.main_layout.addWidget(self.image_label)
+        self.setLayout(self.main_layout)
         pixmap = QPixmap(file_path)
         if pixmap:
             scaled_pixmap = pixmap.scaledToWidth(

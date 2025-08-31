@@ -2,6 +2,13 @@
 
 This page reports the main releases only and the main changes therein.
 
+## [v-.-..] - 2025-08-31
+**Unreleased code**
+* alignment is more tolerant in case of failures: frames are skipped and run is not stopped
+* code cleanup
+
+---
+
 ## [v1.2.0] - 2025-08-31
 **Parallel processing and more improvements**
 

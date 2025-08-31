@@ -5,7 +5,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import cv2
 from .. config.constants import constants
-from .. core.exceptions import AlignmentError, InvalidOptionError
+from .. core.exceptions import InvalidOptionError
 from .. core.colors import color_str
 from .utils import img_8bit, img_bw_8bit, save_plot, img_subsample
 from .stack_framework import SubAction
@@ -427,10 +427,10 @@ class AlignFrames(SubAction):
         )
         self.n_matches[idx] = n_good_matches
         if n_good_matches < self.min_matches:
-            self.process.sub_message(f": image not aligned, too few matches found: "
-                                     f"{n_good_matches}", level=logging.CRITICAL)
-            raise AlignmentError(idx, f"Image not aligned, too few matches found: "
-                                 f"{n_good_matches} < {self.min_matches}")
+            self.process.sub_message(color_str(f": image not aligned, too few matches found: "
+                                     f"{n_good_matches}", constants.LOG_COLOR_WARNING),
+                                     level=logging.WARNING)
+            return None
         return img
 
     def begin(self, process):

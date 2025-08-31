@@ -183,7 +183,6 @@ class NewProjectDialog(BaseFormDialog):
             n_bytes = 1 if img.dtype == np.uint8 else 2
             n_bits = 8 if img.dtype == np.uint8 else 16
             n_gbytes = float(n_bytes * height * width * self.n_image_files) / constants.ONE_GIGA
-            print("GBytes: ", n_gbytes)
             if n_gbytes > 1 and not self.bunch_stack.isChecked():
                 msg = QMessageBox()
                 msg.setStyleSheet("""
