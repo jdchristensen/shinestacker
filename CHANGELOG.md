@@ -3,19 +3,19 @@
 This page reports the main releases only and the main changes therein.
 
 ## [v1.2.0] - 2025-08-31
-**Improved pyramid algorithm**
+**Parallel processing and more improvements**
 
 * Implemented parallel processing for pyramid stacking algorithm
-* optimized Pyramid algorithm: now a single algorithm selects automatically the best strategy ensuring that all the processing stays approximately within a given memory budget; This avoids memory issues in case many pictures are selected. Explicit configuration is also possible for specific needs.
-* Implemented automatic subsample option for alignment, balancing and vignetting, now default.
+* optimized pyramid algorithm: selects automatically the best within the given memory budget to avoid memory issues in case many pictures are selected. Explicit configuration is also possible for specific needs.
+* Implemented automatic subsample option for alignment, balancing and vignetting, now default
 * HLS and HSV corrections now supported for 16 bit images
 * Added luminosity correction in the LAB color space
 * Alignment module skips frames if transformation parameters are out of a reasonable ranges
-* Multilayer modules sends a warning if the estimated file size is > 1GB
-* "Run all jobs" action is enabled only if more than one job are present.
-* Updated default module names for "new project" dialog.
-* Code refactoring.
-* Some GUI fixes.
+* Multilayer modules sends a warning if the estimated output file size is > 1GB
+* "Run all jobs" action is enabled only if more than one job are present
+* Updated default module names in project genereated by "new project" dialog
+* Code refactoring
+* Some GUI fixes
 
 ---
 
