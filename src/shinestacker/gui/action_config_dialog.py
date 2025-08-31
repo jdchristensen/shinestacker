@@ -678,7 +678,7 @@ class AlignFramesConfigurator(SubsampleActionConfigurator):
 
 class BalanceFramesConfigurator(SubsampleActionConfigurator):
     CORRECTION_MAP_OPTIONS = ['Linear', 'Gamma', 'Match histograms']
-    CHANNEL_OPTIONS = ['Luminosity', 'RGB', 'HSV', 'HLS']
+    CHANNEL_OPTIONS = ['Luminosity', 'RGB', 'HSV', 'HLS', 'LAB']
 
     def create_form(self, layout, action):
         super().create_form(layout, action)

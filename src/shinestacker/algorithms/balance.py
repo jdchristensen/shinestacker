@@ -73,7 +73,7 @@ class LumiHistogrammer(BaseHistogrammer):
         self.histo_plot(axs[0], hist, "pixel luminosity", 'black')
         for (chan, color) in zip(chans, self.colors):
             hist_col = calc_hist_func(chan)
-            self.histo_plot(axs[1], hist_col, "r,g,b luminosity", color, alpha=0.5)
+            self.histo_plot(axs[1], hist_col, "R, G, B intensity", color, alpha=0.5)
         plt.xlim(0, self.max_pixel_value)
         self.save_plot(idx)
 
@@ -118,6 +118,37 @@ class RGBHistogrammer(BaseHistogrammer):
         plt.plot(x, y[:, 0], color='r', label='R correction')
         plt.plot(x, y[:, 1], color='g', label='G correction')
         plt.plot(x, y[:, 2], color='b', label='B correction')
+        plt.xlabel('frame')
+        plt.ylabel('correction')
+        plt.legend()
+        plt.xlim(x[0], x[-1])
+        plt.ylim(0, max_val * 1.1)
+        self.save_summary_plot()
+
+
+class Ch1Histogrammer(BaseHistogrammer):
+    def __init__(self, labels, colors, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.labels = labels
+        self.colors = colors
+
+    def generate_frame_plot(self, idx, hists):
+        _fig, axs = plt.subplots(1, 3, figsize=self.figsize, sharey=True)
+        for c in range(3):
+            self.histo_plot(axs[c], hists[c], self.labels[c], self.colors[c])
+        plt.xlim(0, self.max_pixel_value)
+        self.save_plot(idx)
+
+    def generate_summary_plot(self, ref_idx):
+        plt.figure(figsize=self.figsize)
+        x = np.arange(0, len(self.corrections), dtype=int)
+        y = self.corrections
+        max_val = np.max(y) if np.any(y) else 1.0
+        plt.plot([ref_idx, ref_idx], [0, max_val], color='cornflowerblue',
+                 linestyle='--', label='reference frame')
+        plt.plot([x[0], x[-1]], [1, 1], color='lightgray', linestyle='--',
+                 label='no correction')
+        plt.plot(x, y[:, 0], color=self.colors[0], label=self.labels[0] + ' correction')
         plt.xlabel('frame')
         plt.ylabel('correction')
         plt.legend()
@@ -184,13 +215,11 @@ class CorrectionMapBase:
         chans = cv2.split(image)
         if self.channels == 2:
             ch_out = [chans[0]] + [self.apply_lut(
-                correction[c - 1],
-                self.reference[c - 1], chans[c]
+                correction[c - 1], self.reference[c - 1], chans[c]
             ) for c in range(1, 3)]
         elif self.channels == 3:
             ch_out = [self.apply_lut(
-                correction[c],
-                self.reference[c], chans[c]
+                correction[c], self.reference[c], chans[c]
             ) for c in range(3)]
         return cv2.merge(ch_out)
 
@@ -200,7 +229,7 @@ class CorrectionMapBase:
 
 class MatchHist(CorrectionMapBase):
     def __init__(self, dtype, ref_hist, intensity_interval=None):
-        CorrectionMapBase.__init__(self, dtype, ref_hist, intensity_interval)
+        super().__init__(dtype, ref_hist, intensity_interval)
         self.reference = self.cumsum(ref_hist)
         self.reference_mean = [r.mean() for r in self.reference]
         self.values = [*range(self.num_pixel_values)]
@@ -233,7 +262,7 @@ class MatchHist(CorrectionMapBase):
 
 class CorrectionMap(CorrectionMapBase):
     def __init__(self, dtype, ref_hist, intensity_interval=None):
-        CorrectionMapBase.__init__(self, dtype, ref_hist, intensity_interval)
+        super().__init__(dtype, ref_hist, intensity_interval)
         self.reference = [self.mid_val(self.id_lut, h) for h in ref_hist]
 
     def mid_val(self, lut, h):
@@ -242,7 +271,7 @@ class CorrectionMap(CorrectionMapBase):
 
 class GammaMap(CorrectionMap):
     def __init__(self, dtype, ref_hist, intensity_interval=None):
-        CorrectionMap.__init__(self, dtype, ref_hist, intensity_interval)
+        super().__init__(dtype, ref_hist, intensity_interval)
 
     def correction(self, hist):
         return [bisect(lambda x: self.mid_val(self.lut(x), h) - r, 0.1, 5)
@@ -257,7 +286,7 @@ class GammaMap(CorrectionMap):
 
 class LinearMap(CorrectionMap):
     def __init__(self, dtype, ref_hist, intensity_interval=None):
-        CorrectionMap.__init__(self, dtype, ref_hist, intensity_interval)
+        super().__init__(dtype, ref_hist, intensity_interval)
 
     def lut(self, correction, _reference=None):
         ar = np.arange(0, self.num_pixel_values)
@@ -346,9 +375,9 @@ class Correction:
         pass
 
     def apply_correction(self, idx, image):
-        image = self.preprocess(image)
         if idx == self.process.ref_idx:
             return image
+        image = self.preprocess(image)
         correction, image = self.balance(image, idx)
         image = self.postprocess(image)
         self.histogrammer.add_correction(idx, self.corr_map_obj.correction_size(correction))
@@ -363,7 +392,7 @@ class Correction:
 
 class LumiCorrection(Correction):
     def __init__(self, **kwargs):
-        Correction.__init__(self, 1, **kwargs)
+        super().__init__(1, **kwargs)
 
     def _create_histogrammer(self):
         self.histogrammer = LumiHistogrammer(
@@ -389,7 +418,7 @@ class LumiCorrection(Correction):
 
 class RGBCorrection(Correction):
     def __init__(self, **kwargs):
-        Correction.__init__(self, 3, **kwargs)
+        super().__init__(3, **kwargs)
 
     def _create_histogrammer(self):
         self.histogrammer = RGBHistogrammer(
@@ -412,9 +441,29 @@ class RGBCorrection(Correction):
             self.histogrammer.generate_summary_plot(ref_idx)
 
 
+class Ch1Correction(Correction):
+    def __init__(self, **kwargs):
+        super().__init__(1, **kwargs)
+        self.labels = None
+        self.colors = None
+
+    def preprocess(self, image):
+        raise NotImplementedError('abstract method')
+
+    def get_hist(self, image, idx):
+        hist = [self.calc_hist_1ch(chan) for chan in cv2.split(image)]
+        if self.histogrammer.plot_histograms:
+            self.histogrammer.generate_frame_plot(idx, hist)
+        return [hist[0]]
+
+    def end(self, ref_idx):
+        if self.histogrammer.plot_summary:
+            self.histogrammer.generate_summary_plot(ref_idx)
+
+
 class Ch2Correction(Correction):
     def __init__(self, **kwargs):
-        Correction.__init__(self, 2, **kwargs)
+        super().__init__(2, **kwargs)
         self.labels = None
         self.colors = None
 
@@ -434,7 +483,7 @@ class Ch2Correction(Correction):
 
 class SVCorrection(Ch2Correction):
     def __init__(self, **kwargs):
-        Ch2Correction.__init__(self, **kwargs)
+        super().__init__(**kwargs)
         self.labels = ("H", "S", "V")
         self.colors = ("hotpink", "orange", "navy")
 
@@ -464,7 +513,7 @@ class SVCorrection(Ch2Correction):
 
 class LSCorrection(Ch2Correction):
     def __init__(self, **kwargs):
-        Ch2Correction.__init__(self, **kwargs)
+        super().__init__(**kwargs)
         self.labels = ("H", "L", "S")
         self.colors = ("hotpink", "navy", "orange")
 
@@ -492,6 +541,35 @@ class LSCorrection(Ch2Correction):
         return cv2.cvtColor(image, cv2.COLOR_HLS2BGR)
 
 
+class LABCorrection(Ch1Correction):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.labels = ("L", "A", "B")
+        self.colors = ("black", "yellow", "red")
+
+    def _create_histogrammer(self):
+        self.histogrammer = Ch1Histogrammer(
+            dtype=self.dtype,
+            num_pixel_values=self.num_pixel_values,
+            max_pixel_value=self.max_pixel_value,
+            channels=2,
+            plot_histograms=self.plot_histograms,
+            plot_summary=self.plot_summary,
+            labels=self.labels,
+            colors=self.colors
+        )
+
+    def preprocess(self, image):
+        if image.dtype == np.uint16:
+            self.process.sub_message_r(
+                color_str(': HLS color space not supported for 16 bit images',
+                          constants.LOG_COLOR_ALERT))
+        return cv2.cvtColor(image, cv2.COLOR_BGR2LAB)
+
+    def postprocess(self, image):
+        return cv2.cvtColor(image, cv2.COLOR_LAB2BGR)
+
+
 class BalanceFrames(SubAction):
     def __init__(self, enabled=True, **kwargs):
         super().__init__(enabled=enabled)
@@ -515,7 +593,8 @@ class BalanceFrames(SubAction):
             constants.BALANCE_LUMI: LumiCorrection,
             constants.BALANCE_RGB: RGBCorrection,
             constants.BALANCE_HSV: SVCorrection,
-            constants.BALANCE_HLS: LSCorrection
+            constants.BALANCE_HLS: LSCorrection,
+            constants.BALANCE_LAB: LABCorrection,
         }.get(self.channel, None)
         if correction_class is None:
             raise InvalidOptionError("channel", self.channel)

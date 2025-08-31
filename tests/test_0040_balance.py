@@ -73,7 +73,20 @@ def test_jpg_hls():
         job = StackJob("job", "examples", input_path="input/img-jpg", callbacks='tqdm')
         job.add_action(CombinedActions("balance",
                                        [BalanceFrames(channel=constants.BALANCE_HLS,
-                                                      corr_map=constants.BALANCE_GAMMA,
+                                                      corr_map=constants.BALANCE_LINEAR,
+                                                      plot_histograms=True, plot_summary=True)],
+                                       output_path="output/img-jpg-balance-ls"))
+        job.run()
+    except Exception:
+        assert False
+
+
+def test_jpg_lab():
+    try:
+        job = StackJob("job", "examples", input_path="input/img-jpg", callbacks='tqdm')
+        job.add_action(CombinedActions("balance",
+                                       [BalanceFrames(channel=constants.BALANCE_LAB,
+                                                      corr_map=constants.BALANCE_LINEAR,
                                                       plot_histograms=True, plot_summary=True)],
                                        output_path="output/img-jpg-balance-ls"))
         job.run()
@@ -88,3 +101,4 @@ if __name__ == '__main__':
     test_jpg_rgb()
     test_jpg_hsv()
     test_jpg_hls()
+    test_jpg_lab()
