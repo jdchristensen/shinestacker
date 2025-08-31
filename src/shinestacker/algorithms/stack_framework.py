@@ -193,9 +193,9 @@ class FramesRefActions(ActionList, FrameDirectory):
         ActionList.__init__(self, name, enabled)
         self.ref_idx = ref_idx
         self.step_process = step_process
-        self._idx = None
-        self._ref_idx = None
-        self._idx_step = None
+        self.current_idx = None
+        self.current_ref_idx = None
+        self.current_idx_step = None
 
     def begin(self):
         ActionList.begin(self)
@@ -212,24 +212,26 @@ class FramesRefActions(ActionList, FrameDirectory):
 
     def run_step(self):
         if self.count == 0:
-            self._idx = self.ref_idx if self.step_process else 0
-            self._ref_idx = self.ref_idx
-            self._idx_step = +1
+            self.current_idx = self.ref_idx if self.step_process else 0
+            self.current_ref_idx = self.ref_idx
+            self.current_idx_step = +1
         ll = len(self.filenames)
         self.print_message_r(
-            color_str(f"step {self.count + 1}/{ll}: process file: {self.filenames[self._idx]}, "
-                      f"reference: {self.filenames[self._ref_idx]}", constants.LOG_COLOR_LEVEL_2))
+            color_str(f"step {self.count + 1}/{ll}: process file: "
+                      f"{self.filenames[self.current_idx]}, "
+                      f"reference: {self.filenames[self.current_ref_idx]}",
+                      constants.LOG_COLOR_LEVEL_2))
         self.base_message = color_str(self.name, constants.LOG_COLOR_LEVEL_1, "bold")
-        self.run_frame(self._idx, self._ref_idx)
-        if self._idx < ll:
+        self.run_frame(self.current_idx, self.current_ref_idx)
+        if self.current_idx < ll:
             if self.step_process:
-                self._ref_idx = self._idx
-            self._idx += self._idx_step
-        if self._idx == ll:
-            self._idx = self.ref_idx - 1
+                self.current_ref_idx = self.current_idx
+            self.current_idx += self.current_idx_step
+        if self.current_idx == ll:
+            self.current_idx = self.ref_idx - 1
             if self.step_process:
-                self._ref_idx = self.ref_idx
-            self._idx_step = -1
+                self.current_ref_idx = self.ref_idx
+            self.current_idx_step = -1
 
 
 class SubAction:
