@@ -2,7 +2,7 @@
 
 This page reports the main releases only and the main changes therein.
 
-## [v-.-.-] - 2025-08-30
+## [v1.2.0] - 2025-08-31
 **Improved pyramid algorithm**
 
 * Implemented parallel processing for pyramid stacking algorithm
