@@ -511,44 +511,22 @@ class BalanceFrames(SubAction):
         if self.subsample == -1:
             self.subsample = (1 if self.corr_map == constants.BALANCE_MATCH_HIST
                               else constants.DEFAULT_BALANCE_SUBSAMPLE)
-        if self.channel == constants.BALANCE_LUMI:
-            self.correction = LumiCorrection(
-                mask_size=self.mask_size,
-                subsample=self.subsample,
-                fast_subsampling=self.fast_subsampling,
-                corr_map=self.corr_map,
-                plot_histograms=self.plot_histograms,
-                plot_summary=self.plot_summary
-            )
-        elif self.channel == constants.BALANCE_RGB:
-            self.correction = RGBCorrection(
-                mask_size=self.mask_size,
-                subsample=self.subsample,
-                fast_subsampling=self.fast_subsampling,
-                corr_map=self.corr_map,
-                plot_histograms=self.plot_histograms,
-                plot_summary=self.plot_summary
-            )
-        elif self.channel == constants.BALANCE_HSV:
-            self.correction = SVCorrection(
-                mask_size=self.mask_size,
-                subsample=self.subsample,
-                fast_subsampling=self.fast_subsampling,
-                corr_map=self.corr_map,
-                plot_histograms=self.plot_histograms,
-                plot_summary=self.plot_summary
-            )
-        elif self.channel == constants.BALANCE_HLS:
-            self.correction = LSCorrection(
-                mask_size=self.mask_size,
-                subsample=self.subsample,
-                fast_subsampling=self.fast_subsampling,
-                corr_map=self.corr_map,
-                plot_histograms=self.plot_histograms,
-                plot_summary=self.plot_summary
-            )
-        else:
+        correction_class = {
+            constants.BALANCE_LUMI: LumiCorrection,
+            constants.BALANCE_RGB: RGBCorrection,
+            constants.BALANCE_HSV: SVCorrection,
+            constants.BALANCE_HLS: LSCorrection
+        }.get(self.channel, None)
+        if correction_class is None:
             raise InvalidOptionError("channel", self.channel)
+        self.correction = correction_class(
+            mask_size=self.mask_size,
+            subsample=self.subsample,
+            fast_subsampling=self.fast_subsampling,
+            corr_map=self.corr_map,
+            plot_histograms=self.plot_histograms,
+            plot_summary=self.plot_summary
+        )
 
     def begin(self, process):
         self.process = process
