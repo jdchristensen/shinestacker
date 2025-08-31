@@ -13,7 +13,9 @@ class _Constants:
     NUM_UINT16 = 65536
     MAX_UINT8 = 255
     MAX_UINT16 = 65535
-    ONE_GIGA = 1024**3
+    ONE_KILO = 1024
+    ONE_MEGA = ONE_KILO**2
+    ONE_GIGA = ONE_KILO**3
 
     LOG_FONTS = ['Monaco', 'Menlo', ' Lucida Console', 'Courier New', 'Courier', 'monospace']
     LOG_FONTS_STR = ", ".join(LOG_FONTS)

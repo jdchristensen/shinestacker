@@ -12,6 +12,7 @@ This page reports the main releases only and the main changes therein.
 * Multilayer modules sends a warning if the estimated file size is > 1GB
 * "Run all jobs" action is enabled only if more than one job are present.
 * Updated default module names for "new project" dialog.
+* Code refactoring.
 * Some GUI fixes.
 
 ---
