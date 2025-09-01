@@ -426,7 +426,7 @@ class MainWindow(QMainWindow, LogManager):
         self.expert_options = self.menu_manager.expert_options_action.isChecked()
 
     def set_expert_options(self):
-        self.expert_options_action.setChecked(True)
+        self.menu_manager.expert_options_action.setChecked(True)
         self.expert_options = True
 
     def before_thread_begins(self):
