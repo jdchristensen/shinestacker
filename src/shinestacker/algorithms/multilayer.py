@@ -177,9 +177,9 @@ class MultiLayer(JobBase, FrameMultiDirectory):
             self.exif_path = self.working_path + "/" + self.exif_path
 
     def run_core(self):
-        if isinstance(self.input_full_path, str):
+        if isinstance(self.input_full_path(), str):
             paths = [self.input_path]
-        elif hasattr(self.input_full_path, "__len__"):
+        elif hasattr(self.input_full_path(), "__len__"):
             paths = self.input_path
         else:
             raise RuntimeError("input_path option must contain a path or an array of paths")

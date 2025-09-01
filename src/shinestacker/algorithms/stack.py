@@ -94,7 +94,7 @@ class FocusStackBunch(ActionList, FocusStackBase):
         self.print_message_r(
             color_str(f"fusing bunch: {self.current_action_count + 1}/{self.total_action_counts}",
                       constants.LOG_COLOR_LEVEL_2))
-        img_files = [os.path.join(self.input_full_path, name)
+        img_files = [os.path.join(self.input_full_path(), name)
                      for name in self._chunks[self.current_action_count - 1]]
         self.stack_algo.init(img_files)
         self.focus_stack(self._chunks[self.current_action_count - 1])
@@ -108,7 +108,7 @@ class FocusStack(FocusStackBase):
 
     def run_core(self):
         self.set_filelist()
-        img_files = sorted([os.path.join(self.input_full_path, name) for name in self.filenames])
+        img_files = sorted([os.path.join(self.input_full_path(), name) for name in self.filenames])
         self.stack_algo.init(img_files)
         self.callback('step_counts', self.id, self.name,
                       self.stack_algo.total_steps(len(self.filenames)))

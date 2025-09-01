@@ -591,7 +591,7 @@ class BalanceFrames(SubAction):
     def begin(self, process):
         self.process = process
         self.correction.process = process
-        img = read_img(self.process.input_full_path + "/" + self.process.filenames[process.ref_idx])
+        img = read_img(self.process.input_full_path() + "/" + self.process.filenames[process.ref_idx])
         self.shape = img.shape
         self.correction.begin(img, self.process.total_action_counts, process.ref_idx)
 

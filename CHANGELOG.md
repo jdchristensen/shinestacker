@@ -2,9 +2,10 @@
 
 This page reports the main releases only and the main changes therein.
 
-## [v-.-..] - 2025-08-31
+## [v-.-..] - 2025-09-01
 **Unreleased code**
 * alignment is more tolerant in case of failures: frames are skipped and run is not stopped
+* fixed -x (--expert) option
 * code cleanup
 
 ---
