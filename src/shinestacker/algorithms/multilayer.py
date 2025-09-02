@@ -172,7 +172,7 @@ class MultiLayer(JobBase, FramePaths):
     def init(self, job):
         FramePaths.init(self, job)
         if self.exif_path == '':
-            self.exif_path = job.paths[0]
+            self.exif_path = job.action_path(0)
         if self.exif_path != '':
             self.exif_path = self.working_path + "/" + self.exif_path
 

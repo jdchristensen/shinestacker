@@ -14,14 +14,23 @@ class StackJob(Job):
     def __init__(self, name, working_path, input_path='', **kwargs):
         check_path_exists(working_path)
         self.working_path = working_path
-        if input_path == '':
-            self.paths = []
-        else:
-            self.paths = [input_path]
+        self._action_paths = [] if input_path == '' else [input_path]
         Job.__init__(self, name, **kwargs)
 
     def init(self, a):
         a.init(self)
+
+    def action_paths(self):
+        return self._action_paths
+
+    def add_action_path(self, path):
+        self._action_paths.append(path)
+
+    def num_action_paths(self):
+        return len(self._action_paths)
+
+    def action_path(self, i):
+        return self._action_paths[i]
 
 
 class FramePaths:
@@ -138,10 +147,10 @@ class FramePaths:
             if not os.path.exists(self.plot_path):
                 os.makedirs(self.plot_path)
         if self.input_path in ['', []]:
-            if len(job.paths) == 0:
+            if job.num_action_paths() == 0:
                 raise RuntimeError(f"Job {job.name} does not have any configured path")
-            self.input_path = job.paths[-1]
-        job.paths.append(self.output_path)
+            self.input_path = job.action_path(-1)
+        job.add_action_path(self.output_path)
 
     def folder_list_str(self):
         if isinstance(self.input_full_path(), list):

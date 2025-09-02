@@ -1,8 +1,7 @@
 # pylint: disable=C0114, C0115, C0116, E0611, R0913, R0917, R0915, R0912
-# pylint: disable=E0606, W0718, R1702, W0102, W0221
+# pylint: disable=E0606, W0718, R1702, W0102, W0221, R0914
 import traceback
 from abc import ABC, abstractmethod
-from typing import Dict, Any
 import os.path
 from PySide6.QtWidgets import (QPushButton, QHBoxLayout, QFileDialog, QLabel, QComboBox,
                                QMessageBox, QSizePolicy, QLineEdit, QSpinBox,
@@ -145,7 +144,7 @@ class FieldBuilder:
             parent = parent.parent
         return ''
 
-    def update_params(self, params: Dict[str, Any]) -> bool:
+    def update_params(self, params):
         for tag, field in self.fields.items():
             if field['type'] == FIELD_TEXT:
                 params[tag] = field['widget'].text()

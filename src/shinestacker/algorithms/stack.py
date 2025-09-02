@@ -53,7 +53,7 @@ class FocusStackBase(JobBase, FramePaths):
     def init(self, job, working_path=''):
         FramePaths.init(self, job)
         if self.exif_path is None:
-            self.exif_path = job.paths[0]
+            self.exif_path = job.action_path(0)
         if self.exif_path != '':
             self.exif_path = working_path + "/" + self.exif_path
 
