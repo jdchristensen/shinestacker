@@ -12,7 +12,7 @@ from .base_form_dialog import create_form_layout
 from . action_config import (
     FieldBuilder, ActionConfigurator,
     FIELD_TEXT, FIELD_ABS_PATH, FIELD_REL_PATH, FIELD_FLOAT,
-    FIELD_INT, FIELD_INT_TUPLE, FIELD_BOOL, FIELD_COMBO
+    FIELD_INT, FIELD_INT_TUPLE, FIELD_BOOL, FIELD_COMBO, FIELD_REF_IDX
 )
 
 
@@ -431,8 +431,8 @@ class CombinedActionsConfigurator(DefaultActionConfigurator):
                 'resample', FIELD_INT, 'Resample frame stack', required=False,
                 default=1, min_val=1, max_val=100)
             self.add_field(
-                'reference_index', FIELD_INT, 'Reference frame index', required=False,
-                default=0, min_val=-1, max_val=1000)
+                'reference_index', FIELD_REF_IDX, 'Reference frame', required=False,
+                default=0)
             self.add_field(
                 'step_process', FIELD_BOOL, 'Step process', required=False,
                 default=True)

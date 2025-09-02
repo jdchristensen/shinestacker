@@ -16,11 +16,15 @@ FIELD_ABS_PATH = 'abs_path'
 FIELD_REL_PATH = 'rel_path'
 FIELD_FLOAT = 'float'
 FIELD_INT = 'int'
+FIELD_REF_IDX = 'ref_idx'
 FIELD_INT_TUPLE = 'int_tuple'
 FIELD_BOOL = 'bool'
 FIELD_COMBO = 'combo'
 FIELD_TYPES = [FIELD_TEXT, FIELD_ABS_PATH, FIELD_REL_PATH, FIELD_FLOAT,
                FIELD_INT, FIELD_INT_TUPLE, FIELD_BOOL, FIELD_COMBO]
+
+FIELD_REF_IDX_OPTIONS = ['Median frame', 'First frame', 'Last frame', 'Specify index']
+FIELD_REF_IDX_MAX = 1000
 
 
 class ActionConfigurator(ABC):
@@ -56,6 +60,8 @@ class FieldBuilder:
             widget = self.create_float_field(tag, **kwargs)
         elif field_type == FIELD_INT:
             widget = self.create_int_field(tag, **kwargs)
+        elif field_type == FIELD_REF_IDX:
+            widget = self.create_ref_idx_field(tag, **kwargs)
         elif field_type == FIELD_INT_TUPLE:
             widget = self.create_int_tuple_field(tag, **kwargs)
         elif field_type == FIELD_BOOL:
@@ -74,6 +80,8 @@ class FieldBuilder:
             elif field_type == FIELD_FLOAT:
                 default_value = kwargs.get('default', 0.0)
             elif field_type == FIELD_INT:
+                default_value = kwargs.get('default', 0)
+            elif field_type == FIELD_REF_IDX:
                 default_value = kwargs.get('default', 0)
             elif field_type == FIELD_INT_TUPLE:
                 default_value = kwargs.get('default', [0] * kwargs.get('size', 1))
@@ -112,6 +120,9 @@ class FieldBuilder:
                     widget.setChecked(default)
                 elif field['type'] == FIELD_INT:
                     widget.setValue(default)
+                elif field['type'] == FIELD_REF_IDX:
+                    widget.layout().itemAt(2).widget().setValue(default)
+                    widget.layout().itemAt(0).widget().setCurrentText(FIELD_REF_IDX_OPTIONS[0])
                 elif field['type'] == FIELD_INT_TUPLE:
                     for i in range(field['size']):
                         spinbox = widget.layout().itemAt(1 + i * 2).widget()
@@ -146,6 +157,17 @@ class FieldBuilder:
                 params[tag] = field['widget'].isChecked()
             elif field['type'] == FIELD_INT:
                 params[tag] = field['widget'].value()
+            elif field['type'] == FIELD_REF_IDX:
+                wl = field['widget'].layout()
+                txt = wl.itemAt(0).widget().currentText()
+                if txt == FIELD_REF_IDX_OPTIONS[0]:
+                    params[tag] = 0
+                elif txt == FIELD_REF_IDX_OPTIONS[1]:
+                    params[tag] = 1
+                elif txt == FIELD_REF_IDX_OPTIONS[2]:
+                    params[tag] = -1
+                else:
+                    params[tag] = wl.itemAt(2).widget().value()
             elif field['type'] == FIELD_INT_TUPLE:
                 params[tag] = [field['widget'].layout().itemAt(1 + i * 2).widget().value()
                                for i in range(field['size'])]
@@ -326,6 +348,37 @@ class FieldBuilder:
         spin.setRange(min_val, max_val)
         spin.setValue(self.action.params.get(tag, default))
         return spin
+
+    def create_ref_idx_field(self, tag, default=0):
+        layout = QHBoxLayout()
+        combo = QComboBox()
+        combo.addItems(FIELD_REF_IDX_OPTIONS)
+        label = QLabel("index [1, ..., N]: ")
+        spin = QSpinBox()
+        spin.setRange(1, FIELD_REF_IDX_MAX)
+        value = self.action.params.get(tag, default)
+        if value == 0:
+            combo.setCurrentText(FIELD_REF_IDX_OPTIONS[0])
+            spin.setValue(1)
+        elif value == 1:
+            combo.setCurrentText(FIELD_REF_IDX_OPTIONS[1])
+            spin.setValue(1)
+        elif value == -1:
+            combo.setCurrentText(FIELD_REF_IDX_OPTIONS[2])
+            spin.setValue(1)
+        else:
+            combo.setCurrentText(FIELD_REF_IDX_OPTIONS[3])
+            spin.setValue(value)
+
+        def set_enabled():
+            spin.setEnabled(combo.currentText() == FIELD_REF_IDX_OPTIONS[-1])
+
+        combo.currentTextChanged.connect(set_enabled)
+        set_enabled()
+        layout.addWidget(combo)
+        layout.addWidget(label)
+        layout.addWidget(spin)
+        return create_layout_widget_no_margins(layout)
 
     def create_int_tuple_field(self, tag, size=1,
                                default=[0] * 100, min_val=[0] * 100, max_val=[100] * 100,

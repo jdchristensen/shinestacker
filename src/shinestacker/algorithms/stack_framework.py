@@ -169,7 +169,9 @@ class FramesRefActions(ActionList, FramePaths):
         self.set_counts(n)
         if self.ref_idx == 0:
             self.ref_idx = n // 2
-        elif self.ref_idx != -1:
+        elif self.ref_idx == -1:
+            self.ref_idx = n - 1
+        else:
             self.ref_idx -= 1
             if not 0 <= self.ref_idx < n:
                 msg = f"reference index {self.ref_idx} out of range [1, {n}]"

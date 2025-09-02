@@ -8,6 +8,7 @@ This page reports the main releases only and the main changes therein.
 * fixed -x (--expert) option
 * more safety checks prevent crashes for abnormal conditions
 * support reference_index = -1 as last index; indices renumbered starting from 1; 0 means media index.
+* improved reference frame GUI widget
 * code cleanup
 
 ---
