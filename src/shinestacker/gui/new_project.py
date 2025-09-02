@@ -1,15 +1,15 @@
 # pylint: disable=C0114, C0115, C0116, E0611, R0915, R0902, R0914, R0911, R0912, R0904
 import os
 import numpy as np
-from PySide6.QtWidgets import (QHBoxLayout, QPushButton, QLabel, QCheckBox, QSpinBox, QFileDialog,
-                               QMessageBox, QRadioButton, QButtonGroup, QWidget)
+from PySide6.QtWidgets import (QHBoxLayout, QPushButton, QLabel, QCheckBox, QSpinBox,
+                               QMessageBox)
 from PySide6.QtGui import QIcon
 from PySide6.QtCore import Qt
 from .. config.gui_constants import gui_constants
 from .. config.constants import constants
 from .. algorithms.utils import read_img, extension_tif_jpg
 from .. algorithms.stack import get_bunches
-from .select_path_widget import create_select_file_paths_widget
+from .folder_file_selection_widget import FolderFileSelectionWidget
 from .base_form_dialog import BaseFormDialog
 
 DEFAULT_NO_COUNT_LABEL = " - "
@@ -54,23 +54,11 @@ class NewProjectDialog(BaseFormDialog):
         spacer = QLabel("")
         spacer.setFixedHeight(10)
         self.form_layout.addRow(spacer)
-        self.mode_group = QButtonGroup(self)
-        self.folder_mode_radio = QRadioButton("Select Folder")
-        self.files_mode_radio = QRadioButton("Select Files")
-        self.folder_mode_radio.setChecked(True)
-        self.mode_group.addButton(self.folder_mode_radio)
-        self.mode_group.addButton(self.files_mode_radio)
-        mode_layout = QHBoxLayout()
-        mode_layout.addWidget(self.folder_mode_radio)
-        mode_layout.addWidget(self.files_mode_radio)
-        mode_container = QWidget()
-        mode_container.setLayout(mode_layout)
-        self.input_folder, container, self.browse_button = create_select_file_paths_widget(
-            '', 'input files folder')
-        self.input_folder.textChanged.connect(self.update_bunches_label)
-        self.browse_button.clicked.connect(self.handle_browse)
-        self.folder_mode_radio.toggled.connect(self.update_selection_mode)
-        self.files_mode_radio.toggled.connect(self.update_selection_mode)
+
+        # Create the folder/file selection widget
+        self.input_widget = FolderFileSelectionWidget()
+        self.input_widget.text_changed_connect(self.update_bunches_label)
+
         self.noise_detection = QCheckBox()
         self.noise_detection.setChecked(gui_constants.NEW_PROJECT_NOISE_DETECTION)
         self.vignetting_correction = QCheckBox()
@@ -79,6 +67,7 @@ class NewProjectDialog(BaseFormDialog):
         self.align_frames.setChecked(gui_constants.NEW_PROJECT_ALIGN_FRAMES)
         self.balance_frames = QCheckBox()
         self.balance_frames.setChecked(gui_constants.NEW_PROJECT_BALANCE_FRAMES)
+
         self.bunch_stack = QCheckBox()
         self.bunch_stack.setChecked(gui_constants.NEW_PROJECT_BUNCH_STACK)
         self.bunch_frames = QSpinBox()
@@ -91,19 +80,21 @@ class NewProjectDialog(BaseFormDialog):
         self.bunch_overlap.setValue(constants.DEFAULT_OVERLAP)
         self.bunches_label = QLabel(DEFAULT_NO_COUNT_LABEL)
         self.frames_label = QLabel(DEFAULT_NO_COUNT_LABEL)
+
         self.update_bunch_options(gui_constants.NEW_PROJECT_BUNCH_STACK)
         self.bunch_stack.toggled.connect(self.update_bunch_options)
         self.bunch_frames.valueChanged.connect(self.update_bunches_label)
         self.bunch_overlap.valueChanged.connect(self.update_bunches_label)
+
         self.focus_stack_pyramid = QCheckBox()
         self.focus_stack_pyramid.setChecked(gui_constants.NEW_PROJECT_FOCUS_STACK_PYRAMID)
         self.focus_stack_depth_map = QCheckBox()
         self.focus_stack_depth_map.setChecked(gui_constants.NEW_PROJECT_FOCUS_STACK_DEPTH_MAP)
         self.multi_layer = QCheckBox()
         self.multi_layer.setChecked(gui_constants.NEW_PROJECT_MULTI_LAYER)
+
         self.add_bold_label("1️⃣ Select input mode and location:")
-        self.form_layout.addRow("Selection mode:", mode_container)
-        self.form_layout.addRow("Input:", container)
+        self.form_layout.addRow("Input:", self.input_widget)
         self.form_layout.addRow("Number of frames: ", self.frames_label)
         self.add_label("")
         self.add_bold_label("2️⃣ Select basic options.")
@@ -129,43 +120,6 @@ class NewProjectDialog(BaseFormDialog):
         self.add_label("4️⃣ "
                        "Select: <b>View</b> > <b>Expert options</b> "
                        "to unlock advanced configuration.")
-        self.update_selection_mode()
-
-    def handle_browse(self):
-        if self.input_folder.selection_mode == 'folder':
-            path = QFileDialog.getExistingDirectory(self, "Select Input Folder")
-            if path:
-                self.input_folder.setText(path)
-                self.input_folder.selected_files = []
-                self.update_bunches_label()
-        else:
-            files, _ = QFileDialog.getOpenFileNames(
-                self, "Select Input Files", "",
-                "Image files (*.png *.jpg *.jpeg *.tif *.tiff)"
-            )
-            if files:
-                parent_dir = os.path.dirname(files[0])
-                if all(os.path.dirname(f) == parent_dir for f in files):
-                    self.input_folder.setText(parent_dir)
-                    self.input_folder.selected_files = files
-                    self.n_image_files = len(files)
-                    self.update_bunches_label()
-                else:
-                    QMessageBox.warning(
-                        self, "Invalid Selection",
-                        "All files must be in the same directory."
-                    )
-
-    def update_selection_mode(self):
-        if self.folder_mode_radio.isChecked():
-            self.input_folder.selection_mode = 'folder'
-            self.input_folder.selected_files = []
-            self.browse_button.setText("Browse Folder...")
-        else:
-            self.input_folder.selection_mode = 'files'
-            self.input_folder.selected_files = []
-            self.browse_button.setText("Browse Files...")
-        self.update_bunches_label()
 
     def update_bunch_options(self, checked):
         self.bunch_frames.setEnabled(checked)
@@ -173,7 +127,7 @@ class NewProjectDialog(BaseFormDialog):
         self.update_bunches_label()
 
     def update_bunches_label(self):
-        if not self.input_folder.text():
+        if not self.input_widget.get_path():
             return
 
         def count_image_files(path):
@@ -184,12 +138,12 @@ class NewProjectDialog(BaseFormDialog):
                 if extension_tif_jpg(filename):
                     count += 1
             return count
-
-        if self.input_folder.selection_mode == 'files' and self.input_folder.selected_files:
-            self.n_image_files = len(self.input_folder.selected_files)
-            self.selected_files = self.input_folder.selected_files
+        if self.input_widget.get_selection_mode() == 'files' and \
+                self.input_widget.get_selected_files():
+            self.n_image_files = len(self.input_widget.get_selected_files())
+            self.selected_files = self.input_widget.get_selected_files()
         else:
-            self.n_image_files = count_image_files(self.input_folder.text())
+            self.n_image_files = count_image_files(self.input_widget.get_path())
             self.selected_files = []
         if self.n_image_files == 0:
             self.bunches_label.setText(DEFAULT_NO_COUNT_LABEL)
@@ -205,9 +159,9 @@ class NewProjectDialog(BaseFormDialog):
             self.bunches_label.setText(DEFAULT_NO_COUNT_LABEL)
 
     def accept(self):
-        input_path = self.input_folder.text()
-        selection_mode = self.input_folder.selection_mode
-        selected_files = self.input_folder.selected_files
+        input_path = self.input_widget.get_path()
+        selection_mode = self.input_widget.get_selection_mode()
+        selected_files = self.input_widget.get_selected_files()
         if not input_path:
             QMessageBox.warning(self, "Input Required", "Please select an input folder or files")
             return
@@ -237,7 +191,7 @@ class NewProjectDialog(BaseFormDialog):
             if selection_mode == 'files' and selected_files:
                 file_path = selected_files[0]
             else:
-                path = self.input_folder.text()
+                path = self.input_widget.get_path()
                 files = os.listdir(path)
                 file_path = None
                 for filename in files:
@@ -288,13 +242,13 @@ class NewProjectDialog(BaseFormDialog):
         super().accept()
 
     def get_input_folder(self):
-        return self.input_folder.text()
+        return self.input_widget.get_path()
 
     def get_selected_files(self):
-        return self.input_folder.selected_files
+        return self.input_widget.get_selected_files()
 
     def get_selection_mode(self):
-        return self.input_folder.selection_mode
+        return self.input_widget.get_selection_mode()
 
     def get_noise_detection(self):
         return self.noise_detection.isChecked()
