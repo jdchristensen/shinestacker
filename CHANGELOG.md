@@ -4,6 +4,9 @@ This page reports the main releases only and the main changes therein.
 
 ## [v1.2.1] - 2025-09-02
 **Bug fixes and minor improvements**
+
+### Changes
+
 * alignment is more tolerant in case of failures: frames are skipped and the running job is not stopped
 * fixed the -x (--expert) option
 * more safety checks prevent crashes for abnormal conditions
@@ -15,6 +18,8 @@ This page reports the main releases only and the main changes therein.
 
 ## [v1.2.0] - 2025-08-31
 **Parallel processing and more improvements**
+
+### Changes
 
 * Implemented parallel processing for pyramid stacking algorithm
 * optimized pyramid algorithm: selects automatically the best within the given memory budget to avoid memory issues in case many pictures are selected. Explicit configuration is also possible for specific needs.
