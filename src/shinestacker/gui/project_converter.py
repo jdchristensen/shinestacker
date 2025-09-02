@@ -133,7 +133,9 @@ class ProjectConverter:
             enabled = action_config.params.get('enabled', True)
             working_path = action_config.params.get('working_path', '')
             input_path = action_config.params.get('input_path', '')
+            input_filepaths = action_config.params.get('input_filepaths', [])
             stack_job = StackJob(name, working_path, enabled=enabled, input_path=input_path,
+                                 input_filepaths=input_filepaths,
                                  logger_name=logger_name, callbacks=callbacks)
             for sub in action_config.sub_actions:
                 action = self.action(sub)

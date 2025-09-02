@@ -153,6 +153,9 @@ class JobConfigurator(DefaultActionConfigurator):
         self.add_field(
             'input_path', FIELD_REL_PATH, 'Input path', required=False,
             must_exist=True, placeholder='relative to working path')
+        # something like this should be added...
+        # self.add_field(
+        #     'input_filepaths', FIELD_TEXT, 'Input files (dummy)', required=False)
 
 
 class NoiseDetectionConfigurator(DefaultActionConfigurator):
