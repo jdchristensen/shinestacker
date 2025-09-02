@@ -51,6 +51,7 @@ class TestTimerProgressBar:
         assert progress_bar.maximum() == 10
 
     def test_time_formatting(self, progress_bar):
+        assert progress_bar.time_str(0.0) == "0.0s"
         assert progress_bar.time_str(0.5) == "0.5s"
         assert progress_bar.time_str(5.5) == "5.5s"
         assert progress_bar.time_str(65.5) == "1:05.5s"

@@ -39,13 +39,14 @@ class TimerProgressBar(QProgressBar):
         """)
 
     def time_str(self, secs):
-        x = secs % 1
-        ss = int(secs // 1)
+        xsecs = int(secs * 10)
+        x = xsecs % 10
+        ss = xsecs // 10
         s = ss % 60
         mm = ss // 60
         m = mm % 60
         h = mm // 60
-        t_str = f"{s:02d}" + f"{x:.1f}s".lstrip('0')
+        t_str = f"{s:02d}.{x:1d}s"
         if m > 0:
             t_str = f"{m:02d}:{t_str}"
         if h > 0:
