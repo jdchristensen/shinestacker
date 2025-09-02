@@ -328,7 +328,7 @@ class RunWorker(LogWorker):
         self.status_signal.emit(f"{self.tag} running...", constants.RUN_ONGOING, "", 0)
         self.html_signal.emit(f'''
         <div style="margin: 2px 0; font-family: {constants.LOG_FONTS_STR};">
-        <span style="color: #{ColorPalette.DARK_BLUE.hex()}; font-style: italic; font-weigt: bold;">{self.tag} begins</span>
+        <span style="color: #{ColorPalette.DARK_BLUE.hex()}; font-style: italic; font-weight: bold;">{self.tag} begins</span>
         </div>
         ''') # noqa
         status, error_message = self.do_run()
