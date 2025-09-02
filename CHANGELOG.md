@@ -9,6 +9,7 @@ This page reports the main releases only and the main changes therein.
 
 * fixed path in an example project
 * bug fix in config dialog
+* code cleanup
 
 ---
 

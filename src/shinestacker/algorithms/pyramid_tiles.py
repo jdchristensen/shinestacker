@@ -2,6 +2,7 @@
 # pylint: disable=C0114, C0115, C0116, E1101, R0914, R1702, R1732, R0913
 # pylint: disable=R0917, R0912, R0915, R0902, W0718
 import os
+import gc
 import time
 import shutil
 import tempfile
@@ -155,6 +156,7 @@ class PyramidTilesStack(PyramidBase):
             stacked = np.stack(laplacians, axis=0)
             return self.fuse_laplacian(stacked)
         y_end, x_end = min(y + self.tile_size, h), min(x + self.tile_size, w)
+        gc.collect()
         return np.zeros((y_end - y, x_end - x, 3), dtype=self.float_type)
 
     def fuse_pyramids(self, all_level_counts, num_images):
