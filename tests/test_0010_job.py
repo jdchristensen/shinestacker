@@ -1,20 +1,20 @@
 import time
 from shinestacker.core.colors import color_str
-from shinestacker.core.framework import Job, JobBase, ActionList
+from shinestacker.core.framework import Job, TaskBase, ActionList
 
 
-class Action1(JobBase):
+class Action1(TaskBase):
     def __init__(self):
-        JobBase.__init__(self, "action 1")
+        TaskBase.__init__(self, "action 1")
 
     def run(self):
         self.print_message(color_str("run 1", "blue", "bold"))
         time.sleep(0.5)
 
 
-class Action2(JobBase):
+class Action2(TaskBase):
     def __init__(self):
-        JobBase.__init__(self, "action 2")
+        TaskBase.__init__(self, "action 2")
 
     def run(self):
         self.print_message(color_str("run 2", "blue", "bold"))

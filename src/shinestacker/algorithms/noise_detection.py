@@ -9,7 +9,7 @@ from .. config.config import config
 from .. config.constants import constants
 from .. core.colors import color_str
 from .. core.exceptions import ImageLoadError
-from .. core.framework import JobBase
+from .. core.framework import TaskBase
 from .. core.core_utils import make_tqdm_bar
 from .. core.exceptions import RunStopException, ShapeError
 from .stack_framework import ImageSequenceManager, SubAction
@@ -45,10 +45,10 @@ def mean_image(file_paths, max_frames=-1, message_callback=None, progress_callba
     return None if mean_img is None else (mean_img / counter).astype(np.uint8)
 
 
-class NoiseDetection(JobBase, ImageSequenceManager):
+class NoiseDetection(TaskBase, ImageSequenceManager):
     def __init__(self, name="noise-map", enabled=True, **kwargs):
         ImageSequenceManager.__init__(self, name, **kwargs)
-        JobBase.__init__(self, name, enabled)
+        TaskBase.__init__(self, name, enabled)
         self.max_frames = kwargs.get('max_frames', constants.DEFAULT_NOISE_MAX_FRAMES)
         self.blur_size = kwargs.get('blur_size', constants.DEFAULT_BLUR_SIZE)
         self.file_name = kwargs.get('file_name', constants.DEFAULT_NOISE_MAP_FILENAME)

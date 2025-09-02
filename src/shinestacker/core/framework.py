@@ -62,7 +62,7 @@ def elapsed_time_str(start):
     return f"{hh:02d}:{mm:02d}:{ss:05.2f}s"
 
 
-class JobBase:
+class TaskBase:
     def __init__(self, name, enabled=True):
         self.id = -1
         self.name = name
@@ -146,9 +146,9 @@ class JobBase:
         self.sub_message(msg, level, self.end_r, self.begin_r, False)
 
 
-class Job(JobBase):
+class Job(TaskBase):
     def __init__(self, name, logger_name=None, log_file='', callbacks=None, **kwargs):
-        JobBase.__init__(self, name, **kwargs)
+        TaskBase.__init__(self, name, **kwargs)
         self.action_counter = 0
         self.__actions = []
         if logger_name is None:
@@ -163,7 +163,7 @@ class Job(JobBase):
     def init(self, a):
         pass
 
-    def add_action(self, a: JobBase):
+    def add_action(self, a: TaskBase):
         a.id = self.action_counter
         self.action_counter += 1
         a.logger = self.logger
@@ -188,9 +188,9 @@ class Job(JobBase):
                 a.run()
 
 
-class ActionList(JobBase):
+class ActionList(TaskBase):
     def __init__(self, name, enabled=True, **kwargs):
-        JobBase.__init__(self, name, enabled, **kwargs)
+        TaskBase.__init__(self, name, enabled, **kwargs)
         self.total_action_counts = None
         self.current_action_count = None
 

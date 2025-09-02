@@ -12,7 +12,7 @@ from psdtags import (PsdBlendMode, PsdChannel, PsdChannelId, PsdClippingType, Ps
 from .. config.constants import constants
 from .. config.config import config
 from .. core.colors import color_str
-from .. core.framework import JobBase
+from .. core.framework import TaskBase
 from .utils import EXTENSIONS_TIF, EXTENSIONS_JPG, EXTENSIONS_PNG
 from .stack_framework import ImageSequenceManager
 from .exif import exif_extra_tags_for_tif, get_exif
@@ -159,10 +159,10 @@ def write_multilayer_tiff_from_images(image_dict, output_file, exif_path='', cal
                      compression=compression, metadata=None, **tiff_tags)
 
 
-class MultiLayer(JobBase, ImageSequenceManager):
+class MultiLayer(TaskBase, ImageSequenceManager):
     def __init__(self, name, enabled=True, **kwargs):
         ImageSequenceManager.__init__(self, name, **kwargs)
-        JobBase.__init__(self, name, enabled)
+        TaskBase.__init__(self, name, enabled)
         self.exif_path = kwargs.get('exif_path', '')
         self.reverse_order = kwargs.get(
             'reverse_order',

@@ -2,7 +2,7 @@
 import os
 import numpy as np
 from .. config.constants import constants
-from .. core.framework import JobBase
+from .. core.framework import TaskBase
 from .. core.colors import color_str
 from .. core.exceptions import InvalidOptionError
 from .utils import write_img, extension_tif_jpg
@@ -11,10 +11,10 @@ from .exif import copy_exif_from_file_to_file
 from .denoise import denoise
 
 
-class FocusStackBase(JobBase, ImageSequenceManager):
+class FocusStackBase(TaskBase, ImageSequenceManager):
     def __init__(self, name, stack_algo, enabled=True, **kwargs):
         ImageSequenceManager.__init__(self, name, **kwargs)
-        JobBase.__init__(self, name, enabled)
+        TaskBase.__init__(self, name, enabled)
         self.stack_algo = stack_algo
         self.exif_path = kwargs.pop('exif_path', '')
         self.prefix = kwargs.pop('prefix', constants.DEFAULT_STACK_PREFIX)
