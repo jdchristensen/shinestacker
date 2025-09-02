@@ -2,6 +2,16 @@
 
 This page reports the main releases only and the main changes therein.
 
+## [v-.-.-] - 2025-09-02
+**Uncommitted changes**
+
+### Changes
+
+* fixed path in an example project
+* bug fix in config dialog
+
+---
+
 ## [v1.2.1] - 2025-09-02
 **Bug fixes and minor improvements**
 
