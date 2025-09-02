@@ -169,6 +169,10 @@ class FramesRefActions(ActionList, FramePaths):
         self.set_counts(n)
         if self.ref_idx == -1:
             self.ref_idx = n // 2
+        if not 0 <= self.ref_idx < n:
+            msg = f"reference index {self.ref_idx} out of range [0, {n - 1}]"
+            self.print_message_r(color_str(msg, constants.LOG_COLOR_LEVEL_2))
+            raise IndexError(msg)
 
     def end(self):
         ActionList.end(self)
