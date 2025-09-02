@@ -6,6 +6,8 @@ This page reports the main releases only and the main changes therein.
 **Unreleased code**
 * alignment is more tolerant in case of failures: frames are skipped and run is not stopped
 * fixed -x (--expert) option
+* more safety checks prevent crashes for abnormal conditions
+* support reference_index = -1 as last index; indices renumbered starting from 1; 0 means media index.
 * code cleanup
 
 ---

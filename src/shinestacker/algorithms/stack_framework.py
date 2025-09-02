@@ -153,10 +153,10 @@ class FramePaths:
 
 
 class FramesRefActions(ActionList, FramePaths):
-    def __init__(self, name, enabled=True, ref_idx=-1, step_process=False, **kwargs):
+    def __init__(self, name, enabled=True, reference_index=0, step_process=False, **kwargs):
         FramePaths.__init__(self, name, **kwargs)
         ActionList.__init__(self, name, enabled)
-        self.ref_idx = ref_idx
+        self.ref_idx = reference_index
         self.step_process = step_process
         self.current_idx = None
         self.current_ref_idx = None
@@ -167,12 +167,14 @@ class FramesRefActions(ActionList, FramePaths):
         self.set_filelist()
         n = self.num_input_filepaths()
         self.set_counts(n)
-        if self.ref_idx == -1:
+        if self.ref_idx == 0:
             self.ref_idx = n // 2
-        if not 0 <= self.ref_idx < n:
-            msg = f"reference index {self.ref_idx} out of range [0, {n - 1}]"
-            self.print_message_r(color_str(msg, constants.LOG_COLOR_LEVEL_2))
-            raise IndexError(msg)
+        elif self.ref_idx != -1:
+            self.ref_idx -= 1
+            if not 0 <= self.ref_idx < n:
+                msg = f"reference index {self.ref_idx} out of range [1, {n}]"
+                self.print_message_r(color_str(msg, constants.LOG_COLOR_LEVEL_2))
+                raise IndexError(msg)
 
     def end(self):
         ActionList.end(self)

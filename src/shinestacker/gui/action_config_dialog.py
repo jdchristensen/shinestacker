@@ -431,8 +431,8 @@ class CombinedActionsConfigurator(DefaultActionConfigurator):
                 'resample', FIELD_INT, 'Resample frame stack', required=False,
                 default=1, min_val=1, max_val=100)
             self.add_field(
-                'ref_idx', FIELD_INT, 'Reference frame index', required=False,
-                default=-1, min_val=-1, max_val=1000)
+                'reference_index', FIELD_INT, 'Reference frame index', required=False,
+                default=0, min_val=-1, max_val=1000)
             self.add_field(
                 'step_process', FIELD_BOOL, 'Step process', required=False,
                 default=True)

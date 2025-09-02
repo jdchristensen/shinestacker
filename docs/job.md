@@ -41,6 +41,6 @@ Arguments for the constructor of ```CombinedActions``` are for the :
 * ```working_path``` (optional): the directory that contains input and output image subdirectories. If not specified, it is the same as ```job.working_path```.
 * ```plot_path``` (optional, default: ```plots```): the directory within ```working_path``` that contains plots produced by the different actions.
 * ```resample``` (optional, default: 1): take every *n*<sup>th</sup> frame in the selected directory. Default: take all frames.
-* ```ref_idx``` (optional): the index of the image used as reference. Images are numbered starting from zero. If not specified, it is the index of the middle image.
+* ```reference_index``` (optional, default: 0): the index of the image used as reference. Images are numbered starting from one to N. -1 is interpreted as the last image, 0 as the median index.
 * ```step_process``` (optional): if equal to ```True``` (default), each image is processed with respect to the previous or next image, depending if its file is placed in alphabetic order after or befor the reference image.
 * ```enabled``` (optional, default: ```True```): allows to switch on and off this module. 
