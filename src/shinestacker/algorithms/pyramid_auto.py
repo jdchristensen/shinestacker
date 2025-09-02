@@ -44,7 +44,7 @@ class PyramidAutoStack(BaseStackAlgo):
         self.channels = 3
         dtype = np.float32 if self.float_type == constants.FLOAT_32 else np.float64
         self.bytes_per_pixel = self.channels * np.dtype(dtype).itemsize
-        self.overhead = 2.0
+        self.overhead = 2.5
 
     def init(self, filenames):
         first_img_file = None
