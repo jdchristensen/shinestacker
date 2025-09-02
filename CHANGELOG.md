@@ -2,15 +2,14 @@
 
 This page reports the main releases only and the main changes therein.
 
-## [v-.-..] - 2025-09-01
-**Unreleased code**
+## [v1.2.1] - 2025-09-01
+**Bug fixes and minor improvements**
 * alignment is more tolerant in case of failures: frames are skipped and the running job is not stopped
-* fixed -x (--expert) option
+* fixed the -x (--expert) option
 * more safety checks prevent crashes for abnormal conditions
-* support reference_index = -1 as last index; indices renumbered starting from 1; 0 means media index.
-* improved reference frame GUI widget
-* improved project undo description
-* code cleanup
+* reference frame index improved with a more consistent treatment, a better numbering scheme and GUI widget 
+* improved project undo action description text
+* some bug fixes and code cleanup
 
 ---
 
