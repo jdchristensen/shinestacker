@@ -6,14 +6,14 @@ from .. core.framework import JobBase
 from .. core.colors import color_str
 from .. core.exceptions import InvalidOptionError
 from .utils import write_img, extension_tif_jpg
-from .stack_framework import FrameDirectory, ActionList
+from .stack_framework import FramePaths, ActionList
 from .exif import copy_exif_from_file_to_file
 from .denoise import denoise
 
 
-class FocusStackBase(JobBase, FrameDirectory):
+class FocusStackBase(JobBase, FramePaths):
     def __init__(self, name, stack_algo, enabled=True, **kwargs):
-        FrameDirectory.__init__(self, name, **kwargs)
+        FramePaths.__init__(self, name, **kwargs)
         JobBase.__init__(self, name, enabled)
         self.stack_algo = stack_algo
         self.exif_path = kwargs.pop('exif_path', '')
@@ -51,7 +51,7 @@ class FocusStackBase(JobBase, FrameDirectory):
             self.frame_count += 1
 
     def init(self, job, working_path=''):
-        FrameDirectory.init(self, job)
+        FramePaths.init(self, job)
         if self.exif_path is None:
             self.exif_path = job.paths[0]
         if self.exif_path != '':

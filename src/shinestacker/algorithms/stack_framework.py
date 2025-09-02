@@ -67,12 +67,14 @@ class FramePaths:
             elif hasattr(self.input_full_path(), "__len__"):
                 dirs = self.input_full_path()
             else:
-                raise RuntimeError("input_full_path option must contain a path or an array of paths")
+                raise RuntimeError("input_full_path option must contain "
+                                   "a path or an array of paths")
             files = []
             for d in dirs:
                 filelist = []
                 for _dirpath, _, filenames in os.walk(d):
-                    filelist = [os.path.join(_dirpath, name) for name in filenames if extension_tif_jpg(name)]
+                    filelist = [os.path.join(_dirpath, name)
+                                for name in filenames if extension_tif_jpg(name)]
                     filelist.sort()
                     if self.reverse_order:
                         filelist.reverse()
@@ -141,38 +143,17 @@ class FramePaths:
             self.input_path = job.paths[-1]
         job.paths.append(self.output_path)
 
-
-class FrameDirectory(FramePaths):
-    def __init__(self, name, **kwargs):
-        FramePaths.__init__(self, name, **kwargs)
-
     def folder_list_str(self):
         if isinstance(self.input_full_path(), list):
             file_list = ", ".join(
-                list(self.input_full_path().replace(self.working_path, '').lstrip('/')))
+                [path.replace(self.working_path, '').lstrip('/') for path in self.input_full_path()])
             return "folder" + ('s' if len(self.input_full_path()) > 1 else '') + f": {file_list}"
         return "folder: " + self.input_full_path().replace(self.working_path, '').lstrip('/')
 
 
-class FrameMultiDirectory(FramePaths):
-    def __init__(self, name, input_path='', output_path='', working_path='',
-                 plot_path=constants.DEFAULT_PLOTS_PATH,
-                 scratch_output_dir=True, resample=1,
-                 reverse_order=constants.DEFAULT_FILE_REVERSE_ORDER, **_kwargs):
-        FramePaths.__init__(self, name, input_path, output_path, working_path, plot_path,
-                            scratch_output_dir, resample, reverse_order)
-
-    def folder_list_str(self):
-        if isinstance(self.input_full_path(), list):
-            file_list = ", ".join([d.replace(self.working_path, '').lstrip('/')
-                                   for d in self.input_full_path()])
-            return "folder" + ('s' if len(self.input_full_path()) > 1 else '') + f": {file_list}"
-        return "folder: " + self.input_full_path().replace(self.working_path, '').lstrip('/')
-
-
-class FramesRefActions(ActionList, FrameDirectory):
+class FramesRefActions(ActionList, FramePaths):
     def __init__(self, name, enabled=True, ref_idx=-1, step_process=False, **kwargs):
-        FrameDirectory.__init__(self, name, **kwargs)
+        FramePaths.__init__(self, name, **kwargs)
         ActionList.__init__(self, name, enabled)
         self.ref_idx = ref_idx
         self.step_process = step_process
@@ -243,7 +224,8 @@ class CombinedActions(FramesRefActions):
                 a.begin(self)
 
     def img_ref(self, idx):
-        img = read_img(self.input_filepath(idx))
+        input_path = self.input_filepath(idx)
+        img = read_img(input_path)
         if img is None:
             raise RuntimeError(f"Invalid file: {os.path.basename(input_path)}")
         self.dtype, self.shape = img.dtype, img.shape
@@ -282,7 +264,7 @@ class CombinedActions(FramesRefActions):
             write_img(output_path, img)
             return img
         self.print_message(color_str(
-            f"no output file resulted from processing input file: {filename}",
+            f"no output file resulted from processing input file: {os.path.basename(input_path)}",
             constants.LOG_COLOR_ALERT), level=logging.WARNING)
         return None
 

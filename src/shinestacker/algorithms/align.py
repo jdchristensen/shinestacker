@@ -130,7 +130,7 @@ def check_homography_distortion(m, img_shape, homography_thresholds=_HOMOGRAPHY_
     return True, "Transformation within acceptable limits"
 
 
-def get_good_matches(des_0, des_1, matching_config=None):
+def get_good_matches(des_0, des_ref, matching_config=None):
     matching_config = {**_DEFAULT_MATCHING_CONFIG, **(matching_config or {})}
     match_method = matching_config['match_method']
     good_matches = []
@@ -139,12 +139,12 @@ def get_good_matches(des_0, des_1, matching_config=None):
             {'algorithm': matching_config['flann_idx_kdtree'],
              'trees': matching_config['flann_trees']},
             {'checks': matching_config['flann_checks']})
-        matches = flann.knnMatch(des_0, des_1, k=2)
+        matches = flann.knnMatch(des_0, des_ref, k=2)
         good_matches = [m for m, n in matches
                         if m.distance < matching_config['threshold'] * n.distance]
     elif match_method == constants.MATCHING_NORM_HAMMING:
         bf = cv2.BFMatcher(cv2.NORM_HAMMING, crossCheck=True)
-        good_matches = sorted(bf.match(des_0, des_1), key=lambda x: x.distance)
+        good_matches = sorted(bf.match(des_0, des_ref), key=lambda x: x.distance)
     else:
         raise InvalidOptionError(
             'match_method', match_method,
@@ -172,14 +172,14 @@ def validate_align_config(detector, descriptor, match_method):
                          " require matching method Hamming distance")
 
 
-def detect_and_compute(img_0, img_1, feature_config=None, matching_config=None):
+def detect_and_compute(img_0, img_ref, feature_config=None, matching_config=None):
     feature_config = {**_DEFAULT_FEATURE_CONFIG, **(feature_config or {})}
     matching_config = {**_DEFAULT_MATCHING_CONFIG, **(matching_config or {})}
     feature_config_detector = feature_config['detector']
     feature_config_descriptor = feature_config['descriptor']
     match_method = matching_config['match_method']
     validate_align_config(feature_config_detector, feature_config_descriptor, match_method)
-    img_bw_0, img_bw_1 = img_bw_8bit(img_0), img_bw_8bit(img_1)
+    img_bw_0, img_bw_ref = img_bw_8bit(img_0), img_bw_8bit(img_ref)
     detector_map = {
         constants.DETECTOR_SIFT: cv2.SIFT_create,
         constants.DETECTOR_ORB: cv2.ORB_create,
@@ -199,12 +199,12 @@ def detect_and_compute(img_0, img_1, feature_config=None, matching_config=None):
                                    constants.DETECTOR_AKAZE,
                                    constants.DETECTOR_BRISK):
         kp_0, des_0 = detector.detectAndCompute(img_bw_0, None)
-        kp_1, des_1 = detector.detectAndCompute(img_bw_1, None)
+        kp_ref, des_ref = detector.detectAndCompute(img_bw_ref, None)
     else:
         descriptor = descriptor_map[feature_config_descriptor]()
         kp_0, des_0 = descriptor.compute(img_bw_0, detector.detect(img_bw_0, None))
-        kp_1, des_1 = descriptor.compute(img_bw_1, detector.detect(img_bw_1, None))
-    return kp_0, kp_1, get_good_matches(des_0, des_1, matching_config)
+        kp_ref, des_ref = descriptor.compute(img_bw_ref, detector.detect(img_bw_ref, None))
+    return kp_0, kp_ref, get_good_matches(des_0, des_ref, matching_config)
 
 
 def find_transform(src_pts, dst_pts, transform=constants.DEFAULT_TRANSFORM,
@@ -236,7 +236,7 @@ def find_transform(src_pts, dst_pts, transform=constants.DEFAULT_TRANSFORM,
     return result
 
 
-def align_images(img_1, img_0, feature_config=None, matching_config=None, alignment_config=None,
+def align_images(img_ref, img_0, feature_config=None, matching_config=None, alignment_config=None,
                  plot_path=None, callbacks=None,
                  affine_thresholds=_AFFINE_THRESHOLDS,
                  homography_thresholds=_HOMOGRAPHY_THRESHOLDS):
@@ -250,7 +250,7 @@ def align_images(img_1, img_0, feature_config=None, matching_config=None, alignm
     min_matches = 4 if alignment_config['transform'] == constants.ALIGN_HOMOGRAPHY else 3
     if callbacks and 'message' in callbacks:
         callbacks['message']()
-    h_ref, w_ref = img_1.shape[:2]
+    h_ref, w_ref = img_ref.shape[:2]
     h0, w0 = img_0.shape[:2]
     subsample = alignment_config['subsample']
     if subsample == 0:
@@ -262,11 +262,11 @@ def align_images(img_1, img_0, feature_config=None, matching_config=None, alignm
     while True:
         if subsample > 1:
             img_0_sub = img_subsample(img_0, subsample, fast_subsampling)
-            img_1_sub = img_subsample(img_1, subsample, fast_subsampling)
+            img_ref_sub = img_subsample(img_ref, subsample, fast_subsampling)
         else:
-            img_0_sub, img_1_sub = img_0, img_1
-        kp_0, kp_1, good_matches = detect_and_compute(img_0_sub, img_1_sub,
-                                                      feature_config, matching_config)
+            img_0_sub, img_ref_sub = img_0, img_ref
+        kp_0, kp_ref, good_matches = detect_and_compute(img_0_sub, img_ref_sub,
+                                                        feature_config, matching_config)
         n_good_matches = len(good_matches)
         if n_good_matches > min_good_matches or subsample == 1:
             break
@@ -282,7 +282,7 @@ def align_images(img_1, img_0, feature_config=None, matching_config=None, alignm
     if n_good_matches >= min_matches:
         transform = alignment_config['transform']
         src_pts = np.float32([kp_0[m.queryIdx].pt for m in good_matches]).reshape(-1, 1, 2)
-        dst_pts = np.float32([kp_1[m.trainIdx].pt for m in good_matches]).reshape(-1, 1, 2)
+        dst_pts = np.float32([kp_ref[m.trainIdx].pt for m in good_matches]).reshape(-1, 1, 2)
         m, msk = find_transform(src_pts, dst_pts, transform, alignment_config['align_method'],
                                 *(alignment_config[k]
                                   for k in ['rans_threshold', 'max_iters',
@@ -290,8 +290,8 @@ def align_images(img_1, img_0, feature_config=None, matching_config=None, alignm
         if plot_path is not None:
             matches_mask = msk.ravel().tolist()
             img_match = cv2.cvtColor(cv2.drawMatches(
-                img_8bit(img_0_sub), kp_0, img_8bit(img_1_sub),
-                kp_1, good_matches, None, matchColor=(0, 255, 0),
+                img_8bit(img_0_sub), kp_0, img_8bit(img_ref_sub),
+                kp_ref, good_matches, None, matchColor=(0, 255, 0),
                 singlePointColor=None, matchesMask=matches_mask,
                 flags=2), cv2.COLOR_BGR2RGB)
             plt.figure(figsize=(10, 5))
@@ -389,7 +389,7 @@ class AlignFrames(SubAction):
     def sub_msg(self, msg, color=constants.LOG_COLOR_LEVEL_3):
         self.process.sub_message_r(color_str(msg, color))
 
-    def align_images(self, idx, img_1, img_0):
+    def align_images(self, idx, img_ref, img_0):
         idx_str = f"{idx:04d}"
         callbacks = {
             'message': lambda: self.sub_msg(': find matches'),
@@ -415,7 +415,7 @@ class AlignFrames(SubAction):
             affine_thresholds = None
             homography_thresholds = None
         n_good_matches, _m, img = align_images(
-            img_1, img_0,
+            img_ref, img_0,
             feature_config=self.feature_config,
             matching_config=self.matching_config,
             alignment_config=self.alignment_config,
