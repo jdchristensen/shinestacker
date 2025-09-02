@@ -143,40 +143,22 @@ class PyramidTilesStack(PyramidBase):
                 count += 1
         return fused_level, count
 
-
     def _process_tile(self, level, num_images, all_level_counts, y, x, h, w):
-        # Calculate the actual tile dimensions for this position
-        y_end = min(y + self.tile_size, h)
-        x_end = min(x + self.tile_size, w)
-        tile_height = y_end - y
-        tile_width = x_end - x
-        
-        # Initialize a list to collect valid tiles
-        valid_tiles = []
-        valid_indices = []
-        
-        # Collect tiles from all images
+        laplacians = []
         for img_index in range(num_images):
             if level < all_level_counts[img_index]:
                 try:
                     tile = self.load_level_tile(img_index, level, y, x)
-                    # Verify the tile has the expected dimensions
-                    if tile.shape[0] == tile_height and tile.shape[1] == tile_width:
-                        valid_tiles.append(tile)
-                        valid_indices.append(img_index)
-                    else:
-                        self.print_message(f": warning: tile at ({y}, {x}) for image {img_index} "
-                                          f"has unexpected size {tile.shape}, expected ({tile_height}, {tile_width})")
+                    laplacians.append(tile)
                 except FileNotFoundError:
                     continue
-        
-        if valid_tiles:
-            # Stack only the valid tiles
-            stacked = np.stack(valid_tiles, axis=0)
-            return self.fuse_laplacian(stacked)
+        if laplacians:
+            stacked = np.stack(laplacians, axis=0)
+            return self.fuse_laplacian(stacked)        
+        y_end = min(y + self.tile_size, h)
+        x_end = min(x + self.tile_size, w)
         gc.collect()
-        # Return an empty tile if no valid tiles were found
-        return np.zeros((tile_height, tile_width, 3), dtype=self.float_type)
+        return np.zeros((y_end - y, x_end - x, 3), dtype=self.float_type)
 
     def fuse_pyramids(self, all_level_counts, num_images):
         max_levels = max(all_level_counts)
