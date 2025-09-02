@@ -75,28 +75,30 @@ def new_row_after_clone(job, action_row, is_sub_action, cloned):
 
 
 class ProjectUndoManager(QObject):
-    set_enabled_undo_action_requested = Signal(bool)
+    set_enabled_undo_action_requested = Signal(bool, str)
 
     def __init__(self, parent=None):
         super().__init__(parent)
         self._undo_buffer = []
 
-    def add(self, item):
-        self._undo_buffer.append(item)
-        self.set_enabled_undo_action_requested.emit(True)
+    def add(self, item, description):
+        self._undo_buffer.append((item, description))
+        self.set_enabled_undo_action_requested.emit(True, description)
 
     def pop(self):
         last = self._undo_buffer.pop()
         if len(self._undo_buffer) == 0:
-            self.set_enabled_undo_action_requested.emit(False)
-        return last
+            self.set_enabled_undo_action_requested.emit(False, '')
+        else:
+            self.set_enabled_undo_action_requested.emit(True, self._undo_buffer[-1][1])
+        return last[0]
 
     def filled(self):
         return len(self._undo_buffer) != 0
 
     def reset(self):
         self._undo_buffer = []
-        self.set_enabled_undo_action_requested.emit(False)
+        self.set_enabled_undo_action_requested.emit(False, '')
 
 
 class ProjectEditor(QObject):
@@ -122,8 +124,8 @@ class ProjectEditor(QObject):
     def reset_undo(self):
         self.undo_manager.reset()
 
-    def add_undo(self, item):
-        self.undo_manager.add(item)
+    def add_undo(self, item, description=''):
+        self.undo_manager.add(item, description)
 
     def pop_undo(self):
         return self.undo_manager.pop()
@@ -131,10 +133,13 @@ class ProjectEditor(QObject):
     def filled_undo(self):
         return self.undo_manager.filled()
 
-    def mark_as_modified(self, modified=True):
+    def set_modified(self, modified):
+        self._modified = modified
+
+    def mark_as_modified(self, modified=True, description=''):
         self._modified = modified
         if modified:
-            self.add_undo(self._project.clone())
+            self.add_undo(self._project.clone(), description)
         self.modified_signal.emit(modified)
 
     def modified(self):
@@ -320,7 +325,7 @@ class ProjectEditor(QObject):
         new_index = job_index + delta
         if 0 <= new_index < self.num_project_jobs():
             jobs = self.project_jobs()
-            self.mark_as_modified()
+            self.mark_as_modified(True, "Shift Job")
             jobs.insert(new_index, jobs.pop(job_index))
             self.refresh_ui_signal.emit(new_index, -1)
 
@@ -330,12 +335,12 @@ class ProjectEditor(QObject):
             if not pos.is_sub_action:
                 new_index = pos.action_index + delta
                 if 0 <= new_index < len(pos.actions):
-                    self.mark_as_modified()
+                    self.mark_as_modified(True, "Shift Action")
                     pos.actions.insert(new_index, pos.actions.pop(pos.action_index))
             else:
                 new_index = pos.sub_action_index + delta
                 if 0 <= new_index < len(pos.sub_actions):
-                    self.mark_as_modified()
+                    self.mark_as_modified(True, "Shift Sub-action")
                     pos.sub_actions.insert(new_index, pos.sub_actions.pop(pos.sub_action_index))
             new_row = new_row_after_insert(action_row, pos, delta)
             self.refresh_ui_signal.emit(job_row, new_row)
@@ -357,7 +362,7 @@ class ProjectEditor(QObject):
         if 0 <= job_index < self.num_project_jobs():
             job_clone = self.project_job(job_index).clone(self.CLONE_POSTFIX)
             new_job_index = job_index + 1
-            self.mark_as_modified()
+            self.mark_as_modified(True, "Duplicate Job")
             self.project_jobs().insert(new_job_index, job_clone)
             self.set_current_job(new_job_index)
             self.set_current_action(new_job_index)
@@ -367,7 +372,7 @@ class ProjectEditor(QObject):
         job_row, action_row, pos = self.get_current_action()
         if not pos.actions:
             return
-        self.mark_as_modified()
+        self.mark_as_modified(True, "Duplicate Action")
         job = self.project_job(job_row)
         if pos.is_sub_action:
             cloned = pos.sub_action.clone(self.CLONE_POSTFIX)
@@ -398,7 +403,7 @@ class ProjectEditor(QObject):
                 reply = None
             if not confirm or reply == QMessageBox.Yes:
                 self.take_job(current_index)
-                self.mark_as_modified()
+                self.mark_as_modified(True, "Delete Job")
                 current_job = self.project_jobs().pop(current_index)
                 self.clear_action_list()
                 self.refresh_ui_signal.emit(-1, -1)
@@ -420,10 +425,11 @@ class ProjectEditor(QObject):
             else:
                 reply = None
             if not confirm or reply == QMessageBox.Yes:
-                self.mark_as_modified()
                 if pos.is_sub_action:
+                    self.mark_as_modified(True, "Delete Action")
                     pos.action.pop_sub_action(pos.sub_action_index)
                 else:
+                    self.mark_as_modified(True, "Delete Sub-action")
                     self.project_job(job_row).pop_sub_action(pos.action_index)
                 new_row = new_row_after_delete(action_row, pos)
                 self.refresh_ui_signal.emit(job_row, new_row)
@@ -446,7 +452,7 @@ class ProjectEditor(QObject):
         job_action = ActionConfig("Job")
         self.dialog = self.action_config_dialog(job_action)
         if self.dialog.exec() == QDialog.Accepted:
-            self.mark_as_modified()
+            self.mark_as_modified(True, "Add Job")
             self.project_jobs().append(job_action)
             self.add_list_item(self.job_list(), job_action, False)
             self.set_current_job(self.job_list_count() - 1)
@@ -467,7 +473,7 @@ class ProjectEditor(QObject):
         action.parent = self.get_current_job()
         self.dialog = self.action_config_dialog(action)
         if self.dialog.exec() == QDialog.Accepted:
-            self.mark_as_modified()
+            self.mark_as_modified("Add Action")
             self.project_job(current_index).add_sub_action(action)
             self.add_list_item(self.action_list(), action, False)
             self.enable_delete_action_signal.emit(False)
@@ -507,7 +513,7 @@ class ProjectEditor(QObject):
         sub_action = ActionConfig(type_name)
         self.dialog = self.action_config_dialog(sub_action)
         if self.dialog.exec() == QDialog.Accepted:
-            self.mark_as_modified()
+            self.mark_as_modified("Add Sub-action")
             action.add_sub_action(sub_action)
             self.on_job_selected(current_job_index)
             self.set_current_action(current_action_index)
@@ -535,7 +541,7 @@ class ProjectEditor(QObject):
         job_index = self.current_job_index()
         if 0 <= job_index < self.num_project_jobs():
             new_job_index = job_index
-            self.mark_as_modified()
+            self.mark_as_modified(True, "Paste Job")
             self.project_jobs().insert(new_job_index, self.copy_buffer())
             self.set_current_job(new_job_index)
             self.set_current_action(new_job_index)
@@ -547,13 +553,13 @@ class ProjectEditor(QObject):
             if not pos.is_sub_action:
                 if self.copy_buffer().type_name not in constants.ACTION_TYPES:
                     return
-                self.mark_as_modified()
+                self.mark_as_modified(True, "Paste Action")
                 pos.actions.insert(pos.action_index, self.copy_buffer())
             else:
                 if pos.action.type_name != constants.ACTION_COMBO or \
                    self.copy_buffer().type_name not in constants.SUB_ACTION_TYPES:
                     return
-                self.mark_as_modified()
+                self.mark_as_modified(True, "Paste Sub-action")
                 pos.sub_actions.insert(pos.sub_action_index, self.copy_buffer())
             new_row = new_row_after_paste(action_row, pos)
             self.refresh_ui_signal.emit(job_row, new_row)
@@ -597,7 +603,10 @@ class ProjectEditor(QObject):
             action_row = -1
         if current_action:
             if current_action.enabled() != enabled:
-                self.mark_as_modified()
+                if enabled:
+                    self.mark_as_modified(True, "Enable")
+                else:
+                    self.mark_as_modified(True, "Disable")
                 current_action.set_enabled(enabled)
                 self.refresh_ui_signal.emit(job_row, action_row)
 
@@ -608,7 +617,7 @@ class ProjectEditor(QObject):
         self.set_enabled(False)
 
     def set_enabled_all(self, enable=True):
-        self.mark_as_modified()
+        self.mark_as_modified(True, "Enable All")
         job_row = self.current_job_index()
         action_row = self.current_action_index()
         for j in self.project_jobs():

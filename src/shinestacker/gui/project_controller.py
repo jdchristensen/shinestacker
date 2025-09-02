@@ -29,8 +29,8 @@ class ProjectController(QObject):
     def refresh_ui(self, job_row=-1, action_row=-1):
         self.refresh_ui_requested.emit(job_row, action_row)
 
-    def mark_as_modified(self, modified=True):
-        self.project_editor.mark_as_modified(modified)
+    def mark_as_modified(self, modified=True, description=''):
+        self.project_editor.mark_as_modified(modified, description)
 
     def modified(self):
         return self.project_editor.modified()
@@ -227,7 +227,7 @@ class ProjectController(QObject):
                         'input_path': constants.PATH_SEPARATOR.join(multi_input_path)})
                 job.add_sub_action(multi_layer)
             self.add_job_to_project(job)
-            self.mark_as_modified(True)
+            self.mark_as_modified(True, "New Project")
             self.refresh_ui(0, -1)
 
     def open_project(self, file_path=False):
@@ -369,4 +369,4 @@ class ProjectController(QObject):
         dialog = self.action_config_dialog(action)
         if dialog.exec() == QDialog.Accepted:
             self.on_job_selected(self.current_job_index())
-            self.mark_as_modified()
+            # self.mark_as_modified(True. "Edit Action") <-- done by dialog

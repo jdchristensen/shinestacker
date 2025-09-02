@@ -136,7 +136,7 @@ class MainWindow(QMainWindow, LogManager):
         self.project_editor.enable_delete_action_signal.connect(
             self.menu_manager.delete_element_action.setEnabled)
         self.project_editor.undo_manager.set_enabled_undo_action_requested.connect(
-            self.menu_manager.undo_action.setEnabled)
+            self.menu_manager.set_enabled_undo_action)
         self.project_controller.update_title_requested.connect(self.update_title)
         self.project_controller.refresh_ui_requested.connect(self.refresh_ui)
         self.project_controller.activate_window_requested.connect(self.activateWindow)
@@ -148,8 +148,8 @@ class MainWindow(QMainWindow, LogManager):
     def modified(self):
         return self.project_editor.modified()
 
-    def mark_as_modified(self, modified=True):
-        self.project_editor.mark_as_modified(modified)
+    def mark_as_modified(self, modified=True, description=''):
+        self.project_editor.mark_as_modified(modified, description)
 
     def set_project(self, project):
         self.project_editor.set_project(project)

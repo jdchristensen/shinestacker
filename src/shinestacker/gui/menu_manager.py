@@ -244,3 +244,7 @@ class MenuManager:
         if not enabled:
             tooltip += " (requires more tha one job)"
         self.run_all_jobs_action.setToolTip(tooltip)
+
+    def set_enabled_undo_action(self, enabled, description):
+        self.undo_action.setEnabled(enabled)
+        self.undo_action.setText(f"&Undo {description}")

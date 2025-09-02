@@ -101,9 +101,8 @@ class ActionConfigDialog(QDialog):
             action_type, DefaultActionConfigurator)(self.expert(), self.current_wd)
 
     def accept(self):
-        self.parent().project_editor.add_undo(self.parent().project().clone())
         if self.configurator.update_params(self.action.params):
-            self.parent().mark_as_modified()
+            self.parent().mark_as_modified(True, "Modify Configuration")
             super().accept()
         else:
             self.parent().project_editor.pop_undo()
