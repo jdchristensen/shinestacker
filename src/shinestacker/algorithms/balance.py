@@ -24,7 +24,6 @@ class BaseHistogrammer:
         self.plot_summary = plot_summary
         self.process = process
         self.corrections = None
-        self.figsize = (10, 5)
 
     def begin(self, size):
         self.corrections = np.ones((size, self.channels))
@@ -70,7 +69,7 @@ class LumiHistogrammer(BaseHistogrammer):
         self.colors = ("r", "g", "b")
 
     def generate_frame_plot(self, idx, hist, chans, calc_hist_func):
-        _fig, axs = plt.subplots(1, 2, figsize=self.figsize, sharey=True)
+        _fig, axs = plt.subplots(1, 2, figsize=constants.PLT_FIG_SIZE, sharey=True)
         self.histo_plot(axs[0], hist, "pixel luminosity", 'black')
         for (chan, color) in zip(chans, self.colors):
             hist_col = calc_hist_func(chan)
@@ -79,7 +78,7 @@ class LumiHistogrammer(BaseHistogrammer):
         self.save_plot(idx)
 
     def generate_summary_plot(self, ref_idx):
-        plt.figure(figsize=self.figsize)
+        plt.figure(figsize=constants.PLT_FIG_SIZE)
         x = np.arange(0, len(self.corrections), dtype=int)
         y = self.corrections
         plt.plot([ref_idx, ref_idx], [0, np.max(y)], color='cornflowerblue',
@@ -101,14 +100,14 @@ class RGBHistogrammer(BaseHistogrammer):
         self.colors = ("r", "g", "b")
 
     def generate_frame_plot(self, idx, hists):
-        _fig, axs = plt.subplots(1, 3, figsize=self.figsize, sharey=True)
+        _fig, axs = plt.subplots(1, 3, figsize=constants.PLT_FIG_SIZE, sharey=True)
         for c in [2, 1, 0]:
             self.histo_plot(axs[c], hists[c], self.colors[c] + " luminosity", self.colors[c])
         plt.xlim(0, self.max_pixel_value)
         self.save_plot(idx)
 
     def generate_summary_plot(self, ref_idx):
-        plt.figure(figsize=self.figsize)
+        plt.figure(figsize=constants.PLT_FIG_SIZE)
         x = np.arange(0, len(self.corrections), dtype=int)
         y = self.corrections
         max_val = np.max(y) if np.any(y) else 1.0
@@ -134,14 +133,14 @@ class Ch1Histogrammer(BaseHistogrammer):
         self.colors = colors
 
     def generate_frame_plot(self, idx, hists):
-        _fig, axs = plt.subplots(1, 3, figsize=self.figsize, sharey=True)
+        _fig, axs = plt.subplots(1, 3, figsize=constants.PLT_FIG_SIZE, sharey=True)
         for c in range(3):
             self.histo_plot(axs[c], hists[c], self.labels[c], self.colors[c])
         plt.xlim(0, self.max_pixel_value)
         self.save_plot(idx)
 
     def generate_summary_plot(self, ref_idx):
-        plt.figure(figsize=self.figsize)
+        plt.figure(figsize=constants.PLT_FIG_SIZE)
         x = np.arange(0, len(self.corrections), dtype=int)
         y = self.corrections
         max_val = np.max(y) if np.any(y) else 1.0
@@ -165,14 +164,14 @@ class Ch2Histogrammer(BaseHistogrammer):
         self.colors = colors
 
     def generate_frame_plot(self, idx, hists):
-        _fig, axs = plt.subplots(1, 3, figsize=self.figsize, sharey=True)
+        _fig, axs = plt.subplots(1, 3, figsize=constants.PLT_FIG_SIZE, sharey=True)
         for c in range(3):
             self.histo_plot(axs[c], hists[c], self.labels[c], self.colors[c])
         plt.xlim(0, self.max_pixel_value)
         self.save_plot(idx)
 
     def generate_summary_plot(self, ref_idx):
-        plt.figure(figsize=self.figsize)
+        plt.figure(figsize=constants.PLT_FIG_SIZE)
         x = np.arange(0, len(self.corrections), dtype=int)
         y = self.corrections
         max_val = np.max(y) if np.any(y) else 1.0
@@ -603,7 +602,7 @@ class BalanceFrames(SubAction):
             img = np.zeros(shape)
             mask_radius = int(min(*shape) * self.mask_size / 2)
             cv2.circle(img, (shape[1] // 2, shape[0] // 2), mask_radius, 255, -1)
-            plt.figure(figsize=(10, 5))
+            plt.figure(figsize=constants.PLT_FIG_SIZE)
             plt.title('Mask')
             plt.imshow(img, 'gray')
             self.correction.histogrammer.save_summary_plot("mask")

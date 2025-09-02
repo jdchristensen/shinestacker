@@ -160,7 +160,7 @@ class Vignetting(SubAction):
                                            "light_blue"),
                                  level=logging.DEBUG)
         if self.plot_correction:
-            plt.figure(figsize=(10, 5))
+            plt.figure(figsize=constants.PLT_FIG_SIZE)
             plt.plot(radii, intensities, label="image mean intensity")
             plt.plot(radii, sigmoid_model(radii * subsample, *params), label="sigmoid fit")
             plt.xlabel('radius (pixels)')
@@ -192,7 +192,7 @@ class Vignetting(SubAction):
 
     def end(self):
         if self.plot_summary:
-            plt.figure(figsize=(10, 5))
+            plt.figure(figsize=constants.PLT_FIG_SIZE)
             xs = np.arange(1, len(self.corrections[0]) + 1, dtype=int)
             for i, p in enumerate(self.percentiles):
                 linestyle = 'solid'

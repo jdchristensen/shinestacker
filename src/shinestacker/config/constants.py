@@ -22,6 +22,8 @@ class _Constants:
 
     ANSI_ESCAPE = re.compile(r'\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])')
 
+    PLT_FIG_SIZE = (10, 5)
+
     ACTION_JOB = "Job"
     ACTION_COMBO = "CombinedActions"
     ACTION_NOISEDETECTION = "NoiseDetection"

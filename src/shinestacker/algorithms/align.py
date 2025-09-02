@@ -294,7 +294,7 @@ def align_images(img_ref, img_0, feature_config=None, matching_config=None, alig
                 kp_ref, good_matches, None, matchColor=(0, 255, 0),
                 singlePointColor=None, matchesMask=matches_mask,
                 flags=2), cv2.COLOR_BGR2RGB)
-            plt.figure(figsize=(10, 5))
+            plt.figure(figsize=constants.PLT_FIG_SIZE)
             plt.imshow(img_match, 'gray')
             save_plot(plot_path)
             if callbacks and 'save_plot' in callbacks:
@@ -438,7 +438,7 @@ class AlignFrames(SubAction):
 
     def end(self):
         if self.plot_summary:
-            plt.figure(figsize=(10, 5))
+            plt.figure(figsize=constants.PLT_FIG_SIZE)
             x = np.arange(1, len(self.n_matches) + 1, dtype=int)
             no_ref = x != self.process.ref_idx + 1
             x = x[no_ref]

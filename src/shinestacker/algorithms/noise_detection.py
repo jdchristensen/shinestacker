@@ -122,7 +122,7 @@ class NoiseDetection(JobBase, FramePaths):
             plot_range[1] = max_th + 1
         th_range = np.arange(self.plot_range[0], self.plot_range[1] + 1)
         if self.plot_histograms:
-            plt.figure(figsize=(10, 5))
+            plt.figure(figsize=constants.PLT_FIG_SIZE)
             x = np.array(list(th_range))
             ys = [[np.count_nonzero(self.hot_map(ch, th) > 0)
                   for th in th_range] for ch in channels]
