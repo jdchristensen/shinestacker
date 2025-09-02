@@ -443,10 +443,12 @@ class AlignFrames(SubAction):
             no_ref = x != self.process.ref_idx + 1
             x = x[no_ref]
             y = self.n_matches[no_ref]
-            y_max = y[1] \
-                if self.process.ref_idx == 0 \
-                else y[-1] if self.process.ref_idx == len(y) - 1 \
-                else (y[self.process.ref_idx - 1] + y[self.process.ref_idx]) / 2
+            if self.process.ref_idx == 0:
+                y_max = y[1]
+            elif self.process.ref_idx >= len(y):
+                y_max = y[-1]
+            else:
+                y_max = (y[self.process.ref_idx - 1] + y[self.process.ref_idx]) / 2
 
             plt.plot([self.process.ref_idx + 1, self.process.ref_idx + 1],
                      [0, y_max], color='cornflowerblue', linestyle='--', label='reference frame')
