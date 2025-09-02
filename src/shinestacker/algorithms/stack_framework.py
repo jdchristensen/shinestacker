@@ -7,7 +7,7 @@ from .. core.colors import color_str
 from .. core.framework import Job, ActionList
 from .. core.core_utils import check_path_exists
 from .. core.exceptions import ShapeError, BitDepthError, RunStopException
-from .utils import read_img, write_img, extension_tif_jpg
+from .utils import read_img, write_img, extension_tif_jpg, get_img_metadata, validate_image
 
 
 class StackJob(Job):
@@ -214,8 +214,7 @@ class CombinedActions(FramesRefActions):
     def __init__(self, name, actions=[], enabled=True, **kwargs):
         FramesRefActions.__init__(self, name, enabled, **kwargs)
         self._actions = actions
-        self.dtype = None
-        self.shape = None
+        self._metadata = (None, None)
 
     def begin(self):
         FramesRefActions.begin(self)
@@ -228,17 +227,14 @@ class CombinedActions(FramesRefActions):
         img = read_img(input_path)
         if img is None:
             raise RuntimeError(f"Invalid file: {os.path.basename(input_path)}")
-        self.dtype, self.shape = img.dtype, img.shape
+        self._metadata = get_img_metadata(img)
         return img
 
     def run_frame(self, idx, ref_idx):
         input_path = self.input_filepath(idx)
         self.sub_message_r(color_str(': read input image', constants.LOG_COLOR_LEVEL_3))
         img = read_img(input_path)
-        if self.dtype is not None and img.dtype != self.dtype:
-            raise BitDepthError(self.dtype, img.dtype, )
-        if self.shape is not None and img.shape != self.shape:
-            raise ShapeError(self.shape, img.shape)
+        validate_image(img, *(self._metadata))
         if img is None:
             raise RuntimeError(f"Invalid file:  {os.path.basename(input_path)}")
         if len(self._actions) == 0:
