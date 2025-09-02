@@ -1,6 +1,6 @@
 import time
 from shinestacker.core.colors import color_str
-from shinestacker.core.framework import Job, TaskBase, ActionList
+from shinestacker.core.framework import Job, TaskBase, SequentialTask
 
 
 class Action1(TaskBase):
@@ -21,9 +21,9 @@ class Action2(TaskBase):
         time.sleep(0.7)
 
 
-class MyActionList(ActionList):
+class MySequence(SequentialTask):
     def __init__(self, name, enabled=True):
-        ActionList.__init__(self, name, enabled=enabled)
+        SequentialTask.__init__(self, name, enabled=enabled)
 
     def begin(self):
         super().begin()
@@ -39,8 +39,8 @@ def test_run():
         job = Job("job", callbacks='tqdm')
         job.add_action(Action1())
         job.add_action(Action2())
-        job.add_action(MyActionList("my actions"))
-        a = MyActionList("my actions", enabled=False)
+        job.add_action(MySequence("my actions"))
+        a = MySequence("my actions", enabled=False)
         job.add_action(a)
         job.run()
     except Exception:

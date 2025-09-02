@@ -6,7 +6,7 @@ from .. core.framework import TaskBase
 from .. core.colors import color_str
 from .. core.exceptions import InvalidOptionError
 from .utils import write_img, extension_tif_jpg
-from .stack_framework import ImageSequenceManager, ActionList
+from .stack_framework import ImageSequenceManager, SequentialTask
 from .exif import copy_exif_from_file_to_file
 from .denoise import denoise
 
@@ -64,9 +64,9 @@ def get_bunches(collection, n_frames, n_overlap):
     return bunches
 
 
-class FocusStackBunch(ActionList, FocusStackBase):
+class FocusStackBunch(SequentialTask, FocusStackBase):
     def __init__(self, name, stack_algo, enabled=True, **kwargs):
-        ActionList.__init__(self, name, enabled)
+        SequentialTask.__init__(self, name, enabled)
         FocusStackBase.__init__(self, name, stack_algo, enabled, **kwargs)
         self._chunks = None
         self.frame_count = 0
@@ -82,12 +82,12 @@ class FocusStackBunch(ActionList, FocusStackBase):
         FocusStackBase.init(self, job, self.working_path)
 
     def begin(self):
-        ActionList.begin(self)
+        SequentialTask.begin(self)
         self._chunks = get_bunches(self.input_filepaths(), self.frames, self.overlap)
         self.set_counts(len(self._chunks))
 
     def end(self):
-        ActionList.end(self)
+        SequentialTask.end(self)
 
     def run_step(self):
         self.print_message_r(

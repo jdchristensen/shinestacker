@@ -4,7 +4,7 @@ import logging
 import os
 from .. config.constants import constants
 from .. core.colors import color_str
-from .. core.framework import Job, ActionList
+from .. core.framework import Job, SequentialTask
 from .. core.core_utils import check_path_exists
 from .. core.exceptions import RunStopException
 from .utils import read_img, write_img, extension_tif_jpg, get_img_metadata, validate_image
@@ -161,10 +161,10 @@ class ImageSequenceManager:
         return "folder: " + self.input_full_path().replace(self.working_path, '').lstrip('/')
 
 
-class ReferenceFrameProcessor(ActionList, ImageSequenceManager):
+class ReferenceFrameProcessor(SequentialTask, ImageSequenceManager):
     def __init__(self, name, enabled=True, reference_index=0, step_process=False, **kwargs):
         ImageSequenceManager.__init__(self, name, **kwargs)
-        ActionList.__init__(self, name, enabled)
+        SequentialTask.__init__(self, name, enabled)
         self.ref_idx = reference_index
         self.step_process = step_process
         self.current_idx = None
@@ -172,7 +172,7 @@ class ReferenceFrameProcessor(ActionList, ImageSequenceManager):
         self.current_idx_step = None
 
     def begin(self):
-        ActionList.begin(self)
+        SequentialTask.begin(self)
         self.set_filelist()
         n = self.num_input_filepaths()
         self.set_counts(n)
@@ -188,7 +188,7 @@ class ReferenceFrameProcessor(ActionList, ImageSequenceManager):
                 raise IndexError(msg)
 
     def end(self):
-        ActionList.end(self)
+        SequentialTask.end(self)
 
     def run_frame(self, _idx, _ref_idx):
         return None

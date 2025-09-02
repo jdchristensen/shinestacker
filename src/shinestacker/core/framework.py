@@ -188,7 +188,7 @@ class Job(TaskBase):
                 a.run()
 
 
-class ActionList(TaskBase):
+class SequentialTask(TaskBase):
     def __init__(self, name, enabled=True, **kwargs):
         TaskBase.__init__(self, name, enabled, **kwargs)
         self.total_action_counts = None
