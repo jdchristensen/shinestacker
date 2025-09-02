@@ -11,14 +11,30 @@ from .utils import read_img, write_img, extension_tif_jpg, get_img_metadata, val
 
 
 class StackJob(Job):
-    def __init__(self, name, working_path, input_path='', **kwargs):
+    def __init__(self, name, working_path, input_path='', input_filepaths=[], **kwargs):
         check_path_exists(working_path)
         self.working_path = working_path
         self._action_paths = [] if input_path == '' else [input_path]
+        self._input_filepaths = []
+        for filepath in input_filepaths:
+            if os.path.isabs(filepath):
+                self._input_filepaths.append(filepath)
+            elif input_path == '':
+                raise RuntimeError("Can't specify input_filepaths with relative paths "
+                                   "if input_path is null.")
+            else:
+                filepath = os.path.join(input_path, filepath)
+                self._input_filepaths.append(filepath)
         Job.__init__(self, name, **kwargs)
 
     def init(self, a):
         a.init(self)
+
+    def input_filepaths(self):
+        return self._input_filepaths
+
+    def num_input_filepaths(self):
+        return len(self._input_filepaths)
 
     def action_paths(self):
         return self._action_paths
@@ -43,7 +59,7 @@ class ImageSequenceManager:
         self.plot_path = plot_path
         self.input_path = input_path
         self.output_path = self.name if output_path == '' else output_path
-        self.resample = resample
+        self._resample = resample
         self.reverse_order = reverse_order
         self.scratch_output_dir = scratch_output_dir
         self.enabled = None
@@ -87,8 +103,8 @@ class ImageSequenceManager:
                     filelist.sort()
                     if self.reverse_order:
                         filelist.reverse()
-                    if self.resample > 1:
-                        filelist = filelist[0::self.resample]
+                    if self._resample > 1:
+                        filelist = filelist[0::self._resample]
                     files += filelist
                 if len(files) == 0:
                     self.print_message(color_str(f"input folder {d} does not contain any image",
@@ -150,6 +166,8 @@ class ImageSequenceManager:
             if job.num_action_paths() == 0:
                 raise RuntimeError(f"Job {job.name} does not have any configured path")
             self.input_path = job.action_path(-1)
+            if job.num_input_filepaths() > 0:
+                self._input_filepaths = job.input_filepaths()
         job.add_action_path(self.output_path)
 
     def folder_list_str(self):
