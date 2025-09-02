@@ -26,7 +26,7 @@ class FocusStackBase(JobBase, FrameDirectory):
     def focus_stack(self, filenames):
         self.sub_message_r(color_str(': reading input files', constants.LOG_COLOR_LEVEL_3))
         stacked_img = self.stack_algo.focus_stack()
-        in_filename = filenames[0].split(".")
+        in_filename = os.path.basename(filenames[0]).split(".")
         out_filename = os.path.join(
             self.output_full_path(),
             f"{self.prefix}{in_filename[0]}." + '.'.join(in_filename[1:]))
@@ -83,8 +83,7 @@ class FocusStackBunch(ActionList, FocusStackBase):
 
     def begin(self):
         ActionList.begin(self)
-        fnames = self.folder_filelist()
-        self._chunks = get_bunches(fnames, self.frames, self.overlap)
+        self._chunks = get_bunches(self.input_filepaths(), self.frames, self.overlap)
         self.set_counts(len(self._chunks))
 
     def end(self):
@@ -94,8 +93,7 @@ class FocusStackBunch(ActionList, FocusStackBase):
         self.print_message_r(
             color_str(f"fusing bunch: {self.current_action_count + 1}/{self.total_action_counts}",
                       constants.LOG_COLOR_LEVEL_2))
-        img_files = [os.path.join(self.input_full_path(), name)
-                     for name in self._chunks[self.current_action_count - 1]]
+        img_files = self._chunks[self.current_action_count - 1]
         self.stack_algo.init(img_files)
         self.focus_stack(self._chunks[self.current_action_count - 1])
 
@@ -108,11 +106,11 @@ class FocusStack(FocusStackBase):
 
     def run_core(self):
         self.set_filelist()
-        img_files = sorted([os.path.join(self.input_full_path(), name) for name in self.filenames])
+        img_files = sorted(self.input_filepaths())
         self.stack_algo.init(img_files)
         self.callback('step_counts', self.id, self.name,
-                      self.stack_algo.total_steps(len(self.filenames)))
-        self.focus_stack(self.filenames)
+                      self.stack_algo.total_steps(self.num_input_filepaths()))
+        self.focus_stack(img_files)
 
     def init(self, job, _working_path=''):
         FocusStackBase.init(self, job, self.working_path)

@@ -76,8 +76,7 @@ class NoiseDetection(JobBase, FrameMultiDirectory):
             f"map noisy pixels from frames in {self.folder_list_str()}",
             constants.LOG_COLOR_LEVEL_2
         ))
-        files = self.folder_filelist()
-        in_paths = [self.working_path + "/" + f for f in files]
+        in_paths = self.input_filepaths()
         n_frames = min(len(in_paths), self.max_frames) if self.max_frames > 0 else len(in_paths)
         self.callback('step_counts', self.id, self.name, n_frames)
         if not config.DISABLE_TQDM:
@@ -90,7 +89,7 @@ class NoiseDetection(JobBase, FrameMultiDirectory):
         mean_img = mean_image(
             file_paths=in_paths, max_frames=self.max_frames,
             message_callback=lambda path: self.print_message_r(
-                color_str(f"reading frame: {path.split('/')[-1]}", constants.LOG_COLOR_LEVEL_2)
+                color_str(f"reading frame: {os.path.basename(path)}", constants.LOG_COLOR_LEVEL_2)
             ),
             progress_callback=progress_callback)
         if not config.DISABLE_TQDM:

@@ -330,7 +330,6 @@ def align_images(img_1, img_0, feature_config=None, matching_config=None, alignm
             if callbacks and 'warning' in callbacks:
                 callbacks['warning'](f"invalid transformation: {reason}")
             return n_good_matches, None, None
-
         if callbacks and 'align_message' in callbacks:
             callbacks['align_message']()
         img_mask = np.ones_like(img_0, dtype=np.uint8)

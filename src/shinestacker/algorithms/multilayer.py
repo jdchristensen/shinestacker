@@ -188,8 +188,8 @@ class MultiLayer(JobBase, FrameMultiDirectory):
                                          constants.LOG_COLOR_ALERT),
                                level=logging.WARNING)
             return
-        files = self.folder_filelist()
-        if len(files) == 0:
+        input_files = self.input_filepaths()
+        if len(input_files) == 0:
             self.print_message(
                 color_str(f"no input in {len(paths)} specified path" +
                           ('s' if len(paths) > 1 else '') + ": "
@@ -199,12 +199,11 @@ class MultiLayer(JobBase, FrameMultiDirectory):
             return
         self.print_message(color_str("merging frames in " + self.folder_list_str(),
                            constants.LOG_COLOR_LEVEL_2))
-        input_files = [f"{self.working_path}/{f}" for f in files]
         self.print_message(
-            color_str("frames: " + ", ".join([i.split("/")[-1] for i in files]),
+            color_str("frames: " + ", ".join([os.path.basename(i) for i in input_files]),
                       constants.LOG_COLOR_LEVEL_2))
         self.print_message(color_str("reading files", constants.LOG_COLOR_LEVEL_2))
-        filename = ".".join(files[0].split("/")[-1].split(".")[:-1])
+        filename = ".".join(os.path.basename(input_files[0]).split(".")[:-1])
         output_file = f"{self.working_path}/{self.output_path}/{filename}.tif"
         callbacks = {
             'exif_msg': lambda path: self.print_message(

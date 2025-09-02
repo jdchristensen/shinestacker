@@ -38,10 +38,10 @@ class FramePaths:
         self.reverse_order = reverse_order
         self.scratch_output_dir = scratch_output_dir
         self.enabled = None
-        self.filenames = None
         self.base_message = ''
         self._input_full_path = None
         self._output_full_path = None
+        self._input_filepaths = None
 
     def output_full_path(self):
         if self._output_full_path is None:
@@ -60,16 +60,44 @@ class FramePaths:
                     check_path_exists(path)
         return self._input_full_path
 
-    def folder_filelist(self):
-        assert False, "this method should be overwritten"
+    def input_filepaths(self):
+        if self._input_filepaths is None:
+            if isinstance(self.input_full_path(), str):
+                dirs = [self.input_full_path()]
+            elif hasattr(self.input_full_path(), "__len__"):
+                dirs = self.input_full_path()
+            else:
+                raise RuntimeError("input_full_path option must contain a path or an array of paths")
+            files = []
+            for d in dirs:
+                filelist = []
+                for _dirpath, _, filenames in os.walk(d):
+                    filelist = [os.path.join(_dirpath, name) for name in filenames if extension_tif_jpg(name)]
+                    filelist.sort()
+                    if self.reverse_order:
+                        filelist.reverse()
+                    if self.resample > 1:
+                        filelist = filelist[0::self.resample]
+                    files += filelist
+                if len(files) == 0:
+                    self.print_message(color_str(f"input folder {d} does not contain any image",
+                                                 constants.LOG_COLOR_WARNING),
+                                       level=logging.WARNING)
+            self._input_filepaths = files
+        return self._input_filepaths
+
+    def input_filepath(self, index):
+        return self.input_filepaths()[index]
+
+    def num_input_filepaths(self):
+        return len(self.input_filepaths())
 
     def print_message(self, msg='', level=logging.INFO, end=None, begin='', tqdm=False):
         assert False, "this method should be overwritten"
 
     def set_filelist(self):
-        self.filenames = self.folder_filelist()
         file_folder = self.input_full_path().replace(self.working_path, '').lstrip('/')
-        self.print_message(color_str(f"{len(self.filenames)} files in folder: {file_folder}",
+        self.print_message(color_str(f"{self.num_input_filepaths()} files in folder: {file_folder}",
                                      constants.LOG_COLOR_LEVEL_2))
         self.base_message = color_str(self.name, constants.LOG_COLOR_LEVEL_1, "bold")
 
@@ -125,21 +153,6 @@ class FrameDirectory(FramePaths):
             return "folder" + ('s' if len(self.input_full_path()) > 1 else '') + f": {file_list}"
         return "folder: " + self.input_full_path().replace(self.working_path, '').lstrip('/')
 
-    def folder_filelist(self):
-        src_contents = os.walk(self.input_full_path())
-        _dirpath, _, filenames = next(src_contents)
-        filelist = [name for name in filenames if extension_tif_jpg(name)]
-        filelist.sort()
-        if self.reverse_order:
-            filelist.reverse()
-        if self.resample > 1:
-            filelist = filelist[0::self.resample]
-        return filelist
-
-    def init(self, job, _working_path=''):
-        FramePaths.init(self, job)
-        job.paths.append(self.output_path)
-
 
 class FrameMultiDirectory(FramePaths):
     def __init__(self, name, input_path='', output_path='', working_path='',
@@ -156,30 +169,6 @@ class FrameMultiDirectory(FramePaths):
             return "folder" + ('s' if len(self.input_full_path()) > 1 else '') + f": {file_list}"
         return "folder: " + self.input_full_path().replace(self.working_path, '').lstrip('/')
 
-    def folder_filelist(self):
-        if isinstance(self.input_full_path(), str):
-            dirs = [self.input_full_path()]
-            paths = [self.input_path]
-        elif hasattr(self.input_full_path(), "__len__"):
-            dirs = self.input_full_path()
-            paths = self.input_path
-        else:
-            raise RuntimeError("input_full_path option must contain a path or an array of paths")
-        files = []
-        for d, p in zip(dirs, paths):
-            filelist = []
-            for _dirpath, _, filenames in os.walk(d):
-                filelist = [f"{p}/{name}" for name in filenames if extension_tif_jpg(name)]
-                if self.reverse_order:
-                    filelist.reverse()
-                if self.resample > 1:
-                    filelist = filelist[0::self.resample]
-                files += filelist
-            if len(files) == 0:
-                self.print_message(color_str(f"input folder {p} does not contain any image", "red"),
-                                   level=logging.WARNING)
-        return files
-
 
 class FramesRefActions(ActionList, FrameDirectory):
     def __init__(self, name, enabled=True, ref_idx=-1, step_process=False, **kwargs):
@@ -194,9 +183,10 @@ class FramesRefActions(ActionList, FrameDirectory):
     def begin(self):
         ActionList.begin(self)
         self.set_filelist()
-        self.set_counts(len(self.filenames))
+        n = self.num_input_filepaths()
+        self.set_counts(n)
         if self.ref_idx == -1:
-            self.ref_idx = len(self.filenames) // 2
+            self.ref_idx = n // 2
 
     def end(self):
         ActionList.end(self)
@@ -209,11 +199,11 @@ class FramesRefActions(ActionList, FrameDirectory):
             self.current_idx = self.ref_idx if self.step_process else 0
             self.current_ref_idx = self.ref_idx
             self.current_idx_step = +1
-        ll = len(self.filenames)
+        ll = self.num_input_filepaths()
         self.print_message_r(
             color_str(f"step {self.current_action_count + 1}/{ll}: process file: "
-                      f"{self.filenames[self.current_idx]}, "
-                      f"reference: {self.filenames[self.current_ref_idx]}",
+                      f"{os.path.basename(self.input_filepath(self.current_idx))}, "
+                      f"reference: {os.path.basename(self.input_filepath(self.current_ref_idx))}",
                       constants.LOG_COLOR_LEVEL_2))
         self.base_message = color_str(self.name, constants.LOG_COLOR_LEVEL_1, "bold")
         success = self.run_frame(self.current_idx, self.current_ref_idx) is not None
@@ -253,26 +243,22 @@ class CombinedActions(FramesRefActions):
                 a.begin(self)
 
     def img_ref(self, idx):
-        filename = self.filenames[idx]
-        input_path = os.path.join(self.output_full_path()
-                                  if self.step_process else self.input_full_path(), filename)
-        img = read_img(input_path)
+        img = read_img(self.input_filepath(idx))
         if img is None:
-            raise RuntimeError(f"Invalid file: {self.input_full_path()}/{filename}")
-        self.dtype = img.dtype
-        self.shape = img.shape
+            raise RuntimeError(f"Invalid file: {os.path.basename(input_path)}")
+        self.dtype, self.shape = img.dtype, img.shape
         return img
 
     def run_frame(self, idx, ref_idx):
-        filename = self.filenames[idx]
+        input_path = self.input_filepath(idx)
         self.sub_message_r(color_str(': read input image', constants.LOG_COLOR_LEVEL_3))
-        img = read_img(f"{self.input_full_path()}/{filename}")
+        img = read_img(input_path)
         if self.dtype is not None and img.dtype != self.dtype:
             raise BitDepthError(self.dtype, img.dtype, )
         if self.shape is not None and img.shape != self.shape:
             raise ShapeError(self.shape, img.shape)
         if img is None:
-            raise RuntimeError(f"Invalid file: {self.input_full_path()}/{filename}")
+            raise RuntimeError(f"Invalid file:  {os.path.basename(input_path)}")
         if len(self._actions) == 0:
             self.sub_message(color_str(": no actions specified", constants.LOG_COLOR_ALERT),
                              level=logging.WARNING)
@@ -292,12 +278,11 @@ class CombinedActions(FramesRefActions):
                         level=logging.WARNING)
         if img is not None:
             self.sub_message_r(color_str(': write output image', constants.LOG_COLOR_LEVEL_3))
-            output_path = os.path.join(self.output_full_path(), filename)
+            output_path = os.path.join(self.output_full_path(), os.path.basename(input_path))
             write_img(output_path, img)
             return img
         self.print_message(color_str(
-            "no output file resulted from processing input file: "
-            f"{self.input_full_path()}/{filename}",
+            f"no output file resulted from processing input file: {filename}",
             constants.LOG_COLOR_ALERT), level=logging.WARNING)
         return None
 
