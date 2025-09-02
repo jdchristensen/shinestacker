@@ -161,7 +161,7 @@ class ImageSequenceManager:
         return "folder: " + self.input_full_path().replace(self.working_path, '').lstrip('/')
 
 
-class ReferenceFrameProcessor(SequentialTask, ImageSequenceManager):
+class ReferenceFrameTask(SequentialTask, ImageSequenceManager):
     def __init__(self, name, enabled=True, reference_index=0, step_process=False, **kwargs):
         ImageSequenceManager.__init__(self, name, **kwargs)
         SequentialTask.__init__(self, name, enabled)
@@ -228,14 +228,14 @@ class SubAction:
         pass
 
 
-class CombinedActions(ReferenceFrameProcessor):
+class CombinedActions(ReferenceFrameTask):
     def __init__(self, name, actions=[], enabled=True, **kwargs):
-        ReferenceFrameProcessor.__init__(self, name, enabled, **kwargs)
+        ReferenceFrameTask.__init__(self, name, enabled, **kwargs)
         self._actions = actions
         self._metadata = (None, None)
 
     def begin(self):
-        ReferenceFrameProcessor.begin(self)
+        ReferenceFrameTask.begin(self)
         for a in self._actions:
             if a.enabled:
                 a.begin(self)
