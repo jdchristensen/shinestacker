@@ -154,7 +154,7 @@ class PyramidTilesStack(PyramidBase):
                     continue
         if laplacians:
             stacked = np.stack(laplacians, axis=0)
-            return self.fuse_laplacian(stacked)        
+            return self.fuse_laplacian(stacked)
         y_end = min(y + self.tile_size, h)
         x_end = min(x + self.tile_size, w)
         gc.collect()

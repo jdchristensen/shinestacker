@@ -17,9 +17,9 @@ class PyramidAutoStack(BaseStackAlgo):
                  n_tiled_layers=constants.DEFAULT_PY_N_TILED_LAYERS,
                  memory_limit=constants.DEFAULT_PY_MEMORY_LIMIT_GB,
                  max_threads=constants.DEFAULT_PY_MAX_THREADS,
-                 max_tile_size=2048,
-                 min_tile_size=128,
-                 min_n_tiled_layers=1,
+                 max_tile_size=constants.DEFAULT_PY_MAX_TILE_SIZE,
+                 min_tile_size=constants.DEFAULT_PY_MIN_TILE_SIZE,
+                 min_n_tiled_layers=constants.DEFAULT_PY_MIN_N_TILED_LAYERS,
                  mode='auto'):
         super().__init__("auto_pyramid", 2, float_type)
         self.min_size = min_size
@@ -41,10 +41,10 @@ class PyramidAutoStack(BaseStackAlgo):
         self.shape = None
         self.n_levels = None
         self.n_frames = 0
-        self.channels = 3
+        self.channels = 3  # r, g, b
         dtype = np.float32 if self.float_type == constants.FLOAT_32 else np.float64
         self.bytes_per_pixel = self.channels * np.dtype(dtype).itemsize
-        self.overhead = 2.5
+        self.overhead = constants.PY_MEMORY_OVERHEAD
 
     def init(self, filenames):
         first_img_file = None
@@ -100,13 +100,13 @@ class PyramidAutoStack(BaseStackAlgo):
 
     def _find_optimal_tile_params(self):
         h, w = self.shape[:2]
-        base_level_memory = h * w * self.bytes_per_pixel        
+        base_level_memory = h * w * self.bytes_per_pixel
         available_memory = self.memory_limit - base_level_memory
-        available_memory /= self.overhead        
-        tile_size_max = int(np.sqrt(available_memory / 
+        available_memory /= self.overhead
+        tile_size_max = int(np.sqrt(available_memory /
                             (self.num_threads * self.n_frames * self.bytes_per_pixel)))
-        tile_size = min(self.max_tile_size, tile_size_max, self.shape[0], self.shape[1])        
-        tile_size = max(self.min_tile_size, tile_size)        
+        tile_size = min(self.max_tile_size, tile_size_max, self.shape[0], self.shape[1])
+        tile_size = max(self.min_tile_size, tile_size)
         n_tiled_layers = 0
         for layer in range(self.n_levels):
             h_layer = max(1, self.shape[0] // (2 ** layer))
