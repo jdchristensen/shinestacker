@@ -12,7 +12,7 @@ from .. core.exceptions import ImageLoadError
 from .. core.framework import JobBase
 from .. core.core_utils import make_tqdm_bar
 from .. core.exceptions import RunStopException, ShapeError
-from .stack_framework import FramePaths, SubAction
+from .stack_framework import ImageSequenceManager, SubAction
 from .utils import read_img, save_plot, get_img_metadata, validate_image
 
 MAX_NOISY_PIXELS = 1000
@@ -45,9 +45,9 @@ def mean_image(file_paths, max_frames=-1, message_callback=None, progress_callba
     return None if mean_img is None else (mean_img / counter).astype(np.uint8)
 
 
-class NoiseDetection(JobBase, FramePaths):
+class NoiseDetection(JobBase, ImageSequenceManager):
     def __init__(self, name="noise-map", enabled=True, **kwargs):
-        FramePaths.__init__(self, name, **kwargs)
+        ImageSequenceManager.__init__(self, name, **kwargs)
         JobBase.__init__(self, name, enabled)
         self.max_frames = kwargs.get('max_frames', constants.DEFAULT_NOISE_MAX_FRAMES)
         self.blur_size = kwargs.get('blur_size', constants.DEFAULT_BLUR_SIZE)

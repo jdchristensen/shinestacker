@@ -33,7 +33,7 @@ class StackJob(Job):
         return self._action_paths[i]
 
 
-class FramePaths:
+class ImageSequenceManager:
     def __init__(self, name, input_path='', output_path='', working_path='',
                  plot_path=constants.DEFAULT_PLOTS_PATH,
                  scratch_output_dir=True, resample=1,
@@ -161,9 +161,9 @@ class FramePaths:
         return "folder: " + self.input_full_path().replace(self.working_path, '').lstrip('/')
 
 
-class FramesRefActions(ActionList, FramePaths):
+class ReferenceFrameProcessor(ActionList, ImageSequenceManager):
     def __init__(self, name, enabled=True, reference_index=0, step_process=False, **kwargs):
-        FramePaths.__init__(self, name, **kwargs)
+        ImageSequenceManager.__init__(self, name, **kwargs)
         ActionList.__init__(self, name, enabled)
         self.ref_idx = reference_index
         self.step_process = step_process
@@ -228,14 +228,14 @@ class SubAction:
         pass
 
 
-class CombinedActions(FramesRefActions):
+class CombinedActions(ReferenceFrameProcessor):
     def __init__(self, name, actions=[], enabled=True, **kwargs):
-        FramesRefActions.__init__(self, name, enabled, **kwargs)
+        ReferenceFrameProcessor.__init__(self, name, enabled, **kwargs)
         self._actions = actions
         self._metadata = (None, None)
 
     def begin(self):
-        FramesRefActions.begin(self)
+        ReferenceFrameProcessor.begin(self)
         for a in self._actions:
             if a.enabled:
                 a.begin(self)
