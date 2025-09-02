@@ -6,7 +6,7 @@ from .. config.constants import constants
 from .. core.colors import color_str
 from .. core.framework import Job, ActionList
 from .. core.core_utils import check_path_exists
-from .. core.exceptions import ShapeError, BitDepthError, RunStopException
+from .. core.exceptions import RunStopException
 from .utils import read_img, write_img, extension_tif_jpg, get_img_metadata, validate_image
 
 
@@ -146,7 +146,8 @@ class FramePaths:
     def folder_list_str(self):
         if isinstance(self.input_full_path(), list):
             file_list = ", ".join(
-                [path.replace(self.working_path, '').lstrip('/') for path in self.input_full_path()])
+                [path.replace(self.working_path, '').lstrip('/')
+                 for path in self.input_full_path()])
             return "folder" + ('s' if len(self.input_full_path()) > 1 else '') + f": {file_list}"
         return "folder: " + self.input_full_path().replace(self.working_path, '').lstrip('/')
 

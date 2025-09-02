@@ -254,7 +254,7 @@ def align_images(img_ref, img_0, feature_config=None, matching_config=None, alig
     h0, w0 = img_0.shape[:2]
     subsample = alignment_config['subsample']
     if subsample == 0:
-        img_res = (float(h0) / 1000) * (float(w0) / 1000)
+        img_res = (float(h0) / constants.ONE_KILO) * (float(w0) / constants.ONE_KILO)
         target_res = constants.DEFAULT_ALIGN_RES_TARGET_MPX
         subsample = int(1 + math.floor(img_res / target_res))
     fast_subsampling = alignment_config['fast_subsampling']
