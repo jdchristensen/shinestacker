@@ -2,7 +2,7 @@
 
 This page reports the main releases only and the main changes therein.
 
-## [v1.2.1] - 2025-09-01
+## [v1.2.1] - 2025-09-02
 **Bug fixes and minor improvements**
 * alignment is more tolerant in case of failures: frames are skipped and the running job is not stopped
 * fixed the -x (--expert) option
