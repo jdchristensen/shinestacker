@@ -61,11 +61,13 @@ class BaseStackAlgo:
         return img, metadata, updated
 
     def check_running(self, cleanup_callback=None):
-        if self.process.callback('check_running', self.process.id, self.process.name) is False:
+        if self.process.callback(constants.CALLBACK_CHECK_RUNNING,
+                                 self.process.id, self.process.name) is False:
             if cleanup_callback is not None:
                 cleanup_callback()
             raise RunStopException(self.name)
 
     def after_step(self, step):
         if self.do_step_callback:
-            self.process.callback('after_step', self.process.id, self.process.name, step)
+            self.process.callback(constants.CALLBACK_AFTER_STEP,
+                                  self.process.id, self.process.name, step)

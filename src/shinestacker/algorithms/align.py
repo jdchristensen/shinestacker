@@ -400,7 +400,7 @@ class AlignFrames(SubAction):
             'warning': lambda msg: self.sub_msg(
                 f': {msg}', constants.LOG_COLOR_WARNING),
             'save_plot': lambda plot_path: self.process.callback(
-                'save_plot', self.process.id,
+                constants.CALLBACK_SAVE_PLOT, self.process.id,
                 f"{self.process.name}: matches\nframe {idx_str}", plot_path)
         }
         if self.plot_matches:
@@ -464,5 +464,5 @@ class AlignFrames(SubAction):
                         f"{self.process.name}-matches.pdf"
             save_plot(plot_path)
             plt.close('all')
-            self.process.callback('save_plot', self.process.id,
+            self.process.callback(constants.CALLBACK_SAVE_PLOT, self.process.id,
                                   f"{self.process.name}: matches", plot_path)

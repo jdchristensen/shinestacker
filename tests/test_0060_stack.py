@@ -45,6 +45,7 @@ def test_jpg_pt_1():
     except Exception:
         assert False
 
+
 def test_jpg_pt_2():
     try:
         job = StackJob("job", "examples", input_path="input/img-jpg")
@@ -54,6 +55,7 @@ def test_jpg_pt_2():
     except Exception:
         assert False
 
+
 def test_jpg_auto_1():
     try:
         job = StackJob("job", "examples", input_path="input/img-jpg")
@@ -62,6 +64,7 @@ def test_jpg_auto_1():
         job.run()
     except Exception:
         assert False
+
 
 def test_jpg_auto_2():
     try:

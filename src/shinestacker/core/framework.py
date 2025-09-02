@@ -77,8 +77,7 @@ class TaskBase:
             self.begin_r, self.end_r = LINE_UP, None
 
     def callback(self, key, *args):
-        has_callbacks = hasattr(self, 'callbacks')
-        if has_callbacks and self.callbacks is not None:
+        if self.callbacks is not None:
             callback = self.callbacks.get(key, None)
             if callback:
                 return callback(*args)
@@ -92,9 +91,9 @@ class TaskBase:
         if not self.enabled:
             self.get_logger().warning(color_str(self.name + ": entire job disabled",
                                                 constants.LOG_COLOR_ALERT))
-        self.callback('before_action', self.id, self.name)
+        self.callback(constants.CALLBACK_BEFORE_ACTION, self.id, self.name)
         self.run_core()
-        self.callback('after_action', self.id, self.name)
+        self.callback(constants.CALLBACK_AFTER_ACTION, self.id, self.name)
         msg_name = color_str(self.name + ":", constants.LOG_COLOR_LEVEL_JOB, "bold")
         msg_time = color_str(f"elapsed time: {elapsed_time_str(self._t0)}",
                              constants.LOG_COLOR_LEVEL_JOB)
@@ -183,7 +182,8 @@ class Job(TaskBase):
                 self.get_logger().warning(color_str(a.name + f": {msg} disabled",
                                                     constants.LOG_COLOR_ALERT))
             else:
-                if self.callback('check_running', self.id, self.name) is False:
+                if self.callback(constants.CALLBACK_CHECK_RUNNING,
+                                 self.id, self.name) is False:
                     raise RunStopException(self.name)
                 a.run()
 
@@ -196,13 +196,14 @@ class ActionList(TaskBase):
 
     def set_counts(self, counts):
         self.total_action_counts = counts
-        self.callback('step_counts', self.id, self.name, self.total_action_counts)
+        self.callback(constants.CALLBACK_STEP_COUNTS,
+                      self.id, self.name, self.total_action_counts)
 
     def begin(self):
-        self.callback('begin_steps', self.id, self.name)
+        self.callback(constants.CALLBACK_BEGIN_STEPS, self.id, self.name)
 
     def end(self):
-        self.callback('end_steps', self.id, self.name)
+        self.callback(constants.CALLBACK_END_STEPS, self.id, self.name)
 
     def __iter__(self):
         self.current_action_count = 0
@@ -223,7 +224,9 @@ class ActionList(TaskBase):
         self.print_message(color_str('begin run', constants.LOG_COLOR_LEVEL_2), end='\n')
         self.begin()
         for _ in iter(self):
-            self.callback('after_step', self.id, self.name, self.current_action_count)
-            if self.callback('check_running', self.id, self.name) is False:
+            self.callback(constants.CALLBACK_AFTER_STEP,
+                          self.id, self.name, self.current_action_count)
+            if self.callback(constants.CALLBACK_CHECK_RUNNING,
+                             self.id, self.name) is False:
                 raise RunStopException(self.name)
         self.end()

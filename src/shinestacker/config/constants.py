@@ -43,13 +43,6 @@ class _Constants:
     STACK_ALGO_DEPTH_MAP = 'Depth map'
     STACK_ALGO_OPTIONS = [STACK_ALGO_PYRAMID, STACK_ALGO_DEPTH_MAP]
     STACK_ALGO_DEFAULT = STACK_ALGO_PYRAMID
-    DEFAULT_PLOTS_PATH = 'plots'
-
-    FIELD_SUBSAMPLE_VALUES_1 = [2, 3, 4, 6, 8, 12, 16, 24, 32]
-    FIELD_SUBSAMPLE_OPTIONS_1 = [f"1/{n} × 1/{n}" for n in FIELD_SUBSAMPLE_VALUES_1]
-    FIELD_SUBSAMPLE_VALUES = [0, 1] + FIELD_SUBSAMPLE_VALUES_1
-    FIELD_SUBSAMPLE_OPTIONS = ['Auto', 'Full resolution'] + FIELD_SUBSAMPLE_OPTIONS_1
-    FIELD_SUBSAMPLE_DEFAULT = FIELD_SUBSAMPLE_VALUES[0]
 
     PATH_SEPARATOR = ';'
 
@@ -60,9 +53,36 @@ class _Constants:
     LOG_COLOR_LEVEL_2 = 'magenta'
     LOG_COLOR_LEVEL_3 = 'cyan'
 
+    STATUS_RUNNING = 1
+    STATUS_PAUSED = 2
+    STATUS_STOPPED = 3
+
+    RUN_COMPLETED = 0
+    RUN_ONGOING = 1
+    RUN_FAILED = 2
+    RUN_STOPPED = 3
+
+    CALLBACK_BEFORE_ACTION = 'before_action'
+    CALLBACK_AFTER_ACTION = 'after_action'
+    CALLBACK_STEP_COUNTS = 'step_counts'
+    CALLBACK_BEGIN_STEPS = 'begin_steps'
+    CALLBACK_END_STEPS = 'end_steps'
+    CALLBACK_AFTER_STEP = 'after_step'
+    CALLBACK_CHECK_RUNNING = 'check_running'
+    CALLBACK_SAVE_PLOT = 'save_plot'
+    CALLBACK_OPEN_APP = 'open_app'
+
     DEFAULT_FILE_REVERSE_ORDER = False
     DEFAULT_MULTILAYER_FILE_REVERSE_ORDER = True
     MULTILAYER_WARNING_MEM_GB = 1
+
+    DEFAULT_PLOTS_PATH = 'plots'
+
+    FIELD_SUBSAMPLE_VALUES_1 = [2, 3, 4, 6, 8, 12, 16, 24, 32]
+    FIELD_SUBSAMPLE_OPTIONS_1 = [f"1/{n} × 1/{n}" for n in FIELD_SUBSAMPLE_VALUES_1]
+    FIELD_SUBSAMPLE_VALUES = [0, 1] + FIELD_SUBSAMPLE_VALUES_1
+    FIELD_SUBSAMPLE_OPTIONS = ['Auto', 'Full resolution'] + FIELD_SUBSAMPLE_OPTIONS_1
+    FIELD_SUBSAMPLE_DEFAULT = FIELD_SUBSAMPLE_VALUES[0]
 
     DEFAULT_NOISE_MAP_FILENAME = "noise-map/hot_pixels.png"
     DEFAULT_NOISE_MAX_FRAMES = 10
@@ -162,13 +182,13 @@ class _Constants:
     DEFAULT_STACK_PREFIX = "stack_"
     DEFAULT_BUNCH_PREFIX = "bunch_"
 
-    DEFAULT_DM_FLOAT = FLOAT_32
     DM_ENERGY_LAPLACIAN = "laplacian"
     DM_ENERGY_SOBEL = "sobel"
     DM_MAP_AVERAGE = "average"
     DM_MAP_MAX = "max"
     VALID_DM_MAP = [DM_MAP_AVERAGE, DM_MAP_MAX]
     VALID_DM_ENERGY = [DM_ENERGY_LAPLACIAN, DM_ENERGY_SOBEL]
+    DEFAULT_DM_FLOAT = FLOAT_32
     DEFAULT_DM_MAP = DM_MAP_AVERAGE
     DEFAULT_DM_ENERGY = DM_ENERGY_LAPLACIAN
     DEFAULT_DM_KERNEL_SIZE = 5
@@ -177,6 +197,8 @@ class _Constants:
     DEFAULT_DM_TEMPERATURE = 0.1
     DEFAULT_DM_LEVELS = 3
 
+    PY_VALID_MODES = ['auto', 'memory', 'tiled']
+    MIN_PY_TILE_SIZE = 256
     DEFAULT_PY_FLOAT = FLOAT_32
     DEFAULT_PY_MIN_SIZE = 32
     DEFAULT_PY_KERNEL_SIZE = 5
@@ -186,20 +208,9 @@ class _Constants:
     DEFAULT_PY_MEMORY_LIMIT_GB = 8
     DEFAULT_PY_MAX_THREADS = min(os.cpu_count() or 4, 8)
     DEFAULT_PY_MODE = 'auto'
-    PY_VALID_MODES = ['auto', 'memory', 'tiled']
-    MIN_PY_TILE_SIZE = 256
 
     DEFAULT_PLOT_STACK_BUNCH = False
     DEFAULT_PLOT_STACK = True
-
-    STATUS_RUNNING = 1
-    STATUS_PAUSED = 2
-    STATUS_STOPPED = 3
-
-    RUN_COMPLETED = 0
-    RUN_ONGOING = 1
-    RUN_FAILED = 2
-    RUN_STOPPED = 3
 
     def __setattr__aux(self, name, value):
         raise AttributeError(f"Can't reassign constant '{name}'")

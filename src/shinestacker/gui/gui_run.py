@@ -284,15 +284,15 @@ class RunWorker(LogWorker):
         self.id_str = id_str
         self.status = constants.STATUS_RUNNING
         self.callbacks = {
-            'before_action': self.before_action,
-            'after_action': self.after_action,
-            'step_counts': self.step_counts,
-            'begin_steps': self.begin_steps,
-            'end_steps': self.end_steps,
-            'after_step': self.after_step,
-            'save_plot': self.save_plot,
-            'check_running': self.check_running,
-            'open_app': self.open_app
+            constants.CALLBACK_BEFORE_ACTION: self.before_action,
+            constants.CALLBACK_AFTER_ACTION: self.after_action,
+            constants.CALLBACK_STEP_COUNTS: self.step_counts,
+            constants.CALLBACK_BEGIN_STEPS: self.begin_steps,
+            constants.CALLBACK_END_STEPS: self.end_steps,
+            constants.CALLBACK_AFTER_STEP: self.after_step,
+            constants.CALLBACK_CHECK_RUNNING: self.check_running,
+            constants.CALLBACK_SAVE_PLOT: self.save_plot,
+            constants.CALLBACK_OPEN_APP: self.open_app
         }
         self.tag = ""
 

@@ -65,10 +65,10 @@ class NoiseDetection(TaskBase, ImageSequenceManager):
         return cv2.threshold(ch, th, 255, cv2.THRESH_BINARY)[1]
 
     def progress(self, i):
-        self.callback('after_step', self.id, self.name, i)
+        self.callback(constants.CALLBACK_AFTER_STEP, self.id, self.name, i)
         if not config.DISABLE_TQDM:
             self.tbar.update(1)
-            if self.callback('check_running', self.id, self.name) is False:
+            if self.callback(constants.CALLBACK_CHECK_RUNNING, self.id, self.name) is False:
                 raise RunStopException(self.name)
 
     def run_core(self):
@@ -78,13 +78,13 @@ class NoiseDetection(TaskBase, ImageSequenceManager):
         ))
         in_paths = self.input_filepaths()
         n_frames = min(len(in_paths), self.max_frames) if self.max_frames > 0 else len(in_paths)
-        self.callback('step_counts', self.id, self.name, n_frames)
+        self.callback(constants.CALLBACK_STEP_COUNTS, self.id, self.name, n_frames)
         if not config.DISABLE_TQDM:
             self.tbar = make_tqdm_bar(self.name, n_frames)
 
         def progress_callback(i):
             self.progress(i)
-            if self.callback('check_running', self.id, self.name) is False:
+            if self.callback(constants.CALLBACK_CHECK_RUNNING, self.id, self.name) is False:
                 raise RunStopException(self.name)
         mean_img = mean_image(
             file_paths=in_paths, max_frames=self.max_frames,
@@ -137,7 +137,7 @@ class NoiseDetection(TaskBase, ImageSequenceManager):
             plt.ylim(0)
             plot_path = f"{self.working_path}/{self.plot_path}/{self.name}-hot-pixels.pdf"
             save_plot(plot_path)
-            self.callback('save_plot', self.id, f"{self.name}: noise", plot_path)
+            self.callback(constants.CALLBACK_SAVE_PLOT, self.id, f"{self.name}: noise", plot_path)
             plt.close('all')
 
 

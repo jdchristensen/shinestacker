@@ -217,4 +217,4 @@ class MultiLayer(TaskBase, ImageSequenceManager):
         write_multilayer_tiff(input_files, output_file, labels=None, exif_path=self.exif_path,
                               callbacks=callbacks)
         app = 'internal_retouch_app' if config.COMBINED_APP else f'{constants.RETOUCH_APP}'
-        self.callback('open_app', self.id, self.name, app, output_file)
+        self.callback(constants.CALLBACK_OPEN_APP, self.id, self.name, app, output_file)

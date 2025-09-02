@@ -175,7 +175,7 @@ class Vignetting(SubAction):
             save_plot(plot_path)
             plt.close('all')
             self.process.callback(
-                'save_plot', self.process.id,
+                constants.CALLBACK_SAVE_PLOT, self.process.id,
                 f"{self.process.name}: intensity\nframe {idx_str}", plot_path)
         for i, p in enumerate(self.percentiles):
             self.corrections[i][idx] = fsolve(lambda x: sigmoid_model(x, *params) /
@@ -224,5 +224,5 @@ class Vignetting(SubAction):
                         f"{self.process.name}-r0.pdf"
             save_plot(plot_path)
             plt.close('all')
-            self.process.callback('save_plot', self.process.id,
+            self.process.callback(constants.CALLBACK_SAVE_PLOT, self.process.id,
                                   f"{self.process.name}: vignetting", plot_path)

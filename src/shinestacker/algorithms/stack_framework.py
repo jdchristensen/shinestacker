@@ -263,7 +263,7 @@ class CombinedActions(ReferenceFrameProcessor):
                 self.get_logger().warning(color_str(f"{self.base_message}: sub-action disabled",
                                                     constants.LOG_COLOR_ALERT))
             else:
-                if self.callback('check_running', self.id, self.name) is False:
+                if self.callback(constants.CALLBACK_CHECK_RUNNING, self.id, self.name) is False:
                     raise RunStopException(self.name)
                 if img is not None:
                     img = a.run_frame(idx, ref_idx, img)
