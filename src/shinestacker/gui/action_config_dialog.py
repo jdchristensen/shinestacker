@@ -104,8 +104,6 @@ class ActionConfigDialog(QDialog):
         if self.configurator.update_params(self.action.params):
             self.parent().mark_as_modified(True, "Modify Configuration")
             super().accept()
-        else:
-            self.parent().project_editor.pop_undo()
 
     def reset_to_defaults(self):
         builder = self.configurator.get_builder()
