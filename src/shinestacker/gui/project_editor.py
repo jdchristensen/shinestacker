@@ -246,8 +246,10 @@ class ProjectEditor(QObject):
         txt = f"{job.params.get('name', '(job)')}"
         if html:
             txt = f"<b>{txt}</b>"
-        in_path = get_action_input_path(job)
-        return txt + (f" [⚙️ Job: 📁 {in_path[0]} → 📂 ...]" if long_name else "")
+        in_path = get_action_input_path(job)[0]
+        if os.path.isabs(in_path):
+            in_path = ".../" + os.path.basename(in_path)
+        return txt + (f" [⚙️ Job: 📁 {in_path} → 📂 ...]" if long_name else "")
 
     def action_text(self, action, is_sub_action=False, indent=True, long_name=False, html=False):
         icon_map = {
@@ -274,9 +276,13 @@ class ProjectEditor(QObject):
             txt += f"{action.params['name']}"
             if html:
                 txt = f"<b>{txt}</b>"
-        in_path, out_path = get_action_input_path(action), get_action_output_path(action)
+        in_path, out_path = get_action_input_path(action)[0], get_action_output_path(action)[0]
+        if os.path.isabs(in_path):
+            in_path = ".../" + os.path.basename(in_path)
+        if os.path.isabs(out_path):
+            out_path = ".../" + os.path.basename(out_path)
         return f"{txt} [{ico} {action.type_name}" + \
-               (f": 📁 <i>{in_path[0]}</i> → 📂 <i>{out_path[0]}</i>]"
+               (f": 📁 <i>{in_path}</i> → 📂 <i>{out_path}</i>]"
                 if long_name and not is_sub_action else "]")
 
     def get_job_at(self, index):

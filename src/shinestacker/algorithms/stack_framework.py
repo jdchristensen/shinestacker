@@ -14,17 +14,11 @@ class StackJob(Job):
     def __init__(self, name, working_path, input_path='', input_filepaths=[], **kwargs):
         check_path_exists(working_path)
         self.working_path = working_path
+        self._input_path = input_path
         self._action_paths = [] if input_path == '' else [input_path]
         self._input_filepaths = []
-        for filepath in input_filepaths:
-            if os.path.isabs(filepath):
-                self._input_filepaths.append(filepath)
-            elif input_path == '':
-                raise RuntimeError("Can't specify input_filepaths with relative paths "
-                                   "if input_path is null.")
-            else:
-                filepath = os.path.join(input_path, filepath)
-                self._input_filepaths.append(filepath)
+        self._input_full_path = None
+        self._input_filepaths = input_filepaths
         Job.__init__(self, name, **kwargs)
 
     def init(self, a):
@@ -167,7 +161,11 @@ class ImageSequenceManager:
                 raise RuntimeError(f"Job {job.name} does not have any configured path")
             self.input_path = job.action_path(-1)
             if job.num_input_filepaths() > 0:
-                self._input_filepaths = job.input_filepaths()
+                self._input_filepaths = []
+                for filepath in job.input_filepaths():
+                    if not os.path.isabs(filepath):
+                        filepath = os.path.join(self.input_full_path(), filepath)
+                    self._input_filepaths.append(filepath)
         job.add_action_path(self.output_path)
 
     def folder_list_str(self):

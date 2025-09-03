@@ -156,7 +156,7 @@ class ProjectController(QObject):
             input_folder = dialog.get_input_folder().split('/')
             working_path = '/'.join(input_folder[:-1])
             input_path = input_folder[-1]
-            selected_files = dialog.get_selected_files()
+            selected_filenames = dialog.get_selected_filenames()
             if dialog.get_noise_detection():
                 job_noise = ActionConfig(
                     constants.ACTION_JOB,
@@ -171,8 +171,8 @@ class ProjectController(QObject):
                 'working_path': working_path,
                 'input_path': input_path
             }
-            if len(selected_files) > 0:
-                job_params['input_filepaths'] = selected_files
+            if len(selected_filenames) > 0:
+                job_params['input_filepaths'] = selected_filenames
             job = ActionConfig(constants.ACTION_JOB, job_params)
             preprocess_name = ''
             if dialog.get_noise_detection() or dialog.get_vignetting_correction() or \

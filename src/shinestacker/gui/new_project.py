@@ -28,7 +28,7 @@ class NewProjectDialog(BaseFormDialog):
         self.ok_button.clicked.connect(self.accept)
         cancel_button.clicked.connect(self.reject)
         self.n_image_files = 0
-        self.selected_files = []
+        self.selected_filenams = []
 
     def expert(self):
         return self.parent().expert_options
@@ -140,10 +140,10 @@ class NewProjectDialog(BaseFormDialog):
         if self.input_widget.get_selection_mode() == 'files' and \
                 self.input_widget.get_selected_files():
             self.n_image_files = len(self.input_widget.get_selected_files())
-            self.selected_files = self.input_widget.get_selected_files()
+            self.selected_filenames = self.input_widget.get_selected_filenames()
         else:
             self.n_image_files = count_image_files(self.input_widget.get_path())
-            self.selected_files = []
+            self.selected_filenames = []
         if self.n_image_files == 0:
             self.bunches_label.setText(DEFAULT_NO_COUNT_LABEL)
             self.frames_label.setText(DEFAULT_NO_COUNT_LABEL)
@@ -249,6 +249,9 @@ class NewProjectDialog(BaseFormDialog):
 
     def get_selected_files(self):
         return self.input_widget.get_selected_files()
+
+    def get_selected_filenames(self):
+        return self.input_widget.get_selected_filenames()
 
     def get_selection_mode(self):
         return self.input_widget.get_selection_mode()

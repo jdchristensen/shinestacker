@@ -1,5 +1,6 @@
 # pylint: disable=C0114, C0115, C0116, E0611, R0913, R0917, R0915, R0912
 # pylint: disable=E0606, W0718, R1702, W0102, W0221
+import os
 import traceback
 from typing import Dict, Any
 from PySide6.QtWidgets import (QWidget, QPushButton, QHBoxLayout, QLabel, QScrollArea,
@@ -14,6 +15,7 @@ from . action_config import (
     FIELD_TEXT, FIELD_ABS_PATH, FIELD_REL_PATH, FIELD_FLOAT,
     FIELD_INT, FIELD_INT_TUPLE, FIELD_BOOL, FIELD_COMBO, FIELD_REF_IDX
 )
+from .folder_file_selection import FolderFileSelectionWidget
 
 
 class ActionConfigDialog(QDialog):
@@ -137,6 +139,17 @@ class NoNameActionConfigurator(ActionConfigurator):
                   required=False, add_to_layout=None, **kwargs):
         return self.builder.add_field(tag, field_type, label, required, add_to_layout, **kwargs)
 
+    def labelled_widget(self, label, widget):
+        row = QWidget()
+        layout = QHBoxLayout()
+        layout.addWidget(QLabel(label))
+        layout.addWidget(widget)
+        row.setLayout(layout)
+        return row
+
+    def add_labelled_row(self, label, widget):
+        self.add_row(self.labelled_widget(label, widget))
+
 
 class DefaultActionConfigurator(NoNameActionConfigurator):
     def create_form(self, layout, action, tag='Action'):
@@ -148,14 +161,89 @@ class DefaultActionConfigurator(NoNameActionConfigurator):
 class JobConfigurator(DefaultActionConfigurator):
     def create_form(self, layout, action):
         super().create_form(layout, action, "Job")
-        self.add_field(
-            'working_path', FIELD_ABS_PATH, 'Working path', required=True)
-        self.add_field(
-            'input_path', FIELD_REL_PATH, 'Input path', required=False,
-            must_exist=True, placeholder='relative to working path')
-        # something like this should be added...
-        # self.add_field(
-        #     'input_filepaths', FIELD_TEXT, 'Input files (dummy)', required=False)
+        self.input_widget = FolderFileSelectionWidget()
+        self.frames_label = QLabel("0")
+        working_path = action.params.get('working_path', '')
+        input_path = action.params.get('input_path', '')
+        input_filepaths = action.params.get('input_filepaths', [])
+        if isinstance(input_filepaths, str) and input_filepaths:
+            input_filepaths = input_filepaths.split(constants.PATH_SEPARATOR)
+        self.working_path_label = QLabel(working_path or "Not set")
+        self.input_path_label = QLabel(input_path or "Not set")
+        has_existing_data = working_path or input_path or input_filepaths
+        if input_filepaths:
+            self.input_widget.files_mode_radio.setChecked(True)
+            self.input_widget.selected_files = input_filepaths
+            if input_filepaths:
+                parent_dir = os.path.dirname(input_filepaths[0])
+                self.input_widget.path_edit.setText(parent_dir)
+        elif input_path and working_path:
+            self.input_widget.folder_mode_radio.setChecked(True)
+            input_fullpath = os.path.join(working_path, input_path)
+            self.input_widget.path_edit.setText(input_fullpath)
+        elif input_path:
+            self.input_widget.folder_mode_radio.setChecked(True)
+            self.input_widget.path_edit.setText(input_path)
+        self.input_widget.text_changed_connect(self.update_paths_and_frames)
+        self.input_widget.folder_mode_radio.toggled.connect(self.update_paths_and_frames)
+        self.input_widget.files_mode_radio.toggled.connect(self.update_paths_and_frames)
+        self.add_bold_label("Input Selection:")
+        self.add_row(self.input_widget)
+        self.add_labelled_row("Number of frames: ", self.frames_label)
+        self.add_bold_label("Derived Paths:")
+        self.add_labelled_row("Working path: ", self.working_path_label)
+        self.add_labelled_row("Input path:", self.input_path_label)
+        if not has_existing_data:
+            self.update_paths_and_frames()
+        else:
+            self.update_frames_count()
+
+    def update_frames_count(self):
+        if self.input_widget.get_selection_mode() == 'files':
+            count = len(self.input_widget.get_selected_files())
+        else:
+            count = self.count_image_files(self.input_widget.get_path())
+        self.frames_label.setText(str(count))
+
+    def update_paths_and_frames(self):
+        self.update_frames_count()
+        selection_mode = self.input_widget.get_selection_mode()
+        selected_files = self.input_widget.get_selected_files()
+        input_path = self.input_widget.get_path()
+        if selection_mode == 'files' and selected_files:
+            input_path = os.path.dirname(selected_files[0])
+        input_path_value = os.path.basename(os.path.normpath(input_path)) if input_path else ""
+        working_path_value = os.path.dirname(input_path) if input_path else ""
+        self.input_path_label.setText(input_path_value or "Not set")
+        self.working_path_label.setText(working_path_value or "Not set")
+
+    def count_image_files(self, path):
+        if not path or not os.path.isdir(path):
+            return 0
+        count = 0
+        for filename in os.listdir(path):
+            if filename.lower().endswith(('.png', '.jpg', '.jpeg', '.tif', '.tiff')):
+                count += 1
+        return count
+
+    def update_params(self, params):
+        if not super().update_params(params):
+            return False
+        selection_mode = self.input_widget.get_selection_mode()
+        selected_files = self.input_widget.get_selected_files()
+        input_path = self.input_widget.get_path()
+        if selection_mode == 'files' and selected_files:
+            params['input_filepaths'] = self.input_widget.get_selected_filenames()
+            params['input_path'] = os.path.dirname(selected_files[0])
+        else:
+            params['input_filepaths'] = []
+            params['input_path'] = input_path
+        if 'working_path' not in params or not params['working_path']:
+            if params['input_path']:
+                params['working_path'] = os.path.dirname(params['input_path'])
+            else:
+                params['working_path'] = ''
+        return True
 
 
 class NoiseDetectionConfigurator(DefaultActionConfigurator):

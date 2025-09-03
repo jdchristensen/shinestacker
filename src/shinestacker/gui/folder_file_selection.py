@@ -80,6 +80,9 @@ class FolderFileSelectionWidget(QWidget):
     def get_selected_files(self):
         return self.selected_files
 
+    def get_selected_filenames(self):
+        return [os.path.basename(file_path) for file_path in self.selected_files]
+
     def get_path(self):
         return self.path_edit.text()
 
