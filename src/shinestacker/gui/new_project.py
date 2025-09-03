@@ -2,7 +2,7 @@
 import os
 import numpy as np
 from PySide6.QtWidgets import (QHBoxLayout, QPushButton, QLabel, QCheckBox, QSpinBox,
-                               QMessageBox)
+                               QMessageBox, QGroupBox, QVBoxLayout, QFormLayout, QSizePolicy)
 from PySide6.QtGui import QIcon
 from PySide6.QtCore import Qt
 from .. config.gui_constants import gui_constants
@@ -28,7 +28,7 @@ class NewProjectDialog(BaseFormDialog):
         self.ok_button.clicked.connect(self.accept)
         cancel_button.clicked.connect(self.reject)
         self.n_image_files = 0
-        self.selected_filenams = []
+        self.selected_filenames = []
 
     def expert(self):
         return self.parent().expert_options
@@ -43,21 +43,8 @@ class NewProjectDialog(BaseFormDialog):
         self.form_layout.addRow(label)
 
     def create_form(self):
-        icon_path = f"{os.path.dirname(__file__)}/ico/shinestacker.png"
-        app_icon = QIcon(icon_path)
-        icon_pixmap = app_icon.pixmap(128, 128)
-        icon_label = QLabel()
-        icon_label.setPixmap(icon_pixmap)
-        icon_label.setAlignment(Qt.AlignCenter)
-        self.form_layout.addRow(icon_label)
-        spacer = QLabel("")
-        spacer.setFixedHeight(10)
-        self.form_layout.addRow(spacer)
-
-        # Create the folder/file selection widget
         self.input_widget = FolderFileSelectionWidget()
         self.input_widget.text_changed_connect(self.input_submitted)
-
         self.noise_detection = QCheckBox()
         self.noise_detection.setChecked(gui_constants.NEW_PROJECT_NOISE_DETECTION)
         self.vignetting_correction = QCheckBox()
@@ -66,7 +53,6 @@ class NewProjectDialog(BaseFormDialog):
         self.align_frames.setChecked(gui_constants.NEW_PROJECT_ALIGN_FRAMES)
         self.balance_frames = QCheckBox()
         self.balance_frames.setChecked(gui_constants.NEW_PROJECT_BALANCE_FRAMES)
-
         self.bunch_stack = QCheckBox()
         self.bunch_stack.setChecked(gui_constants.NEW_PROJECT_BUNCH_STACK)
         self.bunch_frames = QSpinBox()
@@ -79,54 +65,121 @@ class NewProjectDialog(BaseFormDialog):
         self.bunch_overlap.setValue(constants.DEFAULT_OVERLAP)
         self.bunches_label = QLabel(DEFAULT_NO_COUNT_LABEL)
         self.frames_label = QLabel(DEFAULT_NO_COUNT_LABEL)
-
         self.update_bunch_options(gui_constants.NEW_PROJECT_BUNCH_STACK)
         self.bunch_stack.toggled.connect(self.update_bunch_options)
         self.bunch_frames.valueChanged.connect(self.update_bunches_label)
         self.bunch_overlap.valueChanged.connect(self.update_bunches_label)
-
         self.focus_stack_pyramid = QCheckBox()
         self.focus_stack_pyramid.setChecked(gui_constants.NEW_PROJECT_FOCUS_STACK_PYRAMID)
         self.focus_stack_depth_map = QCheckBox()
         self.focus_stack_depth_map.setChecked(gui_constants.NEW_PROJECT_FOCUS_STACK_DEPTH_MAP)
         self.multi_layer = QCheckBox()
         self.multi_layer.setChecked(gui_constants.NEW_PROJECT_MULTI_LAYER)
-
-        self.add_bold_label("1️⃣ Select either an entire folder, or input files.")
-        self.add_label("📎 Select a folder 📂 containig all your images, or specific image files 🖼️.")
-        self.form_layout.addRow("Input:", self.input_widget)
-        self.form_layout.addRow("Number of frames: ", self.frames_label)
-        self.add_label("")
-        self.add_bold_label("2️⃣ Select basic options.")
+        step1_group = QGroupBox("1️⃣ Select Input")
+        step1_layout = QVBoxLayout()
+        step1_layout.setContentsMargins(15, 0, 15, 15)
+        step1_layout.addWidget(
+            QLabel("📎 Select a folder 📂 containing "
+                   "all your images, or specific image files 🖼️."))
+        input_form = QFormLayout()
+        input_form.setFieldGrowthPolicy(QFormLayout.AllNonFixedFieldsGrow)
+        input_form.setFormAlignment(Qt.AlignLeft)
+        input_form.setLabelAlignment(Qt.AlignLeft)
+        self.input_widget.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
+        self.frames_label.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
+        input_form.addRow("Input:", self.input_widget)
+        input_form.addRow("Number of frames: ", self.frames_label)
+        step1_layout.addLayout(input_form)
+        step1_group.setLayout(step1_layout)
+        self.form_layout.addRow(step1_group)
+        step2_group = QGroupBox("2️⃣ Basic Options")
+        step2_layout = QFormLayout()
+        step2_layout.setContentsMargins(15, 0, 15, 15)
+        step2_layout.setFieldGrowthPolicy(QFormLayout.AllNonFixedFieldsGrow)
+        step2_layout.setFormAlignment(Qt.AlignLeft)
+        step2_layout.setLabelAlignment(Qt.AlignLeft)
+        for widget in [self.noise_detection, self.vignetting_correction, self.align_frames,
+                       self.balance_frames, self.bunch_stack, self.bunch_frames,
+                       self.bunch_overlap, self.focus_stack_pyramid,
+                       self.focus_stack_depth_map, self.multi_layer]:
+            widget.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
         if self.expert():
-            self.form_layout.addRow("Automatic noise detection:", self.noise_detection)
-            self.form_layout.addRow("Vignetting correction:", self.vignetting_correction)
-        self.form_layout.addRow(f" {constants.ACTION_ICONS[constants.ACTION_ALIGNFRAMES]} "
-                                "Align layers:", self.align_frames)
-        self.form_layout.addRow(f" {constants.ACTION_ICONS[constants.ACTION_BALANCEFRAMES]} "
-                                "Balance layers:", self.balance_frames)
-        self.form_layout.addRow(f" {constants.ACTION_ICONS[constants.ACTION_FOCUSSTACKBUNCH]} "
-                                "Bunch stack:", self.bunch_stack)
-        self.form_layout.addRow(" Bunch frames:", self.bunch_frames)
-        self.form_layout.addRow(" Bunch overlap:", self.bunch_overlap)
-        self.form_layout.addRow(" Number of bunches: ", self.bunches_label)
+            step2_layout.addRow("Automatic noise detection:", self.noise_detection)
+            step2_layout.addRow("Vignetting correction:", self.vignetting_correction)
+        step2_layout.addRow(
+            f" {constants.ACTION_ICONS[constants.ACTION_ALIGNFRAMES]} "
+            "Align layers:", self.align_frames)
+        step2_layout.addRow(
+            f" {constants.ACTION_ICONS[constants.ACTION_BALANCEFRAMES]} "
+            "Balance layers:", self.balance_frames)
+        step2_layout.addRow(
+            f" {constants.ACTION_ICONS[constants.ACTION_FOCUSSTACKBUNCH]} "
+            "Bunch stack:", self.bunch_stack)
+        step2_layout.addRow("Bunch frames:", self.bunch_frames)
+        step2_layout.addRow("Bunch overlap:", self.bunch_overlap)
+        self.bunches_label.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
+        step2_layout.addRow("Number of bunches: ", self.bunches_label)
         if self.expert():
-            self.form_layout.addRow(f" {constants.ACTION_ICONS[constants.ACTION_FOCUSSTACK]}"
-                                    " Focus stack (pyramid):", self.focus_stack_pyramid)
-            self.form_layout.addRow(f" {constants.ACTION_ICONS[constants.ACTION_FOCUSSTACK]} "
-                                    "Focus stack (depth map):", self.focus_stack_depth_map)
+            step2_layout.addRow(
+                f" {constants.ACTION_ICONS[constants.ACTION_FOCUSSTACK]} "
+                "Focus stack (pyramid):", self.focus_stack_pyramid)
+            step2_layout.addRow(
+                f" {constants.ACTION_ICONS[constants.ACTION_FOCUSSTACK]} "
+                "Focus stack (depth map):", self.focus_stack_depth_map)
         else:
-            self.form_layout.addRow(f" {constants.ACTION_ICONS[constants.ACTION_FOCUSSTACK]} "
-                                    "Focus stack:", self.focus_stack_pyramid)
+            step2_layout.addRow(
+                f" {constants.ACTION_ICONS[constants.ACTION_FOCUSSTACK]} "
+                "Focus stack:", self.focus_stack_pyramid)
         if self.expert():
-            self.form_layout.addRow(f" {constants.ACTION_ICONS[constants.ACTION_MULTILAYER]} "
-                                    "Save multi layer TIFF:", self.multi_layer)
-        self.add_label("")
-        self.add_bold_label("3️⃣ Click 🆗 to confirm and prepare the job.")
-        self.add_label("💡 Select: <b>View</b> > <b>Expert options</b> "
-                       "for advanced configuration.")
-        self.add_label("")
-        self.add_bold_label("4️⃣ Press ▶️ to run your job.")
+            step2_layout.addRow(
+                f" {constants.ACTION_ICONS[constants.ACTION_MULTILAYER]} "
+                "Save multi layer TIFF:", self.multi_layer)
+        step2_group.setLayout(step2_layout)
+        self.form_layout.addRow(step2_group)
+        step3_group = QGroupBox("3️⃣ Confirmation")
+        step3_layout = QVBoxLayout()
+        step3_layout.setContentsMargins(15, 0, 15, 15)
+        step3_layout.addWidget(
+            QLabel("Click 🆗 to confirm and prepare the job."))
+        step3_layout.addWidget(
+            QLabel("💡 Select: <b>View</b> > <b>Expert options</b> for advanced configuration."))
+        step3_group.setLayout(step3_layout)
+        self.form_layout.addRow(step3_group)
+        step4_group = QGroupBox("4️⃣ Execution")
+        step4_layout = QHBoxLayout()
+        step4_layout.setContentsMargins(15, 0, 15, 15)
+        step4_layout.addWidget(QLabel("Press ▶️ to run your job."))
+        icon_path = f"{os.path.dirname(__file__)}/ico/shinestacker.png"
+        app_icon = QIcon(icon_path)
+        icon_pixmap = app_icon.pixmap(80, 80)
+        icon_label = QLabel()
+        icon_label.setPixmap(icon_pixmap)
+        icon_label.setAlignment(Qt.AlignRight)
+        step4_layout.addWidget(icon_label)
+        step4_group.setLayout(step4_layout)
+        self.form_layout.addRow(step4_group)
+        group_style = """
+            QGroupBox {
+                font-weight: bold;
+                border: 2px solid #cccccc;
+                border-radius: 5px;
+                margin-top: 10px;
+                padding-top: 15px;
+                background-color: #f8f8f8;
+            }
+            QGroupBox::title {
+                subcontrol-origin: margin;
+                left: 10px;
+                padding: 0 5px 0 5px;
+                background-color: #f8f8f8;
+            }
+        """
+        for group in [step1_group, step2_group, step3_group, step4_group]:
+            group.setStyleSheet(group_style)
+            group.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
+        self.form_layout.setFieldGrowthPolicy(QFormLayout.AllNonFixedFieldsGrow)
+        self.form_layout.setFormAlignment(Qt.AlignLeft)
+        self.form_layout.setLabelAlignment(Qt.AlignLeft)
 
     def update_bunch_options(self, checked):
         self.bunch_frames.setEnabled(checked)

@@ -166,6 +166,13 @@ class DefaultActionConfigurator(NoNameActionConfigurator):
 
 
 class JobConfigurator(DefaultActionConfigurator):
+    def __init__(self, expert, current_wd):
+        super().__init__(expert, current_wd)
+        self.working_path_label = None
+        self.input_path_label = None
+        self.frames_label = None
+        self.input_widget = None
+
     def create_form(self, layout, action):
         super().create_form(layout, action, "Job")
         self.input_widget = FolderFileSelectionWidget()
