@@ -44,6 +44,19 @@ class _Constants:
     STACK_ALGO_OPTIONS = [STACK_ALGO_PYRAMID, STACK_ALGO_DEPTH_MAP]
     STACK_ALGO_DEFAULT = STACK_ALGO_PYRAMID
 
+    ACTION_ICONS = {
+        ACTION_JOB: '⚙️',
+        ACTION_COMBO: '⚡',
+        ACTION_NOISEDETECTION: '🌫',
+        ACTION_FOCUSSTACK: '🎯',
+        ACTION_FOCUSSTACKBUNCH: '🖇',
+        ACTION_MULTILAYER: '🎞️',
+        ACTION_MASKNOISE: '🎭',
+        ACTION_VIGNETTING: '⭕️',
+        ACTION_ALIGNFRAMES: '📐',
+        ACTION_BALANCEFRAMES: '🌈'
+    }
+
     PATH_SEPARATOR = ';'
 
     LOG_COLOR_ALERT = 'red'

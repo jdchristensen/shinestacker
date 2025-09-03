@@ -9,7 +9,7 @@ from .. gui.base_form_dialog import BaseFormDialog
 
 class ExifData(BaseFormDialog):
     def __init__(self, exif, parent=None):
-        super().__init__("EXIF data", parent)
+        super().__init__("EXIF data", parent=parent)
         self.exif = exif
         self.create_form()
         button_container = QWidget()

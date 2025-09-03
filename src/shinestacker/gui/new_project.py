@@ -17,7 +17,7 @@ DEFAULT_NO_COUNT_LABEL = " - "
 
 class NewProjectDialog(BaseFormDialog):
     def __init__(self, parent=None):
-        super().__init__("New Project", parent)
+        super().__init__("New Project", 600, parent)
         self.create_form()
         button_box = QHBoxLayout()
         self.ok_button = QPushButton("OK")
@@ -93,7 +93,7 @@ class NewProjectDialog(BaseFormDialog):
         self.multi_layer.setChecked(gui_constants.NEW_PROJECT_MULTI_LAYER)
 
         self.add_bold_label("1️⃣ Select either an entire folder, or input files.")
-        self.add_label("• Select a folder containig all your images, or specific image files.")
+        self.add_label("📎 Select a folder 📂 containig all your images, or specific image files 🖼️.")
         self.form_layout.addRow("Input:", self.input_widget)
         self.form_layout.addRow("Number of frames: ", self.frames_label)
         self.add_label("")
@@ -101,19 +101,26 @@ class NewProjectDialog(BaseFormDialog):
         if self.expert():
             self.form_layout.addRow("Automatic noise detection:", self.noise_detection)
             self.form_layout.addRow("Vignetting correction:", self.vignetting_correction)
-        self.form_layout.addRow("Align layers:", self.align_frames)
-        self.form_layout.addRow("Balance layers:", self.balance_frames)
-        self.form_layout.addRow("Bunch stack:", self.bunch_stack)
-        self.form_layout.addRow("Bunch frames:", self.bunch_frames)
-        self.form_layout.addRow("Bunch overlap:", self.bunch_overlap)
-        self.form_layout.addRow("Number of bunches: ", self.bunches_label)
+        self.form_layout.addRow(f" {constants.ACTION_ICONS[constants.ACTION_ALIGNFRAMES]} "
+                                "Align layers:", self.align_frames)
+        self.form_layout.addRow(f" {constants.ACTION_ICONS[constants.ACTION_BALANCEFRAMES]} "
+                                "Balance layers:", self.balance_frames)
+        self.form_layout.addRow(f" {constants.ACTION_ICONS[constants.ACTION_FOCUSSTACKBUNCH]} "
+                                "Bunch stack:", self.bunch_stack)
+        self.form_layout.addRow(" Bunch frames:", self.bunch_frames)
+        self.form_layout.addRow(" Bunch overlap:", self.bunch_overlap)
+        self.form_layout.addRow(" Number of bunches: ", self.bunches_label)
         if self.expert():
-            self.form_layout.addRow("Focus stack (pyramid):", self.focus_stack_pyramid)
-            self.form_layout.addRow("Focus stack (depth map):", self.focus_stack_depth_map)
+            self.form_layout.addRow(f" {constants.ACTION_ICONS[constants.ACTION_FOCUSSTACK]}"
+                                    " Focus stack (pyramid):", self.focus_stack_pyramid)
+            self.form_layout.addRow(f" {constants.ACTION_ICONS[constants.ACTION_FOCUSSTACK]} "
+                                    "Focus stack (depth map):", self.focus_stack_depth_map)
         else:
-            self.form_layout.addRow("Focus stack:", self.focus_stack_pyramid)
+            self.form_layout.addRow(f" {constants.ACTION_ICONS[constants.ACTION_FOCUSSTACK]} "
+                                    "Focus stack:", self.focus_stack_pyramid)
         if self.expert():
-            self.form_layout.addRow("Save multi layer TIFF:", self.multi_layer)
+            self.form_layout.addRow(f" {constants.ACTION_ICONS[constants.ACTION_MULTILAYER]} "
+                                    "Save multi layer TIFF:", self.multi_layer)
         self.add_label("")
         self.add_bold_label("3️⃣ Click 🆗 to confirm and prepare the job.")
         self.add_label("💡 Select: <b>View</b> > <b>Expert options</b> "

@@ -249,21 +249,11 @@ class ProjectEditor(QObject):
         in_path = get_action_input_path(job)[0]
         if os.path.isabs(in_path):
             in_path = ".../" + os.path.basename(in_path)
-        return txt + (f" [⚙️ Job: 📁 {in_path} → 📂 ...]" if long_name else "")
+        ico = constants.ACTION_ICONS[constants.ACTION_JOB]
+        return txt + (f" [{ico} Job: 📁 {in_path} → 📂 ...]" if long_name else "")
 
     def action_text(self, action, is_sub_action=False, indent=True, long_name=False, html=False):
-        icon_map = {
-            constants.ACTION_COMBO: '⚡',
-            constants.ACTION_NOISEDETECTION: '🌫',
-            constants.ACTION_FOCUSSTACK: '🎯',
-            constants.ACTION_FOCUSSTACKBUNCH: '🖇',
-            constants.ACTION_MULTILAYER: '🎞️',
-            constants.ACTION_MASKNOISE: '🎭',
-            constants.ACTION_VIGNETTING: '⭕️',
-            constants.ACTION_ALIGNFRAMES: '📐',
-            constants.ACTION_BALANCEFRAMES: '🌈'
-        }
-        ico = icon_map.get(action.type_name, '')
+        ico = constants.ACTION_ICONS.get(action.type_name, '')
         if is_sub_action and indent:
             txt = self.INDENT_SPACE
             if ico == '':

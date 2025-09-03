@@ -13,10 +13,10 @@ def create_form_layout(parent):
 
 
 class BaseFormDialog(QDialog):
-    def __init__(self, title, parent=None):
+    def __init__(self, title, width=500, parent=None):
         super().__init__(parent)
         self.setWindowTitle(title)
-        self.resize(500, self.height())
+        self.resize(width, self.height())
         self.form_layout = create_form_layout(self)
 
     def add_row_to_layout(self, item):
