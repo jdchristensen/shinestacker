@@ -7,6 +7,7 @@ This page reports the main releases only and the main changes therein.
 
 ### Changes
 
+* job input can specify a list of files, not only a folder
 * fixed path in an example project
 * bug fix in config dialog
 * code cleanup

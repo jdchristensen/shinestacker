@@ -92,7 +92,8 @@ class NewProjectDialog(BaseFormDialog):
         self.multi_layer = QCheckBox()
         self.multi_layer.setChecked(gui_constants.NEW_PROJECT_MULTI_LAYER)
 
-        self.add_bold_label("1️⃣ Select input mode and location:")
+        self.add_bold_label("1️⃣ Select either an entire folder, or input files.")
+        self.add_label("• Select a folder containig all your images, or specific image files.")
         self.form_layout.addRow("Input:", self.input_widget)
         self.form_layout.addRow("Number of frames: ", self.frames_label)
         self.add_label("")
@@ -114,11 +115,11 @@ class NewProjectDialog(BaseFormDialog):
         if self.expert():
             self.form_layout.addRow("Save multi layer TIFF:", self.multi_layer)
         self.add_label("")
-        self.add_bold_label("3️⃣ Push 🆗 for further options, then press ▶️ to run.")
+        self.add_bold_label("3️⃣ Click 🆗 to confirm and prepare the job.")
+        self.add_label("💡 Select: <b>View</b> > <b>Expert options</b> "
+                       "for advanced configuration.")
         self.add_label("")
-        self.add_label("4️⃣ "
-                       "Select: <b>View</b> > <b>Expert options</b> "
-                       "to unlock advanced configuration.")
+        self.add_bold_label("4️⃣ Press ▶️ to run your job.")
 
     def update_bunch_options(self, checked):
         self.bunch_frames.setEnabled(checked)
