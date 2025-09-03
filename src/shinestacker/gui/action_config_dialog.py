@@ -3,7 +3,7 @@
 import os
 import traceback
 from typing import Dict, Any
-from PySide6.QtWidgets import (QWidget, QPushButton, QHBoxLayout, QLabel, QScrollArea,
+from PySide6.QtWidgets import (QWidget, QPushButton, QHBoxLayout, QLabel, QScrollArea, QSizePolicy,
                                QMessageBox, QStackedWidget, QFormLayout, QDialog)
 from PySide6.QtCore import Qt, QTimer
 from .. config.constants import constants
@@ -142,8 +142,15 @@ class NoNameActionConfigurator(ActionConfigurator):
     def labelled_widget(self, label, widget):
         row = QWidget()
         layout = QHBoxLayout()
-        layout.addWidget(QLabel(label))
+        layout.setContentsMargins(2, 2, 2, 2)
+        layout.setSpacing(8)
+        label_widget = QLabel(label)
+        label_widget.setFixedWidth(120)
+        label_widget.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Preferred)
+        layout.addWidget(label_widget)
         layout.addWidget(widget)
+        layout.setStretch(0, 1)
+        layout.setStretch(1, 3)
         row.setLayout(layout)
         return row
 

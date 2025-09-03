@@ -2,6 +2,7 @@
 import os
 from PySide6.QtWidgets import (QWidget, QRadioButton, QButtonGroup, QLineEdit,
                                QPushButton, QHBoxLayout, QVBoxLayout, QFileDialog, QMessageBox)
+from PySide6.QtCore import Qt
 
 
 class FolderFileSelectionWidget(QWidget):
@@ -14,7 +15,9 @@ class FolderFileSelectionWidget(QWidget):
     def setup_ui(self):
         self.mode_group = QButtonGroup(self)
         self.folder_mode_radio = QRadioButton("Select Folder")
+        self.folder_mode_radio.setMaximumWidth(100)
         self.files_mode_radio = QRadioButton("Select Files")
+        self.files_mode_radio.setMaximumWidth(100)
         self.folder_mode_radio.setChecked(True)
         self.mode_group.addButton(self.folder_mode_radio)
         self.mode_group.addButton(self.files_mode_radio)
@@ -23,11 +26,19 @@ class FolderFileSelectionWidget(QWidget):
         self.browse_button = QPushButton("Browse Folder...")
         self.browse_button.setFixedWidth(120)
         main_layout = QVBoxLayout()
+        main_layout.setSpacing(10)
+        main_layout.setAlignment(Qt.AlignLeft)
         mode_layout = QHBoxLayout()
+        mode_layout.setContentsMargins(2, 2, 2, 2)
+        mode_layout.setSpacing(20)
         mode_layout.addWidget(self.folder_mode_radio)
         mode_layout.addWidget(self.files_mode_radio)
+        mode_layout.addStretch()
         main_layout.addLayout(mode_layout)
         input_layout = QHBoxLayout()
+        input_layout.setContentsMargins(2, 2, 2, 2)
+        input_layout.setSpacing(8)
+        input_layout.setAlignment(Qt.AlignLeft)
         input_layout.addWidget(self.path_edit)
         input_layout.addWidget(self.browse_button)
         main_layout.addLayout(input_layout)
@@ -40,11 +51,11 @@ class FolderFileSelectionWidget(QWidget):
         if self.folder_mode_radio.isChecked():
             self.selection_mode = 'folder'
             self.browse_button.setText("Browse Folder...")
-            self.path_edit.setPlaceholderText("input files folder")
+            # self.path_edit.setPlaceholderText("input files folder")
         else:
             self.selection_mode = 'files'
             self.browse_button.setText("Browse Files...")
-            self.path_edit.setPlaceholderText("input files")
+            # self.path_edit.setPlaceholderText("input files")
 
     def handle_browse(self):
         if self.selection_mode == 'folder':
