@@ -56,7 +56,7 @@ class NewProjectDialog(BaseFormDialog):
 
         # Create the folder/file selection widget
         self.input_widget = FolderFileSelectionWidget()
-        self.input_widget.text_changed_connect(self.update_bunches_label)
+        self.input_widget.text_changed_connect(self.input_submitted)
 
         self.noise_detection = QCheckBox()
         self.noise_detection.setChecked(gui_constants.NEW_PROJECT_NOISE_DETECTION)
@@ -156,6 +156,9 @@ class NewProjectDialog(BaseFormDialog):
             self.bunches_label.setText(f"{max(1, len(bunches))}")
         else:
             self.bunches_label.setText(DEFAULT_NO_COUNT_LABEL)
+
+    def input_submitted(self):
+        self.update_bunches_label()
         self.ok_button.setFocus()
 
     def accept(self):
