@@ -9,7 +9,7 @@ from .. config.gui_constants import gui_constants
 from .. config.constants import constants
 from .. algorithms.utils import read_img, extension_tif_jpg
 from .. algorithms.stack import get_bunches
-from .folder_file_selection_widget import FolderFileSelectionWidget
+from .folder_file_selection import FolderFileSelectionWidget
 from .base_form_dialog import BaseFormDialog
 
 DEFAULT_NO_COUNT_LABEL = " - "
@@ -20,13 +20,12 @@ class NewProjectDialog(BaseFormDialog):
         super().__init__("New Project", parent)
         self.create_form()
         button_box = QHBoxLayout()
-        ok_button = QPushButton("OK")
-        ok_button.setFocus()
+        self.ok_button = QPushButton("OK")
         cancel_button = QPushButton("Cancel")
-        button_box.addWidget(ok_button)
+        button_box.addWidget(self.ok_button)
         button_box.addWidget(cancel_button)
         self.add_row_to_layout(button_box)
-        ok_button.clicked.connect(self.accept)
+        self.ok_button.clicked.connect(self.accept)
         cancel_button.clicked.connect(self.reject)
         self.n_image_files = 0
         self.selected_files = []
@@ -157,6 +156,7 @@ class NewProjectDialog(BaseFormDialog):
             self.bunches_label.setText(f"{max(1, len(bunches))}")
         else:
             self.bunches_label.setText(DEFAULT_NO_COUNT_LABEL)
+        self.ok_button.setFocus()
 
     def accept(self):
         input_path = self.input_widget.get_path()
