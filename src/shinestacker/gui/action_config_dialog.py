@@ -2,7 +2,6 @@
 # pylint: disable=E0606, W0718, R1702, W0102, W0221
 import os
 import traceback
-from typing import Dict, Any
 from PySide6.QtWidgets import (QWidget, QPushButton, QHBoxLayout, QLabel, QScrollArea, QSizePolicy,
                                QMessageBox, QStackedWidget, QFormLayout, QDialog)
 from PySide6.QtCore import Qt, QTimer
@@ -124,7 +123,7 @@ class NoNameActionConfigurator(ActionConfigurator):
     def get_builder(self):
         return self.builder
 
-    def update_params(self, params: Dict[str, Any]) -> bool:
+    def update_params(self, params):
         return self.builder.update_params(params)
 
     def add_bold_label(self, label):
@@ -760,7 +759,7 @@ class AlignFramesConfigurator(SubsampleActionConfigurator):
             'plot_matches', FIELD_BOOL, 'Plot matches',
             required=False, default=False)
 
-    def update_params(self, params: Dict[str, Any]) -> bool:
+    def update_params(self, params):
         if self.detector_field and self.descriptor_field and self.matching_method_field:
             try:
                 detector = self.detector_field.currentText()
