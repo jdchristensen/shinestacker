@@ -38,6 +38,10 @@ The GUI has two main working areas:
 
 <img src='https://raw.githubusercontent.com/lucalista/shinestacker/main/img/gui-retouch.png' width="600" referrerpolicy="no-referrer">
 
+# Resources
+
+ 🌍 [Website on WordPress](https://shinestacker.wordpress.com) • 📖 [Main documentation](https://shinestacker.readthedocs.io) • 📝 [Changelog](https://github.com/lucalista/shinestacker/blob/main/CHANGELOG.md) 
+
 # Note for macOS users
 
 **The following note is only relevant if you download the application as compressed archive from the [release page](https://github.com/lucalista/shinestacker/releases).**
@@ -56,11 +60,6 @@ xattr -cr ~/Downloads/shinestacker/shinestacker.app
 5. Now you can double-click the Sine Stacker icon app in the ```shiestacker``` folder and it should run.
 
 macOS adds a quarantine flag to all files downloaded from the internet. The above command removes that flag while preserving all other application functionality.
-
-# Resources
-
- 🌍 [Website on WordPress](https://shinestacker.wordpress.com) • 📖 [Main documentation](https://shinestacker.readthedocs.io) • 📝 [Changelog](https://github.com/lucalista/shinestacker/blob/main/CHANGELOG.md) 
-
 
 # Credits
 
