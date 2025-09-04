@@ -12,6 +12,17 @@ from .align import (AlignFrames, detect_and_compute_matches, find_transform,
                     check_affine_matrix, check_homography_distortion)
 
 
+def compose_transforms(t1, t2):
+    if transform_type == constants.ALIGN_RIGID:
+        # Convert affine matrices to homogeneous coordinates for multiplication
+        t1_homo = np.vstack([t1, [0, 0, 1]])
+        t2_homo = np.vstack([t2, [0, 0, 1]])
+        result_homo = t2_homo @ t1_homo
+        return result_homo[:2, :]  # Convert back to affine
+    else:  # ALIGN_HOMOGRAPHY
+        return t2 @ t1  # Direct matrix multiplication for homography
+
+
 class AlignFramesParallel(AlignFrames):
     def __init__(self, enabled=True, feature_config=None, matching_config=None,
                  alignment_config=None, **kwargs):
@@ -22,6 +33,7 @@ class AlignFramesParallel(AlignFrames):
         self._img_locks = None
         self._good_matches = None
         self._transforms = None
+        self._cumulative_transforms = None
 
     def cache_img(self, idx):
         self._img_locks[idx] += 1
@@ -37,6 +49,7 @@ class AlignFramesParallel(AlignFrames):
         self._img_locks = [0] * n_frames
         self._good_matches = [0] * n_frames
         self._transforms = [None] * n_frames
+        self._cumulative_transforms = [None] * n_frames
         max_chunck_size = self.max_threads
         input_filepaths = self.process.input_filepaths()
 
@@ -61,26 +74,15 @@ class AlignFramesParallel(AlignFrames):
                 for future in as_completed(future_to_index):
                     idx = future_to_index[future]
                     try:
-                        ret_message = future.result()
+                        info_messages, warning_messages = future.result()
                         message = f": found matches, image {idx}: {self._good_matches[idx]}"
+                        if len(info_messages) > 0:
+                            message += ", ".join(info_messages) 
                         color=constants.LOG_COLOR_LEVEL_3
-                        if ret_message != '':
-                            message += f", {ret_message}"
+                        if warning_message != '':
+                            message += ", ".join(warning_message) 
                             color=constants.LOG_COLOR_WARNING
                         self.sub_msg(message, color=color)
-                        # if plot_path is not None:
-                        #    matches_mask = msk.ravel().tolist()
-                        #    img_match = cv2.cvtColor(cv2.drawMatches(
-                        #        img_8bit(img_0_sub), kp_0, img_8bit(img_ref_sub),
-                        #        kp_ref, good_matches, None, matchColor=(0, 255, 0),
-                        #        singlePointColor=None, matchesMask=matches_mask,
-                        #        flags=2), cv2.COLOR_BGR2RGB)
-                        #    plt.figure(figsize=constants.PLT_FIG_SIZE)
-                        #    plt.imshow(img_match, 'gray')
-                        #    save_plot(plot_path)
-                        #    if callbacks and 'save_plot' in callbacks:
-                        #        callbacks['save_plot'](plot_path)
-
                     except Exception as e:
                         traceback.print_tb(e.__traceback__)
                         self.sub_msg(f": failed processing image: {idx}: {str(e)}")
@@ -95,15 +97,34 @@ class AlignFramesParallel(AlignFrames):
                 self._img_cache[i] = None
                 self.sub_msg(f": clear cache: {i}")
         gc.collect()
+        self.sub_msg("combining transformations")
+        for i in range(ref_idx - 1, -1, -1):
+            if self._transforms[i] is not None and self._cumulative_transforms[i + 1] is not None:
+                self._cumulative_transforms[i] = compose_transforms(
+                    self._transforms[i], self._cumulative_transforms[i + 1])
+            else:
+                self._cumulative_transforms[i] = None
+
+        # Backward pass for indices greater than reference
+        for i in range(ref_idx + 1, n_frames):
+            if self._transforms[i] is not None and self._cumulative_transforms[i - 1] is not None:
+                self._cumulative_transforms[i] = compose_transforms(
+                    self._transforms[i], self._cumulative_transforms[i - 1])
+            else:
+                self._cumulative_transforms[i] = None
 
     def extract_features(self, idx):
         ref_idx = self.process.ref_idx
         if ref_idx > idx:
-            ref_idx = idx + 1
+            delta_idx = +1
         elif ref_idx < idx:
-            ref_idx = idx - 1
+            delta_idx = -1
         else:
-            return None
+            return ''
+        info_messages = []
+        warning_messages = []
+        ref_idx = idx
+        ref_idx += delta_idx
         img_0 = self.cache_img(idx)
         img_ref = self.cache_img(ref_idx)
 
@@ -116,7 +137,6 @@ class AlignFramesParallel(AlignFrames):
             subsample = int(1 + math.floor(img_res / target_res))
         fast_subsampling = self.alignment_config['fast_subsampling']
         min_good_matches = self.alignment_config['min_good_matches']
-        messages = []
         while True:
             if subsample > 1:
                 img_0_sub = img_subsample(img_0, subsample, fast_subsampling)
@@ -129,8 +149,7 @@ class AlignFramesParallel(AlignFrames):
             if n_good_matches > min_good_matches or subsample == 1:
                 break
             subsample = 1
-            messages.append("no subsampling applied")
-
+            info_messages.append("no subsampling applied")
         m = None
         min_matches = 4 if self.alignment_config['transform'] == constants.ALIGN_HOMOGRAPHY else 3
 
@@ -159,8 +178,8 @@ class AlignFramesParallel(AlignFrames):
                     m[:2, :2] = rotation
                     m[:, 2] = translation_fullres
                 else:
-                    messages.append("invalid transform")
-                    return None, None, None, ",".join(messages)
+                    warning_messages.append("invalid transform")
+                    return ",".join(warning_messages)
 
             transform_type = self.alignment_config['transform']
             is_valid = True
@@ -178,8 +197,7 @@ class AlignFramesParallel(AlignFrames):
                 is_valid, reason = check_homography_distortion(
                     m, img_0.shape, homography_thresholds)
             if not is_valid:
-                messages.appen("invalid transform")
-                return None, None, None, ",".join(messages)
+                warning_messages.appen("invalid transform")
         self._good_matches[idx] = len(good_matches)
         self._transforms[idx] = m
-        return ",".join(messages)
+        return info_messages, warning_messages
