@@ -1,10 +1,10 @@
-import os
 import gc
 import copy
+import math
 import traceback
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from ..config.constants import constants
-from .utils import read_img
+from .utils import read_img, img_subsample
 from .align import AlignFrames, detect_and_compute_matches
 
 
@@ -55,9 +55,9 @@ class AlignFramesParallel(AlignFrames):
                 for future in as_completed(future_to_index):
                     idx = future_to_index[future]
                     try:
-                        kp_0, kp_ref, good_matches = future.result()
+                        kp_0, kp_ref, good_matches, message = future.result()
                         self._matches[idx] = (kp_0, kp_ref, good_matches)
-                        self.sub_msg(f": found matches, image {idx}: {len(good_matches)}")
+                        self.sub_msg(f": found matches, image {idx}: {len(good_matches)} {message}")
                     except Exception as e:
                         traceback.print_tb(e.__traceback__)
                         self.sub_msg(f": failed processing image: {idx}: {str(e)}")
@@ -70,7 +70,7 @@ class AlignFramesParallel(AlignFrames):
         for i in range(n_frames):
             if self._img_cache[i] is not None:
                 self._img_cache[i] = None
-                self.sub_msg(f": clear cache: {i}")      
+                self.sub_msg(f": clear cache: {i}")
         gc.collect()
 
     def extract_features(self, idx):
@@ -83,7 +83,28 @@ class AlignFramesParallel(AlignFrames):
             return None
         img_0 = self.cache_img(idx)
         img_ref = self.cache_img(ref_idx)
-        kp_0, kp_ref, good_matches = detect_and_compute_matches(
-            img_ref, img_0, self.feature_config, self.matching_config)
-        return kp_0, kp_ref, good_matches
 
+        h_ref, w_ref = img_ref.shape[:2]
+        h0, w0 = img_0.shape[:2]
+        subsample = self.alignment_config['subsample']
+        if subsample == 0:
+            img_res = (float(h0) / constants.ONE_KILO) * (float(w0) / constants.ONE_KILO)
+            target_res = constants.DEFAULT_ALIGN_RES_TARGET_MPX
+            subsample = int(1 + math.floor(img_res / target_res))
+        fast_subsampling = self.alignment_config['fast_subsampling']
+        min_good_matches = self.alignment_config['min_good_matches']
+        message = ''
+        while True:
+            if subsample > 1:
+                img_0_sub = img_subsample(img_0, subsample, fast_subsampling)
+                img_ref_sub = img_subsample(img_ref, subsample, fast_subsampling)
+            else:
+                img_0_sub, img_ref_sub = img_0, img_ref
+            kp_0, kp_ref, good_matches = detect_and_compute_matches(
+                img_ref_sub, img_0_sub, self.feature_config, self.matching_config)
+            n_good_matches = len(good_matches)
+            if n_good_matches > min_good_matches or subsample == 1:
+                break
+            subsample = 1
+            message = "no subsampling applied"
+        return kp_0, kp_ref, good_matches, message
