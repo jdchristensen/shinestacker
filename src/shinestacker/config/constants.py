@@ -90,6 +90,7 @@ class _Constants:
     MULTILAYER_WARNING_MEM_GB = 1
 
     DEFAULT_PLOTS_PATH = 'plots'
+    DEFAULT_MAX_FWK_THREADS = 1
 
     FIELD_SUBSAMPLE_VALUES_1 = [2, 3, 4, 6, 8, 12, 16, 24, 32]
     FIELD_SUBSAMPLE_OPTIONS_1 = [f"1/{n} × 1/{n}" for n in FIELD_SUBSAMPLE_VALUES_1]

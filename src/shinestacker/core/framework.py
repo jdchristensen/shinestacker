@@ -1,6 +1,8 @@
 # pylint: disable=C0114, C0115, C0116, R0917, R0913, R0902
 import time
 import logging
+import traceback
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from .. config.constants import constants
 from .. config.config import config
 from .colors import color_str
@@ -193,6 +195,7 @@ class SequentialTask(TaskBase):
         TaskBase.__init__(self, name, enabled, **kwargs)
         self.total_action_counts = None
         self.current_action_count = None
+        self.max_threads = kwargs.get('max_threads', constants.DEFAULT_MAX_FWK_THREADS)
 
     def set_counts(self, counts):
         self.total_action_counts = counts
@@ -223,12 +226,36 @@ class SequentialTask(TaskBase):
     def run_core(self):
         self.print_message(color_str('begin run', constants.LOG_COLOR_LEVEL_2), end='\n')
         self.begin()
-        for _ in iter(self):
-            self.callback(constants.CALLBACK_AFTER_STEP,
-                          self.id, self.name, self.current_action_count)
-            if self.callback(constants.CALLBACK_CHECK_RUNNING,
-                             self.id, self.name) is False:
-                raise RunStopException(self.name)
+        if self.sequential_processing() or self.max_threads == 1:
+            for _ in iter(self):
+                self.callback(constants.CALLBACK_AFTER_STEP,
+                              self.id, self.name, self.current_action_count)
+                if self.callback(constants.CALLBACK_CHECK_RUNNING,
+                                 self.id, self.name) is False:
+                    raise RunStopException(self.name)
+        else:
+            with ThreadPoolExecutor(max_workers=self.max_threads) as executor:
+                future_to_index = {}
+                self.current_action_count = 0
+                for idx in range(self.total_action_counts):
+                    self.sub_message(color_str(
+                        f": submit processing step: {idx + 1}/{self.total_action_counts}",
+                        constants.LOG_COLOR_LEVEL_1))
+                    future = executor.submit(self.run_step)
+                    self.current_action_count += 1
+                    future_to_index[future] = idx
+                for future in as_completed(future_to_index):
+                    idx = future_to_index[future]
+                    try:
+                        res = future.result()
+                        self.sub_message(color_str(
+                            f": completed processing step: {idx + 1}/{self.total_action_counts}",
+                            constants.LOG_COLOR_LEVEL_1))
+                    except Exception as e:
+                        traceback.print_tb(e.__traceback__)
+                        self.sub_message(color_str(
+                            f": failed processing image: {idx + 1}: {str(e)}",
+                            constants.LOG_COLOR_ALERT))
         self.end()
 
     def sequential_processing(self):

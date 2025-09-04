@@ -75,7 +75,7 @@ class AlignFramesParallel(AlignFramesBase):
             with ThreadPoolExecutor(max_workers=len(imgs)) as executor:
                 future_to_index = {}
                 for idx in idxs:
-                    self.sub_msg(f": submit processing image: {idx}")
+                    self.sub_msg(f": submit image preprocessing: {idx}")
                     future = executor.submit(self.extract_features, idx)
                     future_to_index[future] = idx
                 for future in as_completed(future_to_index):
@@ -98,12 +98,10 @@ class AlignFramesParallel(AlignFramesBase):
                     if self._img_locks[i] == 2:
                         self._img_cache[i] = None
                         self._img_locks[i] = 0
-                        self.sub_msg(f": clear cache: {i}")
             gc.collect()
         for i in range(n_frames):
             if self._img_cache[i] is not None:
                 self._img_cache[i] = None
-                self.sub_msg(f": clear cache: {i}")
         gc.collect()
         self.sub_msg(": combining transformations")
         transform_type = self.alignment_config['transform']
@@ -129,7 +127,7 @@ class AlignFramesParallel(AlignFramesBase):
         for i in range(n_frames):
             if self._cumulative_transforms[i] is not None:
                 self._cumulative_transforms[i] = self._cumulative_transforms[i].astype(np.float32)
-                self.sub_msg(": feature extaction completed")
+        self.sub_msg(": feature extaction completed")
 
     def extract_features(self, idx, delta=1):
         ref_idx = self.process.ref_idx
