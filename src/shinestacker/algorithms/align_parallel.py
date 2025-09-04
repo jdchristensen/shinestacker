@@ -79,7 +79,7 @@ class AlignFramesParallel(AlignFrames):
                         if len(info_messages) > 0:
                             message += ", ".join(info_messages) 
                         color=constants.LOG_COLOR_LEVEL_3
-                        if warning_message != '':
+                        if len(warning_messages) > 0:
                             message += ", ".join(warning_message) 
                             color=constants.LOG_COLOR_WARNING
                         self.sub_msg(message, color=color)
@@ -97,7 +97,7 @@ class AlignFramesParallel(AlignFrames):
                 self._img_cache[i] = None
                 self.sub_msg(f": clear cache: {i}")
         gc.collect()
-        self.sub_msg("combining transformations")
+        self.sub_msg(": combining transformations")
         for i in range(ref_idx - 1, -1, -1):
             if self._transforms[i] is not None and self._cumulative_transforms[i + 1] is not None:
                 self._cumulative_transforms[i] = compose_transforms(
@@ -201,3 +201,4 @@ class AlignFramesParallel(AlignFrames):
         self._good_matches[idx] = len(good_matches)
         self._transforms[idx] = m
         return info_messages, warning_messages
+
