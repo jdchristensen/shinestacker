@@ -9,22 +9,26 @@ from ..config.constants import constants
 from .. core.exceptions import InvalidOptionError
 from .utils import read_img, img_subsample
 from .align import (AlignFrames, detect_and_compute_matches, find_transform,
-                    check_affine_matrix, check_homography_distortion)
+                    check_affine_matrix, check_homography_distortion, _cv2_border_mode_map)
 
 
-def compose_transforms(T1, T2):
-    # Convert inputs to float64
+def compose_transforms(T1, T2, transform_type):
     T1 = T1.astype(np.float64)
     T2 = T2.astype(np.float64)
     
     if transform_type == constants.ALIGN_RIGID:
-        # Convert affine matrices to homogeneous coordinates for multiplication
+        # Convert affine matrices to homogeneous coordinates
         T1_homo = np.vstack([T1, [0, 0, 1]])
         T2_homo = np.vstack([T2, [0, 0, 1]])
+        
+        # Compose transformations: T2 after T1
         result_homo = T2_homo @ T1_homo
-        return result_homo[:2, :]  # Convert back to affine
-    else:  # ALIGN_HOMOGRAPHY
-        return T2 @ T1  # Direct matrix multiplication for homography
+        
+        # Convert back to affine
+        return result_homo[:2, :].astype(np.float32)
+    else:
+        # For homography, direct matrix multiplication
+        return (T2 @ T1).astype(np.float32)
 
 
 class AlignFramesParallel(AlignFrames):
@@ -35,7 +39,7 @@ class AlignFramesParallel(AlignFrames):
         self.max_threads = kwargs.get('max_threads', constants.DEFAULT_ALIGN_MAX_THREADS)
         self._img_cache = None
         self._img_locks = None
-        self._good_matches = None
+        self._n_good_matches = None
         self._transforms = None
         self._cumulative_transforms = None
 
@@ -51,7 +55,7 @@ class AlignFramesParallel(AlignFrames):
         self.sub_msg(f": preprocess {n_frames} images in parallel, {self.max_threads} cores")
         self._img_cache = [None] * n_frames
         self._img_locks = [0] * n_frames
-        self._good_matches = [0] * n_frames
+        self._n_good_matches = [0] * n_frames
         self._transforms = [None] * n_frames
         self._cumulative_transforms = [None] * n_frames
         max_chunck_size = self.max_threads
@@ -79,7 +83,7 @@ class AlignFramesParallel(AlignFrames):
                     idx = future_to_index[future]
                     try:
                         info_messages, warning_messages = future.result()
-                        message = f": found matches, image {idx}: {self._good_matches[idx]}"
+                        message = f": found matches, image {idx}: {self._n_good_matches[idx]}"
                         if len(info_messages) > 0:
                             message += ", ".join(info_messages) 
                         color=constants.LOG_COLOR_LEVEL_3
@@ -102,28 +106,33 @@ class AlignFramesParallel(AlignFrames):
                 self.sub_msg(f": clear cache: {i}")
         gc.collect()
         self.sub_msg(": combining transformations")
+        transform_type = self.alignment_config['transform']
+        # Set identity for reference frame
+        if transform_type == constants.ALIGN_RIGID:
+            identity = np.array([[1.0, 0.0, 0.0], 
+                                 [0.0, 1.0, 0.0]], dtype=np.float32)
+        else:
+            identity = np.eye(3, dtype=np.float32)
+
+        self._cumulative_transforms[ref_idx] = identity
         # Forward pass for indices less than reference
         for i in range(ref_idx - 1, -1, -1):
             if self._transforms[i] is not None and self._cumulative_transforms[i + 1] is not None:
                 self._cumulative_transforms[i] = compose_transforms(
-                    self._transforms[i], self._cumulative_transforms[i + 1])
+                    self._transforms[i], self._cumulative_transforms[i + 1], transform_type)
             else:
                 self._cumulative_transforms[i] = None
+                self.sub_msg(f": warning: no transform for frame {i}")
 
         # Backward pass for indices greater than reference
         for i in range(ref_idx + 1, n_frames):
             if self._transforms[i] is not None and self._cumulative_transforms[i - 1] is not None:
                 self._cumulative_transforms[i] = compose_transforms(
-                    self._transforms[i], self._cumulative_transforms[i - 1])
+                    self._transforms[i], self._cumulative_transforms[i - 1], transform_type)
             else:
                 self._cumulative_transforms[i] = None
-
-        # Convert back to float32 for OpenCV compatibility if needed
-        for i in range(n_frames):
-            if self._cumulative_transforms[i] is not None:
-                self._cumulative_transforms[i] = self._cumulative_transforms[i].astype(np.float32)
-
-
+                self.sub_msg(f": warning: no transform for frame {i}")
+        self.sub_msg(": feature extaction completed")
 
     def extract_features(self, idx):
         ref_idx = self.process.ref_idx
@@ -162,55 +171,98 @@ class AlignFramesParallel(AlignFrames):
                 break
             subsample = 1
             info_messages.append("no subsampling applied")
+        self._n_good_matches[idx] = n_good_matches
         m = None
         min_matches = 4 if self.alignment_config['transform'] == constants.ALIGN_HOMOGRAPHY else 3
-
-        if n_good_matches >= min_matches:
-            transform = self.alignment_config['transform']
-            src_pts = np.float32([kp_0[m.queryIdx].pt for m in good_matches]).reshape(-1, 1, 2)
-            dst_pts = np.float32([kp_ref[m.trainIdx].pt for m in good_matches]).reshape(-1, 1, 2)
-            m, msk = find_transform(src_pts, dst_pts, transform, self.alignment_config['align_method'],
-                                    *(self.alignment_config[k]
-                                      for k in ['rans_threshold', 'max_iters',
-                                                'align_confidence', 'refine_iters']))
-
-            h_sub, w_sub = img_0_sub.shape[:2]
-            if subsample > 1:
-                if transform == constants.ALIGN_HOMOGRAPHY:
-                    low_size = np.float32([[0, 0], [0, h_sub], [w_sub, h_sub], [w_sub, 0]])
-                    high_size = np.float32([[0, 0], [0, h0], [w0, h0], [w0, 0]])
-                    scale_up = cv2.getPerspectiveTransform(low_size, high_size)
-                    scale_down = cv2.getPerspectiveTransform(high_size, low_size)
-                    m = scale_up @ m @ scale_down
-                elif transform == constants.ALIGN_RIGID:
-                    rotation = m[:2, :2]
-                    translation = m[:, 2]
-                    translation_fullres = translation * subsample
-                    m = np.empty((2, 3), dtype=np.float32)
-                    m[:2, :2] = rotation
-                    m[:, 2] = translation_fullres
-                else:
-                    warning_messages.append("invalid transform")
-                    return ",".join(warning_messages)
-
-            transform_type = self.alignment_config['transform']
-            is_valid = True
-            reason = ""
-            if self.alignment_config['abort_abnormal']:
-                affine_thresholds = _AFFINE_THRESHOLDS
-                homography_thresholds = _HOMOGRAPHY_THRESHOLDS
+        if n_good_matches < min_matches:
+            warning_messages.append("too few matches")
+            return ",".join(warning_messages)
+        transform = self.alignment_config['transform']
+        src_pts = np.float32([kp_0[m.queryIdx].pt for m in good_matches]).reshape(-1, 1, 2)
+        dst_pts = np.float32([kp_ref[m.trainIdx].pt for m in good_matches]).reshape(-1, 1, 2)
+        m, msk = find_transform(src_pts, dst_pts, transform, self.alignment_config['align_method'],
+                                *(self.alignment_config[k]
+                                  for k in ['rans_threshold', 'max_iters',
+                                            'align_confidence', 'refine_iters']))
+        h_sub, w_sub = img_0_sub.shape[:2]
+        if subsample > 1:
+            if transform == constants.ALIGN_HOMOGRAPHY:
+                low_size = np.float32([[0, 0], [0, h_sub], [w_sub, h_sub], [w_sub, 0]])
+                high_size = np.float32([[0, 0], [0, h0], [w0, h0], [w0, 0]])
+                scale_up = cv2.getPerspectiveTransform(low_size, high_size)
+                scale_down = cv2.getPerspectiveTransform(high_size, low_size)
+                m = scale_up @ m @ scale_down
+            elif transform == constants.ALIGN_RIGID:
+                rotation = m[:2, :2]
+                translation = m[:, 2]
+                translation_fullres = translation * subsample
+                m = np.empty((2, 3), dtype=np.float32)
+                m[:2, :2] = rotation
+                m[:, 2] = translation_fullres
             else:
-                affine_thresholds = None
-                homography_thresholds = None
-            if transform_type == constants.ALIGN_RIGID:
-                is_valid, reason = check_affine_matrix(
-                    m, img_0.shape, affine_thresholds)
-            elif transform_type == constants.ALIGN_HOMOGRAPHY:
-                is_valid, reason = check_homography_distortion(
-                    m, img_0.shape, homography_thresholds)
-            if not is_valid:
-                warning_messages.appen("invalid transform")
-        self._good_matches[idx] = len(good_matches)
-        self._transforms[idx] = m
+                warning_messages.append("invalid transform type specified")
+                return ",".join(warning_messages)
+        transform_type = self.alignment_config['transform']
+        is_valid = True
+        reason = ""
+        if self.alignment_config['abort_abnormal']:
+            affine_thresholds = _AFFINE_THRESHOLDS
+            homography_thresholds = _HOMOGRAPHY_THRESHOLDS
+        else:
+            affine_thresholds = None
+            homography_thresholds = None
+        if transform_type == constants.ALIGN_RIGID:
+            is_valid, reason = check_affine_matrix(
+                m, img_0.shape, affine_thresholds)
+        elif transform_type == constants.ALIGN_HOMOGRAPHY:
+            is_valid, reason = check_homography_distortion(
+                m, img_0.shape, homography_thresholds)
+        if not is_valid:
+            warning_messages.appen("invalid transform found")
+        else:
+            self._transforms[idx] = m
         return info_messages, warning_messages
+
+    def align_images(self, idx, img_ref, img_0):
+        if self._cumulative_transforms[idx] is None:
+            self.sub_msg(f": no transformation for frame {idx}, skipping alignment")
+            return img_0
+        m = self._cumulative_transforms[idx]
+        transform_type = self.alignment_config['transform']
+        
+        # Validate matrix dimensions
+        if transform_type == constants.ALIGN_RIGID and m.shape != (2, 3):
+            self.sub_msg(f": invalid matrix shape for rigid transform: {m.shape}")
+            return img_0
+        elif transform_type == constants.ALIGN_HOMOGRAPHY and m.shape != (3, 3):
+            self.sub_msg(f": invalid matrix shape for homography: {m.shape}")
+            return img_0
+        self.sub_msg(': apply image alignment')
+        try:
+            cv2_border_mode = _cv2_border_mode_map[self.alignment_config['border_mode']]
+        except KeyError as e:
+            raise InvalidOptionError("border_mode", self.alignment_config['border_mode']) from e
+        img_mask = np.ones_like(img_0, dtype=np.uint8)
+        h_ref, w_ref = img_ref.shape[:2]
+        if self.alignment_config['transform'] == constants.ALIGN_HOMOGRAPHY:
+            img_warp = cv2.warpPerspective(
+                img_0, m, (w_ref, h_ref),
+                borderMode=cv2_border_mode, borderValue=self.alignment_config['border_value'])
+            if self.alignment_config['border_mode'] == constants.BORDER_REPLICATE_BLUR:
+                mask = cv2.warpPerspective(img_mask, m, (w_ref, h_ref),
+                                           borderMode=cv2.BORDER_CONSTANT, borderValue=0)
+        elif self.alignment_config['transform'] == constants.ALIGN_RIGID:
+            img_warp = cv2.warpAffine(
+                img_0, m, (w_ref, h_ref),
+                borderMode=cv2_border_mode, borderValue=self.alignment_config['border_value'])
+            if self.alignment_config['border_mode'] == constants.BORDER_REPLICATE_BLUR:
+                mask = cv2.warpAffine(img_mask, m, (w_ref, h_ref),
+                                      borderMode=cv2.BORDER_CONSTANT, borderValue=0)
+        if self.alignment_config['border_mode'] == constants.BORDER_REPLICATE_BLUR:
+            self.sub_msg(': blur borders')
+            mask = cv2.cvtColor(mask, cv2.COLOR_BGR2GRAY)
+            blurred_warp = cv2.GaussianBlur(
+                img_warp, (21, 21), sigmaX=self.alignment_config['border_blur'])
+            img_warp[mask == 0] = blurred_warp[mask == 0]
+        return img_warp
 
