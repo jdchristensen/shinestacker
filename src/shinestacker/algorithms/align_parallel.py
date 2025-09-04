@@ -12,15 +12,19 @@ from .align import (AlignFrames, detect_and_compute_matches, find_transform,
                     check_affine_matrix, check_homography_distortion)
 
 
-def compose_transforms(t1, t2):
+def compose_transforms(T1, T2):
+    # Convert inputs to float64
+    T1 = T1.astype(np.float64)
+    T2 = T2.astype(np.float64)
+    
     if transform_type == constants.ALIGN_RIGID:
         # Convert affine matrices to homogeneous coordinates for multiplication
-        t1_homo = np.vstack([t1, [0, 0, 1]])
-        t2_homo = np.vstack([t2, [0, 0, 1]])
-        result_homo = t2_homo @ t1_homo
+        T1_homo = np.vstack([T1, [0, 0, 1]])
+        T2_homo = np.vstack([T2, [0, 0, 1]])
+        result_homo = T2_homo @ T1_homo
         return result_homo[:2, :]  # Convert back to affine
     else:  # ALIGN_HOMOGRAPHY
-        return t2 @ t1  # Direct matrix multiplication for homography
+        return T2 @ T1  # Direct matrix multiplication for homography
 
 
 class AlignFramesParallel(AlignFrames):
@@ -98,6 +102,7 @@ class AlignFramesParallel(AlignFrames):
                 self.sub_msg(f": clear cache: {i}")
         gc.collect()
         self.sub_msg(": combining transformations")
+        # Forward pass for indices less than reference
         for i in range(ref_idx - 1, -1, -1):
             if self._transforms[i] is not None and self._cumulative_transforms[i + 1] is not None:
                 self._cumulative_transforms[i] = compose_transforms(
@@ -112,6 +117,13 @@ class AlignFramesParallel(AlignFrames):
                     self._transforms[i], self._cumulative_transforms[i - 1])
             else:
                 self._cumulative_transforms[i] = None
+
+        # Convert back to float32 for OpenCV compatibility if needed
+        for i in range(n_frames):
+            if self._cumulative_transforms[i] is not None:
+                self._cumulative_transforms[i] = self._cumulative_transforms[i].astype(np.float32)
+
+
 
     def extract_features(self, idx):
         ref_idx = self.process.ref_idx
