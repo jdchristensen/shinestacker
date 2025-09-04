@@ -1,3 +1,4 @@
+# pylint: disable=C0114, C0115, C0116, W0718, R0912, R0915, E1101, R0914, R0911, E0606, R0801
 import gc
 import copy
 import math
@@ -6,29 +7,21 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 import numpy as np
 import cv2
 from ..config.constants import constants
-from .. core.exceptions import InvalidOptionError
+from .. core.exceptions import InvalidOptionError, RunStopException
 from .utils import read_img, img_subsample
 from .align import (AlignFramesBase, detect_and_compute_matches, find_transform,
-                    check_affine_matrix, check_homography_distortion, _cv2_border_mode_map)
+                    check_transform, _cv2_border_mode_map, rescale_trasnsform)
 
 
-def compose_transforms(T1, T2, transform_type):
-    T1 = T1.astype(np.float64)
-    T2 = T2.astype(np.float64)
-    
+def compose_transforms(t1, t2, transform_type):
+    t1 = t1.astype(np.float64)
+    t2 = t2.astype(np.float64)
     if transform_type == constants.ALIGN_RIGID:
-        # Convert affine matrices to homogeneous coordinates
-        T1_homo = np.vstack([T1, [0, 0, 1]])
-        T2_homo = np.vstack([T2, [0, 0, 1]])
-        
-        # Compose transformations: T2 after T1
-        result_homo = T2_homo @ T1_homo
-        
-        # Convert back to affine
-        return result_homo[:2, :].astype(np.float32)
-    else:
-        # For homography, direct matrix multiplication
-        return (T2 @ T1).astype(np.float32)
+        t1_homo = np.vstack([t1, [0, 0, 1]])
+        t2_homo = np.vstack([t2, [0, 0, 1]])
+        result_homo = t2_homo @ t1_homo
+        return result_homo[:2, :]
+    return t2 @ t1
 
 
 class AlignFramesParallel(AlignFramesBase):
@@ -39,8 +32,14 @@ class AlignFramesParallel(AlignFramesBase):
         self.max_threads = kwargs.get('max_threads', constants.DEFAULT_ALIGN_MAX_THREADS)
         self._img_cache = None
         self._img_locks = None
+        self._target_indices = None
         self._transforms = None
         self._cumulative_transforms = None
+
+    def check_running(self):
+        if self.process.callback(constants.CALLBACK_CHECK_RUNNING,
+                                 self.process.id, self.process.name) is False:
+            raise RunStopException(self.name)
 
     def cache_img(self, idx):
         self._img_locks[idx] += 1
@@ -54,6 +53,7 @@ class AlignFramesParallel(AlignFramesBase):
         self.sub_msg(f": preprocess {n_frames} images in parallel, {self.max_threads} cores")
         self._img_cache = [None] * n_frames
         self._img_locks = [0] * n_frames
+        self._target_indices = [None] * n_frames
         self._n_good_matches = [0] * n_frames
         self._transforms = [None] * n_frames
         self._cumulative_transforms = [None] * n_frames
@@ -81,14 +81,15 @@ class AlignFramesParallel(AlignFramesBase):
                 for future in as_completed(future_to_index):
                     idx = future_to_index[future]
                     try:
+                        self.check_running()
                         info_messages, warning_messages = future.result()
-                        message = f": found matches, image {idx}: {self._n_good_matches[idx]}"
+                        message = f": image {idx}: found {self._n_good_matches[idx]} matches"
                         if len(info_messages) > 0:
-                            message += ", ".join(info_messages) 
-                        color=constants.LOG_COLOR_LEVEL_3
+                            message += ", " + ", ".join(info_messages)
+                        color = constants.LOG_COLOR_LEVEL_3
                         if len(warning_messages) > 0:
-                            message += ", ".join(warning_message) 
-                            color=constants.LOG_COLOR_WARNING
+                            message += ", " + ", ".join(warning_messages)
+                            color = constants.LOG_COLOR_WARNING
                         self.sub_msg(message, color=color)
                     except Exception as e:
                         traceback.print_tb(e.__traceback__)
@@ -106,49 +107,47 @@ class AlignFramesParallel(AlignFramesBase):
         gc.collect()
         self.sub_msg(": combining transformations")
         transform_type = self.alignment_config['transform']
-        # Set identity for reference frame
         if transform_type == constants.ALIGN_RIGID:
-            identity = np.array([[1.0, 0.0, 0.0], 
-                                 [0.0, 1.0, 0.0]], dtype=np.float32)
+            identity = np.array([[1.0, 0.0, 0.0],
+                                 [0.0, 1.0, 0.0]], dtype=np.float64)
         else:
-            identity = np.eye(3, dtype=np.float32)
-
+            identity = np.eye(3, dtype=np.float64)
         self._cumulative_transforms[ref_idx] = identity
-        # Forward pass for indices less than reference
-        for i in range(ref_idx - 1, -1, -1):
-            if self._transforms[i] is not None and self._cumulative_transforms[i + 1] is not None:
+        frames_to_process = []
+        for i in range(n_frames):
+            if i != ref_idx:
+                frames_to_process.append((i, abs(i - ref_idx)))
+        frames_to_process.sort(key=lambda x: x[1])
+        for i, _ in frames_to_process:
+            target_idx = self._target_indices[i]
+            if target_idx is not None and self._cumulative_transforms[target_idx] is not None:
                 self._cumulative_transforms[i] = compose_transforms(
-                    self._transforms[i], self._cumulative_transforms[i + 1], transform_type)
+                    self._transforms[i], self._cumulative_transforms[target_idx], transform_type)
             else:
                 self._cumulative_transforms[i] = None
-                self.sub_msg(f": warning: no transform for frame {i}")
+                self.sub_msg(f": warning: no cumulative transform for frame {i}")
+        for i in range(n_frames):
+            if self._cumulative_transforms[i] is not None:
+                self._cumulative_transforms[i] = self._cumulative_transforms[i].astype(np.float32)
+                self.sub_msg(": feature extaction completed")
 
-        # Backward pass for indices greater than reference
-        for i in range(ref_idx + 1, n_frames):
-            if self._transforms[i] is not None and self._cumulative_transforms[i - 1] is not None:
-                self._cumulative_transforms[i] = compose_transforms(
-                    self._transforms[i], self._cumulative_transforms[i - 1], transform_type)
-            else:
-                self._cumulative_transforms[i] = None
-                self.sub_msg(f": warning: no transform for frame {i}")
-        self.sub_msg(": feature extaction completed")
-
-    def extract_features(self, idx):
+    def extract_features(self, idx, delta=1):
         ref_idx = self.process.ref_idx
-        if ref_idx > idx:
-            delta_idx = +1
-        elif ref_idx < idx:
-            delta_idx = -1
+        pass_ref_err_msg = "cannot find path to reference frame"
+        if idx < ref_idx:
+            target_idx = idx + delta
+            if target_idx > ref_idx:
+                return [], [pass_ref_err_msg]
+        elif idx > ref_idx:
+            target_idx = idx - delta
+            if target_idx < ref_idx:
+                return [], [pass_ref_err_msg]
         else:
-            return ''
+            return [], []
         info_messages = []
         warning_messages = []
-        ref_idx = idx
-        ref_idx += delta_idx
         img_0 = self.cache_img(idx)
-        img_ref = self.cache_img(ref_idx)
-
-        h_ref, w_ref = img_ref.shape[:2]
+        img_ref = self.cache_img(target_idx)
         h0, w0 = img_0.shape[:2]
         subsample = self.alignment_config['subsample']
         if subsample == 0:
@@ -169,57 +168,35 @@ class AlignFramesParallel(AlignFramesBase):
             if n_good_matches > min_good_matches or subsample == 1:
                 break
             subsample = 1
-            info_messages.append("no subsampling applied")
+            info_messages.append("too few matches, no subsampling applied")
         self._n_good_matches[idx] = n_good_matches
         m = None
         min_matches = 4 if self.alignment_config['transform'] == constants.ALIGN_HOMOGRAPHY else 3
         if n_good_matches < min_matches:
-            warning_messages.append("too few matches")
-            return ",".join(warning_messages)
+            return self.extract_features(idx, delta + 1)
         transform = self.alignment_config['transform']
         src_pts = np.float32([kp_0[m.queryIdx].pt for m in good_matches]).reshape(-1, 1, 2)
         dst_pts = np.float32([kp_ref[m.trainIdx].pt for m in good_matches]).reshape(-1, 1, 2)
-        m, msk = find_transform(src_pts, dst_pts, transform, self.alignment_config['align_method'],
-                                *(self.alignment_config[k]
-                                  for k in ['rans_threshold', 'max_iters',
-                                            'align_confidence', 'refine_iters']))
+        m, _msk = find_transform(src_pts, dst_pts, transform, self.alignment_config['align_method'],
+                                 *(self.alignment_config[k]
+                                   for k in ['rans_threshold', 'max_iters',
+                                             'align_confidence', 'refine_iters']))
         h_sub, w_sub = img_0_sub.shape[:2]
         if subsample > 1:
-            if transform == constants.ALIGN_HOMOGRAPHY:
-                low_size = np.float32([[0, 0], [0, h_sub], [w_sub, h_sub], [w_sub, 0]])
-                high_size = np.float32([[0, 0], [0, h0], [w0, h0], [w0, 0]])
-                scale_up = cv2.getPerspectiveTransform(low_size, high_size)
-                scale_down = cv2.getPerspectiveTransform(high_size, low_size)
-                m = scale_up @ m @ scale_down
-            elif transform == constants.ALIGN_RIGID:
-                rotation = m[:2, :2]
-                translation = m[:, 2]
-                translation_fullres = translation * subsample
-                m = np.empty((2, 3), dtype=np.float32)
-                m[:2, :2] = rotation
-                m[:, 2] = translation_fullres
-            else:
-                warning_messages.append("invalid transform type specified")
-                return ",".join(warning_messages)
+            m = rescale_trasnsform(m, w0, h0, w_sub, h_sub, subsample, transform)
+            if m is None:
+                warning_messages.append(f" invalid option {transform}")
+                return info_messages, warning_messages
         transform_type = self.alignment_config['transform']
         is_valid = True
-        reason = ""
-        if self.alignment_config['abort_abnormal']:
-            affine_thresholds = _AFFINE_THRESHOLDS
-            homography_thresholds = _HOMOGRAPHY_THRESHOLDS
-        else:
-            affine_thresholds = None
-            homography_thresholds = None
-        if transform_type == constants.ALIGN_RIGID:
-            is_valid, reason = check_affine_matrix(
-                m, img_0.shape, affine_thresholds)
-        elif transform_type == constants.ALIGN_HOMOGRAPHY:
-            is_valid, reason = check_homography_distortion(
-                m, img_0.shape, homography_thresholds)
+        affine_thresholds, homography_thresholds = self.get_transform_thresholds()
+        is_valid, _reason = check_transform(
+            m, img_0, transform_type,
+            affine_thresholds, homography_thresholds)
         if not is_valid:
-            warning_messages.appen("invalid transform found")
-        else:
-            self._transforms[idx] = m
+            return self.extract_features(idx, delta + 1)
+        self._transforms[idx] = m
+        self._target_indices[idx] = target_idx
         return info_messages, warning_messages
 
     def align_images(self, idx, img_ref, img_0):
@@ -228,12 +205,10 @@ class AlignFramesParallel(AlignFramesBase):
             return img_0
         m = self._cumulative_transforms[idx]
         transform_type = self.alignment_config['transform']
-        
-        # Validate matrix dimensions
         if transform_type == constants.ALIGN_RIGID and m.shape != (2, 3):
             self.sub_msg(f": invalid matrix shape for rigid transform: {m.shape}")
             return img_0
-        elif transform_type == constants.ALIGN_HOMOGRAPHY and m.shape != (3, 3):
+        if transform_type == constants.ALIGN_HOMOGRAPHY and m.shape != (3, 3):
             self.sub_msg(f": invalid matrix shape for homography: {m.shape}")
             return img_0
         self.sub_msg(': apply image alignment')
@@ -264,4 +239,3 @@ class AlignFramesParallel(AlignFramesBase):
                 img_warp, (21, 21), sigmaX=self.alignment_config['border_blur'])
             img_warp[mask == 0] = blurred_warp[mask == 0]
         return img_warp
-

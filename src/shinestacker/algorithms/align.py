@@ -130,6 +130,17 @@ def check_homography_distortion(m, img_shape, homography_thresholds=_HOMOGRAPHY_
     return True, "Transformation within acceptable limits"
 
 
+def check_transform(m, img_0, transform_type,
+                    affine_thresholds, homography_thresholds):
+    if transform_type == constants.ALIGN_RIGID:
+        return check_affine_matrix(
+            m, img_0.shape, affine_thresholds)
+    if transform_type == constants.ALIGN_HOMOGRAPHY:
+        return check_homography_distortion(
+            m, img_0.shape, homography_thresholds)
+    return False, f'invalid transfrom option {transform_type}'
+
+
 def get_good_matches(des_0, des_ref, matching_config=None):
     matching_config = {**_DEFAULT_MATCHING_CONFIG, **(matching_config or {})}
     match_method = matching_config['match_method']
@@ -239,6 +250,25 @@ def find_transform(src_pts, dst_pts, transform=constants.DEFAULT_TRANSFORM,
     return result
 
 
+def rescale_trasnsform(m, w0, h0, w_sub, h_sub, subsample, transform):
+    if transform == constants.ALIGN_HOMOGRAPHY:
+        low_size = np.float32([[0, 0], [0, h_sub], [w_sub, h_sub], [w_sub, 0]])
+        high_size = np.float32([[0, 0], [0, h0], [w0, h0], [w0, 0]])
+        scale_up = cv2.getPerspectiveTransform(low_size, high_size)
+        scale_down = cv2.getPerspectiveTransform(high_size, low_size)
+        m = scale_up @ m @ scale_down
+    elif transform == constants.ALIGN_RIGID:
+        rotation = m[:2, :2]
+        translation = m[:, 2]
+        translation_fullres = translation * subsample
+        m = np.empty((2, 3), dtype=np.float32)
+        m[:2, :2] = rotation
+        m[:, 2] = translation_fullres
+    else:
+        return 0
+    return m
+
+
 def align_images(img_ref, img_0, feature_config=None, matching_config=None, alignment_config=None,
                  plot_path=None, callbacks=None,
                  affine_thresholds=_AFFINE_THRESHOLDS,
@@ -304,31 +334,13 @@ def align_images(img_ref, img_0, feature_config=None, matching_config=None, alig
                 callbacks['save_plot'](plot_path)
         h_sub, w_sub = img_0_sub.shape[:2]
         if subsample > 1:
-            if transform == constants.ALIGN_HOMOGRAPHY:
-                low_size = np.float32([[0, 0], [0, h_sub], [w_sub, h_sub], [w_sub, 0]])
-                high_size = np.float32([[0, 0], [0, h0], [w0, h0], [w0, 0]])
-                scale_up = cv2.getPerspectiveTransform(low_size, high_size)
-                scale_down = cv2.getPerspectiveTransform(high_size, low_size)
-                m = scale_up @ m @ scale_down
-            elif transform == constants.ALIGN_RIGID:
-                rotation = m[:2, :2]
-                translation = m[:, 2]
-                translation_fullres = translation * subsample
-                m = np.empty((2, 3), dtype=np.float32)
-                m[:2, :2] = rotation
-                m[:, 2] = translation_fullres
-            else:
+            m = rescale_trasnsform(m, w0, h0, w_sub, h_sub, subsample, transform)
+            if m is None:
                 raise InvalidOptionError("transform", transform)
-
         transform_type = alignment_config['transform']
-        is_valid = True
-        reason = ""
-        if transform_type == constants.ALIGN_RIGID:
-            is_valid, reason = check_affine_matrix(
-                m, img_0.shape, affine_thresholds)
-        elif transform_type == constants.ALIGN_HOMOGRAPHY:
-            is_valid, reason = check_homography_distortion(
-                m, img_0.shape, homography_thresholds)
+        is_valid, reason = check_transform(
+            m, img_0, transform_type,
+            affine_thresholds, homography_thresholds)
         if not is_valid:
             if callbacks and 'warning' in callbacks:
                 callbacks['warning'](f"invalid transformation: {reason}")
@@ -363,7 +375,7 @@ def align_images(img_ref, img_0, feature_config=None, matching_config=None, alig
 class AlignFramesBase(SubAction):
     def __init__(self, enabled=True, feature_config=None, matching_config=None,
                  alignment_config=None, **kwargs):
-        super().__init__(enabled)  
+        super().__init__(enabled)
         self.process = None
         self._n_good_matches = None
         self.feature_config = {**_DEFAULT_FEATURE_CONFIG, **(feature_config or {})}
@@ -399,6 +411,10 @@ class AlignFramesBase(SubAction):
         img_ref = self.process.img_ref(ref_idx)
         return self.align_images(idx, img_ref, img_0)
 
+    def get_transform_thresholds(self):
+        if self.alignment_config['abort_abnormal']:
+            return _AFFINE_THRESHOLDS, _HOMOGRAPHY_THRESHOLDS
+        return None, None
 
 class AlignFrames(AlignFramesBase):
     def __init__(self, enabled=True, feature_config=None, matching_config=None,
@@ -424,12 +440,7 @@ class AlignFrames(AlignFramesBase):
                 f"{self.process.name}-matches-{idx_str}.pdf"
         else:
             plot_path = None
-        if self.alignment_config['abort_abnormal']:
-            affine_thresholds = _AFFINE_THRESHOLDS
-            homography_thresholds = _HOMOGRAPHY_THRESHOLDS
-        else:
-            affine_thresholds = None
-            homography_thresholds = None
+        affine_thresholds, homography_thresholds = self.get_transform_thresholds()
         n_good_matches, _m, img = align_images(
             img_ref, img_0,
             feature_config=self.feature_config,
