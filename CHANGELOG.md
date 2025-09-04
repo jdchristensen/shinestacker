@@ -2,11 +2,12 @@
 
 This page reports the main releases only and the main changes therein.
 
-## [v-.-.-] - 2025-09-02
+## [v-.-.-] - 2025-09-04
 **Uncommitted changes**
 
 ### Changes
 
+* implemented parallel processing of alignment feature extraction
 * job input can specify a list of files, not only a folder
 * fixed path in an example project
 * bug fix in config dialog
