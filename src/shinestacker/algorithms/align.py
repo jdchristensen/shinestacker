@@ -360,12 +360,12 @@ def align_images(img_ref, img_0, feature_config=None, matching_config=None, alig
     return n_good_matches, m, img_warp
 
 
-class AlignFrames(SubAction):
+class AlignFramesBase(SubAction):
     def __init__(self, enabled=True, feature_config=None, matching_config=None,
                  alignment_config=None, **kwargs):
-        super().__init__(enabled)
+        super().__init__(enabled)  
         self.process = None
-        self.n_matches = None
+        self._n_good_matches = None
         self.feature_config = {**_DEFAULT_FEATURE_CONFIG, **(feature_config or {})}
         self.matching_config = {**_DEFAULT_MATCHING_CONFIG, **(matching_config or {})}
         self.alignment_config = {**_DEFAULT_ALIGNMENT_CONFIG, **(alignment_config or {})}
@@ -383,14 +383,27 @@ class AlignFrames(SubAction):
             if k in kwargs:
                 self.alignment_config[k] = kwargs[k]
 
+    def align_images(self, idx, img_ref, img_0):
+        pass
+
+    def sub_msg(self, msg, color=constants.LOG_COLOR_LEVEL_3):
+        self.process.sub_message_r(color_str(msg, color))
+
+    def begin(self, process):
+        self.process = process
+        self._n_good_matches = np.zeros(process.total_action_counts)
+
     def run_frame(self, idx, ref_idx, img_0):
         if idx == self.process.ref_idx:
             return img_0
         img_ref = self.process.img_ref(ref_idx)
         return self.align_images(idx, img_ref, img_0)
 
-    def sub_msg(self, msg, color=constants.LOG_COLOR_LEVEL_3):
-        self.process.sub_message_r(color_str(msg, color))
+
+class AlignFrames(AlignFramesBase):
+    def __init__(self, enabled=True, feature_config=None, matching_config=None,
+                 alignment_config=None, **kwargs):
+        super().__init__(enabled)
 
     def align_images(self, idx, img_ref, img_0):
         idx_str = f"{idx:04d}"
@@ -427,7 +440,7 @@ class AlignFrames(SubAction):
             affine_thresholds=affine_thresholds,
             homography_thresholds=homography_thresholds
         )
-        self.n_matches[idx] = n_good_matches
+        self._n_good_matches[idx] = n_good_matches
         if n_good_matches < self.min_matches:
             self.process.sub_message(color_str(f": image not aligned, too few matches found: "
                                      f"{n_good_matches}", constants.LOG_COLOR_WARNING),
@@ -435,17 +448,13 @@ class AlignFrames(SubAction):
             return None
         return img
 
-    def begin(self, process):
-        self.process = process
-        self.n_matches = np.zeros(process.total_action_counts)
-
     def end(self):
         if self.plot_summary:
             plt.figure(figsize=constants.PLT_FIG_SIZE)
-            x = np.arange(1, len(self.n_matches) + 1, dtype=int)
+            x = np.arange(1, len(self._n_good_matches) + 1, dtype=int)
             no_ref = x != self.process.ref_idx + 1
             x = x[no_ref]
-            y = self.n_matches[no_ref]
+            y = self._n_good_matches[no_ref]
             if self.process.ref_idx == 0:
                 y_max = y[1]
             elif self.process.ref_idx >= len(y):

@@ -8,7 +8,7 @@ import cv2
 from ..config.constants import constants
 from .. core.exceptions import InvalidOptionError
 from .utils import read_img, img_subsample
-from .align import (AlignFrames, detect_and_compute_matches, find_transform,
+from .align import (AlignFramesBase, detect_and_compute_matches, find_transform,
                     check_affine_matrix, check_homography_distortion, _cv2_border_mode_map)
 
 
@@ -31,7 +31,7 @@ def compose_transforms(T1, T2, transform_type):
         return (T2 @ T1).astype(np.float32)
 
 
-class AlignFramesParallel(AlignFrames):
+class AlignFramesParallel(AlignFramesBase):
     def __init__(self, enabled=True, feature_config=None, matching_config=None,
                  alignment_config=None, **kwargs):
         super().__init__(enabled=True, feature_config=None, matching_config=None,
@@ -39,7 +39,6 @@ class AlignFramesParallel(AlignFrames):
         self.max_threads = kwargs.get('max_threads', constants.DEFAULT_ALIGN_MAX_THREADS)
         self._img_cache = None
         self._img_locks = None
-        self._n_good_matches = None
         self._transforms = None
         self._cumulative_transforms = None
 
