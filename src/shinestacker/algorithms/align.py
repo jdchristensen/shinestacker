@@ -416,6 +416,7 @@ class AlignFramesBase(SubAction):
             return _AFFINE_THRESHOLDS, _HOMOGRAPHY_THRESHOLDS
         return None, None
 
+
 class AlignFrames(AlignFramesBase):
     def __init__(self, enabled=True, feature_config=None, matching_config=None,
                  alignment_config=None, **kwargs):
@@ -458,6 +459,9 @@ class AlignFrames(AlignFramesBase):
                                      level=logging.WARNING)
             return None
         return img
+
+    def sequential_processing(self):
+        return False
 
     def end(self):
         if self.plot_summary:

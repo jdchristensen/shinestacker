@@ -230,3 +230,6 @@ class SequentialTask(TaskBase):
                              self.id, self.name) is False:
                 raise RunStopException(self.name)
         self.end()
+
+    def sequential_processing(self):
+        return False

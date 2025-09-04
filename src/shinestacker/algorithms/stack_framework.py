@@ -243,6 +243,9 @@ class SubAction:
     def end(self):
         pass
 
+    def sequential_processing(self):
+        return False
+
 
 class CombinedActions(ReferenceFrameTask):
     def __init__(self, name, actions=[], enabled=True, **kwargs):
@@ -302,3 +305,9 @@ class CombinedActions(ReferenceFrameTask):
         for a in self._actions:
             if a.enabled:
                 a.end()
+
+    def sequential_processing(self):
+        for a in self._actions:
+            if a.sequential_processing():
+                return True
+        return False
