@@ -3,8 +3,10 @@ import copy
 import math
 import traceback
 from concurrent.futures import ThreadPoolExecutor, as_completed
+import numpy as np
 import cv2
 from ..config.constants import constants
+from .. core.exceptions import InvalidOptionError
 from .utils import read_img, img_subsample
 from .align import (AlignFrames, detect_and_compute_matches, find_transform,
                     check_affine_matrix, check_homography_distortion)
@@ -18,7 +20,7 @@ class AlignFramesParallel(AlignFrames):
         self.max_threads = kwargs.get('max_threads', constants.DEFAULT_ALIGN_MAX_THREADS)
         self._img_cache = None
         self._img_locks = None
-        self._matches = None
+        self._good_matches = None
         self._transforms = None
 
     def cache_img(self, idx):
@@ -33,7 +35,7 @@ class AlignFramesParallel(AlignFrames):
         self.sub_msg(f": preprocess {n_frames} images in parallel, {self.max_threads} cores")
         self._img_cache = [None] * n_frames
         self._img_locks = [0] * n_frames
-        self._matches = [0] * n_frames
+        self._good_matches = [0] * n_frames
         self._transforms = [None] * n_frames
         max_chunck_size = self.max_threads
         input_filepaths = self.process.input_filepaths()
@@ -78,8 +80,6 @@ class AlignFramesParallel(AlignFrames):
                         #    save_plot(plot_path)
                         #    if callbacks and 'save_plot' in callbacks:
                         #        callbacks['save_plot'](plot_path)
-                        if ...:
-                            raise InvalidOptionError("transform", transform)
 
                     except Exception as e:
                         traceback.print_tb(e.__traceback__)
@@ -139,7 +139,7 @@ class AlignFramesParallel(AlignFrames):
             src_pts = np.float32([kp_0[m.queryIdx].pt for m in good_matches]).reshape(-1, 1, 2)
             dst_pts = np.float32([kp_ref[m.trainIdx].pt for m in good_matches]).reshape(-1, 1, 2)
             m, msk = find_transform(src_pts, dst_pts, transform, self.alignment_config['align_method'],
-                                    *(alignment_config[k]
+                                    *(self.alignment_config[k]
                                       for k in ['rans_threshold', 'max_iters',
                                                 'align_confidence', 'refine_iters']))
 
@@ -165,6 +165,12 @@ class AlignFramesParallel(AlignFrames):
             transform_type = self.alignment_config['transform']
             is_valid = True
             reason = ""
+            if self.alignment_config['abort_abnormal']:
+                affine_thresholds = _AFFINE_THRESHOLDS
+                homography_thresholds = _HOMOGRAPHY_THRESHOLDS
+            else:
+                affine_thresholds = None
+                homography_thresholds = None
             if transform_type == constants.ALIGN_RIGID:
                 is_valid, reason = check_affine_matrix(
                     m, img_0.shape, affine_thresholds)
@@ -174,6 +180,6 @@ class AlignFramesParallel(AlignFrames):
             if not is_valid:
                 messages.appen("invalid transform")
                 return None, None, None, ",".join(messages)
-        self._matches[idx] = len(good_matches)
-        self.__transforms[idx] = n
+        self._good_matches[idx] = len(good_matches)
+        self._transforms[idx] = m
         return ",".join(messages)
