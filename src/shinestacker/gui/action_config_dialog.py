@@ -753,6 +753,10 @@ class AlignFramesConfigurator(SubsampleActionConfigurator):
                 min_val=0, max_val=1000, step=1)
         self.add_bold_label("Miscellanea:")
         self.add_field(
+            'max_threads', FIELD_INT, 'Max num. of cores',
+            required=False, default=constants.DEFAULT_ALIGN_MAX_THREADS,
+            min_val=1, max_val=64)
+        self.add_field(
             'plot_summary', FIELD_BOOL, 'Plot summary',
             required=False, default=False)
         self.add_field(

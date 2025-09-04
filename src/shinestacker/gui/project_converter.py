@@ -7,6 +7,7 @@ from .. algorithms.stack_framework import StackJob, CombinedActions
 from .. algorithms.noise_detection import NoiseDetection, MaskNoise
 from .. algorithms.vignetting import Vignetting
 from .. algorithms.align import AlignFrames
+from .. algorithms.align_parallel import AlignFramesParallel
 from .. algorithms.balance import BalanceFrames
 from .. algorithms.stack import FocusStack, FocusStackBunch
 from .. algorithms.pyramid_auto import PyramidAutoStack
@@ -92,8 +93,12 @@ class ProjectConverter:
             params = {k: v for k, v in action_config.params.items() if k != 'name'}
             return Vignetting(**params)
         if action_config.type_name == constants.ACTION_ALIGNFRAMES:
+            max_threads = action_config.params.pop('max_threads', 1)
             params = {k: v for k, v in action_config.params.items() if k != 'name'}
-            return AlignFrames(**params)
+            if max_threads > 1:
+                return AlignFramesParallel(**params, max_threads=max_threads)
+            else:
+                return AlignFrames(**params)
         if action_config.type_name == constants.ACTION_BALANCEFRAMES:
             params = {k: v for k, v in action_config.params.items() if k != 'name'}
             if 'intensity_interval' in params.keys():

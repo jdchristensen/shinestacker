@@ -172,7 +172,23 @@ def validate_align_config(detector, descriptor, match_method):
                          " require matching method Hamming distance")
 
 
-def detect_and_compute(img_0, img_ref, feature_config=None, matching_config=None):
+detector_map = {
+    constants.DETECTOR_SIFT: cv2.SIFT_create,
+    constants.DETECTOR_ORB: cv2.ORB_create,
+    constants.DETECTOR_SURF: cv2.FastFeatureDetector_create,
+    constants.DETECTOR_AKAZE: cv2.AKAZE_create,
+    constants.DETECTOR_BRISK: cv2.BRISK_create
+}
+
+descriptor_map = {
+    constants.DESCRIPTOR_SIFT: cv2.SIFT_create,
+    constants.DESCRIPTOR_ORB: cv2.ORB_create,
+    constants.DESCRIPTOR_AKAZE: cv2.AKAZE_create,
+    constants.DETECTOR_BRISK: cv2.BRISK_create
+}
+
+
+def detect_and_compute_matches(img_ref, img_0, feature_config=None, matching_config=None):
     feature_config = {**_DEFAULT_FEATURE_CONFIG, **(feature_config or {})}
     matching_config = {**_DEFAULT_MATCHING_CONFIG, **(matching_config or {})}
     feature_config_detector = feature_config['detector']
@@ -180,19 +196,6 @@ def detect_and_compute(img_0, img_ref, feature_config=None, matching_config=None
     match_method = matching_config['match_method']
     validate_align_config(feature_config_detector, feature_config_descriptor, match_method)
     img_bw_0, img_bw_ref = img_bw_8bit(img_0), img_bw_8bit(img_ref)
-    detector_map = {
-        constants.DETECTOR_SIFT: cv2.SIFT_create,
-        constants.DETECTOR_ORB: cv2.ORB_create,
-        constants.DETECTOR_SURF: cv2.FastFeatureDetector_create,
-        constants.DETECTOR_AKAZE: cv2.AKAZE_create,
-        constants.DETECTOR_BRISK: cv2.BRISK_create
-    }
-    descriptor_map = {
-        constants.DESCRIPTOR_SIFT: cv2.SIFT_create,
-        constants.DESCRIPTOR_ORB: cv2.ORB_create,
-        constants.DESCRIPTOR_AKAZE: cv2.AKAZE_create,
-        constants.DETECTOR_BRISK: cv2.BRISK_create
-    }
     detector = detector_map[feature_config_detector]()
     if feature_config_detector == feature_config_descriptor and \
        feature_config_detector in (constants.DETECTOR_SIFT,
@@ -265,8 +268,8 @@ def align_images(img_ref, img_0, feature_config=None, matching_config=None, alig
             img_ref_sub = img_subsample(img_ref, subsample, fast_subsampling)
         else:
             img_0_sub, img_ref_sub = img_0, img_ref
-        kp_0, kp_ref, good_matches = detect_and_compute(img_0_sub, img_ref_sub,
-                                                        feature_config, matching_config)
+        kp_0, kp_ref, good_matches = detect_and_compute_matches(
+            img_ref_sub, img_0_sub, feature_config, matching_config)
         n_good_matches = len(good_matches)
         if n_good_matches > min_good_matches or subsample == 1:
             break
