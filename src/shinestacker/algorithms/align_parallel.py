@@ -40,11 +40,6 @@ class AlignFramesParallel(AlignFramesBase):
         self._transforms = None
         self._cumulative_transforms = None
 
-    def check_running(self):
-        if self.process.callback(constants.CALLBACK_CHECK_RUNNING,
-                                 self.process.id, self.process.name) is False:
-            raise RunStopException(self.process.name)
-
     def cache_img(self, idx):
         with self._cache_locks[idx]:
             self._img_locks[idx] += 1
@@ -71,7 +66,10 @@ class AlignFramesParallel(AlignFramesBase):
                         message += ", " + ", ".join(warning_messages)
                         color = constants.LOG_COLOR_WARNING
                     self.sub_msg(message, color=color)
-                    self.check_running()
+                    self.process.after_step(idx)
+                    self.process.check_running()
+                except RunStopException as e:
+                    raise e
                 except Exception as e:
                     traceback.print_tb(e.__traceback__)
                     self.sub_msg(f": failed processing image: {idx}: {str(e)}")

@@ -224,13 +224,20 @@ class SequentialTask(TaskBase):
             return x
         raise StopIteration
 
+    def check_running(self):
+        if self.callback(constants.CALLBACK_CHECK_RUNNING,
+                         self.id, self.name) is False:
+            raise RunStopException(self.name)
+
+    def after_step(self, step=-1):
+        if step == -1:
+            step = self.current_action_count
+        self.callback(constants.CALLBACK_AFTER_STEP, self.id, self.name, step)
+
     def run_core_serial(self):
         for _ in iter(self):
-            self.callback(constants.CALLBACK_AFTER_STEP,
-                          self.id, self.name, self.current_action_count)
-            if self.callback(constants.CALLBACK_CHECK_RUNNING,
-                             self.id, self.name) is False:
-                raise RunStopException(self.name)
+            self.after_step()
+            self.check_running()
 
     def run_core_parallel_single_chunk(self, idx_chunk):
         with ThreadPoolExecutor(max_workers=self.max_threads) as executor:
@@ -241,6 +248,7 @@ class SequentialTask(TaskBase):
                     constants.LOG_COLOR_LEVEL_1))
                 future = executor.submit(self.run_step, idx)
                 future_to_index[future] = idx
+                self.check_running()
             for future in as_completed(future_to_index):
                 idx = future_to_index[future]
                 try:
@@ -249,6 +257,10 @@ class SequentialTask(TaskBase):
                         f"completed processing step: {idx + 1}/{self.total_action_counts}",
                         constants.LOG_COLOR_LEVEL_1))
                     self.current_action_count += 1
+                    self.after_step()
+                    self.check_running()
+                except RunStopException as e:
+                    raise e
                 except Exception as e:
                     traceback.print_tb(e.__traceback__)
                     self.print_message(color_str(
