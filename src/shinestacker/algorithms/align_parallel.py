@@ -3,11 +3,13 @@ import gc
 import copy
 import math
 import traceback
+import threading
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import numpy as np
 import cv2
 from ..config.constants import constants
 from .. core.exceptions import InvalidOptionError, RunStopException
+from .. core.core_utils import make_chunks
 from .utils import read_img, img_subsample
 from .align import (AlignFramesBase, detect_and_compute_matches, find_transform,
                     check_transform, _cv2_border_mode_map, rescale_trasnsform)
@@ -32,6 +34,7 @@ class AlignFramesParallel(AlignFramesBase):
         self.max_threads = kwargs.get('max_threads', constants.DEFAULT_ALIGN_MAX_THREADS)
         self._img_cache = None
         self._img_locks = None
+        self._cache_locks = None
         self._target_indices = None
         self._transforms = None
         self._cumulative_transforms = None
@@ -42,10 +45,11 @@ class AlignFramesParallel(AlignFramesBase):
             raise RunStopException(self.process.name)
 
     def cache_img(self, idx):
-        self._img_locks[idx] += 1
-        if self._img_cache[idx] is None:
-            self._img_cache[idx] = read_img(self.process.input_filepath(idx))
-        return self._img_cache[idx]
+        with self._cache_locks[idx]:
+            self._img_locks[idx] += 1
+            if self._img_cache[idx] is None:
+                self._img_cache[idx] = read_img(self.process.input_filepath(idx))
+            return self._img_cache[idx]
 
     def begin(self, process):
         super().begin(process)
@@ -53,16 +57,13 @@ class AlignFramesParallel(AlignFramesBase):
         self.sub_msg(f": preprocess {n_frames} images in parallel, {self.max_threads} cores")
         self._img_cache = [None] * n_frames
         self._img_locks = [0] * n_frames
+        self._cache_locks = [threading.Lock() for _ in range(n_frames)]
         self._target_indices = [None] * n_frames
         self._n_good_matches = [0] * n_frames
         self._transforms = [None] * n_frames
         self._cumulative_transforms = [None] * n_frames
         max_chunck_size = self.max_threads
         input_filepaths = self.process.input_filepaths()
-
-        def make_chunks(ll, max_size):
-            return [ll[i:i + max_size] for i in range(0, len(ll), max_size)]
-
         ref_idx = self.process.ref_idx
         self.sub_msg(f": reference index: {ref_idx}")
         sub_indices = list(range(n_frames))

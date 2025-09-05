@@ -221,9 +221,9 @@ class ReferenceFrameTask(SequentialTask, ImageSequenceManager):
                       f"reference: {os.path.basename(self.input_filepath(self.current_ref_idx))}",
                       constants.LOG_COLOR_LEVEL_2))
         self.base_message = color_str(self.name, constants.LOG_COLOR_LEVEL_1, "bold")
-        success = self.run_frame(self.current_idx, self.current_ref_idx) is not None
+        img = self.run_frame(self.current_idx, self.current_ref_idx) is not None
         if self.current_idx < ll:
-            if self.step_process and success:
+            if self.step_process and img is not None:
                 self.current_ref_idx = self.current_idx
             self.current_idx += self.current_idx_step
         if self.current_idx == ll:

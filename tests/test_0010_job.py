@@ -9,7 +9,7 @@ class Action1(TaskBase):
 
     def run(self):
         self.print_message(color_str("run 1", "blue", "bold"))
-        time.sleep(0.1)
+        time.sleep(0.01)
 
 
 class Action2(TaskBase):
@@ -18,7 +18,7 @@ class Action2(TaskBase):
 
     def run(self):
         self.print_message(color_str("run 2", "blue", "bold"))
-        time.sleep(0.1)
+        time.sleep(0.01)
 
 
 class MySequence(SequentialTask):
@@ -31,7 +31,7 @@ class MySequence(SequentialTask):
 
     def run_step(self, action_step):
         self.print_message_r(color_str("action: {}".format(action_step + 1), "blue"))
-        time.sleep(0.1)
+        time.sleep(0.01)
 
 
 def test_run():

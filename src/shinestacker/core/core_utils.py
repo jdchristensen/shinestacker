@@ -50,3 +50,7 @@ def running_under_macos() -> bool:
 
 def running_under_linux() -> bool:
     return platform.system().lower() == 'linux'
+
+
+def make_chunks(ll, max_size):
+    return [ll[i:i + max_size] for i in range(0, len(ll), max_size)]
