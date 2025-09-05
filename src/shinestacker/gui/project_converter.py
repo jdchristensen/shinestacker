@@ -93,7 +93,7 @@ class ProjectConverter:
             params = {k: v for k, v in action_config.params.items() if k != 'name'}
             return Vignetting(**params)
         if action_config.type_name == constants.ACTION_ALIGNFRAMES:
-            max_threads = action_config.params.pop('max_threads', 1)
+            max_threads = action_config.params.pop('max_threads', constants.DEFAULT_MAX_FWK_THREADS)
             params = {k: v for k, v in action_config.params.items() if k != 'name'}
             if max_threads > 1:
                 return AlignFramesParallel(**params, max_threads=max_threads)
