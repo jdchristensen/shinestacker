@@ -58,7 +58,7 @@ class AlignFramesParallel(AlignFramesBase):
             future_to_index = {}
             for idx in idxs:
                 self.print_message(
-                    f": submit alignment matches, image: {self.process.idx_tot_str(idx)}, "
+                    f"submit alignment matches, image: {self.process.idx_tot_str(idx)}, "
                     f"{os.path.basename(self.process.input_filepath(idx))}")
                 future = executor.submit(self.extract_features, idx)
                 future_to_index[future] = idx
