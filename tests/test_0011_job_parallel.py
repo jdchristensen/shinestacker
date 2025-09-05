@@ -1,12 +1,13 @@
 import time
 import random
-from shinestacker.config.config import config
 from shinestacker.core.colors import color_str
-from shinestacker.core.framework import Job, TaskBase, SequentialTask
+from shinestacker.core.framework import Job, SequentialTask
+
 
 class MySequence(SequentialTask):
     def __init__(self, name, enabled=True, max_threads=4, chunk_submit=True):
-        SequentialTask.__init__(self, name, enabled, max_threads=max_threads, chunk_submit=chunk_submit)
+        SequentialTask.__init__(
+            self, name, enabled, max_threads=max_threads, chunk_submit=chunk_submit)
 
     def begin(self):
         super().begin()
@@ -15,6 +16,7 @@ class MySequence(SequentialTask):
     def run_step(self, action_step):
         time.sleep(random.random() * 0.1)
         self.print_message(color_str(f"my seqence - step {action_step + 1}", "cyan"))
+
 
 def test_run():
     try:
@@ -25,6 +27,7 @@ def test_run():
         job.run()
     except Exception:
         assert False
+
 
 def test_run_chunks():
     try:
