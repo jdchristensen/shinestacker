@@ -10,6 +10,7 @@ import numpy as np
 import cv2
 from ..config.constants import constants
 from .. core.exceptions import InvalidOptionError, RunStopException
+from .. core.colors import color_str
 from .. core.core_utils import make_chunks
 from .utils import read_img, img_subsample, img_bw
 from .align import (AlignFramesBase, detect_and_compute_matches, find_transform,
@@ -83,7 +84,7 @@ class AlignFramesParallel(AlignFramesBase):
                     self.sub_msg(f": failed processing image: {idx}: {str(e)}")
             cached_images = 0
             for i in range(self.process.num_input_filepaths()):
-                if self._img_locks[i] == 2:
+                if self._img_locks[i] >= 2:
                     self._img_cache[i] = None
                     self._img_locks[i] = 0
                 elif self._img_cache[i] is not None:
@@ -94,7 +95,9 @@ class AlignFramesParallel(AlignFramesBase):
     def begin(self, process):
         super().begin(process)
         n_frames = self.process.num_input_filepaths()
+        self.process.set_counts(2 * n_frames)
         self.sub_msg(f": preprocess {n_frames} images in parallel, {self.max_threads} cores")
+        input_filepaths = self.process.input_filepaths()
         self._img_cache = [None] * n_frames
         self._img_locks = [0] * n_frames
         self._cache_locks = [threading.Lock() for _ in range(n_frames)]
@@ -103,7 +106,6 @@ class AlignFramesParallel(AlignFramesBase):
         self._transforms = [None] * n_frames
         self._cumulative_transforms = [None] * n_frames
         max_chunck_size = self.max_threads
-        input_filepaths = self.process.input_filepaths()
         ref_idx = self.process.ref_idx
         self.sub_msg(f": reference index: {ref_idx}")
         sub_indices = list(range(n_frames))
@@ -146,6 +148,7 @@ class AlignFramesParallel(AlignFramesBase):
             if self._cumulative_transforms[i] is not None:
                 self._cumulative_transforms[i] = self._cumulative_transforms[i].astype(np.float32)
         self.sub_msg(": feature extaction completed")
+        self.process.set_begin_steps(n_frames)
 
     def extract_features(self, idx, delta=1):
         ref_idx = self.process.ref_idx
@@ -216,10 +219,11 @@ class AlignFramesParallel(AlignFramesBase):
         return info_messages, warning_messages
 
     def align_images(self, idx, img_ref, img_0):
-        if self._cumulative_transforms[idx] is None:
-            self.sub_msg(f": no transformation for frame {idx}, skipping alignment")
-            return img_0
         m = self._cumulative_transforms[idx]
+        if m is None:
+            self.sub_msg(color_str(f": no transformation for frame {idx}, skipping alignment",
+                                   constants.LOG_COLOR_WARNING))
+            return img_0
         transform_type = self.alignment_config['transform']
         if transform_type == constants.ALIGN_RIGID and m.shape != (2, 3):
             self.sub_msg(f": invalid matrix shape for rigid transform: {m.shape}")

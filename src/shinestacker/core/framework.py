@@ -197,11 +197,15 @@ class SequentialTask(TaskBase):
         TaskBase.__init__(self, name, enabled, **kwargs)
         self.total_action_counts = None
         self.current_action_count = None
+        self.begin_steps = 0
 
     def set_counts(self, counts):
         self.total_action_counts = counts
         self.callback(constants.CALLBACK_STEP_COUNTS,
                       self.id, self.name, self.total_action_counts)
+
+    def set_begin_steps(self, steps):
+        self.begin_steps = steps
 
     def begin(self):
         self.callback(constants.CALLBACK_BEGIN_STEPS, self.id, self.name)
@@ -231,7 +235,7 @@ class SequentialTask(TaskBase):
 
     def after_step(self, step=-1):
         if step == -1:
-            step = self.current_action_count
+            step = self.current_action_count + self.begin_steps
         self.callback(constants.CALLBACK_AFTER_STEP, self.id, self.name, step)
 
     def run_core_serial(self):

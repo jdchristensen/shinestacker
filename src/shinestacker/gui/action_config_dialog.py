@@ -539,11 +539,11 @@ class CombinedActionsConfigurator(DefaultActionConfigurator):
                 default=True)
             self.add_field(
                 'max_threads', FIELD_INT, 'Max num. of cores',
-                required=False, default=constants.DEFAULT_ALIGN_MAX_THREADS,
+                required=False, default=constants.DEFAULT_MAX_FWK_THREADS,
                 min_val=1, max_val=64)
             self.add_field(
                 'chunk_submit', FIELD_BOOL, 'Submit in chunks',
-                required=False, default=constants.DEFAULT_ALIGN_CHUNK_SUBMIT)
+                required=False, default=constants.DEFAULT_MAX_FWK_CHUNK_SUBMIT)
 
 
 class MaskNoiseConfigurator(DefaultActionConfigurator):
