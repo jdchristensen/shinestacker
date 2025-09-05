@@ -609,6 +609,6 @@ class BalanceFrames(SubAction):
 
     def run_frame(self, idx, _ref_idx, image):
         if idx != self.process.ref_idx:
-            self.process.sub_message_r(color_str(': balance image', constants.LOG_COLOR_LEVEL_3))
+            self.process.print_message(color_str(f'{self.process.idx_tot_str(idx)}: balance image', constants.LOG_COLOR_LEVEL_3))
         image = self.correction.apply_correction(idx, image)
         return image

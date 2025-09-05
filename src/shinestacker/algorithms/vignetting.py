@@ -134,7 +134,7 @@ class Vignetting(SubAction):
         self.corrections = None
 
     def run_frame(self, idx, _ref_idx, img_0):
-        self.process.sub_message_r(color_str(": compute vignetting", "cyan"))
+        self.process.print_message(color_str(f"{self.process.idx_tot_str(idx)}: compute vignetting", "cyan"))
         h, w = img_0.shape[:2]
         self.w_2, self.h_2 = w / 2, h / 2
         self.r_max = np.sqrt((w / 2)**2 + (h / 2)**2)
@@ -153,12 +153,12 @@ class Vignetting(SubAction):
             return img_0
         self.v0 = sigmoid_model(0, *params)
         i0_fit, k_fit, r0_fit = params
-        self.process.sub_message(color_str(": vignetting model parameters: ", "cyan") +
-                                 color_str(f"i0={i0_fit / 2:.4f}, "
-                                           f"k={k_fit * self.r_max:.4f}, "
-                                           f"r0={r0_fit / self.r_max:.4f}",
-                                           "light_blue"),
-                                 level=logging.DEBUG)
+        self.process.print_message(color_str(f"{self.process.idx_tot_str(idx)}: vignetting model parameters: ", "cyan") +
+                                   color_str(f"i0={i0_fit / 2:.4f}, "
+                                             f"k={k_fit * self.r_max:.4f}, "
+                                             f"r0={r0_fit / self.r_max:.4f}",
+                                             "light_blue"),
+                                   level=logging.DEBUG)
         if self.plot_correction:
             plt.figure(figsize=constants.PLT_FIG_SIZE)
             plt.plot(radii, intensities, label="image mean intensity")
@@ -180,7 +180,7 @@ class Vignetting(SubAction):
         for i, p in enumerate(self.percentiles):
             self.corrections[i][idx] = fsolve(lambda x: sigmoid_model(x, *params) /
                                               self.v0 - p, r0_fit)[0]
-        self.process.sub_message_r(color_str(": correct vignetting", "cyan"))
+        self.process.print_message(color_str(f"{self.process.idx_tot_str(idx)}: correct vignetting", "cyan"))
         return correct_vignetting(
             img_0, self.max_correction, self.black_threshold, None, params, self.v0,
             subsample, self.fast_subsampling)

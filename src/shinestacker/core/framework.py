@@ -243,12 +243,15 @@ class SequentialTask(TaskBase):
             self.after_step()
             self.check_running()
 
+    def idx_tot_str(self, idx):
+        return f"{idx + 1}/{self.total_action_counts}"
+
     def run_core_parallel_single_chunk(self, idx_chunk):
         with ThreadPoolExecutor(max_workers=self.max_threads) as executor:
             future_to_index = {}
             for idx in idx_chunk:
                 self.print_message(color_str(
-                    f"submit processing step: {idx + 1}/{self.total_action_counts}",
+                    f"submit processing step: {self.idx_tot_str(idx)}",
                     constants.LOG_COLOR_LEVEL_1))
                 future = executor.submit(self.run_step, idx)
                 future_to_index[future] = idx
@@ -258,7 +261,7 @@ class SequentialTask(TaskBase):
                 try:
                     future.result()
                     self.print_message(color_str(
-                        f"completed processing step: {idx + 1}/{self.total_action_counts}",
+                        f"completed processing step: {self.idx_tot_str(idx)}",
                         constants.LOG_COLOR_LEVEL_1))
                     self.current_action_count += 1
                     self.after_step()

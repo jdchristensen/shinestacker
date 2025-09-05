@@ -401,6 +401,9 @@ class AlignFramesBase(SubAction):
     def sub_msg(self, msg, color=constants.LOG_COLOR_LEVEL_3):
         self.process.sub_message_r(color_str(msg, color))
 
+    def print_message(self, msg, color=constants.LOG_COLOR_LEVEL_3):
+        self.process.print_message(color_str(msg, color))
+
     def begin(self, process):
         self.process = process
         self._n_good_matches = np.zeros(process.total_action_counts)
@@ -424,13 +427,13 @@ class AlignFrames(AlignFramesBase):
 
     def align_images(self, idx, img_ref, img_0):
         idx_str = f"{idx:04d}"
+        idx_tot_str = self.process.idx_tot_str(idx)
         callbacks = {
-            'message': lambda: self.sub_msg(': find matches'),
-            'matches_message': lambda n: self.sub_msg(f": good matches: {n}"),
-            'align_message': lambda: self.sub_msg(': align images'),
-            'ecc_message': lambda: self.sub_msg(": ecc refinement"),
-            'blur_message': lambda: self.sub_msg(': blur borders'),
-            'warning': lambda msg: self.sub_msg(
+            'message': lambda: self.print_message(f'{idx_tot_str}: find matches'),
+            'matches_message': lambda n: self.print_message(f'{idx_tot_str}: good matches: {n}'),
+            'align_message': lambda: self.print_message(f'{idx_tot_str}: align images'),
+            'blur_message': lambda: self.print_message(f'{idx_tot_str}: blur borders'),
+            'warning': lambda msg: self.print_message(
                 f': {msg}', constants.LOG_COLOR_WARNING),
             'save_plot': lambda plot_path: self.process.callback(
                 constants.CALLBACK_SAVE_PLOT, self.process.id,

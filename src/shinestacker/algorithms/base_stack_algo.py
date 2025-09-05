@@ -34,6 +34,9 @@ class BaseStackAlgo:
     def set_do_step_callback(self, enable):
         self.do_step_callback = enable
 
+    def idx_tot_str(self, idx):
+        return f"{idx + 1}/{len(self.filenames)}"
+
     def init(self, filenames):
         self.filenames = filenames
         first_img_file = ''

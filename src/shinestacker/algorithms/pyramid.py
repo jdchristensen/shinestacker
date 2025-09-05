@@ -1,4 +1,5 @@
 # pylint: disable=C0114, C0115, C0116, E1101, R0913, R0917, R0902
+import os
 import numpy as np
 import cv2
 from .. config.constants import constants
@@ -124,10 +125,9 @@ class PyramidBase(BaseStackAlgo):
 
     def focus_stack_validate(self, cleanup_callback=None):
         metadata = None
-        n = len(self.filenames)
         for i, img_path in enumerate(self.filenames):
-            self.print_message(f": validating file {img_path.split('/')[-1]}, {i + 1}/{n}")
-
+            self.print_message(
+                f": validating file {os.path.basename(img_path)}, {self.idx_tot_str(i)}")
             _img, metadata, updated = self.read_image_and_update_metadata(img_path, metadata)
             if updated:
                 self.dtype = metadata[1]
@@ -185,7 +185,8 @@ class PyramidStack(PyramidBase):
         self.focus_stack_validate()
         all_laplacians = []
         for i, img_path in enumerate(self.filenames):
-            self.print_message(f": processing file {img_path.split('/')[-1]} ({i + 1}/{n})")
+            self.print_message(
+                f": processing file {os.path.basename(img_path)}, {self.idx_tot_str(i)}")
             img = read_img(img_path)
             all_laplacians.append(self.process_single_image(img, self.n_levels))
             self.after_step(i + n + 1)

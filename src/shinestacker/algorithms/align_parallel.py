@@ -57,15 +57,16 @@ class AlignFramesParallel(AlignFramesBase):
         with ThreadPoolExecutor(max_workers=len(imgs)) as executor:
             future_to_index = {}
             for idx in idxs:
-                self.sub_msg(f": submit alignment matches, image: {idx}, "
-                             f"{os.path.basename(self.process.input_filepath(idx))}")
+                self.print_message(
+                    f": submit alignment matches, image: {self.process.idx_tot_str(idx)}, "
+                    f"{os.path.basename(self.process.input_filepath(idx))}")
                 future = executor.submit(self.extract_features, idx)
                 future_to_index[future] = idx
             for future in as_completed(future_to_index):
                 idx = future_to_index[future]
                 try:
                     info_messages, warning_messages = future.result()
-                    message = f": image {idx}, " \
+                    message = f": image {self.process.idx_tot_str(idx)}, " \
                               f"{os.path.basename(self.process.input_filepath(idx))}: " \
                               f"matches found: {self._n_good_matches[idx]}"
                     if len(info_messages) > 0:
@@ -81,7 +82,8 @@ class AlignFramesParallel(AlignFramesBase):
                     raise e
                 except Exception as e:
                     traceback.print_tb(e.__traceback__)
-                    self.sub_msg(f": failed processing image: {idx}: {str(e)}")
+                    self.sub_msg(
+                        f": failed processing image: {self.process.idx_tot_str(idx)}: {str(e)}")
             cached_images = 0
             for i in range(self.process.num_input_filepaths()):
                 if self._img_locks[i] >= 2:
