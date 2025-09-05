@@ -1,5 +1,4 @@
 # pylint: disable=C0114, C0115, C0116, W0718, R0912, R0915, E1101, R0914, R0911, E0606, R0801
-import os
 import gc
 import copy
 import math
@@ -58,16 +57,14 @@ class AlignFramesParallel(AlignFramesBase):
             future_to_index = {}
             for idx in idxs:
                 self.print_message(
-                    f"submit alignment matches, image: {self.process.idx_tot_str(idx)}, "
-                    f"{os.path.basename(self.process.input_filepath(idx))}")
+                    f"submit alignment matches, {self.image_str(idx)}")
                 future = executor.submit(self.extract_features, idx)
                 future_to_index[future] = idx
             for future in as_completed(future_to_index):
                 idx = future_to_index[future]
                 try:
                     info_messages, warning_messages = future.result()
-                    message = f": image {self.process.idx_tot_str(idx)}, " \
-                              f"{os.path.basename(self.process.input_filepath(idx))}: " \
+                    message = f"{self.image_str(idx)}: " \
                               f"matches found: {self._n_good_matches[idx]}"
                     if len(info_messages) > 0:
                         message += ", " + ", ".join(info_messages)
@@ -75,15 +72,15 @@ class AlignFramesParallel(AlignFramesBase):
                     if len(warning_messages) > 0:
                         message += ", " + ", ".join(warning_messages)
                         color = constants.LOG_COLOR_WARNING
-                    self.sub_msg(message, color=color)
+                    self.print_message(message, color=color)
                     self.process.after_step(idx)
                     self.process.check_running()
                 except RunStopException as e:
                     raise e
                 except Exception as e:
                     traceback.print_tb(e.__traceback__)
-                    self.sub_msg(
-                        f": failed processing image: {self.process.idx_tot_str(idx)}: {str(e)}")
+                    self.self.print_message(
+                        f"failed processing {self.image_str(idx)}: {str(e)}")
             cached_images = 0
             for i in range(self.process.num_input_filepaths()):
                 if self._img_locks[i] >= 2:
@@ -91,7 +88,7 @@ class AlignFramesParallel(AlignFramesBase):
                     self._img_locks[i] = 0
                 elif self._img_cache[i] is not None:
                     cached_images += 1
-            # self.sub_msg(f": cached images: {cached_images}")
+            # self.print_message(f"cached images: {cached_images}")
         gc.collect()
 
     def begin(self, process):
@@ -99,7 +96,7 @@ class AlignFramesParallel(AlignFramesBase):
         n_frames = self.process.num_input_filepaths()
         self.process.callback(constants.CALLBACK_STEP_COUNTS,
                               self.process.id, self.process.name, 2 * n_frames)
-        self.sub_msg(f": preprocess {n_frames} images in parallel, cores: {self.max_threads}")
+        self.print_message(f"preprocess {n_frames} images in parallel, cores: {self.max_threads}")
         input_filepaths = self.process.input_filepaths()
         self._img_cache = [None] * n_frames
         self._img_locks = [0] * n_frames
@@ -110,7 +107,7 @@ class AlignFramesParallel(AlignFramesBase):
         self._cumulative_transforms = [None] * n_frames
         max_chunck_size = self.max_threads
         ref_idx = self.process.ref_idx
-        self.sub_msg(f": reference index: {ref_idx}")
+        self.print_message(f"reference index: {ref_idx}")
         sub_indices = list(range(n_frames))
         sub_indices.remove(ref_idx)
         sub_img_filepaths = copy.deepcopy(input_filepaths)
@@ -126,7 +123,7 @@ class AlignFramesParallel(AlignFramesBase):
             if self._img_cache[i] is not None:
                 self._img_cache[i] = None
         gc.collect()
-        self.sub_msg(": combining transformations")
+        self.print_message(": combining transformations")
         transform_type = self.alignment_config['transform']
         if transform_type == constants.ALIGN_RIGID:
             identity = np.array([[1.0, 0.0, 0.0],
@@ -146,7 +143,8 @@ class AlignFramesParallel(AlignFramesBase):
                     self._transforms[i], self._cumulative_transforms[target_idx], transform_type)
             else:
                 self._cumulative_transforms[i] = None
-                self.sub_msg(f": warning: no cumulative transform for frame {i}")
+                self.print_message(
+                    f": warning: no cumulative transform for {self.image_str(i)}")
         missing_transforms = 0
         for i in range(n_frames):
             if self._cumulative_transforms[i] is not None:
@@ -157,7 +155,7 @@ class AlignFramesParallel(AlignFramesBase):
         if missing_transforms > 0:
             msg += ", " + color_str(f"images not matched: {missing_transforms}",
                                     constants.LOG_COLOR_WARNING)
-        self.sub_msg(msg)
+        self.print_message(msg)
         self.process.add_begin_steps(n_frames)
 
     def extract_features(self, idx, delta=1):
@@ -231,17 +229,18 @@ class AlignFramesParallel(AlignFramesBase):
     def align_images(self, idx, img_ref, img_0):
         m = self._cumulative_transforms[idx]
         if m is None:
-            self.sub_msg(color_str(f": no transformation for frame {idx}, skipping alignment",
-                                   constants.LOG_COLOR_WARNING))
+            self.print_message(color_str(
+                f"no transformation for {self.image_str(idx)}, skipping alignment",
+                constants.LOG_COLOR_WARNING))
             return img_0
         transform_type = self.alignment_config['transform']
         if transform_type == constants.ALIGN_RIGID and m.shape != (2, 3):
-            self.sub_msg(f": invalid matrix shape for rigid transform: {m.shape}")
+            self.print_message(f"invalid matrix shape for rigid transform: {m.shape}")
             return img_0
         if transform_type == constants.ALIGN_HOMOGRAPHY and m.shape != (3, 3):
-            self.sub_msg(f": invalid matrix shape for homography: {m.shape}")
+            self.print_message(f"invalid matrix shape for homography: {m.shape}")
             return img_0
-        self.sub_msg(': apply image alignment')
+        self.print_message(f'{self.image_str(idx)}: apply image alignment')
         try:
             cv2_border_mode = _cv2_border_mode_map[self.alignment_config['border_mode']]
         except KeyError as e:
@@ -263,7 +262,7 @@ class AlignFramesParallel(AlignFramesBase):
                 mask = cv2.warpAffine(img_mask, m, (w_ref, h_ref),
                                       borderMode=cv2.BORDER_CONSTANT, borderValue=0)
         if self.alignment_config['border_mode'] == constants.BORDER_REPLICATE_BLUR:
-            self.sub_msg(': blur borders')
+            self.print_message(f'{self.image_str(idx)}: blur borders')
             mask = cv2.cvtColor(mask, cv2.COLOR_BGR2GRAY)
             blurred_warp = cv2.GaussianBlur(
                 img_warp, (21, 21), sigmaX=self.alignment_config['border_blur'])

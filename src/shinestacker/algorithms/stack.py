@@ -96,6 +96,7 @@ class FocusStackBunch(SequentialTask, FocusStackBase):
         img_files = self._chunks[action_count - 1]
         self.stack_algo.init(img_files)
         self.focus_stack(self._chunks[action_count - 1])
+        return True
 
 
 class FocusStack(FocusStackBase):

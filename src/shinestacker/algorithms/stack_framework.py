@@ -210,27 +210,38 @@ class ReferenceFrameTask(SequentialTask, ImageSequenceManager):
         return None
 
     def run_step(self, action_count):
-        if action_count == 0:
-            self.current_idx = self.ref_idx if self.step_process else 0
-            self.current_ref_idx = self.ref_idx
-            self.current_idx_step = +1
-        ll = self.num_input_filepaths()
-        self.print_message_r(
-            color_str(f"step {action_count + 1}/{ll}: process file: "
-                      f"{os.path.basename(self.input_filepath(self.current_idx))}, "
-                      f"reference: {os.path.basename(self.input_filepath(self.current_ref_idx))}",
-                      constants.LOG_COLOR_LEVEL_2))
-        self.base_message = color_str(self.name, constants.LOG_COLOR_LEVEL_1, "bold")
-        img = self.run_frame(self.current_idx, self.current_ref_idx) is not None
-        if self.current_idx < ll:
-            if self.step_process and img is not None:
-                self.current_ref_idx = self.current_idx
-            self.current_idx += self.current_idx_step
-        if self.current_idx == ll:
-            self.current_idx = self.ref_idx - 1
-            if self.step_process:
+        num_files = self.num_input_filepaths()
+        if self.run_sequential():
+            if action_count == 0:
+                self.current_idx = self.ref_idx if self.step_process else 0
                 self.current_ref_idx = self.ref_idx
-            self.current_idx_step = -1
+                self.current_idx_step = +1
+            idx, ref_idx = self.current_idx, self.current_ref_idx
+            self.print_message_r(
+                color_str(f"step {action_count + 1}/{num_files}: process file: "
+                          f"{os.path.basename(self.input_filepath(idx))}, "
+                          f"reference: "
+                          f"{os.path.basename(self.input_filepath(self.current_ref_idx))}",
+                          constants.LOG_COLOR_LEVEL_2))
+        else:
+            idx, ref_idx = action_count, -1
+            self.print_message_r(
+                color_str(f"step {idx + 1}/{num_files}: process file: "
+                          f"{os.path.basename(self.input_filepath(idx))}, "
+                          "parallel thread", constants.LOG_COLOR_LEVEL_2))
+        self.base_message = color_str(self.name, constants.LOG_COLOR_LEVEL_1, "bold")
+        img = self.run_frame(idx, ref_idx)
+        if self.run_sequential():
+            if self.current_idx < num_files:
+                if self.step_process and img is not None:
+                    self.current_ref_idx = self.current_idx
+                self.current_idx += self.current_idx_step
+            if self.current_idx == num_files:
+                self.current_idx = self.ref_idx - 1
+                if self.step_process:
+                    self.current_ref_idx = self.ref_idx
+                self.current_idx_step = -1
+        return img is not None
 
 
 class SubAction:

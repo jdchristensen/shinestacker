@@ -259,10 +259,15 @@ class SequentialTask(TaskBase):
             for future in as_completed(future_to_index):
                 idx = future_to_index[future]
                 try:
-                    future.result()
-                    self.print_message(color_str(
-                        f"completed processing step: {self.idx_tot_str(idx)}",
-                        constants.LOG_COLOR_LEVEL_1))
+                    result = future.result()
+                    if result:
+                        self.print_message(color_str(
+                            f"completed processing step: {self.idx_tot_str(idx)}",
+                            constants.LOG_COLOR_LEVEL_1))
+                    else:
+                        self.print_message(color_str(
+                            f"failed processing step: {self.idx_tot_str(idx)}",
+                            constants.LOG_COLOR_WARNING))
                     self.current_action_count += 1
                     self.after_step()
                     self.check_running()
@@ -289,7 +294,7 @@ class SequentialTask(TaskBase):
     def run_core(self):
         self.print_message(color_str('begin run', constants.LOG_COLOR_LEVEL_2), end='\n')
         self.begin()
-        if self.sequential_processing() or self.max_threads == 1:
+        if self.run_sequential():
             self.run_core_serial()
         else:
             if self.chunk_submit:
@@ -300,3 +305,6 @@ class SequentialTask(TaskBase):
 
     def sequential_processing(self):
         return False
+
+    def run_sequential(self):
+        return self.sequential_processing() or self.max_threads == 1

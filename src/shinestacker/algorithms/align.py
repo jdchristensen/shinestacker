@@ -1,5 +1,5 @@
 # pylint: disable=C0114, C0115, C0116, E1101, R0914, R0913, R0917, R0912, R0915, R0902, E1121, W0102
-import logging
+import os
 import math
 import numpy as np
 import matplotlib.pyplot as plt
@@ -398,9 +398,6 @@ class AlignFramesBase(SubAction):
     def align_images(self, idx, img_ref, img_0):
         pass
 
-    def sub_msg(self, msg, color=constants.LOG_COLOR_LEVEL_3):
-        self.process.sub_message_r(color_str(msg, color))
-
     def print_message(self, msg, color=constants.LOG_COLOR_LEVEL_3):
         self.process.print_message(color_str(msg, color))
 
@@ -418,6 +415,10 @@ class AlignFramesBase(SubAction):
         if self.alignment_config['abort_abnormal']:
             return _AFFINE_THRESHOLDS, _HOMOGRAPHY_THRESHOLDS
         return None, None
+
+    def image_str(self, idx):
+        return f"image: {self.process.idx_tot_str(idx)}, " \
+               f"{os.path.basename(self.process.input_filepath(idx))}"
 
 
 class AlignFrames(AlignFramesBase):
@@ -457,9 +458,9 @@ class AlignFrames(AlignFramesBase):
         )
         self._n_good_matches[idx] = n_good_matches
         if n_good_matches < self.min_matches:
-            self.process.sub_message(color_str(f": image not aligned, too few matches found: "
-                                     f"{n_good_matches}", constants.LOG_COLOR_WARNING),
-                                     level=logging.WARNING)
+            self.process.print_message(
+                f"{self.image_str(idx)} not aligned, too few matches found: "
+                f"{n_good_matches}")
             return None
         return img
 
