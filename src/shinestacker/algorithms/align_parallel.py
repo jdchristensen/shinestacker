@@ -32,6 +32,7 @@ class AlignFramesParallel(AlignFramesBase):
         super().__init__(enabled=True, feature_config=None, matching_config=None,
                          alignment_config=None, **kwargs)
         self.max_threads = kwargs.get('max_threads', constants.DEFAULT_ALIGN_MAX_THREADS)
+        self.chunk_submit = kwargs.get('chunk_submit', constants.DEFAULT_ALIGN_CHUNK_SUBMIT)
         self._img_cache = None
         self._img_locks = None
         self._cache_locks = None
@@ -50,6 +51,35 @@ class AlignFramesParallel(AlignFramesBase):
             if self._img_cache[idx] is None:
                 self._img_cache[idx] = read_img(self.process.input_filepath(idx))
             return self._img_cache[idx]
+
+    def submit_threads(self, idxs, imgs):
+        with ThreadPoolExecutor(max_workers=len(imgs)) as executor:
+            future_to_index = {}
+            for idx in idxs:
+                self.sub_msg(f": submit image preprocessing: {idx}")
+                future = executor.submit(self.extract_features, idx)
+                future_to_index[future] = idx
+            for future in as_completed(future_to_index):
+                idx = future_to_index[future]
+                try:
+                    info_messages, warning_messages = future.result()
+                    message = f": image {idx}: found {self._n_good_matches[idx]} matches"
+                    if len(info_messages) > 0:
+                        message += ", " + ", ".join(info_messages)
+                    color = constants.LOG_COLOR_LEVEL_3
+                    if len(warning_messages) > 0:
+                        message += ", " + ", ".join(warning_messages)
+                        color = constants.LOG_COLOR_WARNING
+                    self.sub_msg(message, color=color)
+                    self.check_running()
+                except Exception as e:
+                    traceback.print_tb(e.__traceback__)
+                    self.sub_msg(f": failed processing image: {idx}: {str(e)}")
+            for i in range(self.process.num_input_filepaths()):
+                if self._img_locks[i] == 2:
+                    self._img_cache[i] = None
+                    self._img_locks[i] = 0
+        gc.collect()
 
     def begin(self, process):
         super().begin(process)
@@ -70,36 +100,13 @@ class AlignFramesParallel(AlignFramesBase):
         sub_indices.remove(ref_idx)
         sub_img_filepaths = copy.deepcopy(input_filepaths)
         sub_img_filepaths.remove(input_filepaths[ref_idx])
-        img_chunks = make_chunks(sub_img_filepaths, max_chunck_size)
-        idx_chunks = make_chunks(sub_indices, max_chunck_size)
-        for idxs, imgs in zip(idx_chunks, img_chunks):
-            with ThreadPoolExecutor(max_workers=len(imgs)) as executor:
-                future_to_index = {}
-                for idx in idxs:
-                    self.sub_msg(f": submit image preprocessing: {idx}")
-                    future = executor.submit(self.extract_features, idx)
-                    future_to_index[future] = idx
-                for future in as_completed(future_to_index):
-                    idx = future_to_index[future]
-                    try:
-                        info_messages, warning_messages = future.result()
-                        message = f": image {idx}: found {self._n_good_matches[idx]} matches"
-                        if len(info_messages) > 0:
-                            message += ", " + ", ".join(info_messages)
-                        color = constants.LOG_COLOR_LEVEL_3
-                        if len(warning_messages) > 0:
-                            message += ", " + ", ".join(warning_messages)
-                            color = constants.LOG_COLOR_WARNING
-                        self.sub_msg(message, color=color)
-                        self.check_running()
-                    except Exception as e:
-                        traceback.print_tb(e.__traceback__)
-                        self.sub_msg(f": failed processing image: {idx}: {str(e)}")
-                for i in range(n_frames):
-                    if self._img_locks[i] == 2:
-                        self._img_cache[i] = None
-                        self._img_locks[i] = 0
-            gc.collect()
+        if self.chunk_submit:
+            img_chunks = make_chunks(sub_img_filepaths, max_chunck_size)
+            idx_chunks = make_chunks(sub_indices, max_chunck_size)
+            for idxs, imgs in zip(idx_chunks, img_chunks):
+                self.submit_threads(idxs, imgs)
+        else:
+            self.submit_threads(sub_indices, sub_img_filepaths)
         for i in range(n_frames):
             if self._img_cache[i] is not None:
                 self._img_cache[i] = None

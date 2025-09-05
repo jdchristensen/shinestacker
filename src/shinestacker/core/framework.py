@@ -232,12 +232,10 @@ class SequentialTask(TaskBase):
                              self.id, self.name) is False:
                 raise RunStopException(self.name)
 
-    def run_core_parallel(self):
-        self.current_action_count = 0
+    def run_core_parallel_single_chunk(self, idx_chunk):
         with ThreadPoolExecutor(max_workers=self.max_threads) as executor:
-            action_idx_list = list(range(self.total_action_counts))
             future_to_index = {}
-            for idx in action_idx_list:
+            for idx in idx_chunk:
                 self.print_message(color_str(
                     f"submit processing step: {idx + 1}/{self.total_action_counts}",
                     constants.LOG_COLOR_LEVEL_1))
@@ -257,33 +255,17 @@ class SequentialTask(TaskBase):
                         f"failed processing step: {idx + 1}: {str(e)}",
                         constants.LOG_COLOR_ALERT))
 
+    def run_core_parallel(self):
+        self.current_action_count = 0
+        self.run_core_parallel_single_chunk(list(range(self.total_action_counts)))
+
     def run_core_parallel_chunks(self):
         self.current_action_count = 0
         action_idx_list = list(range(self.total_action_counts))
         max_chunck_size = self.max_threads
         action_idx_chunks = make_chunks(action_idx_list, max_chunck_size)
-        with ThreadPoolExecutor(max_workers=self.max_threads) as executor:
-            for idx_chunk in action_idx_chunks:
-                future_to_index = {}
-                for idx in idx_chunk:
-                    self.print_message(color_str(
-                        f"submit processing step: {idx + 1}/{self.total_action_counts}",
-                        constants.LOG_COLOR_LEVEL_1))
-                    future = executor.submit(self.run_step, idx)
-                    future_to_index[future] = idx
-                for future in as_completed(future_to_index):
-                    idx = future_to_index[future]
-                    try:
-                        future.result()
-                        self.print_message(color_str(
-                            f"completed processing step: {idx + 1}/{self.total_action_counts}",
-                            constants.LOG_COLOR_LEVEL_1))
-                        self.current_action_count += 1
-                    except Exception as e:
-                        traceback.print_tb(e.__traceback__)
-                        self.print_message(color_str(
-                            f"failed processing step: {idx + 1}: {str(e)}",
-                            constants.LOG_COLOR_ALERT))
+        for idx_chunk in action_idx_chunks:
+            self.run_core_parallel_single_chunk(idx_chunk)
 
     def run_core(self):
         self.print_message(color_str('begin run', constants.LOG_COLOR_LEVEL_2), end='\n')

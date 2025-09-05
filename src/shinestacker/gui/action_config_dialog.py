@@ -757,6 +757,9 @@ class AlignFramesConfigurator(SubsampleActionConfigurator):
                 'max_threads', FIELD_INT, 'Max num. of cores',
                 required=False, default=constants.DEFAULT_ALIGN_MAX_THREADS,
                 min_val=1, max_val=64)
+            self.add_field(
+                'chunk_submit', FIELD_BOOL, 'Submit in chunks',
+                required=False, default=constants.DEFAULT_ALIGN_CHUNK_SUBMIT)
         self.add_field(
             'plot_summary', FIELD_BOOL, 'Plot summary',
             required=False, default=False)
