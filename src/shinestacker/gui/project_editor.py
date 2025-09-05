@@ -1,9 +1,8 @@
-# pylint: disable=C0114, C0115, C0116, R0904, R1702, R0917, R0913, R0902, E0611, E1131, E1121
+# pylint: disable=C0114, C0115, C0116, R0903, R0904, R1702, R0917, R0913, R0902, E0611, E1131, E1121
 import os
 from dataclasses import dataclass
-from PySide6.QtWidgets import (QListWidget, QMessageBox,
-                               QDialog, QListWidgetItem, QLabel)
-from PySide6.QtCore import Qt, QObject, Signal
+from PySide6.QtWidgets import QListWidget, QMessageBox, QDialog, QListWidgetItem, QLabel
+from PySide6.QtCore import Qt, QObject, Signal, QEvent
 from .. config.constants import constants
 from .colors import ColorPalette
 from .action_config_dialog import ActionConfigDialog
@@ -101,6 +100,25 @@ class ProjectUndoManager(QObject):
         self.set_enabled_undo_action_requested.emit(False, '')
 
 
+class HandCursorListWidget(QListWidget):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setMouseTracking(True)
+        self.viewport().setMouseTracking(True)
+
+    def event(self, event):
+        if event.type() == QEvent.HoverMove:
+            pos = event.position().toPoint()
+            item = self.itemAt(pos)
+            if item:
+                self.viewport().setCursor(Qt.PointingHandCursor)
+            else:
+                self.viewport().setCursor(Qt.ArrowCursor)
+        elif event.type() == QEvent.Leave:
+            self.viewport().setCursor(Qt.ArrowCursor)
+        return super().event(event)
+
+
 class ProjectEditor(QObject):
     INDENT_SPACE = "&nbsp;&nbsp;&nbsp;↪&nbsp;&nbsp;&nbsp;"
     CLONE_POSTFIX = " (clone)"
@@ -117,8 +135,8 @@ class ProjectEditor(QObject):
         self._project = None
         self._copy_buffer = None
         self._current_file_path = ''
-        self._job_list = QListWidget()
-        self._action_list = QListWidget()
+        self._job_list = HandCursorListWidget()
+        self._action_list = HandCursorListWidget()
         self.dialog = None
 
     def reset_undo(self):
@@ -250,18 +268,14 @@ class ProjectEditor(QObject):
         if os.path.isabs(in_path):
             in_path = ".../" + os.path.basename(in_path)
         ico = constants.ACTION_ICONS[constants.ACTION_JOB]
-        return txt + (f" [{ico} Job: 📁 {in_path} → 📂 ...]" if long_name else "")
+        return txt + (f" [{ico}Job: 📁 {in_path} → 📂 ...]" if long_name else "")
 
     def action_text(self, action, is_sub_action=False, indent=True, long_name=False, html=False):
         ico = constants.ACTION_ICONS.get(action.type_name, '')
         if is_sub_action and indent:
             txt = self.INDENT_SPACE
-            if ico == '':
-                ico = '🟣'
         else:
             txt = ''
-            if ico == '':
-                ico = '🔵'
         if action.params.get('name', '') != '':
             txt += f"{action.params['name']}"
             if html:
@@ -271,7 +285,7 @@ class ProjectEditor(QObject):
             in_path = ".../" + os.path.basename(in_path)
         if os.path.isabs(out_path):
             out_path = ".../" + os.path.basename(out_path)
-        return f"{txt} [{ico} {action.type_name}" + \
+        return f"{txt} [{ico}{action.type_name}" + \
                (f": 📁 <i>{in_path}</i> → 📂 <i>{out_path}</i>]"
                 if long_name and not is_sub_action else "]")
 

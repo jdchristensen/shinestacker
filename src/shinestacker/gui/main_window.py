@@ -43,7 +43,10 @@ class ProjectLogWorker(RunWorker):
 
 LIST_STYLE_SHEET = f"""
     QListWidget::item:selected {{
-        background-color: #{ColorPalette.LIGHT_BLUE.hex()};;
+        background-color: #{ColorPalette.LIGHT_BLUE.hex()};
+    }}
+    QListWidget::item:hover {{
+        background-color: #E0E0E0;
     }}
 """
 
@@ -108,8 +111,8 @@ class MainWindow(QMainWindow, LogManager):
         self.tab_widget.resize(1000, 500)
         h_splitter.addWidget(self.tab_widget)
         self.job_list().currentRowChanged.connect(self.project_editor.on_job_selected)
-        self.job_list().itemDoubleClicked.connect(self.on_job_edit)
-        self.action_list().itemDoubleClicked.connect(self.on_action_edit)
+        self.job_list().itemClicked.connect(self.on_job_edit)
+        self.action_list().itemClicked.connect(self.on_action_edit)
         vbox_left = QVBoxLayout()
         vbox_left.setSpacing(4)
         vbox_left.addWidget(QLabel("Job"))

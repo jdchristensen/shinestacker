@@ -79,8 +79,8 @@ class NewProjectDialog(BaseFormDialog):
         step1_layout = QVBoxLayout()
         step1_layout.setContentsMargins(15, 0, 15, 15)
         step1_layout.addWidget(
-            QLabel("📎 Select a folder 📂 containing "
-                   "all your images, or specific image files 🖼️."))
+            QLabel("Select a folder containing "
+                   "all your images, or specific image files."))
         input_form = QFormLayout()
         input_form.setFieldGrowthPolicy(QFormLayout.AllNonFixedFieldsGrow)
         input_form.setFormAlignment(Qt.AlignLeft)
@@ -107,13 +107,13 @@ class NewProjectDialog(BaseFormDialog):
             step2_layout.addRow("Automatic noise detection:", self.noise_detection)
             step2_layout.addRow("Vignetting correction:", self.vignetting_correction)
         step2_layout.addRow(
-            f" {constants.ACTION_ICONS[constants.ACTION_ALIGNFRAMES]} "
+            # f" {constants.ACTION_ICONS[constants.ACTION_ALIGNFRAMES]} "
             "Align layers:", self.align_frames)
         step2_layout.addRow(
-            f" {constants.ACTION_ICONS[constants.ACTION_BALANCEFRAMES]} "
+            # f" {constants.ACTION_ICONS[constants.ACTION_BALANCEFRAMES]} "
             "Balance layers:", self.balance_frames)
         step2_layout.addRow(
-            f" {constants.ACTION_ICONS[constants.ACTION_FOCUSSTACKBUNCH]} "
+            # f" {constants.ACTION_ICONS[constants.ACTION_FOCUSSTACKBUNCH]} "
             "Bunch stack:", self.bunch_stack)
         step2_layout.addRow("Bunch frames:", self.bunch_frames)
         step2_layout.addRow("Bunch overlap:", self.bunch_overlap)
@@ -142,7 +142,7 @@ class NewProjectDialog(BaseFormDialog):
         step3_layout.addWidget(
             QLabel("Click 🆗 to confirm and prepare the job."))
         step3_layout.addWidget(
-            QLabel("💡 Select: <b>View</b> > <b>Expert options</b> for advanced configuration."))
+            QLabel("Select: <b>View</b> > <b>Expert options</b> for advanced configuration."))
         step3_group.setLayout(step3_layout)
         self.form_layout.addRow(step3_group)
         step4_group = QGroupBox("4️⃣ Execution")
