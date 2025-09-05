@@ -37,6 +37,10 @@ class BaseStackAlgo:
     def idx_tot_str(self, idx):
         return f"{idx + 1}/{len(self.filenames)}"
 
+    def image_str(self, idx):
+        return f"image: {self.idx_tot_str(idx)}, " \
+               f"{os.path.basename(self.filenames[idx])}"
+
     def init(self, filenames):
         self.filenames = filenames
         first_img_file = ''

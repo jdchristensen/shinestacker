@@ -111,8 +111,7 @@ def test_run_frame(vignetting_instance, vignetted_images):
     assert result.shape == images[0].shape
     assert result.dtype == images[0].dtype
     assert not np.array_equal(result, images[0])
-    assert vignetting_instance.process.sub_message_r.call_count > 0
-    assert vignetting_instance.process.sub_message.call_count > 0
+    assert vignetting_instance.process.print_message.call_count > 0
     assert vignetting_instance.corrections[0][0] is not None
 
 

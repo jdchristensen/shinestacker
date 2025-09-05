@@ -1,4 +1,4 @@
-# pylint: disable=C0114, C0115, C0116, W0102, R0902, R0903
+# pylint: disable=C0114, C0115, C0116, W0102, R0902, R0903, E1128
 # pylint: disable=R0917, R0913, R1702, R0912, E1111, E1121, W0613
 import logging
 import os
@@ -209,7 +209,7 @@ class ReferenceFrameTask(SequentialTask, ImageSequenceManager):
     def run_frame(self, _idx, _ref_idx):
         return None
 
-    def run_step(self, action_count):
+    def run_step(self, action_count=-1):
         num_files = self.num_input_filepaths()
         if self.run_sequential():
             if action_count == 0:

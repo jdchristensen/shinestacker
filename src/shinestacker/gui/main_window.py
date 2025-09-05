@@ -421,6 +421,8 @@ class MainWindow(QMainWindow, LogManager):
             for worker in self._workers:
                 worker.stop()
             self.close()
+            return True
+        return False
 
     def toggle_expert_options(self):
         self.expert_options = self.menu_manager.expert_options_action.isChecked()

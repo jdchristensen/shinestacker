@@ -142,9 +142,12 @@ class MainApp(QMainWindow):
         return app_menu
 
     def quit(self):
-        self.retouch_window.quit()
-        self.project_window.quit()
+        if not self.retouch_window.quit():
+            return False
+        if not self.project_window.quit():
+            return False
         self.close()
+        return True
 
     def switch_app(self, index):
         self.stacked_widget.setCurrentIndex(index)
@@ -192,7 +195,8 @@ class MainApp(QMainWindow):
 class Application(QApplication):
     def event(self, event):
         if event.type() == QEvent.Quit and event.spontaneous():
-            self.main_app.quit()
+            if not self.quit():
+                return True
         return super().event(event)
 
 

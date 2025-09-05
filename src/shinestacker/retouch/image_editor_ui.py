@@ -658,6 +658,8 @@ class ImageEditorUI(QMainWindow, LayerCollectionHandler):
     def quit(self):
         if self.check_unsaved_changes():
             self.close()
+            return True
+        return False
 
     def undo(self):
         if self.undo_manager.undo(self.master_layer()):

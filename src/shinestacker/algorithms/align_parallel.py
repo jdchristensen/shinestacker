@@ -1,4 +1,4 @@
-# pylint: disable=C0114, C0115, C0116, W0718, R0912, R0915, E1101, R0914, R0911, E0606, R0801
+# pylint: disable=C0114, C0115, C0116, W0718, R0912, R0915, E1101, R0914, R0911, E0606, R0801, R0902
 import gc
 import copy
 import math
@@ -107,7 +107,7 @@ class AlignFramesParallel(AlignFramesBase):
         self._cumulative_transforms = [None] * n_frames
         max_chunck_size = self.max_threads
         ref_idx = self.process.ref_idx
-        self.print_message(f"reference index: {ref_idx}")
+        self.print_message(f"reference: {self.image_str(ref_idx)}")
         sub_indices = list(range(n_frames))
         sub_indices.remove(ref_idx)
         sub_img_filepaths = copy.deepcopy(input_filepaths)

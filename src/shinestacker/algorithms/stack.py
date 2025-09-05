@@ -89,8 +89,8 @@ class FocusStackBunch(SequentialTask, FocusStackBase):
     def end(self):
         SequentialTask.end(self)
 
-    def run_step(self, action_count):
-        self.print_message_r(
+    def run_step(self, action_count=-1):
+        self.print_message(
             color_str(f"fusing bunch: {action_count + 1}/{self.total_action_counts}",
                       constants.LOG_COLOR_LEVEL_2))
         img_files = self._chunks[action_count - 1]
