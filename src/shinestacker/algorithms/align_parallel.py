@@ -89,7 +89,7 @@ class AlignFramesParallel(AlignFramesBase):
                     self._img_locks[i] = 0
                 elif self._img_cache[i] is not None:
                     cached_images += 1
-            self.sub_msg(f": cached images: {cached_images}")
+            # self.sub_msg(f": cached images: {cached_images}")
         gc.collect()
 
     def begin(self, process):
