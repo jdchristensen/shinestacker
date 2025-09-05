@@ -461,7 +461,7 @@ class AlignFrames(AlignFramesBase):
         return img
 
     def sequential_processing(self):
-        return False
+        return True
 
     def end(self):
         if self.plot_summary:
