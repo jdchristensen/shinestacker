@@ -33,7 +33,7 @@ def test_log():
 
 def test_tqdm():
     if config.DISABLE_TQDM:
-        return True
+        assert True
     try:
         setup_logging(
             console_level=logging.DEBUG,

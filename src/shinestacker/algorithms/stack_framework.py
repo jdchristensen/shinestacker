@@ -209,14 +209,14 @@ class ReferenceFrameTask(SequentialTask, ImageSequenceManager):
     def run_frame(self, _idx, _ref_idx):
         return None
 
-    def run_step(self):
-        if self.current_action_count == 0:
+    def run_step(self, action_count):
+        if action_count == 0:
             self.current_idx = self.ref_idx if self.step_process else 0
             self.current_ref_idx = self.ref_idx
             self.current_idx_step = +1
         ll = self.num_input_filepaths()
         self.print_message_r(
-            color_str(f"step {self.current_action_count + 1}/{ll}: process file: "
+            color_str(f"step {action_count + 1}/{ll}: process file: "
                       f"{os.path.basename(self.input_filepath(self.current_idx))}, "
                       f"reference: {os.path.basename(self.input_filepath(self.current_ref_idx))}",
                       constants.LOG_COLOR_LEVEL_2))
