@@ -6,7 +6,7 @@ import gc
 import time
 import shutil
 import tempfile
-import concurrent.futures
+from concurrent.futures import ThreadPoolExecutor, as_completed
 import numpy as np
 from .. config.constants import constants
 from .. core.exceptions import RunStopException
@@ -122,13 +122,13 @@ class PyramidTilesStack(PyramidBase):
             for x in range(0, w, self.tile_size):
                 tiles.append((y, x))
         self.print_message(f': starting parallel propcessging on {self.num_threads} cores')
-        with concurrent.futures.ThreadPoolExecutor(max_workers=self.num_threads) as executor:
+        with ThreadPoolExecutor(max_workers=self.num_threads) as executor:
             future_to_tile = {
                 executor.submit(
                     self._process_tile, level, num_images, all_level_counts, y, x, h, w): (y, x)
                 for y, x in tiles
             }
-            for future in concurrent.futures.as_completed(future_to_tile):
+            for future in as_completed(future_to_tile):
                 y, x = future_to_tile[future]
                 try:
                     fused_tile = future.result()
@@ -209,13 +209,13 @@ class PyramidTilesStack(PyramidBase):
             args_list = [(file_path, i, n) for i, file_path in enumerate(self.filenames)]
             executor = None
             try:
-                executor = concurrent.futures.ThreadPoolExecutor(max_workers=self.num_threads)
+                executor = ThreadPoolExecutor(max_workers=self.num_threads)
                 future_to_index = {
                     executor.submit(self._process_single_image_wrapper, args): i
                     for i, args in enumerate(args_list)
                 }
                 completed_count = 0
-                for future in concurrent.futures.as_completed(future_to_index):
+                for future in as_completed(future_to_index):
                     i = future_to_index[future]
                     try:
                         img_index, level_count = future.result()

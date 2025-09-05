@@ -1,4 +1,5 @@
 # pylint: disable=C0114, C0115, C0116, W0718, R0912, R0915, E1101, R0914, R0911, E0606, R0801
+import os
 import gc
 import copy
 import math
@@ -10,7 +11,7 @@ import cv2
 from ..config.constants import constants
 from .. core.exceptions import InvalidOptionError, RunStopException
 from .. core.core_utils import make_chunks
-from .utils import read_img, img_subsample
+from .utils import read_img, img_subsample, img_bw
 from .align import (AlignFramesBase, detect_and_compute_matches, find_transform,
                     check_transform, _cv2_border_mode_map, rescale_trasnsform)
 
@@ -33,6 +34,7 @@ class AlignFramesParallel(AlignFramesBase):
                          alignment_config=None, **kwargs)
         self.max_threads = kwargs.get('max_threads', constants.DEFAULT_ALIGN_MAX_THREADS)
         self.chunk_submit = kwargs.get('chunk_submit', constants.DEFAULT_ALIGN_CHUNK_SUBMIT)
+        self.bw_matching = kwargs.get('bw_matching', constants.DEFAULT_ALIGN_BW_MATCHING)
         self._img_cache = None
         self._img_locks = None
         self._cache_locks = None
@@ -44,21 +46,27 @@ class AlignFramesParallel(AlignFramesBase):
         with self._cache_locks[idx]:
             self._img_locks[idx] += 1
             if self._img_cache[idx] is None:
-                self._img_cache[idx] = read_img(self.process.input_filepath(idx))
+                img = read_img(self.process.input_filepath(idx))
+                if self.bw_matching:
+                    img = img_bw(img)
+                self._img_cache[idx] = img
             return self._img_cache[idx]
 
     def submit_threads(self, idxs, imgs):
         with ThreadPoolExecutor(max_workers=len(imgs)) as executor:
             future_to_index = {}
             for idx in idxs:
-                self.sub_msg(f": submit image preprocessing: {idx}")
+                self.sub_msg(f": submit alignment matches, image: {idx}, "
+                             f"{os.path.basename(self.process.input_filepath(idx))}")
                 future = executor.submit(self.extract_features, idx)
                 future_to_index[future] = idx
             for future in as_completed(future_to_index):
                 idx = future_to_index[future]
                 try:
                     info_messages, warning_messages = future.result()
-                    message = f": image {idx}: found {self._n_good_matches[idx]} matches"
+                    message = f": image {idx}, " \
+                              f"{os.path.basename(self.process.input_filepath(idx))}: " \
+                              f"found {self._n_good_matches[idx]} matches"
                     if len(info_messages) > 0:
                         message += ", " + ", ".join(info_messages)
                     color = constants.LOG_COLOR_LEVEL_3
@@ -73,10 +81,14 @@ class AlignFramesParallel(AlignFramesBase):
                 except Exception as e:
                     traceback.print_tb(e.__traceback__)
                     self.sub_msg(f": failed processing image: {idx}: {str(e)}")
+            cached_images = 0
             for i in range(self.process.num_input_filepaths()):
                 if self._img_locks[i] == 2:
                     self._img_cache[i] = None
                     self._img_locks[i] = 0
+                elif self._img_cache[i] is not None:
+                    cached_images += 1
+            self.sub_msg(f": cached images: {cached_images}")
         gc.collect()
 
     def begin(self, process):

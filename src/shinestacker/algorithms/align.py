@@ -20,7 +20,7 @@ _DEFAULT_MATCHING_CONFIG = {
     'flann_idx_kdtree': constants.DEFAULT_FLANN_IDX_KDTREE,
     'flann_trees': constants.DEFAULT_FLANN_TREES,
     'flann_checks': constants.DEFAULT_FLANN_CHECKS,
-    'threshold': constants.DEFAULT_ALIGN_THRESHOLD
+    'threshold': constants.DEFAULT_ALIGN_THRESHOLD,
 }
 
 _DEFAULT_ALIGNMENT_CONFIG = {

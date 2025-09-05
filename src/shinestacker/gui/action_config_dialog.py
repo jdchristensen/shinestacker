@@ -537,6 +537,13 @@ class CombinedActionsConfigurator(DefaultActionConfigurator):
             self.add_field(
                 'step_process', FIELD_BOOL, 'Step process', required=False,
                 default=True)
+            self.add_field(
+                'max_threads', FIELD_INT, 'Max num. of cores',
+                required=False, default=constants.DEFAULT_ALIGN_MAX_THREADS,
+                min_val=1, max_val=64)
+            self.add_field(
+                'chunk_submit', FIELD_BOOL, 'Submit in chunks',
+                required=False, default=constants.DEFAULT_ALIGN_CHUNK_SUBMIT)
 
 
 class MaskNoiseConfigurator(DefaultActionConfigurator):
@@ -753,6 +760,9 @@ class AlignFramesConfigurator(SubsampleActionConfigurator):
                 min_val=0, max_val=1000, step=1)
         self.add_bold_label("Miscellanea:")
         if self.expert:
+            self.add_field(
+                'bw_matching', FIELD_BOOL, 'Match using black & white',
+                required=False, default=constants.DEFAULT_ALIGN_BW_MATCHING)
             self.add_field(
                 'max_threads', FIELD_INT, 'Max num. of cores',
                 required=False, default=constants.DEFAULT_ALIGN_MAX_THREADS,
