@@ -48,6 +48,7 @@ Arguments for the constructor are, in addition to the ones for ```PyramidStack``
    * ```tile_size``` (optional, default: 512): size of a time
    * ```n_tiled_layers``` (optional, default: 2): number of layers that are tiled. Usually the last one or two are the ones that take more memory.
    * ```max_threads``` (optional, default: number of cores, up to a maximum of 8): maximum number of thread used for parallel processing. The actual number of threads does not exceed the number of available cores. 
+* ```chunk_submit``` (optional, default: ```True```): submit at most ```max_threads``` parallel processes. If ```chunk_submit``` is greater than ```max_threads``` a moderate performance gain is achieved at the cost of a possibly large memory occupancy.
 
 
 ```PyramidAutoStack```, pyramid algorithn with capability to automatically switch from all-in-memory to I/O buffered tiled.

@@ -93,6 +93,14 @@ alignment_config = {
 * ```plot_matches```  (optional, default: ```False```): if ```True```, for each image matches with reference frame are drawn. May be useful for inspection and debugging.
 * ```enabled``` (optional, default: ```True```): allows to switch on and off this module.
 
+## Parallel processing
+
+A class ```AlignFramesParallel``` implements alignment using parallel processing.
+This class has extra parameters, in addition to the above ones:
+
+* ```max_threads``` (optional, default: ```2```): number of parallel processes allowed. The number of actual threads will not be greater than the number of available CPU cores.
+* ```chunk_submit``` (optional, default: ```True```): submit at most ```max_threads``` parallel processes. If ```chunk_submit``` is greater than ```max_threads``` a moderate performance gain is achieved at the cost of a possibly large memory occupancy.
+* ```bw_matching``` (optional, default: ```False```): perform matches on black and white version of the images in order to save memory. Preliminary tests indicate that the gain with this option is marginal, and this option may be dropped in the future. 
 
 ## Allowed configurations
 
