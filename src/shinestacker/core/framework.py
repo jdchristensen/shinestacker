@@ -204,8 +204,8 @@ class SequentialTask(TaskBase):
         self.callback(constants.CALLBACK_STEP_COUNTS,
                       self.id, self.name, self.total_action_counts)
 
-    def set_begin_steps(self, steps):
-        self.begin_steps = steps
+    def add_begin_steps(self, steps):
+        self.begin_steps += steps
 
     def begin(self):
         self.callback(constants.CALLBACK_BEGIN_STEPS, self.id, self.name)

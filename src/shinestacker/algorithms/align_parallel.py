@@ -67,7 +67,7 @@ class AlignFramesParallel(AlignFramesBase):
                     info_messages, warning_messages = future.result()
                     message = f": image {idx}, " \
                               f"{os.path.basename(self.process.input_filepath(idx))}: " \
-                              f"found {self._n_good_matches[idx]} matches"
+                              f"matches found: {self._n_good_matches[idx]}"
                     if len(info_messages) > 0:
                         message += ", " + ", ".join(info_messages)
                     color = constants.LOG_COLOR_LEVEL_3
@@ -95,8 +95,9 @@ class AlignFramesParallel(AlignFramesBase):
     def begin(self, process):
         super().begin(process)
         n_frames = self.process.num_input_filepaths()
-        self.process.set_counts(2 * n_frames)
-        self.sub_msg(f": preprocess {n_frames} images in parallel, {self.max_threads} cores")
+        self.process.callback(constants.CALLBACK_STEP_COUNTS,
+                              self.process.id, self.process.name, 2 * n_frames)
+        self.sub_msg(f": preprocess {n_frames} images in parallel, cores: {self.max_threads}")
         input_filepaths = self.process.input_filepaths()
         self._img_cache = [None] * n_frames
         self._img_locks = [0] * n_frames
@@ -144,11 +145,18 @@ class AlignFramesParallel(AlignFramesBase):
             else:
                 self._cumulative_transforms[i] = None
                 self.sub_msg(f": warning: no cumulative transform for frame {i}")
+        missing_transforms = 0
         for i in range(n_frames):
             if self._cumulative_transforms[i] is not None:
                 self._cumulative_transforms[i] = self._cumulative_transforms[i].astype(np.float32)
-        self.sub_msg(": feature extaction completed")
-        self.process.set_begin_steps(n_frames)
+            else:
+                missing_transforms += 1
+        msg = ": feature extaction completed"
+        if missing_transforms > 0:
+            msg += ", " + color_str(f"images not matched: {missing_transforms}",
+                                    constants.LOG_COLOR_WARNING)
+        self.sub_msg(msg)
+        self.process.add_begin_steps(n_frames)
 
     def extract_features(self, idx, delta=1):
         ref_idx = self.process.ref_idx

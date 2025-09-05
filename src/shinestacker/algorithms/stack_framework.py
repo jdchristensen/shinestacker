@@ -269,7 +269,7 @@ class CombinedActions(ReferenceFrameTask):
 
     def run_frame(self, idx, ref_idx):
         input_path = self.input_filepath(idx)
-        self.sub_message_r(color_str(': read input image', constants.LOG_COLOR_LEVEL_3))
+        self.print_message(color_str(': read input image', constants.LOG_COLOR_LEVEL_3))
         img = read_img(input_path)
         validate_image(img, *(self._metadata))
         if img is None:
@@ -292,7 +292,7 @@ class CombinedActions(ReferenceFrameTask):
                                   constants.LOG_COLOR_ALERT),
                         level=logging.WARNING)
         if img is not None:
-            self.sub_message_r(color_str(': write output image', constants.LOG_COLOR_LEVEL_3))
+            self.print_message(color_str(': write output image', constants.LOG_COLOR_LEVEL_3))
             output_path = os.path.join(self.output_full_path(), os.path.basename(input_path))
             write_img(output_path, img)
             return img
