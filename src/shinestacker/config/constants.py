@@ -216,7 +216,6 @@ class _Constants:
     DEFAULT_DM_LEVELS = 3
 
     PY_VALID_MODES = ['auto', 'memory', 'tiled']
-    MIN_PY_TILE_SIZE = 256
     DEFAULT_PY_FLOAT = FLOAT_32
     DEFAULT_PY_MIN_SIZE = 32
     DEFAULT_PY_KERNEL_SIZE = 5
@@ -226,12 +225,12 @@ class _Constants:
     DEFAULT_PY_MEMORY_LIMIT_GB = 8
     DEFAULT_PY_MAX_THREADS = min(os.cpu_count() or 4, 8)
     DEFAULT_PY_MODE = 'auto'
-    DEFAULT_PY_MAX_TILE_SIZE = 2048
+    DEFAULT_PY_MAX_TILE_SIZE = 4096
     DEFAULT_PY_MIN_TILE_SIZE = 128
     DEFAULT_PY_MIN_N_TILED_LAYERS = 1
     PY_MEMORY_OVERHEAD = 2.5
 
-    DEFAULT_PLOT_STACK_BUNCH = False
+    DEFAULT_PLOT_STACK_BUNCH = True
     DEFAULT_PLOT_STACK = True
 
     def __setattr__aux(self, name, value):

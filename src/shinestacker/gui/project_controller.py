@@ -143,7 +143,6 @@ class ProjectController(QObject):
             return
         os.chdir(get_app_base_path())
         self.set_current_file_path('')
-        self.mark_as_modified(False)
         self.update_title()
         self.clear_job_list()
         self.clear_action_list()
@@ -232,7 +231,7 @@ class ProjectController(QObject):
                         'input_path': constants.PATH_SEPARATOR.join(multi_input_path)})
                 job.add_sub_action(multi_layer)
             self.add_job_to_project(job)
-            self.mark_as_modified(True, "New Project")
+            self.project_editor.set_modified(True)
             self.refresh_ui(0, -1)
 
     def open_project(self, file_path=False):

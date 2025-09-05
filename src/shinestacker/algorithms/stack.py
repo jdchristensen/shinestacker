@@ -78,6 +78,9 @@ class FocusStackBunch(SequentialTask, FocusStackBase):
             raise InvalidOptionError("overlap", self.overlap,
                                      "overlap must be smaller than batch size")
 
+    def sequential_processing(self):
+        return True
+
     def init(self, job, _working_path=''):
         FocusStackBase.init(self, job, self.working_path)
 

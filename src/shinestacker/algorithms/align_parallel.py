@@ -70,7 +70,7 @@ class AlignFramesParallel(AlignFramesBase):
                         message += ", " + ", ".join(info_messages)
                     color = constants.LOG_COLOR_LEVEL_3
                     if len(warning_messages) > 0:
-                        message += ", " + ", ".join(warning_messages)
+                        message += ", " + color_str(", ".join(warning_messages), 'yellow')
                         color = constants.LOG_COLOR_WARNING
                     self.print_message(message, color=color)
                     self.process.after_step(idx)
@@ -195,7 +195,7 @@ class AlignFramesParallel(AlignFramesBase):
             if n_good_matches > min_good_matches or subsample == 1:
                 break
             subsample = 1
-            info_messages.append("too few matches, no subsampling applied")
+            warning_messages.append("too few matches, no subsampling applied")
         self._n_good_matches[idx] = n_good_matches
         m = None
         min_matches = 4 if self.alignment_config['transform'] == constants.ALIGN_HOMOGRAPHY else 3
