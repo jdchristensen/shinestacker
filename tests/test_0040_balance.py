@@ -1,3 +1,5 @@
+import matplotlib
+matplotlib.use('Agg')
 from shinestacker.config.constants import constants
 from shinestacker.algorithms.stack_framework import StackJob, CombinedActions
 from shinestacker.algorithms.balance import BalanceFrames
