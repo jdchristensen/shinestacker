@@ -2,18 +2,22 @@
 
 This page reports the main releases only and the main changes therein.
 
-## [v-.-.-] - 2025-09-05
-**Uncommitted changes**
 
-### Changes
+## [v1.x.x] - 2025-09-05
+**Parallel processing and input flexibility**
 
-* implemented parallel processing in alignment feature extraction
-* implemented parallel processing of combined actions
-* job input can specify a list of files, not only a folder
-* fixed path in an example project
-* bug fix in config dialog
-* code cleanup
-* some GUI restyling
+### Added
+- Parallel processing in alignment feature extraction
+- Parallel processing of combined actions
+- Job input can now specify a list of files (not only a folder)
+
+### Fixed
+- Path in example project
+- Bug fix in config dialog
+
+### Changed
+- Some GUI restyling
+- Code cleanup
 
 ---
 
