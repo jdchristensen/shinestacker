@@ -10,12 +10,10 @@ class AlignFramesAuto(AlignFramesBase):
                  alignment_config=None, **kwargs):
         super().__init__(enabled=True, feature_config=None, matching_config=None,
                          alignment_config=None, **kwargs)
-        self.enabled = enabled
         self.mode = kwargs.pop('mode', constants.DEFAULT_ALIGN_MODE)
         self.max_threads = kwargs.pop('max_threads', constants.DEFAULT_ALIGN_MAX_THREADS)
         self.chunk_submit = kwargs.pop('chunk_submit', constants.DEFAULT_ALIGN_CHUNK_SUBMIT)
         self.bw_matching = kwargs.pop('bw_matching', constants.DEFAULT_ALIGN_BW_MATCHING)
-        self.feature_config = feature_config
         self.kwargs = kwargs
         available_cores = os.cpu_count() or 1
         self.num_threads = min(self.max_threads, available_cores)
@@ -42,7 +40,10 @@ class AlignFramesAuto(AlignFramesBase):
                 if detector in (constants.DETECTOR_SIFT, constants.DETECTOR_AKAZE) or \
                         descriptor in (constants.DESCRIPTOR_SIFT, constants.DESCRIPTOR_AKAZE):
                     num_threads = min(3, self.num_threads)
-                    chunk_submit = True
+                    chunk_submit = True 
+                else:
+                    num_threads = self.num_threads
+                    chunk_submit = self.chunk_submit                  
             self._implementation = AlignFramesParallel(
                 self.enabled, self.feature_config, self.matching_config, self.alignment_config,
                 max_threads=num_threads, chunk_submit=chunk_submit,
