@@ -14,7 +14,7 @@ class StatusBarSystemMonitor(QWidget):
 
     def setup_ui(self):
         bar_width = 100
-        bar_height = 20
+        bar_height = 22
         layout = QHBoxLayout()
         layout.setSpacing(10)
         layout.setContentsMargins(0, 2, 0, 0)
