@@ -43,8 +43,8 @@ class BaseStackAlgo:
                f"{os.path.basename(self.filenames[idx])}"
 
     def init(self, filenames):
-        self.shape = get_img_file_shape(
-            read_img(get_first_image_file(filenames)))
+        self.filenames = filenames
+        self.shape = get_img_file_shape(get_first_image_file(filenames))
 
     def total_steps(self, n_frames):
         return self._steps_per_frame * n_frames
