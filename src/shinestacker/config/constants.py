@@ -160,6 +160,9 @@ class _Constants:
     DEFAULT_ALIGN_RES_TARGET_MPX = 2
     DEFAULT_ALIGN_FAST_SUBSAMPLING = False
     DEFAULT_ALIGN_MIN_GOOD_MATCHES = 50
+    ALIGN_VALID_MODES = ['auto', 'sequential', 'parallel']
+    DEFAULT_ALIGN_MODE = 'auto'
+    DEFAULT_ALIGN_MEMORY_LIMIT_GB = 8
     DEFAULT_ALIGN_MAX_THREADS = 2
     DEFAULT_ALIGN_CHUNK_SUBMIT = True
     DEFAULT_ALIGN_BW_MATCHING = False
@@ -215,7 +218,6 @@ class _Constants:
     DEFAULT_DM_TEMPERATURE = 0.1
     DEFAULT_DM_LEVELS = 3
 
-    PY_VALID_MODES = ['auto', 'memory', 'tiled']
     DEFAULT_PY_FLOAT = FLOAT_32
     DEFAULT_PY_MIN_SIZE = 32
     DEFAULT_PY_KERNEL_SIZE = 5
@@ -224,6 +226,7 @@ class _Constants:
     DEFAULT_PY_N_TILED_LAYERS = 2
     DEFAULT_PY_MEMORY_LIMIT_GB = 8
     DEFAULT_PY_MAX_THREADS = min(os.cpu_count() or 4, 8)
+    PY_VALID_MODES = ['auto', 'memory', 'tiled']
     DEFAULT_PY_MODE = 'auto'
     DEFAULT_PY_MAX_TILE_SIZE = 4096
     DEFAULT_PY_MIN_TILE_SIZE = 128

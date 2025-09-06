@@ -99,7 +99,6 @@ class RunWindow(QTextEditLogger):
         layout.addLayout(output_layout)
         self.system_monitor = SystemMonitorOverlay(self)
         self.status_bar.addPermanentWidget(self.system_monitor)
-
         n_paths = len(self.retouch_paths) if self.retouch_paths else 0
         if n_paths == 1:
             self.retouch_widget = QPushButton(f"Retouch {self.retouch_paths[0][0]}")
