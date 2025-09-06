@@ -420,6 +420,37 @@ class AlignFramesBase(SubAction):
         return f"image: {self.process.idx_tot_str(idx)}, " \
                f"{os.path.basename(self.process.input_filepath(idx))}"
 
+    def end(self):
+        if self.plot_summary:
+            plt.figure(figsize=constants.PLT_FIG_SIZE)
+            x = np.arange(1, len(self._n_good_matches) + 1, dtype=int)
+            no_ref = x != self.process.ref_idx + 1
+            x = x[no_ref]
+            y = self._n_good_matches[no_ref]
+            if self.process.ref_idx == 0:
+                y_max = y[1]
+            elif self.process.ref_idx >= len(y):
+                y_max = y[-1]
+            else:
+                y_max = (y[self.process.ref_idx - 1] + y[self.process.ref_idx]) / 2
+
+            plt.plot([self.process.ref_idx + 1, self.process.ref_idx + 1],
+                     [0, y_max], color='cornflowerblue', linestyle='--', label='reference frame')
+            plt.plot([x[0], x[-1]], [self.min_matches, self.min_matches], color='lightgray',
+                     linestyle='--', label='min. matches')
+            plt.plot(x, y, color='navy', label='matches')
+            plt.xlabel('frame')
+            plt.ylabel('# of matches')
+            plt.legend()
+            plt.ylim(0)
+            plt.xlim(x[0], x[-1])
+            plot_path = f"{self.process.working_path}/{self.process.plot_path}/" \
+                        f"{self.process.name}-matches.pdf"
+            save_plot(plot_path)
+            plt.close('all')
+            self.process.callback(constants.CALLBACK_SAVE_PLOT, self.process.id,
+                                  f"{self.process.name}: matches", plot_path)
+
 
 class AlignFrames(AlignFramesBase):
     def __init__(self, enabled=True, feature_config=None, matching_config=None,
@@ -466,34 +497,3 @@ class AlignFrames(AlignFramesBase):
 
     def sequential_processing(self):
         return True
-
-    def end(self):
-        if self.plot_summary:
-            plt.figure(figsize=constants.PLT_FIG_SIZE)
-            x = np.arange(1, len(self._n_good_matches) + 1, dtype=int)
-            no_ref = x != self.process.ref_idx + 1
-            x = x[no_ref]
-            y = self._n_good_matches[no_ref]
-            if self.process.ref_idx == 0:
-                y_max = y[1]
-            elif self.process.ref_idx >= len(y):
-                y_max = y[-1]
-            else:
-                y_max = (y[self.process.ref_idx - 1] + y[self.process.ref_idx]) / 2
-
-            plt.plot([self.process.ref_idx + 1, self.process.ref_idx + 1],
-                     [0, y_max], color='cornflowerblue', linestyle='--', label='reference frame')
-            plt.plot([x[0], x[-1]], [self.min_matches, self.min_matches], color='lightgray',
-                     linestyle='--', label='min. matches')
-            plt.plot(x, y, color='navy', label='matches')
-            plt.xlabel('frame')
-            plt.ylabel('# of matches')
-            plt.legend()
-            plt.ylim(0)
-            plt.xlim(x[0], x[-1])
-            plot_path = f"{self.process.working_path}/{self.process.plot_path}/" \
-                        f"{self.process.name}-matches.pdf"
-            save_plot(plot_path)
-            plt.close('all')
-            self.process.callback(constants.CALLBACK_SAVE_PLOT, self.process.id,
-                                  f"{self.process.name}: matches", plot_path)

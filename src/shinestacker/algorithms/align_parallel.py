@@ -123,7 +123,7 @@ class AlignFramesParallel(AlignFramesBase):
             if self._img_cache[i] is not None:
                 self._img_cache[i] = None
         gc.collect()
-        self.print_message(": combining transformations")
+        self.print_message("combining transformations")
         transform_type = self.alignment_config['transform']
         if transform_type == constants.ALIGN_RIGID:
             identity = np.array([[1.0, 0.0, 0.0],
@@ -144,14 +144,14 @@ class AlignFramesParallel(AlignFramesBase):
             else:
                 self._cumulative_transforms[i] = None
                 self.print_message(
-                    f": warning: no cumulative transform for {self.image_str(i)}")
+                    f"warning: no cumulative transform for {self.image_str(i)}")
         missing_transforms = 0
         for i in range(n_frames):
             if self._cumulative_transforms[i] is not None:
                 self._cumulative_transforms[i] = self._cumulative_transforms[i].astype(np.float32)
             else:
                 missing_transforms += 1
-        msg = ": feature extaction completed"
+        msg = "feature extaction completed"
         if missing_transforms > 0:
             msg += ", " + color_str(f"images not matched: {missing_transforms}",
                                     constants.LOG_COLOR_WARNING)

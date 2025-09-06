@@ -4,6 +4,8 @@ from shinestacker.config.constants import constants
 from shinestacker.algorithms.utils import read_img
 from shinestacker.algorithms.stack_framework import StackJob, CombinedActions
 from shinestacker.algorithms.align import align_images, AlignFrames
+from shinestacker.algorithms.align_parallel import AlignFramesParallel
+from shinestacker.algorithms.align_auto import AlignFramesAuto
 
 
 def test_align():
@@ -69,9 +71,30 @@ def test_tif():
         assert False
 
 
+def test_parallel():
+    try:
+        job = StackJob("job", "examples", input_path="input/img-jpg", callbacks='tqdm')
+        job.add_action(CombinedActions("align-jpg", [AlignFramesParallel(plot_summary=False)],
+                                       output_path="output/img-jpg-align"))
+        job.run()
+    except Exception:
+        assert False
+
+
+def test_auto():
+    try:
+        job = StackJob("job", "examples", input_path="input/img-jpg", callbacks='tqdm')
+        job.add_action(CombinedActions("align-jpg", [AlignFramesAuto(plot_summary=False)],
+                                       output_path="output/img-jpg-align"))
+        job.run()
+    except Exception:
+        assert False
+
+
 if __name__ == '__main__':
     test_align()
     test_align_homo()
     test_align_rescale()
     test_jpg()
     test_tif()
+    test_auto()

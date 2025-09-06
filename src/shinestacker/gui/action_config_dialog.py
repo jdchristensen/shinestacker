@@ -1,5 +1,5 @@
 # pylint: disable=C0114, C0115, C0116, E0611, R0913, R0917, R0915, R0912
-# pylint: disable=E0606, W0718, R1702, W0102, W0221
+# pylint: disable=E0606, W0718, R1702, W0102, W0221, R0914
 import os
 import traceback
 from PySide6.QtWidgets import (QWidget, QPushButton, QHBoxLayout, QLabel, QScrollArea, QSizePolicy,
@@ -762,7 +762,7 @@ class AlignFramesConfigurator(SubsampleActionConfigurator):
         self.add_bold_label("Miscellanea:")
         if self.expert:
             mode = self.add_field(
-                'pyramid_mode', FIELD_COMBO, 'Mode',
+                'mode', FIELD_COMBO, 'Mode',
                 required=False, options=self.MODE_OPTIONS, values=constants.ALIGN_VALID_MODES,
                 default=dict(zip(constants.ALIGN_VALID_MODES,
                                  self.MODE_OPTIONS))[constants.DEFAULT_ALIGN_MODE])
