@@ -10,6 +10,7 @@ This page reports the main releases only and the main changes therein.
 - Parallel processing in alignment feature extraction
 - Parallel processing of combined actions
 - Job input can now specify a list of files (not only a folder)
+- CPU and memory usage monitor widget for running jobs
 
 ### Fixed
 - Path in example project

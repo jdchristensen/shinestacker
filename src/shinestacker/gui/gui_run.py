@@ -18,7 +18,7 @@ from .colors import (
     ACTION_STOPPED_COLOR, ACTION_FAILED_COLOR)
 from .time_progress_bar import TimerProgressBar
 from .flow_layout import FlowLayout
-from .sys_mon import SystemMonitorOverlay
+from .sys_mon import StatusBarSystemMonitor
 
 
 class ColorButton(QPushButton):
@@ -97,7 +97,7 @@ class RunWindow(QTextEditLogger):
         self.right_area.setMaximumWidth(0)
         self.image_area_widget.setFixedWidth(0)
         layout.addLayout(output_layout)
-        self.system_monitor = SystemMonitorOverlay(self)
+        self.system_monitor = StatusBarSystemMonitor(self)
         self.status_bar.addPermanentWidget(self.system_monitor)
         n_paths = len(self.retouch_paths) if self.retouch_paths else 0
         if n_paths == 1:
