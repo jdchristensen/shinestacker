@@ -6,6 +6,7 @@ numpy
 opencv_python
 pillow
 psdtags
+psutil
 PySide6
 scipy
 tifffile
