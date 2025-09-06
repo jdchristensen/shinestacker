@@ -248,9 +248,8 @@ class AlignFramesParallel(AlignFramesBase):
             self._target_indices[idx] = None
             self._transforms[idx] = None
             return info_messages, warning_messages
-        else:
-            self._transforms[idx] = m
-            self._target_indices[idx] = target_idx
+        self._transforms[idx] = m
+        self._target_indices[idx] = target_idx
         return info_messages, warning_messages
 
     def align_images(self, idx, img_ref, img_0):
