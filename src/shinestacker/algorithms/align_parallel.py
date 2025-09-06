@@ -41,6 +41,7 @@ class AlignFramesParallel(AlignFramesBase):
         self._target_indices = None
         self._transforms = None
         self._cumulative_transforms = None
+        self.step_counter = 0
 
     def cache_img(self, idx):
         with self._cache_locks[idx]:
@@ -73,7 +74,8 @@ class AlignFramesParallel(AlignFramesBase):
                         message += ", " + color_str(", ".join(warning_messages), 'yellow')
                         color = constants.LOG_COLOR_WARNING
                     self.print_message(message, color=color)
-                    self.process.after_step(idx)
+                    self.step_counter += 1
+                    self.process.after_step(self.step_counter)
                     self.process.check_running()
                 except RunStopException as e:
                     raise e
@@ -112,6 +114,7 @@ class AlignFramesParallel(AlignFramesBase):
         sub_indices.remove(ref_idx)
         sub_img_filepaths = copy.deepcopy(input_filepaths)
         sub_img_filepaths.remove(input_filepaths[ref_idx])
+        self.step_counter = 0
         if self.chunk_submit:
             img_chunks = make_chunks(sub_img_filepaths, max_chunck_size)
             idx_chunks = make_chunks(sub_indices, max_chunck_size)

@@ -42,7 +42,7 @@ class AlignFramesAuto(AlignFramesBase):
                 if detector in (constants.DETECTOR_SIFT, constants.DETECTOR_AKAZE) or \
                         descriptor in (constants.DESCRIPTOR_SIFT, constants.DESCRIPTOR_AKAZE):
                     num_threads = min(2, self.num_threads)
-                    chunk_submit = False
+                    chunk_submit = True
             self._implementation = AlignFramesParallel(
                 self.enabled, self.feature_config, self.matching_config, self.alignment_config,
                 max_threads=num_threads, chunk_submit=chunk_submit,
