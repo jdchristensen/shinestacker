@@ -224,8 +224,10 @@ class AlignFramesParallel(AlignFramesBase):
             m, img_0, transform_type,
             affine_thresholds, homography_thresholds)
         if not is_valid:
-            return self.extract_features(idx, delta + 1)
-        self._transforms[idx] = m
+            warning_messages.append(f" invalid transformation found")
+            return info_messages, warning_messages
+        else:
+            self._transforms[idx] = m
         self._target_indices[idx] = target_idx
         return info_messages, warning_messages
 
