@@ -87,6 +87,17 @@ def img_bw(img):
     return cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 
 
+def get_first_image_file(filenames):
+    first_img_file = None
+    for filename in filenames:
+        if os.path.isfile(filename) and extension_tif_jpg(filename):
+            first_img_file = filename
+            break
+    if first_img_file is None:
+        raise ValueError("No valid image files found")
+    return first_img_file
+
+
 def get_img_file_shape(file_path):
     img = read_img(file_path)
     return img.shape[:2]

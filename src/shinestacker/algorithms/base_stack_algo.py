@@ -4,7 +4,8 @@ import numpy as np
 from .. core.exceptions import InvalidOptionError, ImageLoadError, RunStopException
 from .. config.constants import constants
 from .. core.colors import color_str
-from .utils import read_img, get_img_metadata, validate_image, get_img_file_shape, extension_tif_jpg
+from .utils import (read_img, get_img_metadata, validate_image, get_img_file_shape,
+                    get_first_image_file)
 
 
 class BaseStackAlgo:
@@ -42,13 +43,8 @@ class BaseStackAlgo:
                f"{os.path.basename(self.filenames[idx])}"
 
     def init(self, filenames):
-        self.filenames = filenames
-        first_img_file = ''
-        for filename in filenames:
-            if os.path.isfile(filename) and extension_tif_jpg(filename):
-                first_img_file = filename
-                break
-        self.shape = get_img_file_shape(first_img_file)
+        self.shape = get_img_file_shape(
+            read_img(get_first_image_file(filenames)))
 
     def total_steps(self, n_frames):
         return self._steps_per_frame * n_frames

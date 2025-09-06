@@ -217,8 +217,6 @@ class AlignFramesParallel(AlignFramesBase):
                 f"warning: only {n_good_matches} found for "
                 f"{self.image_str(idx)}, trying next frame",
                 color=constants.LOG_COLOR_WARNING, level=logging.WARNING)
-            self._target_indices[idx] = None
-            self._transforms[idx] = None
             return self.extract_features(idx, delta + 1)
         transform = self.alignment_config['transform']
         src_pts = np.float32([kp_0[m.queryIdx].pt for m in good_matches]).reshape(-1, 1, 2)
@@ -231,23 +229,24 @@ class AlignFramesParallel(AlignFramesBase):
         if subsample > 1:
             m = rescale_trasnsform(m, w0, h0, w_sub, h_sub, subsample, transform)
             if m is None:
-                warning_messages.append(f"invalid option {transform}")
-                self._target_indices[idx] = None
-                self._transforms[idx] = None
-                return info_messages, warning_messages
+                self.print_message(
+                    f"invalid option {transform} "
+                    f"for {self.image_str(idx)}, trying next frame",
+                    color=constants.LOG_COLOR_WARNING, level=logging.WARNING)
+                return self.extract_features(idx, delta + 1)
         transform_type = self.alignment_config['transform']
         thresholds = self.get_transform_thresholds()
-        is_valid, reason = check_transform(m, img_0, transform_type, *thresholds)
+        is_valid, _reason = check_transform(m, img_0, transform_type, *thresholds)
         if not is_valid:
+            msg = f"invalid transformation for {self.image_str(idx)}"
+            do_abort = self.alignment_config['abort_abnormal']
+            if not do_abort:
+                msg += ", trying next frame"
             self.print_message(
-                f"warning: invalid transformation for {self.image_str(idx)}: {reason}",
-                level=logging.WARNING)
-            if self.alignment_config['abort_abnormal']:
+                msg, color=constants.LOG_COLOR_WARNING, level=logging.WARNING)
+            if do_abort:
                 raise RuntimeError("invalid transformation: {reason}")
-            warning_messages.append(f"invalid transformation found: {reason}")
-            self._target_indices[idx] = None
-            self._transforms[idx] = None
-            return info_messages, warning_messages
+            return self.extract_features(idx, delta + 1)
         self._transforms[idx] = m
         self._target_indices[idx] = target_idx
         return info_messages, warning_messages

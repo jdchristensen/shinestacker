@@ -1,8 +1,10 @@
 # pylint: disable=C0114, C0115, C0116, W0718, R0912, R0915, E1101, R0914, R0911, E0606, R0801, R0902
 import os
+import numpy as np
 from ..config.constants import constants
 from .align import AlignFramesBase, AlignFrames
 from .align_parallel import AlignFramesParallel
+from .utils import get_first_image_file, get_img_metadata, read_img
 
 
 class AlignFramesAuto(AlignFramesBase):
@@ -11,6 +13,7 @@ class AlignFramesAuto(AlignFramesBase):
         super().__init__(enabled=True, feature_config=None, matching_config=None,
                          alignment_config=None, **kwargs)
         self.mode = kwargs.pop('mode', constants.DEFAULT_ALIGN_MODE)
+        self.memory_limit = kwargs.pop('memory_limit', constants.DEFAULT_ALIGN_MEMORY_LIMIT_GB)
         self.max_threads = kwargs.pop('max_threads', constants.DEFAULT_ALIGN_MAX_THREADS)
         self.chunk_submit = kwargs.pop('chunk_submit', constants.DEFAULT_ALIGN_CHUNK_SUBMIT)
         self.bw_matching = kwargs.pop('bw_matching', constants.DEFAULT_ALIGN_BW_MATCHING)
@@ -18,6 +21,7 @@ class AlignFramesAuto(AlignFramesBase):
         available_cores = os.cpu_count() or 1
         self.num_threads = min(self.max_threads, available_cores)
         self._implementation = None
+        self.overhead = 30.0
 
     def begin(self, process):
         if self.mode == 'sequential' or self.num_threads == 1:
@@ -39,7 +43,15 @@ class AlignFramesAuto(AlignFramesBase):
                     descriptor = constants.DEFAULT_DESCRIPTOR
                 if detector in (constants.DETECTOR_SIFT, constants.DETECTOR_AKAZE) or \
                         descriptor in (constants.DESCRIPTOR_SIFT, constants.DESCRIPTOR_AKAZE):
-                    num_threads = min(3, self.num_threads)
+                    shape, dtype = get_img_metadata(
+                        read_img(get_first_image_file(process.input_filepaths())))
+                    bytes_per_pixel = 3 * np.dtype(dtype).itemsize
+                    img_memory = bytes_per_pixel * float(shape[0]) * float(shape[1]) * \
+                        self.overhead / constants.ONE_GIGA
+                    num_threads = max(
+                        1,
+                        int(round(self.memory_limit) / img_memory))
+                    num_threads = min(num_threads, self.num_threads)
                     chunk_submit = True
                 else:
                     num_threads = self.num_threads

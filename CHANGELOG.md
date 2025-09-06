@@ -2,8 +2,15 @@
 
 This page reports the main releases only and the main changes therein.
 
+## [v-.-.-] - 2025-09-06
 
-## [v1.3.0] - 2025-09-05
+## Fixed
+- better management of patological alignments
+- improved automatic parameters for parallel alignment
+
+---
+
+## [v1.3.0] - 2025-09-06
 **Parallel processing and input flexibility**
 
 ### Added

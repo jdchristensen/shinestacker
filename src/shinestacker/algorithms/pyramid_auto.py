@@ -2,10 +2,10 @@
 import os
 import numpy as np
 from .. config.constants import constants
-from .utils import extension_tif_jpg
 from .base_stack_algo import BaseStackAlgo
 from .pyramid import PyramidStack
 from .pyramid_tiles import PyramidTilesStack
+from .utils import get_first_image_file
 
 
 class PyramidAutoStack(BaseStackAlgo):
@@ -47,13 +47,7 @@ class PyramidAutoStack(BaseStackAlgo):
         self.overhead = constants.PY_MEMORY_OVERHEAD
 
     def init(self, filenames):
-        first_img_file = None
-        for filename in filenames:
-            if os.path.isfile(filename) and extension_tif_jpg(filename):
-                first_img_file = filename
-                break
-        if first_img_file is None:
-            raise ValueError("No valid image files found")
+        first_img_file = get_first_image_file(filenames)
         _img, metadata, _ = self.read_image_and_update_metadata(first_img_file, None)
         self.shape, self.dtype = metadata
         self.n_levels = int(np.log2(min(self.shape) / self.min_size))
