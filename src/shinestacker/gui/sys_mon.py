@@ -2,6 +2,7 @@
 import psutil
 from PySide6.QtWidgets import QWidget, QHBoxLayout, QLabel, QProgressBar, QSizePolicy
 from PySide6.QtCore import QTimer, Qt
+from .colors import ColorPalette
 
 
 class StatusBarSystemMonitor(QWidget):
@@ -25,27 +26,27 @@ class StatusBarSystemMonitor(QWidget):
         self.cpu_bar.setRange(0, 100)
         self.cpu_bar.setTextVisible(False)
         self.cpu_bar.setGeometry(0, 0, bar_width, bar_height)
-        self.cpu_bar.setStyleSheet("""
-            QProgressBar {
+        self.cpu_bar.setStyleSheet(f"""
+            QProgressBar {{
                 border: 1px solid #cccccc;
                 border-radius: 5px;
-                background: #f0f0f0;
-            }
-            QProgressBar::chunk {
-                background-color: #3498db;
+                background: #F0F0F0;
+            }}
+            QProgressBar::chunk {{
+                background-color: #{ColorPalette.LIGHT_BLUE.hex()};
                 border-radius: 5px;
-            }
+            }}
         """)
         self.cpu_label = QLabel("CPU: --%", cpu_widget)
         self.cpu_label.setAlignment(Qt.AlignCenter)
         self.cpu_label.setGeometry(0, 0, bar_width, bar_height)
-        self.cpu_label.setStyleSheet("""
-            QLabel {
-                color: #2c3e50;
+        self.cpu_label.setStyleSheet(f"""
+            QLabel {{
+                color: #{ColorPalette.DARK_BLUE.hex()};
                 font-weight: bold;
                 background: transparent;
                 font-size: 12px;
-            }
+            }}
         """)
         mem_widget = QWidget()
         mem_widget.setFixedSize(bar_width, bar_height)
@@ -53,27 +54,27 @@ class StatusBarSystemMonitor(QWidget):
         self.mem_bar.setRange(0, 100)
         self.mem_bar.setTextVisible(False)
         self.mem_bar.setGeometry(0, 0, bar_width, bar_height)
-        self.mem_bar.setStyleSheet("""
-            QProgressBar {
-                border: 1px solid #cccccc;
+        self.mem_bar.setStyleSheet(f"""
+            QProgressBar {{
+                border: 1px solid #CCCCCC;
                 border-radius: 5px;
                 background: #f0f0f0;
-            }
-            QProgressBar::chunk {
-                background-color: #2ecc71;
+            }}
+            QProgressBar::chunk {{
+                background-color: #{ColorPalette.LIGHT_GREEN.hex()};
                 border-radius: 5px;
-            }
+            }}
         """)
         self.mem_label = QLabel("MEM: --%", mem_widget)
         self.mem_label.setAlignment(Qt.AlignCenter)
         self.mem_label.setGeometry(0, 0, bar_width, bar_height)
-        self.mem_label.setStyleSheet("""
-            QLabel {
-                color: #2c3e50;
+        self.mem_label.setStyleSheet(f"""
+            QLabel {{
+                color: #{ColorPalette.DARK_BLUE.hex()};
                 font-weight: bold;
                 background: transparent;
                 font-size: 12px;
-            }
+            }}
         """)
         layout.addWidget(cpu_widget)
         layout.addWidget(mem_widget)
