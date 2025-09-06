@@ -163,7 +163,7 @@ class _Constants:
     ALIGN_VALID_MODES = ['auto', 'sequential', 'parallel']
     DEFAULT_ALIGN_MODE = 'auto'
     DEFAULT_ALIGN_MEMORY_LIMIT_GB = 8
-    DEFAULT_ALIGN_MAX_THREADS = 2
+    DEFAULT_ALIGN_MAX_THREADS = min(os.cpu_count() or 4, 8)
     DEFAULT_ALIGN_CHUNK_SUBMIT = True
     DEFAULT_ALIGN_BW_MATCHING = False
 
