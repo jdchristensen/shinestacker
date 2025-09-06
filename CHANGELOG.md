@@ -3,7 +3,7 @@
 This page reports the main releases only and the main changes therein.
 
 
-## [v1.x.x] - 2025-09-05
+## [v1.3.0] - 2025-09-05
 **Parallel processing and input flexibility**
 
 ### Added
