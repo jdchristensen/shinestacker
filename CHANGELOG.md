@@ -17,6 +17,7 @@ This page reports the main releases only and the main changes therein.
 - Bug fix in config dialog
 
 ### Changed
+- Changes some default parameters for better performances
 - Some GUI restyling
 - Code cleanup
 
