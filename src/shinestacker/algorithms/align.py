@@ -1,6 +1,7 @@
 # pylint: disable=C0114, C0115, C0116, E1101, R0914, R0913, R0917, R0912, R0915, R0902, E1121, W0102
 import os
 import math
+import logging
 import numpy as np
 import matplotlib.pyplot as plt
 import cv2
@@ -344,6 +345,8 @@ def align_images(img_ref, img_0, feature_config=None, matching_config=None, alig
         if not is_valid:
             if callbacks and 'warning' in callbacks:
                 callbacks['warning'](f"invalid transformation: {reason}")
+            if alignment_config['abort_abnormal']:
+                raise RuntimeError("invalid transformation: {reason}")
             return n_good_matches, None, None
         if callbacks and 'align_message' in callbacks:
             callbacks['align_message']()
@@ -398,8 +401,8 @@ class AlignFramesBase(SubAction):
     def align_images(self, idx, img_ref, img_0):
         pass
 
-    def print_message(self, msg, color=constants.LOG_COLOR_LEVEL_3):
-        self.process.print_message(color_str(msg, color))
+    def print_message(self, msg, color=constants.LOG_COLOR_LEVEL_3, level=logging.INFO):
+        self.process.print_message(color_str(msg, color), level=level)
 
     def begin(self, process):
         self.process = process
@@ -412,9 +415,7 @@ class AlignFramesBase(SubAction):
         return self.align_images(idx, img_ref, img_0)
 
     def get_transform_thresholds(self):
-        if self.alignment_config['abort_abnormal']:
-            return _AFFINE_THRESHOLDS, _HOMOGRAPHY_THRESHOLDS
-        return None, None
+        return _AFFINE_THRESHOLDS, _HOMOGRAPHY_THRESHOLDS
 
     def image_str(self, idx):
         return f"image: {self.process.idx_tot_str(idx)}, " \

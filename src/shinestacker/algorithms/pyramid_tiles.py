@@ -205,7 +205,7 @@ class PyramidTilesStack(PyramidBase):
         self.focus_stack_validate(self.cleanup_temp_files)
         all_level_counts = [0] * n
         if self.num_threads > 1:
-            self.print_message(f': starting parallel image processing on {self.num_threads} cores')
+            self.print_message(f': starting parallel processing on {self.num_threads} cores')
             args_list = [(file_path, i, n) for i, file_path in enumerate(self.filenames)]
             executor = None
             try:

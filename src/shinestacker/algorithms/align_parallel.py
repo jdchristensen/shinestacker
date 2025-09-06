@@ -4,6 +4,7 @@ import copy
 import math
 import traceback
 import threading
+import logging
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import numpy as np
 import cv2
@@ -70,10 +71,12 @@ class AlignFramesParallel(AlignFramesBase):
                     if len(info_messages) > 0:
                         message += ", " + ", ".join(info_messages)
                     color = constants.LOG_COLOR_LEVEL_3
+                    level = logging.INFO
                     if len(warning_messages) > 0:
                         message += ", " + color_str(", ".join(warning_messages), 'yellow')
                         color = constants.LOG_COLOR_WARNING
-                    self.print_message(message, color=color)
+                        level = logging.WARNING
+                    self.print_message(message, color=color, level=level)
                     self.step_counter += 1
                     self.process.after_step(self.step_counter)
                     self.process.check_running()
@@ -81,7 +84,7 @@ class AlignFramesParallel(AlignFramesBase):
                     raise e
                 except Exception as e:
                     traceback.print_tb(e.__traceback__)
-                    self.self.print_message(
+                    self.print_message(
                         f"failed processing {self.image_str(idx)}: {str(e)}")
             cached_images = 0
             for i in range(self.process.num_input_filepaths()):
@@ -147,7 +150,8 @@ class AlignFramesParallel(AlignFramesBase):
             else:
                 self._cumulative_transforms[i] = None
                 self.print_message(
-                    f"warning: no cumulative transform for {self.image_str(i)}")
+                    f"warning: no cumulative transform for {self.image_str(i)}",
+                    color=constants.LOG_COLOR_WARNING, level=logging.WARNING)
         missing_transforms = 0
         for i in range(n_frames):
             if self._cumulative_transforms[i] is not None:
@@ -167,12 +171,18 @@ class AlignFramesParallel(AlignFramesBase):
         if idx < ref_idx:
             target_idx = idx + delta
             if target_idx > ref_idx:
+                self._target_indices[idx] = None
+                self._transforms[idx] = None
                 return [], [pass_ref_err_msg]
         elif idx > ref_idx:
             target_idx = idx - delta
             if target_idx < ref_idx:
+                self._target_indices[idx] = None
+                self._transforms[idx] = None
                 return [], [pass_ref_err_msg]
         else:
+            self._target_indices[idx] = None
+            self._transforms[idx] = None
             return [], []
         info_messages = []
         warning_messages = []
@@ -203,6 +213,12 @@ class AlignFramesParallel(AlignFramesBase):
         m = None
         min_matches = 4 if self.alignment_config['transform'] == constants.ALIGN_HOMOGRAPHY else 3
         if n_good_matches < min_matches:
+            self.print_message(
+                f"warning: only {n_good_matches} found for "
+                f"{self.image_str(idx)}, trying next frame",
+                color=constants.LOG_COLOR_WARNING, level=logging.WARNING)
+            self._target_indices[idx] = None
+            self._transforms[idx] = None
             return self.extract_features(idx, delta + 1)
         transform = self.alignment_config['transform']
         src_pts = np.float32([kp_0[m.queryIdx].pt for m in good_matches]).reshape(-1, 1, 2)
@@ -215,28 +231,34 @@ class AlignFramesParallel(AlignFramesBase):
         if subsample > 1:
             m = rescale_trasnsform(m, w0, h0, w_sub, h_sub, subsample, transform)
             if m is None:
-                warning_messages.append(f" invalid option {transform}")
+                warning_messages.append(f"invalid option {transform}")
+                self._target_indices[idx] = None
+                self._transforms[idx] = None
                 return info_messages, warning_messages
         transform_type = self.alignment_config['transform']
-        is_valid = True
-        affine_thresholds, homography_thresholds = self.get_transform_thresholds()
-        is_valid, _reason = check_transform(
-            m, img_0, transform_type,
-            affine_thresholds, homography_thresholds)
+        thresholds = self.get_transform_thresholds()
+        is_valid, reason = check_transform(m, img_0, transform_type, *thresholds)
         if not is_valid:
-            warning_messages.append(f" invalid transformation found")
+            self.print_message(
+                f"warning: invalid transformation for {self.image_str(idx)}: {reason}",
+                level=logging.WARNING)
+            if self.alignment_config['abort_abnormal']:
+                raise RuntimeError("invalid transformation: {reason}")
+            warning_messages.append(f"invalid transformation found: {reason}")
+            self._target_indices[idx] = None
+            self._transforms[idx] = None
             return info_messages, warning_messages
         else:
             self._transforms[idx] = m
-        self._target_indices[idx] = target_idx
+            self._target_indices[idx] = target_idx
         return info_messages, warning_messages
 
     def align_images(self, idx, img_ref, img_0):
         m = self._cumulative_transforms[idx]
         if m is None:
-            self.print_message(color_str(
+            self.print_message(
                 f"no transformation for {self.image_str(idx)}, skipping alignment",
-                constants.LOG_COLOR_WARNING))
+                color=constants.LOG_COLOR_WARNING, level=logging.WARNING)
             return img_0
         transform_type = self.alignment_config['transform']
         if transform_type == constants.ALIGN_RIGID and m.shape != (2, 3):
