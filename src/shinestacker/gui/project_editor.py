@@ -268,7 +268,7 @@ class ProjectEditor(QObject):
         if os.path.isabs(in_path):
             in_path = ".../" + os.path.basename(in_path)
         ico = constants.ACTION_ICONS[constants.ACTION_JOB]
-        return txt + (f" [{ico}Job: 📁 {in_path} → 📂 ...]" if long_name else "")
+        return txt + (f" [{ico}Job] - 📁 {in_path} → 📂 ..." if long_name else "")
 
     def action_text(self, action, is_sub_action=False, indent=True, long_name=False, html=False):
         ico = constants.ACTION_ICONS.get(action.type_name, '')
@@ -285,9 +285,9 @@ class ProjectEditor(QObject):
             in_path = ".../" + os.path.basename(in_path)
         if os.path.isabs(out_path):
             out_path = ".../" + os.path.basename(out_path)
-        return f"{txt} [{ico}{action.type_name}" + \
-               (f": 📁 <i>{in_path}</i> → 📂 <i>{out_path}</i>]"
-                if long_name and not is_sub_action else "]")
+        return f"{txt} [{ico}{action.type_name}]" + \
+               (f" - 📁 <i>{in_path}</i> → 📂 <i>{out_path}</i>"
+                if long_name and not is_sub_action else "")
 
     def get_job_at(self, index):
         return None if index < 0 else self.project_job(index)
