@@ -7,6 +7,7 @@ This page reports the main releases only and the main changes therein.
 ## Fixed
 - better management of patological alignments
 - improved automatic parameters for parallel alignment
+- optimization of ORB and SURF feature extraction by cacking key points
 
 ---
 

@@ -12,9 +12,11 @@ from ..config.constants import constants
 from .. core.exceptions import InvalidOptionError, RunStopException
 from .. core.colors import color_str
 from .. core.core_utils import make_chunks
-from .utils import read_img, img_subsample, img_bw
-from .align import (AlignFramesBase, detect_and_compute_matches, find_transform,
-                    check_transform, _cv2_border_mode_map, rescale_trasnsform)
+from .utils import read_img, img_subsample, img_bw, img_bw_8bit
+from .align import (AlignFramesBase, find_transform,
+                    check_transform, _cv2_border_mode_map, rescale_trasnsform,
+                    validate_align_config, detector_map, descriptor_map,
+                    get_good_matches)
 
 
 def compose_transforms(t1, t2, transform_type):
@@ -43,6 +45,8 @@ class AlignFramesParallel(AlignFramesBase):
         self._transforms = None
         self._cumulative_transforms = None
         self.step_counter = 0
+        self._kp = None
+        self._des = None
 
     def cache_img(self, idx):
         with self._cache_locks[idx]:
@@ -110,6 +114,8 @@ class AlignFramesParallel(AlignFramesBase):
         self._n_good_matches = [0] * n_frames
         self._transforms = [None] * n_frames
         self._cumulative_transforms = [None] * n_frames
+        self._kp = [None] * n_frames
+        self._des = [None] * n_frames
         max_chunck_size = self.max_threads
         ref_idx = self.process.ref_idx
         self.print_message(f"reference: {self.image_str(ref_idx)}")
@@ -125,9 +131,11 @@ class AlignFramesParallel(AlignFramesBase):
                 self.submit_threads(idxs, imgs)
         else:
             self.submit_threads(sub_indices, sub_img_filepaths)
-        for i in range(n_frames):
-            if self._img_cache[i] is not None:
-                self._img_cache[i] = None
+        for idx in range(n_frames):
+            if self._img_cache[idx] is not None:
+                self._img_cache[idx] = None
+                self._kp[idx] = None
+                self._des[idx] = None
         gc.collect()
         self.print_message("combining transformations")
         transform_type = self.alignment_config['transform']
@@ -152,6 +160,9 @@ class AlignFramesParallel(AlignFramesBase):
                 self.print_message(
                     f"warning: no cumulative transform for {self.image_str(i)}",
                     color=constants.LOG_COLOR_WARNING, level=logging.WARNING)
+        for idx in range(n_frames):
+            self._transforms[idx] = None
+        gc.collect()
         missing_transforms = 0
         for i in range(n_frames):
             if self._cumulative_transforms[i] is not None:
@@ -164,6 +175,32 @@ class AlignFramesParallel(AlignFramesBase):
                                     constants.LOG_COLOR_WARNING)
         self.print_message(msg)
         self.process.add_begin_steps(n_frames)
+
+    def detect_and_compute_matches(self, img_ref, ref_idx, img_0, idx):
+        feature_config, matching_config = self.feature_config, self.matching_config
+        feature_config_detector = feature_config['detector']
+        feature_config_descriptor = feature_config['descriptor']
+        match_method = matching_config['match_method']
+        validate_align_config(feature_config_detector, feature_config_descriptor, match_method)
+        img_bw_0, img_bw_ref = img_bw_8bit(img_0), img_bw_8bit(img_ref)
+        detector = detector_map[feature_config_detector]()
+        if feature_config_detector == feature_config_descriptor and \
+           feature_config_detector in (constants.DETECTOR_SIFT,
+                                       constants.DETECTOR_AKAZE,
+                                       constants.DETECTOR_BRISK):
+            if self._kp[idx] is None or self._des[idx] is None:
+                kp_0, des_0 = detector.detectAndCompute(img_bw_0, None)
+            else:
+                kp_0, des_0 = self._kp[idx], self._des[idx]
+            if self._kp[ref_idx] is None or self._des[ref_idx] is None:
+                kp_ref, des_ref = detector.detectAndCompute(img_bw_ref, None)
+            else:
+                kp_ref, des_ref = self._kp[ref_idx], self._des[ref_idx]
+        else:
+            descriptor = descriptor_map[feature_config_descriptor]()
+            kp_0, des_0 = descriptor.compute(img_bw_0, detector.detect(img_bw_0, None))
+            kp_ref, des_ref = descriptor.compute(img_bw_ref, detector.detect(img_bw_ref, None))
+        return kp_0, kp_ref, get_good_matches(des_0, des_ref, matching_config)
 
     def extract_features(self, idx, delta=1):
         ref_idx = self.process.ref_idx
@@ -202,8 +239,8 @@ class AlignFramesParallel(AlignFramesBase):
                 img_ref_sub = img_subsample(img_ref, subsample, fast_subsampling)
             else:
                 img_0_sub, img_ref_sub = img_0, img_ref
-            kp_0, kp_ref, good_matches = detect_and_compute_matches(
-                img_ref_sub, img_0_sub, self.feature_config, self.matching_config)
+            kp_0, kp_ref, good_matches = self.detect_and_compute_matches(
+                img_ref_sub, ref_idx, img_0_sub, idx)
             n_good_matches = len(good_matches)
             if n_good_matches > min_good_matches or subsample == 1:
                 break

@@ -135,11 +135,8 @@ def test_extract_features_fallback():
             np.ones((100, 100, 3), dtype=np.uint8),
             np.zeros((100, 100, 3), dtype=np.uint8)
         ]
-        with patch('shinestacker.algorithms.'
-                   'align_parallel.detect_and_compute_matches') as mock_detect:
-            mock_detect.return_value = ([], [], [])
-            _info, warnings = aligner.extract_features(1)
-            assert len(warnings) > 0
+        _info, warnings = aligner.extract_features(1)
+        assert len(warnings) > 0
 
 
 if __name__ == '__main__':
