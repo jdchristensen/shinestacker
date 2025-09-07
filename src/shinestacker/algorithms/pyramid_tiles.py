@@ -222,11 +222,10 @@ class PyramidTilesStack(PyramidBase):
                         all_level_counts[img_index] = level_count
                         completed_count += 1
                         self.print_message(
-                            ": processing completed, image  "
-                            f"{self.idx_tot_str(completed_count - 1)}")
+                            f": processing completed, {self.image_str(completed_count - 1)}")
                     except Exception as e:
                         self.print_message(
-                            f"Error processing image  {self.idx_tot_str(i)}: {str(e)}")
+                            f"Error processing {self.image_str(i)}: {str(e)}")
                     self.after_step(completed_count)
                     self.check_running(lambda: None)
             except RunStopException:
@@ -242,8 +241,7 @@ class PyramidTilesStack(PyramidBase):
         else:
             for i, file_path in enumerate(self.filenames):
                 self.print_message(
-                    f": processing file {os.path.basename(file_path)}, "
-                    f"{self.idx_tot_str(i)}")
+                    f": processing {self.image_str(i)}")
                 img = read_img(file_path)
                 level_count = self.process_single_image(img, self.n_levels, i)
                 all_level_counts[i] = level_count
