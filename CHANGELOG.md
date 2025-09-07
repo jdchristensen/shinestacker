@@ -2,7 +2,7 @@
 
 This page reports the main releases only and the main changes therein.
 
-## [v-.-.-] - 2025-09-06
+## [v-.-.-] - 2025-09-07
 
 ## Fixed
 - better management of patological alignments
@@ -11,6 +11,7 @@ This page reports the main releases only and the main changes therein.
 - improved automatic parameters for parallel alignment
 - optimized ORB and SURF feature extraction with key points caching
 - improved configuration GUI using tabs
+- minor fixes and clean up
 
 ---
 
