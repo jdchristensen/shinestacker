@@ -14,7 +14,8 @@ config.init(DISABLE_TQDM=True, DONT_USE_NATIVE_MENU=True)
 from shinestacker.config.constants import constants
 from shinestacker.core.logging import setup_logging
 from shinestacker.gui.main_window import MainWindow
-from shinestacker.app.gui_utils import disable_macos_special_menu_items, fill_app_menu
+from shinestacker.app.gui_utils import (
+    disable_macos_special_menu_items, fill_app_menu, set_css_style)
 from shinestacker.app.help_menu import add_help_action
 
 
@@ -63,6 +64,7 @@ expert options are visible by default.
         disable_macos_special_menu_items()
     icon_path = f"{os.path.dirname(__file__)}/../gui/ico/shinestacker.png"
     app.setWindowIcon(QIcon(icon_path))
+    set_css_style(app)
     window = ProjectApp()
     if args['expert']:
         window.set_expert_options()

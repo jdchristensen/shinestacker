@@ -495,6 +495,8 @@ class ProjectEditor(QObject):
             text = self.action_text(action, long_name=True, html=True, is_sub_action=is_sub_action)
         item = QListWidgetItem()
         item.setText('')
+        item.setToolTip("<b>Double-click:</b> configure parameters<br>"
+                        "<b>Right-click:</b> show menu")
         item.setData(Qt.ItemDataRole.UserRole, True)
         widget_list.addItem(item)
         html_text = f"✅ <span style='color:#{ColorPalette.DARK_BLUE.hex()};'>{text}</span>" \

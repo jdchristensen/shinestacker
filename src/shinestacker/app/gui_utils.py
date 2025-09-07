@@ -53,3 +53,13 @@ def fill_app_menu(app, app_menu):
     exit_action.setShortcut(quit_short)
     exit_action.triggered.connect(app.quit)
     app_menu.addAction(exit_action)
+
+
+def set_css_style(app):
+    css_style = """
+        QToolTip {
+            color: black;
+            border: 1px solid black;
+        }
+"""
+    app.setStyleSheet(css_style)

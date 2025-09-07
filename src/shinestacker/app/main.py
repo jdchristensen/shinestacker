@@ -16,7 +16,8 @@ from shinestacker.config.constants import constants
 from shinestacker.core.logging import setup_logging
 from shinestacker.gui.main_window import MainWindow
 from shinestacker.retouch.image_editor_ui import ImageEditorUI
-from shinestacker.app.gui_utils import disable_macos_special_menu_items, fill_app_menu
+from shinestacker.app.gui_utils import (
+    disable_macos_special_menu_items, fill_app_menu, set_css_style)
 from shinestacker.app.help_menu import add_help_action
 from shinestacker.app.open_frames import open_frames
 
@@ -233,6 +234,7 @@ expert options are visible by default.
     app.setWindowIcon(QIcon(icon_path))
     main_app = MainApp()
     app.main_app = main_app
+    set_css_style(app)
     main_app.show()
     main_app.activateWindow()
     if args['expert']:

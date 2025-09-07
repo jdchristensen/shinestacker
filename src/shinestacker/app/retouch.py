@@ -9,7 +9,8 @@ from shinestacker.config.config import config
 config.init(DISABLE_TQDM=True, DONT_USE_NATIVE_MENU=True)
 from shinestacker.config.constants import constants
 from shinestacker.retouch.image_editor_ui import ImageEditorUI
-from shinestacker.app.gui_utils import disable_macos_special_menu_items, fill_app_menu
+from shinestacker.app.gui_utils import (
+    disable_macos_special_menu_items, fill_app_menu, set_css_style)
 from shinestacker.app.help_menu import add_help_action
 from shinestacker.app.open_frames import open_frames
 
@@ -60,6 +61,7 @@ Multiple directories can be specified separated by ';'.
         disable_macos_special_menu_items()
     icon_path = f"{os.path.dirname(__file__)}/../gui/ico/shinestacker.png"
     app.setWindowIcon(QIcon(icon_path))
+    set_css_style(app)
     editor = RetouchApp()
     app.editor = editor
     editor.show()

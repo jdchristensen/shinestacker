@@ -301,6 +301,9 @@ class MainWindow(QMainWindow, LogManager):
             edit_config_action.triggered.connect(self.edit_current_action)
             menu.addAction(edit_config_action)
             menu.addSeparator()
+            menu.addAction(self.menu_manager.run_job_action)
+            menu.addAction(self.menu_manager.run_all_jobs_action)
+            menu.addSeparator()
             self.current_action_working_path, name = get_action_working_path(current_action)
             if self.current_action_working_path != '' and \
                     os.path.exists(self.current_action_working_path):
@@ -339,9 +342,6 @@ class MainWindow(QMainWindow, LogManager):
                     self.browse_output_path_action = QAction(action_name)
                     self.browse_output_path_action.triggered.connect(self.browse_output_path)
                     menu.addAction(self.browse_output_path_action)
-            menu.addSeparator()
-            menu.addAction(self.menu_manager.run_job_action)
-            menu.addAction(self.menu_manager.run_all_jobs_action)
             if current_action.type_name == constants.ACTION_JOB:
                 retouch_path = self.get_retouch_path(current_action)
                 if len(retouch_path) > 0:
