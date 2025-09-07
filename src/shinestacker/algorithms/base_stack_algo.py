@@ -1,11 +1,10 @@
-# pylint: disable=C0114, C0115, C0116, E0602, R0903
+# pylint: disable=C0114, C0115, C0116, E0602, R0903, R0902
 import os
 import numpy as np
-from .. core.exceptions import InvalidOptionError, ImageLoadError, RunStopException
+from .. core.exceptions import InvalidOptionError, RunStopException
 from .. config.constants import constants
 from .. core.colors import color_str
-from .utils import (read_img, get_img_metadata, validate_image, get_img_file_shape,
-                    get_first_image_file)
+from .utils import read_img, get_img_metadata, get_first_image_file
 
 
 class BaseStackAlgo:
@@ -15,6 +14,9 @@ class BaseStackAlgo:
         self.process = None
         self.filenames = None
         self.shape = None
+        self.dtype = None
+        self.num_pixel_values = None
+        self.max_pixel_value = None
         self.do_step_callback = False
         if float_type == constants.FLOAT_32:
             self.float_type = np.float32
@@ -42,26 +44,22 @@ class BaseStackAlgo:
         return f"image: {self.idx_tot_str(idx)}, " \
                f"{os.path.basename(self.filenames[idx])}"
 
+    def num_images(self):
+        return len(self.filenames)
+
     def init(self, filenames):
         self.filenames = filenames
-        self.shape = get_img_file_shape(get_first_image_file(filenames))
+        self.shape, self.dtype = get_img_metadata(read_img(get_first_image_file(filenames)))
+        self.num_pixel_values = constants.NUM_UINT8 \
+            if self.dtype == np.uint8 else constants.NUM_UINT16
+        self.max_pixel_value = constants.MAX_UINT8 \
+            if self.dtype == np.uint8 else constants.MAX_UINT16
 
     def total_steps(self, n_frames):
         return self._steps_per_frame * n_frames
 
     def print_message(self, msg):
         self.process.sub_message_r(color_str(msg, constants.LOG_COLOR_LEVEL_3))
-
-    def read_image_and_update_metadata(self, img_path, metadata):
-        img = read_img(img_path)
-        if img is None:
-            raise ImageLoadError(img_path)
-        updated = metadata is None
-        if updated:
-            metadata = get_img_metadata(img)
-        else:
-            validate_image(img, *metadata)
-        return img, metadata, updated
 
     def check_running(self, cleanup_callback=None):
         if self.process.callback(constants.CALLBACK_CHECK_RUNNING,

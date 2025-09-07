@@ -117,6 +117,11 @@ def validate_image(img, expected_shape=None, expected_dtype=None):
         raise ShapeError(expected_shape, shape)
     if expected_dtype and dtype != expected_dtype:
         raise BitDepthError(expected_dtype, dtype)
+    return img
+
+
+def read_and_validate_img(filename, expected_shape=None, expected_dtype=None):
+    return validate_image(read_img(filename), expected_shape, expected_dtype)
 
 
 def save_plot(filename):

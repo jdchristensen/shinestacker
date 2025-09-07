@@ -5,7 +5,6 @@ from .. config.constants import constants
 from .base_stack_algo import BaseStackAlgo
 from .pyramid import PyramidStack
 from .pyramid_tiles import PyramidTilesStack
-from .utils import get_first_image_file
 
 
 class PyramidAutoStack(BaseStackAlgo):
@@ -21,7 +20,7 @@ class PyramidAutoStack(BaseStackAlgo):
                  min_tile_size=constants.DEFAULT_PY_MIN_TILE_SIZE,
                  min_n_tiled_layers=constants.DEFAULT_PY_MIN_N_TILED_LAYERS,
                  mode='auto'):
-        super().__init__("auto_pyramid", 2, float_type)
+        super().__init__("auto_pyramid", 1, float_type)
         self.min_size = min_size
         self.kernel_size = kernel_size
         self.gen_kernel = gen_kernel
@@ -47,9 +46,7 @@ class PyramidAutoStack(BaseStackAlgo):
         self.overhead = constants.PY_MEMORY_OVERHEAD
 
     def init(self, filenames):
-        first_img_file = get_first_image_file(filenames)
-        _img, metadata, _ = self.read_image_and_update_metadata(first_img_file, None)
-        self.shape, self.dtype = metadata
+        super().init(filenames)
         self.n_levels = int(np.log2(min(self.shape) / self.min_size))
         self.n_frames = len(filenames)
         memory_required_memory = self._estimate_memory_memory()
@@ -73,9 +70,9 @@ class PyramidAutoStack(BaseStackAlgo):
                 n_tiled_layers=optimal_params['n_tiled_layers'],
                 max_threads=self.num_threads
             )
-            self.print_message(f": using tile-based pyramid stacking "
-                               f"(tile_size: {optimal_params['tile_size']}, "
-                               f"n_tiled_layers: {optimal_params['n_tiled_layers']}), "
+            self.print_message(f": using tile-based pyramid stacking, "
+                               f"tile size: {optimal_params['tile_size']}, "
+                               f"n. tiled layers: {optimal_params['n_tiled_layers']}, "
                                f"{self.num_threads} cores.")
         self._implementation.init(filenames)
         self._implementation.set_do_step_callback(self.do_step_callback)

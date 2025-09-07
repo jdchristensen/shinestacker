@@ -2,7 +2,7 @@
 import numpy as np
 import cv2
 from .. config.constants import constants
-from .utils import read_img
+from .utils import read_and_validate_img
 from .base_stack_algo import BaseStackAlgo
 
 
@@ -11,7 +11,7 @@ class PyramidBase(BaseStackAlgo):
                  kernel_size=constants.DEFAULT_PY_KERNEL_SIZE,
                  gen_kernel=constants.DEFAULT_PY_GEN_KERNEL,
                  float_type=constants.DEFAULT_PY_FLOAT):
-        super().__init__(name, 2, float_type)
+        super().__init__(name, 1, float_type)
         self.min_size = min_size
         self.kernel_size = kernel_size
         self.pad_amount = (kernel_size - 1) // 2
@@ -30,7 +30,7 @@ class PyramidBase(BaseStackAlgo):
 
     def total_steps(self, n_frames):
         self.n_frames = n_frames
-        return self._steps_per_frame * n_frames + self.n_levels
+        return super().total_steps(n_frames) + self.n_levels
 
     def convolve(self, image):
         return cv2.filter2D(image, -1, self.gen_kernel, borderType=cv2.BORDER_REFLECT101)
@@ -122,21 +122,6 @@ class PyramidBase(BaseStackAlgo):
             fused += np.where(best_d[:, :, np.newaxis] == layer, img, 0)
         return (fused / 2).astype(images.dtype)
 
-    def focus_stack_validate(self, cleanup_callback=None):
-        metadata = None
-        for i, img_path in enumerate(self.filenames):
-            self.print_message(
-                f": validating file {self.image_str(i)}")
-            _img, metadata, updated = self.read_image_and_update_metadata(img_path, metadata)
-            if updated:
-                self.dtype = metadata[1]
-                self.num_pixel_values = constants.NUM_UINT8 \
-                    if self.dtype == np.uint8 else constants.NUM_UINT16
-                self.max_pixel_value = constants.MAX_UINT8 \
-                    if self.dtype == np.uint8 else constants.MAX_UINT16
-            self.after_step(i + 1)
-            self.check_running(cleanup_callback)
-
     def single_image_laplacian(self, img, levels):
         pyramid = [img.astype(self.float_type)]
         for _ in range(levels):
@@ -180,15 +165,16 @@ class PyramidStack(PyramidBase):
         return fused[::-1]
 
     def focus_stack(self):
-        n = len(self.filenames)
-        self.focus_stack_validate()
         all_laplacians = []
         for i, img_path in enumerate(self.filenames):
             self.print_message(
+                f": reading and validating {self.image_str(i)}")
+            img = read_and_validate_img(img_path, self.shape, self.dtype)
+            self.check_running()
+            self.print_message(
                 f": processing {self.image_str(i)}")
-            img = read_img(img_path)
             all_laplacians.append(self.process_single_image(img, self.n_levels))
-            self.after_step(i + n + 1)
+            self.after_step(i + 1)
             self.check_running()
         stacked_image = self.collapse(self.fuse_pyramids(all_laplacians))
         return stacked_image.astype(self.dtype)

@@ -5,13 +5,14 @@ This page reports the main releases only and the main changes therein.
 ## [v-.-.-] - 2025-09-07
 
 ## Fixed
+- fixed input folder widget in job configuration
 - better management of patological alignments
 
 ### Changed
 - improved automatic parameters for parallel alignment
+- improved pyramid performances by removing one input step
 - optimized ORB and SURF feature extraction with key points caching
 - improved configuration GUI using tabs and other minor GUI improvements
-- fixed input folder widget in job configuration
 - code clean up
 
 ---

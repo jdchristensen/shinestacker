@@ -10,7 +10,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 import numpy as np
 from .. config.constants import constants
 from .. core.exceptions import RunStopException
-from .utils import read_img
+from .utils import read_img, read_and_validate_img
 from .pyramid import PyramidBase
 
 
@@ -47,11 +47,11 @@ class PyramidTilesStack(PyramidBase):
         return n_steps + self.n_tiles
 
     def _process_single_image_wrapper(self, args):
-        img_path, img_index, _n = args
-        # self.print_message(f": processing file {img_path.split('/')[-1]}, {img_index + 1}/{n}")
-        img = read_img(img_path)
-        level_count = self.process_single_image(img, self.n_levels, img_index)
-        return img_index, level_count
+        img_path, idx, _n = args
+        img = read_and_validate_img(img_path, self.shape, self.dtype)
+        self.check_running(self.cleanup_temp_files)
+        level_count = self.process_single_image(img, self.n_levels, idx)
+        return idx, level_count
 
     def process_single_image(self, img, levels, img_index):
         laplacian = self.single_image_laplacian(img, levels)
@@ -160,10 +160,11 @@ class PyramidTilesStack(PyramidBase):
         gc.collect()
         return np.zeros((y_end - y, x_end - x, 3), dtype=self.float_type)
 
-    def fuse_pyramids(self, all_level_counts, num_images):
+    def fuse_pyramids(self, all_level_counts):
+        num_images = self.num_images()
         max_levels = max(all_level_counts)
         fused = []
-        count = self._steps_per_frame * self.n_frames
+        count = super().total_steps(num_images)
         for level in range(max_levels - 1, -1, -1):
             self.print_message(f': fusing pyramids, layer: {level + 1}')
             if level < self.n_tiled_layers:
@@ -201,12 +202,11 @@ class PyramidTilesStack(PyramidBase):
         return fused[::-1]
 
     def focus_stack(self):
-        n = len(self.filenames)
-        self.focus_stack_validate(self.cleanup_temp_files)
-        all_level_counts = [0] * n
+        all_level_counts = [0] * self.num_images()
         if self.num_threads > 1:
             self.print_message(f': starting parallel processing on {self.num_threads} cores')
-            args_list = [(file_path, i, n) for i, file_path in enumerate(self.filenames)]
+            args_list = [(file_path, i, self.num_images())
+                         for i, file_path in enumerate(self.filenames)]
             executor = None
             try:
                 executor = ThreadPoolExecutor(max_workers=self.num_threads)
@@ -227,7 +227,7 @@ class PyramidTilesStack(PyramidBase):
                     except Exception as e:
                         self.print_message(
                             f"Error processing image  {self.idx_tot_str(i)}: {str(e)}")
-                    self.after_step(completed_count + n + 1)
+                    self.after_step(completed_count)
                     self.check_running(lambda: None)
             except RunStopException:
                 self.print_message(": stopping image processing...")
@@ -247,11 +247,11 @@ class PyramidTilesStack(PyramidBase):
                 img = read_img(file_path)
                 level_count = self.process_single_image(img, self.n_levels, i)
                 all_level_counts[i] = level_count
-                self.after_step(i + n + 1)
+                self.after_step(i + 1)
                 self.check_running(lambda: None)
         try:
             self.check_running(lambda: None)
-            fused_pyramid = self.fuse_pyramids(all_level_counts, n)
+            fused_pyramid = self.fuse_pyramids(all_level_counts)
             stacked_image = self.collapse(fused_pyramid)
             return stacked_image.astype(self.dtype)
         except RunStopException:
