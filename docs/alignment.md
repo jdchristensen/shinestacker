@@ -127,3 +127,10 @@ give raise to an exception.
 | 0.2887   |  AKAZE   | BRISK      | NORM_HAMMING |
 | 0.4075   |  AKAZE   | SIFT       | KNN          |
 | 0.4397   |  SIFT    | SIFT       | KNN          |
+
+## References
+
+For a detailed review of the various image registration methods, see the publication below:
+*  [A Review of Keypoints’ Detection and Feature Description in Image Registration](https://onlinelibrary.wiley.com/doi/10.1155/2021/8509164), Scientific Programming 2021, 8509164, doi:10.1155/2021/8509164
+
+
