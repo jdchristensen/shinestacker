@@ -58,6 +58,7 @@ class FolderFileSelectionWidget(QWidget):
             # self.path_edit.setPlaceholderText("input files")
 
     def handle_browse(self):
+        self.path_edit.setText('')
         if self.selection_mode == 'folder':
             self.browse_folder()
         else:
@@ -80,6 +81,7 @@ class FolderFileSelectionWidget(QWidget):
                 self.selected_files = files
                 self.path_edit.setText(parent_dir)
             else:
+                self.selected_files = []
                 QMessageBox.warning(
                     self, "Invalid Selection",
                     "All files must be in the same directory."
@@ -90,6 +92,9 @@ class FolderFileSelectionWidget(QWidget):
 
     def get_selected_files(self):
         return self.selected_files
+
+    def num_selected_files(self):
+        return len(self.selected_files)
 
     def get_selected_filenames(self):
         return [os.path.basename(file_path) for file_path in self.selected_files]

@@ -200,7 +200,7 @@ class NewProjectDialog(BaseFormDialog):
             return count
         if self.input_widget.get_selection_mode() == 'files' and \
                 self.input_widget.get_selected_files():
-            self.n_image_files = len(self.input_widget.get_selected_files())
+            self.n_image_files = self.input_widget.num_selected_files()
             self.selected_filenames = self.input_widget.get_selected_filenames()
         else:
             self.n_image_files = count_image_files(self.input_widget.get_path())

@@ -208,20 +208,11 @@ class JobConfigurator(DefaultActionConfigurator):
             input_filepaths = input_filepaths.split(constants.PATH_SEPARATOR)
         self.working_path_label = QLabel(working_path or "Not set")
         self.input_path_label = QLabel(input_path or "Not set")
-        has_existing_data = working_path or input_path or input_filepaths
+        self.input_widget.path_edit.setText('')
         if input_filepaths:
             self.input_widget.files_mode_radio.setChecked(True)
-            self.input_widget.selected_files = input_filepaths
-            if input_filepaths:
-                parent_dir = os.path.dirname(input_filepaths[0])
-                self.input_widget.path_edit.setText(parent_dir)
-        elif input_path and working_path:
-            self.input_widget.folder_mode_radio.setChecked(True)
-            input_fullpath = os.path.join(working_path, input_path)
-            self.input_widget.path_edit.setText(input_fullpath)
-        elif input_path:
-            self.input_widget.folder_mode_radio.setChecked(True)
-            self.input_widget.path_edit.setText(input_path)
+        else:
+            self.input_widget.folder_mode_radio.setChecked(False)
         self.input_widget.text_changed_connect(self.update_paths_and_frames)
         self.input_widget.folder_mode_radio.toggled.connect(self.update_paths_and_frames)
         self.input_widget.files_mode_radio.toggled.connect(self.update_paths_and_frames)
@@ -231,29 +222,27 @@ class JobConfigurator(DefaultActionConfigurator):
         self.add_bold_label("Derived Paths:")
         self.add_labelled_row("Working path: ", self.working_path_label)
         self.add_labelled_row("Input path:", self.input_path_label)
-        if not has_existing_data:
-            self.update_paths_and_frames()
-        else:
-            self.update_frames_count()
+        self.set_paths_and_frames(working_path, input_path, input_filepaths)
 
     def update_frames_count(self):
         if self.input_widget.get_selection_mode() == 'files':
-            count = len(self.input_widget.get_selected_files())
+            count = self.input_widget.num_selected_files()
         else:
             count = self.count_image_files(self.input_widget.get_path())
         self.frames_label.setText(str(count))
 
-    def update_paths_and_frames(self):
+    def set_paths_and_frames(self, working_path, input_path, input_filepaths):
+        self.input_path_label.setText(input_path or "Not set")
+        self.working_path_label.setText(working_path or "Not set")
+        self.frames_label.setText(str(len(input_filepaths)))
+
+    def update_paths_and_frames(self, ):
+        input_fullpath = self.input_widget.get_path()
+        input_path = os.path.basename(os.path.normpath(input_fullpath)) if input_fullpath else ""
+        working_path = os.path.dirname(input_fullpath) if input_fullpath else ""
+        self.input_path_label.setText(input_path or "Not set")
+        self.working_path_label.setText(working_path or "Not set")
         self.update_frames_count()
-        selection_mode = self.input_widget.get_selection_mode()
-        selected_files = self.input_widget.get_selected_files()
-        input_path = self.input_widget.get_path()
-        if selection_mode == 'files' and selected_files:
-            input_path = os.path.dirname(selected_files[0])
-        input_path_value = os.path.basename(os.path.normpath(input_path)) if input_path else ""
-        working_path_value = os.path.dirname(input_path) if input_path else ""
-        self.input_path_label.setText(input_path_value or "Not set")
-        self.working_path_label.setText(working_path_value or "Not set")
 
     def count_image_files(self, path):
         if not path or not os.path.isdir(path):
@@ -269,18 +258,16 @@ class JobConfigurator(DefaultActionConfigurator):
             return False
         selection_mode = self.input_widget.get_selection_mode()
         selected_files = self.input_widget.get_selected_files()
-        input_path = self.input_widget.get_path()
         if selection_mode == 'files' and selected_files:
+            input_full_path = os.path.dirname(selected_files[0])
             params['input_filepaths'] = self.input_widget.get_selected_filenames()
-            params['input_path'] = os.path.dirname(selected_files[0])
         else:
+            input_full_path = self.input_widget.get_path()
             params['input_filepaths'] = []
-            params['input_path'] = input_path
-        if 'working_path' not in params or not params['working_path']:
-            if params['input_path']:
-                params['working_path'] = os.path.dirname(params['input_path'])
-            else:
-                params['working_path'] = ''
+        input_path = os.path.basename(os.path.normpath(input_full_path)) if input_full_path else ""
+        working_path = os.path.dirname(input_full_path) if input_full_path else ""
+        params['input_path'] = input_path
+        params['working_path'] = working_path
         return True
 
 

@@ -11,7 +11,8 @@ This page reports the main releases only and the main changes therein.
 - improved automatic parameters for parallel alignment
 - optimized ORB and SURF feature extraction with key points caching
 - improved configuration GUI using tabs and other minor GUI improvements
-- minor fixes and clean up
+- fixed input folder widget in job configuration
+- code clean up
 
 ---
 
