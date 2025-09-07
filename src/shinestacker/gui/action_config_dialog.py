@@ -713,6 +713,7 @@ class AlignFramesConfigurator(SubsampleActionConfigurator):
             layout, 'threshold', FIELD_FLOAT, 'Threshold', required=False,
             default=constants.DEFAULT_ALIGN_THRESHOLD,
             min_val=0, max_val=1, step=0.05)
+        self.add_subsample_fields(add_to_layout=layout)
 
     def create_transform_tab(self, layout):
         self.add_bold_label_to_layout(layout, "Transform:")
@@ -784,7 +785,6 @@ class AlignFramesConfigurator(SubsampleActionConfigurator):
             layout, 'border_blur', FIELD_FLOAT, 'Border blur', required=False,
             default=constants.DEFAULT_BORDER_BLUR,
             min_val=0, max_val=1000, step=1)
-        self.add_subsample_fields(add_to_layout=layout)
 
     def create_miscellanea_tab(self, layout):
         self.add_bold_label_to_layout(layout, "Miscellanea:")
