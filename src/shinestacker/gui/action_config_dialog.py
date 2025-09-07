@@ -3,7 +3,7 @@
 import os
 import traceback
 from PySide6.QtWidgets import (QWidget, QPushButton, QHBoxLayout, QLabel, QScrollArea, QSizePolicy,
-                               QMessageBox, QStackedWidget, QFormLayout, QDialog)
+                               QMessageBox, QStackedWidget, QFormLayout, QDialog, QTabWidget)
 from PySide6.QtCore import Qt, QTimer
 from .. config.constants import constants
 from .. algorithms.align import validate_align_config
@@ -156,6 +156,31 @@ class NoNameActionConfigurator(ActionConfigurator):
     def add_labelled_row(self, label, widget):
         self.add_row(self.labelled_widget(label, widget))
 
+    def create_tab_widget(self, layout):
+        tab_widget = QTabWidget()
+        layout.addRow(tab_widget)
+        return tab_widget
+
+    def add_tab(self, tab_widget, title):
+        tab = QWidget()
+        tab_layout = QFormLayout()
+        tab_layout.setFieldGrowthPolicy(QFormLayout.AllNonFixedFieldsGrow)
+        tab_layout.setRowWrapPolicy(QFormLayout.DontWrapRows)
+        tab_layout.setFormAlignment(Qt.AlignLeft | Qt.AlignTop)
+        tab_layout.setLabelAlignment(Qt.AlignLeft)
+        tab.setLayout(tab_layout)
+        tab_widget.addTab(tab, title)
+        return tab_layout
+
+    def add_field_to_layout(self, layout, tag, field_type, label, required=False, **kwargs):
+        return self.add_field(tag, field_type, label, required, add_to_layout=layout, **kwargs)
+
+    def add_bold_label_to_layout(self, layout, label):
+        label_widget = QLabel(label)
+        label_widget.setStyleSheet("font-weight: bold")
+        layout.addRow(label_widget)
+        return label_widget
+
 
 class DefaultActionConfigurator(NoNameActionConfigurator):
     def create_form(self, layout, action, tag='Action'):
@@ -307,38 +332,48 @@ class FocusStackBaseConfigurator(DefaultActionConfigurator):
     FLOAT_OPTIONS = ['float 32 bits', 'float 64 bits']
     MODE_OPTIONS = ['Auto', 'All in memory', 'Tiled I/O buffered']
 
+    def __init__(self, expert, current_wd):
+        super().__init__(expert, current_wd)
+        self.tab_widget = None
+        self.general_tab_layout = None
+        self.algorithm_tab_layout = None
+
     def create_form(self, layout, action):
         super().create_form(layout, action)
+        self.tab_widget = self.create_tab_widget(layout)
+        self.general_tab_layout = self.add_tab(self.tab_widget, "General Parameters")
+        self.create_general_tab(self.general_tab_layout)
+        self.algorithm_tab_layout = self.add_tab(self.tab_widget, "Stacking Algorithm")
+        self.create_algorithm_tab(self.algorithm_tab_layout)
+
+    def create_general_tab(self, layout):
         if self.expert:
-            self.add_field(
-                'working_path', FIELD_ABS_PATH, 'Working path', required=False)
-            self.add_field(
-                'input_path', FIELD_REL_PATH, 'Input path', required=False,
+            self.add_field_to_layout(
+                layout, 'working_path', FIELD_ABS_PATH, 'Working path', required=False)
+            self.add_field_to_layout(
+                layout, 'input_path', FIELD_REL_PATH, 'Input path', required=False,
                 placeholder='relative to working path')
-            self.add_field(
-                'output_path', FIELD_REL_PATH, 'Output path', required=False,
+            self.add_field_to_layout(
+                layout, 'output_path', FIELD_REL_PATH, 'Output path', required=False,
                 placeholder='relative to working path')
-        self.add_field(
-            'scratch_output_dir', FIELD_BOOL, 'Scratch output dir.',
+        self.add_field_to_layout(
+            layout, 'scratch_output_dir', FIELD_BOOL, 'Scratch output dir.',
             required=False, default=True)
 
-    def common_fields(self, layout):
-        self.add_field(
-            'denoise_amount', FIELD_FLOAT, 'Denoise', required=False,
-            default=0, min_val=0, max_val=10)
-        self.add_bold_label("Stacking algorithm:")
-        combo = self.add_field(
-            'stacker', FIELD_COMBO, 'Stacking algorithm', required=True,
+    def create_algorithm_tab(self, layout):
+        self.add_bold_label_to_layout(layout, "Stacking algorithm:")
+        combo = self.add_field_to_layout(
+            layout, 'stacker', FIELD_COMBO, 'Stacking algorithm', required=True,
             options=constants.STACK_ALGO_OPTIONS,
             default=constants.STACK_ALGO_DEFAULT)
         q_pyramid, q_depthmap = QWidget(), QWidget()
         for q in [q_pyramid, q_depthmap]:
-            layout = QFormLayout()
-            layout.setFieldGrowthPolicy(QFormLayout.AllNonFixedFieldsGrow)
-            layout.setRowWrapPolicy(QFormLayout.DontWrapRows)
-            layout.setFormAlignment(Qt.AlignLeft | Qt.AlignTop)
-            layout.setLabelAlignment(Qt.AlignLeft)
-            q.setLayout(layout)
+            tab_layout = QFormLayout()
+            tab_layout.setFieldGrowthPolicy(QFormLayout.AllNonFixedFieldsGrow)
+            tab_layout.setRowWrapPolicy(QFormLayout.DontWrapRows)
+            tab_layout.setFormAlignment(Qt.AlignLeft | Qt.AlignTop)
+            tab_layout.setLabelAlignment(Qt.AlignLeft)
+            q.setLayout(tab_layout)
         stacked = QStackedWidget()
         stacked.addWidget(q_pyramid)
         stacked.addWidget(q_depthmap)
@@ -349,52 +384,45 @@ class FocusStackBaseConfigurator(DefaultActionConfigurator):
                 stacked.setCurrentWidget(q_pyramid)
             elif text == constants.STACK_ALGO_DEPTH_MAP:
                 stacked.setCurrentWidget(q_depthmap)
+
         change()
         if self.expert:
-            self.add_field(
-                'pyramid_min_size', FIELD_INT, 'Minimum size (px)',
-                required=False, add_to_layout=q_pyramid.layout(),
-                default=constants.DEFAULT_PY_MIN_SIZE, min_val=2, max_val=256)
-            self.add_field(
-                'pyramid_kernel_size', FIELD_INT, 'Kernel size (px)',
-                required=False, add_to_layout=q_pyramid.layout(),
-                default=constants.DEFAULT_PY_KERNEL_SIZE, min_val=3, max_val=21)
-            self.add_field(
-                'pyramid_gen_kernel', FIELD_FLOAT, 'Gen. kernel',
-                required=False, add_to_layout=q_pyramid.layout(),
-                default=constants.DEFAULT_PY_GEN_KERNEL,
+            self.add_field_to_layout(
+                q_pyramid.layout(), 'pyramid_min_size', FIELD_INT, 'Minimum size (px)',
+                required=False, default=constants.DEFAULT_PY_MIN_SIZE, min_val=2, max_val=256)
+            self.add_field_to_layout(
+                q_pyramid.layout(), 'pyramid_kernel_size', FIELD_INT, 'Kernel size (px)',
+                required=False, default=constants.DEFAULT_PY_KERNEL_SIZE, min_val=3, max_val=21)
+            self.add_field_to_layout(
+                q_pyramid.layout(), 'pyramid_gen_kernel', FIELD_FLOAT, 'Gen. kernel',
+                required=False, default=constants.DEFAULT_PY_GEN_KERNEL,
                 min_val=0.0, max_val=2.0)
-            self.add_field(
-                'pyramid_float_type', FIELD_COMBO, 'Precision', required=False,
-                add_to_layout=q_pyramid.layout(),
+            self.add_field_to_layout(
+                q_pyramid.layout(), 'pyramid_float_type', FIELD_COMBO, 'Precision', required=False,
                 options=self.FLOAT_OPTIONS, values=constants.VALID_FLOATS,
                 default=dict(zip(constants.VALID_FLOATS,
                                  self.FLOAT_OPTIONS))[constants.DEFAULT_PY_FLOAT])
-            mode = self.add_field(
-                'pyramid_mode', FIELD_COMBO, 'Mode',
-                required=False, add_to_layout=q_pyramid.layout(),
-                options=self.MODE_OPTIONS, values=constants.PY_VALID_MODES,
+            mode = self.add_field_to_layout(
+                q_pyramid.layout(), 'pyramid_mode', FIELD_COMBO, 'Mode',
+                required=False, options=self.MODE_OPTIONS, values=constants.PY_VALID_MODES,
                 default=dict(zip(constants.PY_VALID_MODES,
                                  self.MODE_OPTIONS))[constants.DEFAULT_PY_MODE])
-            memory_limit = self.add_field(
-                'pyramid_memory_limit', FIELD_FLOAT, 'Memory limit (approx., GBytes)',
-                required=False, add_to_layout=q_pyramid.layout(),
-                default=constants.DEFAULT_PY_MEMORY_LIMIT_GB,
+            memory_limit = self.add_field_to_layout(
+                q_pyramid.layout(), 'pyramid_memory_limit', FIELD_FLOAT,
+                'Memory limit (approx., GBytes)',
+                required=False, default=constants.DEFAULT_PY_MEMORY_LIMIT_GB,
                 min_val=1.0, max_val=64.0)
-            max_threads = self.add_field(
-                'pyramid_max_threads', FIELD_INT, 'Max num. of cores',
-                required=False, add_to_layout=q_pyramid.layout(),
-                default=constants.DEFAULT_PY_MAX_THREADS,
+            max_threads = self.add_field_to_layout(
+                q_pyramid.layout(), 'pyramid_max_threads', FIELD_INT, 'Max num. of cores',
+                required=False, default=constants.DEFAULT_PY_MAX_THREADS,
                 min_val=1, max_val=64)
-            tile_size = self.add_field(
-                'pyramid_tile_size', FIELD_INT, 'Tile size (px)',
-                required=False, add_to_layout=q_pyramid.layout(),
-                default=constants.DEFAULT_PY_TILE_SIZE,
+            tile_size = self.add_field_to_layout(
+                q_pyramid.layout(), 'pyramid_tile_size', FIELD_INT, 'Tile size (px)',
+                required=False, default=constants.DEFAULT_PY_TILE_SIZE,
                 min_val=128, max_val=2048)
-            n_tiled_layers = self.add_field(
-                'pyramid_n_tiled_layers', FIELD_INT, 'Num. tiled layers',
-                required=False, add_to_layout=q_pyramid.layout(),
-                default=constants.DEFAULT_PY_N_TILED_LAYERS,
+            n_tiled_layers = self.add_field_to_layout(
+                q_pyramid.layout(), 'pyramid_n_tiled_layers', FIELD_INT, 'Num. tiled layers',
+                required=False, default=constants.DEFAULT_PY_N_TILED_LAYERS,
                 min_val=0, max_val=6)
 
             def change_mode():
@@ -407,47 +435,41 @@ class FocusStackBaseConfigurator(DefaultActionConfigurator):
 
             mode.currentIndexChanged.connect(change_mode)
             change_mode()
-        self.add_field(
-            'depthmap_energy', FIELD_COMBO, 'Energy', required=False,
-            add_to_layout=q_depthmap.layout(),
+
+        self.add_field_to_layout(
+            q_depthmap.layout(), 'depthmap_energy', FIELD_COMBO, 'Energy', required=False,
             options=self.ENERGY_OPTIONS, values=constants.VALID_DM_ENERGY,
             default=dict(zip(constants.VALID_DM_ENERGY,
                              self.ENERGY_OPTIONS))[constants.DEFAULT_DM_ENERGY])
-        self.add_field(
-            'map_type', FIELD_COMBO, 'Map type', required=False,
-            add_to_layout=q_depthmap.layout(),
+        self.add_field_to_layout(
+            q_depthmap.layout(), 'map_type', FIELD_COMBO, 'Map type', required=False,
             options=self.MAP_TYPE_OPTIONS, values=constants.VALID_DM_MAP,
             default=dict(zip(constants.VALID_DM_MAP,
                              self.MAP_TYPE_OPTIONS))[constants.DEFAULT_DM_MAP])
         if self.expert:
-            self.add_field(
-                'depthmap_kernel_size', FIELD_INT, 'Kernel size (px)',
-                required=False, add_to_layout=q_depthmap.layout(),
-                default=constants.DEFAULT_DM_KERNEL_SIZE, min_val=3, max_val=21)
-            self.add_field(
-                'depthmap_blur_size', FIELD_INT, 'Blurl size (px)',
-                required=False, add_to_layout=q_depthmap.layout(),
-                default=constants.DEFAULT_DM_BLUR_SIZE, min_val=1, max_val=21)
-            self.add_field(
-                'depthmap_smooth_size', FIELD_INT, 'Smooth size (px)',
-                required=False, add_to_layout=q_depthmap.layout(),
-                default=constants.DEFAULT_DM_SMOOTH_SIZE, min_val=0, max_val=256)
-            self.add_field(
-                'depthmap_temperature', FIELD_FLOAT, 'Temperature',
-                required=False, add_to_layout=q_depthmap.layout(),
-                default=constants.DEFAULT_DM_TEMPERATURE,
+            self.add_field_to_layout(
+                q_depthmap.layout(), 'depthmap_kernel_size', FIELD_INT, 'Kernel size (px)',
+                required=False, default=constants.DEFAULT_DM_KERNEL_SIZE, min_val=3, max_val=21)
+            self.add_field_to_layout(
+                q_depthmap.layout(), 'depthmap_blur_size', FIELD_INT, 'Blurl size (px)',
+                required=False, default=constants.DEFAULT_DM_BLUR_SIZE, min_val=1, max_val=21)
+            self.add_field_to_layout(
+                q_depthmap.layout(), 'depthmap_smooth_size', FIELD_INT, 'Smooth size (px)',
+                required=False, default=constants.DEFAULT_DM_SMOOTH_SIZE, min_val=0, max_val=256)
+            self.add_field_to_layout(
+                q_depthmap.layout(), 'depthmap_temperature', FIELD_FLOAT, 'Temperature',
+                required=False, default=constants.DEFAULT_DM_TEMPERATURE,
                 min_val=0, max_val=1, step=0.05)
-            self.add_field(
-                'depthmap_levels', FIELD_INT, 'Levels', required=False,
-                add_to_layout=q_depthmap.layout(),
+            self.add_field_to_layout(
+                q_depthmap.layout(), 'depthmap_levels', FIELD_INT, 'Levels', required=False,
                 default=constants.DEFAULT_DM_LEVELS, min_val=2, max_val=6)
-            self.add_field(
-                'depthmap_float_type', FIELD_COMBO, 'Precision', required=False,
-                add_to_layout=q_depthmap.layout(), options=self.FLOAT_OPTIONS,
-                values=constants.VALID_FLOATS,
+            self.add_field_to_layout(
+                q_depthmap.layout(), 'depthmap_float_type', FIELD_COMBO,
+                'Precision', required=False,
+                options=self.FLOAT_OPTIONS, values=constants.VALID_FLOATS,
                 default=dict(zip(constants.VALID_FLOATS,
                                  self.FLOAT_OPTIONS))[constants.DEFAULT_DM_FLOAT])
-        self.add_row(stacked)
+        layout.addRow(stacked)
         combo.currentIndexChanged.connect(change)
 
 
@@ -455,32 +477,32 @@ class FocusStackConfigurator(FocusStackBaseConfigurator):
     def create_form(self, layout, action):
         super().create_form(layout, action)
         if self.expert:
-            self.add_field(
-                'exif_path', FIELD_REL_PATH, 'Exif data path', required=False,
+            self.add_field_to_layout(
+                self.general_tab_layout, 'exif_path', FIELD_REL_PATH,
+                'Exif data path', required=False,
                 placeholder='relative to working path')
-            self.add_field(
-                'prefix', FIELD_TEXT, 'Ouptut filename prefix', required=False,
+            self.add_field_to_layout(
+                self.general_tab_layout, 'prefix', FIELD_TEXT,
+                'Output filename prefix', required=False,
                 default=constants.DEFAULT_STACK_PREFIX,
                 placeholder=constants.DEFAULT_STACK_PREFIX)
-        self.add_field(
-            'plot_stack', FIELD_BOOL, 'Plot stack', required=False,
+        self.add_field_to_layout(
+            self.general_tab_layout, 'plot_stack', FIELD_BOOL, 'Plot stack', required=False,
             default=constants.DEFAULT_PLOT_STACK)
-        super().common_fields(layout)
 
 
 class FocusStackBunchConfigurator(FocusStackBaseConfigurator):
     def create_form(self, layout, action):
         super().create_form(layout, action)
-        self.add_field(
-            'frames', FIELD_INT, 'Frames', required=False,
+        self.add_field_to_layout(
+            self.general_tab_layout, 'frames', FIELD_INT, 'Frames', required=False,
             default=constants.DEFAULT_FRAMES, min_val=1, max_val=100)
-        self.add_field(
-            'overlap', FIELD_INT, 'Overlapping frames', required=False,
+        self.add_field_to_layout(
+            self.general_tab_layout, 'overlap', FIELD_INT, 'Overlapping frames', required=False,
             default=constants.DEFAULT_OVERLAP, min_val=0, max_val=100)
-        self.add_field(
-            'plot_stack', FIELD_BOOL, 'Plot stack', required=False,
+        self.add_field_to_layout(
+            self.general_tab_layout, 'plot_stack', FIELD_BOOL, 'Plot stack', required=False,
             default=constants.DEFAULT_PLOT_STACK_BUNCH)
-        super().common_fields(layout)
 
 
 class MultiLayerConfigurator(DefaultActionConfigurator):
@@ -569,18 +591,21 @@ class SubsampleActionConfigurator(DefaultActionConfigurator):
         self.subsample_field = None
         self.fast_subsampling_field = None
 
-    def add_subsample_fields(self):
+    def add_subsample_fields(self, add_to_layout=None):
+        if add_to_layout is None:
+            add_to_layout = self.builder.main_layout
         self.subsample_field = self.add_field(
             'subsample', FIELD_COMBO, 'Subsample', required=False,
             options=constants.FIELD_SUBSAMPLE_OPTIONS,
             values=constants.FIELD_SUBSAMPLE_VALUES,
-            default=constants.FIELD_SUBSAMPLE_DEFAULT)
+            default=constants.FIELD_SUBSAMPLE_DEFAULT,
+            add_to_layout=add_to_layout)
         self.fast_subsampling_field = self.add_field(
             'fast_subsampling', FIELD_BOOL, 'Fast subsampling', required=False,
-            default=constants.DEFAULT_ALIGN_FAST_SUBSAMPLING)
+            default=constants.DEFAULT_ALIGN_FAST_SUBSAMPLING,
+            add_to_layout=add_to_layout)
 
         self.subsample_field.currentTextChanged.connect(self.change_subsample)
-
         self.change_subsample()
 
     def change_subsample(self):
@@ -602,13 +627,14 @@ class AlignFramesConfigurator(SubsampleActionConfigurator):
         self.detector_field = None
         self.descriptor_field = None
         self.matching_method_field = None
+        self.tab_widget = None
+        self.current_tab_layout = None
 
     def show_info(self, message, timeout=3000):
         self.info_label.setText(message)
-        self.info_label.setVisible(True)
         timer = QTimer(self.info_label)
         timer.setSingleShot(True)
-        timer.timeout.connect(self.info_label.hide)
+        timer.timeout.connect(lambda: self.info_label.setText(''))
         timer.start(timeout)
 
     def change_match_config(self):
@@ -643,142 +669,157 @@ class AlignFramesConfigurator(SubsampleActionConfigurator):
         self.detector_field = None
         self.descriptor_field = None
         self.matching_method_field = None
+        self.tab_widget = self.create_tab_widget(layout)
         if self.expert:
-            self.add_bold_label("Feature identification:")
-            self.info_label = QLabel()
-            self.info_label.setStyleSheet("color: orange; font-style: italic;")
-            self.info_label.setVisible(False)
-            layout.addRow(self.info_label)
-            self.detector_field = self.add_field(
-                'detector', FIELD_COMBO, 'Detector', required=False,
-                options=constants.VALID_DETECTORS, default=constants.DEFAULT_DETECTOR)
-            self.descriptor_field = self.add_field(
-                'descriptor', FIELD_COMBO, 'Descriptor', required=False,
-                options=constants.VALID_DESCRIPTORS, default=constants.DEFAULT_DESCRIPTOR)
-            self.add_bold_label("Feature matching:")
-            self.matching_method_field = self.add_field(
-                'match_method', FIELD_COMBO, 'Match method', required=False,
-                options=self.MATCHING_METHOD_OPTIONS, values=constants.VALID_MATCHING_METHODS,
-                default=constants.DEFAULT_MATCHING_METHOD)
-            self.detector_field.setToolTip(
-                "SIFT: Requires SIFT descriptor and K-NN matching\n"
-                "ORB/AKAZE: Work best with Hamming distance"
-            )
-            self.descriptor_field.setToolTip(
-                "SIFT: Requires K-NN matching\n"
-                "ORB/AKAZE: Require Hamming distance with ORB/AKAZE detectors"
-            )
-            self.matching_method_field.setToolTip(
-                "Automatically selected based on detector/descriptor combination"
-            )
-            self.detector_field.currentIndexChanged.connect(self.change_match_config)
-            self.descriptor_field.currentIndexChanged.connect(self.change_match_config)
-            self.matching_method_field.currentIndexChanged.connect(self.change_match_config)
-            self.add_field(
-                'flann_idx_kdtree', FIELD_INT, 'Flann idx kdtree', required=False,
-                default=constants.DEFAULT_FLANN_IDX_KDTREE,
-                min_val=0, max_val=10)
-            self.add_field(
-                'flann_trees', FIELD_INT, 'Flann trees', required=False,
-                default=constants.DEFAULT_FLANN_TREES,
-                min_val=0, max_val=10)
-            self.add_field(
-                'flann_checks', FIELD_INT, 'Flann checks', required=False,
-                default=constants.DEFAULT_FLANN_CHECKS,
-                min_val=0, max_val=1000)
-            self.add_field(
-                'threshold', FIELD_FLOAT, 'Threshold', required=False,
-                default=constants.DEFAULT_ALIGN_THRESHOLD,
-                min_val=0, max_val=1, step=0.05)
-            self.add_bold_label("Transform:")
-            transform = self.add_field(
-                'transform', FIELD_COMBO, 'Transform', required=False,
-                options=self.TRANSFORM_OPTIONS, values=constants.VALID_TRANSFORMS,
-                default=constants.DEFAULT_TRANSFORM)
-            method = self.add_field(
-                'align_method', FIELD_COMBO, 'Align method', required=False,
-                options=self.METHOD_OPTIONS, values=constants.VALID_ALIGN_METHODS,
-                default=constants.DEFAULT_ALIGN_METHOD)
-            rans_threshold = self.add_field(
-                'rans_threshold', FIELD_FLOAT, 'RANSAC threshold (px)', required=False,
-                default=constants.DEFAULT_RANS_THRESHOLD, min_val=0, max_val=20, step=0.1)
-            self.add_field(
-                'min_good_matches', FIELD_INT, "Min. good matches", required=False,
-                default=constants.DEFAULT_ALIGN_MIN_GOOD_MATCHES, min_val=0, max_val=500)
+            feature_layout = self.add_tab(self.tab_widget, "Feature extraction")
+            self.create_feature_tab(feature_layout)
+            transform_layout = self.add_tab(self.tab_widget, "Transform")
+            self.create_transform_tab(transform_layout)
+            border_layout = self.add_tab(self.tab_widget, "Border")
+            self.create_border_tab(border_layout)
+        misc_layout = self.add_tab(self.tab_widget, "Miscellanea")
+        self.create_miscellanea_tab(misc_layout)
 
-            def change_method():
-                text = method.currentText()
-                if text == self.METHOD_OPTIONS[0]:
-                    rans_threshold.setEnabled(True)
-                elif text == self.METHOD_OPTIONS[1]:
-                    rans_threshold.setEnabled(False)
+    def create_feature_tab(self, layout):
+        self.add_bold_label_to_layout(layout, "Feature identification:")
+        self.detector_field = self.add_field_to_layout(
+            layout, 'detector', FIELD_COMBO, 'Detector', required=False,
+            options=constants.VALID_DETECTORS, default=constants.DEFAULT_DETECTOR)
+        self.descriptor_field = self.add_field_to_layout(
+            layout, 'descriptor', FIELD_COMBO, 'Descriptor', required=False,
+            options=constants.VALID_DESCRIPTORS, default=constants.DEFAULT_DESCRIPTOR)
+        self.detector_field.setToolTip(
+            "SIFT: Requires SIFT descriptor and K-NN matching\n"
+            "ORB/AKAZE: Work best with Hamming distance"
+        )
+        self.descriptor_field.setToolTip(
+            "SIFT: Requires K-NN matching\n"
+            "ORB/AKAZE: Require Hamming distance with ORB/AKAZE detectors"
+        )
+        self.detector_field.currentIndexChanged.connect(self.change_match_config)
+        self.descriptor_field.currentIndexChanged.connect(self.change_match_config)
+        self.info_label = QLabel()
+        self.info_label.setStyleSheet("color: orange; font-style: italic;")
+        layout.addRow(self.info_label)
+        self.add_bold_label_to_layout(layout, "Feature matching:")
+        self.matching_method_field = self.add_field_to_layout(
+            layout, 'match_method', FIELD_COMBO, 'Match method', required=False,
+            options=self.MATCHING_METHOD_OPTIONS, values=constants.VALID_MATCHING_METHODS,
+            default=constants.DEFAULT_MATCHING_METHOD)
+        self.matching_method_field.setToolTip(
+            "Automatically selected based on detector/descriptor combination"
+        )
+        self.matching_method_field.currentIndexChanged.connect(self.change_match_config)
+        self.add_field_to_layout(
+            layout, 'flann_idx_kdtree', FIELD_INT, 'Flann idx kdtree', required=False,
+            default=constants.DEFAULT_FLANN_IDX_KDTREE,
+            min_val=0, max_val=10)
+        self.add_field_to_layout(
+            layout, 'flann_trees', FIELD_INT, 'Flann trees', required=False,
+            default=constants.DEFAULT_FLANN_TREES,
+            min_val=0, max_val=10)
+        self.add_field_to_layout(
+            layout, 'flann_checks', FIELD_INT, 'Flann checks', required=False,
+            default=constants.DEFAULT_FLANN_CHECKS,
+            min_val=0, max_val=1000)
+        self.add_field_to_layout(
+            layout, 'threshold', FIELD_FLOAT, 'Threshold', required=False,
+            default=constants.DEFAULT_ALIGN_THRESHOLD,
+            min_val=0, max_val=1, step=0.05)
 
-            method.currentIndexChanged.connect(change_method)
-            change_method()
-            self.add_field(
-                'align_confidence', FIELD_FLOAT, 'Confidence (%)',
-                required=False, decimals=1,
-                default=constants.DEFAULT_ALIGN_CONFIDENCE,
-                min_val=70.0, max_val=100.0, step=0.1)
+    def create_transform_tab(self, layout):
+        self.add_bold_label_to_layout(layout, "Transform:")
+        transform = self.add_field_to_layout(
+            layout, 'transform', FIELD_COMBO, 'Transform', required=False,
+            options=self.TRANSFORM_OPTIONS, values=constants.VALID_TRANSFORMS,
+            default=constants.DEFAULT_TRANSFORM)
+        method = self.add_field_to_layout(
+            layout, 'align_method', FIELD_COMBO, 'Align method', required=False,
+            options=self.METHOD_OPTIONS, values=constants.VALID_ALIGN_METHODS,
+            default=constants.DEFAULT_ALIGN_METHOD)
+        rans_threshold = self.add_field_to_layout(
+            layout, 'rans_threshold', FIELD_FLOAT, 'RANSAC threshold (px)', required=False,
+            default=constants.DEFAULT_RANS_THRESHOLD, min_val=0, max_val=20, step=0.1)
+        self.add_field_to_layout(
+            layout, 'min_good_matches', FIELD_INT, "Min. good matches", required=False,
+            default=constants.DEFAULT_ALIGN_MIN_GOOD_MATCHES, min_val=0, max_val=500)
 
-            refine_iters = self.add_field(
-                'refine_iters', FIELD_INT, 'Refinement iterations (Rigid)', required=False,
-                default=constants.DEFAULT_REFINE_ITERS, min_val=0, max_val=1000)
-            max_iters = self.add_field(
-                'max_iters', FIELD_INT, 'Max. iterations (Homography)', required=False,
-                default=constants.DEFAULT_ALIGN_MAX_ITERS, min_val=0, max_val=5000)
+        def change_method():
+            text = method.currentText()
+            if text == self.METHOD_OPTIONS[0]:
+                rans_threshold.setEnabled(True)
+            elif text == self.METHOD_OPTIONS[1]:
+                rans_threshold.setEnabled(False)
 
-            def change_transform():
-                text = transform.currentText()
-                if text == self.TRANSFORM_OPTIONS[0]:
-                    refine_iters.setEnabled(True)
-                    max_iters.setEnabled(False)
-                elif text == self.TRANSFORM_OPTIONS[1]:
-                    refine_iters.setEnabled(False)
-                    max_iters.setEnabled(True)
+        method.currentIndexChanged.connect(change_method)
+        change_method()
+        self.add_field_to_layout(
+            layout, 'align_confidence', FIELD_FLOAT, 'Confidence (%)',
+            required=False, decimals=1,
+            default=constants.DEFAULT_ALIGN_CONFIDENCE,
+            min_val=70.0, max_val=100.0, step=0.1)
+        refine_iters = self.add_field_to_layout(
+            layout, 'refine_iters', FIELD_INT, 'Refinement iterations (Rigid)', required=False,
+            default=constants.DEFAULT_REFINE_ITERS, min_val=0, max_val=1000)
+        max_iters = self.add_field_to_layout(
+            layout, 'max_iters', FIELD_INT, 'Max. iterations (Homography)', required=False,
+            default=constants.DEFAULT_ALIGN_MAX_ITERS, min_val=0, max_val=5000)
 
-            transform.currentIndexChanged.connect(change_transform)
-            change_transform()
-            self.add_field(
-                'abort_abnormal', FIELD_BOOL, 'Abort on abnormal transf.',
-                required=False, default=constants.DEFAULT_ALIGN_ABORT_ABNORMAL)
-            self.add_subsample_fields()
-            self.add_bold_label("Border:")
-            self.add_field(
-                'border_mode', FIELD_COMBO, 'Border mode', required=False,
-                options=self.BORDER_MODE_OPTIONS,
-                values=constants.VALID_BORDER_MODES,
-                default=constants.DEFAULT_BORDER_MODE)
-            self.add_field(
-                'border_value', FIELD_INT_TUPLE,
-                'Border value (if constant)', required=False, size=4,
-                default=constants.DEFAULT_BORDER_VALUE,
-                labels=constants.RGBA_LABELS,
-                min_val=constants.DEFAULT_BORDER_VALUE, max_val=[255] * 4)
-            self.add_field(
-                'border_blur', FIELD_FLOAT, 'Border blur', required=False,
-                default=constants.DEFAULT_BORDER_BLUR,
-                min_val=0, max_val=1000, step=1)
-        self.add_bold_label("Miscellanea:")
+        def change_transform():
+            text = transform.currentText()
+            if text == self.TRANSFORM_OPTIONS[0]:
+                refine_iters.setEnabled(True)
+                max_iters.setEnabled(False)
+            elif text == self.TRANSFORM_OPTIONS[1]:
+                refine_iters.setEnabled(False)
+                max_iters.setEnabled(True)
+
+        transform.currentIndexChanged.connect(change_transform)
+        change_transform()
+        self.add_field_to_layout(
+            layout, 'abort_abnormal', FIELD_BOOL, 'Abort on abnormal transf.',
+            required=False, default=constants.DEFAULT_ALIGN_ABORT_ABNORMAL)
+
+    def create_border_tab(self, layout):
+        self.add_bold_label_to_layout(layout, "Border:")
+        self.add_field_to_layout(
+            layout, 'border_mode', FIELD_COMBO, 'Border mode', required=False,
+            options=self.BORDER_MODE_OPTIONS,
+            values=constants.VALID_BORDER_MODES,
+            default=constants.DEFAULT_BORDER_MODE)
+        self.add_field_to_layout(
+            layout, 'border_value', FIELD_INT_TUPLE,
+            'Border value (if constant)', required=False, size=4,
+            default=constants.DEFAULT_BORDER_VALUE,
+            labels=constants.RGBA_LABELS,
+            min_val=constants.DEFAULT_BORDER_VALUE, max_val=[255] * 4)
+        self.add_field_to_layout(
+            layout, 'border_blur', FIELD_FLOAT, 'Border blur', required=False,
+            default=constants.DEFAULT_BORDER_BLUR,
+            min_val=0, max_val=1000, step=1)
+        self.add_subsample_fields(add_to_layout=layout)
+
+    def create_miscellanea_tab(self, layout):
+        self.add_bold_label_to_layout(layout, "Miscellanea:")
         if self.expert:
-            mode = self.add_field(
-                'mode', FIELD_COMBO, 'Mode',
+            mode = self.add_field_to_layout(
+                layout, 'mode', FIELD_COMBO, 'Mode',
                 required=False, options=self.MODE_OPTIONS, values=constants.ALIGN_VALID_MODES,
                 default=dict(zip(constants.ALIGN_VALID_MODES,
                                  self.MODE_OPTIONS))[constants.DEFAULT_ALIGN_MODE])
-            memory_limit = self.add_field(
-                'memory_limit', FIELD_FLOAT, 'Memory limit (approx., GBytes)',
+            memory_limit = self.add_field_to_layout(
+                layout, 'memory_limit', FIELD_FLOAT, 'Memory limit (approx., GBytes)',
                 required=False, default=constants.DEFAULT_ALIGN_MEMORY_LIMIT_GB,
                 min_val=1.0, max_val=64.0)
-            max_threads = self.add_field(
-                'max_threads', FIELD_INT, 'Max num. of cores',
+            max_threads = self.add_field_to_layout(
+                layout, 'max_threads', FIELD_INT, 'Max num. of cores',
                 required=False, default=constants.DEFAULT_ALIGN_MAX_THREADS,
                 min_val=1, max_val=64)
-            chunk_submit = self.add_field(
-                'chunk_submit', FIELD_BOOL, 'Submit in chunks',
+            chunk_submit = self.add_field_to_layout(
+                layout, 'chunk_submit', FIELD_BOOL, 'Submit in chunks',
                 required=False, default=constants.DEFAULT_ALIGN_CHUNK_SUBMIT)
-            bw_matching = self.add_field(
-                'bw_matching', FIELD_BOOL, 'Match using black & white',
+            bw_matching = self.add_field_to_layout(
+                layout, 'bw_matching', FIELD_BOOL, 'Match using black & white',
                 required=False, default=constants.DEFAULT_ALIGN_BW_MATCHING)
 
             def change_mode():
@@ -790,11 +831,13 @@ class AlignFramesConfigurator(SubsampleActionConfigurator):
                 bw_matching.setEnabled(enabled)
 
             mode.currentIndexChanged.connect(change_mode)
-        self.add_field(
-            'plot_summary', FIELD_BOOL, 'Plot summary',
+
+        self.add_field_to_layout(
+            layout, 'plot_summary', FIELD_BOOL, 'Plot summary',
             required=False, default=False)
-        self.add_field(
-            'plot_matches', FIELD_BOOL, 'Plot matches',
+
+        self.add_field_to_layout(
+            layout, 'plot_matches', FIELD_BOOL, 'Plot matches',
             required=False, default=False)
 
     def update_params(self, params):
