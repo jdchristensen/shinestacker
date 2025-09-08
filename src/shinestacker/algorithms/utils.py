@@ -2,6 +2,7 @@
 import os
 import gc
 import logging
+import threading
 import numpy as np
 import cv2
 import matplotlib.pyplot as plt
@@ -131,17 +132,19 @@ def read_and_validate_img(filename, expected_shape=None, expected_dtype=None):
 
 def save_plot(filename, fig=None):
     logging.getLogger(__name__).debug(msg=f"save plot file: {filename}")
-    dir_path = os.path.dirname(filename)
-    if not dir_path:
-        dir_path = '.'
-    if not os.path.isdir(dir_path):
-        os.makedirs(dir_path)
-    if fig is None:
-        fig = plt.gcf()
-    fig.savefig(filename, dpi=150)
-    if config.JUPYTER_NOTEBOOK:
-        plt.show()
-    plt.close(fig)
+    save_lock = threading.Lock()
+    with save_lock:
+        dir_path = os.path.dirname(filename)
+        if not dir_path:
+            dir_path = '.'
+        if not os.path.isdir(dir_path):
+            os.makedirs(dir_path)
+        if fig is None:
+            fig = plt.gcf()
+        fig.savefig(filename, dpi=150)
+        if config.JUPYTER_NOTEBOOK:
+            plt.show()
+        plt.close(fig)
     gc.collect()
 
 

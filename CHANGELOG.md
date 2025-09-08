@@ -9,8 +9,11 @@ This page reports the main releases only and the main changes therein.
 - transformation parameters for alignment plot (rotation only for the moment)
 
 ## Fixed
-- fixed bug in plot generatoin
+- fixed bug in plot generation
+- fixes warning due to missing glyph in PDF generation on macOS
+- safer parallel plot generation using a thread lock
 
+---
 
 ### Changed
 - code cleanup
