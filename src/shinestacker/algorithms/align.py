@@ -517,7 +517,6 @@ class AlignFramesBase(SubAction):
                 save_plot(plot_path)
                 self.process.callback(constants.CALLBACK_SAVE_PLOT, self.process.id,
                                       f"{self.process.name}: rotation", plot_path)
-
                 plt.figure(figsize=constants.PLT_FIG_SIZE)
                 x, y_x, y_x_ref = get_coordinates(self._translation_x)
                 x, y_y, y_y_ref = get_coordinates(self._translation_y)
@@ -559,6 +558,65 @@ class AlignFramesBase(SubAction):
                 save_plot(plot_path)
                 self.process.callback(constants.CALLBACK_SAVE_PLOT, self.process.id,
                                       f"{self.process.name}: scale", plot_path)
+            elif transform == constants.ALIGN_HOMOGRAPHY:
+                plt.figure(figsize=constants.PLT_FIG_SIZE)
+                x, y, y_ref = get_coordinates(self._area_ratio)
+                plt.plot([self.process.ref_idx + 1, self.process.ref_idx + 1],
+                         [0, y_ref], color='cornflowerblue',
+                         linestyle='--', label='reference frame')
+                plt.plot([x[0], x[-1]], [0, 0], color='cornflowerblue', linestyle='--')
+                plt.plot(x, y, color='navy', label='area ratio')
+                d_max = max(abs(y.min() - 1), abs(y.max() - 1)) * 1.1
+                plt.ylim(1.0 - d_max, 1.0 + d_max)
+                plt.title(title)
+                plt.xlabel('frame')
+                plt.ylabel('warped area ratio')
+                plt.legend()
+                plt.xlim(x[0], x[-1])
+                plot_path = f"{self.process.working_path}/{self.process.plot_path}/" \
+                            f"{self.process.name}-area-ratio.pdf"
+                save_plot(plot_path)
+                self.process.callback(constants.CALLBACK_SAVE_PLOT, self.process.id,
+                                      f"{self.process.name}: area ratio", plot_path)
+                plt.figure(figsize=constants.PLT_FIG_SIZE)
+                x, y, y_ref = get_coordinates(self._aspect_ratio)
+                plt.plot([self.process.ref_idx + 1, self.process.ref_idx + 1],
+                         [0, y_ref], color='cornflowerblue',
+                         linestyle='--', label='reference frame')
+                plt.plot([x[0], x[-1]], [0, 0], color='cornflowerblue', linestyle='--')
+                plt.plot(x, y, color='navy', label='aspect ratio')
+                y_min, y_max = y.min(), y.max()
+                delta = y_max - y_min
+                plt.ylim(y_min - 0.05 * delta, y_max + 0.05 * delta)
+                plt.title(title)
+                plt.xlabel('frame')
+                plt.ylabel('aspect ratio')
+                plt.legend()
+                plt.xlim(x[0], x[-1])
+                plot_path = f"{self.process.working_path}/{self.process.plot_path}/" \
+                            f"{self.process.name}-aspect-ratio.pdf"
+                save_plot(plot_path)
+                self.process.callback(constants.CALLBACK_SAVE_PLOT, self.process.id,
+                                      f"{self.process.name}: aspect ratio", plot_path)
+                plt.figure(figsize=constants.PLT_FIG_SIZE)
+                x, y, y_ref = get_coordinates(self._max_angle_dev)
+                plt.plot([self.process.ref_idx + 1, self.process.ref_idx + 1],
+                         [0, y_ref], color='cornflowerblue',
+                         linestyle='--', label='reference frame')
+                plt.plot([x[0], x[-1]], [0, 0], color='cornflowerblue', linestyle='--')
+                plt.plot(x, y, color='navy', label='max. dev. ang. (°)')
+                y_lim = max(abs(y.min()), abs(y.max())) * 1.1
+                plt.ylim(-y_lim, y_lim)
+                plt.title(title)
+                plt.xlabel('frame')
+                plt.ylabel('max deviation angle (degrees)')
+                plt.legend()
+                plt.xlim(x[0], x[-1])
+                plot_path = f"{self.process.working_path}/{self.process.plot_path}/" \
+                            f"{self.process.name}-rotation.pdf"
+                save_plot(plot_path)
+                self.process.callback(constants.CALLBACK_SAVE_PLOT, self.process.id,
+                                      f"{self.process.name}: rotation", plot_path)
 
     def save_transform_result(self, idx, result):
         if result is None:

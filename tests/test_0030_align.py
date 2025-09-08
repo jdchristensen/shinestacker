@@ -61,6 +61,21 @@ def test_jpg():
         assert False
 
 
+def test_jpg_homo():
+    try:
+        job = StackJob("job", "examples", input_path="input/img-jpg", callbacks='tqdm')
+        job.add_action(
+            CombinedActions(
+                "align-jpg",
+                [AlignFrames(
+                    alignment_config={'transform': constants.ALIGN_HOMOGRAPHY},
+                    plot_summary=True)],
+                output_path="output/img-jpg-align"))
+        job.run()
+    except Exception:
+        assert False
+
+
 def test_tif():
     try:
         job = StackJob("job", "examples", input_path="input/img-tif", callbacks='tqdm')

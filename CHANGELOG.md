@@ -6,7 +6,7 @@ This page reports the main releases only and the main changes therein.
 ** Unreleased code**
 
 ### Added
-- transformation parameters for alignment plot (rotation only for the moment)
+- optional plots for alignment transformation parameters
 
 ## Fixed
 - fixed bug in plot generation

@@ -1,9 +1,9 @@
-# pylint: disable=C0114, C0116
+# pylint: disable=C0114, C0116, E0602, W0718
 import os
 import sys
 import platform
-from .. config.config import config
 import matplotlib
+from .. config.config import config
 
 if not config.DISABLE_TQDM:
     from tqdm import tqdm
