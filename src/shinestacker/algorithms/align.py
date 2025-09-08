@@ -77,7 +77,7 @@ def decompose_affine_matrix(m):
 
 def check_affine_matrix(m, img_shape, affine_thresholds=_AFFINE_THRESHOLDS):
     if affine_thresholds is None:
-        return True, "No thresholds provided"
+        return True, "No thresholds provided", None
     (scale_x, scale_y), rotation, shear, (tx, ty) = decompose_affine_matrix(m)
     h, w = img_shape[:2]
     reasons = []
@@ -96,13 +96,14 @@ def check_affine_matrix(m, img_shape, affine_thresholds=_AFFINE_THRESHOLDS):
     if abs(ty) > max_ty:
         reasons.append(f"y-translation too large (|{ty:.1f}| > {max_ty:.1f})")
     if reasons:
-        return False, "; ".join(reasons)
-    return True, "Transformation within acceptable limits"
+        return False, "; ".join(reasons), None
+    return True, "Transformation within acceptable limits", \
+        (scale_x, scale_y, tx, ty, rotation, shear)
 
 
 def check_homography_distortion(m, img_shape, homography_thresholds=_HOMOGRAPHY_THRESHOLDS):
     if homography_thresholds is None:
-        return True, "No thresholds provided"
+        return True, "No thresholds provided", None
     h, w = img_shape[:2]
     corners = np.array([[0, 0], [w, 0], [w, h], [0, h]], dtype=np.float32)
     transformed = cv2.perspectiveTransform(corners.reshape(1, -1, 2), m).reshape(-1, 2)
@@ -129,8 +130,9 @@ def check_homography_distortion(m, img_shape, homography_thresholds=_HOMOGRAPHY_
     if max_angle_dev > homography_thresholds['max_skew']:
         reasons.append(f"angle distortion too large ({max_angle_dev:.1f}°)")
     if reasons:
-        return False, "; ".join(reasons)
-    return True, "Transformation within acceptable limits"
+        return False, "; ".join(reasons), None
+    return True, "Transformation within acceptable limits", \
+        (area_ratio, aspect_ratio, max_angle_dev)
 
 
 def check_transform(m, img_0, transform_type,
@@ -141,7 +143,7 @@ def check_transform(m, img_0, transform_type,
     if transform_type == constants.ALIGN_HOMOGRAPHY:
         return check_homography_distortion(
             m, img_0.shape, homography_thresholds)
-    return False, f'invalid transfrom option {transform_type}'
+    return False, f'invalid transfrom option {transform_type}', None
 
 
 def get_good_matches(des_0, des_ref, matching_config=None):
@@ -347,7 +349,7 @@ def align_images(img_ref, img_0, feature_config=None, matching_config=None, alig
             if m is None:
                 raise InvalidOptionError("transform", transform)
         transform_type = alignment_config['transform']
-        is_valid, reason = check_transform(
+        is_valid, reason, _result = check_transform(
             m, img_0, transform_type,
             affine_thresholds, homography_thresholds)
         if not is_valid:
