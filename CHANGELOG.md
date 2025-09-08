@@ -7,7 +7,7 @@ This page reports the main releases only and the main changes therein.
 
 ### Added
 - optional plots for alignment transformation parameters
-- implemented "Open Recent" menu entry
+- implemented "Open Recent" menu entry for both projects and retouch images
 
 ## Fixed
 - fixed bug in plot generation

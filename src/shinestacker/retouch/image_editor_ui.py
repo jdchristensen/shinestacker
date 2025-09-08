@@ -1,6 +1,7 @@
 # pylint: disable=C0114, C0115, C0116, E0611, R0902, R0914, R0915, R0904
+from functools import partial
 import numpy as np
-from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QFrame, QLabel,
+from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QFrame, QLabel, QMenu,
                                QListWidget, QSlider, QMainWindow, QMessageBox)
 from PySide6.QtGui import QShortcut, QKeySequence, QAction, QActionGroup
 from PySide6.QtCore import Qt
@@ -21,12 +22,14 @@ from .denoise_filter import DenoiseFilter
 from .unsharp_mask_filter import UnsharpMaskFilter
 from .white_balance_filter import WhiteBalanceFilter
 from .vignetting_filter import VignettingFilter
+from .. gui.recent_file_manager import RecentFileManager
 
 
 class ImageEditorUI(QMainWindow, LayerCollectionHandler):
     def __init__(self):
         QMainWindow.__init__(self)
         LayerCollectionHandler.__init__(self, LayerCollection())
+        self._recent_file_manager = RecentFileManager("shinestacker-recent-images-files.txt")
         self.thumbnail_highlight = gui_constants.THUMB_MASTER_HI_COLOR
         self.undo_manager = UndoManager()
         self.undo_action = None
@@ -241,6 +244,7 @@ class ImageEditorUI(QMainWindow, LayerCollectionHandler):
         self.io_gui_handler.update_title_requested.connect(self.update_title)
         self.io_gui_handler.mark_as_modified_requested.connect(self.mark_as_modified)
         self.io_gui_handler.change_layer_requested.connect(self.change_layer)
+        self.io_gui_handler.add_recent_file_requested.connect(self.add_recent_file)
         self.brush_tool.setup_ui(self.brush, self.brush_preview, self.image_viewer,
                                  self.brush_size_slider, self.hardness_slider, self.opacity_slider,
                                  self.flow_slider)
@@ -252,6 +256,9 @@ class ImageEditorUI(QMainWindow, LayerCollectionHandler):
         menubar = self.menuBar()
         file_menu = menubar.addMenu("&File")
         file_menu.addAction("&Open...", self.io_gui_handler.open_file, "Ctrl+O")
+        self.recent_files_menu = QMenu("Open &Recent", file_menu)
+        file_menu.addMenu(self.recent_files_menu)
+        self.update_recent_files()
         self.save_action = QAction("&Save", self)
         self.save_action.setShortcut("Ctrl+S")
         self.save_action.triggered.connect(self.io_gui_handler.save_file)
@@ -414,6 +421,19 @@ class ImageEditorUI(QMainWindow, LayerCollectionHandler):
                 if self.modified:
                     title += " *"
         self.window().setWindowTitle(title)
+
+    def update_recent_files(self):
+        self.recent_files_menu.clear()
+        recent_files = self._recent_file_manager.get_files_with_display_names()
+        for file_path, display_name in recent_files.items():
+            action = self.recent_files_menu.addAction(display_name)
+            action.setData(file_path)
+            action.triggered.connect(partial(self.io_gui_handler.open_file, file_path))
+        self.recent_files_menu.setEnabled(len(recent_files) > 0)
+
+    def add_recent_file(self, file_path):
+        self._recent_file_manager.add_file(file_path)
+        self.update_recent_files()
 
     def show_status_message(self, message):
         self.statusBar().showMessage(message)

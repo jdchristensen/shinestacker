@@ -1,5 +1,6 @@
 # pylint: disable=C0114, C0115, C0116, R0904, E0611, R0902, W0201
 import os
+from functools import partial
 from PySide6.QtCore import Signal, QObject
 from PySide6.QtGui import QAction, QIcon
 from PySide6.QtWidgets import QMenu, QComboBox
@@ -81,7 +82,7 @@ class MenuManager(QObject):
         for file_path, display_name in recent_files.items():
             action = self.recent_files_menu.addAction(display_name)
             action.setData(file_path)
-            action.triggered.connect(lambda: self.open_file_requested.emit(file_path))
+            action.triggered.connect(partial(self.open_file_requested.emit, file_path))
         self.recent_files_menu.setEnabled(len(recent_files) > 0)
 
     def add_recent_file(self, file_path):

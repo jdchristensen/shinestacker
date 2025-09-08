@@ -16,6 +16,7 @@ class IOGuiHandler(QObject, LayerCollectionHandler):
     update_title_requested = Signal()
     mark_as_modified_requested = Signal(bool)
     change_layer_requested = Signal(int)
+    add_recent_file_requested = Signal(str)
 
     def __init__(self, layer_collection, undo_manager, parent):
         QObject.__init__(self, parent)
@@ -75,6 +76,7 @@ class IOGuiHandler(QObject, LayerCollectionHandler):
         self.saving_dialog.deleteLater()
         self.mark_as_modified_requested.emit(False)
         self.update_title_requested.emit()
+        self.add_recent_file_requested.emit(self.current_file_path_multi)
         self.status_message_requested.emit(f"Saved multilayer to: {self.current_file_path_multi}")
 
     def on_multilayer_save_error(self, error_msg):
@@ -159,6 +161,7 @@ class IOGuiHandler(QObject, LayerCollectionHandler):
         self.image_viewer.reset_zoom()
         self.status_message_requested.emit(message)
         self.update_title_requested.emit()
+        self.add_recent_file_requested.emit(self.current_file_path_master)
 
     def save_file(self):
         if self.save_master_only.isChecked():
@@ -218,7 +221,6 @@ class IOGuiHandler(QObject, LayerCollectionHandler):
             self.saving_timer.timeout.connect(self.saving_dialog.show)
             self.saving_timer.start(100)
             self.saver_thread.start()
-
         except Exception as e:
             traceback.print_tb(e.__traceback__)
             QMessageBox.critical(self.parent(), "Save Error", f"Could not save file: {str(e)}")
@@ -247,6 +249,7 @@ class IOGuiHandler(QObject, LayerCollectionHandler):
             self.mark_as_modified_requested.emit(False)
             self.update_title_requested.emit()
             self.status_message_requested.emit(f"Saved master layer to: {path}")
+            self.add_recent_file_requested.emit(self.current_file_path_master)
         except Exception as e:
             traceback.print_tb(e.__traceback__)
             QMessageBox.critical(self.parent(), "Save Error", f"Could not save file: {str(e)}")
