@@ -3,10 +3,12 @@
 This page reports the main releases only and the main changes therein.
 
 ## [v1.3.1] - 2025-09-08
+**Fixes and optimizations**
 
 ## Fixed
 - fixed input folder widget in job configuration
 - better management of patological alignments
+- restored alignment match plots
 
 ### Changed
 - improved automatic parameters for parallel alignment
