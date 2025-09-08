@@ -1,13 +1,19 @@
 # pylint: disable=C0114, C0115, C0116, R0904, E0611, R0902, W0201
 import os
+from PySide6.QtCore import Signal, QObject
 from PySide6.QtGui import QAction, QIcon
 from PySide6.QtWidgets import QMenu, QComboBox
 from .. config.constants import constants
+from .recent_file_manager import RecentFileManager
 
 
-class MenuManager:
+class MenuManager(QObject):
+    open_file_requested = Signal(str)
+
     def __init__(self, menubar, actions, project_editor, parent):
+        super().__init__(parent)
         self.script_dir = os.path.dirname(__file__)
+        self._recent_file_manager = RecentFileManager("shinestacker-recent-project-files.txt")
         self.project_editor = project_editor
         self.parent = parent
         self.menubar = menubar
@@ -69,10 +75,27 @@ class MenuManager:
             action.triggered.connect(action_fun)
         return action
 
+    def update_recent_files(self):
+        self.recent_files_menu.clear()
+        recent_files = self._recent_file_manager.get_files_with_display_names()
+        for file_path, display_name in recent_files.items():
+            action = self.recent_files_menu.addAction(display_name)
+            action.setData(file_path)
+            action.triggered.connect(lambda: self.open_file_requested.emit(file_path))
+        self.recent_files_menu.setEnabled(len(recent_files) > 0)
+
+    def add_recent_file(self, file_path):
+        self._recent_file_manager.add_file(file_path)
+        self.update_recent_files()
+
     def add_file_menu(self):
         menu = self.menubar.addMenu("&File")
-        for name in ["&New...", "&Open...", "&Close"]:
+        for name in ["&New...", "&Open..."]:
             menu.addAction(self.action(name))
+        self.recent_files_menu = QMenu("Open &Recent", menu)
+        menu.addMenu(self.recent_files_menu)
+        self.update_recent_files()
+        menu.addAction(self.action("&Close"))
         menu.addSeparator()
         self.save_action = self.action("&Save")
         menu.addAction(self.save_action)

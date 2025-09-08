@@ -20,6 +20,7 @@ class ProjectController(QObject):
     activate_window_requested = Signal()
     enable_save_actions_requested = Signal(bool)
     enable_sub_actions_requested = Signal(bool)
+    add_recent_file_requested = Signal(str)
 
     def __init__(self, parent):
         super().__init__(parent)
@@ -242,6 +243,7 @@ class ProjectController(QObject):
                 self.parent, "Open Project", "", "Project Files (*.fsp);;All Files (*)")
         if file_path:
             try:
+                abs_file_path = os.path.abspath(file_path)
                 self.set_current_file_path(file_path)
                 with open(self.current_file_path(), 'r', encoding="utf-8") as file:
                     json_obj = json.load(file)
@@ -250,6 +252,7 @@ class ProjectController(QObject):
                     raise RuntimeError(f"Project from file {file_path} produced a null project.")
                 self.set_project(project)
                 self.mark_as_modified(False)
+                self.add_recent_file_requested.emit(abs_file_path)
                 self.project_editor.reset_undo()
                 self.refresh_ui(0, -1)
                 if self.job_list_count() > 0:
@@ -311,6 +314,7 @@ class ProjectController(QObject):
                 f.write(json_obj)
             self.mark_as_modified(False)
             self.update_title_requested.emit()
+            self.add_recent_file_requested.emit(file_path)
         except Exception as e:
             QMessageBox.critical(self.parent, "Error", f"Cannot save file:\n{str(e)}")
 

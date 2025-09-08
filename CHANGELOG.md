@@ -7,6 +7,7 @@ This page reports the main releases only and the main changes therein.
 
 ### Added
 - optional plots for alignment transformation parameters
+- implemented "Open Recent" menu entry
 
 ## Fixed
 - fixed bug in plot generation

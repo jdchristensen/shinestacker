@@ -134,19 +134,28 @@ class MainWindow(QMainWindow, LogManager):
             self.update_title()
 
         self.project_editor.modified_signal.connect(handle_modified)
-        self.project_editor.select_signal.connect(self.update_delete_action_state)
-        self.project_editor.refresh_ui_signal.connect(self.refresh_ui)
+        self.project_editor.select_signal.connect(
+            self.update_delete_action_state)
+        self.project_editor.refresh_ui_signal.connect(
+            self.refresh_ui)
         self.project_editor.enable_delete_action_signal.connect(
             self.menu_manager.delete_element_action.setEnabled)
         self.project_editor.undo_manager.set_enabled_undo_action_requested.connect(
             self.menu_manager.set_enabled_undo_action)
-        self.project_controller.update_title_requested.connect(self.update_title)
-        self.project_controller.refresh_ui_requested.connect(self.refresh_ui)
-        self.project_controller.activate_window_requested.connect(self.activateWindow)
+        self.project_controller.update_title_requested.connect(
+            self.update_title)
+        self.project_controller.refresh_ui_requested.connect(
+            self.refresh_ui)
+        self.project_controller.activate_window_requested.connect(
+            self.activateWindow)
         self.project_controller.enable_save_actions_requested.connect(
             self.menu_manager.save_actions_set_enabled)
         self.project_controller.enable_sub_actions_requested.connect(
             self.menu_manager.set_enabled_sub_actions_gui)
+        self.project_controller.add_recent_file_requested.connect(
+            self.menu_manager.add_recent_file)
+        self.menu_manager.open_file_requested.connect(
+            self.project_controller.open_project)
 
     def modified(self):
         return self.project_editor.modified()
