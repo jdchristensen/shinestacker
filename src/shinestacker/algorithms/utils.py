@@ -50,6 +50,10 @@ def extension_jpg_png(path):
     return extension_in(path, EXTENSIONS_JPG + EXTENSIONS_PNG)
 
 
+def extension_jpg_tif_png(path):
+    return extension_in(path, EXTENSIONS_JPG + EXTENSIONS_TIF + EXTENSIONS_PNG)
+
+
 def read_img(file_path):
     if not os.path.isfile(file_path):
         raise RuntimeError("File does not exist: " + file_path)
@@ -124,17 +128,19 @@ def read_and_validate_img(filename, expected_shape=None, expected_dtype=None):
     return validate_image(read_img(filename), expected_shape, expected_dtype)
 
 
-def save_plot(filename):
+def save_plot(filename, fig=None):
     logging.getLogger(__name__).debug(msg=f"save plot file: {filename}")
     dir_path = os.path.dirname(filename)
     if not dir_path:
         dir_path = '.'
     if not os.path.isdir(dir_path):
         os.makedirs(dir_path)
-    plt.savefig(filename, dpi=150)
+    if fig is None:
+        fig = plt.gcf()
+    fig.savefig(filename, dpi=150)
     if config.JUPYTER_NOTEBOOK:
         plt.show()
-    plt.close('all')
+    plt.close(fig)
 
 
 def img_subsample(img, subsample, fast=True):

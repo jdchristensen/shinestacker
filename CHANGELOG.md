@@ -2,6 +2,19 @@
 
 This page reports the main releases only and the main changes therein.
 
+## [v-.-.-] - 2025-09-08
+** Unreleased code**
+
+### Added
+- transformation parameters for alignment plot (rotation only for the moment)
+
+## Fixed
+- fixed bug in plot generatoin
+
+
+### Changed
+- code cleanup
+
 ## [v1.3.1] - 2025-09-08
 **Fixes and optimizations**
 

@@ -48,6 +48,9 @@ class AlignFramesParallel(AlignFramesBase):
         self._kp = None
         self._des = None
 
+    def relative_transformation(self):
+        return True
+
     def cache_img(self, idx):
         with self._cache_locks[idx]:
             self._img_locks[idx] += 1
@@ -277,7 +280,8 @@ class AlignFramesParallel(AlignFramesBase):
                 return self.extract_features(idx, delta + 1)
         transform_type = self.alignment_config['transform']
         thresholds = self.get_transform_thresholds()
-        is_valid, _reason, _result = check_transform(m, img_0, transform_type, *thresholds)
+        is_valid, _reason, result = check_transform(m, img_0, transform_type, *thresholds)
+        self.save_transform_result(idx, result)
         if not is_valid:
             msg = f"invalid transformation for {self.image_str(idx)}"
             do_abort = self.alignment_config['abort_abnormal']

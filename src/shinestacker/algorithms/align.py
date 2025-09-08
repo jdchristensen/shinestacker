@@ -251,7 +251,10 @@ def find_transform(src_pts, dst_pts, transform=constants.DEFAULT_TRANSFORM,
                                              confidence=align_confidence / 100.0,
                                              refineIters=refine_iters)
     else:
-        raise InvalidOptionError("transform", transform)
+        raise InvalidOptionError(
+            'transform', method,
+            f". Valid options are: {constants.ALIGN_HOMOGRAPHY}, {constants.ALIGN_RIGID}"
+        )
     return result
 
 
@@ -349,9 +352,11 @@ def align_images(img_ref, img_0, feature_config=None, matching_config=None, alig
             if m is None:
                 raise InvalidOptionError("transform", transform)
         transform_type = alignment_config['transform']
-        is_valid, reason, _result = check_transform(
+        is_valid, reason, result = check_transform(
             m, img_0, transform_type,
             affine_thresholds, homography_thresholds)
+        if callbacks and 'save_transform_result' in callbacks:
+            callbacks['save_transform_result'](result)
         if not is_valid:
             if callbacks and 'warning' in callbacks:
                 callbacks['warning'](f"invalid transformation: {reason}")
@@ -407,6 +412,18 @@ class AlignFramesBase(SubAction):
         for k in self.alignment_config:
             if k in kwargs:
                 self.alignment_config[k] = kwargs[k]
+        self._area_ratio = None
+        self._aspect_ratio = None
+        self._max_angle_dev = None
+        self._scale_x = None
+        self._scale_y = None
+        self._translation_x = None
+        self._translation_y = None
+        self._rotation = None
+        self._shear = None
+
+    def relative_transformation(self):
+        return None
 
     def align_images(self, idx, img_ref, img_0):
         pass
@@ -417,6 +434,15 @@ class AlignFramesBase(SubAction):
     def begin(self, process):
         self.process = process
         self._n_good_matches = np.zeros(process.total_action_counts)
+        self._area_ratio = np.ones(process.total_action_counts)
+        self._aspect_ratio = np.ones(process.total_action_counts)
+        self._max_angle_dev = np.zeros(process.total_action_counts)
+        self._scale_x = np.ones(process.total_action_counts)
+        self._scale_y = np.ones(process.total_action_counts)
+        self._translation_x = np.zeros(process.total_action_counts)
+        self._translation_y = np.zeros(process.total_action_counts)
+        self._rotation = np.zeros(process.total_action_counts)
+        self._shear = np.zeros(process.total_action_counts)
 
     def run_frame(self, idx, ref_idx, img_0):
         if idx == self.process.ref_idx:
@@ -432,24 +458,29 @@ class AlignFramesBase(SubAction):
                f"{os.path.basename(self.process.input_filepath(idx))}"
 
     def end(self):
-        if self.plot_summary:
-            plt.figure(figsize=constants.PLT_FIG_SIZE)
-            x = np.arange(1, len(self._n_good_matches) + 1, dtype=int)
+
+        def get_coordinates(items):
+            x = np.arange(1, len(items) + 1, dtype=int)
             no_ref = x != self.process.ref_idx + 1
             x = x[no_ref]
-            y = np.array(self._n_good_matches)[no_ref]
+            y = np.array(items)[no_ref]
             if self.process.ref_idx == 0:
-                y_max = y[1]
+                y_ref = y[1]
             elif self.process.ref_idx >= len(y):
-                y_max = y[-1]
+                y_ref = y[-1]
             else:
-                y_max = (y[self.process.ref_idx - 1] + y[self.process.ref_idx]) / 2
+                y_ref = (y[self.process.ref_idx - 1] + y[self.process.ref_idx]) / 2
+            return x, y, y_ref
 
+        if self.plot_summary:
+            plt.figure(figsize=constants.PLT_FIG_SIZE)
+            x, y, y_ref = get_coordinates(self._n_good_matches)
             plt.plot([self.process.ref_idx + 1, self.process.ref_idx + 1],
-                     [0, y_max], color='cornflowerblue', linestyle='--', label='reference frame')
+                     [0, y_ref], color='cornflowerblue', linestyle='--', label='reference frame')
             plt.plot([x[0], x[-1]], [self.min_matches, self.min_matches], color='lightgray',
                      linestyle='--', label='min. matches')
             plt.plot(x, y, color='navy', label='matches')
+            plt.title("Number of matches")
             plt.xlabel('frame')
             plt.ylabel('# of matches')
             plt.legend()
@@ -458,15 +489,106 @@ class AlignFramesBase(SubAction):
             plot_path = f"{self.process.working_path}/{self.process.plot_path}/" \
                         f"{self.process.name}-matches.pdf"
             save_plot(plot_path)
-            plt.close('all')
             self.process.callback(constants.CALLBACK_SAVE_PLOT, self.process.id,
                                   f"{self.process.name}: matches", plot_path)
+            transform = self.alignment_config['transform']
+            title = "Transformation parameters"
+            if self.relative_transformation():
+                title += " rel. to nearest frame"
+            else:
+                title += " rel. to reference frame"
+            if transform == constants.ALIGN_RIGID:
+                plt.figure(figsize=constants.PLT_FIG_SIZE)
+                x, y, y_ref = get_coordinates(self._rotation)
+                plt.plot([self.process.ref_idx + 1, self.process.ref_idx + 1],
+                         [0, y_ref], color='cornflowerblue',
+                         linestyle='--', label='reference frame')
+                plt.plot([x[0], x[-1]], [0, 0], color='cornflowerblue', linestyle='--')
+                plt.plot(x, y, color='navy', label='rotation (°)')
+                y_lim = max(abs(y.min()), abs(y.max())) * 1.1
+                plt.ylim(-y_lim, y_lim)
+                plt.title(title)
+                plt.xlabel('frame')
+                plt.ylabel('rotation angle (degrees)')
+                plt.legend()
+                plt.xlim(x[0], x[-1])
+                plot_path = f"{self.process.working_path}/{self.process.plot_path}/" \
+                            f"{self.process.name}-rotation.pdf"
+                save_plot(plot_path)
+                self.process.callback(constants.CALLBACK_SAVE_PLOT, self.process.id,
+                                      f"{self.process.name}: rotation", plot_path)
+
+                plt.figure(figsize=constants.PLT_FIG_SIZE)
+                x, y_x, y_x_ref = get_coordinates(self._translation_x)
+                x, y_y, y_y_ref = get_coordinates(self._translation_y)
+                plt.plot([self.process.ref_idx + 1, self.process.ref_idx + 1],
+                         [y_x_ref, y_y_ref], color='cornflowerblue',
+                         linestyle='--', label='reference frame')
+                plt.plot([x[0], x[-1]], [0, 0], color='cornflowerblue', linestyle='--')
+                plt.plot(x, y_x, color='blue', label='translation, x (px)')
+                plt.plot(x, y_y, color='red', label='translation, y (px)')
+                y_lim = max(abs(y_x.min()), abs(y_x.max()), abs(y_y.min()), abs(y_y.max())) * 1.1
+                plt.ylim(-y_lim, y_lim)
+                plt.title(title)
+                plt.xlabel('frame')
+                plt.ylabel('translation (pixels)')
+                plt.legend()
+                plt.xlim(x[0], x[-1])
+                plot_path = f"{self.process.working_path}/{self.process.plot_path}/" \
+                            f"{self.process.name}-translation.pdf"
+                save_plot(plot_path)
+                self.process.callback(constants.CALLBACK_SAVE_PLOT, self.process.id,
+                                      f"{self.process.name}: translation", plot_path)
+
+                plt.figure(figsize=constants.PLT_FIG_SIZE)
+                x, y, y_ref = get_coordinates(self._scale_x)
+                plt.plot([self.process.ref_idx + 1, self.process.ref_idx + 1],
+                         [1, y_ref], color='cornflowerblue',
+                         linestyle='--', label='reference frame')
+                plt.plot([x[0], x[-1]], [1, 1], color='cornflowerblue', linestyle='--')
+                plt.plot(x, y, color='blue', label='scale factor')
+                d_max = max(abs(y.min() - 1), abs(y.max() - 1)) * 1.1
+                plt.ylim(1.0 - d_max, 1.0 + d_max)
+                plt.title(title)
+                plt.xlabel('frame')
+                plt.ylabel('scale factor')
+                plt.legend()
+                plt.xlim(x[0], x[-1])
+                plot_path = f"{self.process.working_path}/{self.process.plot_path}/" \
+                            f"{self.process.name}-scale.pdf"
+                save_plot(plot_path)
+                self.process.callback(constants.CALLBACK_SAVE_PLOT, self.process.id,
+                                      f"{self.process.name}: scale", plot_path)
+
+    def save_transform_result(self, idx, result):
+        if result is None:
+            return
+        transform = self.alignment_config['transform']
+        if transform == constants.ALIGN_HOMOGRAPHY:
+            area_ratio, aspect_ratio, max_angle_dev = result
+            self._area_ratio[idx] = area_ratio
+            self._aspect_ratio[idx] = aspect_ratio
+            self._max_angle_dev[idx] = max_angle_dev
+        elif transform == constants.ALIGN_RIGID:
+            scale_x, scale_y, translation_x, translation_y, rotation, shear = result
+            self._scale_x[idx] = scale_x
+            self._scale_y[idx] = scale_y
+            self._translation_x[idx] = translation_x
+            self._translation_y[idx] = translation_y
+            self._rotation[idx] = rotation
+            self._shear[idx] = shear
+        else:
+            raise InvalidOptionError(
+                'transform', transform,
+                f". Valid options are: {constants.ALIGN_HOMOGRAPHY}, {constants.ALIGN_RIGID}"
+            )
 
 
 class AlignFrames(AlignFramesBase):
     def align_images(self, idx, img_ref, img_0):
         idx_str = f"{idx:04d}"
         idx_tot_str = self.process.idx_tot_str(idx)
+
         callbacks = {
             'message': lambda: self.print_message(f'{idx_tot_str}: find matches'),
             'matches_message': lambda n: self.print_message(f'{idx_tot_str}: good matches: {n}'),
@@ -476,7 +598,8 @@ class AlignFrames(AlignFramesBase):
                 f': {msg}', constants.LOG_COLOR_WARNING),
             'save_plot': lambda plot_path: self.process.callback(
                 constants.CALLBACK_SAVE_PLOT, self.process.id,
-                f"{self.process.name}: matches\nframe {idx_str}", plot_path)
+                f"{self.process.name}: matches\nframe {idx_str}", plot_path),
+            'save_transform_result': lambda result: self.save_transform_result(idx, result)
         }
         if self.plot_matches:
             plot_path = os.path.join(
@@ -503,6 +626,9 @@ class AlignFrames(AlignFramesBase):
                 f"{n_good_matches}")
             return None
         return img
+
+    def relative_transformation(self):
+        return False
 
     def sequential_processing(self):
         return True

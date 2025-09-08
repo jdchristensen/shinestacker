@@ -9,7 +9,7 @@ from PySide6.QtCore import Signal, Slot
 from .. config.constants import constants
 from .. config.gui_constants import gui_constants
 from .colors import RED_BUTTON_STYLE, BLUE_BUTTON_STYLE, BLUE_COMBO_STYLE
-from .. algorithms.utils import extension_tif_jpg, extension_pdf
+from .. algorithms.utils import extension_jpg_tif_png, extension_pdf
 from .gui_logging import LogWorker, QTextEditLogger
 from .gui_images import GuiPdfView, GuiImageView, GuiOpenApp
 from .colors import (
@@ -209,7 +209,7 @@ class RunWindow(QTextEditLogger):
         try:
             if extension_pdf(path):
                 image_view = GuiPdfView(path, self)
-            elif extension_tif_jpg(path):
+            elif extension_jpg_tif_png(path):
                 image_view = GuiImageView(path, self)
             else:
                 raise RuntimeError(f"Can't visualize file type {os.path.splitext(path)[1]}.")

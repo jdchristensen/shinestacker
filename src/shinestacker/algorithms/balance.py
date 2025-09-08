@@ -2,6 +2,7 @@
 import math
 import numpy as np
 import cv2
+import matplotlib
 import matplotlib.pyplot as plt
 from scipy.optimize import bisect
 from scipy.interpolate import interp1d
@@ -11,6 +12,7 @@ from .. core.colors import color_str
 from .utils import (read_img, save_plot, img_subsample, bgr_to_hsv, bgr_to_hls,
                     hsv_to_bgr, hls_to_bgr, bgr_to_lab, lab_to_bgr)
 from .stack_framework import SubAction
+matplotlib.use('agg')
 
 
 class BaseHistogrammer:
@@ -40,12 +42,11 @@ class BaseHistogrammer:
         x_values = np.linspace(0, self.max_pixel_value, len(hist))
         ax.plot(x_values, hist, color=color, alpha=alpha)
 
-    def save_plot(self, idx):
+    def save_plot(self, idx, fig=None):
         idx_str = f"{idx:04d}"
         plot_path = f"{self.process.working_path}/{self.process.plot_path}/" \
                     f"{self.process.name}-hist-{idx_str}.pdf"
-        save_plot(plot_path)
-        plt.close('all')
+        save_plot(plot_path, fig)
         self.process.callback(
             'save_plot',
             self.process.id, f"{self.process.name}: balance\nframe {idx_str}",
@@ -56,7 +57,6 @@ class BaseHistogrammer:
         plot_path = f"{self.process.working_path}/{self.process.plot_path}/" \
                     f"{self.process.name}-{name}.pdf"
         save_plot(plot_path)
-        plt.close('all')
         self.process.callback(
             'save_plot', self.process.id,
             f"{self.process.name}: {name}", plot_path
@@ -69,13 +69,14 @@ class LumiHistogrammer(BaseHistogrammer):
         self.colors = ("r", "g", "b")
 
     def generate_frame_plot(self, idx, hist, chans, calc_hist_func):
-        _fig, axs = plt.subplots(1, 2, figsize=constants.PLT_FIG_SIZE, sharey=True)
+        fig, axs = plt.subplots(1, 2, figsize=constants.PLT_FIG_SIZE, sharey=True)
         self.histo_plot(axs[0], hist, "pixel luminosity", 'black')
         for (chan, color) in zip(chans, self.colors):
             hist_col = calc_hist_func(chan)
             self.histo_plot(axs[1], hist_col, "R, G, B intensity", color, alpha=0.5)
+        fig.suptitle("Image histograms")
         plt.xlim(0, self.max_pixel_value)
-        self.save_plot(idx)
+        self.save_plot(idx, fig)
 
     def generate_summary_plot(self, ref_idx):
         plt.figure(figsize=constants.PLT_FIG_SIZE)
@@ -86,6 +87,7 @@ class LumiHistogrammer(BaseHistogrammer):
         plt.plot([x[0], x[-1]], [1, 1], color='lightgray', linestyle='--',
                  label='no correction')
         plt.plot(x, y, color='navy', label='luminosity correction')
+        plt.title("Image balance correction")
         plt.xlabel('frame')
         plt.ylabel('correction')
         plt.legend()
@@ -100,11 +102,12 @@ class RGBHistogrammer(BaseHistogrammer):
         self.colors = ("r", "g", "b")
 
     def generate_frame_plot(self, idx, hists):
-        _fig, axs = plt.subplots(1, 3, figsize=constants.PLT_FIG_SIZE, sharey=True)
+        fig, axs = plt.subplots(1, 3, figsize=constants.PLT_FIG_SIZE, sharey=True)
         for c in [2, 1, 0]:
             self.histo_plot(axs[c], hists[c], self.colors[c] + " luminosity", self.colors[c])
+        fig.suptitle("Image histograms")
         plt.xlim(0, self.max_pixel_value)
-        self.save_plot(idx)
+        self.save_plot(idx, fig)
 
     def generate_summary_plot(self, ref_idx):
         plt.figure(figsize=constants.PLT_FIG_SIZE)
@@ -118,6 +121,7 @@ class RGBHistogrammer(BaseHistogrammer):
         plt.plot(x, y[:, 0], color='r', label='R correction')
         plt.plot(x, y[:, 1], color='g', label='G correction')
         plt.plot(x, y[:, 2], color='b', label='B correction')
+        plt.title("Image balance correction")
         plt.xlabel('frame')
         plt.ylabel('correction')
         plt.legend()
@@ -133,10 +137,12 @@ class Ch1Histogrammer(BaseHistogrammer):
         self.colors = colors
 
     def generate_frame_plot(self, idx, hists):
-        _fig, axs = plt.subplots(1, 3, figsize=constants.PLT_FIG_SIZE, sharey=True)
+        fig, axs = plt.subplots(1, 3, figsize=constants.PLT_FIG_SIZE, sharey=True)
         for c in range(3):
             self.histo_plot(axs[c], hists[c], self.labels[c], self.colors[c])
-        plt.xlim(0, self.max_pixel_value)
+        fig.suptitle("Image histograms")
+        for ax in axs:
+            ax.set_xlim(0, self.max_pixel_value)
         self.save_plot(idx)
 
     def generate_summary_plot(self, ref_idx):
@@ -149,6 +155,7 @@ class Ch1Histogrammer(BaseHistogrammer):
         plt.plot([x[0], x[-1]], [1, 1], color='lightgray', linestyle='--',
                  label='no correction')
         plt.plot(x, y[:, 0], color=self.colors[0], label=self.labels[0] + ' correction')
+        plt.title("Image balance correction")
         plt.xlabel('frame')
         plt.ylabel('correction')
         plt.legend()
@@ -164,10 +171,12 @@ class Ch2Histogrammer(BaseHistogrammer):
         self.colors = colors
 
     def generate_frame_plot(self, idx, hists):
-        _fig, axs = plt.subplots(1, 3, figsize=constants.PLT_FIG_SIZE, sharey=True)
+        fig, axs = plt.subplots(1, 3, figsize=constants.PLT_FIG_SIZE, sharey=True)
         for c in range(3):
             self.histo_plot(axs[c], hists[c], self.labels[c], self.colors[c])
-        plt.xlim(0, self.max_pixel_value)
+        fig.suptitle("Image histograms")
+        for ax in axs:
+            ax.set_xlim(0, self.max_pixel_value)
         self.save_plot(idx)
 
     def generate_summary_plot(self, ref_idx):
@@ -181,6 +190,7 @@ class Ch2Histogrammer(BaseHistogrammer):
                  label='no correction')
         plt.plot(x, y[:, 0], color=self.colors[1], label=self.labels[1] + ' correction')
         plt.plot(x, y[:, 1], color=self.colors[2], label=self.labels[2] + ' correction')
+        plt.title("Image balance correction")
         plt.xlabel('frame')
         plt.ylabel('correction')
         plt.legend()
@@ -603,7 +613,7 @@ class BalanceFrames(SubAction):
             mask_radius = int(min(*shape) * self.mask_size / 2)
             cv2.circle(img, (shape[1] // 2, shape[0] // 2), mask_radius, 255, -1)
             plt.figure(figsize=constants.PLT_FIG_SIZE)
-            plt.title('Mask')
+            plt.title('Image balance mask')
             plt.imshow(img, 'gray')
             self.correction.histogrammer.save_summary_plot("mask")
 
