@@ -33,8 +33,8 @@ def compose_transforms(t1, t2, transform_type):
 class AlignFramesParallel(AlignFramesBase):
     def __init__(self, enabled=True, feature_config=None, matching_config=None,
                  alignment_config=None, **kwargs):
-        super().__init__(enabled=True, feature_config=None, matching_config=None,
-                         alignment_config=None, **kwargs)
+        super().__init__(enabled, feature_config, matching_config,
+                         alignment_config, **kwargs)
         self.max_threads = kwargs.get('max_threads', constants.DEFAULT_ALIGN_MAX_THREADS)
         self.chunk_submit = kwargs.get('chunk_submit', constants.DEFAULT_ALIGN_CHUNK_SUBMIT)
         self.bw_matching = kwargs.get('bw_matching', constants.DEFAULT_ALIGN_BW_MATCHING)
@@ -102,10 +102,14 @@ class AlignFramesParallel(AlignFramesBase):
 
     def begin(self, process):
         super().begin(process)
+        if self.plot_matches:
+            self.print_message(
+                "requested plot matches is not supported with parallel processing",
+                color=constants.LOG_COLOR_WARNING, level=logging.WARNING)
         n_frames = self.process.num_input_filepaths()
+        self.print_message(f"preprocess {n_frames} images in parallel, cores: {self.max_threads}")
         self.process.callback(constants.CALLBACK_STEP_COUNTS,
                               self.process.id, self.process.name, 2 * n_frames)
-        self.print_message(f"preprocess {n_frames} images in parallel, cores: {self.max_threads}")
         input_filepaths = self.process.input_filepaths()
         self._img_cache = [None] * n_frames
         self._img_locks = [0] * n_frames

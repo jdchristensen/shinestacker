@@ -3,13 +3,15 @@ import os
 import math
 import logging
 import numpy as np
-import matplotlib.pyplot as plt
 import cv2
+import matplotlib.pyplot as plt
+import matplotlib
 from .. config.constants import constants
 from .. core.exceptions import InvalidOptionError
 from .. core.colors import color_str
 from .utils import img_8bit, img_bw_8bit, save_plot, img_subsample
 from .stack_framework import SubAction
+matplotlib.use('Agg')
 
 _DEFAULT_FEATURE_CONFIG = {
     'detector': constants.DEFAULT_DETECTOR,
@@ -270,6 +272,18 @@ def rescale_trasnsform(m, w0, h0, w_sub, h_sub, subsample, transform):
     return m
 
 
+def plot_matches(msk, img_ref_sub, img_0_sub, kp_ref, kp_0, good_matches, plot_path):
+    matches_mask = msk.ravel().tolist()
+    img_match = cv2.cvtColor(cv2.drawMatches(
+        img_8bit(img_0_sub), kp_0, img_8bit(img_ref_sub),
+        kp_ref, good_matches, None, matchColor=(0, 255, 0),
+        singlePointColor=None, matchesMask=matches_mask,
+        flags=2), cv2.COLOR_BGR2RGB)
+    plt.figure(figsize=constants.PLT_FIG_SIZE)
+    plt.imshow(img_match, 'gray')
+    save_plot(plot_path)
+
+
 def align_images(img_ref, img_0, feature_config=None, matching_config=None, alignment_config=None,
                  plot_path=None, callbacks=None,
                  affine_thresholds=_AFFINE_THRESHOLDS,
@@ -315,22 +329,16 @@ def align_images(img_ref, img_0, feature_config=None, matching_config=None, alig
     m = None
     if n_good_matches >= min_matches:
         transform = alignment_config['transform']
-        src_pts = np.float32([kp_0[m.queryIdx].pt for m in good_matches]).reshape(-1, 1, 2)
-        dst_pts = np.float32([kp_ref[m.trainIdx].pt for m in good_matches]).reshape(-1, 1, 2)
+        src_pts = np.float32(
+            [kp_0[match.queryIdx].pt for match in good_matches]).reshape(-1, 1, 2)
+        dst_pts = np.float32(
+            [kp_ref[match.trainIdx].pt for match in good_matches]).reshape(-1, 1, 2)
         m, msk = find_transform(src_pts, dst_pts, transform, alignment_config['align_method'],
                                 *(alignment_config[k]
                                   for k in ['rans_threshold', 'max_iters',
                                             'align_confidence', 'refine_iters']))
         if plot_path is not None:
-            matches_mask = msk.ravel().tolist()
-            img_match = cv2.cvtColor(cv2.drawMatches(
-                img_8bit(img_0_sub), kp_0, img_8bit(img_ref_sub),
-                kp_ref, good_matches, None, matchColor=(0, 255, 0),
-                singlePointColor=None, matchesMask=matches_mask,
-                flags=2), cv2.COLOR_BGR2RGB)
-            plt.figure(figsize=constants.PLT_FIG_SIZE)
-            plt.imshow(img_match, 'gray')
-            save_plot(plot_path)
+            plot_matches(msk, img_ref_sub, img_0_sub, kp_ref, kp_0, good_matches, plot_path)
             if callbacks and 'save_plot' in callbacks:
                 callbacks['save_plot'](plot_path)
         h_sub, w_sub = img_0_sub.shape[:2]
@@ -427,7 +435,7 @@ class AlignFramesBase(SubAction):
             x = np.arange(1, len(self._n_good_matches) + 1, dtype=int)
             no_ref = x != self.process.ref_idx + 1
             x = x[no_ref]
-            y = self._n_good_matches[no_ref]
+            y = np.array(self._n_good_matches)[no_ref]
             if self.process.ref_idx == 0:
                 y_max = y[1]
             elif self.process.ref_idx >= len(y):
@@ -454,10 +462,6 @@ class AlignFramesBase(SubAction):
 
 
 class AlignFrames(AlignFramesBase):
-    def __init__(self, enabled=True, feature_config=None, matching_config=None,
-                 alignment_config=None, **kwargs):
-        super().__init__(enabled)
-
     def align_images(self, idx, img_ref, img_0):
         idx_str = f"{idx:04d}"
         idx_tot_str = self.process.idx_tot_str(idx)
@@ -473,8 +477,10 @@ class AlignFrames(AlignFramesBase):
                 f"{self.process.name}: matches\nframe {idx_str}", plot_path)
         }
         if self.plot_matches:
-            plot_path = f"{self.process.working_path}/{self.process.plot_path}/" \
-                f"{self.process.name}-matches-{idx_str}.pdf"
+            plot_path = os.path.join(
+                self.process.working_path,
+                self.process.plot_path,
+                f"{self.process.name}-matches-{idx_str}.pdf")
         else:
             plot_path = None
         affine_thresholds, homography_thresholds = self.get_transform_thresholds()

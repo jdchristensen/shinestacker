@@ -10,14 +10,14 @@ from .utils import get_first_image_file, get_img_metadata, read_img
 class AlignFramesAuto(AlignFramesBase):
     def __init__(self, enabled=True, feature_config=None, matching_config=None,
                  alignment_config=None, **kwargs):
-        super().__init__(enabled=True, feature_config=None, matching_config=None,
-                         alignment_config=None, **kwargs)
         self.mode = kwargs.pop('mode', constants.DEFAULT_ALIGN_MODE)
         self.memory_limit = kwargs.pop('memory_limit', constants.DEFAULT_ALIGN_MEMORY_LIMIT_GB)
         self.max_threads = kwargs.pop('max_threads', constants.DEFAULT_ALIGN_MAX_THREADS)
         self.chunk_submit = kwargs.pop('chunk_submit', constants.DEFAULT_ALIGN_CHUNK_SUBMIT)
         self.bw_matching = kwargs.pop('bw_matching', constants.DEFAULT_ALIGN_BW_MATCHING)
         self.kwargs = kwargs
+        super().__init__(enabled=True, feature_config=None, matching_config=None,
+                         alignment_config=None, **kwargs)
         available_cores = os.cpu_count() or 1
         self.num_threads = min(self.max_threads, available_cores)
         self._implementation = None
