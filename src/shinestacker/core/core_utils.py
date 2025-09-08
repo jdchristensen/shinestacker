@@ -3,6 +3,7 @@ import os
 import sys
 import platform
 from .. config.config import config
+import matplotlib
 
 if not config.DISABLE_TQDM:
     from tqdm import tqdm
@@ -54,3 +55,11 @@ def running_under_linux() -> bool:
 
 def make_chunks(ll, max_size):
     return [ll[i:i + max_size] for i in range(0, len(ll), max_size)]
+
+
+def setup_matplotlib_mode():
+    try:
+        __IPYTHON__ # noqa
+    except Exception:
+        matplotlib.use('agg')
+    matplotlib.rcParams['pdf.fonttype'] = 42

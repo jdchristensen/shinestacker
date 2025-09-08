@@ -7,9 +7,11 @@ import matplotlib.pyplot as plt
 from scipy.optimize import curve_fit, fsolve
 import cv2
 from .. core.colors import color_str
+from .. core.core_utils import setup_matplotlib_mode
 from .. config.constants import constants
 from .utils import img_8bit, save_plot, img_subsample
 from .stack_framework import SubAction
+setup_matplotlib_mode()
 
 CLIP_EXP = 10
 

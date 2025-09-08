@@ -10,10 +10,12 @@ from .. config.constants import constants
 from .. core.colors import color_str
 from .. core.exceptions import ImageLoadError
 from .. core.framework import TaskBase
-from .. core.core_utils import make_tqdm_bar
+from .. core.core_utils import make_tqdm_bar, setup_matplotlib_mode
 from .. core.exceptions import RunStopException, ShapeError
 from .stack_framework import ImageSequenceManager, SubAction
 from .utils import read_img, save_plot, get_img_metadata, validate_image
+setup_matplotlib_mode()
+
 
 MAX_NOISY_PIXELS = 1000
 

@@ -1,5 +1,6 @@
 # pylint: disable=C0114, C0116, E1101, R0914
 import os
+import gc
 import logging
 import numpy as np
 import cv2
@@ -141,6 +142,7 @@ def save_plot(filename, fig=None):
     if config.JUPYTER_NOTEBOOK:
         plt.show()
     plt.close(fig)
+    gc.collect()
 
 
 def img_subsample(img, subsample, fast=True):

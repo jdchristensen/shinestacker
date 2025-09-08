@@ -5,13 +5,13 @@ import logging
 import numpy as np
 import cv2
 import matplotlib.pyplot as plt
-import matplotlib
 from .. config.constants import constants
 from .. core.exceptions import InvalidOptionError
 from .. core.colors import color_str
+from .. core.core_utils import setup_matplotlib_mode
 from .utils import img_8bit, img_bw_8bit, save_plot, img_subsample
 from .stack_framework import SubAction
-matplotlib.use('Agg')
+setup_matplotlib_mode()
 
 _DEFAULT_FEATURE_CONFIG = {
     'detector': constants.DEFAULT_DETECTOR,

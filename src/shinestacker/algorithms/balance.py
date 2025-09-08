@@ -2,17 +2,17 @@
 import math
 import numpy as np
 import cv2
-import matplotlib
 import matplotlib.pyplot as plt
 from scipy.optimize import bisect
 from scipy.interpolate import interp1d
 from .. config.constants import constants
 from .. core.exceptions import InvalidOptionError
 from .. core.colors import color_str
+from .. core.core_utils import setup_matplotlib_mode
 from .utils import (read_img, save_plot, img_subsample, bgr_to_hsv, bgr_to_hls,
                     hsv_to_bgr, hls_to_bgr, bgr_to_lab, lab_to_bgr)
 from .stack_framework import SubAction
-matplotlib.use('agg')
+setup_matplotlib_mode()
 
 
 class BaseHistogrammer:
