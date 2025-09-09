@@ -5,7 +5,7 @@ from abc import ABC, abstractmethod
 import os.path
 from PySide6.QtCore import Qt, QTimer
 from PySide6.QtWidgets import (QPushButton, QHBoxLayout, QFileDialog, QLabel, QComboBox,
-                               QMessageBox, QSizePolicy, QLineEdit, QSpinBox,
+                               QMessageBox, QSizePolicy, QLineEdit, QSpinBox, QFrame,
                                QDoubleSpinBox, QCheckBox, QTreeView, QAbstractItemView, QListView,
                                QWidget, QScrollArea, QFormLayout, QDialog, QTabWidget)
 from .. config.constants import constants
@@ -496,13 +496,29 @@ class DefaultActionConfigurator(NoNameActionConfigurator):
 
     def create_form(self, main_layout, action, tag='Action'):
         self.builder = FieldBuilder(main_layout, action, self.current_wd)
-        self.add_field(
-            'name', FIELD_TEXT, f'{tag} name', required=True)
+        name_row = QHBoxLayout()
+        name_row.setContentsMargins(0, 0, 0, 0)
+        name_label = QLabel(f"{tag} name:")
+        name_field = self.builder.create_text_field('name', required=True)
+        name_row.addWidget(name_label)
+        name_row.addWidget(name_field, 1)
+        name_row.addStretch()
         if self.expert_toggle:
-            self.expert_cb = QCheckBox("Show expert options")
+            expert_layout = QHBoxLayout()
+            expert_layout.setContentsMargins(0, 0, 0, 0)
+            expert_label = QLabel("Show expert options:")
+            self.expert_cb = QCheckBox()
             self.expert_cb.setChecked(self._expert_init)
-            main_layout.addRow(self.expert_cb)
             self.expert_cb.stateChanged.connect(self.toggle_expert_options)
+            expert_layout.addWidget(expert_label)
+            expert_layout.addWidget(self.expert_cb)
+            name_row.addLayout(expert_layout)
+        main_layout.addRow(name_row)
+        separator = QFrame()
+        separator.setFrameShape(QFrame.HLine)
+        separator.setFrameShadow(QFrame.Sunken)
+        separator.setLineWidth(1)
+        main_layout.addRow(separator)
 
     def main_layout(self):
         return self.builder.main_layout
