@@ -40,6 +40,7 @@ def test_cache_img():
         mock_read.return_value = np.ones((100, 100, 3), dtype=np.uint8)
         mock_bw.return_value = np.ones((100, 100), dtype=np.uint8)
         aligner._img_cache = [None]
+        aligner._img_shapes = [None]
         aligner._img_locks = [0]
         aligner._cache_locks = [threading.Lock()]
         result = aligner.cache_img(0)

@@ -39,6 +39,7 @@ class AlignFramesParallel(AlignFramesBase):
         self.chunk_submit = kwargs.get('chunk_submit', constants.DEFAULT_ALIGN_CHUNK_SUBMIT)
         self.bw_matching = kwargs.get('bw_matching', constants.DEFAULT_ALIGN_BW_MATCHING)
         self._img_cache = None
+        self._img_shapes = None
         self._img_locks = None
         self._cache_locks = None
         self._target_indices = None
@@ -59,6 +60,8 @@ class AlignFramesParallel(AlignFramesBase):
                 if self.bw_matching:
                     img = img_bw(img)
                 self._img_cache[idx] = img
+                if img is not None:
+                    self._img_shapes[idx] = img.shape
             return self._img_cache[idx]
 
     def submit_threads(self, idxs, imgs):
@@ -115,6 +118,7 @@ class AlignFramesParallel(AlignFramesBase):
                               self.process.id, self.process.name, 2 * n_frames)
         input_filepaths = self.process.input_filepaths()
         self._img_cache = [None] * n_frames
+        self._img_shapes = [None] * n_frames
         self._img_locks = [0] * n_frames
         self._cache_locks = [threading.Lock() for _ in range(n_frames)]
         self._target_indices = [None] * n_frames
@@ -171,9 +175,17 @@ class AlignFramesParallel(AlignFramesBase):
             self._transforms[idx] = None
         gc.collect()
         missing_transforms = 0
+        thresholds = self.get_transform_thresholds()
         for i in range(n_frames):
             if self._cumulative_transforms[i] is not None:
                 self._cumulative_transforms[i] = self._cumulative_transforms[i].astype(np.float32)
+                is_valid, _reason, result = check_transform(
+                    self._cumulative_transforms[i], self._img_shapes[i],
+                    transform_type, *thresholds)
+                if is_valid:
+                    self.save_transform_result(i, result)
+                else:
+                    self._cumulative_transforms[i] = None
             else:
                 missing_transforms += 1
         msg = "feature extaction completed"
@@ -280,8 +292,8 @@ class AlignFramesParallel(AlignFramesBase):
                 return self.extract_features(idx, delta + 1)
         transform_type = self.alignment_config['transform']
         thresholds = self.get_transform_thresholds()
-        is_valid, _reason, result = check_transform(m, img_0, transform_type, *thresholds)
-        self.save_transform_result(idx, result)
+        is_valid, _reason, result = check_transform(m, img_0.shape, transform_type, *thresholds)
+        # self.save_transform_result(idx, result)
         if not is_valid:
             msg = f"invalid transformation for {self.image_str(idx)}"
             do_abort = self.alignment_config['abort_abnormal']

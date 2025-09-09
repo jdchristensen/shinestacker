@@ -135,14 +135,14 @@ def check_homography_distortion(m, img_shape, homography_thresholds=_HOMOGRAPHY_
         (area_ratio, aspect_ratio, max_angle_dev)
 
 
-def check_transform(m, img_0, transform_type,
+def check_transform(m, img_shape, transform_type,
                     affine_thresholds, homography_thresholds):
     if transform_type == constants.ALIGN_RIGID:
         return check_affine_matrix(
-            m, img_0.shape, affine_thresholds)
+            m, img_shape, affine_thresholds)
     if transform_type == constants.ALIGN_HOMOGRAPHY:
         return check_homography_distortion(
-            m, img_0.shape, homography_thresholds)
+            m, img_shape, homography_thresholds)
     return False, f'invalid transfrom option {transform_type}', None
 
 
@@ -353,7 +353,7 @@ def align_images(img_ref, img_0, feature_config=None, matching_config=None, alig
                 raise InvalidOptionError("transform", transform)
         transform_type = alignment_config['transform']
         is_valid, reason, result = check_transform(
-            m, img_0, transform_type,
+            m, img_0.shape, transform_type,
             affine_thresholds, homography_thresholds)
         if callbacks and 'save_transform_result' in callbacks:
             callbacks['save_transform_result'](result)
@@ -492,11 +492,7 @@ class AlignFramesBase(SubAction):
             self.process.callback(constants.CALLBACK_SAVE_PLOT, self.process.id,
                                   f"{self.process.name}: matches", plot_path)
             transform = self.alignment_config['transform']
-            title = "Transformation parameters"
-            if self.relative_transformation():
-                title += " rel. to nearest frame"
-            else:
-                title += " rel. to reference frame"
+            title = "Transformation parameters rel. to reference frame"
             if transform == constants.ALIGN_RIGID:
                 plt.figure(figsize=constants.PLT_FIG_SIZE)
                 x, y, y_ref = get_coordinates(self._rotation)
