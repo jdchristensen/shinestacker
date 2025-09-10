@@ -2,12 +2,13 @@
 
 This page reports the main releases only and the main changes therein.
 
-## [v-.-.-] - 2025-09-08
+## [v-.-.-] - 2025-09-09
 ** Unreleased code**
 
 ### Added
 - optional plots for alignment transformation parameters
 - implemented "Open Recent" menu entry for both projects and retouch images
+- expert options can be shown with a checkbox in each dialog
 
 ## Fixed
 - fixed bug in plot generation

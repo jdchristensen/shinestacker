@@ -3,9 +3,11 @@
 import traceback
 from abc import ABC, abstractmethod
 import os.path
+from PySide6.QtCore import Qt, QTimer
 from PySide6.QtWidgets import (QPushButton, QHBoxLayout, QFileDialog, QLabel, QComboBox,
-                               QMessageBox, QSizePolicy, QLineEdit, QSpinBox,
-                               QDoubleSpinBox, QCheckBox, QTreeView, QAbstractItemView, QListView)
+                               QMessageBox, QSizePolicy, QLineEdit, QSpinBox, QFrame,
+                               QDoubleSpinBox, QCheckBox, QTreeView, QAbstractItemView, QListView,
+                               QWidget, QScrollArea, QFormLayout, QDialog, QTabWidget)
 from .. config.constants import constants
 from .select_path_widget import (create_select_file_paths_widget, create_layout_widget_no_margins,
                                  create_layout_widget_and_connect)
@@ -27,12 +29,11 @@ FIELD_REF_IDX_MAX = 1000
 
 
 class ActionConfigurator(ABC):
-    def __init__(self, expert, current_wd):
-        self.expert = expert
+    def __init__(self, current_wd):
         self.current_wd = current_wd
 
     @abstractmethod
-    def create_form(self, layout, action, tag="Action"):
+    def create_form(self, main_layout, action, tag="Action"):
         pass
 
     @abstractmethod
@@ -41,8 +42,8 @@ class ActionConfigurator(ABC):
 
 
 class FieldBuilder:
-    def __init__(self, layout, action, current_wd):
-        self.main_layout = layout
+    def __init__(self, main_layout, action, current_wd):
+        self.main_layout = main_layout
         self.action = action
         self.current_wd = current_wd
         self.fields = {}
@@ -412,3 +413,167 @@ class FieldBuilder:
         checkbox = QCheckBox()
         checkbox.setChecked(self.action.params.get(tag, default))
         return checkbox
+
+
+class NoNameActionConfigurator(ActionConfigurator):
+    def __init__(self, current_wd):
+        super().__init__(current_wd)
+        self.builder = None
+
+    def get_builder(self):
+        return self.builder
+
+    def update_params(self, params):
+        return self.builder.update_params(params)
+
+    def add_bold_label(self, label):
+        label = QLabel(label)
+        label.setStyleSheet("font-weight: bold")
+        self.add_row(label)
+
+    def add_row(self, row):
+        self.builder.main_layout.addRow(row)
+
+    def add_field(self, tag, field_type, label, required=False, add_to_layout=None,
+                  **kwargs):
+        return self.builder.add_field(tag, field_type, label, required, add_to_layout, **kwargs)
+
+    def labelled_widget(self, label, widget):
+        row = QWidget()
+        main_layout = QHBoxLayout()
+        main_layout.setContentsMargins(2, 2, 2, 2)
+        main_layout.setSpacing(8)
+        label_widget = QLabel(label)
+        label_widget.setFixedWidth(120)
+        label_widget.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Preferred)
+        main_layout.addWidget(label_widget)
+        main_layout.addWidget(widget)
+        main_layout.setStretch(0, 1)
+        main_layout.setStretch(1, 3)
+        row.setLayout(main_layout)
+        return row
+
+    def add_labelled_row(self, label, widget):
+        self.add_row(self.labelled_widget(label, widget))
+
+    def create_tab_widget(self, main_layout):
+        tab_widget = QTabWidget()
+        main_layout.addRow(tab_widget)
+        return tab_widget
+
+    def create_tab_layout(self):
+        tab_layout = QFormLayout()
+        tab_layout.setFieldGrowthPolicy(QFormLayout.AllNonFixedFieldsGrow)
+        tab_layout.setRowWrapPolicy(QFormLayout.DontWrapRows)
+        tab_layout.setFormAlignment(Qt.AlignLeft | Qt.AlignTop)
+        tab_layout.setLabelAlignment(Qt.AlignLeft)
+        return tab_layout
+
+    def add_tab(self, tab_widget, title):
+        tab = QWidget()
+        tab_layout = self.create_tab_layout()
+        tab.setLayout(tab_layout)
+        tab_widget.addTab(tab, title)
+        return tab_layout
+
+    def add_field_to_layout(self, main_layout, tag, field_type, label, required=False, **kwargs):
+        return self.add_field(tag, field_type, label, required, add_to_layout=main_layout, **kwargs)
+
+    def add_bold_label_to_layout(self, main_layout, label):
+        label_widget = QLabel(label)
+        label_widget.setStyleSheet("font-weight: bold")
+        main_layout.addRow(label_widget)
+        return label_widget
+
+
+class DefaultActionConfigurator(NoNameActionConfigurator):
+    def __init__(self, expert_init, current_wd, expert_toggle=True):
+        super().__init__(current_wd)
+        self.expert_toggle = expert_toggle
+        self._expert_init = expert_init
+        self.expert_cb = None
+        self.expert_widgets = []
+
+    def create_form(self, main_layout, action, tag='Action'):
+        self.builder = FieldBuilder(main_layout, action, self.current_wd)
+        name_row = QHBoxLayout()
+        name_row.setContentsMargins(0, 0, 0, 0)
+        name_label = QLabel(f"{tag} name:")
+        name_field = self.builder.create_text_field('name', required=True)
+        name_row.addWidget(name_label)
+        name_row.addWidget(name_field, 1)
+        name_row.addStretch()
+        if self.expert_toggle:
+            expert_layout = QHBoxLayout()
+            expert_layout.setContentsMargins(0, 0, 0, 0)
+            expert_label = QLabel("Show expert options:")
+            self.expert_cb = QCheckBox()
+            self.expert_cb.setChecked(self._expert_init)
+            self.expert_cb.stateChanged.connect(self.toggle_expert_options)
+            expert_layout.addWidget(expert_label)
+            expert_layout.addWidget(self.expert_cb)
+            name_row.addLayout(expert_layout)
+        main_layout.addRow(name_row)
+        separator = QFrame()
+        separator.setFrameShape(QFrame.HLine)
+        separator.setFrameShadow(QFrame.Sunken)
+        separator.setLineWidth(1)
+        main_layout.addRow(separator)
+
+    def main_layout(self):
+        return self.builder.main_layout
+
+    def add_field(self, tag, field_type, label, required=False, add_to_layout=None,
+                  expert=False, **kwargs):
+        current_layout = add_to_layout if add_to_layout is not None else self.main_layout()
+        widget = super().add_field(tag, field_type, label, required, add_to_layout, **kwargs)
+        if expert:
+            label_widget = None
+            if hasattr(current_layout, 'labelForField'):
+                label_widget = current_layout.labelForField(widget)
+            if label_widget is None:
+                for i in range(current_layout.rowCount()):
+                    item = current_layout.itemAt(i, QFormLayout.LabelRole)
+                    if item and item.widget() and \
+                            current_layout.itemAt(i, QFormLayout.FieldRole).widget() == widget:
+                        label_widget = item.widget()
+                        break
+            self.expert_widgets.append((widget, label_widget))
+            visible = self.expert_cb.isChecked() if self.expert_cb else self._expert_init
+            widget.setVisible(visible)
+            if label_widget:
+                label_widget.setVisible(visible)
+        return widget
+
+    def toggle_expert_options(self, state):
+        visible = state == Qt.CheckState.Checked.value
+        for widget, label_widget in self.expert_widgets:
+            widget.setVisible(visible)
+            if label_widget:
+                label_widget.setVisible(visible)
+        self.main_layout().invalidate()
+        self.main_layout().activate()
+        parent = self.main_layout().parent()
+        while parent and not isinstance(parent, QDialog):
+            parent = parent.parent()
+        if parent and isinstance(parent, QDialog):
+            QTimer.singleShot(50, lambda: self._resize_dialog(parent))
+
+    def _resize_dialog(self, dialog):
+        scroll_area = dialog.findChild(QScrollArea)
+        if not scroll_area:
+            return
+        container = scroll_area.widget()
+        content_size = container.sizeHint()
+        margin = 40
+        button_height = 50
+        new_height = content_size.height() + button_height + margin
+        screen_geo = dialog.screen().availableGeometry()
+        max_height = int(screen_geo.height() * 0.8)
+        current_size = dialog.size()
+        new_height = min(new_height, max_height)
+        dialog.resize(current_size.width(), new_height)
+        if content_size.height() <= max_height - button_height - margin:
+            scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        else:
+            scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)

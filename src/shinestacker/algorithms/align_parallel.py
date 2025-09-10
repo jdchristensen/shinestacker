@@ -292,7 +292,7 @@ class AlignFramesParallel(AlignFramesBase):
                 return self.extract_features(idx, delta + 1)
         transform_type = self.alignment_config['transform']
         thresholds = self.get_transform_thresholds()
-        is_valid, _reason, result = check_transform(m, img_0.shape, transform_type, *thresholds)
+        is_valid, _reason, _result = check_transform(m, img_0.shape, transform_type, *thresholds)
         # self.save_transform_result(idx, result)
         if not is_valid:
             msg = f"invalid transformation for {self.image_str(idx)}"
