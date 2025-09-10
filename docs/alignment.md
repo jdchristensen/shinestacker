@@ -100,12 +100,21 @@ This class has extra parameters, in addition to the above ones:
 
 * ```max_threads``` (optional, default: ```2```): number of parallel processes allowed. The number of actual threads will not be greater than the number of available CPU cores.
 * ```chunk_submit``` (optional, default: ```True```): submit at most ```max_threads``` parallel processes. If ```chunk_submit``` is greater than ```max_threads``` a moderate performance gain is achieved at the cost of a possibly large memory occupancy.
-* ```bw_matching``` (optional, default: ```False```): perform matches on black and white version of the images in order to save memory. Preliminary tests indicate that the gain with this option is marginal, and this option may be dropped in the future. 
+* ```bw_matching``` (optional, default: ```False```): perform matches on black and white version of the images in order to save memory. Preliminary tests indicate that the gain with this option is marginal, and this option may be dropped in the future.
+
+## Automatic selection of processing strategy
+
+A class ```AlignFramesAuto``` implements alignment with either sequential or parallel processing, and automatically tunes parallel processing parameters.
+This class has extra parameters, in addition to the above ones:
+
+* ```mode``` (optional, default: ```auto```): can be ```auto```, ```sequential``` or ```parallel```.
+* ```memory_limit``` (optional, default: 8×1024<sup>3</sup>sup>): memory limit to determine optimal running parameters
+
 
 ## Allowed configurations
 
 ⚠️ Not all combinations of detector, descriptor and match methods are allowed. Combinations that are not allowed
-give raise to an exception.
+give raise to an exception. This is automatically prevented if one works with the GUI, but may occur when using python scripting. Below the table of the allowed combination with a comparison of CPU performances.
 
 ## CPU performances
 

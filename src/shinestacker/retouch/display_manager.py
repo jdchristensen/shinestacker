@@ -171,7 +171,7 @@ class DisplayManager(QObject, LayerCollectionHandler):
         self.thumbnail_highlight = gui_constants.THUMB_LO_COLOR
         self.highlight_thumbnail(self.current_layer_idx())
         self.status_message_requested.emit("View mode: Master")
-        self.cursor_preview_state_changed.emit(True)  # True = allow preview
+        self.cursor_preview_state_changed.emit(True)
 
     def set_view_individual(self):
         if self.has_no_master_layer():
@@ -182,7 +182,7 @@ class DisplayManager(QObject, LayerCollectionHandler):
         self.thumbnail_highlight = gui_constants.THUMB_HI_COLOR
         self.highlight_thumbnail(self.current_layer_idx())
         self.status_message_requested.emit("View mode: Individual layers")
-        self.cursor_preview_state_changed.emit(False)  # False = no preview
+        self.cursor_preview_state_changed.emit(False)
 
     def start_temp_view(self):
         if not self.temp_view_individual and self.view_mode == 'master':
