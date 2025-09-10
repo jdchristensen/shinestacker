@@ -249,6 +249,7 @@ class ImageEditorUI(QMainWindow, LayerCollectionHandler):
                                  self.brush_size_slider, self.hardness_slider, self.opacity_slider,
                                  self.flow_slider)
         self.image_viewer.brush = self.brush_tool.brush
+        self.image_viewer.brush_preview.brush = self.brush_tool.brush
         self.brush_tool.update_brush_thumb()
         self.io_gui_handler.setup_ui(self.display_manager, self.image_viewer)
         self.image_viewer.display_manager = self.display_manager
