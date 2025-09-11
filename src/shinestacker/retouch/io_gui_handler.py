@@ -140,8 +140,7 @@ class IOGuiHandler(QObject, LayerCollectionHandler):
             msg.setText(str(e))
             msg.exec()
             return
-        master_qimage = self.display_manager.numpy_to_qimage(master)
-        self.image_viewer.set_master_image(master_qimage)
+        self.image_viewer.set_master_image_np(master)
         if self.layer_stack() is None and len(stack) > 0:
             self.set_layer_stack(np.array(stack))
             if labels is None:
