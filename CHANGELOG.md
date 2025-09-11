@@ -2,7 +2,7 @@
 
 This page reports the main releases only and the main changes therein.
 
-## [v-.-.-] - 2025-09-09
+## [v-.-.-] - 2025-09-11
 ** Unreleased code**
 
 ### Added
@@ -14,6 +14,9 @@ This page reports the main releases only and the main changes therein.
 - fixed bug in plot generation
 - fixes warning due to missing glyph in PDF generation on macOS
 - safer parallel plot generation using a thread lock
+
+### Changed
+- code refactoring
 
 ---
 

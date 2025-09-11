@@ -55,6 +55,9 @@ class IOGuiHandler(QObject, LayerCollectionHandler):
         else:
             self.set_layer_labels(labels)
         self.set_master_layer(master_layer)
+        self.image_viewer.set_master_image_np(master_layer)
+        self.image_viewer.show_master()
+        self.image_viewer.update_master_display()
         self.undo_manager.reset()
         self.blank_layer = np.zeros(master_layer.shape[:2])
         self.finish_loading_setup(f"Loaded: {self.current_file_path()}")
@@ -137,6 +140,8 @@ class IOGuiHandler(QObject, LayerCollectionHandler):
             msg.setText(str(e))
             msg.exec()
             return
+        master_qimage = self.display_manager.numpy_to_qimage(master)
+        self.image_viewer.set_master_image(master_qimage)
         if self.layer_stack() is None and len(stack) > 0:
             self.set_layer_stack(np.array(stack))
             if labels is None:

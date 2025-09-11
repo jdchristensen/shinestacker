@@ -64,6 +64,8 @@ class BrushPreviewItem(QGraphicsPixmapItem, LayerCollectionHandler):
         raise RuntimeError("Bitmas is neither 8 bit nor 16, but of type " + area.dtype)
 
     def update(self, scene_pos, size):
+        if self.brush is None:
+            return
         try:
             if self.layer_collection is None or self.number_of_layers() == 0 or size <= 0:
                 self.hide()

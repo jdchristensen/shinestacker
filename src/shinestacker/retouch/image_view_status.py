@@ -1,4 +1,4 @@
-# image_view_status.py
+# pylint: disable=C0114, C0115, C0116, E0611, R0902
 from PySide6.QtCore import QObject, QRectF
 from PySide6.QtGui import QPixmap
 
@@ -6,24 +6,31 @@ from PySide6.QtGui import QPixmap
 class ImageViewStatus(QObject):
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.pixmap = QPixmap()
+        self.pixmap_master = QPixmap()
+        self.pixmap_current = QPixmap()
         self.zoom_factor = 1.0
         self.min_scale = 0.0
         self.max_scale = 0.0
         self.h_scroll = 0
         self.v_scroll = 0
-        self.empty = True
         self.scene_rect = QRectF()
 
-    def set_image(self, qimage):
+    def empty(self):
+        return self.pixmap_master.isNull()
+
+    def set_master_image(self, qimage):
         pixmap = QPixmap.fromImage(qimage)
-        self.pixmap = pixmap
-        self.empty = pixmap.isNull()
-        self.scene_rect = QRectF(pixmap.rect())
+        self.pixmap_master = pixmap
+        if not self.empty():
+            self.scene_rect = QRectF(pixmap.rect())
+
+    def set_current_image(self, qimage):
+        pixmap = QPixmap.fromImage(qimage)
+        self.pixmap_current = pixmap
 
     def clear(self):
-        self.pixmap = QPixmap()
-        self.empty = True
+        self.pixmap_master = QPixmap()
+        self.pixmap_current = QPixmap()
         self.zoom_factor = 1.0
         self.min_scale = 0.0
         self.max_scale = 0.0

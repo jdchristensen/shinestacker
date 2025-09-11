@@ -44,26 +44,21 @@ class DisplayManager(QObject, LayerCollectionHandler):
 
     def process_pending_updates(self):
         if self.needs_update:
-            self.display_master_layer()
+            self.refresh_master_view()
             self.needs_update = False
 
-    def display_image(self, img):
-        if img is None:
-            self.image_viewer.clear_image()
-        else:
-            self.image_viewer.set_image(self.numpy_to_qimage(img))
+    def refresh_master_view(self):
+        if self.has_no_master_layer():
+            return
+        self.image_viewer.update_master_display()
+        self.update_master_thumbnail()
+        self.image_viewer.refresh_display()
 
-    def display_current_layer(self):
-        self.display_image(self.current_layer())
-
-    def display_master_layer(self):
-        self.display_image(self.master_layer())
-
-    def display_current_view(self):
-        if self.temp_view_individual or self.view_mode == 'individual':
-            self.display_current_layer()
-        else:
-            self.display_master_layer()
+    def refresh_current_view(self):
+        if self.number_of_layers() == 0:
+            return
+        self.image_viewer.update_current_display()
+        self.image_viewer.refresh_display()
 
     def create_thumbnail(self, layer):
         source_layer = (layer // 256).astype(np.uint8) if layer.dtype == np.uint16 else layer
@@ -167,7 +162,8 @@ class DisplayManager(QObject, LayerCollectionHandler):
             return
         self.view_mode = 'master'
         self.temp_view_individual = False
-        self.display_master_layer()
+        self.image_viewer.show_master()
+        self.refresh_master_view()
         self.thumbnail_highlight = gui_constants.THUMB_LO_COLOR
         self.highlight_thumbnail(self.current_layer_idx())
         self.status_message_requested.emit("View mode: Master")
@@ -178,7 +174,8 @@ class DisplayManager(QObject, LayerCollectionHandler):
             return
         self.view_mode = 'individual'
         self.temp_view_individual = False
-        self.display_current_layer()
+        self.image_viewer.show_current()
+        self.refresh_current_view()
         self.thumbnail_highlight = gui_constants.THUMB_HI_COLOR
         self.highlight_thumbnail(self.current_layer_idx())
         self.status_message_requested.emit("View mode: Individual layers")
@@ -190,7 +187,8 @@ class DisplayManager(QObject, LayerCollectionHandler):
             self.image_viewer.update_brush_cursor()
             self.thumbnail_highlight = gui_constants.THUMB_HI_COLOR
             self.highlight_thumbnail(self.current_layer_idx())
-            self.display_current_layer()
+            self.image_viewer.show_current()
+            self.refresh_current_view()
             self.status_message_requested.emit("Temporary view: Individual layer (hold X)")
 
     def end_temp_view(self):
@@ -199,22 +197,10 @@ class DisplayManager(QObject, LayerCollectionHandler):
             self.image_viewer.update_brush_cursor()
             self.thumbnail_highlight = gui_constants.THUMB_LO_COLOR
             self.highlight_thumbnail(self.current_layer_idx())
-            self.display_master_layer()
+            self.image_viewer.show_master()
+            self.refresh_master_view()
             self.status_message_requested.emit("View mode: Master")
-            self.cursor_preview_state_changed.emit(True)  # Restore preview
-
-    def numpy_to_qimage(self, array):
-        if array.dtype == np.uint16:
-            array = np.right_shift(array, 8).astype(np.uint8)
-        if array.ndim == 2:
-            height, width = array.shape
-            return QImage(memoryview(array), width, height, width, QImage.Format_Grayscale8)
-        if array.ndim == 3:
-            height, width, _ = array.shape
-            if not array.flags['C_CONTIGUOUS']:
-                array = np.ascontiguousarray(array)
-            return QImage(memoryview(array), width, height, 3 * width, QImage.Format_RGB888)
-        return QImage()
+            self.cursor_preview_state_changed.emit(True)
 
     def allow_cursor_preview(self):
         return self.view_mode == 'master' and not self.temp_view_individual

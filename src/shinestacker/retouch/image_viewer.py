@@ -1,9 +1,10 @@
 # pylint: disable=C0114, C0115, C0116, E0611, R0904, R0902, R0914, R0912
 import math
+import numpy as np
 from PySide6.QtWidgets import (QGraphicsView, QGraphicsScene, QGraphicsPixmapItem,
                                QGraphicsEllipseItem)
-from PySide6.QtGui import QPixmap, QPainter, QColor, QPen, QBrush, QCursor
-from PySide6.QtCore import Qt, QTime, QPoint, QPointF, Signal, QEvent
+from PySide6.QtGui import QPixmap, QPainter, QColor, QPen, QBrush, QCursor, QImage
+from PySide6.QtCore import Qt, QTime, QPoint, QPointF, Signal, QEvent, QRectF
 from .. config.gui_constants import gui_constants
 from .brush_preview import BrushPreviewItem
 from .brush_gradient import create_default_brush_gradient
@@ -26,9 +27,10 @@ class ImageViewer(QGraphicsView, LayerCollectionHandler):
         self.cursor_style = gui_constants.DEFAULT_CURSOR_STYLE
         self.scene = QGraphicsScene(self)
         self.setScene(self.scene)
-        self.pixmap_item = QGraphicsPixmapItem()
-        self.scene.addItem(self.pixmap_item)
-        self.pixmap_item.setPixmap(QPixmap())
+        self.pixmap_item_master = QGraphicsPixmapItem()
+        self.pixmap_item_current = QGraphicsPixmapItem()
+        self.scene.addItem(self.pixmap_item_master)
+        self.scene.addItem(self.pixmap_item_current)
         self.scene.setBackgroundBrush(QBrush(QColor(120, 120, 120)))
         self.status = ImageViewStatus(self)
         self.last_mouse_pos = None
@@ -49,7 +51,6 @@ class ImageViewer(QGraphicsView, LayerCollectionHandler):
         self.set_layer_collection(layer_collection)
         self.brush_preview = BrushPreviewItem(self.layer_collection)
         self.scene.addItem(self.brush_preview)
-        self.empty = True
         self.allow_cursor_preview = True
         self.last_brush_pos = None
         self.grabGesture(Qt.PanGesture)
@@ -81,27 +82,48 @@ class ImageViewer(QGraphicsView, LayerCollectionHandler):
     def empty(self):
         return self.status.empty()
 
-    def set_image(self, qimage):
-        pixmap = QPixmap.fromImage(qimage)
-        self.pixmap_item.setPixmap(pixmap)
-        self.status.set_image(qimage)
+    def numpy_to_qimage(self, array):
+        if array.dtype == np.uint16:
+            array = np.right_shift(array, 8).astype(np.uint8)
+        if array.ndim == 2:
+            height, width = array.shape
+            return QImage(memoryview(array), width, height, width, QImage.Format_Grayscale8)
+        if array.ndim == 3:
+            height, width, _ = array.shape
+            if not array.flags['C_CONTIGUOUS']:
+                array = np.ascontiguousarray(array)
+            return QImage(memoryview(array), width, height, 3 * width, QImage.Format_RGB888)
+        return QImage()
+
+    def set_master_image(self, qimage):
+        self.status.set_master_image(qimage)
+        pixmap = self.status.pixmap_master
+        self.setSceneRect(QRectF(pixmap.rect()))
         img_width, img_height = pixmap.width(), pixmap.height()
         self.set_min_scale(min(gui_constants.MIN_ZOOMED_IMG_WIDTH / img_width,
                                gui_constants.MIN_ZOOMED_IMG_HEIGHT / img_height))
         self.set_max_scale(gui_constants.MAX_ZOOMED_IMG_PX_SIZE)
-        if self.set_zoom_factor(1.0):
-            self.fitInView(self.pixmap_item, Qt.KeepAspectRatio)
+        if self.zoom_factor() == 1.0:
+            self.fitInView(self.pixmap_item_master, Qt.KeepAspectRatio)
             self.set_zoom_factor(self.get_current_scale())
-            self.set_zoom_factor(max(self.min_scale(),
-                                 min(self.max_scale(), self.zoom_factor())))
+            self.set_zoom_factor(max(self.min_scale(), min(self.max_scale(), self.zoom_factor())))
             self.resetTransform()
             self.scale(self.zoom_factor(), self.zoom_factor())
-        self.empty = False
+
+    def set_master_image_np(self, img):
+        self.set_master_image(self.numpy_to_qimage(img))
+
+    def set_current_image(self, qimage):
+        self.status.set_current_image(qimage)
+        if self.empty():
+            self.setSceneRect(QRectF(self.status.pixmap_current.rect()))
 
     def clear_image(self):
         self.scene.clear()
-        self.pixmap_item = QGraphicsPixmapItem()
-        self.scene.addItem(self.pixmap_item)
+        self.pixmap_item_master = QGraphicsPixmapItem()
+        self.pixmap_item_current = QGraphicsPixmapItem()
+        self.scene.addItem(self.pixmap_item_master)
+        self.scene.addItem(self.pixmap_item_current)
         self.status.clear()
         self.setup_brush_cursor()
         self.brush_preview = BrushPreviewItem(self.layer_collection)
@@ -109,7 +131,30 @@ class ImageViewer(QGraphicsView, LayerCollectionHandler):
         self.setCursor(Qt.ArrowCursor)
         if self.brush_cursor:
             self.brush_cursor.hide()
-        self.empty = True
+
+    def show_master(self):
+        self.pixmap_item_master.setVisible(True)
+        self.pixmap_item_current.setVisible(False)
+
+    def show_current(self):
+        self.pixmap_item_master.setVisible(False)
+        self.pixmap_item_current.setVisible(True)
+
+    def update_master_display(self):
+        if not self.empty():
+            master_qimage = self.numpy_to_qimage(
+                self.master_layer())
+            self.pixmap_item_master.setPixmap(QPixmap.fromImage(master_qimage))
+
+    def update_current_display(self):
+        if not self.empty() and self.number_of_layers() > 0:
+            current_qimage = self.numpy_to_qimage(
+                self.current_layer())
+            self.pixmap_item_current.setPixmap(QPixmap.fromImage(current_qimage))
+
+    def refresh_display(self):
+        self.update_brush_cursor()
+        self.scene.update()
 
     def get_view_state(self):
         return self.status.get_state()
@@ -125,7 +170,7 @@ class ImageViewer(QGraphicsView, LayerCollectionHandler):
 
     # pylint: disable=C0103
     def keyPressEvent(self, event):
-        if self.empty:
+        if self.empty():
             return
         if event.key() == Qt.Key_Space and not self.scrolling:
             self.space_pressed = True
@@ -141,7 +186,7 @@ class ImageViewer(QGraphicsView, LayerCollectionHandler):
         super().keyPressEvent(event)
 
     def keyReleaseEvent(self, event):
-        if self.empty:
+        if self.empty():
             return
         self.update_brush_cursor()
         if event.key() == Qt.Key_Space:
@@ -158,9 +203,9 @@ class ImageViewer(QGraphicsView, LayerCollectionHandler):
         super().keyReleaseEvent(event)
 
     def mousePressEvent(self, event):
-        if self.empty:
+        if self.empty():
             return
-        if event.button() == Qt.LeftButton and self.layer_collection.has_master_layer():
+        if event.button() == Qt.LeftButton and self.has_master_layer():
             if self.space_pressed:
                 self.scrolling = True
                 self.last_mouse_pos = event.position()
@@ -176,7 +221,7 @@ class ImageViewer(QGraphicsView, LayerCollectionHandler):
         super().mousePressEvent(event)
 
     def mouseMoveEvent(self, event):
-        if self.empty:
+        if self.empty():
             return
         position = event.position()
         brush_size = self.brush.size
@@ -213,7 +258,7 @@ class ImageViewer(QGraphicsView, LayerCollectionHandler):
             super().mouseMoveEvent(event)
 
     def mouseReleaseEvent(self, event):
-        if self.empty:
+        if self.empty():
             return
         if self.space_pressed:
             self.setCursor(Qt.OpenHandCursor)
@@ -233,7 +278,7 @@ class ImageViewer(QGraphicsView, LayerCollectionHandler):
         super().mouseReleaseEvent(event)
 
     def wheelEvent(self, event):
-        if self.empty or self.gesture_active:
+        if self.empty() or self.gesture_active:
             return
         if event.source() == Qt.MouseEventNotSynthesized:  # Physical mouse
             if self.control_pressed:
@@ -274,14 +319,14 @@ class ImageViewer(QGraphicsView, LayerCollectionHandler):
     def enterEvent(self, event):
         self.activateWindow()
         self.setFocus()
-        if not self.empty:
+        if not self.empty():
             self.setCursor(Qt.BlankCursor)
             if self.brush_cursor:
                 self.brush_cursor.show()
         super().enterEvent(event)
 
     def leaveEvent(self, event):
-        if not self.empty:
+        if not self.empty():
             self.setCursor(Qt.ArrowCursor)
             if self.brush_cursor:
                 self.brush_cursor.hide()
@@ -294,6 +339,8 @@ class ImageViewer(QGraphicsView, LayerCollectionHandler):
         return super().event(event)
 
     def handle_gesture_event(self, event):
+        if self.empty():
+            return False
         handled = False
         pan_gesture = event.gesture(Qt.PanGesture)
         if pan_gesture:
@@ -358,7 +405,7 @@ class ImageViewer(QGraphicsView, LayerCollectionHandler):
         self.brush_cursor.hide()
 
     def update_brush_cursor(self):
-        if self.empty:
+        if self.empty():
             return
         if not self.brush_cursor or not self.isVisible():
             return
@@ -404,7 +451,7 @@ class ImageViewer(QGraphicsView, LayerCollectionHandler):
         self.brush_cursor.setBrush(QBrush(gradient))
 
     def zoom_in(self):
-        if self.empty:
+        if self.empty():
             return
         current_scale = self.get_current_scale()
         new_scale = current_scale * gui_constants.ZOOM_IN_FACTOR
@@ -414,7 +461,7 @@ class ImageViewer(QGraphicsView, LayerCollectionHandler):
             self.update_brush_cursor()
 
     def zoom_out(self):
-        if self.empty:
+        if self.empty():
             return
         current_scale = self.get_current_scale()
         new_scale = current_scale * gui_constants.ZOOM_OUT_FACTOR
@@ -424,14 +471,15 @@ class ImageViewer(QGraphicsView, LayerCollectionHandler):
             self.update_brush_cursor()
 
     def reset_zoom(self):
-        if self.empty:
+        if self.empty():
             return
         self.pinch_start_scale = 1.0
         self.last_scroll_pos = QPointF()
         self.gesture_active = False
         self.pinch_center_view = None
         self.pinch_center_scene = None
-        self.fitInView(self.pixmap_item, Qt.KeepAspectRatio)
+        self.fitInView(self.pixmap_item_master, Qt.KeepAspectRatio)
+        self.fitInView(self.pixmap_item_current, Qt.KeepAspectRatio)
         self.set_zoom_factor(self.get_current_scale())
         self.set_zoom_factor(max(self.min_scale(), min(self.max_scale(), self.zoom_factor())))
         self.resetTransform()
@@ -439,7 +487,7 @@ class ImageViewer(QGraphicsView, LayerCollectionHandler):
         self.update_brush_cursor()
 
     def actual_size(self):
-        if self.empty:
+        if self.empty():
             return
         self.set_zoom_factor(max(self.min_scale(), min(self.max_scale(), 1.0)))
         self.resetTransform()
@@ -456,16 +504,16 @@ class ImageViewer(QGraphicsView, LayerCollectionHandler):
 
     def position_on_image(self, pos):
         scene_pos = self.mapToScene(pos)
-        item_pos = self.pixmap_item.mapFromScene(scene_pos)
+        item_pos = self.pixmap_item_master.mapFromScene(scene_pos)
         return item_pos
 
     def get_visible_image_region(self):
-        if self.empty:
+        if self.empty():
             return None
         view_rect = self.viewport().rect()
         scene_rect = self.mapToScene(view_rect).boundingRect()
-        image_rect = self.pixmap_item.mapFromScene(scene_rect).boundingRect()
-        image_rect = image_rect.intersected(self.pixmap_item.boundingRect().toRect())
+        image_rect = self.pixmap_item_master.mapFromScene(scene_rect).boundingRect()
+        image_rect = image_rect.intersected(self.pixmap_item_master.boundingRect().toRect())
         return image_rect
 
     def get_visible_image_portion(self):

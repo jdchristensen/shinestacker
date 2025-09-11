@@ -461,7 +461,7 @@ class ImageEditorUI(QMainWindow, LayerCollectionHandler):
 
     # pylint: disable=C0103
     def keyPressEvent(self, event):
-        if self.image_viewer.empty:
+        if self.image_viewer.empty():
             return
         if event.text() == '[':
             self.brush_tool.decrease_brush_size()
@@ -488,10 +488,8 @@ class ImageEditorUI(QMainWindow, LayerCollectionHandler):
 
     def change_layer(self, layer_idx):
         if 0 <= layer_idx < self.number_of_layers():
-            view_state = self.image_viewer.get_view_state()
             self.set_current_layer_idx(layer_idx)
-            self.display_manager.display_current_view()
-            self.image_viewer.set_view_state(view_state)
+            self.display_manager.refresh_current_view()
             self.thumbnail_list.setCurrentRow(layer_idx)
             self.thumbnail_list.setFocus()
             self.image_viewer.update_brush_cursor()
@@ -524,8 +522,7 @@ class ImageEditorUI(QMainWindow, LayerCollectionHandler):
         if reply == QMessageBox.Yes:
             self.set_master_layer(self.current_layer().copy())
             self.master_layer().setflags(write=True)
-            self.display_manager.display_current_view()
-            self.display_manager.update_thumbnails()
+            self.display_manager.refresh_master_view()
             self.mark_as_modified()
             self.statusBar().showMessage(f"Copied layer {self.current_layer_idx() + 1} to master")
 
@@ -561,8 +558,7 @@ class ImageEditorUI(QMainWindow, LayerCollectionHandler):
 
     def end_copy_brush_area(self):
         if self.display_manager.update_timer.isActive():
-            self.display_manager.display_master_layer()
-            self.display_manager.update_master_thumbnail()
+            self.display_manager.refresh_master_view()
             self.undo_manager.save_undo_state(self.master_layer_copy(), 'Brush Stroke')
             self.display_manager.update_timer.stop()
             self.mark_as_modified()
@@ -656,11 +652,13 @@ class ImageEditorUI(QMainWindow, LayerCollectionHandler):
 
     def set_view_master(self):
         self.display_manager.set_view_master()
+        self.display_manager.refresh_master_view()
         self.thumbnail_highlight = gui_constants.THUMB_MASTER_HI_COLOR
         self.highlight_master_thumbnail()
 
     def set_view_individual(self):
         self.display_manager.set_view_individual()
+        self.display_manager.refresh_current_view()
         self.thumbnail_highlight = gui_constants.THUMB_MASTER_LO_COLOR
         self.highlight_master_thumbnail()
 
@@ -684,15 +682,13 @@ class ImageEditorUI(QMainWindow, LayerCollectionHandler):
 
     def undo(self):
         if self.undo_manager.undo(self.master_layer()):
-            self.display_manager.display_current_view()
-            self.display_manager.update_master_thumbnail()
+            self.display_manager.refresh_master_view()
             self.mark_as_modified()
             self.statusBar().showMessage("Undo applied", 2000)
 
     def redo(self):
         if self.undo_manager.redo(self.master_layer()):
-            self.display_manager.display_current_view()
-            self.display_manager.update_master_thumbnail()
+            self.display_manager.refresh_master_view()
             self.mark_as_modified()
             self.statusBar().showMessage("Redo applied", 2000)
 
