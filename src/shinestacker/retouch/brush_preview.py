@@ -41,6 +41,7 @@ class BrushPreviewItem(QGraphicsPixmapItem, LayerCollectionHandler):
         self.setVisible(False)
         self.setZValue(500)
         self.setTransformationMode(Qt.SmoothTransformation)
+        self.brush = None
 
     def get_layer_area(self, layer, x, y, w, h):
         if not isinstance(layer, np.ndarray):

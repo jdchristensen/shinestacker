@@ -61,6 +61,7 @@ class IOGuiHandler(QObject, LayerCollectionHandler):
         self.undo_manager.reset()
         self.blank_layer = np.zeros(master_layer.shape[:2])
         self.finish_loading_setup(f"Loaded: {self.current_file_path()}")
+        self.image_viewer.reset_zoom()
 
     def on_file_error(self, error_msg):
         QApplication.restoreOverrideCursor()
@@ -131,6 +132,7 @@ class IOGuiHandler(QObject, LayerCollectionHandler):
         self.status_message_requested.emit("Imported selected frames")
 
     def import_frames_from_files(self, file_paths):
+        empty_viewer = self.image_viewer.empty()
         try:
             stack, labels, master = self.io_manager.import_frames(file_paths)
         except Exception as e:
@@ -156,13 +158,14 @@ class IOGuiHandler(QObject, LayerCollectionHandler):
                 self.add_layer_label(label)
                 self.add_layer(img)
         self.finish_loading_setup("Selected frames imported")
+        if empty_viewer:
+            self.image_viewer.reset_zoom()
 
     def finish_loading_setup(self, message):
         self.display_manager.update_thumbnails()
         self.mark_as_modified_requested.emit(True)
         self.change_layer_requested.emit(0)
         self.image_viewer.setup_brush_cursor()
-        self.image_viewer.reset_zoom()
         self.status_message_requested.emit(message)
         self.update_title_requested.emit()
         self.add_recent_file_requested.emit(self.current_file_path_master)
