@@ -96,13 +96,13 @@ class BrushTool:
         preview_size = min(self.brush.size, width + 30, height + 30)
         center_x, center_y = width // 2, height // 2
         radius = preview_size // 2
-        if self.image_viewer.cursor_style == 'preview':
+        if self.image_viewer.strategy.cursor_style == 'preview':
             gradient = create_default_brush_gradient(center_x, center_y, radius, self.brush)
             painter.setBrush(QBrush(gradient))
             painter.setPen(
                 QPen(QColor(*gui_constants.BRUSH_COLORS['outer']),
                      gui_constants.BRUSH_PREVIEW_LINE_WIDTH))
-        elif self.image_viewer.cursor_style == 'outline':
+        elif self.image_viewer.strategy.cursor_style == 'outline':
             painter.setBrush(Qt.NoBrush)
             painter.setPen(
                 QPen(QColor(*gui_constants.BRUSH_COLORS['outer']),
@@ -113,7 +113,7 @@ class BrushTool:
                 QPen(QColor(*gui_constants.BRUSH_COLORS['pen']),
                      gui_constants.BRUSH_PREVIEW_LINE_WIDTH))
         painter.drawEllipse(QPoint(center_x, center_y), radius, radius)
-        if self.image_viewer.cursor_style == 'preview':
+        if self.image_viewer.strategy.cursor_style == 'preview':
             painter.setPen(QPen(QColor(0, 0, 160)))
             font = QApplication.font()
             painter.setFont(font)
@@ -132,7 +132,7 @@ class BrushTool:
             self.brush_text.hide()
         painter.end()
         self.brush_preview.setPixmap(pixmap)
-        self.image_viewer.update_brush_cursor()
+        self.image_viewer.strategy.update_brush_cursor()
 
     def apply_brush_operation(self, master_layer, source_layer, dest_layer, mask_layer,
                               view_pos):
@@ -140,7 +140,7 @@ class BrushTool:
             return False
         if dest_layer is None:
             dest_layer = master_layer
-        scene_pos = self.image_viewer.mapToScene(view_pos)
+        scene_pos = self.image_viewer.strategy.mapToScene(view_pos)
         x_center = int(round(scene_pos.x()))
         y_center = int(round(scene_pos.y()))
         radius = int(round(self.brush.size // 2))

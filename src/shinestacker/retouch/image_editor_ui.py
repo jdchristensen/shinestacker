@@ -56,12 +56,17 @@ class ImageEditorUI(QMainWindow, LayerCollectionHandler):
         self.setCentralWidget(central_widget)
         layout = QHBoxLayout(central_widget)
         self.image_viewer = ImageViewer(self.layer_collection)
-        self.image_viewer.temp_view_requested.connect(self.handle_temp_view)
-        self.image_viewer.brush_operation_started.connect(self.begin_copy_brush_area)
-        self.image_viewer.brush_operation_continued.connect(self.continue_copy_brush_area)
-        self.image_viewer.brush_operation_ended.connect(self.end_copy_brush_area)
-        self.image_viewer.brush_size_change_requested.connect(self.handle_brush_size_change)
-        self.image_viewer.setFocusPolicy(Qt.StrongFocus)
+        self.image_viewer.strategy.temp_view_requested.connect(
+            self.handle_temp_view)
+        self.image_viewer.strategy.brush_operation_started.connect(
+            self.begin_copy_brush_area)
+        self.image_viewer.strategy.brush_operation_continued.connect(
+            self.continue_copy_brush_area)
+        self.image_viewer.strategy.brush_operation_ended.connect(
+            self.end_copy_brush_area)
+        self.image_viewer.strategy.brush_size_change_requested.connect(
+            self.handle_brush_size_change)
+        self.image_viewer.strategy.setFocusPolicy(Qt.StrongFocus)
         side_panel = QWidget()
         side_layout = QVBoxLayout(side_panel)
         side_layout.setContentsMargins(0, 0, 0, 0)
@@ -228,7 +233,7 @@ class ImageEditorUI(QMainWindow, LayerCollectionHandler):
         """)
         side_layout.addWidget(self.thumbnail_list, 1)
         control_panel = QWidget()
-        layout.addWidget(self.image_viewer, 1)
+        layout.addWidget(self.image_viewer.strategy, 1)
         layout.addWidget(side_panel, 0)
         layout.addWidget(control_panel, 0)
         layout.setContentsMargins(0, 0, 0, 0)
@@ -239,7 +244,7 @@ class ImageEditorUI(QMainWindow, LayerCollectionHandler):
         self.io_gui_handler = IOGuiHandler(self.layer_collection, self.undo_manager, parent=self)
         self.display_manager.status_message_requested.connect(self.show_status_message)
         self.display_manager.cursor_preview_state_changed.connect(
-            lambda state: setattr(self.image_viewer, 'allow_cursor_preview', state))
+            self.image_viewer.set_allow_cursor_preview)
         self.io_gui_handler.status_message_requested.connect(self.show_status_message)
         self.io_gui_handler.update_title_requested.connect(self.update_title)
         self.io_gui_handler.mark_as_modified_requested.connect(self.mark_as_modified)
@@ -248,11 +253,11 @@ class ImageEditorUI(QMainWindow, LayerCollectionHandler):
         self.brush_tool.setup_ui(self.brush, self.brush_preview, self.image_viewer,
                                  self.brush_size_slider, self.hardness_slider, self.opacity_slider,
                                  self.flow_slider)
-        self.image_viewer.brush = self.brush_tool.brush
-        self.image_viewer.brush_preview.brush = self.brush_tool.brush
+        self.image_viewer.set_brush(self.brush_tool.brush)
+        self.image_viewer.set_preview_brush(self.brush_tool.brush)
         self.brush_tool.update_brush_thumb()
         self.io_gui_handler.setup_ui(self.display_manager, self.image_viewer)
-        self.image_viewer.display_manager = self.display_manager
+        self.image_viewer.set_display_manager(self.display_manager)
 
         menubar = self.menuBar()
         file_menu = menubar.addMenu("&File")
@@ -357,21 +362,22 @@ class ImageEditorUI(QMainWindow, LayerCollectionHandler):
 
         cursor_menu = view_menu.addMenu("Cursor Style")
 
+        cursor_stype = self.image_viewer.get_cursor_style()
         brush_action = QAction("Simple Brush", self)
         brush_action.setCheckable(True)
-        brush_action.setChecked(self.image_viewer.cursor_style == 'brush')
+        brush_action.setChecked(cursor_stype == 'brush')
         brush_action.triggered.connect(lambda: self.image_viewer.set_cursor_style('brush'))
         cursor_menu.addAction(brush_action)
 
         preview_action = QAction("Brush Preview", self)
         preview_action.setCheckable(True)
-        preview_action.setChecked(self.image_viewer.cursor_style == 'preview')
+        preview_action.setChecked(cursor_stype == 'preview')
         preview_action.triggered.connect(lambda: self.image_viewer.set_cursor_style('preview'))
         cursor_menu.addAction(preview_action)
 
         outline_action = QAction("Outline Only", self)
         outline_action.setCheckable(True)
-        outline_action.setChecked(self.image_viewer.cursor_style == 'outline')
+        outline_action.setChecked(cursor_stype == 'outline')
         outline_action.triggered.connect(lambda: self.image_viewer.set_cursor_style('outline'))
         cursor_menu.addAction(outline_action)
 
@@ -493,7 +499,7 @@ class ImageEditorUI(QMainWindow, LayerCollectionHandler):
             self.thumbnail_list.setCurrentRow(layer_idx)
             self.thumbnail_list.setFocus()
             self.image_viewer.update_brush_cursor()
-            self.image_viewer.setFocus()
+            self.image_viewer.strategy.setFocus()
 
     def prev_layer(self):
         if self.layer_stack() is not None:
@@ -646,6 +652,7 @@ class ImageEditorUI(QMainWindow, LayerCollectionHandler):
 
     def close_file(self):
         if self.check_unsaved_changes():
+            self.image_viewer.reset_zoom()
             self.io_gui_handler.close_file()
             self.set_master_layer(None)
             self.mark_as_modified(False)
