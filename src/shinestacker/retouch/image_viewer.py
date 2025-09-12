@@ -1,4 +1,5 @@
 # pylint: disable=C0114, C0115, C0116, E0611, R0904, R0902, R0914, R0912
+from PySide6.QtCore import Qt
 from .image_view_status import ImageViewStatus
 from .overlaid_view import OverlaidView
 
@@ -6,8 +7,16 @@ from .overlaid_view import OverlaidView
 class ImageViewer:
     def __init__(self, layer_collection, parent=None):
         self.status = ImageViewStatus()
-        self.strategy = OverlaidView(layer_collection, self.status, parent)
-        self._strategies = [self.strategy]
+        self._strategies = {
+            'overlaid': OverlaidView(layer_collection, self.status, parent),
+            'overlaid_2': OverlaidView(layer_collection, self.status, parent)
+        }
+        self.strategy = self._strategies['overlaid']
+
+    def set_strategy(self, label):
+        self.strategy = self._strategies.get(label, None)
+        if self.strategy is None:
+            raise RuntimeError(f"View strategy {label} is invalid.")
 
     def empty(self):
         return self.strategy.empty()
@@ -37,16 +46,16 @@ class ImageViewer:
         self.strategy.refresh_display()
 
     def set_brush(self, brush):
-        for s in self._strategies:
-            s.set_brush(brush)
+        for st in self._strategies.values():
+            st.set_brush(brush)
 
     def set_preview_brush(self, brush):
-        for s in self._strategies:
-            s.set_preview_brush(brush)
+        for st in self._strategies.values():
+            st.set_preview_brush(brush)
 
     def set_display_manager(self, dm):
-        for s in self._strategies:
-            s.set_display_manager(dm)
+        for st in self._strategies.values():
+            st.set_display_manager(dm)
 
     def set_allow_cursor_preview(self, state):
         self.strategy.set_allow_cursor_preview(state)
@@ -80,3 +89,14 @@ class ImageViewer:
 
     def get_visible_image_portion(self):
         return self.strategy.get_visible_image_portion()
+
+    def connect_signals(
+            self, handle_temp_view, begin_copy_brush_area, continue_copy_brush_area,
+            end_copy_brush_area, handle_brush_size_change):
+        for st in self._strategies.values():
+            st.temp_view_requested.connect(handle_temp_view)
+            st.brush_operation_started.connect(begin_copy_brush_area)
+            st.brush_operation_continued.connect(continue_copy_brush_area)
+            st.brush_operation_ended.connect(end_copy_brush_area)
+            st.brush_size_change_requested.connect(handle_brush_size_change)
+            st.setFocusPolicy(Qt.StrongFocus)

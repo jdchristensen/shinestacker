@@ -56,17 +56,12 @@ class ImageEditorUI(QMainWindow, LayerCollectionHandler):
         self.setCentralWidget(central_widget)
         layout = QHBoxLayout(central_widget)
         self.image_viewer = ImageViewer(self.layer_collection)
-        self.image_viewer.strategy.temp_view_requested.connect(
-            self.handle_temp_view)
-        self.image_viewer.strategy.brush_operation_started.connect(
-            self.begin_copy_brush_area)
-        self.image_viewer.strategy.brush_operation_continued.connect(
-            self.continue_copy_brush_area)
-        self.image_viewer.strategy.brush_operation_ended.connect(
-            self.end_copy_brush_area)
-        self.image_viewer.strategy.brush_size_change_requested.connect(
+        self.image_viewer.connect_signals(
+            self.handle_temp_view,
+            self.begin_copy_brush_area,
+            self.continue_copy_brush_area,
+            self.end_copy_brush_area,
             self.handle_brush_size_change)
-        self.image_viewer.strategy.setFocusPolicy(Qt.StrongFocus)
         side_panel = QWidget()
         side_layout = QVBoxLayout(side_panel)
         side_layout.setContentsMargins(0, 0, 0, 0)
@@ -310,6 +305,17 @@ class ImageEditorUI(QMainWindow, LayerCollectionHandler):
         fullscreen_action.setCheckable(True)
         fullscreen_action.triggered.connect(self.toggle_fullscreen)
         view_menu.addAction(fullscreen_action)
+
+        view_menu.addSeparator()
+
+        view_strategy_menu = QMenu("View &Mode", view_menu)
+        overlaid_mode = QAction("Overlaid", self)
+        overlaid_mode.triggered.connect(lambda: self.image_viewer.set_strategy('overlaid'))
+        view_strategy_menu.addAction(overlaid_mode)
+        overlaid_mode_2 = QAction("Overlaid 2", self)
+        overlaid_mode_2.triggered.connect(lambda: self.image_viewer.set_strategy('overlaid_2'))
+        view_strategy_menu.addAction(overlaid_mode_2)
+        view_menu.addMenu(view_strategy_menu)
 
         view_menu.addSeparator()
 
