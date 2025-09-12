@@ -3,18 +3,23 @@ import math
 from PySide6.QtWidgets import (QGraphicsView, QGraphicsScene, QGraphicsPixmapItem,
                                QGraphicsEllipseItem)
 from PySide6.QtGui import QPixmap, QPainter, QColor, QPen, QBrush, QCursor
-from PySide6.QtCore import Qt, QTime, QPoint, QPointF, QEvent, QRectF
+from PySide6.QtCore import Qt, QTime, QPoint, QPointF, QEvent, QRectF, Signal
 from .. config.gui_constants import gui_constants
-from .brush_preview import BrushPreviewItem
 from .brush_gradient import create_default_brush_gradient
 from .view_strategy import ViewStrategy
+from .brush_preview import BrushPreviewItem
 
 
-class OverlaidView(ViewStrategy):
-    def __init__(self, layer_collection, status, parent):
-        ViewStrategy.__init__(self, layer_collection, status, parent)
-        self.display_manager = None
-        self.layer_collection = layer_collection
+class OverlaidView(ViewStrategy, QGraphicsView):
+    temp_view_requested = Signal(bool)
+    brush_operation_started = Signal(QPoint)
+    brush_operation_continued = Signal(QPoint)
+    brush_operation_ended = Signal()
+    brush_size_change_requested = Signal(int)  # +1 or -1
+
+    def __init__(self, brush_preview, status, parent):
+        ViewStrategy.__init__(self, brush_preview, status)
+        QGraphicsView.__init__(self, parent)
         self.scene = QGraphicsScene(self)
         self.setScene(self.scene)
         self.pixmap_item_master = QGraphicsPixmapItem()
@@ -36,8 +41,6 @@ class OverlaidView(ViewStrategy):
         self.scrolling = False
         self.dragging = False
         self.last_update_time = QTime.currentTime()
-        self.set_layer_collection(layer_collection)
-        self.brush_preview = BrushPreviewItem(self.layer_collection)
         self.scene.addItem(self.brush_preview)
         self.allow_cursor_preview = True
         self.last_brush_pos = None

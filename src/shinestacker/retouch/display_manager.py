@@ -162,7 +162,6 @@ class DisplayManager(QObject, LayerCollectionHandler):
             return
         self.view_mode = 'master'
         self.temp_view_individual = False
-        self.image_viewer.show_master()
         self.refresh_master_view()
         self.thumbnail_highlight = gui_constants.THUMB_LO_COLOR
         self.highlight_thumbnail(self.current_layer_idx())
@@ -174,7 +173,6 @@ class DisplayManager(QObject, LayerCollectionHandler):
             return
         self.view_mode = 'individual'
         self.temp_view_individual = False
-        self.image_viewer.show_current()
         self.refresh_current_view()
         self.thumbnail_highlight = gui_constants.THUMB_HI_COLOR
         self.highlight_thumbnail(self.current_layer_idx())

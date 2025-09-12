@@ -12,7 +12,7 @@ from .brush_preview import create_brush_mask
 class BrushTool:
     def __init__(self):
         self.brush = None
-        self.brush_preview = None
+        self.brush_preview_widget = None
         self.image_viewer = None
         self.size_slider = None
         self.hardness_slider = None
@@ -21,11 +21,11 @@ class BrushTool:
         self._brush_mask_cache = {}
         self.brush_text = None
 
-    def setup_ui(self, brush, brush_preview, image_viewer, size_slider, hardness_slider,
+    def setup_ui(self, brush, brush_preview_widget, image_viewer, size_slider, hardness_slider,
                  opacity_slider, flow_slider):
         self.brush = brush
-        self.brush_preview = brush_preview
-        self.brush_text = QLabel(brush_preview.parent())
+        self.brush_preview_widget = brush_preview_widget
+        self.brush_text = QLabel(brush_preview_widget.parent())
         self.brush_text.setStyleSheet("color: navy; background: transparent;")
         self.brush_text.setAlignment(Qt.AlignLeft | Qt.AlignTop)
         self.brush_text.raise_()
@@ -126,12 +126,12 @@ class BrushTool:
                 f"Flow: {self.brush.flow}%"
             )
             self.brush_text.adjustSize()
-            self.brush_text.move(10, self.brush_preview.height() // 2 + 125)
+            self.brush_text.move(10, self.brush_preview_widget.height() // 2 + 125)
             self.brush_text.show()
         else:
             self.brush_text.hide()
         painter.end()
-        self.brush_preview.setPixmap(pixmap)
+        self.brush_preview_widget.setPixmap(pixmap)
         self.image_viewer.strategy.update_brush_cursor()
 
     def apply_brush_operation(self, master_layer, source_layer, dest_layer, mask_layer,

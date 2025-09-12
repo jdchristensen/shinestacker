@@ -118,9 +118,9 @@ class ImageEditorUI(QMainWindow, LayerCollectionHandler):
         brush_layout.addWidget(self.flow_slider)
 
         side_layout.addWidget(brush_panel)
-        self.brush_preview = QLabel()
-        self.brush_preview.setContentsMargins(0, 0, 0, 0)
-        self.brush_preview.setStyleSheet("""
+        self.brush_preview_widget = QLabel()
+        self.brush_preview_widget.setContentsMargins(0, 0, 0, 0)
+        self.brush_preview_widget.setStyleSheet("""
             QLabel {
                 background-color: #f0f0f0;
                 border: 1px solid #ccc;
@@ -129,9 +129,9 @@ class ImageEditorUI(QMainWindow, LayerCollectionHandler):
                 margin: 0px;
             }
         """)
-        self.brush_preview.setAlignment(Qt.AlignCenter)
-        self.brush_preview.setFixedHeight(100)
-        brush_layout.addWidget(self.brush_preview)
+        self.brush_preview_widget.setAlignment(Qt.AlignCenter)
+        self.brush_preview_widget.setFixedHeight(100)
+        brush_layout.addWidget(self.brush_preview_widget)
         side_layout.addWidget(brush_panel)
 
         master_label = QLabel("Master")
@@ -228,7 +228,7 @@ class ImageEditorUI(QMainWindow, LayerCollectionHandler):
         """)
         side_layout.addWidget(self.thumbnail_list, 1)
         control_panel = QWidget()
-        layout.addWidget(self.image_viewer.strategy, 1)
+        layout.addWidget(self.image_viewer, 1)
         layout.addWidget(side_panel, 0)
         layout.addWidget(control_panel, 0)
         layout.setContentsMargins(0, 0, 0, 0)
@@ -245,7 +245,7 @@ class ImageEditorUI(QMainWindow, LayerCollectionHandler):
         self.io_gui_handler.mark_as_modified_requested.connect(self.mark_as_modified)
         self.io_gui_handler.change_layer_requested.connect(self.change_layer)
         self.io_gui_handler.add_recent_file_requested.connect(self.add_recent_file)
-        self.brush_tool.setup_ui(self.brush, self.brush_preview, self.image_viewer,
+        self.brush_tool.setup_ui(self.brush, self.brush_preview_widget, self.image_viewer,
                                  self.brush_size_slider, self.hardness_slider, self.opacity_slider,
                                  self.flow_slider)
         self.image_viewer.set_brush(self.brush_tool.brush)
@@ -312,8 +312,8 @@ class ImageEditorUI(QMainWindow, LayerCollectionHandler):
         overlaid_mode = QAction("Overlaid", self)
         overlaid_mode.triggered.connect(lambda: self.image_viewer.set_strategy('overlaid'))
         view_strategy_menu.addAction(overlaid_mode)
-        overlaid_mode_2 = QAction("Overlaid 2", self)
-        overlaid_mode_2.triggered.connect(lambda: self.image_viewer.set_strategy('overlaid_2'))
+        overlaid_mode_2 = QAction("Side By Side", self)
+        overlaid_mode_2.triggered.connect(lambda: self.image_viewer.set_strategy('sidebyside'))
         view_strategy_menu.addAction(overlaid_mode_2)
         view_menu.addMenu(view_strategy_menu)
 

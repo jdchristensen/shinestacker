@@ -1,27 +1,20 @@
-# pylint: disable=C0114, C0115, C0116, E0611
+# pylint: disable=C0114, C0115, C0116, E0611, R0904
 from abc import abstractmethod
 import numpy as np
-from PySide6.QtWidgets import QGraphicsView
-from PySide6.QtCore import Signal, QPoint
 from PySide6.QtGui import QImage
 from .. config.gui_constants import gui_constants
 from .layer_collection import LayerCollectionHandler
 
 
-class ViewStrategy(QGraphicsView, LayerCollectionHandler):
-    temp_view_requested = Signal(bool)
-    brush_operation_started = Signal(QPoint)
-    brush_operation_continued = Signal(QPoint)
-    brush_operation_ended = Signal()
-    brush_size_change_requested = Signal(int)  # +1 or -1
-
-    def __init__(self, layer_collection, status, parent=None):
-        QGraphicsView.__init__(self, parent)
-        LayerCollectionHandler.__init__(self, layer_collection)
+class ViewStrategy(LayerCollectionHandler):
+    def __init__(self, brush_preview, status):
+        LayerCollectionHandler.__init__(self, brush_preview.layer_collection)
+        self.display_manager = None
         self.status = status
         self.brush = None
         self.brush_cursor = None
         self.display_manager = None
+        self.brush_preview = brush_preview
         self.cursor_style = gui_constants.DEFAULT_CURSOR_STYLE
 
     @abstractmethod
@@ -34,14 +27,6 @@ class ViewStrategy(QGraphicsView, LayerCollectionHandler):
 
     @abstractmethod
     def clear_image(self):
-        pass
-
-    @abstractmethod
-    def show_master(self):
-        pass
-
-    @abstractmethod
-    def show_current(self):
         pass
 
     @abstractmethod
@@ -94,6 +79,12 @@ class ViewStrategy(QGraphicsView, LayerCollectionHandler):
 
     @abstractmethod
     def get_visible_image_region(self):
+        pass
+
+    def show_master(self):
+        pass
+
+    def show_current(self):
         pass
 
     def zoom_factor(self):

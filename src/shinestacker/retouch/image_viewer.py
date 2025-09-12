@@ -1,22 +1,43 @@
-# pylint: disable=C0114, C0115, C0116, E0611, R0904, R0902, R0914, R0912
+# pylint: disable=C0114, C0115, C0116, E0611, R0904, R0902, R0914, R0912, R0913, R0917
 from PySide6.QtCore import Qt
+from PySide6.QtWidgets import QWidget, QVBoxLayout
 from .image_view_status import ImageViewStatus
+from .brush_preview import BrushPreviewItem
 from .overlaid_view import OverlaidView
+from .sidebyside_view import SideBySideView
 
 
-class ImageViewer:
+class ImageViewer(QWidget):
     def __init__(self, layer_collection, parent=None):
+        super().__init__(parent)
         self.status = ImageViewStatus()
+        brush_preview = BrushPreviewItem(layer_collection)
         self._strategies = {
-            'overlaid': OverlaidView(layer_collection, self.status, parent),
-            'overlaid_2': OverlaidView(layer_collection, self.status, parent)
+            'overlaid': OverlaidView(brush_preview, self.status, self),
+            'sidebyside': SideBySideView(brush_preview, self.status, self)
         }
+        for strategy in self._strategies.values():
+            strategy.hide()
         self.strategy = self._strategies['overlaid']
+        self.layout = QVBoxLayout(self)
+        self.layout.setContentsMargins(0, 0, 0, 0)
+        self.strategy = self._strategies['overlaid']
+        self.layout.addWidget(self.strategy)
+        self.strategy.show()
 
     def set_strategy(self, label):
-        self.strategy = self._strategies.get(label, None)
-        if self.strategy is None:
+        new_strategy = self._strategies.get(label, None)
+        if new_strategy is None:
             raise RuntimeError(f"View strategy {label} is invalid.")
+        self.layout.removeWidget(self.strategy)
+        self.strategy.hide()
+        self.strategy = new_strategy
+        self.layout.addWidget(self.strategy)
+        self.strategy.show()
+        self.strategy.resize(self.size())
+        if not self.strategy.empty():
+            self.strategy.update_master_display()
+            self.strategy.update_current_display()
 
     def empty(self):
         return self.strategy.empty()
