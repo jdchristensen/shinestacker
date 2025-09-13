@@ -337,6 +337,33 @@ class ImageEditorUI(QMainWindow, LayerCollectionHandler):
                 mode.setEnabled(label != strategy)
                 mode.setChecked(label == strategy)
 
+        cursor_menu = view_menu.addMenu("Cursor Style")
+
+        cursor_stype = self.image_viewer.get_cursor_style()
+        brush_action = QAction("Simple Brush", self)
+        brush_action.setCheckable(True)
+        brush_action.setChecked(cursor_stype == 'brush')
+        brush_action.triggered.connect(lambda: self.image_viewer.set_cursor_style('brush'))
+        cursor_menu.addAction(brush_action)
+
+        preview_action = QAction("Brush Preview", self)
+        preview_action.setCheckable(True)
+        preview_action.setChecked(cursor_stype == 'preview')
+        preview_action.triggered.connect(lambda: self.image_viewer.set_cursor_style('preview'))
+        cursor_menu.addAction(preview_action)
+
+        outline_action = QAction("Outline Only", self)
+        outline_action.setCheckable(True)
+        outline_action.setChecked(cursor_stype == 'outline')
+        outline_action.triggered.connect(lambda: self.image_viewer.set_cursor_style('outline'))
+        cursor_menu.addAction(outline_action)
+
+        cursor_group = QActionGroup(self)
+        cursor_group.addAction(preview_action)
+        cursor_group.addAction(outline_action)
+        cursor_group.addAction(brush_action)
+        cursor_group.setExclusive(True)
+
         view_menu.addSeparator()
 
         zoom_in_action = QAction("Zoom In", self)
@@ -388,33 +415,6 @@ class ImageEditorUI(QMainWindow, LayerCollectionHandler):
         view_menu.addAction(sort_desc_action)
 
         view_menu.addSeparator()
-
-        cursor_menu = view_menu.addMenu("Cursor Style")
-
-        cursor_stype = self.image_viewer.get_cursor_style()
-        brush_action = QAction("Simple Brush", self)
-        brush_action.setCheckable(True)
-        brush_action.setChecked(cursor_stype == 'brush')
-        brush_action.triggered.connect(lambda: self.image_viewer.set_cursor_style('brush'))
-        cursor_menu.addAction(brush_action)
-
-        preview_action = QAction("Brush Preview", self)
-        preview_action.setCheckable(True)
-        preview_action.setChecked(cursor_stype == 'preview')
-        preview_action.triggered.connect(lambda: self.image_viewer.set_cursor_style('preview'))
-        cursor_menu.addAction(preview_action)
-
-        outline_action = QAction("Outline Only", self)
-        outline_action.setCheckable(True)
-        outline_action.setChecked(cursor_stype == 'outline')
-        outline_action.triggered.connect(lambda: self.image_viewer.set_cursor_style('outline'))
-        cursor_menu.addAction(outline_action)
-
-        cursor_group = QActionGroup(self)
-        cursor_group.addAction(preview_action)
-        cursor_group.addAction(outline_action)
-        cursor_group.addAction(brush_action)
-        cursor_group.setExclusive(True)
 
         filter_menu = menubar.addMenu("&Filter")
         filter_menu.setObjectName("Filter")
