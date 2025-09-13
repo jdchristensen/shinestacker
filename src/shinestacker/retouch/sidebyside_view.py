@@ -16,10 +16,10 @@ class ImageGraphicsView(QGraphicsView):
     
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.setDragMode(QGraphicsView.NoDrag)
+        self.setDragMode(QGraphicsView.ScrollHandDrag)
         self.setInteractive(False)
         self.grabGesture(Qt.PinchGesture)
-        
+
     def event(self, event):
         if event.type() == QEvent.Gesture:
             self.gesture_event.emit(event)
@@ -35,7 +35,7 @@ class ImageGraphicsView(QGraphicsView):
             
     def mouseMoveEvent(self, event):
         self.mouse_moved.emit(event.position())
-        event.accept()
+        super().mouseMoveEvent(event)
             
     def mouseReleaseEvent(self, event):
         if event.button() == Qt.LeftButton:
@@ -75,8 +75,6 @@ class SideBySideView(ViewStrategy, QWidget):
         self._connect_signals()
         
         self.zoom_factor = 1.0
-        self.min_scale = 0.1
-        self.max_scale = 10.0
         self.space_pressed = False
         self.control_pressed = False
         self.dragging = False
@@ -117,9 +115,6 @@ class SideBySideView(ViewStrategy, QWidget):
         self.right_view.mouse_moved.connect(self.handle_right_mouse_move)
         self.right_view.mouse_released.connect(self.handle_right_mouse_release)
         self.right_view.gesture_event.connect(self.handle_gesture_event)
-        
-        self.left_view.setDragMode(QGraphicsView.NoDrag)
-        self.right_view.setDragMode(QGraphicsView.NoDrag)
         self.left_view.setTransformationAnchor(QGraphicsView.AnchorUnderMouse)
         self.right_view.setTransformationAnchor(QGraphicsView.AnchorUnderMouse)
         self.left_view.setResizeAnchor(QGraphicsView.AnchorUnderMouse)
@@ -272,7 +267,7 @@ class SideBySideView(ViewStrategy, QWidget):
             self.pinch_center_scene = self.right_view.mapToScene(self.pinch_center_view.toPoint())
         elif pinch.state() == Qt.GestureUpdated:
             new_scale = self.pinch_start_scale * pinch.totalScaleFactor()
-            new_scale = max(self.min_scale, min(new_scale, self.max_scale))
+            new_scale = max(self.min_scale(), min(new_scale, self.max_scale()))
             if abs(new_scale - self.zoom_factor) > 0.01:
                 self.zoom_factor = new_scale
                 self._apply_zoom()
@@ -339,7 +334,7 @@ class SideBySideView(ViewStrategy, QWidget):
     def zoom_in(self):
         if self.status.empty():
             return
-        new_zoom = min(self.zoom_factor * 1.1, self.max_scale)
+        new_zoom = min(self.zoom_factor * gui_constants.ZOOM_IN_FACTOR, self.max_scale())
         if new_zoom != self.zoom_factor:
             self.zoom_factor = new_zoom
             self._apply_zoom()
@@ -348,7 +343,7 @@ class SideBySideView(ViewStrategy, QWidget):
     def zoom_out(self):
         if self.status.empty():
             return
-        new_zoom = max(self.zoom_factor / 1.1, self.min_scale)
+        new_zoom = max(self.zoom_factor * gui_constants.ZOOM_OUT_FACTOR, self.min_scale())
         if new_zoom != self.zoom_factor:
             self.zoom_factor = new_zoom
             self._apply_zoom()
