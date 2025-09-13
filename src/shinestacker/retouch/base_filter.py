@@ -48,7 +48,7 @@ class BaseFilter(ABC):
             nonlocal active_worker, dialog_closed  # noqa
             dialog_closed = True
             self.editor.restore_master_layer()
-            self.editor.display_manager.display_master_layer()
+            self.editor.image_viewer.update_master_display()
             if active_worker and active_worker.isRunning():
                 active_worker.wait()
             initial_timer.stop()
@@ -62,10 +62,10 @@ class BaseFilter(ABC):
                 current_region = self.editor.image_viewer.get_visible_image_portion()[1]
                 if current_region == region:
                     self.editor.set_master_layer(img)
-                    self.editor.display_manager.display_master_layer()
+                    self.editor.image_viewer.update_master_display()
             else:
                 self.editor.set_master_layer(img)
-                self.editor.display_manager.display_master_layer()
+                self.editor.image_viewer.update_master_display()
             try:
                 dlg.activateWindow()
             except Exception:
@@ -125,7 +125,7 @@ class BaseFilter(ABC):
 
         def restore_original():
             self.editor.restore_master_layer()
-            self.editor.display_manager.display_master_layer()
+            self.editor.image_viewer.update_master_display()
             try:
                 dlg.activateWindow()
             except Exception:
@@ -155,7 +155,7 @@ class BaseFilter(ABC):
             final_img = self.apply(self.editor.master_layer_copy(), *params)
             self.editor.set_master_layer(final_img)
             self.editor.copy_master_layer()
-            self.editor.display_manager.display_master_layer()
+            self.editor.image_viewer.update_master_display()
             self.editor.display_manager.update_master_thumbnail()
             self.editor.mark_as_modified()
         else:

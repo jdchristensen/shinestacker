@@ -6,56 +6,125 @@ from PySide6.QtCore import Qt, Signal, QPoint, QPointF, QEvent, QTime
 from .. config.gui_constants import gui_constants
 from .view_strategy import ViewStrategy
 from .brush_preview import BrushPreviewItem
+from .brush_gradient import create_default_brush_gradient
 
+class ImageGraphicsView(QGraphicsView):
+    mouse_pressed = Signal(QPointF)
+    mouse_moved = Signal(QPointF)
+    mouse_released = Signal(QPointF)
+    gesture_event = Signal(QEvent)
+    
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setDragMode(QGraphicsView.NoDrag)
+        self.setInteractive(False)
+        self.grabGesture(Qt.PinchGesture)
+        
+    def event(self, event):
+        if event.type() == QEvent.Gesture:
+            self.gesture_event.emit(event)
+            return True
+        return super().event(event)
+        
+    def mousePressEvent(self, event):
+        if event.button() == Qt.LeftButton:
+            self.mouse_pressed.emit(event.position())
+            event.accept()
+        else:
+            super().mousePressEvent(event)
+            
+    def mouseMoveEvent(self, event):
+        self.mouse_moved.emit(event.position())
+        event.accept()
+            
+    def mouseReleaseEvent(self, event):
+        if event.button() == Qt.LeftButton:
+            self.mouse_released.emit(event.position())
+            event.accept()
+        else:
+            super().mouseReleaseEvent(event)
 
 class SideBySideView(ViewStrategy, QWidget):
     temp_view_requested = Signal(bool)
     brush_operation_started = Signal(QPoint)
     brush_operation_continued = Signal(QPoint)
     brush_operation_ended = Signal()
-    brush_size_change_requested = Signal(int)  # +1 or -1
+    brush_size_change_requested = Signal(int)
 
     def __init__(self, brush_preview, status, parent):
         ViewStrategy.__init__(self, brush_preview, status)
         QWidget.__init__(self, parent)
+        
         layout = QHBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(0)
-        self.left_view = QGraphicsView()
-        self.left_scene = QGraphicsScene()
-        self.left_view.setScene(self.left_scene)
-        self.left_view.setRenderHint(QPainter.Antialiasing)
-        self.left_view.setRenderHint(QPainter.SmoothPixmapTransform)
-        self.left_pixmap_item = QGraphicsPixmapItem()
-        self.left_scene.addItem(self.left_pixmap_item)
-        self.left_scene.setBackgroundBrush(QBrush(QColor(120, 120, 120)))
+        
+        self.left_view, self.left_scene, self.left_pixmap_item = self._create_view()
+        self.right_view, self.right_scene, self.right_pixmap_item = self._create_view()
+        
         layout.addWidget(self.left_view)
+        
         separator = QFrame()
         separator.setFrameShape(QFrame.VLine)
         separator.setFrameShadow(QFrame.Sunken)
         separator.setLineWidth(2)
         layout.addWidget(separator)
-        self.right_view = QGraphicsView()
-        self.right_scene = QGraphicsScene()
-        self.right_view.setScene(self.right_scene)
-        self.right_view.setRenderHint(QPainter.Antialiasing)
-        self.right_view.setRenderHint(QPainter.SmoothPixmapTransform)
-        self.right_pixmap_item = QGraphicsPixmapItem()
-        self.right_scene.addItem(self.right_pixmap_item)
-        self.right_scene.setBackgroundBrush(QBrush(QColor(120, 120, 120)))
+        
         layout.addWidget(self.right_view)
-        self.zoom_factor = -1
+        
+        self._connect_signals()
+        
+        self.zoom_factor = 1.0
         self.min_scale = 0.1
         self.max_scale = 10.0
-        self.pan_start = QPointF()
-        self.panning = False
+        self.space_pressed = False
+        self.control_pressed = False
+        self.dragging = False
+        self.scrolling = False
         self.panning_left = False
+        self.last_brush_pos = None
+        self.last_mouse_pos = None
+        self.last_update_time = QTime.currentTime()
+        
+        self.brush_cursor = None
+        self.right_view.setCursor(Qt.BlankCursor)
+        self.allow_cursor_preview = True
+        self.setup_brush_cursor()
+        
+        self.setFocusPolicy(Qt.StrongFocus)
+        self.setMouseTracking(True)
+
+    def _create_view(self):
+        view = ImageGraphicsView()
+        scene = QGraphicsScene()
+        view.setScene(scene)
+        view.setRenderHint(QPainter.Antialiasing)
+        view.setRenderHint(QPainter.SmoothPixmapTransform)
+        
+        pixmap_item = QGraphicsPixmapItem()
+        scene.addItem(pixmap_item)
+        scene.setBackgroundBrush(QBrush(QColor(120, 120, 120)))
+        
+        return view, scene, pixmap_item
+
+    def _connect_signals(self):
+        self.left_view.mouse_pressed.connect(self.handle_left_mouse_press)
+        self.left_view.mouse_moved.connect(self.handle_left_mouse_move)
+        self.left_view.mouse_released.connect(self.handle_left_mouse_release)
+        self.left_view.gesture_event.connect(self.handle_gesture_event)
+        
+        self.right_view.mouse_pressed.connect(self.handle_right_mouse_press)
+        self.right_view.mouse_moved.connect(self.handle_right_mouse_move)
+        self.right_view.mouse_released.connect(self.handle_right_mouse_release)
+        self.right_view.gesture_event.connect(self.handle_gesture_event)
+        
         self.left_view.setDragMode(QGraphicsView.NoDrag)
         self.right_view.setDragMode(QGraphicsView.NoDrag)
         self.left_view.setTransformationAnchor(QGraphicsView.AnchorUnderMouse)
         self.right_view.setTransformationAnchor(QGraphicsView.AnchorUnderMouse)
         self.left_view.setResizeAnchor(QGraphicsView.AnchorUnderMouse)
         self.right_view.setResizeAnchor(QGraphicsView.AnchorUnderMouse)
+        
         self.left_view.horizontalScrollBar().valueChanged.connect(
             self.right_view.horizontalScrollBar().setValue)
         self.left_view.verticalScrollBar().valueChanged.connect(
@@ -64,32 +133,7 @@ class SideBySideView(ViewStrategy, QWidget):
             self.left_view.horizontalScrollBar().setValue)
         self.right_view.verticalScrollBar().valueChanged.connect(
             self.left_view.verticalScrollBar().setValue)
-        self.left_view.viewport().installEventFilter(self)
-        self.right_view.viewport().installEventFilter(self)
-        self.pinch_start_scale = 1.0
-        self.pinch_center_view = None
-        self.pinch_center_scene = None
-        self.gesture_active = False
-        self.left_view.grabGesture(Qt.PinchGesture)
-        self.right_view.grabGesture(Qt.PinchGesture)
-        self.left_view.installEventFilter(self)
-        self.right_view.installEventFilter(self)
-        self.space_pressed = False
-        self.control_pressed = False
-        self.dragging = False
-        self.last_brush_pos = None
-        self.last_update_time = QTime.currentTime()
-        self.setFocusPolicy(Qt.StrongFocus)
-        self.right_view.viewport().installEventFilter(self)
-        self.setMouseTracking(True)
-        self.brush_cursor = None
-        self.scrolling = False
-        self.dragging = False
-        self.last_mouse_pos = None
-        self.last_brush_pos = None
-        self.right_view.setCursor(Qt.BlankCursor)
 
-    # pylint: disable=C0103
     def keyPressEvent(self, event):
         if self.empty():
             return
@@ -98,10 +142,6 @@ class SideBySideView(ViewStrategy, QWidget):
             self.right_view.setCursor(Qt.OpenHandCursor)
             if self.brush_cursor:
                 self.brush_cursor.hide()
-            event.accept()
-        elif event.key() == Qt.Key_X:
-            self.temp_view_requested.emit(True)
-            self.update_brush_cursor()
             event.accept()
         elif event.key() == Qt.Key_Control and not self.scrolling:
             self.control_pressed = True
@@ -119,25 +159,11 @@ class SideBySideView(ViewStrategy, QWidget):
                 if self.brush_cursor:
                     self.brush_cursor.show()
             event.accept()
-        elif event.key() == Qt.Key_X:
-            self.temp_view_requested.emit(False)
-            event.accept()
         elif event.key() == Qt.Key_Control:
             self.control_pressed = False
             event.accept()
         else:
             super().keyReleaseEvent(event)
-
-    def eventFilter(self, obj, event):
-        if obj in [self.left_view, self.right_view] and event.type() == QEvent.Gesture:
-            return self.handle_gesture_event(event)
-        # Handle mouse events on the right view
-        if obj == self.right_view.viewport():
-            return self.handle_right_view_events(event)
-        # Handle mouse events on the left view
-        if obj == self.left_view.viewport():
-            return self.handle_left_view_events(event)
-        return super().eventFilter(obj, event)
 
     def resizeEvent(self, event):
         super().resizeEvent(event)
@@ -165,144 +191,85 @@ class SideBySideView(ViewStrategy, QWidget):
             if self.brush_cursor:
                 self.brush_cursor.hide()
         super().leaveEvent(event)
-    # pylint: enable=C0103
 
-    def handle_right_view_events(self, event):
-        if event.type() == QEvent.MouseButtonPress:
-            return self.handle_right_mouse_press(event)
-        elif event.type() == QEvent.MouseMove:
-            return self.handle_right_mouse_move(event)
-        elif event.type() == QEvent.MouseButtonRelease:
-            return self.handle_right_mouse_release(event)
-        return False
-
-    def handle_left_view_events(self, event):
-        if event.type() == QEvent.MouseButtonPress:
-            return self.handle_left_mouse_press(event)
-        elif event.type() == QEvent.MouseMove:
-            return self.handle_left_mouse_move(event)
-        elif event.type() == QEvent.MouseButtonRelease:
-            return self.handle_left_mouse_release(event)
-        return False
-
-    def handle_right_mouse_press(self, event):
-        if event.button() == Qt.LeftButton and self.has_master_layer():
+    def handle_right_mouse_press(self, position):
+        if self.has_master_layer():
             if self.space_pressed:
-                # Start panning
                 self.scrolling = True
-                self.last_mouse_pos = event.position()
+                self.last_mouse_pos = position
+                self.right_view.setCursor(Qt.ClosedHandCursor)
+            else:
+                self.last_brush_pos = position
+                self.brush_operation_started.emit(position.toPoint())
+                self.dragging = True
+            if self.brush_cursor:
+                self.brush_cursor.show()
+
+    def handle_right_mouse_move(self, position):
+        self.update_brush_cursor()            
+        if self.dragging:
+            current_time = QTime.currentTime()
+            if self.last_update_time.msecsTo(current_time) >= gui_constants.PAINT_REFRESH_TIMER:
+                self.brush_operation_continued.emit(position.toPoint())
+                self.last_brush_pos = position
+                self.last_update_time = current_time
+        elif self.scrolling:
+            if self.space_pressed:
                 self.right_view.setCursor(Qt.ClosedHandCursor)
                 if self.brush_cursor:
                     self.brush_cursor.hide()
-                return True
+            delta = position - self.last_mouse_pos
+            self.last_mouse_pos = position
+            self.right_view.horizontalScrollBar().setValue(
+                self.right_view.horizontalScrollBar().value() - delta.x())
+            self.right_view.verticalScrollBar().setValue(
+                self.right_view.verticalScrollBar().value() - delta.y())
+
+    def handle_right_mouse_release(self, position):
+        if self.scrolling:
+            self.scrolling = False
+            if self.space_pressed:
+                self.right_view.setCursor(Qt.OpenHandCursor)
             else:
-                # Start painting
-                self.last_brush_pos = event.position()
-                self.brush_operation_started.emit(event.position().toPoint())
-                self.dragging = True
-                return True
-        return False
+                self.right_view.setCursor(Qt.BlankCursor)
+                if self.brush_cursor:
+                    self.brush_cursor.show()
+        elif self.dragging:
+            self.brush_operation_ended.emit()
+            self.dragging = False
 
-    def handle_right_mouse_move(self, event):
-        position = event.position()
-        # Update brush cursor position if not panning
-        if not self.space_pressed:
-            self.update_brush_cursor()
-        if self.dragging and event.buttons() & Qt.LeftButton:
-            # Handle painting
-            return self.handle_painting_move(event, position)
-        elif self.scrolling and event.buttons() & Qt.LeftButton:
-            # Handle panning
-            return self.handle_panning_move(event, position)
-        return False
-
-    def handle_painting_move(self, event, position):
-        current_time = QTime.currentTime()
-        if self.last_update_time.msecsTo(current_time) >= gui_constants.PAINT_REFRESH_TIMER:
-            self.brush_operation_continued.emit(event.position().toPoint())
-            self.last_brush_pos = position
-            self.last_update_time = current_time
-        return True
-
-    def handle_panning_move(self, event, position):
+    def handle_left_mouse_press(self, position):
         if self.space_pressed:
-            self.right_view.setCursor(Qt.ClosedHandCursor)
-            if self.brush_cursor:
-                self.brush_cursor.hide()
-        delta = position - self.last_mouse_pos
-        self.last_mouse_pos = position
-        # Pan both views
-        self.right_view.horizontalScrollBar().setValue(
-            self.right_view.horizontalScrollBar().value() - delta.x())
-        self.right_view.verticalScrollBar().setValue(
-            self.right_view.verticalScrollBar().value() - delta.y())
-        return True
-
-    def handle_right_mouse_release(self, event):
-        if event.button() == Qt.LeftButton:
-            if self.scrolling:
-                # End panning
-                self.scrolling = False
-                if self.space_pressed:
-                    self.right_view.setCursor(Qt.OpenHandCursor)
-                else:
-                    self.right_view.setCursor(Qt.BlankCursor)
-                    if self.brush_cursor:
-                        self.brush_cursor.show()
-                return True
-            elif self.dragging:
-                # End painting
-                self.brush_operation_ended.emit()
-                self.dragging = False
-                return True
-        return False
-
-    def handle_left_mouse_press(self, event):
-        """Handle mouse press on left view"""
-        if event.button() == Qt.LeftButton:
-            self.pan_start = event.pos()
+            self.pan_start = position
             self.panning_left = True
-            return True
-        return False
 
-    def handle_left_mouse_move(self, event):
-        """Handle mouse move on left view"""
-        if self.panning_left:
-            delta = event.pos() - self.pan_start
-            self.pan_start = event.pos()
+    def handle_left_mouse_move(self, position):
+        if self.panning_left and self.space_pressed:
+            delta = position - self.pan_start
+            self.pan_start = position
             self.left_view.horizontalScrollBar().setValue(
                 self.left_view.horizontalScrollBar().value() - delta.x())
             self.left_view.verticalScrollBar().setValue(
                 self.left_view.verticalScrollBar().value() - delta.y())
-            return True
-        return False
 
-    def handle_left_mouse_release(self, event):
-        """Handle mouse release on left view"""
-        if event.button() == Qt.LeftButton and self.panning_left:
+    def handle_left_mouse_release(self, position):
+        if self.panning_left:
             self.panning_left = False
-            return True
-        return False
 
     def handle_gesture_event(self, event):
         if self.empty():
-            return False
-        handled = False
+            return
+            
         pinch_gesture = event.gesture(Qt.PinchGesture)
         if pinch_gesture:
             self.handle_pinch_gesture(pinch_gesture)
-            handled = True
-        if handled:
             event.accept()
-            return True
-        return False
 
     def handle_pinch_gesture(self, pinch):
         if pinch.state() == Qt.GestureStarted:
             self.pinch_start_scale = self.zoom_factor
             self.pinch_center_view = pinch.centerPoint()
             self.pinch_center_scene = self.right_view.mapToScene(self.pinch_center_view.toPoint())
-            self.gesture_active = True
         elif pinch.state() == Qt.GestureUpdated:
             new_scale = self.pinch_start_scale * pinch.totalScaleFactor()
             new_scale = max(self.min_scale, min(new_scale, self.max_scale))
@@ -317,8 +284,6 @@ class SideBySideView(ViewStrategy, QWidget):
                     h_scroll + int(delta.x() * self.zoom_factor))
                 self.right_view.verticalScrollBar().setValue(
                     v_scroll + int(delta.y() * self.zoom_factor))
-        elif pinch.state() in (Qt.GestureFinished, Qt.GestureCanceled):
-            self.gesture_active = False
 
     def set_master_image(self, qimage):
         self.status.set_master_image(qimage)
@@ -334,6 +299,7 @@ class SideBySideView(ViewStrategy, QWidget):
         if self.status.empty():
             return
         if self.right_pixmap_item.pixmap().height() == 0:
+            self.right_scene.addItem(self.brush_preview)
             self.update_master_display()
             self.update_current_display()
             self.reset_zoom()
@@ -349,7 +315,7 @@ class SideBySideView(ViewStrategy, QWidget):
         self.status.clear()
         self.setup_brush_cursor()
         self.brush_preview = BrushPreviewItem(self.layer_collection)
-        self.scene.addItem(self.brush_preview)
+        self.right_scene.addItem(self.brush_preview)
         self.setCursor(Qt.ArrowCursor)
         if self.brush_cursor:
             self.brush_cursor.hide()
@@ -377,6 +343,7 @@ class SideBySideView(ViewStrategy, QWidget):
         if new_zoom != self.zoom_factor:
             self.zoom_factor = new_zoom
             self._apply_zoom()
+            self.update_brush_cursor()
 
     def zoom_out(self):
         if self.status.empty():
@@ -385,6 +352,7 @@ class SideBySideView(ViewStrategy, QWidget):
         if new_zoom != self.zoom_factor:
             self.zoom_factor = new_zoom
             self._apply_zoom()
+            self.update_brush_cursor()
 
     def reset_zoom(self):
         pixmap_height = self.right_pixmap_item.pixmap().height()
@@ -393,10 +361,12 @@ class SideBySideView(ViewStrategy, QWidget):
             self.zoom_factor = view_height / pixmap_height
         else:
             self._arrange_images()
+        self.update_brush_cursor()
 
     def actual_size(self):
         self.zoom_factor = 1.0
         self._apply_zoom()
+        self.update_brush_cursor()
 
     def _apply_zoom(self):
         if not self.left_pixmap_item.pixmap().isNull():
@@ -410,20 +380,56 @@ class SideBySideView(ViewStrategy, QWidget):
         return self.zoom_factor
 
     def update_brush_cursor(self):
-        if not self.brush_cursor or self.empty() or self.space_pressed or self.scrolling:
+        if self.empty():
             return
+        if not self.brush_cursor or not self.isVisible():
+            return         
         mouse_pos = self.right_view.mapFromGlobal(QCursor.pos())
-        if not self.right_view.rect().contains(mouse_pos):
+        if not self.rect().contains(mouse_pos):
             self.brush_cursor.hide()
             return
         scene_pos = self.right_view.mapToScene(mouse_pos)
-        radius = self.brush.size / 2
-        self.brush_cursor.setRect(scene_pos.x() - radius, scene_pos.y() - radius,
-                                  self.brush.size, self.brush.size)
-        self.brush_cursor.show()
+        size = self.brush.size
+        radius = size / 2
+        self.brush_cursor.setRect(scene_pos.x() - radius, scene_pos.y() - radius, size, size)
+        allow_cursor_preview = self.display_manager.allow_cursor_preview()
+        if self.cursor_style == 'preview' and allow_cursor_preview:
+            self._setup_outline_style()
+            self.brush_cursor.hide()
+            pos = QCursor.pos()
+            if isinstance(pos, QPointF):
+                scene_pos = pos
+            else:
+                cursor_pos = self.mapFromGlobal(pos)
+                scene_pos = self.mapToScene(cursor_pos)
+            self.brush_preview.update(scene_pos, int(size))
+        else:
+            self.brush_preview.hide()
+            if self.cursor_style == 'outline' or not allow_cursor_preview:
+                self._setup_outline_style()
+            else:
+                self._setup_simple_brush_style(scene_pos.x(), scene_pos.y(), radius)
+        if not self.brush_cursor.isVisible():
+            self.brush_cursor.show()
+
+    def _setup_outline_style(self):
+        self.brush_cursor.setPen(QPen(QColor(*gui_constants.BRUSH_COLORS['pen']),
+                                      gui_constants.BRUSH_LINE_WIDTH / self.zoom_factor))
+        self.brush_cursor.setBrush(Qt.NoBrush)
+
+    def _setup_simple_brush_style(self, center_x, center_y, radius):
+        gradient = create_default_brush_gradient(center_x, center_y, radius, self.brush)
+        self.brush_cursor.setPen(QPen(QColor(*gui_constants.BRUSH_COLORS['pen']),
+                                      gui_constants.BRUSH_LINE_WIDTH / self.zoom_factor))
+        self.brush_cursor.setBrush(QBrush(gradient))
 
     def set_allow_cursor_preview(self, state):
-        pass
+        self.allow_cursor_preview = state
+
+    def set_cursor_style(self, style):
+        self.cursor_style = style
+        if self.brush_cursor:
+            self.update_brush_cursor()
 
     def set_brush(self, brush):
         super().set_brush(brush)
@@ -433,13 +439,15 @@ class SideBySideView(ViewStrategy, QWidget):
 
     def setup_brush_cursor(self):
         if not self.brush:
-            return
-        self.brush_cursor = QGraphicsEllipseItem(0, 0, self.brush.size, self.brush.size)
-        pen = QPen(QColor(255, 0, 0), 2)
-        self.brush_cursor.setPen(pen)
-        self.brush_cursor.setBrush(Qt.NoBrush)
+            return        
+        for item in self.right_scene.items():
+            if isinstance(item, QGraphicsEllipseItem) and item != self.brush_preview:
+                self.right_scene.removeItem(item)        
+        pen = QPen(QColor(*gui_constants.BRUSH_COLORS['pen']), 1)
+        brush = QBrush(QColor(*gui_constants.BRUSH_COLORS['cursor_inner']))
+        self.brush_cursor = self.right_scene.addEllipse(
+            0, 0, self.brush.size, self.brush.size, pen, brush)
         self.brush_cursor.setZValue(1000)
-        self.right_scene.addItem(self.brush_cursor)
         self.brush_cursor.hide()
 
     def position_on_image(self, pos):
@@ -449,7 +457,21 @@ class SideBySideView(ViewStrategy, QWidget):
         if self.empty():
             return None
         view_rect = self.right_view.viewport().rect()
-        return self.right_view.mapToScene(view_rect).boundingRect()
+        scene_rect = self.right_view.mapToScene(view_rect).boundingRect()
+        image_rect = self.right_view.mapFromScene(scene_rect).boundingRect()
+        image_rect = image_rect.intersected(self.right_pixmap_item.boundingRect().toRect())
+        return image_rect
 
-    def mapToScene(self, *args, **kwargs):
-        return self.right_view.mapToScene(*args, **kwargs)
+    def get_visible_image_portion(self):
+        if self.has_no_master_layer():
+            return None
+        visible_rect = self.get_visible_image_region()
+        if not visible_rect:
+            return self.master_layer()
+        x, y = int(visible_rect.x()), int(visible_rect.y())
+        w, h = int(visible_rect.width()), int(visible_rect.height())
+        master_img = self.master_layer()
+        return master_img[y:y + h, x:x + w], (x, y, w, h)
+
+    def mapToScene(self, pos):
+        return self.right_view.mapToScene(pos)

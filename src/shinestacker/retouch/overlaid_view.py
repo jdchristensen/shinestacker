@@ -5,8 +5,8 @@ from PySide6.QtWidgets import (QGraphicsView, QGraphicsScene, QGraphicsPixmapIte
 from PySide6.QtGui import QPixmap, QPainter, QColor, QPen, QBrush, QCursor
 from PySide6.QtCore import Qt, QTime, QPoint, QPointF, QEvent, QRectF, Signal
 from .. config.gui_constants import gui_constants
-from .brush_gradient import create_default_brush_gradient
 from .view_strategy import ViewStrategy
+from .brush_gradient import create_default_brush_gradient
 from .brush_preview import BrushPreviewItem
 
 
@@ -167,14 +167,12 @@ class OverlaidView(ViewStrategy, QGraphicsView):
                 self.scrolling = True
                 self.last_mouse_pos = event.position()
                 self.setCursor(Qt.ClosedHandCursor)
-                if self.brush_cursor:
-                    self.brush_cursor.hide()
             else:
                 self.last_brush_pos = event.position()
                 self.brush_operation_started.emit(event.position().toPoint())
                 self.dragging = True
-                if self.brush_cursor:
-                    self.brush_cursor.show()
+            if self.brush_cursor:
+                self.brush_cursor.show()
         super().mousePressEvent(event)
 
     def mouseMoveEvent(self, event):
@@ -366,16 +364,14 @@ class OverlaidView(ViewStrategy, QGraphicsView):
             return
         if not self.brush_cursor or not self.isVisible():
             return
-        size = self.brush.size
         mouse_pos = self.mapFromGlobal(QCursor.pos())
         if not self.rect().contains(mouse_pos):
             self.brush_cursor.hide()
             return
         scene_pos = self.mapToScene(mouse_pos)
-        center_x = scene_pos.x()
-        center_y = scene_pos.y()
+        size = self.brush.size
         radius = size / 2
-        self.brush_cursor.setRect(center_x - radius, center_y - radius, size, size)
+        self.brush_cursor.setRect(scene_pos.x() - radius, scene_pos.y() - radius, size, size)
         allow_cursor_preview = self.display_manager.allow_cursor_preview()
         if self.cursor_style == 'preview' and allow_cursor_preview:
             self._setup_outline_style()
@@ -392,7 +388,7 @@ class OverlaidView(ViewStrategy, QGraphicsView):
             if self.cursor_style == 'outline' or not allow_cursor_preview:
                 self._setup_outline_style()
             else:
-                self._setup_simple_brush_style(center_x, center_y, radius)
+                self._setup_simple_brush_style(scene_pos.x(), scene_pos.y(), radius)
         if not self.brush_cursor.isVisible():
             self.brush_cursor.show()
 
