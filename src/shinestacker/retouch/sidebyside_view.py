@@ -1,4 +1,4 @@
-# pylint: disable=C0114, C0115, C0116, R0904, R0915, E0611, R0902
+# pylint: disable=C0114, C0115, C0116, R0904, R0915, E0611, R0902, R0911
 from PySide6.QtWidgets import (QWidget, QHBoxLayout, QFrame, QGraphicsView, QGraphicsScene,
                                QGraphicsPixmapItem, QGraphicsEllipseItem)
 from PySide6.QtGui import QPixmap, QPainter, QColor, QBrush, QWheelEvent, QMouseEvent, QPen, QCursor
@@ -143,7 +143,6 @@ class SideBySideView(ViewStrategy, QWidget):
                     self.brush_operation_started.emit(event.pos())
                     self.dragging = True
                     return True
-                    
             elif event.type() == QEvent.MouseMove:
                 if self.dragging and event.buttons() & Qt.LeftButton:
                     current_time = QTime.currentTime()
@@ -153,12 +152,11 @@ class SideBySideView(ViewStrategy, QWidget):
                         self.last_update_time = current_time
                     return True
                 self.update_brush_cursor()
-                
             elif event.type() == QEvent.MouseButtonRelease:
                 if event.button() == Qt.LeftButton and self.dragging:
                     self.brush_operation_ended.emit()
                     self.dragging = False
-                    return True                
+                    return True
         return super().eventFilter(obj, event)
 
     def resizeEvent(self, event):
@@ -304,16 +302,14 @@ class SideBySideView(ViewStrategy, QWidget):
     def update_brush_cursor(self):
         if not self.brush_cursor or self.empty():
             return
-            
         mouse_pos = self.right_view.mapFromGlobal(QCursor.pos())
         if not self.right_view.rect().contains(mouse_pos):
             self.brush_cursor.hide()
             return
-            
         scene_pos = self.right_view.mapToScene(mouse_pos)
         radius = self.brush.size / 2
-        self.brush_cursor.setRect(scene_pos.x() - radius, scene_pos.y() - radius, 
-                                 self.brush.size, self.brush.size)
+        self.brush_cursor.setRect(scene_pos.x() - radius, scene_pos.y() - radius,
+                                  self.brush.size, self.brush.size)
         self.brush_cursor.show()
 
     def set_allow_cursor_preview(self, state):
