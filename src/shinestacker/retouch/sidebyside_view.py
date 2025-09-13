@@ -35,6 +35,7 @@ class ImageGraphicsView(QGraphicsView):
             
     def mouseMoveEvent(self, event):
         self.mouse_moved.emit(event.position())
+        event.accept()
         super().mouseMoveEvent(event)
             
     def mouseReleaseEvent(self, event):
@@ -115,8 +116,8 @@ class SideBySideView(ViewStrategy, QWidget):
         self.right_view.mouse_moved.connect(self.handle_right_mouse_move)
         self.right_view.mouse_released.connect(self.handle_right_mouse_release)
         self.right_view.gesture_event.connect(self.handle_gesture_event)
-        self.left_view.setTransformationAnchor(QGraphicsView.AnchorUnderMouse)
-        self.right_view.setTransformationAnchor(QGraphicsView.AnchorUnderMouse)
+        self.left_view.setTransformationAnchor(QGraphicsView.AnchorViewCenter)
+        self.right_view.setTransformationAnchor(QGraphicsView.AnchorViewCenter)
         self.left_view.setResizeAnchor(QGraphicsView.AnchorUnderMouse)
         self.right_view.setResizeAnchor(QGraphicsView.AnchorUnderMouse)
         
@@ -380,7 +381,7 @@ class SideBySideView(ViewStrategy, QWidget):
         if not self.brush_cursor or not self.isVisible():
             return         
         mouse_pos = self.right_view.mapFromGlobal(QCursor.pos())
-        if not self.rect().contains(mouse_pos):
+        if not self.right_view.rect().contains(mouse_pos):
             self.brush_cursor.hide()
             return
         scene_pos = self.right_view.mapToScene(mouse_pos)
