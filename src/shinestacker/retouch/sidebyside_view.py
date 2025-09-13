@@ -15,10 +15,10 @@ class SideBySideView(ViewStrategy, QWidget):
 
     def __init__(self, brush_preview, status, parent):
         ViewStrategy.__init__(self, brush_preview, status)
-        QWidget.__init__(self, parent)        
+        QWidget.__init__(self, parent)
         layout = QHBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
-        layout.setSpacing(0)        
+        layout.setSpacing(0)
         self.left_view = QGraphicsView()
         self.left_scene = QGraphicsScene()
         self.left_view.setScene(self.left_scene)
@@ -27,12 +27,12 @@ class SideBySideView(ViewStrategy, QWidget):
         self.left_pixmap_item = QGraphicsPixmapItem()
         self.left_scene.addItem(self.left_pixmap_item)
         self.left_scene.setBackgroundBrush(QBrush(QColor(120, 120, 120)))
-        layout.addWidget(self.left_view)        
+        layout.addWidget(self.left_view)
         separator = QFrame()
         separator.setFrameShape(QFrame.VLine)
         separator.setFrameShadow(QFrame.Sunken)
         separator.setLineWidth(2)
-        layout.addWidget(separator)        
+        layout.addWidget(separator)
         self.right_view = QGraphicsView()
         self.right_scene = QGraphicsScene()
         self.right_view.setScene(self.right_scene)
@@ -42,7 +42,7 @@ class SideBySideView(ViewStrategy, QWidget):
         self.right_scene.addItem(self.right_pixmap_item)
         self.right_scene.setBackgroundBrush(QBrush(QColor(120, 120, 120)))
         layout.addWidget(self.right_view)
-        self.zoom_factor = 1.0
+        self.zoom_factor = -1
         self.min_scale = 0.1
         self.max_scale = 10.0
         self.pan_start = QPointF()
@@ -74,7 +74,7 @@ class SideBySideView(ViewStrategy, QWidget):
                 self.zoom_in()
             else:
                 self.zoom_out()
-            return True            
+            return True
         elif (obj == self.left_view.viewport() or obj == self.right_view.viewport()) and \
                 event.type() == QMouseEvent.Type:
             if event.button() == Qt.LeftButton:
@@ -84,16 +84,15 @@ class SideBySideView(ViewStrategy, QWidget):
                     return True
                 elif event.type() == QMouseEvent.MouseMove and self.panning:
                     delta = event.pos() - self.pan_start
-                    self.pan_start = event.pos()                    
+                    self.pan_start = event.pos()
                     self.left_view.horizontalScrollBar().setValue(
                         self.left_view.horizontalScrollBar().value() - delta.x())
                     self.left_view.verticalScrollBar().setValue(
-                        self.left_view.verticalScrollBar().value() - delta.y())                    
+                        self.left_view.verticalScrollBar().value() - delta.y())
                     return True
                 elif event.type() == QMouseEvent.MouseButtonRelease and self.panning:
                     self.panning = False
                     return True
-        
         return super().eventFilter(obj, event)
 
     def set_master_image(self, qimage):
@@ -108,19 +107,12 @@ class SideBySideView(ViewStrategy, QWidget):
 
     def _arrange_images(self):
         if self.status.empty():
-            return            
-        if not self.left_pixmap_item.pixmap().isNull():
-            pixmap = self.left_pixmap_item.pixmap()
-            view_height = self.left_view.height()
-            scale = view_height / pixmap.height()
-            self.left_view.resetTransform()
-            self.left_view.scale(scale, scale)
-        if not self.right_pixmap_item.pixmap().isNull():
-            pixmap = self.right_pixmap_item.pixmap()
-            view_height = self.right_view.height()
-            scale = view_height / pixmap.height()
-            self.right_view.resetTransform()
-            self.right_view.scale(scale, scale)
+            return
+        if self.right_pixmap_item.pixmap().height() == 0:
+            self.update_master_display()
+            self.update_current_display()
+            self.reset_zoom()
+        self._apply_zoom()
 
     def resizeEvent(self, event):
         super().resizeEvent(event)
@@ -158,7 +150,7 @@ class SideBySideView(ViewStrategy, QWidget):
     def zoom_in(self):
         if self.status.empty():
             return
-        new_zoom = min(self.zoom_factor * 1.2, self.max_scale)
+        new_zoom = min(self.zoom_factor * 1.1, self.max_scale)
         if new_zoom != self.zoom_factor:
             self.zoom_factor = new_zoom
             self._apply_zoom()
@@ -166,14 +158,18 @@ class SideBySideView(ViewStrategy, QWidget):
     def zoom_out(self):
         if self.status.empty():
             return
-        new_zoom = max(self.zoom_factor / 1.2, self.min_scale)
+        new_zoom = max(self.zoom_factor / 1.1, self.min_scale)
         if new_zoom != self.zoom_factor:
             self.zoom_factor = new_zoom
             self._apply_zoom()
 
     def reset_zoom(self):
-        self.zoom_factor = 1.0
-        self._arrange_images()
+        pixmap_height = self.right_pixmap_item.pixmap().height()
+        view_height = self.right_view.height()
+        if pixmap_height > 0:
+            self.zoom_factor = view_height / pixmap_height
+        else:
+            self._arrange_images()
 
     def actual_size(self):
         self.zoom_factor = 1.0
