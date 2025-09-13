@@ -309,13 +309,33 @@ class ImageEditorUI(QMainWindow, LayerCollectionHandler):
         view_menu.addSeparator()
 
         view_strategy_menu = QMenu("View &Mode", view_menu)
-        overlaid_mode = QAction("Overlaid", self)
-        overlaid_mode.triggered.connect(lambda: self.image_viewer.set_strategy('overlaid'))
+
+        self.view_action_modes = {
+            'overlaid': QAction("Overlaid", self),
+            'sidebyside': QAction("Side By Side", self)
+        }
+        overlaid_mode = self.view_action_modes['overlaid']
+        overlaid_mode.setShortcut("Ctrl+1")
+        overlaid_mode.setCheckable(True)
+        overlaid_mode.triggered.connect(lambda: set_strategy('overlaid'))
         view_strategy_menu.addAction(overlaid_mode)
-        overlaid_mode_2 = QAction("Side By Side", self)
-        overlaid_mode_2.triggered.connect(lambda: self.image_viewer.set_strategy('sidebyside'))
-        view_strategy_menu.addAction(overlaid_mode_2)
+
+        side_by_side_mode = self.view_action_modes['sidebyside']
+        side_by_side_mode.setShortcut("Ctrl+2")
+        side_by_side_mode.setCheckable(True)
+        side_by_side_mode.triggered.connect(lambda: set_strategy('sidebyside'))
+        view_strategy_menu.addAction(side_by_side_mode)
         view_menu.addMenu(view_strategy_menu)
+
+        def set_strategy(strategy):
+            self.image_viewer.set_strategy(strategy)
+            enable_shortcuts = strategy == 'overlaid'
+            self.view_master_action.setEnabled(enable_shortcuts)
+            self.view_individual_action.setEnabled(enable_shortcuts)
+            self.toggle_view_master_individual_action.setEnabled(enable_shortcuts)
+            for label, mode in self.view_action_modes.items():
+                mode.setEnabled(label != strategy)
+                mode.setChecked(label == strategy)
 
         view_menu.addSeparator()
 
@@ -340,21 +360,24 @@ class ImageEditorUI(QMainWindow, LayerCollectionHandler):
         view_menu.addAction(actual_size_action)
         view_menu.addSeparator()
 
-        view_master_action = QAction("View Master", self)
-        view_master_action.setShortcut("M")
-        view_master_action.triggered.connect(self.set_view_master)
-        view_menu.addAction(view_master_action)
+        self.view_master_action = QAction("View Master", self)
+        self.view_master_action.setShortcut("M")
+        self.view_master_action.triggered.connect(self.set_view_master)
+        view_menu.addAction(self.view_master_action)
 
-        view_individual_action = QAction("View Individual", self)
-        view_individual_action.setShortcut("L")
-        view_individual_action.triggered.connect(self.set_view_individual)
-        view_menu.addAction(view_individual_action)
+        self.view_individual_action = QAction("View Individual", self)
+        self.view_individual_action.setShortcut("L")
+        self.view_individual_action.triggered.connect(self.set_view_individual)
+        view_menu.addAction(self.view_individual_action)
 
-        toggle_view_master_individual_action = QAction("Toggle Master/Individual", self)
-        toggle_view_master_individual_action.setShortcut("T")
-        toggle_view_master_individual_action.triggered.connect(self.toggle_view_master_individual)
-        view_menu.addAction(toggle_view_master_individual_action)
+        self.toggle_view_master_individual_action = QAction("Toggle Master/Individual", self)
+        self.toggle_view_master_individual_action.setShortcut("T")
+        self.toggle_view_master_individual_action.triggered.connect(
+            self.toggle_view_master_individual)
+        view_menu.addAction(self.toggle_view_master_individual_action)
         view_menu.addSeparator()
+
+        set_strategy('overlaid')
 
         sort_asc_action = QAction("Sort Layers A-Z", self)
         sort_asc_action.triggered.connect(lambda: self.sort_layers('asc'))

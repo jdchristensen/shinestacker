@@ -1,8 +1,8 @@
-# sidebyside_view.py
+# pylint: disable=C0114, C0115, C0116, R0904, R0915, E0611, R0902
 from PySide6.QtWidgets import (QWidget, QHBoxLayout, QFrame, QGraphicsView, QGraphicsScene,
                                QGraphicsPixmapItem)
 from PySide6.QtGui import QPixmap, QPainter, QColor, QBrush, QWheelEvent, QMouseEvent
-from PySide6.QtCore import Qt, Signal, QPoint, QPointF
+from PySide6.QtCore import Qt, Signal, QPoint, QPointF, QEvent
 from .view_strategy import ViewStrategy
 
 
@@ -63,26 +63,35 @@ class SideBySideView(ViewStrategy, QWidget):
             self.left_view.verticalScrollBar().setValue)
         self.left_view.viewport().installEventFilter(self)
         self.right_view.viewport().installEventFilter(self)
+        self.pinch_start_scale = 1.0
+        self.pinch_center_view = None
+        self.pinch_center_scene = None
+        self.gesture_active = False
+        self.left_view.grabGesture(Qt.PinchGesture)
+        self.right_view.grabGesture(Qt.PinchGesture)
+        self.left_view.installEventFilter(self)
+        self.right_view.installEventFilter(self)
 
+    # pylint: disable=C0103
     def eventFilter(self, obj, event):
-        # Handle wheel events for zooming
+        if obj in [self.left_view, self.right_view] and event.type() == QEvent.Gesture:
+            return self.handle_gesture_event(event)
         if (obj == self.left_view.viewport() or obj == self.right_view.viewport()) and \
            event.type() == QWheelEvent.Type:
-            # Zoom with mouse wheel
             delta = event.angleDelta().y()
             if delta > 0:
                 self.zoom_in()
             else:
                 self.zoom_out()
             return True
-        elif (obj == self.left_view.viewport() or obj == self.right_view.viewport()) and \
+        if (obj == self.left_view.viewport() or obj == self.right_view.viewport()) and \
                 event.type() == QMouseEvent.Type:
             if event.button() == Qt.LeftButton:
                 if event.type() == QMouseEvent.MouseButtonPress:
                     self.pan_start = event.pos()
                     self.panning = True
                     return True
-                elif event.type() == QMouseEvent.MouseMove and self.panning:
+                if event.type() == QMouseEvent.MouseMove and self.panning:
                     delta = event.pos() - self.pan_start
                     self.pan_start = event.pos()
                     self.left_view.horizontalScrollBar().setValue(
@@ -90,10 +99,55 @@ class SideBySideView(ViewStrategy, QWidget):
                     self.left_view.verticalScrollBar().setValue(
                         self.left_view.verticalScrollBar().value() - delta.y())
                     return True
-                elif event.type() == QMouseEvent.MouseButtonRelease and self.panning:
+                if event.type() == QMouseEvent.MouseButtonRelease and self.panning:
                     self.panning = False
                     return True
         return super().eventFilter(obj, event)
+
+    def resizeEvent(self, event):
+        super().resizeEvent(event)
+        self._arrange_images()
+
+    def showEvent(self, event):
+        super().showEvent(event)
+        self._arrange_images()
+    # pylint: enable=C0103
+
+    def handle_gesture_event(self, event):
+        if self.empty():
+            return False
+        handled = False
+        pinch_gesture = event.gesture(Qt.PinchGesture)
+        if pinch_gesture:
+            self.handle_pinch_gesture(pinch_gesture)
+            handled = True
+        if handled:
+            event.accept()
+            return True
+        return False
+
+    def handle_pinch_gesture(self, pinch):
+        if pinch.state() == Qt.GestureStarted:
+            self.pinch_start_scale = self.zoom_factor
+            self.pinch_center_view = pinch.centerPoint()
+            self.pinch_center_scene = self.right_view.mapToScene(self.pinch_center_view.toPoint())
+            self.gesture_active = True
+        elif pinch.state() == Qt.GestureUpdated:
+            new_scale = self.pinch_start_scale * pinch.totalScaleFactor()
+            new_scale = max(self.min_scale, min(new_scale, self.max_scale))
+            if abs(new_scale - self.zoom_factor) > 0.01:
+                self.zoom_factor = new_scale
+                self._apply_zoom()
+                new_center = self.right_view.mapToScene(self.pinch_center_view.toPoint())
+                delta = self.pinch_center_scene - new_center
+                h_scroll = self.right_view.horizontalScrollBar().value()
+                v_scroll = self.right_view.verticalScrollBar().value()
+                self.right_view.horizontalScrollBar().setValue(
+                    h_scroll + int(delta.x() * self.zoom_factor))
+                self.right_view.verticalScrollBar().setValue(
+                    v_scroll + int(delta.y() * self.zoom_factor))
+        elif pinch.state() in (Qt.GestureFinished, Qt.GestureCanceled):
+            self.gesture_active = False
 
     def set_master_image(self, qimage):
         self.status.set_master_image(qimage)
@@ -113,14 +167,6 @@ class SideBySideView(ViewStrategy, QWidget):
             self.update_current_display()
             self.reset_zoom()
         self._apply_zoom()
-
-    def resizeEvent(self, event):
-        super().resizeEvent(event)
-        self._arrange_images()
-
-    def showEvent(self, event):
-        super().showEvent(event)
-        self._arrange_images()
 
     def clear_image(self):
         self.left_scene.clear()
