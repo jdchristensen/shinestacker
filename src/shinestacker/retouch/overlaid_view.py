@@ -103,19 +103,7 @@ class OverlaidView(ViewStrategy, ImageGraphicsViewBase, ViewSignals):
 
     # pylint: disable=C0103
     def mousePressEvent(self, event):
-        if self.empty():
-            return
-        if event.button() == Qt.LeftButton and self.has_master_layer():
-            if self.space_pressed:
-                self.scrolling = True
-                self.last_mouse_pos = event.position()
-                self.setCursor(Qt.ClosedHandCursor)
-            else:
-                self.last_brush_pos = event.position()
-                self.brush_operation_started.emit(event.position().toPoint())
-                self.dragging = True
-            if self.brush_cursor:
-                self.brush_cursor.show()
+        self.mouse_press_event(event)
         super().mousePressEvent(event)
 
     def mouseMoveEvent(self, event):
@@ -172,13 +160,6 @@ class OverlaidView(ViewStrategy, ImageGraphicsViewBase, ViewSignals):
             if self.brush_cursor:
                 self.brush_cursor.show()
         super().enterEvent(event)
-
-    def leaveEvent(self, event):
-        if not self.empty():
-            self.setCursor(Qt.ArrowCursor)
-            if self.brush_cursor:
-                self.brush_cursor.hide()
-        super().leaveEvent(event)
     # pylint: enable=C0103
 
     def event(self, event):

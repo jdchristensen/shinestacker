@@ -25,7 +25,6 @@ class ImageGraphicsViewBase(QGraphicsView):
         super().__init__(parent)
         self.setTransformationAnchor(QGraphicsView.AnchorViewCenter)
         self.setResizeAnchor(QGraphicsView.AnchorUnderMouse)
-        self.setDragMode(QGraphicsView.ScrollHandDrag)
         self.setInteractive(False)
         self.grabGesture(Qt.PinchGesture)
         self.grabGesture(Qt.PanGesture)
@@ -283,12 +282,12 @@ class ViewStrategy(LayerCollectionHandler):
             return
         if not self.brush_cursor or not self.isVisible():
             return
-        view = self.get_master_view()
-        mouse_pos = view.mapFromGlobal(QCursor.pos())
-        if not view.rect().contains(mouse_pos):
+        master_view = self.get_master_view()
+        mouse_pos = master_view.mapFromGlobal(QCursor.pos())
+        if not master_view.rect().contains(mouse_pos):
             self.brush_cursor.hide()
             return
-        scene_pos = view.mapToScene(mouse_pos)
+        scene_pos = master_view.mapToScene(mouse_pos)
         size = self.brush.size
         radius = size / 2
         self.brush_cursor.setRect(scene_pos.x() - radius, scene_pos.y() - radius, size, size)
@@ -300,8 +299,8 @@ class ViewStrategy(LayerCollectionHandler):
             if isinstance(pos, QPointF):
                 scene_pos = pos
             else:
-                cursor_pos = view.mapFromGlobal(pos)
-                scene_pos = view.mapToScene(cursor_pos)
+                cursor_pos = master_view.mapFromGlobal(pos)
+                scene_pos = master_view.mapToScene(cursor_pos)
             self.brush_preview.update(scene_pos, int(size))
         else:
             self.brush_preview.hide()
@@ -313,20 +312,20 @@ class ViewStrategy(LayerCollectionHandler):
             self.brush_cursor.show()
 
     def position_on_image(self, pos):
-        view = self.get_master_view()
+        master_view = self.get_master_view()
         pixmap = self.get_master_pixmap()
-        scene_pos = view.mapToScene(pos)
+        scene_pos = master_view.mapToScene(pos)
         item_pos = pixmap.mapFromScene(scene_pos)
         return item_pos
 
     def get_visible_image_region(self):
         if self.empty():
             return None
-        view = self.get_master_view()
+        master_view = self.get_master_view()
         pixmap = self.get_master_pixmap()
-        view_rect = view.viewport().rect()
-        scene_rect = view.mapToScene(view_rect).boundingRect()
-        image_rect = view.mapFromScene(scene_rect).boundingRect()
+        view_rect = master_view.viewport().rect()
+        scene_rect = master_view.mapToScene(view_rect).boundingRect()
+        image_rect = master_view.mapFromScene(scene_rect).boundingRect()
         image_rect = image_rect.intersected(pixmap.boundingRect().toRect())
         return image_rect
 
@@ -348,9 +347,10 @@ class ViewStrategy(LayerCollectionHandler):
     def keyPressEvent(self, event):
         if self.empty():
             return
+        master_view = self.get_master_view()
         if event.key() == Qt.Key_Space and not self.scrolling:
             self.space_pressed = True
-            self.setCursor(Qt.OpenHandCursor)
+            master_view.setCursor(Qt.OpenHandCursor)
             if self.brush_cursor:
                 self.brush_cursor.hide()
         self.handle_key_press_event(event)
@@ -361,17 +361,25 @@ class ViewStrategy(LayerCollectionHandler):
     def keyReleaseEvent(self, event):
         if self.empty():
             return
+        master_view = self.get_master_view()
         self.update_brush_cursor()
         if event.key() == Qt.Key_Space:
             self.space_pressed = False
             if not self.scrolling:
-                self.setCursor(Qt.BlankCursor)
+                master_view.setCursor(Qt.BlankCursor)
                 if self.brush_cursor:
                     self.brush_cursor.show()
         self.handle_key_release_event(event)
         if event.key() == Qt.Key_Control:
             self.control_pressed = False
         super().keyReleaseEvent(event)
+
+    def leaveEvent(self, event):
+        if not self.empty():
+            self.get_master_view().setCursor(Qt.ArrowCursor)
+            if self.brush_cursor:
+                self.brush_cursor.hide()
+        super().leaveEvent(event)
     # pylint: enable=C0103
 
     def mouse_move_event(self, event):
@@ -400,27 +408,43 @@ class ViewStrategy(LayerCollectionHandler):
                     self.last_brush_pos = position
                 self.last_update_time = current_time
         if self.scrolling and event.buttons() & Qt.LeftButton:
+            master_view = self.get_master_view()
             if self.space_pressed:
-                self.right_view.setCursor(Qt.ClosedHandCursor)
+                master_view.setCursor(Qt.ClosedHandCursor)
                 if self.brush_cursor:
                     self.brush_cursor.hide()
             delta = position - self.last_mouse_pos
             self.last_mouse_pos = position
-            view = self.get_master_view()
-            view.horizontalScrollBar().setValue(
-                view.horizontalScrollBar().value() - delta.x())
-            view.verticalScrollBar().setValue(
-                view.verticalScrollBar().value() - delta.y())
+            master_view.horizontalScrollBar().setValue(
+                master_view.horizontalScrollBar().value() - delta.x())
+            master_view.verticalScrollBar().setValue(
+                master_view.verticalScrollBar().value() - delta.y())
+
+    def mouse_press_event(self, event):
+        if self.empty():
+            return
+        if event.button() == Qt.LeftButton and self.has_master_layer():
+            if self.space_pressed:
+                self.scrolling = True
+                self.last_mouse_pos = event.position()
+                self.setCursor(Qt.ClosedHandCursor)
+            else:
+                self.last_brush_pos = event.position()
+                self.brush_operation_started.emit(event.position().toPoint())
+                self.dragging = True
+            if self.brush_cursor:
+                self.brush_cursor.show()
 
     def mouse_release_event(self, event):
         if self.empty():
             return
+        master_view = self.get_master_view()
         if self.space_pressed:
-            self.setCursor(Qt.OpenHandCursor)
+            master_view.setCursor(Qt.OpenHandCursor)
             if self.brush_cursor:
                 self.brush_cursor.hide()
         else:
-            self.setCursor(Qt.BlankCursor)
+            master_view.setCursor(Qt.BlankCursor)
             if self.brush_cursor:
                 self.brush_cursor.show()
         if event.button() == Qt.LeftButton:

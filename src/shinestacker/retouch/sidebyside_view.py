@@ -20,18 +20,14 @@ class ImageGraphicsView(ImageGraphicsViewBase):
         return super().event(event)
 
     def mousePressEvent(self, event):
-        if event.button() == Qt.LeftButton:
-            self.mouse_pressed.emit(event)
+        self.mouse_pressed.emit(event)
         super().mousePressEvent(event)
 
     def mouseMoveEvent(self, event):
         self.mouse_moved.emit(event)
-        event.accept()
-        super().mouseMoveEvent(event)
 
     def mouseReleaseEvent(self, event):
-        if event.button() == Qt.LeftButton:
-            self.mouse_released.emit(event)
+        self.mouse_released.emit(event)
         super().mouseReleaseEvent(event)
     # pylint: enable=C0103
 
@@ -64,6 +60,11 @@ class SideBySideView(ViewStrategy, QWidget, ViewSignals):
         self.setFocusPolicy(Qt.StrongFocus)
         self.pan_start = None
         self.pinch_start_scale = None
+
+        self.left_view.installEventFilter(self)
+        self.right_view.installEventFilter(self)
+        self.left_view.setFocusPolicy(Qt.NoFocus)
+        self.right_view.setFocusPolicy(Qt.NoFocus)
 
     def create_pixmaps(self):
         self.left_pixmap_item = self.create_pixmap(self.left_scene)
@@ -109,6 +110,21 @@ class SideBySideView(ViewStrategy, QWidget, ViewSignals):
         }
 
     # pylint: disable=C0103
+    def focusInEvent(self, event):
+        super().focusInEvent(event)
+        self.activateWindow()
+        self.setFocus()
+
+    def eventFilter(self, obj, event):
+        if obj in [self.left_view, self.right_view]:
+            if event.type() == QEvent.KeyPress:
+                self.keyPressEvent(event)
+                return True
+            if event.type() == QEvent.KeyRelease:
+                self.keyReleaseEvent(event)
+                return True
+        return super().eventFilter(obj, event)
+
     def showEvent(self, event):
         super().showEvent(event)
         self.update_brush_cursor()
@@ -124,28 +140,11 @@ class SideBySideView(ViewStrategy, QWidget, ViewSignals):
                 if self.brush_cursor:
                     self.brush_cursor.show()
         super().enterEvent(event)
-
-    def leaveEvent(self, event):
-        if not self.empty():
-            self.right_view.setCursor(Qt.ArrowCursor)
-            if self.brush_cursor:
-                self.brush_cursor.hide()
-        super().leaveEvent(event)
     # pylint: enable=C0103
 
     def handle_right_mouse_press(self, event):
-        position = event.position()
-        if self.has_master_layer():
-            if self.space_pressed:
-                self.scrolling = True
-                self.last_mouse_pos = event.position()
-                self.right_view.setCursor(Qt.ClosedHandCursor)
-            else:
-                self.last_brush_pos = position
-                self.brush_operation_started.emit(position.toPoint())
-                self.dragging = True
-            if self.brush_cursor:
-                self.brush_cursor.show()
+        self.setFocus()
+        self.mouse_press_event(event)
 
     def handle_right_mouse_move(self, event):
         self.mouse_move_event(event)
