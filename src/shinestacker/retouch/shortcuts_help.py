@@ -71,6 +71,7 @@ class ShortcutsHelp(QDialog):
         shortcuts = {
             "Ctrl + 1": "view mode: overlaid",
             "Ctrl + 2": "view mode: side by side",
+            "Ctrl + 3": "view mode: top-bottom",
             "[": "increase brush size",
             "]": "decrease brush size",
             "{": "increase brush hardness",

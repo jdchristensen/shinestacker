@@ -312,18 +312,23 @@ class ImageEditorUI(QMainWindow, LayerCollectionHandler):
 
         self.view_action_modes = {
             'overlaid': QAction("Overlaid", self),
-            'sidebyside': QAction("Side By Side", self)
+            'sidebyside': QAction("Side By Side", self),
+            'topbottom': QAction("Top-Bottom", self)
         }
         overlaid_mode = self.view_action_modes['overlaid']
         overlaid_mode.setShortcut("Ctrl+1")
         overlaid_mode.setCheckable(True)
         overlaid_mode.triggered.connect(lambda: set_strategy('overlaid'))
         view_strategy_menu.addAction(overlaid_mode)
-
         side_by_side_mode = self.view_action_modes['sidebyside']
         side_by_side_mode.setShortcut("Ctrl+2")
         side_by_side_mode.setCheckable(True)
         side_by_side_mode.triggered.connect(lambda: set_strategy('sidebyside'))
+        view_strategy_menu.addAction(side_by_side_mode)
+        side_by_side_mode = self.view_action_modes['topbottom']
+        side_by_side_mode.setShortcut("Ctrl+3")
+        side_by_side_mode.setCheckable(True)
+        side_by_side_mode.triggered.connect(lambda: set_strategy('topbottom'))
         view_strategy_menu.addAction(side_by_side_mode)
         view_menu.addMenu(view_strategy_menu)
 

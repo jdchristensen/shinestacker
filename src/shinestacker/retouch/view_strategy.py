@@ -32,6 +32,7 @@ class ImageGraphicsViewBase(QGraphicsView):
         self.setDragMode(QGraphicsView.NoDrag)
         self.setRenderHint(QPainter.Antialiasing)
         self.setRenderHint(QPainter.SmoothPixmapTransform)
+        self.setCursor(Qt.BlankCursor)
 
 
 class ViewStrategy(LayerCollectionHandler):

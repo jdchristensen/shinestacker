@@ -2,11 +2,11 @@
 
 This page reports the main releases only and the main changes therein.
 
-## [v-.-.-] - 2025-09-14
-** Unreleased code**
+## [v1.4.0] - 2025-09-14
+**GUI improvements**
 
 ### Added
-- added retouch view mode with master and frame side by side
+- added retouch view mode with master and frame side by side and top-bottom
 - implemented "Open Recent" menu entry for both projects and retouch images
 - expert options can be shown with a checkbox in each dialog
 - optional summary plots for alignment transformation parameters
@@ -14,10 +14,10 @@ This page reports the main releases only and the main changes therein.
 ## Fixed
 - fixed bug in plot generation
 - fixes warning due to missing glyph in PDF generation on macOS
-- safer parallel plot generation using a thread lock
+- safer parallel plot generation using a thread locks
 
 ### Changed
-- code refactoring
+- code refactoring in various areas
 
 ---
 

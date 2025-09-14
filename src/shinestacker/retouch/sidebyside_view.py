@@ -1,7 +1,7 @@
 # pylint: disable=C0114, C0115, C0116, R0904, R0915, E0611, R0902, R0911, R0914, E1003
 from PySide6.QtCore import Qt, Signal, QEvent, QRectF
 from PySide6.QtGui import QPixmap, QPen, QColor, QCursor
-from PySide6.QtWidgets import QWidget, QHBoxLayout, QFrame, QGraphicsEllipseItem
+from PySide6.QtWidgets import QWidget, QHBoxLayout, QVBoxLayout, QFrame, QGraphicsEllipseItem
 from .. config.gui_constants import gui_constants
 from .view_strategy import ViewStrategy, ImageGraphicsViewBase, ViewSignals
 
@@ -32,42 +32,34 @@ class ImageGraphicsView(ImageGraphicsViewBase):
     # pylint: enable=C0103
 
 
-class SideBySideView(ViewStrategy, QWidget, ViewSignals):
+class DoubleViewBase(ViewStrategy, QWidget, ViewSignals):
     def __init__(self, layer_collection, status, parent):
         ViewStrategy.__init__(self, layer_collection, status)
         QWidget.__init__(self, parent)
-        layout = QHBoxLayout(self)
-        layout.setContentsMargins(0, 0, 0, 0)
-        layout.setSpacing(0)
         self.current_view = ImageGraphicsView(parent)
         self.master_view = ImageGraphicsView(parent)
         self.current_scene = self.create_scene(self.current_view)
         self.master_scene = self.create_scene(self.master_view)
         self.create_pixmaps()
         self.master_scene.addItem(self.brush_preview)
-        layout.addWidget(self.current_view, 1)
-        separator = QFrame()
-        separator.setFrameShape(QFrame.VLine)
-        separator.setFrameShadow(QFrame.Sunken)
-        separator.setLineWidth(2)
-        layout.addWidget(separator, 0)
-        layout.addWidget(self.master_view, 1)
+        self.setup_layout()
         self._connect_signals()
         self.panning_current = False
         self.brush_cursor = None
-        self.master_view.setCursor(Qt.BlankCursor)
         self.setup_brush_cursor()
         self.setFocusPolicy(Qt.StrongFocus)
         self.pan_start = None
         self.pinch_start_scale = None
-
         self.current_view.installEventFilter(self)
         self.master_view.installEventFilter(self)
         self.current_view.setFocusPolicy(Qt.NoFocus)
         self.master_view.setFocusPolicy(Qt.NoFocus)
-
         self.current_brush_cursor = None
         self.setup_current_brush_cursor()
+
+    def setup_layout(self):
+        """To be implemented by subclasses - creates layout and adds widgets"""
+        raise NotImplementedError("Subclasses must implement setup_layout")
 
     def create_pixmaps(self):
         self.current_pixmap_item = self.create_pixmap(self.current_scene)
@@ -457,3 +449,31 @@ class SideBySideView(ViewStrategy, QWidget, ViewSignals):
     def actual_size(self):
         super().actual_size()
         self.update_cursor_pen_width()
+
+
+class SideBySideView(DoubleViewBase):
+    def setup_layout(self):
+        layout = QHBoxLayout(self)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(0)
+        layout.addWidget(self.current_view, 1)
+        separator = QFrame()
+        separator.setFrameShape(QFrame.VLine)
+        separator.setFrameShadow(QFrame.Sunken)
+        separator.setLineWidth(2)
+        layout.addWidget(separator, 0)
+        layout.addWidget(self.master_view, 1)
+
+
+class TopBottomView(DoubleViewBase):
+    def setup_layout(self):
+        layout = QVBoxLayout(self)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(0)
+        layout.addWidget(self.current_view, 1)
+        separator = QFrame()
+        separator.setFrameShape(QFrame.HLine)
+        separator.setFrameShadow(QFrame.Sunken)
+        separator.setLineWidth(2)
+        layout.addWidget(separator, 0)
+        layout.addWidget(self.master_view, 1)

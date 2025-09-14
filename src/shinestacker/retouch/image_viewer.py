@@ -3,7 +3,7 @@ from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QWidget, QVBoxLayout
 from .image_view_status import ImageViewStatus
 from .overlaid_view import OverlaidView
-from .sidebyside_view import SideBySideView
+from .sidebyside_view import SideBySideView, TopBottomView
 
 
 class ImageViewer(QWidget):
@@ -12,7 +12,8 @@ class ImageViewer(QWidget):
         self.status = ImageViewStatus()
         self._strategies = {
             'overlaid': OverlaidView(layer_collection, self.status, self),
-            'sidebyside': SideBySideView(layer_collection, self.status, self)
+            'sidebyside': SideBySideView(layer_collection, self.status, self),
+            'topbottom': TopBottomView(layer_collection, self.status, self)
         }
         for strategy in self._strategies.values():
             strategy.hide()
