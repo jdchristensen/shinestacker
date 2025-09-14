@@ -1,7 +1,8 @@
 # pylint: disable=C0114, C0115, C0116, E0611, R0904, R0903, R0902, E1101
+import math
 from abc import abstractmethod
 import numpy as np
-from PySide6.QtCore import Qt, QPointF
+from PySide6.QtCore import Qt, QPointF, QTime, QPoint
 from PySide6.QtGui import QImage, QPainter, QColor, QBrush, QPen, QCursor
 from PySide6.QtWidgets import (
     QGraphicsEllipseItem, QGraphicsView, QGraphicsScene, QGraphicsPixmapItem)
@@ -359,3 +360,60 @@ class ViewStrategy(LayerCollectionHandler):
             self.control_pressed = False
         super().keyReleaseEvent(event)
     # pylint: enable=C0103
+
+    def mouse_move_event(self, event):
+        if self.empty():
+            return
+        position = event.position()
+        brush_size = self.brush.size
+        if not self.space_pressed:
+            self.update_brush_cursor()
+        if self.dragging and event.buttons() & Qt.LeftButton:
+            current_time = QTime.currentTime()
+            if self.last_update_time.msecsTo(current_time) >= gui_constants.PAINT_REFRESH_TIMER:
+                min_step = brush_size * \
+                    gui_constants.MIN_MOUSE_STEP_BRUSH_FRACTION * self.zoom_factor()
+                x, y = position.x(), position.y()
+                xp, yp = self.last_brush_pos.x(), self.last_brush_pos.y()
+                distance = math.sqrt((x - xp)**2 + (y - yp)**2)
+                n_steps = int(float(distance) / min_step)
+                if n_steps > 0:
+                    delta_x = (position.x() - self.last_brush_pos.x()) / n_steps
+                    delta_y = (position.y() - self.last_brush_pos.y()) / n_steps
+                    for i in range(0, n_steps + 1):
+                        pos = QPoint(self.last_brush_pos.x() + i * delta_x,
+                                     self.last_brush_pos.y() + i * delta_y)
+                        self.brush_operation_continued.emit(pos)
+                    self.last_brush_pos = position
+                self.last_update_time = current_time
+        if self.scrolling and event.buttons() & Qt.LeftButton:
+            if self.space_pressed:
+                self.right_view.setCursor(Qt.ClosedHandCursor)
+                if self.brush_cursor:
+                    self.brush_cursor.hide()
+            delta = position - self.last_mouse_pos
+            self.last_mouse_pos = position
+            view = self.get_master_view()
+            view.horizontalScrollBar().setValue(
+                view.horizontalScrollBar().value() - delta.x())
+            view.verticalScrollBar().setValue(
+                view.verticalScrollBar().value() - delta.y())
+
+    def mouse_release_event(self, event):
+        if self.empty():
+            return
+        if self.space_pressed:
+            self.setCursor(Qt.OpenHandCursor)
+            if self.brush_cursor:
+                self.brush_cursor.hide()
+        else:
+            self.setCursor(Qt.BlankCursor)
+            if self.brush_cursor:
+                self.brush_cursor.show()
+        if event.button() == Qt.LeftButton:
+            if self.scrolling:
+                self.scrolling = False
+                self.last_mouse_pos = None
+            elif self.dragging:
+                self.dragging = False
+                self.brush_operation_ended.emit()

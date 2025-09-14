@@ -1,5 +1,4 @@
 # pylint: disable=C0114, C0115, C0116, E0611, E1101, R0904, R0912, R0914, R0902
-import math
 from PySide6.QtGui import QPixmap
 from PySide6.QtCore import Qt, QTime, QPoint, QPointF, QEvent, QRectF, Signal
 from .. config.gui_constants import gui_constants
@@ -132,60 +131,10 @@ class OverlaidView(ViewStrategy, ImageGraphicsViewBase):
         super().mousePressEvent(event)
 
     def mouseMoveEvent(self, event):
-        if self.empty():
-            return
-        position = event.position()
-        brush_size = self.brush.size
-        if not self.space_pressed:
-            self.update_brush_cursor()
-        if self.dragging and event.buttons() & Qt.LeftButton:
-            current_time = QTime.currentTime()
-            if self.last_update_time.msecsTo(current_time) >= gui_constants.PAINT_REFRESH_TIMER:
-                min_step = brush_size * \
-                    gui_constants.MIN_MOUSE_STEP_BRUSH_FRACTION * self.zoom_factor()
-                x, y = position.x(), position.y()
-                xp, yp = self.last_brush_pos.x(), self.last_brush_pos.y()
-                distance = math.sqrt((x - xp)**2 + (y - yp)**2)
-                n_steps = int(float(distance) / min_step)
-                if n_steps > 0:
-                    delta_x = (position.x() - self.last_brush_pos.x()) / n_steps
-                    delta_y = (position.y() - self.last_brush_pos.y()) / n_steps
-                    for i in range(0, n_steps + 1):
-                        pos = QPoint(self.last_brush_pos.x() + i * delta_x,
-                                     self.last_brush_pos.y() + i * delta_y)
-                        self.brush_operation_continued.emit(pos)
-                    self.last_brush_pos = position
-                self.last_update_time = current_time
-        if self.scrolling and event.buttons() & Qt.LeftButton:
-            if self.space_pressed:
-                self.setCursor(Qt.ClosedHandCursor)
-                if self.brush_cursor:
-                    self.brush_cursor.hide()
-            delta = position - self.last_mouse_pos
-            self.last_mouse_pos = position
-            self.horizontalScrollBar().setValue(self.horizontalScrollBar().value() - delta.x())
-            self.verticalScrollBar().setValue(self.verticalScrollBar().value() - delta.y())
-        else:
-            super().mouseMoveEvent(event)
+        self.mouse_move_event(event)
 
     def mouseReleaseEvent(self, event):
-        if self.empty():
-            return
-        if self.space_pressed:
-            self.setCursor(Qt.OpenHandCursor)
-            if self.brush_cursor:
-                self.brush_cursor.hide()
-        else:
-            self.setCursor(Qt.BlankCursor)
-            if self.brush_cursor:
-                self.brush_cursor.show()
-        if event.button() == Qt.LeftButton:
-            if self.scrolling:
-                self.scrolling = False
-                self.last_mouse_pos = None
-            elif hasattr(self, 'dragging') and self.dragging:
-                self.dragging = False
-                self.brush_operation_ended.emit()
+        self.mouse_release_event(event)
         super().mouseReleaseEvent(event)
 
     def wheelEvent(self, event):
