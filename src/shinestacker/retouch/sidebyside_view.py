@@ -1,6 +1,6 @@
 # pylint: disable=C0114, C0115, C0116, R0904, R0915, E0611, R0902, R0911, R0914
 from PySide6.QtCore import Qt, Signal, QEvent, QRectF
-from PySide6.QtGui import QPixmap, QPen, QColor
+from PySide6.QtGui import QPixmap, QPen, QColor, QCursor
 from PySide6.QtWidgets import QWidget, QHBoxLayout, QFrame, QGraphicsEllipseItem
 from .. config.gui_constants import gui_constants
 from .view_strategy import ViewStrategy, ImageGraphicsViewBase, ViewSignals
@@ -90,6 +90,30 @@ class SideBySideView(ViewStrategy, QWidget, ViewSignals):
             self.left_view.horizontalScrollBar().setValue)
         self.right_view.verticalScrollBar().valueChanged.connect(
             self.left_view.verticalScrollBar().setValue)
+        self.left_view.enterEvent = self.left_view_enter_event
+        self.left_view.leaveEvent = self.left_view_leave_event
+        self.right_view.enterEvent = self.right_view_enter_event
+        self.right_view.leaveEvent = self.right_view_leave_event
+
+    def left_view_enter_event(self, event):
+        self.activateWindow()
+        self.setFocus()
+        self.update_brush_cursor()
+        super(ImageGraphicsView, self.left_view).enterEvent(event)
+
+    def left_view_leave_event(self, event):
+        self.update_brush_cursor()
+        super(ImageGraphicsView, self.left_view).leaveEvent(event)
+
+    def right_view_enter_event(self, event):
+        self.activateWindow()
+        self.setFocus()
+        self.update_brush_cursor()
+        super(ImageGraphicsView, self.right_view).enterEvent(event)
+
+    def right_view_leave_event(self, event):
+        self.update_brush_cursor()
+        super(ImageGraphicsView, self.right_view).leaveEvent(event)
 
     def get_master_view(self):
         return self.right_view
@@ -143,7 +167,20 @@ class SideBySideView(ViewStrategy, QWidget, ViewSignals):
                 if self.brush_cursor:
                     self.brush_cursor.show()
         super().enterEvent(event)
+
+    def leaveEvent(self, event):
+        if self.brush_cursor:
+            self.brush_cursor.hide()
+        if self.left_brush_cursor:
+            self.left_brush_cursor.hide()
+        self.right_view.setCursor(Qt.ArrowCursor)
+        self.left_view.setCursor(Qt.ArrowCursor)
+        super().leaveEvent(event)
     # pylint: enable=C0103
+
+    def setup_brush_cursor(self):
+        super().setup_brush_cursor()
+        self.setup_left_brush_cursor()
 
     def setup_left_brush_cursor(self):
         if not self.brush:
@@ -171,11 +208,48 @@ class SideBySideView(ViewStrategy, QWidget, ViewSignals):
             self.left_brush_cursor.hide()
 
     def update_brush_cursor(self):
-        super().update_brush_cursor()
-        if self.brush_cursor:
-            right_rect = self.brush_cursor.rect()
-            scene_pos = right_rect.center()
-            self.update_left_brush_cursor(scene_pos)
+        if self.empty():
+            return
+        mouse_pos_global = QCursor.pos()
+        mouse_pos_left = self.left_view.mapFromGlobal(mouse_pos_global)
+        mouse_pos_right = self.right_view.mapFromGlobal(mouse_pos_global)
+        left_has_mouse = self.left_view.rect().contains(mouse_pos_left)
+        right_has_mouse = self.right_view.rect().contains(mouse_pos_right)
+        if right_has_mouse:
+            super().update_brush_cursor()
+            self.sync_left_cursor_with_right()
+            if self.space_pressed:
+                self.right_view.setCursor(Qt.OpenHandCursor)
+            else:
+                self.right_view.setCursor(Qt.BlankCursor)
+        elif left_has_mouse:
+            scene_pos = self.left_view.mapToScene(mouse_pos_left)
+            size = self.brush.size
+            radius = size / 2
+            self.left_brush_cursor.setRect(
+                scene_pos.x() - radius,
+                scene_pos.y() - radius,
+                size, size
+            )
+            self.left_brush_cursor.show()
+            if self.brush_cursor:
+                self.brush_cursor.setRect(
+                    scene_pos.x() - radius,
+                    scene_pos.y() - radius,
+                    size, size
+                )
+                self.brush_cursor.show()
+            if self.space_pressed:
+                self.left_view.setCursor(Qt.OpenHandCursor)
+            else:
+                self.left_view.setCursor(Qt.CrossCursor)
+        else:
+            if self.brush_cursor:
+                self.brush_cursor.hide()
+            if self.left_brush_cursor:
+                self.left_brush_cursor.hide()
+            self.right_view.setCursor(Qt.ArrowCursor)
+            self.left_view.setCursor(Qt.ArrowCursor)
 
     def handle_right_mouse_press(self, event):
         self.setFocus()
@@ -183,6 +257,7 @@ class SideBySideView(ViewStrategy, QWidget, ViewSignals):
 
     def handle_right_mouse_move(self, event):
         self.mouse_move_event(event)
+        self.update_brush_cursor()
 
     def handle_right_mouse_release(self, event):
         self.mouse_release_event(event)
@@ -199,6 +274,9 @@ class SideBySideView(ViewStrategy, QWidget, ViewSignals):
             delta = position - self.pan_start
             self.pan_start = position
             self.scroll_view(self.left_view, delta.x(), delta.y())
+        else:
+            # Update cursor position when not panning
+            self.update_brush_cursor()
 
     def handle_left_mouse_release(self, _event):
         if self.panning_left:
@@ -303,3 +381,20 @@ class SideBySideView(ViewStrategy, QWidget, ViewSignals):
         if self.left_brush_cursor:
             self.left_scene.removeItem(self.left_brush_cursor)
             self.left_brush_cursor = None
+
+    def sync_left_cursor_with_right(self):
+        if not self.brush_cursor or not self.left_brush_cursor:
+            return
+        right_rect = self.brush_cursor.rect()
+        scene_pos = right_rect.center()
+        size = self.brush.size
+        radius = size / 2
+        self.left_brush_cursor.setRect(
+            scene_pos.x() - radius,
+            scene_pos.y() - radius,
+            size, size
+        )
+        if self.brush_cursor.isVisible():
+            self.left_brush_cursor.show()
+        else:
+            self.left_brush_cursor.hide()
