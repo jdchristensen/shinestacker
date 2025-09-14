@@ -278,7 +278,7 @@ class ImageEditorUI(QMainWindow, LayerCollectionHandler):
         file_menu.addAction("&Close", self.close_file, "Ctrl+W")
         file_menu.addSeparator()
         file_menu.addAction("&Import Frames", self.io_gui_handler.import_frames)
-        file_menu.addAction("Import &EXIF data", self.io_gui_handler.select_exif_path)
+        file_menu.addAction("Import &EXIF Data", self.io_gui_handler.select_exif_path)
 
         edit_menu = menubar.addMenu("&Edit")
         self.undo_action = QAction("Undo", self)
@@ -312,7 +312,7 @@ class ImageEditorUI(QMainWindow, LayerCollectionHandler):
 
         self.view_action_modes = {
             'overlaid': QAction("Overlaid", self),
-            'sidebyside': QAction("Side By Side", self),
+            'sidebyside': QAction("Side by Side", self),
             'topbottom': QAction("Top-Bottom", self)
         }
         overlaid_mode = self.view_action_modes['overlaid']
@@ -432,13 +432,13 @@ class ImageEditorUI(QMainWindow, LayerCollectionHandler):
         white_balance_action = QAction("White Balance", self)
         white_balance_action.triggered.connect(self.white_balance)
         filter_menu.addAction(white_balance_action)
-        vignetting_action = QAction("Vignetting correction", self)
+        vignetting_action = QAction("Vignetting Correction", self)
         vignetting_action.triggered.connect(self.vignetting_correction)
         filter_menu.addAction(vignetting_action)
 
         help_menu = menubar.addMenu("&Help")
         help_menu.setObjectName("Help")
-        shortcuts_help_action = QAction("Shortcuts and mouse", self)
+        shortcuts_help_action = QAction("Shortcuts and Mouse", self)
 
         def shortcuts_help():
             self.shortcuts_help_dialog = ShortcutsHelp(self)
