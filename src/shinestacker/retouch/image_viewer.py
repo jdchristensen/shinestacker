@@ -46,7 +46,8 @@ class ImageViewer(QWidget):
         self.strategy.set_master_image_np(img)
 
     def clear_image(self):
-        self.strategy.clear_image()
+        for st in self._strategies.values():
+            st.clear_image()
 
     def show_master(self):
         self.strategy.show_master()
