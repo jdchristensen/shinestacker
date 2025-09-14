@@ -217,23 +217,22 @@ class SideBySideView(ViewStrategy, QWidget, ViewSignals):
         self.right_scene.scale(self.zoom_factor(), self.zoom_factor())
         self.right_view.centerOn(self.right_pixmap_item)
         center = self.right_scene.sceneRect().center()
-        self.brush_preview.setPos(center)
-        self.brush_cursor.setPos(center)
+        self.brush_preview.setPos(max(0, min(center.x(), img_width)),
+                                  max(0, min(center.y(), img_height)))
 
     def set_current_image(self, qimage):
         self.status.set_current_image(qimage)
         pixmap = self.status.pixmap_current
         self.left_scene.setSceneRect(QRectF(pixmap.rect()))
-        self.right_view.fitInView(self.left_pixmap_item, Qt.KeepAspectRatio)
+        # self.left_view.fitInView(self.left_pixmap_item, Qt.KeepAspectRatio)
         self.left_view.resetTransform()
         self.left_scene.scale(self.zoom_factor(), self.zoom_factor())
-        self.left_view.centerOn(self.left_pixmap_item)
+        # self.left_view.centerOn(self.left_pixmap_item)
 
     def _arrange_images(self):
         if self.status.empty():
             return
         if self.right_pixmap_item.pixmap().height() == 0:
-            self.right_scene.addItem(self.brush_preview)
             self.update_master_display()
             self.update_current_display()
             self.reset_zoom()
@@ -257,11 +256,9 @@ class SideBySideView(ViewStrategy, QWidget, ViewSignals):
         if not self.left_pixmap_item.pixmap().isNull():
             self.left_view.resetTransform()
             self.left_view.scale(self.zoom_factor(), self.zoom_factor())
-            self.left_view.centerOn(self.left_pixmap_item)
         if not self.right_pixmap_item.pixmap().isNull():
             self.right_view.resetTransform()
             self.right_view.scale(self.zoom_factor(), self.zoom_factor())
-            self.right_view.centerOn(self.right_pixmap_item)
 
     def set_brush(self, brush):
         super().set_brush(brush)
