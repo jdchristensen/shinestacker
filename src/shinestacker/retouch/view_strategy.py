@@ -207,23 +207,29 @@ class ViewStrategy(LayerCollectionHandler):
     def zoom_in(self):
         if self.empty():
             return
+        master_view = self.get_master_view()
+        old_center = master_view.mapToScene(master_view.viewport().rect().center())
         current_scale = self.get_current_scale()
         new_scale = current_scale * gui_constants.ZOOM_IN_FACTOR
         if new_scale <= self.max_scale():
             for view in self.get_views():
                 view.scale(gui_constants.ZOOM_IN_FACTOR, gui_constants.ZOOM_IN_FACTOR)
             self.set_zoom_factor(new_scale)
+            master_view.centerOn(old_center)
             self.update_brush_cursor()
 
     def zoom_out(self):
         if self.empty():
             return
+        master_view = self.get_master_view()
+        old_center = master_view.mapToScene(master_view.viewport().rect().center())
         current_scale = self.get_current_scale()
         new_scale = current_scale * gui_constants.ZOOM_OUT_FACTOR
         if new_scale >= self.min_scale():
             for view in self.get_views():
                 view.scale(gui_constants.ZOOM_OUT_FACTOR, gui_constants.ZOOM_OUT_FACTOR)
             self.set_zoom_factor(new_scale)
+            master_view.centerOn(old_center)
             self.update_brush_cursor()
 
     def reset_zoom(self):
