@@ -382,7 +382,7 @@ class ImageEditorUI(QMainWindow, LayerCollectionHandler):
         view_menu.addAction(adapt_action)
 
         actual_size_action = QAction("Actual Size", self)
-        actual_size_action.setShortcut("Ctrl+=")
+        actual_size_action.setShortcut("Ctrl+R")
         actual_size_action.triggered.connect(self.image_viewer.actual_size)
         view_menu.addAction(actual_size_action)
         view_menu.addSeparator()

@@ -61,7 +61,7 @@ class ShortcutsHelp(QDialog):
             "Ctrl + +": "zoom in",
             "Ctrl + -": "zoom out",
             "Ctrl + 0": "adapt to screen",
-            "Ctrl + =": "actual size",
+            "Ctrl + R": "actual size",
             "[": "increase brush size",
             "]": "decrease brush size",
             "{": "increase brush hardness",

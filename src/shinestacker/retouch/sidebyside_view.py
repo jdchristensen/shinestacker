@@ -205,23 +205,29 @@ class SideBySideView(ViewStrategy, QWidget, ViewSignals):
         self.status.set_master_image(qimage)
         pixmap = self.status.pixmap_master
         img_width, img_height = pixmap.width(), pixmap.height()
+        self.right_view.setSceneRect(QRectF(pixmap.rect()))
         self.set_min_scale(min(gui_constants.MIN_ZOOMED_IMG_WIDTH / img_width,
                                gui_constants.MIN_ZOOMED_IMG_HEIGHT / img_height))
         self.set_max_scale(gui_constants.MAX_ZOOMED_IMG_PX_SIZE)
+        self.set_zoom_factor(1.0)
+        self.right_view.fitInView(self.right_pixmap_item, Qt.KeepAspectRatio)
         self.set_zoom_factor(self.get_current_scale())
         self.set_zoom_factor(max(self.min_scale(), min(self.max_scale(), self.zoom_factor())))
-        self.righ_scene.setSceneRect(QRectF(pixmap.rect()))
-        self.righ_scene.fitInView(self.right_pixmap_item, Qt.KeepAspectRatio)
-        self.righ_scene.resetTransform()
-        self.righ_scene.scale(self.zoom_factor(), self.zoom_factor())
+        self.right_view.resetTransform()
+        self.right_scene.scale(self.zoom_factor(), self.zoom_factor())
+        self.right_view.centerOn(self.right_pixmap_item)
+        center = self.right_scene.sceneRect().center()
+        self.brush_preview.setPos(center)
+        self.brush_cursor.setPos(center)
 
     def set_current_image(self, qimage):
         self.status.set_current_image(qimage)
         pixmap = self.status.pixmap_current
         self.left_scene.setSceneRect(QRectF(pixmap.rect()))
-        self.left_scene.fitInView(self.right_pixmap_item, Qt.KeepAspectRatio)
-        self.left_scene.resetTransform()
+        self.right_view.fitInView(self.left_pixmap_item, Qt.KeepAspectRatio)
+        self.left_view.resetTransform()
         self.left_scene.scale(self.zoom_factor(), self.zoom_factor())
+        self.left_view.centerOn(self.left_pixmap_item)
 
     def _arrange_images(self):
         if self.status.empty():
@@ -251,9 +257,11 @@ class SideBySideView(ViewStrategy, QWidget, ViewSignals):
         if not self.left_pixmap_item.pixmap().isNull():
             self.left_view.resetTransform()
             self.left_view.scale(self.zoom_factor(), self.zoom_factor())
+            self.left_view.centerOn(self.left_pixmap_item)
         if not self.right_pixmap_item.pixmap().isNull():
             self.right_view.resetTransform()
             self.right_view.scale(self.zoom_factor(), self.zoom_factor())
+            self.right_view.centerOn(self.right_pixmap_item)
 
     def set_brush(self, brush):
         super().set_brush(brush)
