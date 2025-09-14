@@ -1,8 +1,8 @@
-# pylint: disable=C0114, C0115, C0116, E0611, R0904, R0903, R0902, E1101
+# pylint: disable=C0114, C0115, C0116, E0611, R0904, R0903, R0902, E1101, R0914
 import math
 from abc import abstractmethod
 import numpy as np
-from PySide6.QtCore import Qt, QPointF, QTime, QPoint
+from PySide6.QtCore import Qt, QPointF, QTime, QPoint, Signal
 from PySide6.QtGui import QImage, QPainter, QColor, QBrush, QPen, QCursor
 from PySide6.QtWidgets import (
     QGraphicsEllipseItem, QGraphicsView, QGraphicsScene, QGraphicsPixmapItem)
@@ -10,6 +10,14 @@ from .. config.gui_constants import gui_constants
 from .layer_collection import LayerCollectionHandler
 from .brush_gradient import create_default_brush_gradient
 from .brush_preview import BrushPreviewItem
+
+
+class ViewSignals:
+    temp_view_requested = Signal(bool)
+    brush_operation_started = Signal(QPoint)
+    brush_operation_continued = Signal(QPoint)
+    brush_operation_ended = Signal()
+    brush_size_change_requested = Signal(int)  # +1 or -1
 
 
 class ImageGraphicsViewBase(QGraphicsView):
@@ -45,6 +53,11 @@ class ViewStrategy(LayerCollectionHandler):
         self.pinch_center_scene = None
         self.pinch_start_scale = None
         self.last_scroll_pos = None
+        self.scrolling = False
+        self.dragging = False
+        self.last_brush_pos = None
+        self.last_mouse_pos = None
+        self.last_update_time = QTime.currentTime()
 
     @abstractmethod
     def create_pixmaps(self):

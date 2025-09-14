@@ -1,29 +1,18 @@
 # pylint: disable=C0114, C0115, C0116, E0611, E1101, R0904, R0912, R0914, R0902
 from PySide6.QtGui import QPixmap
-from PySide6.QtCore import Qt, QTime, QPoint, QPointF, QEvent, QRectF, Signal
+from PySide6.QtCore import Qt, QPointF, QEvent, QRectF
 from .. config.gui_constants import gui_constants
-from .view_strategy import ViewStrategy, ImageGraphicsViewBase
+from .view_strategy import ViewStrategy, ImageGraphicsViewBase, ViewSignals
 
 
-class OverlaidView(ViewStrategy, ImageGraphicsViewBase):
-    temp_view_requested = Signal(bool)
-    brush_operation_started = Signal(QPoint)
-    brush_operation_continued = Signal(QPoint)
-    brush_operation_ended = Signal()
-    brush_size_change_requested = Signal(int)  # +1 or -1
-
+class OverlaidView(ViewStrategy, ImageGraphicsViewBase, ViewSignals):
     def __init__(self, layer_collection, status, parent):
         ViewStrategy.__init__(self, layer_collection, status)
         ImageGraphicsViewBase.__init__(self, parent)
         self.scene = self.create_scene(self)
         self.create_pixmaps()
         self.scene.addItem(self.brush_preview)
-        self.last_mouse_pos = None
         self.brush_cursor = None
-        self.scrolling = False
-        self.dragging = False
-        self.last_update_time = QTime.currentTime()
-        self.last_brush_pos = None
         self.pinch_start_scale = 1.0
         self.last_scroll_pos = QPointF()
 

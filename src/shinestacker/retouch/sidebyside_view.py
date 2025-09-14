@@ -1,9 +1,9 @@
 # pylint: disable=C0114, C0115, C0116, R0904, R0915, E0611, R0902, R0911, R0914
 from PySide6.QtWidgets import QWidget, QHBoxLayout, QFrame
 from PySide6.QtGui import QPixmap
-from PySide6.QtCore import Qt, Signal, QPoint, QEvent, QTime, QRectF
+from PySide6.QtCore import Qt, Signal, QEvent, QRectF
 from .. config.gui_constants import gui_constants
-from .view_strategy import ViewStrategy, ImageGraphicsViewBase
+from .view_strategy import ViewStrategy, ImageGraphicsViewBase, ViewSignals
 
 
 class ImageGraphicsView(ImageGraphicsViewBase):
@@ -36,13 +36,7 @@ class ImageGraphicsView(ImageGraphicsViewBase):
     # pylint: enable=C0103
 
 
-class SideBySideView(ViewStrategy, QWidget):
-    temp_view_requested = Signal(bool)
-    brush_operation_started = Signal(QPoint)
-    brush_operation_continued = Signal(QPoint)
-    brush_operation_ended = Signal()
-    brush_size_change_requested = Signal(int)
-
+class SideBySideView(ViewStrategy, QWidget, ViewSignals):
     def __init__(self, layer_collection, status, parent):
         ViewStrategy.__init__(self, layer_collection, status)
         QWidget.__init__(self, parent)
@@ -63,12 +57,7 @@ class SideBySideView(ViewStrategy, QWidget):
         layout.addWidget(separator, 0)
         layout.addWidget(self.right_view, 1)
         self._connect_signals()
-        self.dragging = False
-        self.scrolling = False
         self.panning_left = False
-        self.last_brush_pos = None
-        self.last_mouse_pos = None
-        self.last_update_time = QTime.currentTime()
         self.brush_cursor = None
         self.right_view.setCursor(Qt.BlankCursor)
         self.setup_brush_cursor()
