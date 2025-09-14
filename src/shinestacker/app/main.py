@@ -102,7 +102,7 @@ class MainApp(QMainWindow):
                 file_menu = action.menu()
                 break
         if file_menu is not None:
-            import_action = QAction("Import From Current Project", self)
+            import_action = QAction("Import from Current Project", self)
             import_action.triggered.connect(self.import_from_project)
             file_menu.addAction(import_action)
         else:

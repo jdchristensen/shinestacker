@@ -277,7 +277,7 @@ class ImageEditorUI(QMainWindow, LayerCollectionHandler):
 
         file_menu.addAction("&Close", self.close_file, "Ctrl+W")
         file_menu.addSeparator()
-        file_menu.addAction("&Import frames", self.io_gui_handler.import_frames)
+        file_menu.addAction("&Import Frames", self.io_gui_handler.import_frames)
         file_menu.addAction("Import &EXIF data", self.io_gui_handler.select_exif_path)
 
         edit_menu = menubar.addMenu("&Edit")
