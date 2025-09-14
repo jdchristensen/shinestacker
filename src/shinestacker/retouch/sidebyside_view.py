@@ -1,7 +1,7 @@
 # pylint: disable=C0114, C0115, C0116, R0904, R0915, E0611, R0902, R0911, R0914
-from PySide6.QtWidgets import QWidget, QHBoxLayout, QFrame
-from PySide6.QtGui import QPixmap
 from PySide6.QtCore import Qt, Signal, QEvent, QRectF
+from PySide6.QtGui import QPixmap, QPen, QColor
+from PySide6.QtWidgets import QWidget, QHBoxLayout, QFrame, QGraphicsEllipseItem
 from .. config.gui_constants import gui_constants
 from .view_strategy import ViewStrategy, ImageGraphicsViewBase, ViewSignals
 
@@ -65,6 +65,9 @@ class SideBySideView(ViewStrategy, QWidget, ViewSignals):
         self.right_view.installEventFilter(self)
         self.left_view.setFocusPolicy(Qt.NoFocus)
         self.right_view.setFocusPolicy(Qt.NoFocus)
+
+        self.left_brush_cursor = None
+        self.setup_left_brush_cursor()
 
     def create_pixmaps(self):
         self.left_pixmap_item = self.create_pixmap(self.left_scene)
@@ -141,6 +144,38 @@ class SideBySideView(ViewStrategy, QWidget, ViewSignals):
                     self.brush_cursor.show()
         super().enterEvent(event)
     # pylint: enable=C0103
+
+    def setup_left_brush_cursor(self):
+        if not self.brush:
+            return
+        for item in self.left_scene.items():
+            if isinstance(item, QGraphicsEllipseItem) and item != self.brush_preview:
+                self.left_scene.removeItem(item)
+        pen = QPen(QColor(255, 0, 0))
+        brush = Qt.NoBrush
+        self.left_brush_cursor = self.left_scene.addEllipse(
+            0, 0, self.brush.size, self.brush.size, pen, brush)
+        self.left_brush_cursor.setZValue(1000)
+        self.left_brush_cursor.hide()
+
+    def update_left_brush_cursor(self, scene_pos):
+        if not self.left_brush_cursor or not self.isVisible():
+            return
+        size = self.brush.size
+        radius = size / 2
+        self.left_brush_cursor.setRect(
+            scene_pos.x() - radius, scene_pos.y() - radius, size, size)
+        if self.brush_cursor and self.brush_cursor.isVisible():
+            self.left_brush_cursor.show()
+        else:
+            self.left_brush_cursor.hide()
+
+    def update_brush_cursor(self):
+        super().update_brush_cursor()
+        if self.brush_cursor:
+            right_rect = self.brush_cursor.rect()
+            scene_pos = right_rect.center()
+            self.update_left_brush_cursor(scene_pos)
 
     def handle_right_mouse_press(self, event):
         self.setFocus()
@@ -261,3 +296,10 @@ class SideBySideView(ViewStrategy, QWidget, ViewSignals):
         if self.brush_cursor:
             self.right_scene.removeItem(self.brush_cursor)
         self.setup_brush_cursor()
+        self.setup_left_brush_cursor()
+
+    def clear_image(self):
+        super().clear_image()
+        if self.left_brush_cursor:
+            self.left_scene.removeItem(self.left_brush_cursor)
+            self.left_brush_cursor = None
