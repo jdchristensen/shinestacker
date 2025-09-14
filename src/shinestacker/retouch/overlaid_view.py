@@ -1,16 +1,15 @@
 # pylint: disable=C0114, C0115, C0116, E0611, E1101, R0904, R0912, R0914, R0902
 import math
-from PySide6.QtWidgets import (QGraphicsView, QGraphicsScene, QGraphicsPixmapItem,
-                               QGraphicsEllipseItem)
-from PySide6.QtGui import QPixmap, QPainter, QColor, QPen, QBrush, QCursor
+from PySide6.QtWidgets import QGraphicsEllipseItem
+from PySide6.QtGui import QPixmap, QColor, QPen, QBrush, QCursor
 from PySide6.QtCore import Qt, QTime, QPoint, QPointF, QEvent, QRectF, Signal
 from .. config.gui_constants import gui_constants
-from .view_strategy import ViewStrategy
+from .view_strategy import ViewStrategy, ImageGraphicsViewBase
 from .brush_gradient import create_default_brush_gradient
 from .brush_preview import BrushPreviewItem
 
 
-class OverlaidView(ViewStrategy, QGraphicsView):
+class OverlaidView(ViewStrategy, ImageGraphicsViewBase):
     temp_view_requested = Signal(bool)
     brush_operation_started = Signal(QPoint)
     brush_operation_continued = Signal(QPoint)
@@ -19,33 +18,21 @@ class OverlaidView(ViewStrategy, QGraphicsView):
 
     def __init__(self, brush_preview, status, parent):
         ViewStrategy.__init__(self, brush_preview, status)
-        QGraphicsView.__init__(self, parent)
-        self.scene = QGraphicsScene(self)
-        self.setScene(self.scene)
-        self.pixmap_item_master = QGraphicsPixmapItem()
-        self.pixmap_item_current = QGraphicsPixmapItem()
-        self.scene.addItem(self.pixmap_item_master)
-        self.scene.addItem(self.pixmap_item_current)
+        ImageGraphicsViewBase.__init__(self, parent)
+        self.scene = self.create_scene(self)
+        self.pixmap_item_master = self.create_pixmap(self.scene)
+        self.pixmap_item_current = self.create_pixmap(self.scene)
         self.scene.setBackgroundBrush(QBrush(QColor(120, 120, 120)))
         self.last_mouse_pos = None
-        self.setRenderHint(QPainter.Antialiasing)
-        self.setRenderHint(QPainter.SmoothPixmapTransform)
-        self.setTransformationAnchor(QGraphicsView.AnchorUnderMouse)
-        self.setResizeAnchor(QGraphicsView.AnchorUnderMouse)
-        self.setDragMode(QGraphicsView.ScrollHandDrag)
         self.brush_cursor = None
-        self.setMouseTracking(True)
         self.space_pressed = False
         self.control_pressed = False
-        self.setDragMode(QGraphicsView.NoDrag)
         self.scrolling = False
         self.dragging = False
         self.last_update_time = QTime.currentTime()
         self.scene.addItem(self.brush_preview)
         self.allow_cursor_preview = True
         self.last_brush_pos = None
-        self.grabGesture(Qt.PanGesture)
-        self.grabGesture(Qt.PinchGesture)
         self.pinch_start_scale = 1.0
         self.last_scroll_pos = QPointF()
         self.gesture_active = False
@@ -74,10 +61,8 @@ class OverlaidView(ViewStrategy, QGraphicsView):
 
     def clear_image(self):
         self.scene.clear()
-        self.pixmap_item_master = QGraphicsPixmapItem()
-        self.pixmap_item_current = QGraphicsPixmapItem()
-        self.scene.addItem(self.pixmap_item_master)
-        self.scene.addItem(self.pixmap_item_current)
+        self.pixmap_item_master = self.create_pixmap(self.scene)
+        self.pixmap_item_current = self.create_pixmap(self.scene)
         self.status.clear()
         self.setup_brush_cursor()
         self.brush_preview = BrushPreviewItem(self.layer_collection)

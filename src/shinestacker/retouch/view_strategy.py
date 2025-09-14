@@ -1,9 +1,26 @@
 # pylint: disable=C0114, C0115, C0116, E0611, R0904
 from abc import abstractmethod
 import numpy as np
-from PySide6.QtGui import QImage
+from PySide6.QtCore import Qt
+from PySide6.QtGui import QImage, QPainter, QColor, QBrush
+from PySide6.QtWidgets import QGraphicsView, QGraphicsScene, QGraphicsPixmapItem
 from .. config.gui_constants import gui_constants
 from .layer_collection import LayerCollectionHandler
+
+
+class ImageGraphicsViewBase(QGraphicsView):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setTransformationAnchor(QGraphicsView.AnchorViewCenter)
+        self.setResizeAnchor(QGraphicsView.AnchorUnderMouse)
+        self.setDragMode(QGraphicsView.ScrollHandDrag)
+        self.setInteractive(False)
+        self.grabGesture(Qt.PinchGesture)
+        self.grabGesture(Qt.PanGesture)
+        self.setMouseTracking(True)
+        self.setDragMode(QGraphicsView.NoDrag)
+        self.setRenderHint(QPainter.Antialiasing)
+        self.setRenderHint(QPainter.SmoothPixmapTransform)
 
 
 class ViewStrategy(LayerCollectionHandler):
@@ -140,3 +157,14 @@ class ViewStrategy(LayerCollectionHandler):
                 array = np.ascontiguousarray(array)
             return QImage(memoryview(array), width, height, 3 * width, QImage.Format_RGB888)
         return QImage()
+
+    def create_scene(self, view):
+        scene = QGraphicsScene()
+        view.setScene(scene)
+        scene.setBackgroundBrush(QBrush(QColor(120, 120, 120)))
+        return scene
+
+    def create_pixmap(self, scene):
+        pixmap_item = QGraphicsPixmapItem()
+        scene.addItem(pixmap_item)
+        return pixmap_item
