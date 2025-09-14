@@ -58,7 +58,6 @@ class DoubleViewBase(ViewStrategy, QWidget, ViewSignals):
         self.setup_current_brush_cursor()
 
     def setup_layout(self):
-        """To be implemented by subclasses - creates layout and adds widgets"""
         raise NotImplementedError("Subclasses must implement setup_layout")
 
     def create_pixmaps(self):
@@ -350,6 +349,7 @@ class DoubleViewBase(ViewStrategy, QWidget, ViewSignals):
                     h_scroll + int(delta.x() * self.zoom_factor()))
                 self.master_view.verticalScrollBar().setValue(
                     v_scroll + int(delta.y() * self.zoom_factor()))
+                self.update_cursor_pen_width()
 
     def set_master_image(self, qimage):
         self.status.set_master_image(qimage)
@@ -379,7 +379,6 @@ class DoubleViewBase(ViewStrategy, QWidget, ViewSignals):
         self.current_pixmap_item.setPixmap(pixmap)
         self.current_view.resetTransform()
         self.current_scene.scale(self.zoom_factor(), self.zoom_factor())
-        # self.current_view.centerOn(self.current_pixmap_item)
         self.current_scene.setSceneRect(QRectF(self.current_pixmap_item.boundingRect()))
 
     def _arrange_images(self):
@@ -413,11 +412,9 @@ class DoubleViewBase(ViewStrategy, QWidget, ViewSignals):
         if not self.current_pixmap_item.pixmap().isNull():
             self.current_view.resetTransform()
             self.current_view.scale(self.zoom_factor(), self.zoom_factor())
-            # self.current_view.centerOn(self.current_pixmap_item)
         if not self.master_pixmap_item.pixmap().isNull():
             self.master_view.resetTransform()
             self.master_view.scale(self.zoom_factor(), self.zoom_factor())
-            # self.master_view.centerOn(self.master_pixmap_item)
 
     def set_brush(self, brush):
         super().set_brush(brush)
