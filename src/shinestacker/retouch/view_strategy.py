@@ -32,7 +32,7 @@ class ViewStrategy(LayerCollectionHandler):
         self.brush = None
         self.brush_cursor = None
         self.display_manager = None
-        self.brush_preview = brush_preview
+        self.brush_preview = brush_preview.clone()
         self.cursor_style = gui_constants.DEFAULT_CURSOR_STYLE
 
     @abstractmethod
@@ -92,11 +92,11 @@ class ViewStrategy(LayerCollectionHandler):
         pass
 
     @abstractmethod
-    def position_on_image(self, pos):
+    def get_master_view(self):
         pass
 
     @abstractmethod
-    def get_visible_image_region(self):
+    def get_master_pixmap(self):
         pass
 
     def show_master(self):
@@ -180,3 +180,35 @@ class ViewStrategy(LayerCollectionHandler):
         self.brush_cursor.setPen(QPen(QColor(*gui_constants.BRUSH_COLORS['pen']),
                                       gui_constants.BRUSH_LINE_WIDTH / self.zoom_factor()))
         self.brush_cursor.setBrush(QBrush(gradient))
+
+    def position_on_image(self, pos):
+        view = self.get_master_view()
+        pixmap = self.get_master_pixmap()
+        scene_pos = view.mapToScene(pos)
+        item_pos = pixmap.mapFromScene(scene_pos)
+        return item_pos
+
+    def get_visible_image_region(self):
+        if self.empty():
+            return None
+        view = self.get_master_view()
+        pixmap = self.get_master_pixmap()
+        view_rect = view.viewport().rect()
+        scene_rect = view.mapToScene(view_rect).boundingRect()
+        image_rect = view.mapFromScene(scene_rect).boundingRect()
+        image_rect = image_rect.intersected(pixmap.boundingRect().toRect())
+        return image_rect
+
+    def get_visible_image_portion(self):
+        if self.has_no_master_layer():
+            return None
+        visible_rect = self.get_visible_image_region()
+        if not visible_rect:
+            return self.master_layer()
+        x, y = int(visible_rect.x()), int(visible_rect.y())
+        w, h = int(visible_rect.width()), int(visible_rect.height())
+        master_img = self.master_layer()
+        return master_img[y:y + h, x:x + w], (x, y, w, h)
+
+    def map_to_scene(self, pos):
+        return self.get_master_view().mapToScene(pos)

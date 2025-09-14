@@ -140,7 +140,7 @@ class BrushTool:
             return False
         if dest_layer is None:
             dest_layer = master_layer
-        scene_pos = self.image_viewer.strategy.mapToScene(view_pos)
+        scene_pos = self.image_viewer.strategy.map_to_scene(view_pos)
         x_center = int(round(scene_pos.x()))
         y_center = int(round(scene_pos.y()))
         radius = int(round(self.brush.size // 2))

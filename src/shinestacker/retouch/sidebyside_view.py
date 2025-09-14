@@ -95,6 +95,12 @@ class SideBySideView(ViewStrategy, QWidget):
         self.right_view.verticalScrollBar().valueChanged.connect(
             self.left_view.verticalScrollBar().setValue)
 
+    def get_master_view(self):
+        return self.right_view
+
+    def get_master_pixmap(self):
+        return self.right_pixmap_item
+
     def keyPressEvent(self, event):
         if self.empty():
             return
@@ -393,8 +399,8 @@ class SideBySideView(ViewStrategy, QWidget):
             if isinstance(pos, QPointF):
                 scene_pos = pos
             else:
-                cursor_pos = self.mapFromGlobal(pos)
-                scene_pos = self.mapToScene(cursor_pos)
+                cursor_pos = self.right_view.mapFromGlobal(pos)
+                scene_pos = self.right_view.mapToScene(cursor_pos)
             self.brush_preview.update(scene_pos, int(size))
         else:
             self.brush_preview.hide()
@@ -431,29 +437,3 @@ class SideBySideView(ViewStrategy, QWidget):
             0, 0, self.brush.size, self.brush.size, pen, brush)
         self.brush_cursor.setZValue(1000)
         self.brush_cursor.hide()
-
-    def position_on_image(self, pos):
-        return self.right_view.mapToScene(pos)
-
-    def get_visible_image_region(self):
-        if self.empty():
-            return None
-        view_rect = self.right_view.viewport().rect()
-        scene_rect = self.right_view.mapToScene(view_rect).boundingRect()
-        image_rect = self.right_view.mapFromScene(scene_rect).boundingRect()
-        image_rect = image_rect.intersected(self.right_pixmap_item.boundingRect().toRect())
-        return image_rect
-
-    def get_visible_image_portion(self):
-        if self.has_no_master_layer():
-            return None
-        visible_rect = self.get_visible_image_region()
-        if not visible_rect:
-            return self.master_layer()
-        x, y = int(visible_rect.x()), int(visible_rect.y())
-        w, h = int(visible_rect.width()), int(visible_rect.height())
-        master_img = self.master_layer()
-        return master_img[y:y + h, x:x + w], (x, y, w, h)
-
-    def mapToScene(self, pos):
-        return self.right_view.mapToScene(pos)

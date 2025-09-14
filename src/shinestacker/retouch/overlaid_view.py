@@ -21,7 +21,7 @@ class OverlaidView(ViewStrategy, ImageGraphicsViewBase):
         self.scene = self.create_scene(self)
         self.pixmap_item_master = self.create_pixmap(self.scene)
         self.pixmap_item_current = self.create_pixmap(self.scene)
-        # self.scene.addItem(self.brush_preview)
+        self.scene.addItem(self.brush_preview)
         self.last_mouse_pos = None
         self.brush_cursor = None
         self.space_pressed = False
@@ -36,6 +36,12 @@ class OverlaidView(ViewStrategy, ImageGraphicsViewBase):
         self.gesture_active = False
         self.pinch_center_view = None
         self.pinch_center_scene = None
+
+    def get_master_view(self):
+        return self
+
+    def get_master_pixmap(self):
+        return self.pixmap_item_master
 
     def set_master_image(self, qimage):
         self.status.set_master_image(qimage)
@@ -427,28 +433,3 @@ class OverlaidView(ViewStrategy, ImageGraphicsViewBase):
         self.cursor_style = style
         if self.brush_cursor:
             self.update_brush_cursor()
-
-    def position_on_image(self, pos):
-        scene_pos = self.mapToScene(pos)
-        item_pos = self.pixmap_item_master.mapFromScene(scene_pos)
-        return item_pos
-
-    def get_visible_image_region(self):
-        if self.empty():
-            return None
-        view_rect = self.viewport().rect()
-        scene_rect = self.mapToScene(view_rect).boundingRect()
-        image_rect = self.pixmap_item_master.mapFromScene(scene_rect).boundingRect()
-        image_rect = image_rect.intersected(self.pixmap_item_master.boundingRect().toRect())
-        return image_rect
-
-    def get_visible_image_portion(self):
-        if self.has_no_master_layer():
-            return None
-        visible_rect = self.get_visible_image_region()
-        if not visible_rect:
-            return self.master_layer()
-        x, y = int(visible_rect.x()), int(visible_rect.y())
-        w, h = int(visible_rect.width()), int(visible_rect.height())
-        master_img = self.master_layer()
-        return master_img[y:y + h, x:x + w], (x, y, w, h)
