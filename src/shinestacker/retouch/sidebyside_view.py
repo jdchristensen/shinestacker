@@ -193,6 +193,7 @@ class SideBySideView(ViewStrategy, QWidget, ViewSignals):
     def setup_brush_cursor(self):
         super().setup_brush_cursor()
         self.setup_left_brush_cursor()
+        self.update_cursor_pen_width()
 
     def setup_left_brush_cursor(self):
         if not self.brush:
@@ -220,9 +221,21 @@ class SideBySideView(ViewStrategy, QWidget, ViewSignals):
         else:
             self.left_brush_cursor.hide()
 
+    def update_cursor_pen_width(self):
+        if not self.brush_cursor or not self.left_brush_cursor:
+            return
+        pen_width = gui_constants.BRUSH_LINE_WIDTH / self.zoom_factor()
+        right_pen = self.brush_cursor.pen()
+        right_pen.setWidthF(pen_width)
+        self.brush_cursor.setPen(right_pen)
+        left_pen = self.left_brush_cursor.pen()
+        left_pen.setWidthF(pen_width)
+        self.left_brush_cursor.setPen(left_pen)
+
     def update_brush_cursor(self):
         if self.empty():
             return
+        self.update_cursor_pen_width()
         mouse_pos_global = QCursor.pos()
         mouse_pos_left = self.left_view.mapFromGlobal(mouse_pos_global)
         mouse_pos_right = self.right_view.mapFromGlobal(mouse_pos_global)
@@ -419,3 +432,19 @@ class SideBySideView(ViewStrategy, QWidget, ViewSignals):
             self.left_brush_cursor.show()
         else:
             self.left_brush_cursor.hide()
+
+    def zoom_in(self):
+        super().zoom_in()
+        self.update_cursor_pen_width()
+
+    def zoom_out(self):
+        super().zoom_out()
+        self.update_cursor_pen_width()
+
+    def reset_zoom(self):
+        super().reset_zoom()
+        self.update_cursor_pen_width()
+
+    def actual_size(self):
+        super().actual_size()
+        self.update_cursor_pen_width()
