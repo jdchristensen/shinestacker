@@ -61,16 +61,25 @@ class ShortcutsHelp(QDialog):
             "Ctrl + +": "zoom in",
             "Ctrl + -": "zoom out",
             "Ctrl + 0": "adapt to screen",
-            "Ctrl + R": "actual size",
+            "Ctrl + R": "actual size"
+        }
+
+        self.add_bold_label(left_layout, "Keyboard Shortcuts")
+        for k, v in shortcuts.items():
+            left_layout.addRow(f"<b>{k}</b>", QLabel(v))
+
+        shortcuts = {
+            "Ctrl + 1": "view mode: overlaid",
+            "Ctrl + 2": "view mode: side by side",
             "[": "increase brush size",
             "]": "decrease brush size",
             "{": "increase brush hardness",
             "}": "decrease brush hardness"
         }
 
-        self.add_bold_label(left_layout, "Keyboard Shortcuts")
+        self.add_bold_label(right_layout, "Keyboard Shortcuts")
         for k, v in shortcuts.items():
-            left_layout.addRow(f"<b>{k}</b>", QLabel(v))
+            right_layout.addRow(f"<b>{k}</b>", QLabel(v))
 
         mouse_controls = {
             "Space + Drag": "pan",
