@@ -200,7 +200,8 @@ class SideBySideView(ViewStrategy, QWidget, ViewSignals):
         for item in self.left_scene.items():
             if isinstance(item, QGraphicsEllipseItem) and item != self.brush_preview:
                 self.left_scene.removeItem(item)
-        pen = QPen(QColor(255, 0, 0))
+        pen_width = gui_constants.BRUSH_LINE_WIDTH / self.zoom_factor()
+        pen = QPen(QColor(255, 0, 0), pen_width)
         brush = Qt.NoBrush
         self.left_brush_cursor = self.left_scene.addEllipse(
             0, 0, self.brush.size, self.brush.size, pen, brush)
