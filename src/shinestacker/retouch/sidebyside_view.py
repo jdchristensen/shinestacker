@@ -163,10 +163,7 @@ class SideBySideView(ViewStrategy, QWidget, ViewSignals):
         if self.panning_left and self.space_pressed:
             delta = position - self.pan_start
             self.pan_start = position
-            self.left_view.horizontalScrollBar().setValue(
-                self.left_view.horizontalScrollBar().value() - delta.x())
-            self.left_view.verticalScrollBar().setValue(
-                self.left_view.verticalScrollBar().value() - delta.y())
+            self.scroll_view(self.left_view, delta.x(), delta.y())
 
     def handle_left_mouse_release(self, _event):
         if self.panning_left:

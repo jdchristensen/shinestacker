@@ -138,12 +138,7 @@ class OverlaidView(ViewStrategy, ImageGraphicsViewBase, ViewSignals):
             if not self.control_pressed:
                 delta = event.pixelDelta() or event.angleDelta() / 8
                 if delta:
-                    self.horizontalScrollBar().setValue(
-                        self.horizontalScrollBar().value() - delta.x()
-                    )
-                    self.verticalScrollBar().setValue(
-                        self.verticalScrollBar().value() - delta.y()
-                    )
+                    self.scroll_view(self, delta.x(), delta.y())
             else:  # Control + touchpad scroll for zoom
                 zoom_in = event.angleDelta().y() > 0
                 if zoom_in:
@@ -192,12 +187,7 @@ class OverlaidView(ViewStrategy, ImageGraphicsViewBase, ViewSignals):
             delta = pan_gesture.delta() - self.last_scroll_pos
             self.last_scroll_pos = pan_gesture.delta()
             scaled_delta = delta * (1.0 / self.get_current_scale())
-            self.horizontalScrollBar().setValue(
-                self.horizontalScrollBar().value() - int(scaled_delta.x())
-            )
-            self.verticalScrollBar().setValue(
-                self.verticalScrollBar().value() - int(scaled_delta.y())
-            )
+            self.scroll_view(self, int(scaled_delta.x()), int(scaled_delta.y()))
         elif pan_gesture.state() == Qt.GestureFinished:
             self.gesture_active = False
 

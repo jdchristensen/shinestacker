@@ -415,10 +415,13 @@ class ViewStrategy(LayerCollectionHandler):
                     self.brush_cursor.hide()
             delta = position - self.last_mouse_pos
             self.last_mouse_pos = position
-            master_view.horizontalScrollBar().setValue(
-                master_view.horizontalScrollBar().value() - delta.x())
-            master_view.verticalScrollBar().setValue(
-                master_view.verticalScrollBar().value() - delta.y())
+            self.scroll_view(master_view, delta.x(), delta.y())
+
+    def scroll_view(self, view, delta_x, delta_y):
+        view.horizontalScrollBar().setValue(
+            view.horizontalScrollBar().value() - delta_x)
+        view.verticalScrollBar().setValue(
+            view.verticalScrollBar().value() - delta_y)
 
     def mouse_press_event(self, event):
         if self.empty():
