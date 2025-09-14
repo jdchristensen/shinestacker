@@ -43,8 +43,8 @@ class SideBySideView(ViewStrategy, QWidget):
     brush_operation_ended = Signal()
     brush_size_change_requested = Signal(int)
 
-    def __init__(self, brush_preview, status, parent):
-        ViewStrategy.__init__(self, brush_preview, status)
+    def __init__(self, layer_collection, status, parent):
+        ViewStrategy.__init__(self, layer_collection, status)
         QWidget.__init__(self, parent)
         layout = QHBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
@@ -52,9 +52,8 @@ class SideBySideView(ViewStrategy, QWidget):
         self.left_view = ImageGraphicsView(parent)
         self.right_view = ImageGraphicsView(parent)
         self.left_scene = self.create_scene(self.left_view)
-        self.left_pixmap_item = self.create_pixmap(self.left_scene)
         self.right_scene = self.create_scene(self.right_view)
-        self.right_pixmap_item = self.create_pixmap(self.right_scene)
+        self.create_pixmaps()
         self.right_scene.addItem(self.brush_preview)
         layout.addWidget(self.left_view, 1)
         separator = QFrame()
@@ -74,9 +73,12 @@ class SideBySideView(ViewStrategy, QWidget):
         self.last_update_time = QTime.currentTime()
         self.brush_cursor = None
         self.right_view.setCursor(Qt.BlankCursor)
-        self.allow_cursor_preview = True
         self.setup_brush_cursor()
         self.setFocusPolicy(Qt.StrongFocus)
+
+    def create_pixmaps(self):
+        self.left_pixmap_item = self.create_pixmap(self.left_scene)
+        self.right_pixmap_item = self.create_pixmap(self.right_scene)
 
     def _connect_signals(self):
         self.left_view.mouse_pressed.connect(self.handle_left_mouse_press)
@@ -101,6 +103,18 @@ class SideBySideView(ViewStrategy, QWidget):
 
     def get_master_pixmap(self):
         return self.right_pixmap_item
+
+    def get_views(self):
+        return [self.right_view, self.left_view]
+
+    def get_scenes(self):
+        return [self.right_scene, self.left_scene]
+
+    def get_pixmaps(self):
+        return {
+            self.right_pixmap_item: self.right_view,
+            self.left_pixmap_item: self.left_view
+        }
 
     def keyPressEvent(self, event):
         if self.empty():
@@ -307,8 +321,7 @@ class SideBySideView(ViewStrategy, QWidget):
     def clear_image(self):
         self.left_scene.clear()
         self.right_scene.clear()
-        self.left_pixmap_item = self.create_pixmap(self.left_scene)
-        self.right_pixmap_item = self.create_pixmap(self.right_scene)
+        self.create_pixmaps()
         self.status.clear()
         self.setup_brush_cursor()
         self.brush_preview = BrushPreviewItem(self.layer_collection)
@@ -329,61 +342,6 @@ class SideBySideView(ViewStrategy, QWidget):
             self.left_pixmap_item.setPixmap(QPixmap.fromImage(current_qimage))
             self._arrange_images()
 
-    def refresh_display(self):
-        self.update_brush_cursor()
-        self.left_scene.update()
-        self.right_scene.update()
-
-    def zoom_in(self):
-        if self.empty():
-            return
-        current_scale = self.get_current_scale()
-        new_scale = current_scale * gui_constants.ZOOM_IN_FACTOR
-        if new_scale <= self.max_scale():
-            self.left_view.scale(gui_constants.ZOOM_IN_FACTOR, gui_constants.ZOOM_IN_FACTOR)
-            self.right_view.scale(gui_constants.ZOOM_IN_FACTOR, gui_constants.ZOOM_IN_FACTOR)
-            self.set_zoom_factor(new_scale)
-            self.update_brush_cursor()
-
-    def zoom_out(self):
-        if self.empty():
-            return
-        current_scale = self.get_current_scale()
-        new_scale = current_scale * gui_constants.ZOOM_OUT_FACTOR
-        if new_scale >= self.min_scale():
-            self.left_view.scale(gui_constants.ZOOM_OUT_FACTOR, gui_constants.ZOOM_OUT_FACTOR)
-            self.right_view.scale(gui_constants.ZOOM_OUT_FACTOR, gui_constants.ZOOM_OUT_FACTOR)
-            self.set_zoom_factor(new_scale)
-            self.update_brush_cursor()
-
-    def reset_zoom(self):
-        if self.empty():
-            return
-        self.pinch_start_scale = 1.0
-        self.last_scroll_pos = QPointF()
-        self.gesture_active = False
-        self.pinch_center_view = None
-        self.pinch_center_scene = None
-        self.right_view.fitInView(self.right_pixmap_item, Qt.KeepAspectRatio)
-        self.left_view.fitInView(self.left_pixmap_item, Qt.KeepAspectRatio)
-        self.set_zoom_factor(self.get_current_scale())
-        self.set_zoom_factor(max(self.min_scale(), min(self.max_scale(), self.zoom_factor())))
-        self.right_view.resetTransform()
-        self.left_view.resetTransform()
-        self.right_view.scale(self.zoom_factor(), self.zoom_factor())
-        self.left_view.scale(self.zoom_factor(), self.zoom_factor())
-        self.update_brush_cursor()
-
-    def actual_size(self):
-        if self.empty():
-            return
-        self.set_zoom_factor(max(self.min_scale(), min(self.max_scale(), 1.0)))
-        self.left_view.resetTransform()
-        self.right_view.resetTransform()
-        self.left_view.scale(self.zoom_factor(), self.zoom_factor())
-        self.right_view.scale(self.zoom_factor(), self.zoom_factor())
-        self.update_brush_cursor()
-
     def _apply_zoom(self):
         if not self.left_pixmap_item.pixmap().isNull():
             self.left_view.resetTransform()
@@ -391,9 +349,6 @@ class SideBySideView(ViewStrategy, QWidget):
         if not self.right_pixmap_item.pixmap().isNull():
             self.right_view.resetTransform()
             self.right_view.scale(self.zoom_factor(), self.zoom_factor())
-
-    def get_current_scale(self):
-        return self.right_view.transform().m11()
 
     def update_brush_cursor(self):
         if self.empty():
@@ -427,9 +382,6 @@ class SideBySideView(ViewStrategy, QWidget):
                 self.setup_simple_brush_style(scene_pos.x(), scene_pos.y(), radius)
         if not self.brush_cursor.isVisible():
             self.brush_cursor.show()
-
-    def set_allow_cursor_preview(self, state):
-        self.allow_cursor_preview = state
 
     def set_cursor_style(self, style):
         self.cursor_style = style

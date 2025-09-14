@@ -15,12 +15,11 @@ class OverlaidView(ViewStrategy, ImageGraphicsViewBase):
     brush_operation_ended = Signal()
     brush_size_change_requested = Signal(int)  # +1 or -1
 
-    def __init__(self, brush_preview, status, parent):
-        ViewStrategy.__init__(self, brush_preview, status)
+    def __init__(self, layer_collection, status, parent):
+        ViewStrategy.__init__(self, layer_collection, status)
         ImageGraphicsViewBase.__init__(self, parent)
         self.scene = self.create_scene(self)
-        self.pixmap_item_master = self.create_pixmap(self.scene)
-        self.pixmap_item_current = self.create_pixmap(self.scene)
+        self.create_pixmaps()
         self.scene.addItem(self.brush_preview)
         self.last_mouse_pos = None
         self.brush_cursor = None
@@ -29,7 +28,6 @@ class OverlaidView(ViewStrategy, ImageGraphicsViewBase):
         self.scrolling = False
         self.dragging = False
         self.last_update_time = QTime.currentTime()
-        self.allow_cursor_preview = True
         self.last_brush_pos = None
         self.pinch_start_scale = 1.0
         self.last_scroll_pos = QPointF()
@@ -37,11 +35,27 @@ class OverlaidView(ViewStrategy, ImageGraphicsViewBase):
         self.pinch_center_view = None
         self.pinch_center_scene = None
 
+    def create_pixmaps(self):
+        self.pixmap_item_master = self.create_pixmap(self.scene)
+        self.pixmap_item_current = self.create_pixmap(self.scene)
+
     def get_master_view(self):
         return self
 
     def get_master_pixmap(self):
         return self.pixmap_item_master
+
+    def get_views(self):
+        return [self]
+
+    def get_scenes(self):
+        return [self.scene]
+
+    def get_pixmaps(self):
+        return {
+            self.pixmap_item_master: self,
+            self.pixmap_item_current: self
+        }
 
     def set_master_image(self, qimage):
         self.status.set_master_image(qimage)
@@ -66,8 +80,7 @@ class OverlaidView(ViewStrategy, ImageGraphicsViewBase):
 
     def clear_image(self):
         self.scene.clear()
-        self.pixmap_item_master = self.create_pixmap(self.scene)
-        self.pixmap_item_current = self.create_pixmap(self.scene)
+        self.create_pixmaps()
         self.status.clear()
         self.setup_brush_cursor()
         self.brush_preview = BrushPreviewItem(self.layer_collection)
@@ -95,16 +108,6 @@ class OverlaidView(ViewStrategy, ImageGraphicsViewBase):
             current_qimage = self.numpy_to_qimage(
                 self.current_layer())
             self.pixmap_item_current.setPixmap(QPixmap.fromImage(current_qimage))
-
-    def refresh_display(self):
-        self.update_brush_cursor()
-        self.scene.update()
-
-    def get_view_state(self):
-        return self.status.get_state()
-
-    def set_allow_cursor_preview(self, state):
-        self.allow_cursor_preview = state
 
     def set_view_state(self, state):
         self.status.set_state(state)
@@ -381,53 +384,6 @@ class OverlaidView(ViewStrategy, ImageGraphicsViewBase):
                 self.setup_simple_brush_style(scene_pos.x(), scene_pos.y(), radius)
         if not self.brush_cursor.isVisible():
             self.brush_cursor.show()
-
-    def zoom_in(self):
-        if self.empty():
-            return
-        current_scale = self.get_current_scale()
-        new_scale = current_scale * gui_constants.ZOOM_IN_FACTOR
-        if new_scale <= self.max_scale():
-            self.scale(gui_constants.ZOOM_IN_FACTOR, gui_constants.ZOOM_IN_FACTOR)
-            self.set_zoom_factor(new_scale)
-            self.update_brush_cursor()
-
-    def zoom_out(self):
-        if self.empty():
-            return
-        current_scale = self.get_current_scale()
-        new_scale = current_scale * gui_constants.ZOOM_OUT_FACTOR
-        if new_scale >= self.min_scale():
-            self.scale(gui_constants.ZOOM_OUT_FACTOR, gui_constants.ZOOM_OUT_FACTOR)
-            self.set_zoom_factor(new_scale)
-            self.update_brush_cursor()
-
-    def reset_zoom(self):
-        if self.empty():
-            return
-        self.pinch_start_scale = 1.0
-        self.last_scroll_pos = QPointF()
-        self.gesture_active = False
-        self.pinch_center_view = None
-        self.pinch_center_scene = None
-        self.fitInView(self.pixmap_item_master, Qt.KeepAspectRatio)
-        self.fitInView(self.pixmap_item_current, Qt.KeepAspectRatio)
-        self.set_zoom_factor(self.get_current_scale())
-        self.set_zoom_factor(max(self.min_scale(), min(self.max_scale(), self.zoom_factor())))
-        self.resetTransform()
-        self.scale(self.zoom_factor(), self.zoom_factor())
-        self.update_brush_cursor()
-
-    def actual_size(self):
-        if self.empty():
-            return
-        self.set_zoom_factor(max(self.min_scale(), min(self.max_scale(), 1.0)))
-        self.resetTransform()
-        self.scale(self.zoom_factor(), self.zoom_factor())
-        self.update_brush_cursor()
-
-    def get_current_scale(self):
-        return self.transform().m11()
 
     def set_cursor_style(self, style):
         self.cursor_style = style

@@ -1,12 +1,13 @@
 # pylint: disable=C0114, C0115, C0116, E0611, R0904
 from abc import abstractmethod
 import numpy as np
-from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt, QPointF
 from PySide6.QtGui import QImage, QPainter, QColor, QBrush, QPen
 from PySide6.QtWidgets import QGraphicsView, QGraphicsScene, QGraphicsPixmapItem
 from .. config.gui_constants import gui_constants
 from .layer_collection import LayerCollectionHandler
 from .brush_gradient import create_default_brush_gradient
+from .brush_preview import BrushPreviewItem
 
 
 class ImageGraphicsViewBase(QGraphicsView):
@@ -25,15 +26,20 @@ class ImageGraphicsViewBase(QGraphicsView):
 
 
 class ViewStrategy(LayerCollectionHandler):
-    def __init__(self, brush_preview, status):
-        LayerCollectionHandler.__init__(self, brush_preview.layer_collection)
+    def __init__(self, layer_collection, status):
+        LayerCollectionHandler.__init__(self, layer_collection)
         self.display_manager = None
         self.status = status
         self.brush = None
         self.brush_cursor = None
         self.display_manager = None
-        self.brush_preview = brush_preview.clone()
+        self.brush_preview = BrushPreviewItem(layer_collection)
         self.cursor_style = gui_constants.DEFAULT_CURSOR_STYLE
+        self.allow_cursor_preview = True
+
+    @abstractmethod
+    def create_pixmaps(self):
+        pass
 
     @abstractmethod
     def set_master_image(self, qimage):
@@ -60,39 +66,23 @@ class ViewStrategy(LayerCollectionHandler):
         pass
 
     @abstractmethod
-    def refresh_display(self):
-        pass
-
-    @abstractmethod
-    def set_allow_cursor_preview(self, state):
-        pass
-
-    @abstractmethod
     def setup_brush_cursor(self):
         pass
 
     @abstractmethod
-    def zoom_in(self):
-        pass
-
-    @abstractmethod
-    def zoom_out(self):
-        pass
-
-    @abstractmethod
-    def reset_zoom(self):
-        pass
-
-    @abstractmethod
-    def actual_size(self):
-        pass
-
-    @abstractmethod
-    def get_current_scale(self):
-        pass
-
-    @abstractmethod
     def get_master_view(self):
+        pass
+
+    @abstractmethod
+    def get_views(self):
+        pass
+
+    @abstractmethod
+    def get_scenes(self):
+        pass
+
+    @abstractmethod
+    def get_pixmaps(self):
         pass
 
     @abstractmethod
@@ -105,11 +95,17 @@ class ViewStrategy(LayerCollectionHandler):
     def show_current(self):
         pass
 
+    def set_allow_cursor_preview(self, state):
+        self.allow_cursor_preview = state
+
     def zoom_factor(self):
         return self.status.zoom_factor
 
     def set_zoom_factor(self, zoom_factor):
         self.status.set_zoom_factor(zoom_factor)
+
+    def get_current_scale(self):
+        return self.get_master_view().transform().m11()
 
     def min_scale(self):
         return self.status.min_scale
@@ -169,6 +165,59 @@ class ViewStrategy(LayerCollectionHandler):
         pixmap_item = QGraphicsPixmapItem()
         scene.addItem(pixmap_item)
         return pixmap_item
+
+    def refresh_display(self):
+        self.update_brush_cursor()
+        for scene in self.get_scenes():
+            scene.update()
+
+    def zoom_in(self):
+        if self.empty():
+            return
+        current_scale = self.get_current_scale()
+        new_scale = current_scale * gui_constants.ZOOM_IN_FACTOR
+        if new_scale <= self.max_scale():
+            for view in self.get_views():
+                view.scale(gui_constants.ZOOM_IN_FACTOR, gui_constants.ZOOM_IN_FACTOR)
+            self.set_zoom_factor(new_scale)
+            self.update_brush_cursor()
+
+    def zoom_out(self):
+        if self.empty():
+            return
+        current_scale = self.get_current_scale()
+        new_scale = current_scale * gui_constants.ZOOM_OUT_FACTOR
+        if new_scale >= self.min_scale():
+            for view in self.get_views():
+                view.scale(gui_constants.ZOOM_OUT_FACTOR, gui_constants.ZOOM_OUT_FACTOR)
+            self.set_zoom_factor(new_scale)
+            self.update_brush_cursor()
+
+    def reset_zoom(self):
+        if self.empty():
+            return
+        self.pinch_start_scale = 1.0
+        self.last_scroll_pos = QPointF()
+        self.gesture_active = False
+        self.pinch_center_view = None
+        self.pinch_center_scene = None
+        for pixmap, view in self.get_pixmaps().items():
+            view.fitInView(pixmap, Qt.KeepAspectRatio)
+        self.set_zoom_factor(self.get_current_scale())
+        self.set_zoom_factor(max(self.min_scale(), min(self.max_scale(), self.zoom_factor())))
+        for view in self.get_views():
+            view.resetTransform()
+            view.scale(self.zoom_factor(), self.zoom_factor())
+        self.update_brush_cursor()
+
+    def actual_size(self):
+        if self.empty():
+            return
+        self.set_zoom_factor(max(self.min_scale(), min(self.max_scale(), 1.0)))
+        for view in self.get_views():
+            view.resetTransform()
+            view.scale(self.zoom_factor(), self.zoom_factor())
+        self.update_brush_cursor()
 
     def setup_outline_style(self):
         self.brush_cursor.setPen(QPen(QColor(*gui_constants.BRUSH_COLORS['pen']),

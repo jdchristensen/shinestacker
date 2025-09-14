@@ -2,7 +2,6 @@
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QWidget, QVBoxLayout
 from .image_view_status import ImageViewStatus
-from .brush_preview import BrushPreviewItem
 from .overlaid_view import OverlaidView
 from .sidebyside_view import SideBySideView
 
@@ -11,10 +10,9 @@ class ImageViewer(QWidget):
     def __init__(self, layer_collection, parent=None):
         super().__init__(parent)
         self.status = ImageViewStatus()
-        brush_preview = BrushPreviewItem(layer_collection)
         self._strategies = {
-            'overlaid': OverlaidView(brush_preview, self.status, self),
-            'sidebyside': SideBySideView(brush_preview, self.status, self)
+            'overlaid': OverlaidView(layer_collection, self.status, self),
+            'sidebyside': SideBySideView(layer_collection, self.status, self)
         }
         for strategy in self._strategies.values():
             strategy.hide()

@@ -43,9 +43,6 @@ class BrushPreviewItem(QGraphicsPixmapItem, LayerCollectionHandler):
         self.setTransformationMode(Qt.SmoothTransformation)
         self.brush = None
 
-    def clone(self):
-        return BrushPreviewItem(self.layer_collection)
-
     def get_layer_area(self, layer, x, y, w, h):
         if not isinstance(layer, np.ndarray):
             self.hide()
