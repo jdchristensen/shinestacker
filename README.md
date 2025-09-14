@@ -38,11 +38,11 @@ The GUI has two main working areas:
 
 <img src='https://raw.githubusercontent.com/lucalista/shinestacker/main/img/gui-retouch.png' width="600" referrerpolicy="no-referrer">
 
-# Resources
+## Resources
 
  🌍 [Website on WordPress](https://shinestacker.wordpress.com) • 📖 [Main documentation](https://shinestacker.readthedocs.io) • 📝 [Changelog](https://github.com/lucalista/shinestacker/blob/main/CHANGELOG.md) 
 
-# Note for macOS users
+## Note for macOS users
 
 **The following note is only relevant if you download the application as compressed archive from the [release page](https://github.com/lucalista/shinestacker/releases).**
 
@@ -61,17 +61,17 @@ xattr -cr ~/Downloads/shinestacker/shinestacker.app
 
 macOS adds a quarantine flag to all files downloaded from the internet. The above command removes that flag while preserving all other application functionality.
 
-# Credits
+## Credits
 
 The first version of the core focus stack algorithm was initially inspired by the [Laplacian pyramids method](https://github.com/sjawhar/focus-stacking) implementation by Sami Jawhar that was used under permission of the author. The implementation in the latest releases was rewritten from the original code.
 
-# Resources
+## Resources
 
 * [Pyramid Methods in Image Processing](https://www.researchgate.net/publication/246727904_Pyramid_Methods_in_Image_Processing), E. H. Adelson, C. H. Anderson,  J. R. Bergen, P. J. Burt, J. M. Ogden, RCA Engineer, 29-6, Nov/Dec 1984
 Pyramid methods in image processing
 * [A Multi-focus Image Fusion Method Based on Laplacian Pyramid](http://www.jcomputers.us/vol6/jcp0612-07.pdf), Wencheng Wang, Faliang Chang, Journal of Computers 6 (12), 2559, December 2011
 
-# License
+## License
 
 <img src="https://www.gnu.org/graphics/lgplv3-147x51.png" alt="LGPL 3 logo">
 
