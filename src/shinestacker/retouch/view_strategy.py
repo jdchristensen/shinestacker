@@ -1,9 +1,10 @@
-# pylint: disable=C0114, C0115, C0116, E0611, R0904
+# pylint: disable=C0114, C0115, C0116, E0611, R0904, R0903, R0902, E1101
 from abc import abstractmethod
 import numpy as np
 from PySide6.QtCore import Qt, QPointF
-from PySide6.QtGui import QImage, QPainter, QColor, QBrush, QPen
-from PySide6.QtWidgets import QGraphicsView, QGraphicsScene, QGraphicsPixmapItem
+from PySide6.QtGui import QImage, QPainter, QColor, QBrush, QPen, QCursor
+from PySide6.QtWidgets import (
+    QGraphicsEllipseItem, QGraphicsView, QGraphicsScene, QGraphicsPixmapItem)
 from .. config.gui_constants import gui_constants
 from .layer_collection import LayerCollectionHandler
 from .brush_gradient import create_default_brush_gradient
@@ -36,6 +37,13 @@ class ViewStrategy(LayerCollectionHandler):
         self.brush_preview = BrushPreviewItem(layer_collection)
         self.cursor_style = gui_constants.DEFAULT_CURSOR_STYLE
         self.allow_cursor_preview = True
+        self.control_pressed = False
+        self.space_pressed = False
+        self.gesture_active = False
+        self.pinch_center_view = None
+        self.pinch_center_scene = None
+        self.pinch_start_scale = None
+        self.last_scroll_pos = None
 
     @abstractmethod
     def create_pixmaps(self):
@@ -55,14 +63,6 @@ class ViewStrategy(LayerCollectionHandler):
 
     @abstractmethod
     def update_current_display(self):
-        pass
-
-    @abstractmethod
-    def update_brush_cursor(self):
-        pass
-
-    @abstractmethod
-    def setup_brush_cursor(self):
         pass
 
     @abstractmethod
@@ -139,10 +139,10 @@ class ViewStrategy(LayerCollectionHandler):
     def get_cursor_style(self):
         return self.cursor_style
 
-    def handle_key_press_event(self, event):
+    def handle_key_press_event(self, _event):
         return
 
-    def handle_key_release_event(self, event):
+    def handle_key_release_event(self, _event):
         return
 
     def clear_image(self):
@@ -249,6 +249,54 @@ class ViewStrategy(LayerCollectionHandler):
         self.brush_cursor.setPen(QPen(QColor(*gui_constants.BRUSH_COLORS['pen']),
                                       gui_constants.BRUSH_LINE_WIDTH / self.zoom_factor()))
         self.brush_cursor.setBrush(QBrush(gradient))
+
+    def setup_brush_cursor(self):
+        if not self.brush:
+            return
+        scene = self.get_master_scene()
+        for item in scene.items():
+            if isinstance(item, QGraphicsEllipseItem) and item != self.brush_preview:
+                scene.removeItem(item)
+        pen = QPen(QColor(*gui_constants.BRUSH_COLORS['pen']), 1)
+        brush = QBrush(QColor(*gui_constants.BRUSH_COLORS['cursor_inner']))
+        self.brush_cursor = scene.addEllipse(
+            0, 0, self.brush.size, self.brush.size, pen, brush)
+        self.brush_cursor.setZValue(1000)
+        self.brush_cursor.hide()
+
+    def update_brush_cursor(self):
+        if self.empty():
+            return
+        if not self.brush_cursor or not self.isVisible():
+            return
+        view = self.get_master_view()
+        mouse_pos = view.mapFromGlobal(QCursor.pos())
+        if not view.rect().contains(mouse_pos):
+            self.brush_cursor.hide()
+            return
+        scene_pos = view.mapToScene(mouse_pos)
+        size = self.brush.size
+        radius = size / 2
+        self.brush_cursor.setRect(scene_pos.x() - radius, scene_pos.y() - radius, size, size)
+        allow_cursor_preview = self.display_manager.allow_cursor_preview()
+        if self.cursor_style == 'preview' and allow_cursor_preview:
+            self.setup_outline_style()
+            self.brush_cursor.hide()
+            pos = QCursor.pos()
+            if isinstance(pos, QPointF):
+                scene_pos = pos
+            else:
+                cursor_pos = view.mapFromGlobal(pos)
+                scene_pos = view.mapToScene(cursor_pos)
+            self.brush_preview.update(scene_pos, int(size))
+        else:
+            self.brush_preview.hide()
+            if self.cursor_style == 'outline' or not allow_cursor_preview:
+                self.setup_outline_style()
+            else:
+                self.setup_simple_brush_style(scene_pos.x(), scene_pos.y(), radius)
+        if not self.brush_cursor.isVisible():
+            self.brush_cursor.show()
 
     def position_on_image(self, pos):
         view = self.get_master_view()

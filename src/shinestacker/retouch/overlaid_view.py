@@ -1,7 +1,6 @@
 # pylint: disable=C0114, C0115, C0116, E0611, E1101, R0904, R0912, R0914, R0902
 import math
-from PySide6.QtWidgets import QGraphicsEllipseItem
-from PySide6.QtGui import QPixmap, QColor, QPen, QBrush, QCursor
+from PySide6.QtGui import QPixmap
 from PySide6.QtCore import Qt, QTime, QPoint, QPointF, QEvent, QRectF, Signal
 from .. config.gui_constants import gui_constants
 from .view_strategy import ViewStrategy, ImageGraphicsViewBase
@@ -22,17 +21,12 @@ class OverlaidView(ViewStrategy, ImageGraphicsViewBase):
         self.scene.addItem(self.brush_preview)
         self.last_mouse_pos = None
         self.brush_cursor = None
-        self.space_pressed = False
-        self.control_pressed = False
         self.scrolling = False
         self.dragging = False
         self.last_update_time = QTime.currentTime()
         self.last_brush_pos = None
         self.pinch_start_scale = 1.0
         self.last_scroll_pos = QPointF()
-        self.gesture_active = False
-        self.pinch_center_view = None
-        self.pinch_center_scene = None
 
     def create_pixmaps(self):
         self.pixmap_item_master = self.create_pixmap(self.scene)
@@ -115,12 +109,10 @@ class OverlaidView(ViewStrategy, ImageGraphicsViewBase):
         if event.key() == Qt.Key_X:
             self.temp_view_requested.emit(True)
             self.update_brush_cursor()
-            return
 
     def handle_key_release_event(self, event):
         if event.key() == Qt.Key_X:
             self.temp_view_requested.emit(False)
-            return
 
     # pylint: disable=C0103
     def mousePressEvent(self, event):
@@ -310,53 +302,3 @@ class OverlaidView(ViewStrategy, ImageGraphicsViewBase):
                 self.update_brush_cursor()
         elif pinch.state() in (Qt.GestureFinished, Qt.GestureCanceled):
             self.gesture_active = False
-
-    def setup_brush_cursor(self):
-        self.setCursor(Qt.BlankCursor)
-        pen = QPen(QColor(*gui_constants.BRUSH_COLORS['pen']), 1)
-        brush = QBrush(QColor(*gui_constants.BRUSH_COLORS['cursor_inner']))
-        for item in self.scene.items():
-            if isinstance(item, QGraphicsEllipseItem):
-                self.scene.removeItem(item)
-        self.brush_cursor = self.scene.addEllipse(
-            0, 0, self.brush.size, self.brush.size, pen, brush)
-        self.brush_cursor.setZValue(1000)
-        self.brush_cursor.hide()
-
-    def update_brush_cursor(self):
-        if self.empty():
-            return
-        if not self.brush_cursor or not self.isVisible():
-            return
-        mouse_pos = self.mapFromGlobal(QCursor.pos())
-        if not self.rect().contains(mouse_pos):
-            self.brush_cursor.hide()
-            return
-        scene_pos = self.mapToScene(mouse_pos)
-        size = self.brush.size
-        radius = size / 2
-        self.brush_cursor.setRect(scene_pos.x() - radius, scene_pos.y() - radius, size, size)
-        allow_cursor_preview = self.display_manager.allow_cursor_preview()
-        if self.cursor_style == 'preview' and allow_cursor_preview:
-            self.setup_outline_style()
-            self.brush_cursor.hide()
-            pos = QCursor.pos()
-            if isinstance(pos, QPointF):
-                scene_pos = pos
-            else:
-                cursor_pos = self.mapFromGlobal(pos)
-                scene_pos = self.mapToScene(cursor_pos)
-            self.brush_preview.update(scene_pos, int(size))
-        else:
-            self.brush_preview.hide()
-            if self.cursor_style == 'outline' or not allow_cursor_preview:
-                self.setup_outline_style()
-            else:
-                self.setup_simple_brush_style(scene_pos.x(), scene_pos.y(), radius)
-        if not self.brush_cursor.isVisible():
-            self.brush_cursor.show()
-
-    def set_cursor_style(self, style):
-        self.cursor_style = style
-        if self.brush_cursor:
-            self.update_brush_cursor()
