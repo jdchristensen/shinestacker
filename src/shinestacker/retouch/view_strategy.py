@@ -328,12 +328,12 @@ class ViewStrategy(LayerCollectionHandler):
         if self.empty():
             return None
         master_view = self.get_master_view()
+        master_pixmap = self.get_master_pixmap()
         pixmap = self.get_master_pixmap()
         view_rect = master_view.viewport().rect()
         scene_rect = master_view.mapToScene(view_rect).boundingRect()
-        image_rect = master_view.mapFromScene(scene_rect).boundingRect()
-        image_rect = image_rect.intersected(pixmap.boundingRect().toRect())
-        return image_rect
+        image_rect = master_pixmap.mapFromScene(scene_rect).boundingRect().toRect()
+        return image_rect.intersected(pixmap.boundingRect().toRect())
 
     def get_visible_image_portion(self):
         if self.has_no_master_layer():
