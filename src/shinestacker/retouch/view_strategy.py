@@ -50,10 +50,6 @@ class ViewStrategy(LayerCollectionHandler):
         pass
 
     @abstractmethod
-    def clear_image(self):
-        pass
-
-    @abstractmethod
     def update_master_display(self):
         pass
 
@@ -71,6 +67,10 @@ class ViewStrategy(LayerCollectionHandler):
 
     @abstractmethod
     def get_master_view(self):
+        pass
+
+    @abstractmethod
+    def get_master_scene(self):
         pass
 
     @abstractmethod
@@ -139,10 +139,30 @@ class ViewStrategy(LayerCollectionHandler):
     def get_cursor_style(self):
         return self.cursor_style
 
+    def handle_key_press_event(self, event):
+        return
+
+    def handle_key_release_event(self, event):
+        return
+
+    def clear_image(self):
+        for scene in self.get_scenes():
+            scene.clear()
+        self.create_pixmaps()
+        self.status.clear()
+        self.setup_brush_cursor()
+        self.brush_preview = BrushPreviewItem(self.layer_collection)
+        self.get_master_scene().addItem(self.brush_preview)
+        self.setCursor(Qt.ArrowCursor)
+        if self.brush_cursor:
+            self.brush_cursor.hide()
+
     def set_master_image_np(self, img):
         self.set_master_image(self.numpy_to_qimage(img))
 
     def numpy_to_qimage(self, array):
+        if array is None:
+            return None
         if array.dtype == np.uint16:
             array = np.right_shift(array, 8).astype(np.uint8)
         if array.ndim == 2:
@@ -261,3 +281,33 @@ class ViewStrategy(LayerCollectionHandler):
 
     def map_to_scene(self, pos):
         return self.get_master_view().mapToScene(pos)
+
+    # pylint: disable=C0103
+    def keyPressEvent(self, event):
+        if self.empty():
+            return
+        if event.key() == Qt.Key_Space and not self.scrolling:
+            self.space_pressed = True
+            self.setCursor(Qt.OpenHandCursor)
+            if self.brush_cursor:
+                self.brush_cursor.hide()
+        self.handle_key_press_event(event)
+        if event.key() == Qt.Key_Control and not self.scrolling:
+            self.control_pressed = True
+        super().keyPressEvent(event)
+
+    def keyReleaseEvent(self, event):
+        if self.empty():
+            return
+        self.update_brush_cursor()
+        if event.key() == Qt.Key_Space:
+            self.space_pressed = False
+            if not self.scrolling:
+                self.setCursor(Qt.BlankCursor)
+                if self.brush_cursor:
+                    self.brush_cursor.show()
+        self.handle_key_release_event(event)
+        if event.key() == Qt.Key_Control:
+            self.control_pressed = False
+        super().keyReleaseEvent(event)
+    # pylint: enable=C0103

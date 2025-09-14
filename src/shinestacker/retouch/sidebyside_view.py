@@ -5,7 +5,6 @@ from PySide6.QtGui import QPixmap, QColor, QBrush, QPen, QCursor
 from PySide6.QtCore import Qt, Signal, QPoint, QPointF, QEvent, QTime, QRectF
 from .. config.gui_constants import gui_constants
 from .view_strategy import ViewStrategy, ImageGraphicsViewBase
-from .brush_preview import BrushPreviewItem
 
 
 class ImageGraphicsView(ImageGraphicsViewBase):
@@ -101,6 +100,9 @@ class SideBySideView(ViewStrategy, QWidget):
     def get_master_view(self):
         return self.right_view
 
+    def get_master_scene(self):
+        return self.right_scene
+
     def get_master_pixmap(self):
         return self.right_pixmap_item
 
@@ -115,37 +117,6 @@ class SideBySideView(ViewStrategy, QWidget):
             self.right_pixmap_item: self.right_view,
             self.left_pixmap_item: self.left_view
         }
-
-    def keyPressEvent(self, event):
-        if self.empty():
-            return
-        if event.key() == Qt.Key_Space and not self.scrolling:
-            self.space_pressed = True
-            self.right_view.setCursor(Qt.OpenHandCursor)
-            if self.brush_cursor:
-                self.brush_cursor.hide()
-            event.accept()
-        elif event.key() == Qt.Key_Control and not self.scrolling:
-            self.control_pressed = True
-            event.accept()
-        else:
-            super().keyPressEvent(event)
-
-    def keyReleaseEvent(self, event):
-        if self.empty():
-            return
-        if event.key() == Qt.Key_Space:
-            self.space_pressed = False
-            if not self.scrolling:
-                self.right_view.setCursor(Qt.BlankCursor)
-                if self.brush_cursor:
-                    self.brush_cursor.show()
-            event.accept()
-        elif event.key() == Qt.Key_Control:
-            self.control_pressed = False
-            event.accept()
-        else:
-            super().keyReleaseEvent(event)
 
     def showEvent(self, event):
         super().showEvent(event)
@@ -289,14 +260,14 @@ class SideBySideView(ViewStrategy, QWidget):
     def set_master_image(self, qimage):
         self.status.set_master_image(qimage)
         pixmap = self.status.pixmap_master
-        self.righ_scene.setSceneRect(QRectF(pixmap.rect()))
         img_width, img_height = pixmap.width(), pixmap.height()
         self.set_min_scale(min(gui_constants.MIN_ZOOMED_IMG_WIDTH / img_width,
                                gui_constants.MIN_ZOOMED_IMG_HEIGHT / img_height))
         self.set_max_scale(gui_constants.MAX_ZOOMED_IMG_PX_SIZE)
-        self.righ_scene.fitInView(self.right_pixmap_item, Qt.KeepAspectRatio)
         self.set_zoom_factor(self.get_current_scale())
         self.set_zoom_factor(max(self.min_scale(), min(self.max_scale(), self.zoom_factor())))
+        self.righ_scene.setSceneRect(QRectF(pixmap.rect()))
+        self.righ_scene.fitInView(self.right_pixmap_item, Qt.KeepAspectRatio)
         self.righ_scene.resetTransform()
         self.righ_scene.scale(self.zoom_factor(), self.zoom_factor())
 
@@ -318,29 +289,19 @@ class SideBySideView(ViewStrategy, QWidget):
             self.reset_zoom()
         self._apply_zoom()
 
-    def clear_image(self):
-        self.left_scene.clear()
-        self.right_scene.clear()
-        self.create_pixmaps()
-        self.status.clear()
-        self.setup_brush_cursor()
-        self.brush_preview = BrushPreviewItem(self.layer_collection)
-        self.right_scene.addItem(self.brush_preview)
-        self.setCursor(Qt.ArrowCursor)
-        if self.brush_cursor:
-            self.brush_cursor.hide()
-
     def update_master_display(self):
         if not self.status.empty():
             master_qimage = self.numpy_to_qimage(self.master_layer())
-            self.right_pixmap_item.setPixmap(QPixmap.fromImage(master_qimage))
-            self._arrange_images()
+            if master_qimage:
+                self.right_pixmap_item.setPixmap(QPixmap.fromImage(master_qimage))
+                self._arrange_images()
 
     def update_current_display(self):
         if not self.status.empty() and self.number_of_layers() > 0:
             current_qimage = self.numpy_to_qimage(self.current_layer())
-            self.left_pixmap_item.setPixmap(QPixmap.fromImage(current_qimage))
-            self._arrange_images()
+            if current_qimage:
+                self.left_pixmap_item.setPixmap(QPixmap.fromImage(current_qimage))
+                self._arrange_images()
 
     def _apply_zoom(self):
         if not self.left_pixmap_item.pixmap().isNull():

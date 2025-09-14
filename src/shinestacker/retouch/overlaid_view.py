@@ -5,7 +5,6 @@ from PySide6.QtGui import QPixmap, QColor, QPen, QBrush, QCursor
 from PySide6.QtCore import Qt, QTime, QPoint, QPointF, QEvent, QRectF, Signal
 from .. config.gui_constants import gui_constants
 from .view_strategy import ViewStrategy, ImageGraphicsViewBase
-from .brush_preview import BrushPreviewItem
 
 
 class OverlaidView(ViewStrategy, ImageGraphicsViewBase):
@@ -41,6 +40,9 @@ class OverlaidView(ViewStrategy, ImageGraphicsViewBase):
 
     def get_master_view(self):
         return self
+
+    def get_master_scene(self):
+        return self.scene
 
     def get_master_pixmap(self):
         return self.pixmap_item_master
@@ -78,17 +80,6 @@ class OverlaidView(ViewStrategy, ImageGraphicsViewBase):
         if self.empty():
             self.setSceneRect(QRectF(self.status.pixmap_current.rect()))
 
-    def clear_image(self):
-        self.scene.clear()
-        self.create_pixmaps()
-        self.status.clear()
-        self.setup_brush_cursor()
-        self.brush_preview = BrushPreviewItem(self.layer_collection)
-        self.scene.addItem(self.brush_preview)
-        self.setCursor(Qt.ArrowCursor)
-        if self.brush_cursor:
-            self.brush_cursor.hide()
-
     def show_master(self):
         self.pixmap_item_master.setVisible(True)
         self.pixmap_item_current.setVisible(False)
@@ -101,13 +92,15 @@ class OverlaidView(ViewStrategy, ImageGraphicsViewBase):
         if not self.empty():
             master_qimage = self.numpy_to_qimage(
                 self.master_layer())
-            self.pixmap_item_master.setPixmap(QPixmap.fromImage(master_qimage))
+            if master_qimage:
+                self.pixmap_item_master.setPixmap(QPixmap.fromImage(master_qimage))
 
     def update_current_display(self):
         if not self.empty() and self.number_of_layers() > 0:
             current_qimage = self.numpy_to_qimage(
                 self.current_layer())
-            self.pixmap_item_current.setPixmap(QPixmap.fromImage(current_qimage))
+            if current_qimage:
+                self.pixmap_item_current.setPixmap(QPixmap.fromImage(current_qimage))
 
     def set_view_state(self, state):
         self.status.set_state(state)
@@ -118,40 +111,18 @@ class OverlaidView(ViewStrategy, ImageGraphicsViewBase):
             self.verticalScrollBar().setValue(state['v_scroll'])
             self.set_zoom_factor(state['zoom'])
 
-    # pylint: disable=C0103
-    def keyPressEvent(self, event):
-        if self.empty():
-            return
-        if event.key() == Qt.Key_Space and not self.scrolling:
-            self.space_pressed = True
-            self.setCursor(Qt.OpenHandCursor)
-            if self.brush_cursor:
-                self.brush_cursor.hide()
-        elif event.key() == Qt.Key_X:
+    def handle_key_press_event(self, event):
+        if event.key() == Qt.Key_X:
             self.temp_view_requested.emit(True)
             self.update_brush_cursor()
             return
-        if event.key() == Qt.Key_Control and not self.scrolling:
-            self.control_pressed = True
-        super().keyPressEvent(event)
 
-    def keyReleaseEvent(self, event):
-        if self.empty():
-            return
-        self.update_brush_cursor()
-        if event.key() == Qt.Key_Space:
-            self.space_pressed = False
-            if not self.scrolling:
-                self.setCursor(Qt.BlankCursor)
-                if self.brush_cursor:
-                    self.brush_cursor.show()
-        elif event.key() == Qt.Key_X:
+    def handle_key_release_event(self, event):
+        if event.key() == Qt.Key_X:
             self.temp_view_requested.emit(False)
             return
-        if event.key() == Qt.Key_Control:
-            self.control_pressed = False
-        super().keyReleaseEvent(event)
 
+    # pylint: disable=C0103
     def mousePressEvent(self, event):
         if self.empty():
             return
