@@ -1,4 +1,5 @@
 # pylint: disable=C0114, C0115, C0116, R0904, R0915, E0611, R0902, R0911
+import math
 from PySide6.QtWidgets import (QWidget, QHBoxLayout, QFrame, QGraphicsEllipseItem)
 from PySide6.QtGui import QPixmap, QColor, QBrush, QPen, QCursor
 from PySide6.QtCore import Qt, Signal, QPoint, QPointF, QEvent, QTime, QRectF
@@ -170,15 +171,31 @@ class SideBySideView(ViewStrategy, QWidget):
                 self.brush_cursor.show()
 
     def handle_right_mouse_move(self, event):
+        if self.empty():
+            return
         position = event.position()
-        self.update_brush_cursor()
-        if self.dragging:
+        brush_size = self.brush.size
+        if not self.space_pressed:
+            self.update_brush_cursor()
+        if self.dragging and event.buttons() & Qt.LeftButton:
             current_time = QTime.currentTime()
             if self.last_update_time.msecsTo(current_time) >= gui_constants.PAINT_REFRESH_TIMER:
-                self.brush_operation_continued.emit(position.toPoint())
-                self.last_brush_pos = position
+                min_step = brush_size * \
+                    gui_constants.MIN_MOUSE_STEP_BRUSH_FRACTION * self.zoom_factor()
+                x, y = position.x(), position.y()
+                xp, yp = self.last_brush_pos.x(), self.last_brush_pos.y()
+                distance = math.sqrt((x - xp)**2 + (y - yp)**2)
+                n_steps = int(float(distance) / min_step)
+                if n_steps > 0:
+                    delta_x = (position.x() - self.last_brush_pos.x()) / n_steps
+                    delta_y = (position.y() - self.last_brush_pos.y()) / n_steps
+                    for i in range(0, n_steps + 1):
+                        pos = QPoint(self.last_brush_pos.x() + i * delta_x,
+                                     self.last_brush_pos.y() + i * delta_y)
+                        self.brush_operation_continued.emit(pos)
+                    self.last_brush_pos = position
                 self.last_update_time = current_time
-        elif self.scrolling:
+        if self.scrolling and event.buttons() & Qt.LeftButton:
             if self.space_pressed:
                 self.right_view.setCursor(Qt.ClosedHandCursor)
                 if self.brush_cursor:
