@@ -2,6 +2,15 @@
 
 This page reports the main releases only and the main changes therein.
 
+## [v-.-.-] - 2025-09-14
+**Unreleased changes**
+
+## Fixed
+- restored standard cursor in empty retouch views
+- lower/upper case GUI labels
+
+---
+
 ## [v1.4.0] - 2025-09-14
 **GUI improvements**
 

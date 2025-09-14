@@ -382,7 +382,9 @@ class ViewStrategy(LayerCollectionHandler):
         super().keyReleaseEvent(event)
 
     def leaveEvent(self, event):
-        if not self.empty():
+        if self.empty():
+            self.setCursor(Qt.ArrowCursor)
+        else:
             self.get_master_view().setCursor(Qt.ArrowCursor)
             if self.brush_cursor:
                 self.brush_cursor.hide()

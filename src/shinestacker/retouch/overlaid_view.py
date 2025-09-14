@@ -150,7 +150,9 @@ class OverlaidView(ViewStrategy, ImageGraphicsViewBase, ViewSignals):
     def enterEvent(self, event):
         self.activateWindow()
         self.setFocus()
-        if not self.empty():
+        if self.empty():
+            self.setCursor(Qt.ArrowCursor)
+        else:
             self.setCursor(Qt.BlankCursor)
             if self.brush_cursor:
                 self.brush_cursor.show()

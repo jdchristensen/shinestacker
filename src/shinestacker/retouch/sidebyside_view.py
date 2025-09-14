@@ -92,21 +92,25 @@ class DoubleViewBase(ViewStrategy, QWidget, ViewSignals):
     def current_view_enter_event(self, event):
         self.activateWindow()
         self.setFocus()
-        self.update_brush_cursor()
+        if not self.empty():
+            self.update_brush_cursor()
         super(ImageGraphicsView, self.current_view).enterEvent(event)
 
     def current_view_leave_event(self, event):
-        self.update_brush_cursor()
+        if not self.empty():
+            self.update_brush_cursor()
         super(ImageGraphicsView, self.current_view).leaveEvent(event)
 
     def master_view_enter_event(self, event):
         self.activateWindow()
         self.setFocus()
-        self.update_brush_cursor()
+        if not self.empty():
+            self.update_brush_cursor()
         super(ImageGraphicsView, self.master_view).enterEvent(event)
 
     def master_view_leave_event(self, event):
-        self.update_brush_cursor()
+        if not self.empty():
+            self.update_brush_cursor()
         super(ImageGraphicsView, self.master_view).leaveEvent(event)
 
     def get_master_view(self):
@@ -153,22 +157,33 @@ class DoubleViewBase(ViewStrategy, QWidget, ViewSignals):
     def enterEvent(self, event):
         self.activateWindow()
         self.setFocus()
-        if not self.empty():
+        if self.empty():
+            self.setCursor(Qt.ArrowCursor)
+            self.master_view.setCursor(Qt.ArrowCursor)
+            self.current_view.setCursor(Qt.ArrowCursor)
+        else:
             if self.space_pressed:
                 self.master_view.setCursor(Qt.OpenHandCursor)
+                self.current_view.setCursor(Qt.OpenHandCursor)
             else:
                 self.master_view.setCursor(Qt.BlankCursor)
+                self.current_view.setCursor(Qt.BlankCursor)
                 if self.brush_cursor:
                     self.brush_cursor.show()
         super().enterEvent(event)
 
     def leaveEvent(self, event):
-        if self.brush_cursor:
-            self.brush_cursor.hide()
-        if self.current_brush_cursor:
-            self.current_brush_cursor.hide()
-        self.master_view.setCursor(Qt.ArrowCursor)
-        self.current_view.setCursor(Qt.ArrowCursor)
+        if self.empty():
+            self.setCursor(Qt.ArrowCursor)
+            self.master_view.setCursor(Qt.ArrowCursor)
+            self.current_view.setCursor(Qt.ArrowCursor)
+        else:
+            if self.brush_cursor:
+                self.brush_cursor.hide()
+            if self.current_brush_cursor:
+                self.current_brush_cursor.hide()
+            self.master_view.setCursor(Qt.ArrowCursor)
+            self.current_view.setCursor(Qt.ArrowCursor)
         super().leaveEvent(event)
 
     def keyPressEvent(self, event):
@@ -413,6 +428,9 @@ class DoubleViewBase(ViewStrategy, QWidget, ViewSignals):
 
     def clear_image(self):
         super().clear_image()
+        self.setCursor(Qt.ArrowCursor)
+        self.master_view.setCursor(Qt.ArrowCursor)
+        self.current_view.setCursor(Qt.ArrowCursor)
         if self.current_brush_cursor:
             self.current_scene.removeItem(self.current_brush_cursor)
             self.current_brush_cursor = None
