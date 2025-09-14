@@ -63,8 +63,8 @@ class _GuiConstants:
     DEFAULT_CURSOR_STYLE = 'preview'
     BRUSH_LINE_WIDTH = 2
     BRUSH_PREVIEW_LINE_WIDTH = 1.5
-    ZOOM_IN_FACTOR = 1.25
-    ZOOM_OUT_FACTOR = 0.80
+    ZOOM_IN_FACTOR = 1.10
+    ZOOM_OUT_FACTOR = 1 / ZOOM_IN_FACTOR
 
     def calculate_gamma(self):
         if self.BRUSH_SIZES['mid'] <= self.BRUSH_SIZES['min'] or self.BRUSH_SIZES['max'] <= 0:

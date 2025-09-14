@@ -2,10 +2,11 @@
 
 This page reports the main releases only and the main changes therein.
 
-## [v-.-.-] - 2025-09-11
+## [v-.-.-] - 2025-09-14
 ** Unreleased code**
 
 ### Added
+- added retouch view mode with master and frame side by side
 - implemented "Open Recent" menu entry for both projects and retouch images
 - expert options can be shown with a checkbox in each dialog
 - optional summary plots for alignment transformation parameters

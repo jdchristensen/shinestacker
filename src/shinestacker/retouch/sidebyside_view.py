@@ -299,7 +299,7 @@ class SideBySideView(ViewStrategy, QWidget, ViewSignals):
         if self.space_pressed:
             self.pan_start = position
             self.panning_left = True
-            self.update_brush_cursor()  # Update cursor to closed hand
+            self.update_brush_cursor()
 
     def handle_left_mouse_move(self, event):
         position = event.position()
@@ -308,7 +308,6 @@ class SideBySideView(ViewStrategy, QWidget, ViewSignals):
             self.pan_start = position
             self.scroll_view(self.left_view, delta.x(), delta.y())
         else:
-            # Update cursor position when not panning
             self.update_brush_cursor()
 
     def handle_left_mouse_release(self, _event):
@@ -349,6 +348,7 @@ class SideBySideView(ViewStrategy, QWidget, ViewSignals):
         pixmap = self.status.pixmap_master
         img_width, img_height = pixmap.width(), pixmap.height()
         self.right_view.setSceneRect(QRectF(pixmap.rect()))
+        self.right_pixmap_item.setPixmap(pixmap)
         self.set_min_scale(min(gui_constants.MIN_ZOOMED_IMG_WIDTH / img_width,
                                gui_constants.MIN_ZOOMED_IMG_HEIGHT / img_height))
         self.set_max_scale(gui_constants.MAX_ZOOMED_IMG_PX_SIZE)
@@ -362,15 +362,17 @@ class SideBySideView(ViewStrategy, QWidget, ViewSignals):
         center = self.right_scene.sceneRect().center()
         self.brush_preview.setPos(max(0, min(center.x(), img_width)),
                                   max(0, min(center.y(), img_height)))
+        self.right_scene.setSceneRect(QRectF(self.right_pixmap_item.boundingRect()))
 
     def set_current_image(self, qimage):
         self.status.set_current_image(qimage)
         pixmap = self.status.pixmap_current
         self.left_scene.setSceneRect(QRectF(pixmap.rect()))
-        # self.left_view.fitInView(self.left_pixmap_item, Qt.KeepAspectRatio)
+        self.left_pixmap_item.setPixmap(pixmap)
         self.left_view.resetTransform()
         self.left_scene.scale(self.zoom_factor(), self.zoom_factor())
         # self.left_view.centerOn(self.left_pixmap_item)
+        self.left_scene.setSceneRect(QRectF(self.left_pixmap_item.boundingRect()))
 
     def _arrange_images(self):
         if self.status.empty():
@@ -385,23 +387,29 @@ class SideBySideView(ViewStrategy, QWidget, ViewSignals):
         if not self.status.empty():
             master_qimage = self.numpy_to_qimage(self.master_layer())
             if master_qimage:
-                self.right_pixmap_item.setPixmap(QPixmap.fromImage(master_qimage))
+                pixmap = QPixmap.fromImage(master_qimage)
+                self.right_pixmap_item.setPixmap(pixmap)
+                self.right_scene.setSceneRect(QRectF(pixmap.rect()))
                 self._arrange_images()
 
     def update_current_display(self):
         if not self.status.empty() and self.number_of_layers() > 0:
             current_qimage = self.numpy_to_qimage(self.current_layer())
             if current_qimage:
-                self.left_pixmap_item.setPixmap(QPixmap.fromImage(current_qimage))
+                pixmap = QPixmap.fromImage(current_qimage)
+                self.left_pixmap_item.setPixmap(pixmap)
+                self.left_scene.setSceneRect(QRectF(pixmap.rect()))
                 self._arrange_images()
 
     def _apply_zoom(self):
         if not self.left_pixmap_item.pixmap().isNull():
             self.left_view.resetTransform()
             self.left_view.scale(self.zoom_factor(), self.zoom_factor())
+            # self.left_view.centerOn(self.left_pixmap_item)
         if not self.right_pixmap_item.pixmap().isNull():
             self.right_view.resetTransform()
             self.right_view.scale(self.zoom_factor(), self.zoom_factor())
+            # self.right_view.centerOn(self.right_pixmap_item)
 
     def set_brush(self, brush):
         super().set_brush(brush)
