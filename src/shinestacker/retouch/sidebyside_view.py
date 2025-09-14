@@ -1,4 +1,4 @@
-# pylint: disable=C0114, C0115, C0116, R0904, R0915, E0611, R0902, R0911, R0914
+# pylint: disable=C0114, C0115, C0116, R0904, R0915, E0611, R0902, R0911, R0914, E1003
 from PySide6.QtCore import Qt, Signal, QEvent, QRectF
 from PySide6.QtGui import QPixmap, QPen, QColor, QCursor
 from PySide6.QtWidgets import QWidget, QHBoxLayout, QFrame, QGraphicsEllipseItem
@@ -90,10 +90,12 @@ class SideBySideView(ViewStrategy, QWidget, ViewSignals):
             self.left_view.horizontalScrollBar().setValue)
         self.right_view.verticalScrollBar().valueChanged.connect(
             self.left_view.verticalScrollBar().setValue)
+        # pylint: disable=C0103, W0201
         self.left_view.enterEvent = self.left_view_enter_event
         self.left_view.leaveEvent = self.left_view_leave_event
         self.right_view.enterEvent = self.right_view_enter_event
         self.right_view.leaveEvent = self.right_view_leave_event
+        # pylint: enable=C0103, W0201
 
     def left_view_enter_event(self, event):
         self.activateWindow()
@@ -176,6 +178,16 @@ class SideBySideView(ViewStrategy, QWidget, ViewSignals):
         self.right_view.setCursor(Qt.ArrowCursor)
         self.left_view.setCursor(Qt.ArrowCursor)
         super().leaveEvent(event)
+
+    def keyPressEvent(self, event):
+        super().keyPressEvent(event)
+        if event.key() == Qt.Key_Space:
+            self.update_brush_cursor()
+
+    def keyReleaseEvent(self, event):
+        super().keyReleaseEvent(event)
+        if event.key() == Qt.Key_Space:
+            self.update_brush_cursor()
     # pylint: enable=C0103
 
     def setup_brush_cursor(self):
@@ -219,9 +231,12 @@ class SideBySideView(ViewStrategy, QWidget, ViewSignals):
             super().update_brush_cursor()
             self.sync_left_cursor_with_right()
             if self.space_pressed:
-                self.right_view.setCursor(Qt.OpenHandCursor)
+                cursor_style = Qt.OpenHandCursor if not self.scrolling else Qt.ClosedHandCursor
+                self.right_view.setCursor(cursor_style)
+                self.left_view.setCursor(cursor_style)
             else:
                 self.right_view.setCursor(Qt.BlankCursor)
+                self.left_view.setCursor(Qt.BlankCursor)
         elif left_has_mouse:
             scene_pos = self.left_view.mapToScene(mouse_pos_left)
             size = self.brush.size
@@ -240,9 +255,12 @@ class SideBySideView(ViewStrategy, QWidget, ViewSignals):
                 )
                 self.brush_cursor.show()
             if self.space_pressed:
-                self.left_view.setCursor(Qt.OpenHandCursor)
+                cursor_style = Qt.OpenHandCursor if not self.panning_left else Qt.ClosedHandCursor
+                self.left_view.setCursor(cursor_style)
+                self.right_view.setCursor(cursor_style)
             else:
-                self.left_view.setCursor(Qt.CrossCursor)
+                self.left_view.setCursor(Qt.BlankCursor)
+                self.right_view.setCursor(Qt.BlankCursor)
         else:
             if self.brush_cursor:
                 self.brush_cursor.hide()
@@ -267,6 +285,7 @@ class SideBySideView(ViewStrategy, QWidget, ViewSignals):
         if self.space_pressed:
             self.pan_start = position
             self.panning_left = True
+            self.update_brush_cursor()  # Update cursor to closed hand
 
     def handle_left_mouse_move(self, event):
         position = event.position()
@@ -281,6 +300,7 @@ class SideBySideView(ViewStrategy, QWidget, ViewSignals):
     def handle_left_mouse_release(self, _event):
         if self.panning_left:
             self.panning_left = False
+            self.update_brush_cursor()
 
     def handle_gesture_event(self, event):
         if self.empty():
