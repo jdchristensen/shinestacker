@@ -5,7 +5,6 @@ from PySide6.QtGui import QPixmap, QColor, QPen, QBrush, QCursor
 from PySide6.QtCore import Qt, QTime, QPoint, QPointF, QEvent, QRectF, Signal
 from .. config.gui_constants import gui_constants
 from .view_strategy import ViewStrategy, ImageGraphicsViewBase
-from .brush_gradient import create_default_brush_gradient
 from .brush_preview import BrushPreviewItem
 
 
@@ -22,7 +21,7 @@ class OverlaidView(ViewStrategy, ImageGraphicsViewBase):
         self.scene = self.create_scene(self)
         self.pixmap_item_master = self.create_pixmap(self.scene)
         self.pixmap_item_current = self.create_pixmap(self.scene)
-        self.scene.setBackgroundBrush(QBrush(QColor(120, 120, 120)))
+        # self.scene.addItem(self.brush_preview)
         self.last_mouse_pos = None
         self.brush_cursor = None
         self.space_pressed = False
@@ -30,7 +29,6 @@ class OverlaidView(ViewStrategy, ImageGraphicsViewBase):
         self.scrolling = False
         self.dragging = False
         self.last_update_time = QTime.currentTime()
-        self.scene.addItem(self.brush_preview)
         self.allow_cursor_preview = True
         self.last_brush_pos = None
         self.pinch_start_scale = 1.0
@@ -43,6 +41,7 @@ class OverlaidView(ViewStrategy, ImageGraphicsViewBase):
         self.status.set_master_image(qimage)
         pixmap = self.status.pixmap_master
         self.setSceneRect(QRectF(pixmap.rect()))
+
         img_width, img_height = pixmap.width(), pixmap.height()
         self.set_min_scale(min(gui_constants.MIN_ZOOMED_IMG_WIDTH / img_width,
                                gui_constants.MIN_ZOOMED_IMG_HEIGHT / img_height))
@@ -359,7 +358,7 @@ class OverlaidView(ViewStrategy, ImageGraphicsViewBase):
         self.brush_cursor.setRect(scene_pos.x() - radius, scene_pos.y() - radius, size, size)
         allow_cursor_preview = self.display_manager.allow_cursor_preview()
         if self.cursor_style == 'preview' and allow_cursor_preview:
-            self._setup_outline_style()
+            self.setup_outline_style()
             self.brush_cursor.hide()
             pos = QCursor.pos()
             if isinstance(pos, QPointF):
@@ -371,22 +370,11 @@ class OverlaidView(ViewStrategy, ImageGraphicsViewBase):
         else:
             self.brush_preview.hide()
             if self.cursor_style == 'outline' or not allow_cursor_preview:
-                self._setup_outline_style()
+                self.setup_outline_style()
             else:
-                self._setup_simple_brush_style(scene_pos.x(), scene_pos.y(), radius)
+                self.setup_simple_brush_style(scene_pos.x(), scene_pos.y(), radius)
         if not self.brush_cursor.isVisible():
             self.brush_cursor.show()
-
-    def _setup_outline_style(self):
-        self.brush_cursor.setPen(QPen(QColor(*gui_constants.BRUSH_COLORS['pen']),
-                                      gui_constants.BRUSH_LINE_WIDTH / self.zoom_factor()))
-        self.brush_cursor.setBrush(Qt.NoBrush)
-
-    def _setup_simple_brush_style(self, center_x, center_y, radius):
-        gradient = create_default_brush_gradient(center_x, center_y, radius, self.brush)
-        self.brush_cursor.setPen(QPen(QColor(*gui_constants.BRUSH_COLORS['pen']),
-                                      gui_constants.BRUSH_LINE_WIDTH / self.zoom_factor()))
-        self.brush_cursor.setBrush(QBrush(gradient))
 
     def zoom_in(self):
         if self.empty():

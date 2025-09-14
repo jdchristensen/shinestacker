@@ -2,10 +2,11 @@
 from abc import abstractmethod
 import numpy as np
 from PySide6.QtCore import Qt
-from PySide6.QtGui import QImage, QPainter, QColor, QBrush
+from PySide6.QtGui import QImage, QPainter, QColor, QBrush, QPen
 from PySide6.QtWidgets import QGraphicsView, QGraphicsScene, QGraphicsPixmapItem
 from .. config.gui_constants import gui_constants
 from .layer_collection import LayerCollectionHandler
+from .brush_gradient import create_default_brush_gradient
 
 
 class ImageGraphicsViewBase(QGraphicsView):
@@ -168,3 +169,14 @@ class ViewStrategy(LayerCollectionHandler):
         pixmap_item = QGraphicsPixmapItem()
         scene.addItem(pixmap_item)
         return pixmap_item
+
+    def setup_outline_style(self):
+        self.brush_cursor.setPen(QPen(QColor(*gui_constants.BRUSH_COLORS['pen']),
+                                      gui_constants.BRUSH_LINE_WIDTH / self.zoom_factor()))
+        self.brush_cursor.setBrush(Qt.NoBrush)
+
+    def setup_simple_brush_style(self, center_x, center_y, radius):
+        gradient = create_default_brush_gradient(center_x, center_y, radius, self.brush)
+        self.brush_cursor.setPen(QPen(QColor(*gui_constants.BRUSH_COLORS['pen']),
+                                      gui_constants.BRUSH_LINE_WIDTH / self.zoom_factor()))
+        self.brush_cursor.setBrush(QBrush(gradient))
