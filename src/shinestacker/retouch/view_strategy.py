@@ -72,14 +72,6 @@ class ViewStrategy(LayerCollectionHandler):
         pass
 
     @abstractmethod
-    def update_master_display(self):
-        pass
-
-    @abstractmethod
-    def update_current_display(self):
-        pass
-
-    @abstractmethod
     def get_master_view(self):
         pass
 

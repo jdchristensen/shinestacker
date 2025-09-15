@@ -71,17 +71,30 @@ class OverlaidView(ViewStrategy, ImageGraphicsViewBase, ViewSignals):
         self.pixmap_item_master.setVisible(False)
         self.pixmap_item_current.setVisible(True)
 
+    def _arrange_images(self):
+        if self.empty():
+            return
+        pixmap = self.pixmap_item_master.pixmap()
+        if not pixmap.isNull():
+            self.setSceneRect(QRectF(pixmap.rect()))
+        current_scale = self.get_current_scale()
+        scale_factor = self.zoom_factor() / current_scale
+        self.scale(scale_factor, scale_factor)
+        self.centerOn(self.pixmap_item_master)
+
     def update_master_display(self):
         if not self.empty():
             master_qimage = self.numpy_to_qimage(self.master_layer())
             if master_qimage:
                 self.pixmap_item_master.setPixmap(QPixmap.fromImage(master_qimage))
+                self._arrange_images()
 
     def update_current_display(self):
         if not self.empty() and self.number_of_layers() > 0:
             current_qimage = self.numpy_to_qimage(self.current_layer())
             if current_qimage:
                 self.pixmap_item_current.setPixmap(QPixmap.fromImage(current_qimage))
+                self._arrange_images()
 
     def set_view_state(self, state):
         self.status.set_state(state)
