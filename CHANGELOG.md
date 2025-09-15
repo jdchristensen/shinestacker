@@ -8,7 +8,7 @@ This page reports the main releases only and the main changes therein.
 ### Added
 - implemented image rotation
 
-## Fixed
+### Fixed
 - fixed (partially) zoom in wheel events for side-by-side view
 - restored standard cursor in empty retouch views
 - lower/upper case GUI labels
@@ -24,7 +24,7 @@ This page reports the main releases only and the main changes therein.
 - expert options can be shown with a checkbox in each dialog
 - optional summary plots for alignment transformation parameters
 
-## Fixed
+### Fixed
 - fixed bug in plot generation
 - fixes warning due to missing glyph in PDF generation on macOS
 - safer parallel plot generation using a thread locks
@@ -32,15 +32,11 @@ This page reports the main releases only and the main changes therein.
 ### Changed
 - code refactoring in various areas
 
----
-
-### Changed
-- code cleanup
 
 ## [v1.3.1] - 2025-09-08
 **Fixes and optimizations**
 
-## Fixed
+### Fixed
 - fixed input folder widget in job configuration
 - better management of patological alignments
 - restored alignment match plots
