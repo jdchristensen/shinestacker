@@ -101,6 +101,14 @@ class ViewStrategy(LayerCollectionHandler):
     def show_current(self):
         pass
 
+    @abstractmethod
+    def update_master_display(self):
+        pass
+
+    @abstractmethod
+    def update_current_display(self):
+        pass
+
     def set_allow_cursor_preview(self, state):
         self.allow_cursor_preview = state
 
@@ -196,6 +204,11 @@ class ViewStrategy(LayerCollectionHandler):
         self.update_brush_cursor()
         for scene in self.get_scenes():
             scene.update()
+
+    def set_max_min_scales(self, img_width, img_height):
+        self.set_min_scale(min(gui_constants.MIN_ZOOMED_IMG_WIDTH / img_width,
+                               gui_constants.MIN_ZOOMED_IMG_HEIGHT / img_height))
+        self.set_max_scale(gui_constants.MAX_ZOOMED_IMG_PX_SIZE)
 
     def zoom_in(self):
         if self.empty():
@@ -458,3 +471,27 @@ class ViewStrategy(LayerCollectionHandler):
             elif self.dragging:
                 self.dragging = False
                 self.brush_operation_ended.emit()
+
+    def handle_pinch_gesture(self, pinch):
+        master_view = self.get_master_view()
+        if pinch.state() == Qt.GestureStarted:
+            self.pinch_start_scale = self.zoom_factor()
+            self.pinch_center_view = pinch.centerPoint()
+            self.pinch_center_scene = master_view.mapToScene(self.pinch_center_view.toPoint())
+            self.gesture_active = True
+        elif pinch.state() == Qt.GestureUpdated:
+            new_scale = self.pinch_start_scale * pinch.totalScaleFactor()
+            new_scale = max(self.min_scale(), min(new_scale, self.max_scale()))
+            if abs(new_scale - self.zoom_factor()) > 0.01:
+                self.set_zoom_factor(new_scale)
+                self._apply_zoom()
+                new_center = master_view.mapToScene(self.pinch_center_view.toPoint())
+                delta = self.pinch_center_scene - new_center
+                h_scroll = master_view.horizontalScrollBar().value()
+                v_scroll = master_view.verticalScrollBar().value()
+                master_view.horizontalScrollBar().setValue(
+                    h_scroll + int(delta.x() * self.zoom_factor()))
+                master_view.verticalScrollBar().setValue(
+                    v_scroll + int(delta.y() * self.zoom_factor()))
+        elif pinch.state() in (Qt.GestureFinished, Qt.GestureCanceled):
+            self.gesture_active = False

@@ -1,4 +1,4 @@
-# pylint: disable=C0114, C0115, C0116, R0904, R0915, E0611, R0902, R0911, R0914, E1003, R0801
+# pylint: disable=C0114, C0115, C0116, R0904, R0915, E0611, R0902, R0911, R0914, E1003
 from PySide6.QtCore import Qt, Signal, QEvent, QRectF
 from PySide6.QtGui import QPixmap, QPen, QColor, QCursor
 from PySide6.QtWidgets import QWidget, QHBoxLayout, QVBoxLayout, QFrame, QGraphicsEllipseItem
@@ -203,6 +203,7 @@ class DoubleViewBase(ViewStrategy, QWidget, ViewSignals):
             self.update_brush_cursor()
     # pylint: enable=C0103
 
+    # pylint: enable=R0801
     def handle_wheel_event(self, event):
         if self.empty() or self.gesture_active:
             return
@@ -220,6 +221,7 @@ class DoubleViewBase(ViewStrategy, QWidget, ViewSignals):
                 if delta:
                     self.scroll_view(self.master_view, delta.x(), delta.y())
                     self.scroll_view(self.current_view, delta.x(), delta.y())
+    # pylint: disable=R0801
 
     def _apply_zoom_to_view(self, view, factor):
         view.scale(factor, factor)
@@ -362,35 +364,16 @@ class DoubleViewBase(ViewStrategy, QWidget, ViewSignals):
             event.accept()
 
     def handle_pinch_gesture(self, pinch):
-        if pinch.state() == Qt.GestureStarted:
-            self.pinch_start_scale = self.zoom_factor()
-            self.pinch_center_view = pinch.centerPoint()
-            self.pinch_center_scene = self.master_view.mapToScene(self.pinch_center_view.toPoint())
-        elif pinch.state() == Qt.GestureUpdated:
-            new_scale = self.pinch_start_scale * pinch.totalScaleFactor()
-            new_scale = max(self.min_scale(), min(new_scale, self.max_scale()))
-            if abs(new_scale - self.zoom_factor()) > 0.01:
-                self.set_zoom_factor(new_scale)
-                self._apply_zoom()
-                new_center = self.master_view.mapToScene(self.pinch_center_view.toPoint())
-                delta = self.pinch_center_scene - new_center
-                h_scroll = self.master_view.horizontalScrollBar().value()
-                v_scroll = self.master_view.verticalScrollBar().value()
-                self.master_view.horizontalScrollBar().setValue(
-                    h_scroll + int(delta.x() * self.zoom_factor()))
-                self.master_view.verticalScrollBar().setValue(
-                    v_scroll + int(delta.y() * self.zoom_factor()))
-                self.update_cursor_pen_width()
+        super().handle_pinch_gesture(pinch)
+        self.update_cursor_pen_width()
 
     def set_master_image(self, qimage):
         self.status.set_master_image(qimage)
         pixmap = self.status.pixmap_master
-        img_width, img_height = pixmap.width(), pixmap.height()
         self.master_view.setSceneRect(QRectF(pixmap.rect()))
         self.master_pixmap_item.setPixmap(pixmap)
-        self.set_min_scale(min(gui_constants.MIN_ZOOMED_IMG_WIDTH / img_width,
-                               gui_constants.MIN_ZOOMED_IMG_HEIGHT / img_height))
-        self.set_max_scale(gui_constants.MAX_ZOOMED_IMG_PX_SIZE)
+        img_width, img_height = pixmap.width(), pixmap.height()
+        self.set_max_min_scales(img_width, img_height)
         self.set_zoom_factor(1.0)
         self.master_view.fitInView(self.master_pixmap_item, Qt.KeepAspectRatio)
         self.set_zoom_factor(self.get_current_scale())
@@ -398,6 +381,7 @@ class DoubleViewBase(ViewStrategy, QWidget, ViewSignals):
         self.master_view.resetTransform()
         self.master_scene.scale(self.zoom_factor(), self.zoom_factor())
         self.master_view.centerOn(self.master_pixmap_item)
+
         center = self.master_scene.sceneRect().center()
         self.brush_preview.setPos(max(0, min(center.x(), img_width)),
                                   max(0, min(center.y(), img_height)))

@@ -1,4 +1,4 @@
-# pylint: disable=C0114, C0115, C0116, E0611, E1101, R0904, R0912, R0914, R0902, R0801
+# pylint: disable=C0114, C0115, C0116, E0611, E1101, R0904, R0912, R0914, R0902
 from PySide6.QtGui import QPixmap
 from PySide6.QtCore import Qt, QPointF, QEvent, QRectF
 from .. config.gui_constants import gui_constants
@@ -45,11 +45,8 @@ class OverlaidView(ViewStrategy, ImageGraphicsViewBase, ViewSignals):
         self.status.set_master_image(qimage)
         pixmap = self.status.pixmap_master
         self.setSceneRect(QRectF(pixmap.rect()))
-
         img_width, img_height = pixmap.width(), pixmap.height()
-        self.set_min_scale(min(gui_constants.MIN_ZOOMED_IMG_WIDTH / img_width,
-                               gui_constants.MIN_ZOOMED_IMG_HEIGHT / img_height))
-        self.set_max_scale(gui_constants.MAX_ZOOMED_IMG_PX_SIZE)
+        self.set_max_min_scales(img_width, img_height)
         self.set_zoom_factor(1.0)
         self.resetTransform()
         self.fitInView(self.pixmap_item_master, Qt.KeepAspectRatio)
@@ -126,6 +123,7 @@ class OverlaidView(ViewStrategy, ImageGraphicsViewBase, ViewSignals):
         self.mouse_release_event(event)
         super().mouseReleaseEvent(event)
 
+    # pylint: enable=R0801
     def wheelEvent(self, event):
         if self.empty() or self.gesture_active:
             return
@@ -159,6 +157,7 @@ class OverlaidView(ViewStrategy, ImageGraphicsViewBase, ViewSignals):
                 else:
                     self.zoom_out()
         event.accept()
+        # pylint: disable=R0801
 
     def enterEvent(self, event):
         self.activateWindow()
@@ -206,22 +205,9 @@ class OverlaidView(ViewStrategy, ImageGraphicsViewBase, ViewSignals):
         elif pan_gesture.state() == Qt.GestureFinished:
             self.gesture_active = False
 
-    def handle_pinch_gesture(self, pinch):
-        if pinch.state() == Qt.GestureStarted:
-            self.pinch_start_scale = self.zoom_factor()
-            self.pinch_center_view = pinch.centerPoint()
-            self.pinch_center_scene = self.mapToScene(self.pinch_center_view.toPoint())
-            self.gesture_active = True
-        elif pinch.state() == Qt.GestureUpdated:
-            new_scale = self.pinch_start_scale * pinch.totalScaleFactor()
-            new_scale = max(self.min_scale(), min(new_scale, self.max_scale()))
-            if abs(new_scale - self.get_current_scale()) > 0.01:
-                self.resetTransform()
-                self.scale(new_scale, new_scale)
-                self.set_zoom_factor(new_scale)
-                new_center = self.mapToScene(self.pinch_center_view.toPoint())
-                delta = self.pinch_center_scene - new_center
-                self.translate(delta.x(), delta.y())
-                self.update_brush_cursor()
-        elif pinch.state() in (Qt.GestureFinished, Qt.GestureCanceled):
-            self.gesture_active = False
+    def _apply_zoom(self):
+        if self.empty():
+            return
+        scale = self.transform().m11()
+        scale_factor = self.zoom_factor() / scale
+        self.scale(scale_factor, scale_factor)
