@@ -111,6 +111,10 @@ class ViewStrategy(LayerCollectionHandler):
     def show_current(self):
         pass
 
+    @abstractmethod
+    def arrange_images(self):
+        pass
+
     def update_master_display(self):
         if not self.empty():
             master_qimage = self.numpy_to_qimage(self.master_layer())
@@ -118,7 +122,7 @@ class ViewStrategy(LayerCollectionHandler):
                 pixmap = QPixmap.fromImage(master_qimage)
                 self.get_master_pixmap().setPixmap(pixmap)
                 self.get_master_scene().setSceneRect(QRectF(pixmap.rect()))
-                self._arrange_images()
+                self.arrange_images()
 
     def update_current_display(self):
         if not self.empty() and self.number_of_layers() > 0:
@@ -127,7 +131,7 @@ class ViewStrategy(LayerCollectionHandler):
                 pixmap = QPixmap.fromImage(current_qimage)
                 self.get_current_pixmap().setPixmap(pixmap)
                 self.get_current_scene().setSceneRect(QRectF(pixmap.rect()))
-                self._arrange_images()
+                self.arrange_images()
 
     def set_allow_cursor_preview(self, state):
         self.allow_cursor_preview = state

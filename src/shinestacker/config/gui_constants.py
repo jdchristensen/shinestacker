@@ -66,6 +66,11 @@ class _GuiConstants:
     ZOOM_IN_FACTOR = 1.10
     ZOOM_OUT_FACTOR = 1 / ZOOM_IN_FACTOR
 
+    ROTATE_LABEL = "Rotate"
+    ROTATE_90_CW_LABEL = f"{ROTATE_LABEL} 90° Clockwise"
+    ROTATE_90_CCW_LABEL = f"{ROTATE_LABEL} 90° Anticlockwise"
+    ROTATE_180_LABEL = f"{ROTATE_LABEL} 180°"
+
     def calculate_gamma(self):
         if self.BRUSH_SIZES['mid'] <= self.BRUSH_SIZES['min'] or self.BRUSH_SIZES['max'] <= 0:
             return 1.0

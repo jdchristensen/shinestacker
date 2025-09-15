@@ -1,5 +1,7 @@
 # pylint: disable=C0114, C0115, C0116, E1101, W0718
+import traceback
 from .. algorithms.utils import rotate_90_cw, rotate_90_ccw, rotate_180
+from .. config.gui_constants import gui_constants
 from .layer_collection import LayerCollectionHandler
 
 
@@ -8,14 +10,17 @@ class TransfromationManager(LayerCollectionHandler):
         super().__init__(editor.layer_collection)
         self.editor = editor
 
-    def transform(self, transf_func, label):
+    def transform(self, transf_func, label, undoable=True):
         if self.has_no_master_layer():
             return
-        try:
-            self.editor.undo_manager.extend_undo_area(0, 0, 1, 1)  # dummy for the moment
-            self.editor.undo_manager.save_undo_state(self.editor.master_layer_copy(), label)
-        except Exception:
-            pass
+        if undoable:
+            try:
+                undo = self.editor.undo_manager
+                undo.x_start, undo.x_stop = 0, 1
+                undo.y_start, undo.y_stop = 0, 1
+                undo.save_undo_state(self.editor.master_layer(), label)
+            except Exception as e:
+                traceback.print_tb(e.__traceback__)
         self.set_master_layer(transf_func(self.master_layer()))
         self.set_layer_stack([transf_func(layer) for layer in self.layer_stack()])
         self.copy_master_layer()
@@ -25,11 +30,11 @@ class TransfromationManager(LayerCollectionHandler):
         self.editor.display_manager.update_thumbnails()
         self.editor.mark_as_modified()
 
-    def rotate_90_cw(self):
-        self.transform(rotate_90_cw, "Rotate 90° Clockwise")
+    def rotate_90_cw(self, undoable=True):
+        self.transform(rotate_90_cw, gui_constants.ROTATE_90_CW_LABEL, undoable)
 
-    def rotate_90_ccw(self):
-        self.transform(rotate_90_ccw, "Rotate 90° Anticlockwise")
+    def rotate_90_ccw(self, undoable=True):
+        self.transform(rotate_90_ccw, gui_constants.ROTATE_90_CCW_LABEL, undoable)
 
-    def rotate_180(self):
-        self.transform(rotate_180, "Rotate 180°")
+    def rotate_180(self, undoable=True):
+        self.transform(rotate_180, gui_constants.ROTATE_180_LABEL, undoable)

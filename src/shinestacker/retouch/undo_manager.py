@@ -6,8 +6,9 @@ from .. config.gui_constants import gui_constants
 class UndoManager(QObject):
     stack_changed = Signal(bool, str, bool, str)
 
-    def __init__(self):
+    def __init__(self, transformation_manager):
         super().__init__()
+        self.transformation_manager = transformation_manager
         self.x_start = None
         self.y_start = None
         self.x_end = None
@@ -59,7 +60,16 @@ class UndoManager(QObject):
             'description': undo_state['description']
         }
         self.redo_stack.append(redo_state)
-        layer[y_start:y_end, x_start:x_end] = undo_state['master']
+        descr = undo_state['description']
+        if descr.startswith(gui_constants.ROTATE_LABEL):
+            if descr == gui_constants.ROTATE_90_CW_LABEL:
+                self.transformation_manager.rotate_90_ccw(False)
+            elif descr == gui_constants.ROTATE_90_CCW_LABEL:
+                self.transformation_manager.rotate_90_cw(False)
+            elif descr == gui_constants.ROTATE_180_LABEL:
+                self.transformation_manager.rotate_180(False)
+        else:
+            layer[y_start:y_end, x_start:x_end] = undo_state['master']
         undo_desc = self.undo_stack[-1]['description'] if self.undo_stack else ""
         redo_desc = redo_state['description']
         self.stack_changed.emit(bool(self.undo_stack), undo_desc, bool(self.redo_stack), redo_desc)
@@ -76,7 +86,16 @@ class UndoManager(QObject):
             'description': redo_state['description']
         }
         self.undo_stack.append(undo_state)
-        layer[y_start:y_end, x_start:x_end] = redo_state['master']
+        descr = undo_state['description']
+        if descr.startswith(gui_constants.ROTATE_LABEL):
+            if descr == gui_constants.ROTATE_90_CW_LABEL:
+                self.transformation_manager.rotate_90_cw(False)
+            elif descr == gui_constants.ROTATE_90_CCW_LABEL:
+                self.transformation_manager.rotate_90_ccw(False)
+            elif descr == gui_constants.ROTATE_180_LABEL:
+                self.transformation_manager.rotate_180(False)
+        else:
+            layer[y_start:y_end, x_start:x_end] = redo_state['master']
         undo_desc = undo_state['description']
         redo_desc = self.redo_stack[-1]['description'] if self.redo_stack else ""
         self.stack_changed.emit(bool(self.undo_stack), undo_desc, bool(self.redo_stack), redo_desc)

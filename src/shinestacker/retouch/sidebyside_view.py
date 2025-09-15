@@ -410,7 +410,7 @@ class DoubleViewBase(ViewStrategy, QWidget, ViewSignals):
         self.current_scene.scale(self.zoom_factor(), self.zoom_factor())
         self.current_scene.setSceneRect(QRectF(self.pixmap_item_current.boundingRect()))
 
-    def _arrange_images(self):
+    def arrange_images(self):
         if self.status.empty():
             return
         if self.pixmap_item_master.pixmap().height() == 0:

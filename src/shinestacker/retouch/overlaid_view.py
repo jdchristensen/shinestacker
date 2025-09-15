@@ -73,7 +73,7 @@ class OverlaidView(ViewStrategy, ImageGraphicsViewBase, ViewSignals):
         self.pixmap_item_master.setVisible(False)
         self.pixmap_item_current.setVisible(True)
 
-    def _arrange_images(self):
+    def arrange_images(self):
         if self.empty():
             return
         pixmap = self.pixmap_item_master.pixmap()

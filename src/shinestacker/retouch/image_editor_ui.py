@@ -1,4 +1,4 @@
-# pylint: disable=C0114, C0115, C0116, E0611, R0902, R0914, R0915, R0904
+# pylint: disable=C0114, C0115, C0116, E0611, R0902, R0914, R0915, R0904, W0108
 from functools import partial
 import numpy as np
 from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QFrame, QLabel, QMenu,
@@ -32,10 +32,6 @@ class ImageEditorUI(QMainWindow, LayerCollectionHandler):
         LayerCollectionHandler.__init__(self, LayerCollection())
         self._recent_file_manager = RecentFileManager("shinestacker-recent-images-files.txt")
         self.thumbnail_highlight = gui_constants.THUMB_MASTER_HI_COLOR
-        self.undo_manager = UndoManager()
-        self.undo_action = None
-        self.redo_action = None
-        self.undo_manager.stack_changed.connect(self.update_undo_redo_actions)
         self.io_gui_handler = None
         self.display_manager = None
         self.brush = Brush()
@@ -43,6 +39,10 @@ class ImageEditorUI(QMainWindow, LayerCollectionHandler):
         self.modified = False
         self.mask_layer = None
         self.transformation_manager = TransfromationManager(self)
+        self.undo_manager = UndoManager(self.transformation_manager)
+        self.undo_action = None
+        self.redo_action = None
+        self.undo_manager.stack_changed.connect(self.update_undo_redo_actions)
         self.filter_manager = FilterManager(self)
         self.filter_manager.register_filter("Denoise", DenoiseFilter)
         self.filter_manager.register_filter("Unsharp Mask", UnsharpMaskFilter)
@@ -296,14 +296,14 @@ class ImageEditorUI(QMainWindow, LayerCollectionHandler):
         edit_menu.addSeparator()
 
         transf_menu = QMenu("&Transform")
-        rotate_90_cw_action = QAction("Rotate 90° Clockwise", self)
+        rotate_90_cw_action = QAction(gui_constants.ROTATE_90_CW_LABEL, self)
         transf_menu.addAction(rotate_90_cw_action)
-        rotate_90_cw_action.triggered.connect(self.transformation_manager.rotate_90_cw)
-        rotate_90_ccw_action = QAction("Rotate 90° Anticlockwise", self)
+        rotate_90_cw_action.triggered.connect(lambda: self.transformation_manager.rotate_90_cw())
+        rotate_90_ccw_action = QAction(gui_constants.ROTATE_90_CCW_LABEL, self)
         transf_menu.addAction(rotate_90_ccw_action)
-        rotate_90_ccw_action.triggered.connect(self.transformation_manager.rotate_90_ccw)
-        rotate_180_action = QAction("Rotate 180°", self)
-        rotate_180_action.triggered.connect(self.transformation_manager.rotate_180)
+        rotate_90_ccw_action.triggered.connect(lambda: self.transformation_manager.rotate_90_ccw())
+        rotate_180_action = QAction(gui_constants.ROTATE_180_LABEL, self)
+        rotate_180_action.triggered.connect(lambda: self.transformation_manager.rotate_180())
         transf_menu.addAction(rotate_180_action)
         edit_menu.addMenu(transf_menu)
 
