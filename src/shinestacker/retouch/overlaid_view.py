@@ -51,10 +51,12 @@ class OverlaidView(ViewStrategy, ImageGraphicsViewBase, ViewSignals):
                                gui_constants.MIN_ZOOMED_IMG_HEIGHT / img_height))
         self.set_max_scale(gui_constants.MAX_ZOOMED_IMG_PX_SIZE)
         self.set_zoom_factor(1.0)
+        self.resetTransform()
         self.fitInView(self.pixmap_item_master, Qt.KeepAspectRatio)
         self.set_zoom_factor(self.get_current_scale())
         self.set_zoom_factor(max(self.min_scale(), min(self.max_scale(), self.zoom_factor())))
         self.scale(self.zoom_factor(), self.zoom_factor())
+        self.centerOn(self.pixmap_item_master)
 
     def set_current_image(self, qimage):
         self.status.set_current_image(qimage)
