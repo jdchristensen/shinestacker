@@ -1,5 +1,5 @@
 # pylint: disable=C0114, C0115, C0116, R0904, R0915, E0611, R0902, R0911, R0914, E1003
-from PySide6.QtCore import Qt, Signal, QEvent, QRectF, QPoint
+from PySide6.QtCore import Qt, Signal, QEvent, QRectF
 from PySide6.QtGui import QPixmap, QPen, QColor, QCursor
 from PySide6.QtWidgets import QWidget, QHBoxLayout, QVBoxLayout, QFrame, QGraphicsEllipseItem
 from .. config.gui_constants import gui_constants
@@ -201,43 +201,23 @@ class DoubleViewBase(ViewStrategy, QWidget, ViewSignals):
         super().keyReleaseEvent(event)
         if event.key() == Qt.Key_Space:
             self.update_brush_cursor()
-
     # pylint: enable=C0103
 
     def handle_wheel_event(self, event):
         if self.empty() or self.gesture_active:
             return
-            
         if event.source() == Qt.MouseEventNotSynthesized:  # Physical mouse
             if self.control_pressed:
-                # Ctrl + wheel: change brush size
                 self.brush_size_change_requested.emit(1 if event.angleDelta().y() > 0 else -1)
             else:
-                # Wheel without Ctrl: handle zoom like OverlaidView
-                # Determine which view the event came from
-                sender_view = self.sender()
-                zoom_in_factor = 1.10
-                zoom_out_factor = 1 / zoom_in_factor
-                
                 if event.angleDelta().y() > 0:  # Zoom in
-                    new_scale = self.zoom_factor() * zoom_in_factor
-                    if new_scale <= self.max_scale():
-                        self.set_zoom_factor(new_scale)
-                        self._apply_zoom_to_view(sender_view, zoom_in_factor)
+                    self.zoom_in()
                 else:  # Zoom out
-                    new_scale = self.zoom_factor() * zoom_out_factor
-                    if new_scale >= self.min_scale():
-                        self.set_zoom_factor(new_scale)
-                        self._apply_zoom_to_view(sender_view, zoom_out_factor)
-                
-                self.update_cursor_pen_width()
-                self.update_brush_cursor()
-        else:
-            # Touchpad event - handle scrolling
+                    self.zoom_out()
+        else:  # Touchpad event - handle scrolling
             if not self.control_pressed:
                 delta = event.pixelDelta() or event.angleDelta() / 8
                 if delta:
-                    # Scroll both views
                     self.scroll_view(self.master_view, delta.x(), delta.y())
                     self.scroll_view(self.current_view, delta.x(), delta.y())
 
@@ -462,16 +442,10 @@ class DoubleViewBase(ViewStrategy, QWidget, ViewSignals):
     def _apply_zoom(self):
         if self.empty():
             return
-            
-        # Get the current scale factors
         current_scale_master = self.master_view.transform().m11()
         current_scale_current = self.current_view.transform().m11()
-        
-        # Calculate the scale factor needed to reach the target zoom
         scale_factor_master = self.zoom_factor() / current_scale_master
         scale_factor_current = self.zoom_factor() / current_scale_current
-        
-        # Apply scaling to both views
         self.master_view.scale(scale_factor_master, scale_factor_master)
         self.current_view.scale(scale_factor_current, scale_factor_current)
 
