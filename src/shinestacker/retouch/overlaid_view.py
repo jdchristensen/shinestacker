@@ -1,4 +1,4 @@
-# pylint: disable=C0114, C0115, C0116, E0611, E1101, R0904, R0912, R0914, R0902
+# pylint: disable=C0114, C0115, C0116, E0611, E1101, R0904, R0912, R0914, R0902, R0801
 from PySide6.QtGui import QPixmap
 from PySide6.QtCore import Qt, QPointF, QEvent, QRectF
 from .. config.gui_constants import gui_constants
@@ -133,8 +133,8 @@ class OverlaidView(ViewStrategy, ImageGraphicsViewBase, ViewSignals):
             if self.control_pressed:
                 self.brush_size_change_requested.emit(1 if event.angleDelta().y() > 0 else -1)
             else:
-                zoom_in_factor = 1.10
-                zoom_out_factor = 1 / zoom_in_factor
+                zoom_in_factor = gui_constants.ZOOM_IN_FACTOR
+                zoom_out_factor = gui_constants.ZOOM_OUT_FACTOR
                 current_scale = self.get_current_scale()
                 if event.angleDelta().y() > 0:  # Zoom in
                     new_scale = current_scale * zoom_in_factor
@@ -208,7 +208,7 @@ class OverlaidView(ViewStrategy, ImageGraphicsViewBase, ViewSignals):
 
     def handle_pinch_gesture(self, pinch):
         if pinch.state() == Qt.GestureStarted:
-            self.pinch_start_scale = self.get_current_scale()
+            self.pinch_start_scale = self.zoom_factor()
             self.pinch_center_view = pinch.centerPoint()
             self.pinch_center_scene = self.mapToScene(self.pinch_center_view.toPoint())
             self.gesture_active = True
