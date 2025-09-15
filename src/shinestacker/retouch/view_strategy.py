@@ -2,8 +2,8 @@
 import math
 from abc import abstractmethod
 import numpy as np
-from PySide6.QtCore import Qt, QPointF, QTime, QPoint, Signal
-from PySide6.QtGui import QImage, QPainter, QColor, QBrush, QPen, QCursor
+from PySide6.QtCore import Qt, QPointF, QTime, QPoint, Signal, QRectF
+from PySide6.QtGui import QImage, QPainter, QColor, QBrush, QPen, QCursor, QPixmap
 from PySide6.QtWidgets import (
     QGraphicsEllipseItem, QGraphicsView, QGraphicsScene, QGraphicsPixmapItem)
 from .. config.gui_constants import gui_constants
@@ -80,6 +80,10 @@ class ViewStrategy(LayerCollectionHandler):
         pass
 
     @abstractmethod
+    def get_current_scene(self):
+        pass
+
+    @abstractmethod
     def get_views(self):
         pass
 
@@ -95,19 +99,35 @@ class ViewStrategy(LayerCollectionHandler):
     def get_master_pixmap(self):
         pass
 
+    @abstractmethod
+    def get_current_pixmap(self):
+        pass
+
+    @abstractmethod
     def show_master(self):
         pass
 
+    @abstractmethod
     def show_current(self):
         pass
 
-    @abstractmethod
     def update_master_display(self):
-        pass
+        if not self.empty():
+            master_qimage = self.numpy_to_qimage(self.master_layer())
+            if master_qimage:
+                pixmap = QPixmap.fromImage(master_qimage)
+                self.get_master_pixmap().setPixmap(pixmap)
+                self.get_master_scene().setSceneRect(QRectF(pixmap.rect()))
+                self._arrange_images()
 
-    @abstractmethod
     def update_current_display(self):
-        pass
+        if not self.empty() and self.number_of_layers() > 0:
+            current_qimage = self.numpy_to_qimage(self.current_layer())
+            if current_qimage:
+                pixmap = QPixmap.fromImage(current_qimage)
+                self.get_current_pixmap().setPixmap(pixmap)
+                self.get_current_scene().setSceneRect(QRectF(pixmap.rect()))
+                self._arrange_images()
 
     def set_allow_cursor_preview(self, state):
         self.allow_cursor_preview = state
@@ -223,6 +243,14 @@ class ViewStrategy(LayerCollectionHandler):
             self.set_zoom_factor(new_scale)
             master_view.centerOn(old_center)
             self.update_brush_cursor()
+
+    def apply_zoom(self):
+        if self.empty():
+            return
+        for view in self.get_views():
+            current_scale = view.transform().m11()
+            scale_factor = self.zoom_factor() / current_scale
+            view.scale(scale_factor, scale_factor)
 
     def zoom_out(self):
         if self.empty():
@@ -484,7 +512,7 @@ class ViewStrategy(LayerCollectionHandler):
             new_scale = max(self.min_scale(), min(new_scale, self.max_scale()))
             if abs(new_scale - self.zoom_factor()) > 0.01:
                 self.set_zoom_factor(new_scale)
-                self._apply_zoom()
+                self.apply_zoom()
                 new_center = master_view.mapToScene(self.pinch_center_view.toPoint())
                 delta = self.pinch_center_scene - new_center
                 h_scroll = master_view.horizontalScrollBar().value()

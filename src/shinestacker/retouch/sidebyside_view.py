@@ -1,6 +1,6 @@
 # pylint: disable=C0114, C0115, C0116, R0904, R0915, E0611, R0902, R0911, R0914, E1003
 from PySide6.QtCore import Qt, Signal, QEvent, QRectF
-from PySide6.QtGui import QPixmap, QPen, QColor, QCursor
+from PySide6.QtGui import QPen, QColor, QCursor
 from PySide6.QtWidgets import QWidget, QHBoxLayout, QVBoxLayout, QFrame, QGraphicsEllipseItem
 from .. config.gui_constants import gui_constants
 from .view_strategy import ViewStrategy, ImageGraphicsViewBase, ViewSignals
@@ -66,8 +66,8 @@ class DoubleViewBase(ViewStrategy, QWidget, ViewSignals):
         raise NotImplementedError("Subclasses must implement setup_layout")
 
     def create_pixmaps(self):
-        self.current_pixmap_item = self.create_pixmap(self.current_scene)
-        self.master_pixmap_item = self.create_pixmap(self.master_scene)
+        self.pixmap_item_current = self.create_pixmap(self.current_scene)
+        self.pixmap_item_master = self.create_pixmap(self.master_scene)
 
     def _connect_signals(self):
         self.current_view.mouse_pressed.connect(self.handle_current_mouse_press)
@@ -125,8 +125,14 @@ class DoubleViewBase(ViewStrategy, QWidget, ViewSignals):
     def get_master_scene(self):
         return self.master_scene
 
+    def get_current_scene(self):
+        return self.current_scene
+
     def get_master_pixmap(self):
-        return self.master_pixmap_item
+        return self.pixmap_item_master
+
+    def get_current_pixmap(self):
+        return self.pixmap_item_current
 
     def get_views(self):
         return [self.master_view, self.current_view]
@@ -136,8 +142,8 @@ class DoubleViewBase(ViewStrategy, QWidget, ViewSignals):
 
     def get_pixmaps(self):
         return {
-            self.master_pixmap_item: self.master_view,
-            self.current_pixmap_item: self.current_view
+            self.pixmap_item_master: self.master_view,
+            self.pixmap_item_current: self.current_view
         }
 
     # pylint: disable=C0103
@@ -228,6 +234,14 @@ class DoubleViewBase(ViewStrategy, QWidget, ViewSignals):
         other_view = self.current_view if view == self.master_view else self.master_view
         other_view.resetTransform()
         other_view.scale(self.zoom_factor(), self.zoom_factor())
+
+    def show_master(self):
+        self.pixmap_item_master.setVisible(True)
+        self.pixmap_item_current.setVisible(True)
+
+    def show_current(self):
+        self.pixmap_item_master.setVisible(True)
+        self.pixmap_item_current.setVisible(True)
 
     def setup_brush_cursor(self):
         super().setup_brush_cursor()
@@ -371,67 +385,39 @@ class DoubleViewBase(ViewStrategy, QWidget, ViewSignals):
         self.status.set_master_image(qimage)
         pixmap = self.status.pixmap_master
         self.master_view.setSceneRect(QRectF(pixmap.rect()))
-        self.master_pixmap_item.setPixmap(pixmap)
+        self.pixmap_item_master.setPixmap(pixmap)
         img_width, img_height = pixmap.width(), pixmap.height()
         self.set_max_min_scales(img_width, img_height)
         self.set_zoom_factor(1.0)
-        self.master_view.fitInView(self.master_pixmap_item, Qt.KeepAspectRatio)
+        self.master_view.fitInView(self.pixmap_item_master, Qt.KeepAspectRatio)
         self.set_zoom_factor(self.get_current_scale())
         self.set_zoom_factor(max(self.min_scale(), min(self.max_scale(), self.zoom_factor())))
         self.master_view.resetTransform()
         self.master_scene.scale(self.zoom_factor(), self.zoom_factor())
-        self.master_view.centerOn(self.master_pixmap_item)
+        self.master_view.centerOn(self.pixmap_item_master)
 
         center = self.master_scene.sceneRect().center()
         self.brush_preview.setPos(max(0, min(center.x(), img_width)),
                                   max(0, min(center.y(), img_height)))
-        self.master_scene.setSceneRect(QRectF(self.master_pixmap_item.boundingRect()))
+        self.master_scene.setSceneRect(QRectF(self.pixmap_item_master.boundingRect()))
 
     def set_current_image(self, qimage):
         self.status.set_current_image(qimage)
         pixmap = self.status.pixmap_current
         self.current_scene.setSceneRect(QRectF(pixmap.rect()))
-        self.current_pixmap_item.setPixmap(pixmap)
+        self.pixmap_item_current.setPixmap(pixmap)
         self.current_view.resetTransform()
         self.current_scene.scale(self.zoom_factor(), self.zoom_factor())
-        self.current_scene.setSceneRect(QRectF(self.current_pixmap_item.boundingRect()))
+        self.current_scene.setSceneRect(QRectF(self.pixmap_item_current.boundingRect()))
 
     def _arrange_images(self):
         if self.status.empty():
             return
-        if self.master_pixmap_item.pixmap().height() == 0:
+        if self.pixmap_item_master.pixmap().height() == 0:
             self.update_master_display()
             self.update_current_display()
             self.reset_zoom()
-        self._apply_zoom()
-
-    def update_master_display(self):
-        if not self.status.empty():
-            master_qimage = self.numpy_to_qimage(self.master_layer())
-            if master_qimage:
-                pixmap = QPixmap.fromImage(master_qimage)
-                self.master_pixmap_item.setPixmap(pixmap)
-                self.master_scene.setSceneRect(QRectF(pixmap.rect()))
-                self._arrange_images()
-
-    def update_current_display(self):
-        if not self.status.empty() and self.number_of_layers() > 0:
-            current_qimage = self.numpy_to_qimage(self.current_layer())
-            if current_qimage:
-                pixmap = QPixmap.fromImage(current_qimage)
-                self.current_pixmap_item.setPixmap(pixmap)
-                self.current_scene.setSceneRect(QRectF(pixmap.rect()))
-                self._arrange_images()
-
-    def _apply_zoom(self):
-        if self.empty():
-            return
-        current_scale_master = self.master_view.transform().m11()
-        current_scale_current = self.current_view.transform().m11()
-        scale_factor_master = self.zoom_factor() / current_scale_master
-        scale_factor_current = self.zoom_factor() / current_scale_current
-        self.master_view.scale(scale_factor_master, scale_factor_master)
-        self.current_view.scale(scale_factor_current, scale_factor_current)
+        self.apply_zoom()
 
     def set_brush(self, brush):
         super().set_brush(brush)

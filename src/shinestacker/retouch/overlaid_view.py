@@ -1,5 +1,4 @@
 # pylint: disable=C0114, C0115, C0116, E0611, E1101, R0904, R0912, R0914, R0902
-from PySide6.QtGui import QPixmap
 from PySide6.QtCore import Qt, QPointF, QEvent, QRectF
 from .. config.gui_constants import gui_constants
 from .view_strategy import ViewStrategy, ImageGraphicsViewBase, ViewSignals
@@ -26,8 +25,14 @@ class OverlaidView(ViewStrategy, ImageGraphicsViewBase, ViewSignals):
     def get_master_scene(self):
         return self.scene
 
+    def get_current_scene(self):
+        return self.scene
+
     def get_master_pixmap(self):
         return self.pixmap_item_master
+
+    def get_current_pixmap(self):
+        return self.pixmap_item_current
 
     def get_views(self):
         return [self]
@@ -78,20 +83,6 @@ class OverlaidView(ViewStrategy, ImageGraphicsViewBase, ViewSignals):
         scale_factor = self.zoom_factor() / current_scale
         self.scale(scale_factor, scale_factor)
         self.centerOn(self.pixmap_item_master)
-
-    def update_master_display(self):
-        if not self.empty():
-            master_qimage = self.numpy_to_qimage(self.master_layer())
-            if master_qimage:
-                self.pixmap_item_master.setPixmap(QPixmap.fromImage(master_qimage))
-                self._arrange_images()
-
-    def update_current_display(self):
-        if not self.empty() and self.number_of_layers() > 0:
-            current_qimage = self.numpy_to_qimage(self.current_layer())
-            if current_qimage:
-                self.pixmap_item_current.setPixmap(QPixmap.fromImage(current_qimage))
-                self._arrange_images()
 
     def set_view_state(self, state):
         self.status.set_state(state)
@@ -204,10 +195,3 @@ class OverlaidView(ViewStrategy, ImageGraphicsViewBase, ViewSignals):
             self.scroll_view(self, int(scaled_delta.x()), int(scaled_delta.y()))
         elif pan_gesture.state() == Qt.GestureFinished:
             self.gesture_active = False
-
-    def _apply_zoom(self):
-        if self.empty():
-            return
-        scale = self.transform().m11()
-        scale_factor = self.zoom_factor() / scale
-        self.scale(scale_factor, scale_factor)
