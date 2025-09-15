@@ -198,10 +198,16 @@ class DoubleViewBase(ViewStrategy, QWidget, ViewSignals):
     def wheelEvent(self, event):
         if self.empty() or self.gesture_active:
             return
-        if event.source() == Qt.MouseEventNotSynthesized:
+        if event.source() == Qt.MouseEventNotSynthesized:  # Physical mouse
             if self.control_pressed:
                 self.brush_size_change_requested.emit(1 if event.angleDelta().y() > 0 else -1)
             else:
+                mouse_pos = self.master_view.mapFromGlobal(QCursor.pos())
+                if not self.master_view.rect().contains(mouse_pos):
+                    mouse_pos = self.current_view.mapFromGlobal(QCursor.pos())
+                    if not self.current_view.rect().contains(mouse_pos):
+                        return
+                scene_pos = self.master_view.mapToScene(mouse_pos)
                 zoom_in_factor = 1.10
                 zoom_out_factor = 1 / zoom_in_factor
                 current_scale = self.zoom_factor()
@@ -210,14 +216,27 @@ class DoubleViewBase(ViewStrategy, QWidget, ViewSignals):
                     if new_scale <= self.max_scale():
                         self.set_zoom_factor(new_scale)
                         self._apply_zoom()
+                        new_scene_pos = self.master_view.mapToScene(mouse_pos)
+                        delta = scene_pos - new_scene_pos
+                        h_scroll = self.master_view.horizontalScrollBar().value()
+                        v_scroll = self.master_view.verticalScrollBar().value()
+                        self.master_view.horizontalScrollBar().setValue(h_scroll + int(delta.x() * new_scale))
+                        self.master_view.verticalScrollBar().setValue(v_scroll + int(delta.y() * new_scale))
                 else:  # Zoom out
                     new_scale = current_scale * zoom_out_factor
                     if new_scale >= self.min_scale():
                         self.set_zoom_factor(new_scale)
                         self._apply_zoom()
+                        new_scene_pos = self.master_view.mapToScene(mouse_pos)
+                        delta = scene_pos - new_scene_pos
+                        h_scroll = self.master_view.horizontalScrollBar().value()
+                        v_scroll = self.master_view.verticalScrollBar().value()
+                        self.master_view.horizontalScrollBar().setValue(h_scroll + int(delta.x() * new_scale))
+                        self.master_view.verticalScrollBar().setValue(v_scroll + int(delta.y() * new_scale))
+            
             self.update_cursor_pen_width()
             self.update_brush_cursor()
-        else:
+        else:  # Touchpad event
             if not self.control_pressed:
                 delta = event.pixelDelta() or event.angleDelta() / 8
                 if delta:

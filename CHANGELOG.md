@@ -5,7 +5,11 @@ This page reports the main releases only and the main changes therein.
 ## [v-.-.-] - 2025-09-14
 **Unreleased changes**
 
+### Added
+- implemented image rotation
+
 ## Fixed
+- fixed (partially) zoom in wheel events for side-by-side view
 - restored standard cursor in empty retouch views
 - lower/upper case GUI labels
 
