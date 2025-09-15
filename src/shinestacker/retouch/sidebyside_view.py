@@ -11,7 +11,7 @@ class ImageGraphicsView(ImageGraphicsViewBase):
     mouse_moved = Signal(QEvent)
     mouse_released = Signal(QEvent)
     gesture_event = Signal(QEvent)
-    wheel_zoomed = Signal(bool, QPoint)
+    wheel_event = Signal(QEvent)
 
     # pylint: disable=C0103
     def event(self, event):
@@ -32,11 +32,7 @@ class ImageGraphicsView(ImageGraphicsViewBase):
         super().mouseReleaseEvent(event)
 
     def wheelEvent(self, event):
-        mouse_pos = event.position()
-        if event.angleDelta().y() > 0:
-            self.wheel_zoomed.emit(True, mouse_pos.toPoint())  # Zoom in
-        else:
-            self.wheel_zoomed.emit(False, mouse_pos.toPoint())  # Zoom out
+        self.wheel_event.emit(event)
         event.accept()
     # pylint: enable=C0103
 
@@ -90,8 +86,8 @@ class DoubleViewBase(ViewStrategy, QWidget, ViewSignals):
             self.current_view.horizontalScrollBar().setValue)
         self.master_view.verticalScrollBar().valueChanged.connect(
             self.current_view.verticalScrollBar().setValue)
-        self.current_view.wheel_zoomed.connect(self.handle_wheel_zoom)
-        self.master_view.wheel_zoomed.connect(self.handle_wheel_zoom)
+        self.current_view.wheel_event.connect(self.handle_wheel_event)
+        self.master_view.wheel_event.connect(self.handle_wheel_event)
         # pylint: disable=C0103, W0201
         self.current_view.enterEvent = self.current_view_enter_event
         self.current_view.leaveEvent = self.current_view_leave_event
@@ -208,30 +204,48 @@ class DoubleViewBase(ViewStrategy, QWidget, ViewSignals):
 
     # pylint: enable=C0103
 
-    def handle_wheel_zoom(self, zoom_in, mouse_pos):
+    def handle_wheel_event(self, event):
         if self.empty() or self.gesture_active:
             return
             
-        if self.control_pressed:
-            # Ctrl + wheel: change brush size
-            self.brush_size_change_requested.emit(1 if zoom_in else -1)
-        else:
-            # Wheel without Ctrl: zoom (centering is handled by scale() with AnchorViewCenter)
-            current_scale = self.zoom_factor()
-            
-            if zoom_in:
-                new_scale = current_scale * 1.10
-                if new_scale <= self.max_scale():
-                    self.set_zoom_factor(new_scale)
-                    self._apply_zoom()
+        if event.source() == Qt.MouseEventNotSynthesized:  # Physical mouse
+            if self.control_pressed:
+                # Ctrl + wheel: change brush size
+                self.brush_size_change_requested.emit(1 if event.angleDelta().y() > 0 else -1)
             else:
-                new_scale = current_scale / 1.10
-                if new_scale >= self.min_scale():
-                    self.set_zoom_factor(new_scale)
-                    self._apply_zoom()
-            
-            self.update_cursor_pen_width()
-            self.update_brush_cursor()
+                # Wheel without Ctrl: handle zoom like OverlaidView
+                # Determine which view the event came from
+                sender_view = self.sender()
+                zoom_in_factor = 1.10
+                zoom_out_factor = 1 / zoom_in_factor
+                
+                if event.angleDelta().y() > 0:  # Zoom in
+                    new_scale = self.zoom_factor() * zoom_in_factor
+                    if new_scale <= self.max_scale():
+                        self.set_zoom_factor(new_scale)
+                        self._apply_zoom_to_view(sender_view, zoom_in_factor)
+                else:  # Zoom out
+                    new_scale = self.zoom_factor() * zoom_out_factor
+                    if new_scale >= self.min_scale():
+                        self.set_zoom_factor(new_scale)
+                        self._apply_zoom_to_view(sender_view, zoom_out_factor)
+                
+                self.update_cursor_pen_width()
+                self.update_brush_cursor()
+        else:
+            # Touchpad event - handle scrolling
+            if not self.control_pressed:
+                delta = event.pixelDelta() or event.angleDelta() / 8
+                if delta:
+                    # Scroll both views
+                    self.scroll_view(self.master_view, delta.x(), delta.y())
+                    self.scroll_view(self.current_view, delta.x(), delta.y())
+
+    def _apply_zoom_to_view(self, view, factor):
+        view.scale(factor, factor)
+        other_view = self.current_view if view == self.master_view else self.master_view
+        other_view.resetTransform()
+        other_view.scale(self.zoom_factor(), self.zoom_factor())
 
     def setup_brush_cursor(self):
         super().setup_brush_cursor()
