@@ -26,10 +26,10 @@ class TransfromationManager(LayerCollectionHandler):
         self.editor.mark_as_modified()
 
     def rotate_90_cw(self):
-        self.transform(rotate_90_cw, "Rotate 90° CW")
+        self.transform(rotate_90_cw, "Rotate 90° Clockwise")
 
     def rotate_90_ccw(self):
-        self.transform(rotate_90_ccw, "Rotate 90° CCW")
+        self.transform(rotate_90_ccw, "Rotate 90° Anticlockwise")
 
     def rotate_180(self):
         self.transform(rotate_180, "Rotate 180°")

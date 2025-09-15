@@ -296,10 +296,10 @@ class ImageEditorUI(QMainWindow, LayerCollectionHandler):
         edit_menu.addSeparator()
 
         transf_menu = QMenu("&Transform")
-        rotate_90_cw_action = QAction("Rotate 90° CW", self)
+        rotate_90_cw_action = QAction("Rotate 90° Clockwise", self)
         transf_menu.addAction(rotate_90_cw_action)
         rotate_90_cw_action.triggered.connect(self.transformation_manager.rotate_90_cw)
-        rotate_90_ccw_action = QAction("Rotate 90° CCW", self)
+        rotate_90_ccw_action = QAction("Rotate 90° Anticlockwise", self)
         transf_menu.addAction(rotate_90_ccw_action)
         rotate_90_ccw_action.triggered.connect(self.transformation_manager.rotate_90_ccw)
         rotate_180_action = QAction("Rotate 180°", self)
@@ -309,7 +309,7 @@ class ImageEditorUI(QMainWindow, LayerCollectionHandler):
 
         edit_menu.addSeparator()
 
-        copy_action = QAction("Copy Layer to Master", self)
+        copy_action = QAction("Copy Current Layer to Master", self)
         copy_action.setShortcut("Ctrl+M")
         copy_action.triggered.connect(self.copy_layer_to_master)
         edit_menu.addAction(copy_action)
