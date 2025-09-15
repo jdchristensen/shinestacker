@@ -143,6 +143,9 @@ class LayerCollectionHandler:
     def has_master_layer(self):
         return self.layer_collection.has_master_layer()
 
+    def set_layer(self, idx, img):
+        self.layer_collection.layer_stack[idx] = img
+
     def set_layer_stack(self, stk):
         self.layer_collection.set_layer_stack(stk)
 

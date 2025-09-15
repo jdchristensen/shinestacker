@@ -34,7 +34,6 @@ class BaseFilter(ABC):
     def run_with_preview(self, **kwargs):
         if self.editor.has_no_master_layer():
             return
-
         self.editor.copy_master_layer()
         dlg = QDialog(self.editor)
         layout = QVBoxLayout(dlg)
@@ -143,15 +142,14 @@ class BaseFilter(ABC):
                 h, w = self.editor.master_layer().shape[:2]
             except Exception:
                 h, w = self.editor.master_layer_copy().shape[:2]
-            if hasattr(self.editor, "undo_manager"):
-                try:
-                    self.editor.undo_manager.extend_undo_area(0, 0, w, h)
-                    self.editor.undo_manager.save_undo_state(
-                        self.editor.master_layer_copy(),
-                        self.name
-                    )
-                except Exception:
-                    pass
+            try:
+                self.editor.undo_manager.extend_undo_area(0, 0, w, h)
+                self.editor.undo_manager.save_undo_state(
+                    self.editor.master_layer_copy(),
+                    self.name
+                )
+            except Exception:
+                pass
             final_img = self.apply(self.editor.master_layer_copy(), *params)
             self.editor.set_master_layer(final_img)
             self.editor.copy_master_layer()

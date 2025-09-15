@@ -71,15 +71,13 @@ class OverlaidView(ViewStrategy, ImageGraphicsViewBase, ViewSignals):
 
     def update_master_display(self):
         if not self.empty():
-            master_qimage = self.numpy_to_qimage(
-                self.master_layer())
+            master_qimage = self.numpy_to_qimage(self.master_layer())
             if master_qimage:
                 self.pixmap_item_master.setPixmap(QPixmap.fromImage(master_qimage))
 
     def update_current_display(self):
         if not self.empty() and self.number_of_layers() > 0:
-            current_qimage = self.numpy_to_qimage(
-                self.current_layer())
+            current_qimage = self.numpy_to_qimage(self.current_layer())
             if current_qimage:
                 self.pixmap_item_current.setPixmap(QPixmap.fromImage(current_qimage))
 

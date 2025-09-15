@@ -8,6 +8,7 @@ from PySide6.QtCore import Qt
 from PySide6.QtGui import QGuiApplication
 from .. config.constants import constants
 from .. config.gui_constants import gui_constants
+from .. gui.recent_file_manager import RecentFileManager
 from .image_viewer import ImageViewer
 from .shortcuts_help import ShortcutsHelp
 from .brush import Brush
@@ -22,7 +23,7 @@ from .denoise_filter import DenoiseFilter
 from .unsharp_mask_filter import UnsharpMaskFilter
 from .white_balance_filter import WhiteBalanceFilter
 from .vignetting_filter import VignettingFilter
-from .. gui.recent_file_manager import RecentFileManager
+from .transformation_manager import TransfromationManager
 
 
 class ImageEditorUI(QMainWindow, LayerCollectionHandler):
@@ -41,6 +42,7 @@ class ImageEditorUI(QMainWindow, LayerCollectionHandler):
         self.brush_tool = BrushTool()
         self.modified = False
         self.mask_layer = None
+        self.transformation_manager = TransfromationManager(self)
         self.filter_manager = FilterManager(self)
         self.filter_manager.register_filter("Denoise", DenoiseFilter)
         self.filter_manager.register_filter("Unsharp Mask", UnsharpMaskFilter)
@@ -291,6 +293,20 @@ class ImageEditorUI(QMainWindow, LayerCollectionHandler):
         self.redo_action.setShortcut("Ctrl+Y")
         self.redo_action.triggered.connect(self.redo)
         edit_menu.addAction(self.redo_action)
+        edit_menu.addSeparator()
+
+        transf_menu = QMenu("&Transform")
+        rotate_90_cw_action = QAction("Rotate 90° CW", self)
+        transf_menu.addAction(rotate_90_cw_action)
+        rotate_90_cw_action.triggered.connect(self.transformation_manager.rotate_90_cw)
+        rotate_90_ccw_action = QAction("Rotate 90° CCW", self)
+        transf_menu.addAction(rotate_90_ccw_action)
+        rotate_90_ccw_action.triggered.connect(self.transformation_manager.rotate_90_ccw)
+        rotate_180_action = QAction("Rotate 180°", self)
+        rotate_180_action.triggered.connect(self.transformation_manager.rotate_180)
+        transf_menu.addAction(rotate_180_action)
+        edit_menu.addMenu(transf_menu)
+
         edit_menu.addSeparator()
 
         copy_action = QAction("Copy Layer to Master", self)

@@ -62,6 +62,8 @@ class DisplayManager(QObject, LayerCollectionHandler):
 
     def create_thumbnail(self, layer):
         source_layer = (layer // 256).astype(np.uint8) if layer.dtype == np.uint16 else layer
+        if not source_layer.flags.c_contiguous:
+            source_layer = np.ascontiguousarray(source_layer)
         height, width = source_layer.shape[:2]
         if layer.ndim == 3 and source_layer.shape[-1] == 3:
             qimg = QImage(source_layer.data, width, height, 3 * width, QImage.Format_RGB888)
