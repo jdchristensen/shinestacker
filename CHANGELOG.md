@@ -3,13 +3,13 @@
 This page reports the main releases only and the main changes therein.
 
 ## [v1.5.0] - 2025-09-16
-**GUI updates and fixes**
+**GUI improvements and fixes**
 
 ### Added
 - implemented image rotation
 
 ### Fixed
-- fixed zoom in wheel events for side-by-side view
+- fixed zoom in wheel events for side-by-side views
 - restored standard cursor in empty retouch views
 - lower/upper case GUI labels
 
