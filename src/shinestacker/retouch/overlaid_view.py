@@ -62,8 +62,7 @@ class OverlaidView(ViewStrategy, ImageGraphicsViewBase, ViewSignals):
         self.set_zoom_factor(max(self.min_scale(), min(self.max_scale(), self.zoom_factor())))
         self.scale(self.zoom_factor(), self.zoom_factor())
         self.centerOn(self.pixmap_item_master)
-        self.horizontalScrollBar().setValue(self.status.h_scroll)
-        self.verticalScrollBar().setValue(self.status.v_scroll)
+        self.center_image(self)
 
     def set_current_image(self, qimage):
         self.status.set_current_image(qimage)
@@ -85,8 +84,7 @@ class OverlaidView(ViewStrategy, ImageGraphicsViewBase, ViewSignals):
         if not pixmap.isNull():
             self.setSceneRect(QRectF(pixmap.rect()))
             self.centerOn(self.pixmap_item_master)
-            self.get_master_view().horizontalScrollBar().setValue(self.status.h_scroll)
-            self.get_master_view().verticalScrollBar().setValue(self.status.v_scroll)
+            self.center_image(self)
         current_scale = self.get_current_scale()
         scale_factor = self.zoom_factor() / current_scale
         self.scale(scale_factor, scale_factor)

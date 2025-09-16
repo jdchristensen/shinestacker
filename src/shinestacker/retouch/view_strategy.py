@@ -440,6 +440,10 @@ class ViewStrategy(LayerCollectionHandler):
         self.status.set_scroll(view.horizontalScrollBar().value(),
                                view.verticalScrollBar().value())
 
+    def center_image(self, view):
+        view.horizontalScrollBar().setValue(self.status.h_scroll)
+        view.verticalScrollBar().setValue(self.status.v_scroll)
+
     def mouse_move_event(self, event):
         if self.empty():
             return
@@ -529,8 +533,7 @@ class ViewStrategy(LayerCollectionHandler):
                     int(delta.x() * self.zoom_factor())
                 v_scroll = master_view.verticalScrollBar().value() + \
                     int(delta.y() * self.zoom_factor())
-                master_view.horizontalScrollBar().setValue(h_scroll)
-                master_view.verticalScrollBar().setValue(v_scroll)
                 self.status.set_scroll(h_scroll, v_scroll)
+                self.center_image(master_view)
         elif pinch.state() in (Qt.GestureFinished, Qt.GestureCanceled):
             self.gesture_active = False

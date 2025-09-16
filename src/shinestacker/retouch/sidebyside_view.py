@@ -402,8 +402,7 @@ class DoubleViewBase(ViewStrategy, QWidget, ViewSignals):
         self.brush_preview.setPos(max(0, min(center.x(), img_width)),
                                   max(0, min(center.y(), img_height)))
         self.master_scene.setSceneRect(QRectF(self.pixmap_item_master.boundingRect()))
-        self.master_view.horizontalScrollBar().setValue(self.status.h_scroll)
-        self.master_view.verticalScrollBar().setValue(self.status.v_scroll)
+        self.center_image(self.master_view)
 
     def set_current_image(self, qimage):
         self.status.set_current_image(qimage)
@@ -413,8 +412,7 @@ class DoubleViewBase(ViewStrategy, QWidget, ViewSignals):
         self.current_view.resetTransform()
         self.current_scene.scale(self.zoom_factor(), self.zoom_factor())
         self.current_scene.setSceneRect(QRectF(self.pixmap_item_current.boundingRect()))
-        self.current_view.horizontalScrollBar().setValue(self.status.h_scroll)
-        self.current_view.verticalScrollBar().setValue(self.status.v_scroll)
+        self.center_image(self.current_view)
 
     def arrange_images(self):
         if self.status.empty():
@@ -424,8 +422,7 @@ class DoubleViewBase(ViewStrategy, QWidget, ViewSignals):
             self.update_current_display()
             self.reset_zoom()
         else:
-            self.get_master_view().horizontalScrollBar().setValue(self.status.h_scroll)
-            self.get_master_view().verticalScrollBar().setValue(self.status.v_scroll)
+            self.center_image(self.master_view)
         self.apply_zoom()
 
     def set_brush(self, brush):
