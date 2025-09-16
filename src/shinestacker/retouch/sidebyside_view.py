@@ -312,17 +312,11 @@ class DoubleViewBase(ViewStrategy, QWidget, ViewSignals):
             size = self.brush.size
             radius = size / 2
             self.current_brush_cursor.setRect(
-                scene_pos.x() - radius,
-                scene_pos.y() - radius,
-                size, size
-            )
+                scene_pos.x() - radius, scene_pos.y() - radius, size, size)
             self.current_brush_cursor.show()
             if self.brush_cursor:
                 self.brush_cursor.setRect(
-                    scene_pos.x() - radius,
-                    scene_pos.y() - radius,
-                    size, size
-                )
+                    scene_pos.x() - radius, scene_pos.y() - radius, size, size)
                 self.brush_cursor.show()
             if self.space_pressed:
                 cursor_style = Qt.OpenHandCursor \
