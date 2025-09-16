@@ -294,6 +294,7 @@ class DoubleViewBase(ViewStrategy, QWidget, ViewSignals):
         current_has_mouse = self.current_view.rect().contains(mouse_pos_current)
         master_has_mouse = self.master_view.rect().contains(mouse_pos_master)
         if master_has_mouse:
+            self.brush_preview.show()
             super().update_brush_cursor()
             self.sync_current_cursor_with_master()
             if self.space_pressed:
@@ -304,6 +305,7 @@ class DoubleViewBase(ViewStrategy, QWidget, ViewSignals):
                 self.master_view.setCursor(Qt.BlankCursor)
                 self.current_view.setCursor(Qt.BlankCursor)
         elif current_has_mouse:
+            self.brush_preview.hide()
             scene_pos = self.current_view.mapToScene(mouse_pos_current)
             size = self.brush.size
             radius = size / 2
