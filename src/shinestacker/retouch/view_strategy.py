@@ -52,7 +52,6 @@ class ViewStrategy(LayerCollectionHandler):
         self.pinch_center_view = None
         self.pinch_center_scene = None
         self.pinch_start_scale = None
-        self.last_scroll_pos = None
         self.scrolling = False
         self.dragging = False
         self.last_brush_pos = None
@@ -178,10 +177,10 @@ class ViewStrategy(LayerCollectionHandler):
         return self.cursor_style
 
     def handle_key_press_event(self, _event):
-        return
+        return True
 
     def handle_key_release_event(self, _event):
-        return
+        return True
 
     def clear_image(self):
         for scene in self.get_scenes():
@@ -274,7 +273,6 @@ class ViewStrategy(LayerCollectionHandler):
         if self.empty():
             return
         self.pinch_start_scale = 1.0
-        self.last_scroll_pos = QPointF()
         self.gesture_active = False
         self.pinch_center_view = None
         self.pinch_center_scene = None
@@ -391,32 +389,30 @@ class ViewStrategy(LayerCollectionHandler):
     def keyPressEvent(self, event):
         if self.empty():
             return
-        master_view = self.get_master_view()
         if event.key() == Qt.Key_Space and not self.scrolling:
             self.space_pressed = True
-            master_view.setCursor(Qt.OpenHandCursor)
+            self.get_master_view().setCursor(Qt.OpenHandCursor)
             if self.brush_cursor:
                 self.brush_cursor.hide()
-        self.handle_key_press_event(event)
-        if event.key() == Qt.Key_Control and not self.scrolling:
-            self.control_pressed = True
-        super().keyPressEvent(event)
+        if self.handle_key_press_event(event):
+            if event.key() == Qt.Key_Control and not self.scrolling:
+                self.control_pressed = True
+            super().keyPressEvent(event)
 
     def keyReleaseEvent(self, event):
         if self.empty():
             return
-        master_view = self.get_master_view()
         self.update_brush_cursor()
         if event.key() == Qt.Key_Space:
             self.space_pressed = False
             if not self.scrolling:
-                master_view.setCursor(Qt.BlankCursor)
+                self.get_master_view().setCursor(Qt.BlankCursor)
                 if self.brush_cursor:
                     self.brush_cursor.show()
-        self.handle_key_release_event(event)
-        if event.key() == Qt.Key_Control:
-            self.control_pressed = False
-        super().keyReleaseEvent(event)
+        if self.handle_key_release_event(event):
+            if event.key() == Qt.Key_Control:
+                self.control_pressed = False
+            super().keyReleaseEvent(event)
 
     def leaveEvent(self, event):
         if self.empty():

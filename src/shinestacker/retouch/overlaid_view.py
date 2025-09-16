@@ -94,13 +94,20 @@ class OverlaidView(ViewStrategy, ImageGraphicsViewBase, ViewSignals):
             self.set_zoom_factor(state['zoom'])
 
     def handle_key_press_event(self, event):
+        if event.key() in [Qt.Key_Up, Qt.Key_Down]:
+            return False
         if event.key() == Qt.Key_X:
             self.temp_view_requested.emit(True)
-            self.update_brush_cursor()
+            return False
+        return True
 
     def handle_key_release_event(self, event):
+        if event.key() in [Qt.Key_Up, Qt.Key_Down]:
+            return False
         if event.key() == Qt.Key_X:
             self.temp_view_requested.emit(False)
+            return False
+        return True
 
     # pylint: disable=C0103
     def mousePressEvent(self, event):
