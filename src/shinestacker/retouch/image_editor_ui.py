@@ -716,13 +716,11 @@ class ImageEditorUI(QMainWindow, LayerCollectionHandler):
 
     def set_view_master(self):
         self.display_manager.set_view_master()
-        self.display_manager.refresh_master_view()
         self.thumbnail_highlight = gui_constants.THUMB_MASTER_HI_COLOR
         self.highlight_master_thumbnail()
 
     def set_view_individual(self):
         self.display_manager.set_view_individual()
-        self.display_manager.refresh_current_view()
         self.thumbnail_highlight = gui_constants.THUMB_MASTER_LO_COLOR
         self.highlight_master_thumbnail()
 
