@@ -326,7 +326,7 @@ class ViewStrategy(LayerCollectionHandler):
             if isinstance(item, QGraphicsEllipseItem) and item != self.brush_preview:
                 scene.removeItem(item)
         pen = QPen(QColor(*gui_constants.BRUSH_COLORS['pen']), 1)
-        brush = QBrush(QColor(*gui_constants.BRUSH_COLORS['cursor_inner']))
+        brush = Qt.NoBrush
         self.brush_cursor = scene.addEllipse(
             0, 0, self.brush.size, self.brush.size, pen, brush)
         self.brush_cursor.setZValue(1000)
