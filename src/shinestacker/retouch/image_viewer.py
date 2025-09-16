@@ -37,7 +37,10 @@ class ImageViewer(QWidget):
         if not self.strategy.empty():
             self.strategy.update_master_display()
             self.strategy.update_current_display()
+            self.strategy.setup_brush_cursor()
             self.strategy.update_brush_cursor()
+            self.strategy.setFocus()
+            self.strategy.activateWindow()
 
     def empty(self):
         return self.strategy.empty()
