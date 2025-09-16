@@ -113,7 +113,6 @@ class BrushPreviewItem(QGraphicsPixmapItem, LayerCollectionHandler):
             self.setPixmap(final_pixmap)
             x_start, y_start = max(0, x), max(0, y)
             self.setPos(x_start, y_start)
-            self.show()
         except Exception:
             traceback.print_exc()
             self.hide()

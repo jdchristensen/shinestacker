@@ -40,6 +40,7 @@ class ImageViewer(QWidget):
             self.strategy.update_current_display()
             self.strategy.setup_brush_cursor()
             self.strategy.update_brush_cursor()
+            self.strategy.show_master()
             self.strategy.setFocus()
             self.strategy.activateWindow()
 

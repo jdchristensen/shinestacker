@@ -34,7 +34,6 @@ class DisplayManager(QObject, LayerCollectionHandler):
         self.master_thumbnail_label = master_thumbnail_label
         self.thumbnail_list = thumbnail_list
         self.view_mode = 'master'
-        self.temp_view_individual = False
         self.needs_update = False
         self.update_timer = QTimer()
         self.update_timer.setInterval(gui_constants.PAINT_REFRESH_TIMER)
@@ -149,7 +148,6 @@ class DisplayManager(QObject, LayerCollectionHandler):
         if self.has_no_master_layer():
             return
         self.view_mode = 'master'
-        self.temp_view_individual = False
         self.image_viewer.show_master()
         self.refresh_master_view()
         self.thumbnail_highlight = gui_constants.THUMB_LO_COLOR
@@ -160,7 +158,6 @@ class DisplayManager(QObject, LayerCollectionHandler):
         if self.has_no_master_layer():
             return
         self.view_mode = 'individual'
-        self.temp_view_individual = False
         self.image_viewer.show_current()
         self.refresh_current_view()
         self.thumbnail_highlight = gui_constants.THUMB_HI_COLOR
@@ -171,8 +168,8 @@ class DisplayManager(QObject, LayerCollectionHandler):
         if self.has_no_master_layer():
             return
         self.image_viewer.update_master_display()
-        self.update_master_thumbnail()
         self.image_viewer.refresh_display()
+        self.update_master_thumbnail()
 
     def refresh_current_view(self):
         if self.number_of_layers() == 0:
@@ -181,24 +178,33 @@ class DisplayManager(QObject, LayerCollectionHandler):
         self.image_viewer.refresh_display()
 
     def start_temp_view(self):
-        if not self.temp_view_individual and self.view_mode == 'master':
-            self.temp_view_individual = True
-            self.image_viewer.update_brush_cursor()
-            self.thumbnail_highlight = gui_constants.THUMB_HI_COLOR
-            self.highlight_thumbnail(self.current_layer_idx())
+        if self.view_mode == 'master':
             self.image_viewer.show_current()
             self.refresh_current_view()
-            self.status_message_requested.emit("Temporary view: Individual layer (hold X)")
-
-    def end_temp_view(self):
-        if self.temp_view_individual:
-            self.temp_view_individual = False
-            self.image_viewer.update_brush_cursor()
+            self.thumbnail_highlight = gui_constants.THUMB_HI_COLOR
+            self.highlight_thumbnail(self.current_layer_idx())
+            self.status_message_requested.emit("Temporary view: Individual layer")
+        else:
+            self.image_viewer.show_master()
+            self.image_viewer.strategy.brush_preview.hide()
+            self.refresh_master_view()
             self.thumbnail_highlight = gui_constants.THUMB_LO_COLOR
             self.highlight_thumbnail(self.current_layer_idx())
+            self.status_message_requested.emit("Temporary view: Master")
+
+    def end_temp_view(self):
+        if self.view_mode == 'master':
             self.image_viewer.show_master()
             self.refresh_master_view()
+            self.thumbnail_highlight = gui_constants.THUMB_LO_COLOR
+            self.highlight_thumbnail(self.current_layer_idx())
             self.status_message_requested.emit("View mode: Master")
+        else:
+            self.image_viewer.show_current()
+            self.refresh_current_view()
+            self.thumbnail_highlight = gui_constants.THUMB_HI_COLOR
+            self.highlight_thumbnail(self.current_layer_idx())
+            self.status_message_requested.emit("View: Individual layer")
 
     def allow_cursor_preview(self):
-        return self.view_mode == 'master' and not self.temp_view_individual
+        return self.view_mode == 'master'

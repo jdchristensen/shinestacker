@@ -257,7 +257,7 @@ class DoubleViewBase(ViewStrategy, QWidget, ViewSignals):
             if isinstance(item, QGraphicsEllipseItem) and item != self.brush_preview:
                 self.current_scene.removeItem(item)
         pen_width = gui_constants.BRUSH_LINE_WIDTH / self.zoom_factor()
-        pen = QPen(QColor(255, 0, 0), pen_width)
+        pen = QPen(QColor(255, 0, 0), pen_width, Qt.DotLine)
         brush = Qt.NoBrush
         self.current_brush_cursor = self.current_scene.addEllipse(
             0, 0, self.brush.size, self.brush.size, pen, brush)

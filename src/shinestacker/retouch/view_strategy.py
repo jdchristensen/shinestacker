@@ -345,9 +345,7 @@ class ViewStrategy(LayerCollectionHandler):
         self.brush_cursor.hide()
 
     def update_brush_cursor(self):
-        if self.empty():
-            return
-        if not self.brush_cursor or not self.isVisible():
+        if self.empty() or not self.brush_cursor or not self.isVisible():
             return
         self.update_cursor_pen_width()
         master_view = self.get_master_view()
