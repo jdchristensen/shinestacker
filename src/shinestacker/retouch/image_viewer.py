@@ -35,6 +35,7 @@ class ImageViewer(QWidget):
         self.strategy.show()
         self.strategy.resize(self.size())
         if not self.strategy.empty():
+            self.strategy.cleanup_brush_preview()
             self.strategy.update_master_display()
             self.strategy.update_current_display()
             self.strategy.setup_brush_cursor()

@@ -202,6 +202,11 @@ class ViewStrategy(LayerCollectionHandler):
         if self.brush_cursor:
             self.brush_cursor.hide()
 
+    def cleanup_brush_preview(self):
+        if self.brush_cursor:
+            self.brush_cursor.hide()
+        self.brush_preview.hide()
+
     def set_master_image_np(self, img):
         self.set_master_image(self.numpy_to_qimage(img))
 
