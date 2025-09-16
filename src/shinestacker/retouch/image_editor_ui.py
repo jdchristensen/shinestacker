@@ -360,12 +360,11 @@ class ImageEditorUI(QMainWindow, LayerCollectionHandler):
 
         cursor_menu = view_menu.addMenu("Cursor Style")
 
-        self.cursor_style_actions= {
+        self.cursor_style_actions = {
             'brush': QAction("Simple Brush", self),
             'preview': QAction("Brush Preview", self),
             'outline': QAction("Outline Only", self)
         }
-        cursor_stype = self.image_viewer.get_cursor_style()
         brush_action = self.cursor_style_actions['brush']
         brush_action.setCheckable(True)
         brush_action.triggered.connect(lambda: set_cursor_style('brush'))

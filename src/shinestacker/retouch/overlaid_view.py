@@ -49,62 +49,6 @@ class OverlaidView(ViewStrategy, ImageGraphicsViewBase, ViewSignals):
             self.pixmap_item_current: self
         }
 
-    def set_master_image(self, qimage):
-        self.status.set_master_image(qimage)
-        pixmap = self.status.pixmap_master
-        self.setSceneRect(QRectF(pixmap.rect()))
-        img_width, img_height = pixmap.width(), pixmap.height()
-        self.set_max_min_scales(img_width, img_height)
-        self.set_zoom_factor(1.0)
-        self.resetTransform()
-        self.fitInView(self.pixmap_item_master, Qt.KeepAspectRatio)
-        self.set_zoom_factor(self.get_current_scale())
-        self.set_zoom_factor(max(self.min_scale(), min(self.max_scale(), self.zoom_factor())))
-        self.scale(self.zoom_factor(), self.zoom_factor())
-        self.centerOn(self.pixmap_item_master)
-        self.center_image(self)
-
-    def set_current_image(self, qimage):
-        self.status.set_current_image(qimage)
-        if self.empty():
-            self.setSceneRect(QRectF(self.status.pixmap_current.rect()))
-
-    def show_master(self):
-        self.pixmap_item_master.setVisible(True)
-        self.pixmap_item_current.setVisible(False)
-
-    def show_current(self):
-        self.pixmap_item_master.setVisible(False)
-        self.pixmap_item_current.setVisible(True)
-
-    def arrange_images(self):
-        if self.empty():
-            return
-        pixmap = self.pixmap_item_master.pixmap()
-        if not pixmap.isNull():
-            self.setSceneRect(QRectF(pixmap.rect()))
-            self.centerOn(self.pixmap_item_master)
-            self.center_image(self)
-        current_scale = self.get_current_scale()
-        scale_factor = self.zoom_factor() / current_scale
-        self.scale(scale_factor, scale_factor)
-
-    def handle_key_press_event(self, event):
-        if event.key() in [Qt.Key_Up, Qt.Key_Down]:
-            return False
-        if event.key() == Qt.Key_X:
-            self.temp_view_requested.emit(True)
-            return False
-        return True
-
-    def handle_key_release_event(self, event):
-        if event.key() in [Qt.Key_Up, Qt.Key_Down]:
-            return False
-        if event.key() == Qt.Key_X:
-            self.temp_view_requested.emit(False)
-            return False
-        return True
-
     # pylint: disable=C0103
     def mousePressEvent(self, event):
         self.mouse_press_event(event)
@@ -169,6 +113,68 @@ class OverlaidView(ViewStrategy, ImageGraphicsViewBase, ViewSignals):
         if event.type() == QEvent.Gesture:
             return self.handle_gesture_event(event)
         return super().event(event)
+
+    def set_master_image(self, qimage):
+        self.status.set_master_image(qimage)
+        pixmap = self.status.pixmap_master
+        self.setSceneRect(QRectF(pixmap.rect()))
+        img_width, img_height = pixmap.width(), pixmap.height()
+        self.set_max_min_scales(img_width, img_height)
+        self.set_zoom_factor(1.0)
+        self.resetTransform()
+        self.fitInView(self.pixmap_item_master, Qt.KeepAspectRatio)
+        self.set_zoom_factor(self.get_current_scale())
+        self.set_zoom_factor(max(self.min_scale(), min(self.max_scale(), self.zoom_factor())))
+        self.scale(self.zoom_factor(), self.zoom_factor())
+        self.centerOn(self.pixmap_item_master)
+        self.center_image(self)
+        self.update_cursor_pen_width()
+
+    def set_current_image(self, qimage):
+        self.status.set_current_image(qimage)
+        if self.empty():
+            self.setSceneRect(QRectF(self.status.pixmap_current.rect()))
+        self.update_cursor_pen_width()
+
+    def setup_brush_cursor(self):
+        super().setup_brush_cursor()
+        self.update_cursor_pen_width()
+
+    def show_master(self):
+        self.pixmap_item_master.setVisible(True)
+        self.pixmap_item_current.setVisible(False)
+
+    def show_current(self):
+        self.pixmap_item_master.setVisible(False)
+        self.pixmap_item_current.setVisible(True)
+
+    def arrange_images(self):
+        if self.empty():
+            return
+        pixmap = self.pixmap_item_master.pixmap()
+        if not pixmap.isNull():
+            self.setSceneRect(QRectF(pixmap.rect()))
+            self.centerOn(self.pixmap_item_master)
+            self.center_image(self)
+        current_scale = self.get_current_scale()
+        scale_factor = self.zoom_factor() / current_scale
+        self.scale(scale_factor, scale_factor)
+
+    def handle_key_press_event(self, event):
+        if event.key() in [Qt.Key_Up, Qt.Key_Down]:
+            return False
+        if event.key() == Qt.Key_X:
+            self.temp_view_requested.emit(True)
+            return False
+        return True
+
+    def handle_key_release_event(self, event):
+        if event.key() in [Qt.Key_Up, Qt.Key_Down]:
+            return False
+        if event.key() == Qt.Key_X:
+            self.temp_view_requested.emit(False)
+            return False
+        return True
 
     def handle_gesture_event(self, event):
         if self.empty():

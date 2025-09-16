@@ -140,6 +140,14 @@ class ViewStrategy(LayerCollectionHandler):
                 self.get_current_view().verticalScrollBar().setValue(self.status.v_scroll)
                 self.arrange_images()
 
+    def update_cursor_pen_width(self):
+        pen_width = gui_constants.BRUSH_LINE_WIDTH / self.zoom_factor()
+        if self.brush_cursor is not None:
+            master_pen = self.brush_cursor.pen()
+            master_pen.setWidthF(pen_width)
+            self.brush_cursor.setPen(master_pen)
+        return pen_width
+
     def set_allow_cursor_preview(self, state):
         self.allow_cursor_preview = state
 
@@ -259,6 +267,7 @@ class ViewStrategy(LayerCollectionHandler):
             self.set_zoom_factor(new_scale)
             master_view.centerOn(old_center)
             self.update_brush_cursor()
+            self.update_cursor_pen_width()
 
     def apply_zoom(self):
         if self.empty():
@@ -281,6 +290,7 @@ class ViewStrategy(LayerCollectionHandler):
             self.set_zoom_factor(new_scale)
             master_view.centerOn(old_center)
             self.update_brush_cursor()
+            self.update_cursor_pen_width()
 
     def reset_zoom(self):
         if self.empty():
@@ -297,6 +307,7 @@ class ViewStrategy(LayerCollectionHandler):
             view.resetTransform()
             view.scale(self.zoom_factor(), self.zoom_factor())
         self.update_brush_cursor()
+        self.update_cursor_pen_width()
 
     def actual_size(self):
         if self.empty():
@@ -306,6 +317,7 @@ class ViewStrategy(LayerCollectionHandler):
             view.resetTransform()
             view.scale(self.zoom_factor(), self.zoom_factor())
         self.update_brush_cursor()
+        self.update_cursor_pen_width()
 
     def setup_outline_style(self):
         self.brush_cursor.setPen(QPen(QColor(*gui_constants.BRUSH_COLORS['pen']),
@@ -337,6 +349,7 @@ class ViewStrategy(LayerCollectionHandler):
             return
         if not self.brush_cursor or not self.isVisible():
             return
+        self.update_cursor_pen_width()
         master_view = self.get_master_view()
         mouse_pos = master_view.mapFromGlobal(QCursor.pos())
         if not master_view.rect().contains(mouse_pos):
@@ -543,3 +556,4 @@ class ViewStrategy(LayerCollectionHandler):
                 self.center_image(master_view)
         elif pinch.state() in (Qt.GestureFinished, Qt.GestureCanceled):
             self.gesture_active = False
+        self.update_cursor_pen_width()

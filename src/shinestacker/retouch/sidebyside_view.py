@@ -51,7 +51,6 @@ class DoubleViewBase(ViewStrategy, QWidget, ViewSignals):
         self._connect_signals()
         self.panning_current = False
         self.brush_cursor = None
-        self.setup_brush_cursor()
         self.setFocusPolicy(Qt.StrongFocus)
         self.pan_start = None
         self.pinch_start_scale = None
@@ -193,9 +192,9 @@ class DoubleViewBase(ViewStrategy, QWidget, ViewSignals):
             self.master_view.setCursor(Qt.ArrowCursor)
             self.current_view.setCursor(Qt.ArrowCursor)
         else:
-            if self.brush_cursor:
+            if self.brush_cursor is not None:
                 self.brush_cursor.hide()
-            if self.current_brush_cursor:
+            if self.current_brush_cursor is not None:
                 self.current_brush_cursor.hide()
             self.master_view.setCursor(Qt.ArrowCursor)
             self.current_view.setCursor(Qt.ArrowCursor)
@@ -278,15 +277,12 @@ class DoubleViewBase(ViewStrategy, QWidget, ViewSignals):
             self.current_brush_cursor.hide()
 
     def update_cursor_pen_width(self):
-        if not self.brush_cursor or not self.current_brush_cursor:
-            return
-        pen_width = gui_constants.BRUSH_LINE_WIDTH / self.zoom_factor()
-        master_pen = self.brush_cursor.pen()
-        master_pen.setWidthF(pen_width)
-        self.brush_cursor.setPen(master_pen)
-        current_pen = self.current_brush_cursor.pen()
-        current_pen.setWidthF(pen_width)
-        self.current_brush_cursor.setPen(current_pen)
+        pen_width = super().update_cursor_pen_width()
+        if self.current_brush_cursor:
+            current_pen = self.current_brush_cursor.pen()
+            current_pen.setWidthF(pen_width)
+            self.current_brush_cursor.setPen(current_pen)
+        return pen_width
 
     def update_brush_cursor(self):
         if self.empty():
@@ -374,10 +370,6 @@ class DoubleViewBase(ViewStrategy, QWidget, ViewSignals):
             self.handle_pinch_gesture(pinch_gesture)
             event.accept()
 
-    def handle_pinch_gesture(self, pinch):
-        super().handle_pinch_gesture(pinch)
-        self.update_cursor_pen_width()
-
     def set_master_image(self, qimage):
         self.status.set_master_image(qimage)
         pixmap = self.status.pixmap_master
@@ -397,6 +389,7 @@ class DoubleViewBase(ViewStrategy, QWidget, ViewSignals):
                                   max(0, min(center.y(), img_height)))
         self.master_scene.setSceneRect(QRectF(self.pixmap_item_master.boundingRect()))
         self.center_image(self.master_view)
+        self.update_cursor_pen_width()
 
     def set_current_image(self, qimage):
         self.status.set_current_image(qimage)
@@ -407,6 +400,7 @@ class DoubleViewBase(ViewStrategy, QWidget, ViewSignals):
         self.current_scene.scale(self.zoom_factor(), self.zoom_factor())
         self.current_scene.setSceneRect(QRectF(self.pixmap_item_current.boundingRect()))
         self.center_image(self.current_view)
+        self.update_cursor_pen_width()
 
     def arrange_images(self):
         if self.status.empty():
@@ -451,22 +445,6 @@ class DoubleViewBase(ViewStrategy, QWidget, ViewSignals):
             self.current_brush_cursor.show()
         else:
             self.current_brush_cursor.hide()
-
-    def zoom_in(self):
-        super().zoom_in()
-        self.update_cursor_pen_width()
-
-    def zoom_out(self):
-        super().zoom_out()
-        self.update_cursor_pen_width()
-
-    def reset_zoom(self):
-        super().reset_zoom()
-        self.update_cursor_pen_width()
-
-    def actual_size(self):
-        super().actual_size()
-        self.update_cursor_pen_width()
 
 
 class SideBySideView(DoubleViewBase):
