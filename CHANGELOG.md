@@ -7,7 +7,6 @@ This page reports the main releases only and the main changes therein.
 
 ### Added
 - implemented image rotation
-- dotted cursor in secondary two-image view
 
 ### Fixed
 - fixed zoom in wheel events for side-by-side view
@@ -16,6 +15,7 @@ This page reports the main releases only and the main changes therein.
 
 ### Changed
 - code refactoring and cleanup
+- dotted cursor in secondary two-image view
 
 ---
 
