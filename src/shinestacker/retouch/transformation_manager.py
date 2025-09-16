@@ -1,6 +1,6 @@
 # pylint: disable=C0114, C0115, C0116, E1101, W0718
 import traceback
-from .. algorithms.utils import rotate_90_cw, rotate_90_ccw, rotate_180
+import cv2
 from .. config.gui_constants import gui_constants
 from .layer_collection import LayerCollectionHandler
 
@@ -31,10 +31,13 @@ class TransfromationManager(LayerCollectionHandler):
         self.editor.mark_as_modified()
 
     def rotate_90_cw(self, undoable=True):
-        self.transform(rotate_90_cw, gui_constants.ROTATE_90_CW_LABEL, undoable)
+        self.transform(lambda img: cv2.rotate(img, cv2.ROTATE_90_CLOCKWISE),
+                       gui_constants.ROTATE_90_CW_LABEL, undoable)
 
     def rotate_90_ccw(self, undoable=True):
-        self.transform(rotate_90_ccw, gui_constants.ROTATE_90_CCW_LABEL, undoable)
+        self.transform(lambda img: cv2.rotate(img, cv2.ROTATE_90_COUNTERCLOCKWISE),
+                       gui_constants.ROTATE_90_CCW_LABEL, undoable)
 
     def rotate_180(self, undoable=True):
-        self.transform(rotate_180, gui_constants.ROTATE_180_LABEL, undoable)
+        self.transform(lambda img: cv2.rotate(img, cv2.ROTATE_180),
+                       gui_constants.ROTATE_180_LABEL, undoable)

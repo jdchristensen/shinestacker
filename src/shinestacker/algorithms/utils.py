@@ -93,24 +93,6 @@ def img_bw(img):
     return cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 
 
-def rotate_90_cw(img):
-    if len(img.shape) == 3:
-        return np.rot90(img, k=3, axes=(0, 1))
-    return np.rot90(img, k=3)
-
-
-def rotate_90_ccw(img):
-    if len(img.shape) == 3:
-        return np.rot90(img, k=1, axes=(0, 1))
-    return np.rot90(img, k=1)
-
-
-def rotate_180(img):
-    if len(img.shape) == 3:
-        return np.rot90(img, k=2, axes=(0, 1))
-    return np.rot90(img, k=2)
-
-
 def get_first_image_file(filenames):
     first_img_file = None
     for filename in filenames:
