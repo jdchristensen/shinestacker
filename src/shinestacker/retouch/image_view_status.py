@@ -59,3 +59,7 @@ class ImageViewStatus(QObject):
 
     def set_max_scale(self, min_scale):
         self.max_scale = min_scale
+
+    def set_scroll(self, h, v):
+        self.h_scroll = h
+        self.v_scroll = v

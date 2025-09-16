@@ -47,19 +47,6 @@ class DisplayManager(QObject, LayerCollectionHandler):
             self.refresh_master_view()
             self.needs_update = False
 
-    def refresh_master_view(self):
-        if self.has_no_master_layer():
-            return
-        self.image_viewer.update_master_display()
-        self.update_master_thumbnail()
-        self.image_viewer.refresh_display()
-
-    def refresh_current_view(self):
-        if self.number_of_layers() == 0:
-            return
-        self.image_viewer.update_current_display()
-        self.image_viewer.refresh_display()
-
     def create_thumbnail(self, layer):
         source_layer = (layer // 256).astype(np.uint8) if layer.dtype == np.uint16 else layer
         if not source_layer.flags.c_contiguous:
@@ -180,6 +167,19 @@ class DisplayManager(QObject, LayerCollectionHandler):
         self.highlight_thumbnail(self.current_layer_idx())
         self.status_message_requested.emit("View mode: Individual layers")
         self.cursor_preview_state_changed.emit(False)
+
+    def refresh_master_view(self):
+        if self.has_no_master_layer():
+            return
+        self.image_viewer.update_master_display()
+        self.update_master_thumbnail()
+        self.image_viewer.refresh_display()
+
+    def refresh_current_view(self):
+        if self.number_of_layers() == 0:
+            return
+        self.image_viewer.update_current_display()
+        self.image_viewer.refresh_display()
 
     def start_temp_view(self):
         if not self.temp_view_individual and self.view_mode == 'master':

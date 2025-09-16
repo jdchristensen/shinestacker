@@ -22,6 +22,9 @@ class OverlaidView(ViewStrategy, ImageGraphicsViewBase, ViewSignals):
     def get_master_view(self):
         return self
 
+    def get_current_view(self):
+        return self
+
     def get_master_scene(self):
         return self.scene
 
@@ -59,6 +62,8 @@ class OverlaidView(ViewStrategy, ImageGraphicsViewBase, ViewSignals):
         self.set_zoom_factor(max(self.min_scale(), min(self.max_scale(), self.zoom_factor())))
         self.scale(self.zoom_factor(), self.zoom_factor())
         self.centerOn(self.pixmap_item_master)
+        self.horizontalScrollBar().setValue(self.status.h_scroll)
+        self.verticalScrollBar().setValue(self.status.v_scroll)
 
     def set_current_image(self, qimage):
         self.status.set_current_image(qimage)
@@ -79,19 +84,12 @@ class OverlaidView(ViewStrategy, ImageGraphicsViewBase, ViewSignals):
         pixmap = self.pixmap_item_master.pixmap()
         if not pixmap.isNull():
             self.setSceneRect(QRectF(pixmap.rect()))
+            self.centerOn(self.pixmap_item_master)
+            self.get_master_view().horizontalScrollBar().setValue(self.status.h_scroll)
+            self.get_master_view().verticalScrollBar().setValue(self.status.v_scroll)
         current_scale = self.get_current_scale()
         scale_factor = self.zoom_factor() / current_scale
         self.scale(scale_factor, scale_factor)
-        self.centerOn(self.pixmap_item_master)
-
-    def set_view_state(self, state):
-        self.status.set_state(state)
-        if state:
-            self.resetTransform()
-            self.scale(state['zoom'], state['zoom'])
-            self.horizontalScrollBar().setValue(state['h_scroll'])
-            self.verticalScrollBar().setValue(state['v_scroll'])
-            self.set_zoom_factor(state['zoom'])
 
     def handle_key_press_event(self, event):
         if event.key() in [Qt.Key_Up, Qt.Key_Down]:

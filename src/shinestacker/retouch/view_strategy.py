@@ -75,6 +75,10 @@ class ViewStrategy(LayerCollectionHandler):
         pass
 
     @abstractmethod
+    def get_current_view(self):
+        pass
+
+    @abstractmethod
     def get_master_scene(self):
         pass
 
@@ -121,6 +125,8 @@ class ViewStrategy(LayerCollectionHandler):
                 pixmap = QPixmap.fromImage(master_qimage)
                 self.get_master_pixmap().setPixmap(pixmap)
                 self.get_master_scene().setSceneRect(QRectF(pixmap.rect()))
+                self.get_master_view().horizontalScrollBar().setValue(self.status.h_scroll)
+                self.get_master_view().verticalScrollBar().setValue(self.status.v_scroll)
                 self.arrange_images()
 
     def update_current_display(self):
@@ -130,6 +136,8 @@ class ViewStrategy(LayerCollectionHandler):
                 pixmap = QPixmap.fromImage(current_qimage)
                 self.get_current_pixmap().setPixmap(pixmap)
                 self.get_current_scene().setSceneRect(QRectF(pixmap.rect()))
+                self.get_current_view().horizontalScrollBar().setValue(self.status.h_scroll)
+                self.get_current_view().verticalScrollBar().setValue(self.status.v_scroll)
                 self.arrange_images()
 
     def set_allow_cursor_preview(self, state):
@@ -424,6 +432,14 @@ class ViewStrategy(LayerCollectionHandler):
         super().leaveEvent(event)
     # pylint: enable=C0103
 
+    def scroll_view(self, view, delta_x, delta_y):
+        view.horizontalScrollBar().setValue(
+            view.horizontalScrollBar().value() - delta_x)
+        view.verticalScrollBar().setValue(
+            view.verticalScrollBar().value() - delta_y)
+        self.status.set_scroll(view.horizontalScrollBar().value(),
+                               view.verticalScrollBar().value())
+
     def mouse_move_event(self, event):
         if self.empty():
             return
@@ -458,12 +474,6 @@ class ViewStrategy(LayerCollectionHandler):
             delta = position - self.last_mouse_pos
             self.last_mouse_pos = position
             self.scroll_view(master_view, delta.x(), delta.y())
-
-    def scroll_view(self, view, delta_x, delta_y):
-        view.horizontalScrollBar().setValue(
-            view.horizontalScrollBar().value() - delta_x)
-        view.verticalScrollBar().setValue(
-            view.verticalScrollBar().value() - delta_y)
 
     def mouse_press_event(self, event):
         if self.empty():
@@ -515,11 +525,12 @@ class ViewStrategy(LayerCollectionHandler):
                 self.apply_zoom()
                 new_center = master_view.mapToScene(self.pinch_center_view.toPoint())
                 delta = self.pinch_center_scene - new_center
-                h_scroll = master_view.horizontalScrollBar().value()
-                v_scroll = master_view.verticalScrollBar().value()
-                master_view.horizontalScrollBar().setValue(
-                    h_scroll + int(delta.x() * self.zoom_factor()))
-                master_view.verticalScrollBar().setValue(
-                    v_scroll + int(delta.y() * self.zoom_factor()))
+                h_scroll = master_view.horizontalScrollBar().value() + \
+                    int(delta.x() * self.zoom_factor())
+                v_scroll = master_view.verticalScrollBar().value() + \
+                    int(delta.y() * self.zoom_factor())
+                master_view.horizontalScrollBar().setValue(h_scroll)
+                master_view.verticalScrollBar().setValue(v_scroll)
+                self.status.set_scroll(h_scroll, v_scroll)
         elif pinch.state() in (Qt.GestureFinished, Qt.GestureCanceled):
             self.gesture_active = False
