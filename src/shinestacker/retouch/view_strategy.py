@@ -232,9 +232,9 @@ class ViewStrategy(LayerCollectionHandler):
         return pixmap_item
 
     def refresh_display(self):
-        self.update_brush_cursor()
         for scene in self.get_scenes():
             scene.update()
+        self.update_brush_cursor()
 
     def set_max_min_scales(self, img_width, img_height):
         self.set_min_scale(min(gui_constants.MIN_ZOOMED_IMG_WIDTH / img_width,
