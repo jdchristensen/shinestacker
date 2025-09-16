@@ -25,7 +25,6 @@ class ClickableLabel(QLabel):
 
 class DisplayManager(QObject, LayerCollectionHandler):
     status_message_requested = Signal(str)
-    cursor_preview_state_changed = Signal(bool)
 
     def __init__(self, layer_collection, image_viewer, master_thumbnail_label,
                  thumbnail_list, parent=None):
@@ -151,22 +150,22 @@ class DisplayManager(QObject, LayerCollectionHandler):
             return
         self.view_mode = 'master'
         self.temp_view_individual = False
+        self.image_viewer.show_master()
         self.refresh_master_view()
         self.thumbnail_highlight = gui_constants.THUMB_LO_COLOR
         self.highlight_thumbnail(self.current_layer_idx())
         self.status_message_requested.emit("View mode: Master")
-        self.cursor_preview_state_changed.emit(True)
 
     def set_view_individual(self):
         if self.has_no_master_layer():
             return
         self.view_mode = 'individual'
         self.temp_view_individual = False
+        self.image_viewer.show_current()
         self.refresh_current_view()
         self.thumbnail_highlight = gui_constants.THUMB_HI_COLOR
         self.highlight_thumbnail(self.current_layer_idx())
         self.status_message_requested.emit("View mode: Individual layers")
-        self.cursor_preview_state_changed.emit(False)
 
     def refresh_master_view(self):
         if self.has_no_master_layer():
@@ -200,7 +199,6 @@ class DisplayManager(QObject, LayerCollectionHandler):
             self.image_viewer.show_master()
             self.refresh_master_view()
             self.status_message_requested.emit("View mode: Master")
-            self.cursor_preview_state_changed.emit(True)
 
     def allow_cursor_preview(self):
         return self.view_mode == 'master' and not self.temp_view_individual

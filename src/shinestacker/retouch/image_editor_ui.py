@@ -240,8 +240,6 @@ class ImageEditorUI(QMainWindow, LayerCollectionHandler):
             self.master_thumbnail_label, self.thumbnail_list, parent=self)
         self.io_gui_handler = IOGuiHandler(self.layer_collection, self.undo_manager, parent=self)
         self.display_manager.status_message_requested.connect(self.show_status_message)
-        self.display_manager.cursor_preview_state_changed.connect(
-            self.image_viewer.set_allow_cursor_preview)
         self.io_gui_handler.status_message_requested.connect(self.show_status_message)
         self.io_gui_handler.update_title_requested.connect(self.update_title)
         self.io_gui_handler.mark_as_modified_requested.connect(self.mark_as_modified)

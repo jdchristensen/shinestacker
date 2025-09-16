@@ -143,19 +143,28 @@ class OverlaidView(ViewStrategy, ImageGraphicsViewBase, ViewSignals):
     def show_master(self):
         self.pixmap_item_master.setVisible(True)
         self.pixmap_item_current.setVisible(False)
+        self.brush_preview.show()
 
     def show_current(self):
         self.pixmap_item_master.setVisible(False)
         self.pixmap_item_current.setVisible(True)
+        self.brush_preview.hide()
 
     def arrange_images(self):
         if self.empty():
             return
-        pixmap = self.pixmap_item_master.pixmap()
-        if not pixmap.isNull():
-            self.setSceneRect(QRectF(pixmap.rect()))
-            self.centerOn(self.pixmap_item_master)
-            self.center_image(self)
+        if self.pixmap_item_master.isVisible():
+            pixmap = self.pixmap_item_master.pixmap()
+            if not pixmap.isNull():
+                self.setSceneRect(QRectF(pixmap.rect()))
+                self.centerOn(self.pixmap_item_master)
+                self.center_image(self)
+        elif self.pixmap_item_current.isVisible():
+            pixmap = self.pixmap_item_current.pixmap()
+            if not pixmap.isNull():
+                self.setSceneRect(QRectF(pixmap.rect()))
+                self.centerOn(self.pixmap_item_current)
+                self.center_image(self)
         current_scale = self.get_current_scale()
         scale_factor = self.zoom_factor() / current_scale
         self.scale(scale_factor, scale_factor)
