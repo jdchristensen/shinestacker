@@ -347,19 +347,20 @@ class ViewStrategy(LayerCollectionHandler):
         radius = size / 2
         self.brush_cursor.setRect(scene_pos.x() - radius, scene_pos.y() - radius, size, size)
         allow_cursor_preview = self.display_manager.allow_cursor_preview()
-        if self.cursor_style == 'preview' and allow_cursor_preview:
+        if self.cursor_style == 'preview':
             self.setup_outline_style()
-            self.brush_cursor.hide()
-            pos = QCursor.pos()
-            if isinstance(pos, QPointF):
-                scene_pos = pos
-            else:
-                cursor_pos = master_view.mapFromGlobal(pos)
-                scene_pos = master_view.mapToScene(cursor_pos)
-            self.brush_preview.update(scene_pos, int(size))
+            if allow_cursor_preview:
+                self.brush_cursor.hide()
+                pos = QCursor.pos()
+                if isinstance(pos, QPointF):
+                    scene_pos = pos
+                else:
+                    cursor_pos = master_view.mapFromGlobal(pos)
+                    scene_pos = master_view.mapToScene(cursor_pos)
+                self.brush_preview.update(scene_pos, int(size))
         else:
             self.brush_preview.hide()
-            if self.cursor_style == 'outline' or not allow_cursor_preview:
+            if self.cursor_style == 'outline':
                 self.setup_outline_style()
             else:
                 self.setup_simple_brush_style(scene_pos.x(), scene_pos.y(), radius)

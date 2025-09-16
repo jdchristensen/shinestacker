@@ -326,22 +326,22 @@ class ImageEditorUI(QMainWindow, LayerCollectionHandler):
 
         view_strategy_menu = QMenu("View &Mode", view_menu)
 
-        self.view_action_modes = {
+        self.view_mode_actions = {
             'overlaid': QAction("Overlaid", self),
             'sidebyside': QAction("Side by Side", self),
             'topbottom': QAction("Top-Bottom", self)
         }
-        overlaid_mode = self.view_action_modes['overlaid']
+        overlaid_mode = self.view_mode_actions['overlaid']
         overlaid_mode.setShortcut("Ctrl+1")
         overlaid_mode.setCheckable(True)
         overlaid_mode.triggered.connect(lambda: set_strategy('overlaid'))
         view_strategy_menu.addAction(overlaid_mode)
-        side_by_side_mode = self.view_action_modes['sidebyside']
+        side_by_side_mode = self.view_mode_actions['sidebyside']
         side_by_side_mode.setShortcut("Ctrl+2")
         side_by_side_mode.setCheckable(True)
         side_by_side_mode.triggered.connect(lambda: set_strategy('sidebyside'))
         view_strategy_menu.addAction(side_by_side_mode)
-        side_by_side_mode = self.view_action_modes['topbottom']
+        side_by_side_mode = self.view_mode_actions['topbottom']
         side_by_side_mode.setShortcut("Ctrl+3")
         side_by_side_mode.setCheckable(True)
         side_by_side_mode.triggered.connect(lambda: set_strategy('topbottom'))
@@ -354,30 +354,40 @@ class ImageEditorUI(QMainWindow, LayerCollectionHandler):
             self.view_master_action.setEnabled(enable_shortcuts)
             self.view_individual_action.setEnabled(enable_shortcuts)
             self.toggle_view_master_individual_action.setEnabled(enable_shortcuts)
-            for label, mode in self.view_action_modes.items():
+            for label, mode in self.view_mode_actions.items():
                 mode.setEnabled(label != strategy)
                 mode.setChecked(label == strategy)
 
         cursor_menu = view_menu.addMenu("Cursor Style")
 
+        self.cursor_style_actions= {
+            'brush': QAction("Simple Brush", self),
+            'preview': QAction("Brush Preview", self),
+            'outline': QAction("Outline Only", self)
+        }
         cursor_stype = self.image_viewer.get_cursor_style()
-        brush_action = QAction("Simple Brush", self)
+        brush_action = self.cursor_style_actions['brush']
         brush_action.setCheckable(True)
-        brush_action.setChecked(cursor_stype == 'brush')
-        brush_action.triggered.connect(lambda: self.image_viewer.set_cursor_style('brush'))
+        brush_action.triggered.connect(lambda: set_cursor_style('brush'))
         cursor_menu.addAction(brush_action)
 
-        preview_action = QAction("Brush Preview", self)
+        preview_action = self.cursor_style_actions['preview']
         preview_action.setCheckable(True)
-        preview_action.setChecked(cursor_stype == 'preview')
-        preview_action.triggered.connect(lambda: self.image_viewer.set_cursor_style('preview'))
+        preview_action.triggered.connect(lambda: set_cursor_style('preview'))
         cursor_menu.addAction(preview_action)
 
-        outline_action = QAction("Outline Only", self)
+        outline_action = self.cursor_style_actions['outline']
         outline_action.setCheckable(True)
-        outline_action.setChecked(cursor_stype == 'outline')
-        outline_action.triggered.connect(lambda: self.image_viewer.set_cursor_style('outline'))
+        outline_action.triggered.connect(lambda: set_cursor_style('outline'))
         cursor_menu.addAction(outline_action)
+
+        def set_cursor_style(cursor_style):
+            self.image_viewer.set_cursor_style(cursor_style)
+            for label, style in self.cursor_style_actions.items():
+                style.setEnabled(label != cursor_style)
+                style.setChecked(label == cursor_style)
+
+        set_cursor_style(self.image_viewer.get_cursor_style())
 
         cursor_group = QActionGroup(self)
         cursor_group.addAction(preview_action)
