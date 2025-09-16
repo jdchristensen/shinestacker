@@ -2,11 +2,12 @@
 
 This page reports the main releases only and the main changes therein.
 
-## [v-.-.-] - 2025-09-15
-**Unreleased changes**
+## [v1.5.0] - 2025-09-16
+**GUI updates and fixes**
 
 ### Added
 - implemented image rotation
+- dotted cursor in secondary two-image view
 
 ### Fixed
 - fixed zoom in wheel events for side-by-side view
@@ -14,7 +15,7 @@ This page reports the main releases only and the main changes therein.
 - lower/upper case GUI labels
 
 ### Changed
-- code refactoring
+- code refactoring and cleanup
 
 ---
 
