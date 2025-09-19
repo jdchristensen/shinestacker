@@ -2,6 +2,14 @@
 
 This page reports the main releases only and the main changes therein.
 
+## [V-.-.-] - 2025-09-19
+
+### Fixed
+- fixed zoom in wheel events for side-by-side views
+- restored standard cursor in empty retouch views
+- fixed ghost cursors in double window views
+- lower/upper case GUI labels
+
 ## [v1.5.0] - 2025-09-16
 **GUI improvements and fixes**
 
@@ -11,7 +19,6 @@ This page reports the main releases only and the main changes therein.
 ### Fixed
 - fixed zoom in wheel events for side-by-side views
 - restored standard cursor in empty retouch views
-- fixed ghost cursors in double window views
 - lower/upper case GUI labels
 
 ### Changed
