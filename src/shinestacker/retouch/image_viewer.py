@@ -87,9 +87,6 @@ class ImageViewer(QWidget):
     def set_allow_cursor_preview(self, state):
         self.strategy.set_allow_cursor_preview(state)
 
-    def setup_brush_cursor(self):
-        self.strategy.setup_brush_cursor()
-
     def zoom_in(self):
         self.strategy.zoom_in()
 
@@ -109,7 +106,8 @@ class ImageViewer(QWidget):
         return self.strategy.get_cursor_style()
 
     def set_cursor_style(self, style):
-        self.strategy.set_cursor_style(style)
+        for st in self._strategies.values():
+            st.set_cursor_style(style)
 
     def position_on_image(self, pos):
         return self.strategy.position_on_image(pos)

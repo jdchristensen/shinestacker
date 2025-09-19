@@ -141,12 +141,12 @@ class ViewStrategy(LayerCollectionHandler):
                 self.arrange_images()
 
     def update_cursor_pen_width(self):
-        pen_width = gui_constants.BRUSH_LINE_WIDTH / self.zoom_factor()
+        width = gui_constants.BRUSH_LINE_WIDTH / self.zoom_factor()
         if self.brush_cursor is not None:
-            master_pen = self.brush_cursor.pen()
-            master_pen.setWidthF(pen_width)
-            self.brush_cursor.setPen(master_pen)
-        return pen_width
+            pen = self.brush_cursor.pen()
+            pen.setWidthF(width)
+            self.brush_cursor.setPen(pen)
+        return width
 
     def set_allow_cursor_preview(self, state):
         self.allow_cursor_preview = state
@@ -217,6 +217,8 @@ class ViewStrategy(LayerCollectionHandler):
 
     def set_master_image_np(self, img):
         self.set_master_image(self.numpy_to_qimage(img))
+        if self.brush_cursor is None:
+            self.setup_brush_cursor()
 
     def numpy_to_qimage(self, array):
         if array is None:
@@ -319,11 +321,6 @@ class ViewStrategy(LayerCollectionHandler):
         self.update_brush_cursor()
         self.update_cursor_pen_width()
 
-    def setup_outline_style(self):
-        self.brush_cursor.setPen(QPen(QColor(*gui_constants.BRUSH_COLORS['pen']),
-                                      gui_constants.BRUSH_LINE_WIDTH / self.zoom_factor()))
-        self.brush_cursor.setBrush(Qt.NoBrush)
-
     def setup_simple_brush_style(self, center_x, center_y, radius):
         gradient = create_default_brush_gradient(center_x, center_y, radius, self.brush)
         self.brush_cursor.setPen(QPen(QColor(*gui_constants.BRUSH_COLORS['pen']),
@@ -363,7 +360,7 @@ class ViewStrategy(LayerCollectionHandler):
         self.brush_cursor.setRect(scene_pos.x() - radius, scene_pos.y() - radius, size, size)
         allow_cursor_preview = self.display_manager.allow_cursor_preview()
         if self.cursor_style == 'preview':
-            self.setup_outline_style()
+            self.update_cursor_pen_width()
             if allow_cursor_preview:
                 self.brush_cursor.hide()
                 pos = QCursor.pos()
@@ -376,7 +373,7 @@ class ViewStrategy(LayerCollectionHandler):
         else:
             self.brush_preview.hide()
             if self.cursor_style == 'outline':
-                self.setup_outline_style()
+                self.update_cursor_pen_width()
             else:
                 self.setup_simple_brush_style(scene_pos.x(), scene_pos.y(), radius)
         if not self.brush_cursor.isVisible():

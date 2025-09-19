@@ -181,7 +181,9 @@ class DoubleViewBase(ViewStrategy, QWidget, ViewSignals):
             else:
                 self.master_view.setCursor(Qt.BlankCursor)
                 self.current_view.setCursor(Qt.BlankCursor)
-                if self.brush_cursor:
+                if self.brush_cursor is None:
+                    self.setup_brush_cursor()
+                else:
                     self.brush_cursor.show()
         super().enterEvent(event)
 
@@ -193,7 +195,9 @@ class DoubleViewBase(ViewStrategy, QWidget, ViewSignals):
         else:
             if self.brush_cursor is not None:
                 self.brush_cursor.hide()
-            if self.current_brush_cursor is not None:
+            if self.current_brush_cursor is None:
+                self.setup_brush_cursor()
+            else:
                 self.current_brush_cursor.hide()
             self.master_view.setCursor(Qt.ArrowCursor)
             self.current_view.setCursor(Qt.ArrowCursor)
@@ -247,7 +251,6 @@ class DoubleViewBase(ViewStrategy, QWidget, ViewSignals):
     def setup_brush_cursor(self):
         super().setup_brush_cursor()
         self.setup_current_brush_cursor()
-        self.update_cursor_pen_width()
 
     def setup_current_brush_cursor(self):
         if not self.brush:
@@ -278,6 +281,8 @@ class DoubleViewBase(ViewStrategy, QWidget, ViewSignals):
     def update_brush_cursor(self):
         if self.empty():
             return
+        if self.brush_cursor is None or self.current_brush_cursor is None:
+            self.setup_brush_cursor()
         self.update_cursor_pen_width()
         mouse_pos_global = QCursor.pos()
         mouse_pos_current = self.current_view.mapFromGlobal(mouse_pos_global)
@@ -405,13 +410,6 @@ class DoubleViewBase(ViewStrategy, QWidget, ViewSignals):
         else:
             self.center_image(self.master_view)
         self.apply_zoom()
-
-    def set_brush(self, brush):
-        super().set_brush(brush)
-        if self.brush_cursor:
-            self.master_scene.removeItem(self.brush_cursor)
-        self.setup_brush_cursor()
-        self.setup_current_brush_cursor()
 
     def clear_image(self):
         super().clear_image()

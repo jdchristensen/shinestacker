@@ -144,11 +144,19 @@ class OverlaidView(ViewStrategy, ImageGraphicsViewBase, ViewSignals):
         self.pixmap_item_master.setVisible(True)
         self.pixmap_item_current.setVisible(False)
         self.brush_preview.show()
+        if self.brush_cursor:
+            pen = self.brush_cursor.pen()
+            pen.setStyle(Qt.SolidLine)
+            self.brush_cursor.setPen(pen)
 
     def show_current(self):
         self.pixmap_item_master.setVisible(False)
         self.pixmap_item_current.setVisible(True)
         self.brush_preview.hide()
+        if self.brush_cursor:
+            pen = self.brush_cursor.pen()
+            pen.setStyle(Qt.DotLine)
+            self.brush_cursor.setPen(pen)
 
     def arrange_images(self):
         if self.empty():
