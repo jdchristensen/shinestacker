@@ -258,18 +258,6 @@ class DoubleViewBase(ViewStrategy, QWidget, ViewSignals):
         self.current_brush_cursor = self.create_scene_ellipse(
             self.get_current_scene(), line_style=Qt.DotLine)
 
-    def update_current_brush_cursor(self, scene_pos):
-        if not self.current_brush_cursor or not self.isVisible():
-            return
-        size = self.brush.size
-        radius = size / 2
-        self.current_brush_cursor.setRect(
-            scene_pos.x() - radius, scene_pos.y() - radius, size, size)
-        if self.brush_cursor and self.brush_cursor.isVisible():
-            self.current_brush_cursor.show()
-        else:
-            self.current_brush_cursor.hide()
-
     def update_cursor_pen_width(self):
         pen_width = super().update_cursor_pen_width()
         if self.current_brush_cursor:
@@ -284,22 +272,27 @@ class DoubleViewBase(ViewStrategy, QWidget, ViewSignals):
         if self.brush_cursor is None or self.current_brush_cursor is None:
             self.setup_brush_cursor()
         self.update_cursor_pen_width()
+        if self.space_pressed:
+            cursor_style = Qt.OpenHandCursor if not self.scrolling else Qt.ClosedHandCursor
+            self.master_view.setCursor(cursor_style)
+            self.current_view.setCursor(cursor_style)
+            self.brush_cursor.hide()
+            self.current_brush_cursor.hide()
+            return
+        else:
+            self.master_view.setCursor(Qt.BlankCursor)
+            self.current_view.setCursor(Qt.BlankCursor)
         mouse_pos_global = QCursor.pos()
         mouse_pos_current = self.current_view.mapFromGlobal(mouse_pos_global)
         mouse_pos_master = self.master_view.mapFromGlobal(mouse_pos_global)
         current_has_mouse = self.current_view.rect().contains(mouse_pos_current)
         master_has_mouse = self.master_view.rect().contains(mouse_pos_master)
+        self.current_brush_cursor.hide()
         if master_has_mouse:
-            self.brush_preview.show()
+            if self.cursor_style == 'preview':
+                self.brush_preview.show()
             super().update_brush_cursor()
             self.sync_current_cursor_with_master()
-            if self.space_pressed:
-                cursor_style = Qt.OpenHandCursor if not self.scrolling else Qt.ClosedHandCursor
-                self.master_view.setCursor(cursor_style)
-                self.current_view.setCursor(cursor_style)
-            else:
-                self.master_view.setCursor(Qt.BlankCursor)
-                self.current_view.setCursor(Qt.BlankCursor)
         elif current_has_mouse:
             self.brush_preview.hide()
             scene_pos = self.current_view.mapToScene(mouse_pos_current)
@@ -308,23 +301,12 @@ class DoubleViewBase(ViewStrategy, QWidget, ViewSignals):
             self.current_brush_cursor.setRect(
                 scene_pos.x() - radius, scene_pos.y() - radius, size, size)
             self.current_brush_cursor.show()
-            if self.brush_cursor:
-                self.brush_cursor.setRect(
-                    scene_pos.x() - radius, scene_pos.y() - radius, size, size)
-                self.brush_cursor.show()
-            if self.space_pressed:
-                cursor_style = Qt.OpenHandCursor \
-                    if not self.panning_current else Qt.ClosedHandCursor
-                self.current_view.setCursor(cursor_style)
-                self.master_view.setCursor(cursor_style)
-            else:
-                self.current_view.setCursor(Qt.BlankCursor)
-                self.master_view.setCursor(Qt.BlankCursor)
+            self.brush_cursor.setRect(
+                scene_pos.x() - radius, scene_pos.y() - radius, size, size)
+            self.brush_cursor.show()
         else:
-            if self.brush_cursor:
-                self.brush_cursor.hide()
-            if self.current_brush_cursor:
-                self.current_brush_cursor.hide()
+            self.brush_cursor.hide()
+            self.current_brush_cursor.hide()
             self.master_view.setCursor(Qt.ArrowCursor)
             self.current_view.setCursor(Qt.ArrowCursor)
 

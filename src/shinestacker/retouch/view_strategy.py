@@ -346,7 +346,7 @@ class ViewStrategy(LayerCollectionHandler):
         self.brush_cursor = self.create_scene_ellipse(self.get_master_scene())
 
     def update_brush_cursor(self):
-        if self.empty() or not self.brush_cursor or not self.isVisible():
+        if self.empty() or self.brush_cursor is None or not self.isVisible():
             return
         self.update_cursor_pen_width()
         master_view = self.get_master_view()
@@ -360,7 +360,6 @@ class ViewStrategy(LayerCollectionHandler):
         self.brush_cursor.setRect(scene_pos.x() - radius, scene_pos.y() - radius, size, size)
         allow_cursor_preview = self.display_manager.allow_cursor_preview()
         if self.cursor_style == 'preview':
-            self.update_cursor_pen_width()
             if allow_cursor_preview:
                 self.brush_cursor.hide()
                 pos = QCursor.pos()
@@ -372,9 +371,7 @@ class ViewStrategy(LayerCollectionHandler):
                 self.brush_preview.update(scene_pos, int(size))
         else:
             self.brush_preview.hide()
-            if self.cursor_style == 'outline':
-                self.update_cursor_pen_width()
-            else:
+            if self.cursor_style != 'outline':
                 self.setup_simple_brush_style(scene_pos.x(), scene_pos.y(), radius)
         if not self.brush_cursor.isVisible():
             self.brush_cursor.show()

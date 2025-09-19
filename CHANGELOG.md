@@ -11,6 +11,7 @@ This page reports the main releases only and the main changes therein.
 ### Fixed
 - fixed zoom in wheel events for side-by-side views
 - restored standard cursor in empty retouch views
+- fixed ghost cursors in double window views
 - lower/upper case GUI labels
 
 ### Changed
