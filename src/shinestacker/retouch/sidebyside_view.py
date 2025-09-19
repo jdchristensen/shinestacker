@@ -1,8 +1,7 @@
 # pylint: disable=C0114, C0115, C0116, R0904, R0915, E0611, R0902, R0911, R0914, E1003
 from PySide6.QtCore import Qt, Signal, QEvent, QRectF
-from PySide6.QtGui import QPen, QColor, QCursor
-from PySide6.QtWidgets import QWidget, QHBoxLayout, QVBoxLayout, QFrame, QGraphicsEllipseItem
-from .. config.gui_constants import gui_constants
+from PySide6.QtGui import QCursor
+from PySide6.QtWidgets import QWidget, QHBoxLayout, QVBoxLayout, QFrame
 from .view_strategy import ViewStrategy, ImageGraphicsViewBase, ViewSignals
 
 
@@ -253,16 +252,8 @@ class DoubleViewBase(ViewStrategy, QWidget, ViewSignals):
     def setup_current_brush_cursor(self):
         if not self.brush:
             return
-        for item in self.current_scene.items():
-            if isinstance(item, QGraphicsEllipseItem) and item != self.brush_preview:
-                self.current_scene.removeItem(item)
-        pen_width = gui_constants.BRUSH_LINE_WIDTH / self.zoom_factor()
-        pen = QPen(QColor(255, 0, 0), pen_width, Qt.DotLine)
-        brush = Qt.NoBrush
-        self.current_brush_cursor = self.current_scene.addEllipse(
-            0, 0, self.brush.size, self.brush.size, pen, brush)
-        self.current_brush_cursor.setZValue(1000)
-        self.current_brush_cursor.hide()
+        self.current_brush_cursor = self.create_scene_ellipse(
+            self.get_current_scene(), line_style=Qt.DotLine)
 
     def update_current_brush_cursor(self, scene_pos):
         if not self.current_brush_cursor or not self.isVisible():

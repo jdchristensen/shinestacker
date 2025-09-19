@@ -330,19 +330,23 @@ class ViewStrategy(LayerCollectionHandler):
                                       gui_constants.BRUSH_LINE_WIDTH / self.zoom_factor()))
         self.brush_cursor.setBrush(QBrush(gradient))
 
-    def setup_brush_cursor(self):
-        if not self.brush:
-            return
-        scene = self.get_master_scene()
+    def create_scene_ellipse(self, scene, line_style=Qt.SolidLine):
         for item in scene.items():
             if isinstance(item, QGraphicsEllipseItem) and item != self.brush_preview:
                 scene.removeItem(item)
-        pen = QPen(QColor(*gui_constants.BRUSH_COLORS['pen']), 1)
+        pen_width = gui_constants.BRUSH_LINE_WIDTH / self.zoom_factor()
+        pen = QPen(QColor(255, 0, 0), pen_width, line_style)
         brush = Qt.NoBrush
-        self.brush_cursor = scene.addEllipse(
+        brush_cursor = scene.addEllipse(
             0, 0, self.brush.size, self.brush.size, pen, brush)
-        self.brush_cursor.setZValue(1000)
-        self.brush_cursor.hide()
+        brush_cursor.setZValue(1000)
+        brush_cursor.hide()
+        return brush_cursor
+
+    def setup_brush_cursor(self):
+        if not self.brush:
+            return
+        self.brush_cursor = self.create_scene_ellipse(self.get_master_scene())
 
     def update_brush_cursor(self):
         if self.empty() or not self.brush_cursor or not self.isVisible():
