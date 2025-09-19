@@ -39,7 +39,7 @@ class ShortcutsHelp(QDialog):
         ok_button.clicked.connect(self.accept)
 
     def add_bold_label(self, layout, label):
-        label = QLabel(label)
+        label = QLabel(f"{label}:")
         label.setStyleSheet("font-weight: bold")
         layout.addRow(label)
 
@@ -47,21 +47,21 @@ class ShortcutsHelp(QDialog):
         self.main_layout.insertWidget(0, icon_container())
 
         shortcuts = {
-            "M": "show master layer",
-            "L": "show selected layer",
-            "T": "toggle master/selected layer",
-            "X": "temp. toggle between master and source layer",
-            "↑": "select one layer up",
-            "↓": "selcet one layer down",
-            "Ctrl + O": "open file",
-            "Ctrl + S": "save multilayer tiff",
-            "Crtl + Z": "undo brush draw",
-            "Ctrl + M": "copy selected layer to master",
-            "Ctrl + Cmd + F": "full screen mode",
-            "Ctrl + +": "zoom in",
-            "Ctrl + -": "zoom out",
-            "Ctrl + 0": "adapt to screen",
-            "Ctrl + R": "actual size"
+            "M": "Show master layer",
+            "L": "Show selected layer",
+            "T": "Toggle master/selected layer",
+            "X": "Temporarily toggle between master and source layer",
+            "↑": "Select one layer up",
+            "↓": "Select one layer down",
+            "Ctrl + O": "Open file",
+            "Ctrl + S": "Save multilayer tiff",
+            "Ctrl + Z": "Undo brush draw",
+            "Ctrl + M": "Copy selected layer to master",
+            "Ctrl + Cmd + F": "Full screen mode",
+            "Ctrl + +": "Zoom in",
+            "Ctrl + -": "Zoom out",
+            "Ctrl + 0": "Fit to screen",
+            "Ctrl + R": "Actual size"
         }
 
         self.add_bold_label(left_layout, "Keyboard Shortcuts")
@@ -69,13 +69,13 @@ class ShortcutsHelp(QDialog):
             left_layout.addRow(f"<b>{k}</b>", QLabel(v))
 
         shortcuts = {
-            "Ctrl + 1": "view mode: overlaid",
-            "Ctrl + 2": "view mode: side by side",
-            "Ctrl + 3": "view mode: top-bottom",
-            "[": "increase brush size",
-            "]": "decrease brush size",
-            "{": "increase brush hardness",
-            "}": "decrease brush hardness"
+            "Ctrl + 1": "View: overlaid",
+            "Ctrl + 2": "View: side by side",
+            "Ctrl + 3": "View: top-bottom",
+            "[": "Increase brush size",
+            "]": "Decrease brush size",
+            "{": "Increase brush hardness",
+            "}": "Decrease brush hardness"
         }
 
         self.add_bold_label(right_layout, "Keyboard Shortcuts")
@@ -83,22 +83,26 @@ class ShortcutsHelp(QDialog):
             right_layout.addRow(f"<b>{k}</b>", QLabel(v))
 
         mouse_controls = {
-            "Space + Drag": "pan",
-            "Wheel": "zoom in/out",
-            "Ctrl + Wheel": "adjust brush size",
-            "Left Click": "brush action",
+            "Space + Drag": "Move",
+            "Wheel": "Zoom in/out",
+            "Ctrl + Wheel": "Adjust brush size",
+            "Left Click": "Use brush to copy from selected layer to master",
         }
 
+        spacer = QLabel("")
+        spacer.setFixedHeight(10)
+        right_layout.addWidget(spacer)
         self.add_bold_label(right_layout, "Mouse Controls")
         for k, v in mouse_controls.items():
             right_layout.addRow(f"<b>{k}</b>", QLabel(v))
 
         touchpad_controls = {
-            "Two fingers": "pan",
-            "Pinch": "zoom in/out",
-            "Ctrl + two fingers": "zoom in/out",
+            "Two-finger drag": "Move",
+            "Pinch two fingers": "Zoom in/out"
         }
-        self.add_bold_label(right_layout, " ")
+        spacer = QLabel("")
+        spacer.setFixedHeight(10)
+        right_layout.addWidget(spacer)
         self.add_bold_label(right_layout, "Touchpad Controls")
         for k, v in touchpad_controls.items():
             right_layout.addRow(f"<b>{k}</b>", QLabel(v))
