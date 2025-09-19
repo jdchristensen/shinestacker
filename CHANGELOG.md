@@ -8,6 +8,7 @@ This page reports the main releases only and the main changes therein.
 - consistent cursor style for current layer view in overlaid view
 - fixed ghost cursors in side-by-side views
 - lower/upper case GUI labels
+- improved help text
 
 ## [v1.5.0] - 2025-09-16
 **GUI improvements and fixes**
