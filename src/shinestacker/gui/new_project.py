@@ -108,17 +108,19 @@ class NewProjectDialog(BaseFormDialog):
             step2_layout.addRow("Vignetting correction:", self.vignetting_correction)
         step2_layout.addRow(
             # f" {constants.ACTION_ICONS[constants.ACTION_ALIGNFRAMES]} "
-            "Align layers:", self.align_frames)
+            "Align frames:", self.align_frames)
         step2_layout.addRow(
             # f" {constants.ACTION_ICONS[constants.ACTION_BALANCEFRAMES]} "
-            "Balance layers:", self.balance_frames)
+            "Balance frames:", self.balance_frames)
         step2_layout.addRow(
             # f" {constants.ACTION_ICONS[constants.ACTION_FOCUSSTACKBUNCH]} "
-            "Bunch stack:", self.bunch_stack)
-        step2_layout.addRow("Bunch frames:", self.bunch_frames)
-        step2_layout.addRow("Bunch overlap:", self.bunch_overlap)
+            "Create bunches:", self.bunch_stack)
+        self.bunch_stack.setToolTip("Combine multiple frames into fewer, high-quality "
+                                    "composite frames for easier retouching")
+        step2_layout.addRow("Frames per bunch:", self.bunch_frames)
+        step2_layout.addRow("Overlap between bunches:", self.bunch_overlap)
         self.bunches_label.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
-        step2_layout.addRow("Number of bunches: ", self.bunches_label)
+        step2_layout.addRow("Number of resulting bunches: ", self.bunches_label)
         if self.expert():
             step2_layout.addRow(
                 f" {constants.ACTION_ICONS[constants.ACTION_FOCUSSTACK]} "
@@ -133,14 +135,14 @@ class NewProjectDialog(BaseFormDialog):
         if self.expert():
             step2_layout.addRow(
                 f" {constants.ACTION_ICONS[constants.ACTION_MULTILAYER]} "
-                "Save multi layer TIFF:", self.multi_layer)
+                "Export as multilayer TIFF:", self.multi_layer)
         step2_group.setLayout(step2_layout)
         self.form_layout.addRow(step2_group)
         step3_group = QGroupBox("3) Confirm")
         step3_layout = QVBoxLayout()
         step3_layout.setContentsMargins(15, 0, 15, 15)
         step3_layout.addWidget(
-            QLabel("Click 🆗 to confirm and prepare the project."))
+            QLabel("Click 🆗 to create project with these settings."))
         step3_layout.addWidget(
             QLabel("Select: <b>View</b> > <b>Expert options</b> for advanced configuration."))
         step3_group.setLayout(step3_layout)
@@ -149,6 +151,7 @@ class NewProjectDialog(BaseFormDialog):
         step4_layout = QHBoxLayout()
         step4_layout.setContentsMargins(15, 0, 15, 15)
         step4_layout.addWidget(QLabel("Press ▶️ to run your job."))
+        step4_layout.addStretch()
         icon_path = f"{os.path.dirname(__file__)}/ico/shinestacker.png"
         app_icon = QIcon(icon_path)
         icon_pixmap = app_icon.pixmap(80, 80)
@@ -293,12 +296,12 @@ class NewProjectDialog(BaseFormDialog):
                             "Processing may require a significant amount "
                             "of memory or I/O buffering.\n\n"
                             "Continue anyway?")
-                msg.setInformativeText("You may consider to split the processing "
-                                       " using a bunch stack to reduce memory usage.\n\n"
-                                       '✅ Check the option "Bunch stack".\n\n'
-                                       "➡️ Check expert options for the stacking algorithm."
-                                       'Go to "View" > "Expert Options".'
-                                       )
+                msg.setInformativeText('You may consider creating "bunches" to reduce '
+                                       "the number of frames for retouching.\n\n"
+                                       '✅ Check "Create bunches" to combine frames '
+                                       "into manageable composites.\n\n"
+                                       "➡️ Check expert options for the stacking algorithm.\n\n"
+                                       'Go to "View" > "Expert Options".')
                 msg.setStandardButtons(QMessageBox.Ok | QMessageBox.Cancel)
                 msg.setDefaultButton(QMessageBox.Cancel)
                 if msg.exec_() != QMessageBox.Ok:
