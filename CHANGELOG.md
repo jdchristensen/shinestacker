@@ -6,7 +6,7 @@ This page reports the main releases only and the main changes therein.
 **Several bug fixes**
 
 ### Added
-- new command-line parameters -v1, -v2, -v3, allow different view modes at startup
+- new command-line arguments -v1, -v2, -v3, allow different view modes at startup
 
 ### Fixed
 - consistent and restyled cursor for current layer view
