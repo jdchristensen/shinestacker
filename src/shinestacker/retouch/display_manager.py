@@ -110,7 +110,7 @@ class DisplayManager(QObject, LayerCollectionHandler):
             if ok and new_label and new_label != old_label:
                 label_widget.setText(new_label)
                 self.set_layer_label(i, new_label)
-                self.status_message_requested.emit("Label renamed")
+                self.status_message_requested.emit("Label renamed.")
 
         label_widget.double_clicked.connect(lambda: rename_label(label_widget, label, i))
         content_layout.addWidget(label_widget)
@@ -159,14 +159,14 @@ class DisplayManager(QObject, LayerCollectionHandler):
             return
         self.view_mode = 'master'
         self._master_refresh_and_thumb()
-        self.status_message_requested.emit("View: Master")
+        self.status_message_requested.emit("View: Master.")
 
     def set_view_individual(self):
         if self.has_no_master_layer():
             return
         self.view_mode = 'individual'
         self._current_refresh_and_thumb()
-        self.status_message_requested.emit("View: Individual layers")
+        self.status_message_requested.emit("View: Individual layers.")
 
     def refresh_master_view(self):
         if self.has_no_master_layer():
@@ -184,16 +184,16 @@ class DisplayManager(QObject, LayerCollectionHandler):
     def start_temp_view(self):
         if self.view_mode == 'master':
             self._current_refresh_and_thumb()
-            self.status_message_requested.emit("Temporary view: Individual layer")
+            self.status_message_requested.emit("Temporary view: Individual layer.")
         else:
             self._master_refresh_and_thumb()
             self.image_viewer.strategy.brush_preview.hide()
-            self.status_message_requested.emit("Temporary view: Master")
+            self.status_message_requested.emit("Temporary view: Master.")
 
     def end_temp_view(self):
         if self.view_mode == 'master':
             self._master_refresh_and_thumb()
-            self.status_message_requested.emit("View mode: Master")
+            self.status_message_requested.emit("View mode: Master.")
         else:
             self._current_refresh_and_thumb()
-            self.status_message_requested.emit("View: Individual layer")
+            self.status_message_requested.emit("View: Individual layer.")
