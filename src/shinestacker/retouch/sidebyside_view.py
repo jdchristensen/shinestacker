@@ -253,7 +253,6 @@ class DoubleViewBase(ViewStrategy, QWidget, ViewSignals):
         self.setup_current_brush_cursor()
 
     def setup_current_brush_cursor(self):
-        print("setup_current_brush_cursor")
         if not self.brush:
             return
         self.current_brush_cursor = self.create_alt_circle(

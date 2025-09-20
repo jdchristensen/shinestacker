@@ -23,7 +23,7 @@ class BrushCursor(QGraphicsItemGroup):
         self._arc_items = []
         self._create_arcs()
 
-    def point_on_circle(self, phi_deg):
+    def _point_on_circle(self, phi_deg):
         phi = phi_deg / 180.0 * math.pi
         x0 = (self._rect.left() + self._rect.right()) / 2
         y0 = (self._rect.top() + self._rect.bottom()) / 2
@@ -40,7 +40,7 @@ class BrushCursor(QGraphicsItemGroup):
         span_angle = 90 - 2 * half_gap
         for start_angle in arcs:
             path = QPainterPath()
-            p = self.point_on_circle(start_angle)
+            p = self._point_on_circle(start_angle)
             path.moveTo(*p)
             path.arcTo(self._rect, start_angle, span_angle)
             arc_item = QGraphicsPathItem(path)
@@ -393,7 +393,7 @@ class ViewStrategy(LayerCollectionHandler):
             if isinstance(item, QGraphicsEllipseItem) and item != self.brush_preview:
                 scene.removeItem(item)
         pen_width = gui_constants.BRUSH_LINE_WIDTH / self.zoom_factor()
-        pen = QPen(QColor(255, 0, 0), pen_width, line_style)
+        pen = QPen(QColor(*gui_constants.BRUSH_COLORS['pen']), pen_width, line_style)
         brush = Qt.NoBrush
         brush_cursor = scene.addEllipse(
             0, 0, self.brush.size, self.brush.size, pen, brush)
@@ -406,7 +406,7 @@ class ViewStrategy(LayerCollectionHandler):
             if isinstance(item, BrushCursor) and item != self.brush_preview:
                 scene.removeItem(item)
         pen_width = gui_constants.BRUSH_LINE_WIDTH / self.zoom_factor()
-        pen = QPen(QColor(255, 0, 0), pen_width, line_style)
+        pen = QPen(QColor(*gui_constants.BRUSH_COLORS['pen']), pen_width, line_style)
         brush = Qt.NoBrush
         brush_cursor = BrushCursor(
             0, 0, self.brush.size, pen, brush

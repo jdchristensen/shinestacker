@@ -26,7 +26,7 @@ class _GuiConstants:
         'outer': (255, 0, 0, 200),
         'inner': (255, 0, 0, 150),
         'gradient_end': (255, 0, 0, 0),
-        'pen': (255, 0, 0, 150),
+        'pen': (255, 0, 0, 200),
         'preview': (255, 180, 180),
         'cursor_inner': (255, 0, 0, 120),
         'preview_inner': (255, 255, 255, 150)
