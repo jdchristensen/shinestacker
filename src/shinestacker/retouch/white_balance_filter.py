@@ -116,7 +116,9 @@ class WhiteBalanceFilter(BaseFilter):
         self.editor.image_viewer.strategy.set_mouse_callbacks(self.pick_color_from_click)
 
     def pick_color_from_click(self, event):
+        print("pick color")
         if event.button() == Qt.LeftButton:
+            print("picking color (click)")
             pos = event.pos()
             bgr = self.editor.display_manager.get_pixel_color_at(
                 pos, radius=int(self.editor.brush.size))
