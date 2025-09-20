@@ -58,7 +58,7 @@ class DoubleViewBase(ViewStrategy, QWidget, ViewSignals):
         self.current_view.setFocusPolicy(Qt.NoFocus)
         self.master_view.setFocusPolicy(Qt.NoFocus)
         self.current_brush_cursor = None
-        self.setup_current_brush_cursor()
+        # self.setup_current_brush_cursor()
 
     def setup_layout(self):
         raise NotImplementedError("Subclasses must implement setup_layout")
@@ -253,10 +253,11 @@ class DoubleViewBase(ViewStrategy, QWidget, ViewSignals):
         self.setup_current_brush_cursor()
 
     def setup_current_brush_cursor(self):
+        print("setup_current_brush_cursor")
         if not self.brush:
             return
-        self.current_brush_cursor = self.create_scene_ellipse(
-            self.get_current_scene(), line_style=Qt.DotLine)
+        self.current_brush_cursor = self.create_alt_circle(
+            self.get_current_scene(), line_style=Qt.SolidLine)
 
     def update_cursor_pen_width(self):
         pen_width = super().update_cursor_pen_width()

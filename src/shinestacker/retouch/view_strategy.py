@@ -3,13 +3,74 @@ import math
 from abc import abstractmethod
 import numpy as np
 from PySide6.QtCore import Qt, QPointF, QTime, QPoint, Signal, QRectF
-from PySide6.QtGui import QImage, QPainter, QColor, QBrush, QPen, QCursor, QPixmap
+from PySide6.QtGui import QImage, QPainter, QColor, QBrush, QPen, QCursor, QPixmap, QPainterPath
 from PySide6.QtWidgets import (
-    QGraphicsEllipseItem, QGraphicsView, QGraphicsScene, QGraphicsPixmapItem)
+    QGraphicsEllipseItem, QGraphicsView, QGraphicsScene, QGraphicsPixmapItem,
+    QGraphicsItemGroup, QGraphicsPathItem)
 from .. config.gui_constants import gui_constants
 from .layer_collection import LayerCollectionHandler
 from .brush_gradient import create_default_brush_gradient
 from .brush_preview import BrushPreviewItem
+
+
+class BrushCursor(QGraphicsItemGroup):
+    def __init__(self, x, y, size, pen, brush):
+        super().__init__()
+        self._pen = pen
+        self._radius = size / 2
+        self._brush = brush
+        self._rect = QRectF(x, y, size, size)
+        self._arc_items = []
+        self._create_arcs()
+
+    def point_on_circle(self, phi_deg):
+        phi = phi_deg / 180.0 * math.pi
+        x0 = (self._rect.left() + self._rect.right()) / 2
+        y0 = (self._rect.top() + self._rect.bottom()) / 2
+        return x0 + self._radius * math.cos(phi), y0 - self._radius * math.sin(phi)
+
+    def _create_arcs(self):
+        for item in self._arc_items:
+            self.removeFromGroup(item)
+            if item.scene():
+                item.scene().removeItem(item)
+        self._arc_items = []
+        half_gap = 20
+        arcs = [half_gap, 90 + half_gap, 180 + half_gap, 270 + half_gap]
+        span_angle = 90 - 2 * half_gap
+        for start_angle in arcs:
+            path = QPainterPath()
+            p = self.point_on_circle(start_angle)
+            path.moveTo(*p)
+            path.arcTo(self._rect, start_angle, span_angle)
+            arc_item = QGraphicsPathItem(path)
+            arc_item.setPen(self._pen)
+            arc_item.setBrush(Qt.NoBrush)
+            self.addToGroup(arc_item)
+            self._arc_items.append(arc_item)
+
+    def setPen(self, pen):
+        self._pen = pen
+        for item in self._arc_items:
+            item.setPen(pen)
+
+    def pen(self):
+        return self._pen
+
+    def setBrush(self, brush):
+        self._brush = brush
+        for item in self._arc_items:
+            item.setBrush(Qt.NoBrush)
+
+    def brush(self):
+        return self._brush
+
+    def setRect(self, x, y, w, h):
+        self._rect = QRectF(x, y, w, h)
+        self._create_arcs()
+
+    def rect(self):
+        return self._rect
 
 
 class ViewSignals:
@@ -327,7 +388,7 @@ class ViewStrategy(LayerCollectionHandler):
                                       gui_constants.BRUSH_LINE_WIDTH / self.zoom_factor()))
         self.brush_cursor.setBrush(QBrush(gradient))
 
-    def create_scene_ellipse(self, scene, line_style=Qt.SolidLine):
+    def create_circle(self, scene, line_style=Qt.SolidLine):
         for item in scene.items():
             if isinstance(item, QGraphicsEllipseItem) and item != self.brush_preview:
                 scene.removeItem(item)
@@ -340,10 +401,25 @@ class ViewStrategy(LayerCollectionHandler):
         brush_cursor.hide()
         return brush_cursor
 
+    def create_alt_circle(self, scene, line_style=Qt.SolidLine):
+        for item in scene.items():
+            if isinstance(item, BrushCursor) and item != self.brush_preview:
+                scene.removeItem(item)
+        pen_width = gui_constants.BRUSH_LINE_WIDTH / self.zoom_factor()
+        pen = QPen(QColor(255, 0, 0), pen_width, line_style)
+        brush = Qt.NoBrush
+        brush_cursor = BrushCursor(
+            0, 0, self.brush.size, pen, brush
+        )
+        brush_cursor.setZValue(1000)
+        brush_cursor.hide()
+        scene.addItem(brush_cursor)
+        return brush_cursor
+
     def setup_brush_cursor(self):
         if not self.brush:
             return
-        self.brush_cursor = self.create_scene_ellipse(self.get_master_scene())
+        self.brush_cursor = self.create_circle(self.get_master_scene())
 
     def update_brush_cursor(self):
         if self.empty() or self.brush_cursor is None or not self.isVisible():
