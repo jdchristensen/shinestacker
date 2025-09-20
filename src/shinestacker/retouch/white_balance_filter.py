@@ -116,6 +116,7 @@ class WhiteBalanceFilter(BaseFilter):
         self.editor.image_viewer.strategy.setCursor(Qt.CrossCursor)
         self.original_mouse_press = self.editor.image_viewer.strategy.get_mouse_callbacks()
         self.editor.image_viewer.strategy.set_mouse_callbacks(self.pick_color_from_click)
+        self.editor.view_strategy_menu.setEnabled(False)
 
     def pick_color_from_click(self, event):
         if event.button() == Qt.LeftButton:
@@ -131,6 +132,7 @@ class WhiteBalanceFilter(BaseFilter):
             self.editor.image_viewer.set_cursor_style(self.original_cursor_style)
             self.editor.image_viewer.show_brush_cursor()
             self.editor.image_viewer.show_brush_preview()
+            self.editor.view_strategy_menu.setEnabled(True)
 
     def reset_rgb(self):
         for name, slider in self.sliders.items():

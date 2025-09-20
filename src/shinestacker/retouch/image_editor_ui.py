@@ -309,7 +309,7 @@ class ImageEditorUI(QMainWindow, LayerCollectionHandler):
 
         view_menu.addSeparator()
 
-        view_strategy_menu = QMenu("View &Mode", view_menu)
+        self.view_strategy_menu = QMenu("View &Mode", view_menu)
 
         self.view_mode_actions = {
             'overlaid': QAction("Overlaid", self),
@@ -320,18 +320,18 @@ class ImageEditorUI(QMainWindow, LayerCollectionHandler):
         overlaid_mode.setShortcut("Ctrl+1")
         overlaid_mode.setCheckable(True)
         overlaid_mode.triggered.connect(lambda: self.set_strategy('overlaid'))
-        view_strategy_menu.addAction(overlaid_mode)
+        self.view_strategy_menu.addAction(overlaid_mode)
         side_by_side_mode = self.view_mode_actions['sidebyside']
         side_by_side_mode.setShortcut("Ctrl+2")
         side_by_side_mode.setCheckable(True)
         side_by_side_mode.triggered.connect(lambda: self.set_strategy('sidebyside'))
-        view_strategy_menu.addAction(side_by_side_mode)
+        self.view_strategy_menu.addAction(side_by_side_mode)
         side_by_side_mode = self.view_mode_actions['topbottom']
         side_by_side_mode.setShortcut("Ctrl+3")
         side_by_side_mode.setCheckable(True)
         side_by_side_mode.triggered.connect(lambda: self.set_strategy('topbottom'))
-        view_strategy_menu.addAction(side_by_side_mode)
-        view_menu.addMenu(view_strategy_menu)
+        self.view_strategy_menu.addAction(side_by_side_mode)
+        view_menu.addMenu(self.view_strategy_menu)
 
         cursor_menu = view_menu.addMenu("Cursor Style")
 
