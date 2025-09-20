@@ -1,4 +1,4 @@
-# pylint: disable=C0114, C0115, C0116, E0611, R0913, R0917, R0914, W0718
+# pylint: disable=C0114, C0115, C0116, E0611, R0913, R0917, R0914, W0718, R0915
 import traceback
 import numpy as np
 from PySide6.QtWidgets import QGraphicsPixmapItem
@@ -72,38 +72,52 @@ class BrushPreviewItem(QGraphicsPixmapItem, LayerCollectionHandler):
                 self.hide()
                 return
             radius = size // 2
-            x = int(scene_pos.x() - radius + 0.5)
-            y = int(scene_pos.y() - radius)
+            x_center = int(scene_pos.x() + 0.5)
+            y_center = int(scene_pos.y() + 0.5)
+            x = x_center - radius
+            y = y_center - radius
             w = h = size
             if not self.valid_current_layer_idx():
                 self.hide()
                 return
-            layer_area = self.get_layer_area(self.current_layer(), x, y, w, h)
-            master_area = self.get_layer_area(self.master_layer(), x, y, w, h)
+            height, width = self.current_layer().shape[:2]
+            visible_x = max(0, x)
+            visible_y = max(0, y)
+            visible_w = min(width, x + w) - visible_x
+            visible_h = min(height, y + h) - visible_y
+            if visible_w <= 0 or visible_h <= 0:
+                self.hide()
+                return
+            layer_area = self.get_layer_area(
+                self.current_layer(), visible_x, visible_y, visible_w, visible_h)
+            master_area = self.get_layer_area(
+                self.master_layer(), visible_x, visible_y, visible_w, visible_h)
             if layer_area is None or master_area is None:
                 self.hide()
                 return
-            height, width = self.current_layer().shape[:2]
             full_mask = create_brush_mask(size=size, hardness_percent=self.brush.hardness,
                                           opacity_percent=self.brush.opacity)[:, :, np.newaxis]
-            mask_x_start = max(0, -x) if x < 0 else 0
-            mask_y_start = max(0, -y) if y < 0 else 0
-            mask_x_end = size - (max(0, (x + w) - width)) if (x + w) > width else size
-            mask_y_end = size - (max(0, (y + h) - height)) if (y + h) > height else size
+            mask_x_start = max(0, -x)
+            mask_y_start = max(0, -y)
+            mask_x_end = mask_x_start + visible_w
+            mask_y_end = mask_y_start + visible_h
             mask_area = full_mask[mask_y_start:mask_y_end, mask_x_start:mask_x_end]
             area = (layer_area * mask_area + master_area * (1 - mask_area)) * 255.0
             area = area.astype(np.uint8)
             qimage = QImage(area.data, area.shape[1], area.shape[0],
                             area.strides[0], QImage.Format_RGB888)
-            mask = QPixmap(w, h)
+            mask = QPixmap(visible_w, visible_h)
             mask.fill(Qt.transparent)
             painter = QPainter(mask)
             painter.setPen(Qt.NoPen)
             painter.setBrush(Qt.black)
-            painter.drawEllipse(0, 0, w, h)
+            center_x_in_visible = x_center - visible_x
+            center_y_in_visible = y_center - visible_y
+            painter.drawEllipse(
+                center_x_in_visible - radius, center_y_in_visible - radius, size, size)
             painter.end()
             pixmap = QPixmap.fromImage(qimage)
-            final_pixmap = QPixmap(w, h)
+            final_pixmap = QPixmap(visible_w, visible_h)
             final_pixmap.fill(Qt.transparent)
             painter = QPainter(final_pixmap)
             painter.drawPixmap(0, 0, pixmap)
@@ -111,8 +125,8 @@ class BrushPreviewItem(QGraphicsPixmapItem, LayerCollectionHandler):
             painter.drawPixmap(0, 0, mask)
             painter.end()
             self.setPixmap(final_pixmap)
-            x_start, y_start = max(0, x), max(0, y)
-            self.setPos(x_start, y_start)
+            self.setPos(visible_x, visible_y)
+            self.show()
         except Exception:
             traceback.print_exc()
             self.hide()

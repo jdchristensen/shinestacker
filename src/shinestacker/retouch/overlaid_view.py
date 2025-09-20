@@ -133,6 +133,7 @@ class OverlaidView(ViewStrategy, ImageGraphicsViewBase, ViewSignals):
     def set_master_image(self, qimage):
         self.status.set_master_image(qimage)
         self.setup_scene_image(self.status.pixmap_master, self.pixmap_item_master)
+        self.update_master_display()
 
     def set_current_image(self, qimage):
         self.status.set_current_image(qimage)
@@ -150,6 +151,7 @@ class OverlaidView(ViewStrategy, ImageGraphicsViewBase, ViewSignals):
         if self.brush_cursor:
             self.scene.removeItem(self.brush_cursor)
             self.brush_cursor = self.create_circle(self.scene)
+            self.update_brush_cursor()
 
     def show_current(self):
         self.pixmap_item_master.setVisible(False)
@@ -158,6 +160,7 @@ class OverlaidView(ViewStrategy, ImageGraphicsViewBase, ViewSignals):
         if self.brush_cursor:
             self.scene.removeItem(self.brush_cursor)
             self.brush_cursor = self.create_alt_circle(self.scene)
+            self.update_brush_cursor()
 
     def arrange_images(self):
         if self.empty():

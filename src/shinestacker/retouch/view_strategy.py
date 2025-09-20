@@ -281,6 +281,7 @@ class ViewStrategy(LayerCollectionHandler):
         self.set_master_image(self.numpy_to_qimage(img))
         if self.brush_cursor is None:
             self.setup_brush_cursor()
+        self.show_master()
 
     def numpy_to_qimage(self, array):
         if array is None:
