@@ -18,6 +18,7 @@ class WhiteBalanceFilter(BaseFilter):
         self.color_preview = None
         self.preview_timer = None
         self.original_mouse_press = None
+        self.original_cursor_style = None
 
     def setup_ui(self, dlg, layout, do_preview, restore_original, init_val=None):
         if init_val:
@@ -107,6 +108,7 @@ class WhiteBalanceFilter(BaseFilter):
                 widget.hide()
                 widget.reject()
                 break
+        self.original_cursor_style = self.editor.image_viewer.get_cursor_style()
         self.editor.image_viewer.set_cursor_style('outline')
         self.editor.image_viewer.hide_brush_cursor()
         self.editor.image_viewer.hide_brush_preview()
@@ -116,20 +118,19 @@ class WhiteBalanceFilter(BaseFilter):
         self.editor.image_viewer.strategy.set_mouse_callbacks(self.pick_color_from_click)
 
     def pick_color_from_click(self, event):
-        print("pick color")
         if event.button() == Qt.LeftButton:
-            print("picking color (click)")
             pos = event.pos()
             bgr = self.editor.display_manager.get_pixel_color_at(
                 pos, radius=int(self.editor.brush.size))
             rgb = (bgr[2], bgr[1], bgr[0])
+            new_filter = WhiteBalanceFilter(self.name, self.editor)
+            new_filter.run_with_preview(init_val=rgb)
             QApplication.restoreOverrideCursor()
             self.editor.image_viewer.unsetCursor()
             self.editor.image_viewer.strategy.set_mouse_callbacks(self.original_mouse_press)
+            self.editor.image_viewer.set_cursor_style(self.original_cursor_style)
             self.editor.image_viewer.show_brush_cursor()
             self.editor.image_viewer.show_brush_preview()
-            new_filter = WhiteBalanceFilter(self.name, self.editor)
-            new_filter.run_with_preview(init_val=rgb)
 
     def reset_rgb(self):
         for name, slider in self.sliders.items():

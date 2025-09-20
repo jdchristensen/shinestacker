@@ -215,7 +215,6 @@ class DoubleViewBase(ViewStrategy, QWidget, ViewSignals):
         super().keyReleaseEvent(event)
         if event.key() == Qt.Key_Space:
             self.update_brush_cursor()
-    # pylint: enable=C0103
 
     def get_mouse_callbacks(self):
         return self.master_view.mousePressEvent, self.current_view.mousePressEvent
@@ -226,6 +225,7 @@ class DoubleViewBase(ViewStrategy, QWidget, ViewSignals):
         else:
             self.master_view.mousePressEvent = callbacks
             self.current_view.mousePressEvent = callbacks
+    # pylint: enable=C0103
 
     # pylint: enable=R0801
     def handle_wheel_event(self, event):

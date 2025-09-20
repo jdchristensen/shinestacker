@@ -6,6 +6,7 @@ This page reports the main releases only and the main changes therein.
 **Bug fixes**
 
 ### Fixed
+- fixed white balance filter functionality
 - fixed brush preview visiblity in view mode transitions
 
 ### Changed

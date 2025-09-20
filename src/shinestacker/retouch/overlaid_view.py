@@ -1,4 +1,4 @@
-# pylint: disable=C0114, C0115, C0116, E0611, E1101, R0904, R0912, R0914, R0902
+# pylint: disable=C0114, C0115, C0116, E0611, E1101, R0904, R0912, R0914, R0902, E0202
 from PySide6.QtCore import Qt, QPointF, QEvent, QRectF
 from .. config.gui_constants import gui_constants
 from .view_strategy import ViewStrategy, ImageGraphicsViewBase, ViewSignals
@@ -108,6 +108,12 @@ class OverlaidView(ViewStrategy, ImageGraphicsViewBase, ViewSignals):
                 self.brush_cursor.show()
         super().enterEvent(event)
 
+    def get_mouse_callbacks(self):
+        return self.mousePressEvent
+
+    def set_mouse_callbacks(self, callbacks):
+        self.mousePressEvent = callbacks
+
     def show(self):
         self.show_master()
         super().show()
@@ -117,12 +123,6 @@ class OverlaidView(ViewStrategy, ImageGraphicsViewBase, ViewSignals):
         if event.type() == QEvent.Gesture:
             return self.handle_gesture_event(event)
         return super().event(event)
-
-    def get_mouse_callbacks(self):
-        return self.mousePressEvent
-
-    def set_mouse_callbacks(self, callbacks):
-        self.mousePressEvent = callbacks
 
     def setup_scene_image(self, pixmap, pixmap_item):
         self.setSceneRect(QRectF(pixmap.rect()))
