@@ -58,7 +58,6 @@ class DoubleViewBase(ViewStrategy, QWidget, ViewSignals):
         self.current_view.setFocusPolicy(Qt.NoFocus)
         self.master_view.setFocusPolicy(Qt.NoFocus)
         self.current_brush_cursor = None
-        # self.setup_current_brush_cursor()
 
     def setup_layout(self):
         raise NotImplementedError("Subclasses must implement setup_layout")
@@ -179,12 +178,11 @@ class DoubleViewBase(ViewStrategy, QWidget, ViewSignals):
                 self.master_view.setCursor(Qt.OpenHandCursor)
                 self.current_view.setCursor(Qt.OpenHandCursor)
             else:
+                if self.brush_cursor is None or self.current_brush_cursor is None:
+                    self.setup_brush_cursor()
                 self.master_view.setCursor(Qt.BlankCursor)
                 self.current_view.setCursor(Qt.BlankCursor)
-                if self.brush_cursor is None:
-                    self.setup_brush_cursor()
-                else:
-                    self.brush_cursor.show()
+                self.brush_cursor.show()
         super().enterEvent(event)
 
     def leaveEvent(self, event):
@@ -193,12 +191,10 @@ class DoubleViewBase(ViewStrategy, QWidget, ViewSignals):
             self.master_view.setCursor(Qt.ArrowCursor)
             self.current_view.setCursor(Qt.ArrowCursor)
         else:
-            if self.brush_cursor is not None:
-                self.brush_cursor.hide()
-            if self.current_brush_cursor is None:
+            if self.brush_cursor is None or self.current_brush_cursor is None:
                 self.setup_brush_cursor()
-            else:
-                self.current_brush_cursor.hide()
+            self.brush_cursor.hide()
+            self.current_brush_cursor.hide()
             self.master_view.setCursor(Qt.ArrowCursor)
             self.current_view.setCursor(Qt.ArrowCursor)
         super().leaveEvent(event)
@@ -279,9 +275,8 @@ class DoubleViewBase(ViewStrategy, QWidget, ViewSignals):
             self.brush_cursor.hide()
             self.current_brush_cursor.hide()
             return
-        else:
-            self.master_view.setCursor(Qt.BlankCursor)
-            self.current_view.setCursor(Qt.BlankCursor)
+        self.master_view.setCursor(Qt.BlankCursor)
+        self.current_view.setCursor(Qt.BlankCursor)
         mouse_pos_global = QCursor.pos()
         mouse_pos_current = self.current_view.mapFromGlobal(mouse_pos_global)
         mouse_pos_master = self.master_view.mapFromGlobal(mouse_pos_global)
@@ -357,12 +352,14 @@ class DoubleViewBase(ViewStrategy, QWidget, ViewSignals):
         self.pixmap_item_master.setPixmap(pixmap)
         img_width, img_height = pixmap.width(), pixmap.height()
         self.set_max_min_scales(img_width, img_height)
-        self.set_zoom_factor(1.0)
-        self.master_view.fitInView(self.pixmap_item_master, Qt.KeepAspectRatio)
-        self.set_zoom_factor(self.get_current_scale())
-        self.set_zoom_factor(max(self.min_scale(), min(self.max_scale(), self.zoom_factor())))
+        view_rect = self.master_view.viewport().rect()
+        scale_x = view_rect.width() / img_width
+        scale_y = view_rect.height() / img_height
+        scale_factor = min(scale_x, scale_y)
+        scale_factor = max(self.min_scale(), min(scale_factor, self.max_scale()))
+        self.set_zoom_factor(scale_factor)
         self.master_view.resetTransform()
-        self.master_view.scale(self.zoom_factor(), self.zoom_factor())
+        self.master_view.scale(scale_factor, scale_factor)
         self.master_view.centerOn(self.pixmap_item_master)
         center = self.master_scene.sceneRect().center()
         self.brush_preview.setPos(max(0, min(center.x(), img_width)),
@@ -380,7 +377,6 @@ class DoubleViewBase(ViewStrategy, QWidget, ViewSignals):
         self.master_view.scale(self.zoom_factor(), self.zoom_factor())
         self.current_scene.setSceneRect(QRectF(self.pixmap_item_current.boundingRect()))
         self.center_image(self.current_view)
-        self.update_cursor_pen_width()
 
     def arrange_images(self):
         if self.status.empty():
@@ -410,10 +406,8 @@ class DoubleViewBase(ViewStrategy, QWidget, ViewSignals):
         size = self.brush.size
         radius = size / 2
         self.current_brush_cursor.setRect(
-            scene_pos.x() - radius,
-            scene_pos.y() - radius,
-            size, size
-        )
+            scene_pos.x() - radius, scene_pos.y() - radius,
+            size, size)
         if self.brush_cursor.isVisible():
             self.current_brush_cursor.show()
         else:

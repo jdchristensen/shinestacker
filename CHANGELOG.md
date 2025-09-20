@@ -2,11 +2,15 @@
 
 This page reports the main releases only and the main changes therein.
 
-## [V-.-.-] - 2025-09-19
+## [V-.-.-] - 2025-09-20
+
+### Added
+- command-line parameters -v1, -v2, -v3 allow different view modes at startup
 
 ### Fixed
 - consistent and restyled cursor for current layer view in overlaid view
 - fixed ghost cursors in side-by-side views
+- fixed cursor shift at startup
 - lower/upper case GUI labels
 - improved help and description text
 

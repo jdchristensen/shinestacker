@@ -114,27 +114,30 @@ class OverlaidView(ViewStrategy, ImageGraphicsViewBase, ViewSignals):
             return self.handle_gesture_event(event)
         return super().event(event)
 
-    def set_master_image(self, qimage):
-        self.status.set_master_image(qimage)
-        pixmap = self.status.pixmap_master
+    def setup_scene_image(self, pixmap, pixmap_item):
         self.setSceneRect(QRectF(pixmap.rect()))
         img_width, img_height = pixmap.width(), pixmap.height()
         self.set_max_min_scales(img_width, img_height)
-        self.set_zoom_factor(1.0)
+        view_rect = self.viewport().rect()
+        scale_x = view_rect.width() / img_width
+        scale_y = view_rect.height() / img_height
+        scale_factor = min(scale_x, scale_y)
+        scale_factor = max(self.min_scale(), min(scale_factor, self.max_scale()))
+        self.set_zoom_factor(scale_factor)
         self.resetTransform()
-        self.fitInView(self.pixmap_item_master, Qt.KeepAspectRatio)
-        self.set_zoom_factor(self.get_current_scale())
-        self.set_zoom_factor(max(self.min_scale(), min(self.max_scale(), self.zoom_factor())))
-        self.scale(self.zoom_factor(), self.zoom_factor())
-        self.centerOn(self.pixmap_item_master)
+        self.scale(scale_factor, scale_factor)
+        self.centerOn(pixmap_item)
         self.center_image(self)
         self.update_cursor_pen_width()
+
+    def set_master_image(self, qimage):
+        self.status.set_master_image(qimage)
+        self.setup_scene_image(self.status.pixmap_master, self.pixmap_item_master)
 
     def set_current_image(self, qimage):
         self.status.set_current_image(qimage)
         if self.empty():
-            self.setSceneRect(QRectF(self.status.pixmap_current.rect()))
-        self.update_cursor_pen_width()
+            self.setup_scene_image(self.status.pixmap_current, self.pixmap_item_current)
 
     def setup_brush_cursor(self):
         super().setup_brush_cursor()

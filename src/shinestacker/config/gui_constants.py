@@ -55,7 +55,7 @@ class _GuiConstants:
     DEFAULT_BRUSH_OPACITY = 100
     DEFAULT_BRUSH_FLOW = 100
     BRUSH_SIZES = {
-        'default': 50,
+        'default': 100,
         'min': 5,
         'mid': 50,
         'max': 1000

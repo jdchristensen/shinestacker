@@ -1,4 +1,4 @@
-# pylint: disable=C0114, C0115, C0116, E0611, R0904, R0903, R0902, E1101, R0914
+# pylint: disable=C0114, C0115, C0116, E0611, R0904, R0903, R0902, E1101, R0914, R0913, R0917
 import math
 from abc import abstractmethod
 import numpy as np
@@ -14,19 +14,19 @@ from .brush_preview import BrushPreviewItem
 
 
 class BrushCursor(QGraphicsItemGroup):
-    def __init__(self, x, y, size, pen, brush):
+    def __init__(self, x0, y0, size, pen, brush):
         super().__init__()
         self._pen = pen
         self._radius = size / 2
         self._brush = brush
-        self._rect = QRectF(-size / 2, -size / 2, size, size)
+        self._rect = QRectF(x0 - self._radius, y0 - self._radius, size, size)
         self._arc_items = []
         self._create_arcs()
 
     def _point_on_circle(self, phi_deg):
         phi = phi_deg / 180.0 * math.pi
-        x0 = (self._rect.left() + self._rect.right()) / 2
-        y0 = (self._rect.top() + self._rect.bottom()) / 2
+        x0 = self._rect.x() + self._radius
+        y0 = self._rect.y() + self._radius
         return x0 + self._radius * math.cos(phi), y0 - self._radius * math.sin(phi)
 
     def _create_arcs(self):
@@ -40,8 +40,7 @@ class BrushCursor(QGraphicsItemGroup):
         span_angle = 90 - 2 * half_gap
         for start_angle in arcs:
             path = QPainterPath()
-            p = self._point_on_circle(start_angle)
-            path.moveTo(*p)
+            path.moveTo(*self._point_on_circle(start_angle))
             path.arcTo(self._rect, start_angle, span_angle)
             arc_item = QGraphicsPathItem(path)
             arc_item.setPen(self._pen)
@@ -49,6 +48,7 @@ class BrushCursor(QGraphicsItemGroup):
             self.addToGroup(arc_item)
             self._arc_items.append(arc_item)
 
+    # pylint: disable=C0103
     def setPen(self, pen):
         self._pen = pen
         for item in self._arc_items:
@@ -71,6 +71,7 @@ class BrushCursor(QGraphicsItemGroup):
 
     def rect(self):
         return self._rect
+    # pylint: enable=C0103
 
 
 class ViewSignals:
@@ -505,7 +506,6 @@ class ViewStrategy(LayerCollectionHandler):
     def keyReleaseEvent(self, event):
         if self.empty():
             return
-        self.update_brush_cursor()
         if event.key() == Qt.Key_Space:
             self.space_pressed = False
             if not self.scrolling:

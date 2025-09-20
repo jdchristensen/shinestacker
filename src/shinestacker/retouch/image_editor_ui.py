@@ -49,7 +49,6 @@ class ImageEditorUI(QMainWindow, LayerCollectionHandler):
         self.filter_manager.register_filter("White Balance", WhiteBalanceFilter)
         self.filter_manager.register_filter("Vignetting Correction", VignettingFilter)
         self.shortcuts_help_dialog = None
-
         self.update_title()
         self.resize(1400, 900)
         center = QGuiApplication.primaryScreen().geometry().center()
@@ -68,18 +67,15 @@ class ImageEditorUI(QMainWindow, LayerCollectionHandler):
         side_layout = QVBoxLayout(side_panel)
         side_layout.setContentsMargins(0, 0, 0, 0)
         side_layout.setSpacing(2)
-
         brush_panel = QFrame()
         brush_panel.setFrameShape(QFrame.StyledPanel)
         brush_panel.setContentsMargins(0, 0, 0, 0)
         brush_layout = QVBoxLayout(brush_panel)
         brush_layout.setContentsMargins(0, 0, 0, 0)
         brush_layout.setSpacing(2)
-
         brush_label = QLabel("Brush Size")
         brush_label.setAlignment(Qt.AlignCenter)
         brush_layout.addWidget(brush_label)
-
         self.brush_size_slider = QSlider(Qt.Horizontal)
         self.brush_size_slider.setRange(0, gui_constants.BRUSH_SIZE_SLIDER_MAX)
 
@@ -94,7 +90,6 @@ class ImageEditorUI(QMainWindow, LayerCollectionHandler):
 
         self.brush_size_slider.setValue(brush_size_to_slider(self.brush.size))
         brush_layout.addWidget(self.brush_size_slider)
-
         hardness_label = QLabel("Brush Hardness")
         hardness_label.setAlignment(Qt.AlignCenter)
         brush_layout.addWidget(hardness_label)
@@ -102,7 +97,6 @@ class ImageEditorUI(QMainWindow, LayerCollectionHandler):
         self.hardness_slider.setRange(0, 100)
         self.hardness_slider.setValue(self.brush.hardness)
         brush_layout.addWidget(self.hardness_slider)
-
         opacity_label = QLabel("Brush Opacity")
         opacity_label.setAlignment(Qt.AlignCenter)
         brush_layout.addWidget(opacity_label)
@@ -110,7 +104,6 @@ class ImageEditorUI(QMainWindow, LayerCollectionHandler):
         self.opacity_slider.setRange(0, 100)
         self.opacity_slider.setValue(self.brush.opacity)
         brush_layout.addWidget(self.opacity_slider)
-
         flow_label = QLabel("Brush Flow")
         flow_label.setAlignment(Qt.AlignCenter)
         brush_layout.addWidget(flow_label)
@@ -118,7 +111,6 @@ class ImageEditorUI(QMainWindow, LayerCollectionHandler):
         self.flow_slider.setRange(1, 100)
         self.flow_slider.setValue(self.brush.flow)
         brush_layout.addWidget(self.flow_slider)
-
         side_layout.addWidget(brush_panel)
         self.brush_preview_widget = QLabel()
         self.brush_preview_widget.setContentsMargins(0, 0, 0, 0)
@@ -135,7 +127,6 @@ class ImageEditorUI(QMainWindow, LayerCollectionHandler):
         self.brush_preview_widget.setFixedHeight(100)
         brush_layout.addWidget(self.brush_preview_widget)
         side_layout.addWidget(brush_panel)
-
         master_label = QLabel("Master")
         master_label.setStyleSheet("""
             QLabel {
@@ -452,6 +443,8 @@ class ImageEditorUI(QMainWindow, LayerCollectionHandler):
         help_menu = menubar.addMenu("&Help")
         help_menu.setObjectName("Help")
         shortcuts_help_action = QAction("Shortcuts and Mouse", self)
+
+        self.statusBar().showMessage("Shine Stacker ready.", 2000)
 
         def shortcuts_help():
             self.shortcuts_help_dialog = ShortcutsHelp(self)

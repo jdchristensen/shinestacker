@@ -1,4 +1,4 @@
-# pylint: disable=C0114, C0115, C0116, C0413, E0611, R0903, E1121, W0201, R0915
+# pylint: disable=C0114, C0115, C0116, C0413, E0611, R0903, E1121, W0201, R0915, R0912
 import sys
 import os
 import logging
@@ -224,6 +224,9 @@ open retouch window at startup instead of project windows.
     args = vars(parser.parse_args(sys.argv[1:]))
     filename = args['filename']
     path = args['path']
+    if filename and path:
+        print("can't specify both arguments --filename and --path", file=sys.stderr)
+        sys.exit(1)
     setup_logging(console_level=logging.DEBUG, file_level=logging.DEBUG, disable_console=True)
     app = Application(sys.argv)
     if config.DONT_USE_NATIVE_MENU:
