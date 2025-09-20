@@ -90,6 +90,18 @@ class ImageViewer(QWidget):
     def get_visible_image_portion(self):
         return self.strategy.get_visible_image_portion()
 
+    def hide_brush_cursor(self):
+        self.strategy.hide_brush_cursor()
+
+    def show_brush_cursor(self):
+        self.strategy.show_brush_cursor()
+
+    def hide_brush_preview(self):
+        self.strategy.hide_brush_preview()
+
+    def show_brush_preview(self):
+        self.strategy.show_brush_preview()
+
     def clear_image(self):
         for st in self._strategies.values():
             st.clear_image()

@@ -146,6 +146,14 @@ class DoubleViewBase(ViewStrategy, QWidget, ViewSignals):
             self.pixmap_item_current: self.current_view
         }
 
+    def hide_brush_cursor(self):
+        super().hide_brush_cursor()
+        self.current_brush_cursor.hide()
+
+    def show_brush_cursor(self):
+        super().show_brush_cursor()
+        self.current_brush_cursor.show()
+
     # pylint: disable=C0103
     def focusInEvent(self, event):
         super().focusInEvent(event)
@@ -193,8 +201,7 @@ class DoubleViewBase(ViewStrategy, QWidget, ViewSignals):
         else:
             if self.brush_cursor is None or self.current_brush_cursor is None:
                 self.setup_brush_cursor()
-            self.brush_cursor.hide()
-            self.current_brush_cursor.hide()
+            self.hide_brush_cursor()
             self.master_view.setCursor(Qt.ArrowCursor)
             self.current_view.setCursor(Qt.ArrowCursor)
         super().leaveEvent(event)
@@ -209,6 +216,16 @@ class DoubleViewBase(ViewStrategy, QWidget, ViewSignals):
         if event.key() == Qt.Key_Space:
             self.update_brush_cursor()
     # pylint: enable=C0103
+
+    def get_mouse_callbacks(self):
+        return self.master_view.mousePressEvent, self.current_view.mousePressEvent
+
+    def set_mouse_callbacks(self, callbacks):
+        if isinstance(callbacks, tuple):
+            self.master_view.mousePressEvent, self.current_view.mousePressEvent = callbacks
+        else:
+            self.master_view.mousePressEvent = callbacks
+            self.current_view.mousePressEvent = callbacks
 
     # pylint: enable=R0801
     def handle_wheel_event(self, event):
@@ -272,8 +289,7 @@ class DoubleViewBase(ViewStrategy, QWidget, ViewSignals):
             cursor_style = Qt.OpenHandCursor if not self.scrolling else Qt.ClosedHandCursor
             self.master_view.setCursor(cursor_style)
             self.current_view.setCursor(cursor_style)
-            self.brush_cursor.hide()
-            self.current_brush_cursor.hide()
+            self.hide_brush_cursor()
             return
         self.master_view.setCursor(Qt.BlankCursor)
         self.current_view.setCursor(Qt.BlankCursor)
@@ -285,11 +301,11 @@ class DoubleViewBase(ViewStrategy, QWidget, ViewSignals):
         self.current_brush_cursor.hide()
         if master_has_mouse:
             if self.cursor_style == 'preview':
-                self.brush_preview.show()
+                self.show_brush_preview()
             super().update_brush_cursor()
             self.sync_current_cursor_with_master()
         elif current_has_mouse:
-            self.brush_preview.hide()
+            self.hide_brush_preview()
             scene_pos = self.current_view.mapToScene(mouse_pos_current)
             size = self.brush.size
             radius = size / 2

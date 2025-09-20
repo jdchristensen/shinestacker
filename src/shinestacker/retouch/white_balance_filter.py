@@ -108,24 +108,24 @@ class WhiteBalanceFilter(BaseFilter):
                 widget.reject()
                 break
         self.editor.image_viewer.set_cursor_style('outline')
-        if self.editor.image_viewer.brush_cursor:
-            self.editor.image_viewer.brush_cursor.hide()
-        self.editor.brush_preview.hide()
+        self.editor.image_viewer.hide_brush_cursor()
+        self.editor.image_viewer.hide_brush_preview()
         QApplication.setOverrideCursor(QCursor(Qt.CrossCursor))
-        self.editor.image_viewer.setCursor(Qt.CrossCursor)
-        self.original_mouse_press = self.editor.image_viewer.mousePressEvent
-        self.editor.image_viewer.mousePressEvent = self.pick_color_from_click
+        self.editor.image_viewer.strategy.setCursor(Qt.CrossCursor)
+        self.original_mouse_press = self.editor.image_viewer.strategy.get_mouse_callbacks()
+        self.editor.image_viewer.strategy.set_mouse_callbacks(self.pick_color_from_click)
 
     def pick_color_from_click(self, event):
         if event.button() == Qt.LeftButton:
             pos = event.pos()
-            bgr = self.editor.get_pixel_color_at(pos, radius=int(self.editor.brush.size))
+            bgr = self.editor.display_manager.get_pixel_color_at(
+                pos, radius=int(self.editor.brush.size))
             rgb = (bgr[2], bgr[1], bgr[0])
             QApplication.restoreOverrideCursor()
             self.editor.image_viewer.unsetCursor()
-            self.editor.image_viewer.mousePressEvent = self.original_mouse_press
-            self.editor.image_viewer.brush_cursor.show()
-            self.editor.brush_preview.show()
+            self.editor.image_viewer.strategy.set_mouse_callbacks(self.original_mouse_press)
+            self.editor.image_viewer.show_brush_cursor()
+            self.editor.image_viewer.show_brush_preview()
             new_filter = WhiteBalanceFilter(self.name, self.editor)
             new_filter.run_with_preview(init_val=rgb)
 

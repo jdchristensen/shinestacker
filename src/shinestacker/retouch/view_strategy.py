@@ -177,6 +177,30 @@ class ViewStrategy(LayerCollectionHandler):
     def arrange_images(self):
         pass
 
+    @abstractmethod
+    def get_mouse_callbacks(self):
+        pass
+
+    @abstractmethod
+    def set_mouse_callbacks(self, callbacks):
+        pass
+
+    def hide_brush_cursor(self):
+        if self.brush_cursor:
+            self.brush_cursor.hide()
+
+    def show_brush_cursor(self):
+        if self.brush_cursor:
+            self.brush_cursor.show()
+
+    def hide_brush_preview(self):
+        if self.brush_preview:
+            self.brush_preview.hide()
+
+    def show_brush_preview(self):
+        if self.brush_preview:
+            self.brush_preview.show()
+
     def current_line_width(self):
         return gui_constants.BRUSH_LINE_WIDTH / self.zoom_factor()
 
@@ -212,8 +236,7 @@ class ViewStrategy(LayerCollectionHandler):
 
     def set_cursor_style(self, style):
         self.cursor_style = style
-        if self.brush_cursor:
-            self.update_brush_cursor()
+        self.update_brush_cursor()
 
     def get_cursor_style(self):
         return self.cursor_style
@@ -269,7 +292,7 @@ class ViewStrategy(LayerCollectionHandler):
         self.brush_preview = BrushPreviewItem(self.layer_collection)
         self.get_master_scene().addItem(self.brush_preview)
         self.setCursor(Qt.ArrowCursor)
-        self.brush_cursor.hide()
+        self.hide_brush_cursor()
 
     def set_master_image_np(self, img):
         self.set_master_image(self.numpy_to_qimage(img))
@@ -428,7 +451,7 @@ class ViewStrategy(LayerCollectionHandler):
         master_view = self.get_master_view()
         mouse_pos = master_view.mapFromGlobal(QCursor.pos())
         if not master_view.rect().contains(mouse_pos):
-            self.brush_cursor.hide()
+            self.hide_brush_cursor()
             return
         scene_pos = master_view.mapToScene(mouse_pos)
         size = self.brush.size
@@ -436,7 +459,7 @@ class ViewStrategy(LayerCollectionHandler):
         self.brush_cursor.setRect(scene_pos.x() - radius, scene_pos.y() - radius, size, size)
         if self.cursor_style == 'preview':
             if self.brush_preview.isVisible():
-                self.brush_cursor.hide()
+                self.hide_brush_cursor()
                 pos = QCursor.pos()
                 if isinstance(pos, QPointF):
                     scene_pos = pos
@@ -445,10 +468,10 @@ class ViewStrategy(LayerCollectionHandler):
                     scene_pos = master_view.mapToScene(cursor_pos)
                 self.brush_preview.update(scene_pos, int(size))
         else:
-            self.brush_preview.hide()
+            self.hide_brush_preview()
             if self.cursor_style != 'outline':
                 self.setup_simple_brush_style(scene_pos.x(), scene_pos.y(), radius)
-        self.brush_cursor.show()
+        self.show_brush_cursor()
 
     def position_on_image(self, pos):
         master_view = self.get_master_view()
@@ -489,8 +512,7 @@ class ViewStrategy(LayerCollectionHandler):
         if event.key() == Qt.Key_Space and not self.scrolling:
             self.space_pressed = True
             self.get_master_view().setCursor(Qt.OpenHandCursor)
-            if self.brush_cursor:
-                self.brush_cursor.hide()
+            self.hide_brush_cursor()
         if self.handle_key_press_event(event):
             if event.key() == Qt.Key_Control and not self.scrolling:
                 self.control_pressed = True
@@ -503,8 +525,7 @@ class ViewStrategy(LayerCollectionHandler):
             self.space_pressed = False
             if not self.scrolling:
                 self.get_master_view().setCursor(Qt.BlankCursor)
-                if self.brush_cursor:
-                    self.brush_cursor.show()
+                self.show_brush_cursor()
         if self.handle_key_release_event(event):
             if event.key() == Qt.Key_Control:
                 self.control_pressed = False
@@ -515,8 +536,7 @@ class ViewStrategy(LayerCollectionHandler):
             self.setCursor(Qt.ArrowCursor)
         else:
             self.get_master_view().setCursor(Qt.ArrowCursor)
-            if self.brush_cursor:
-                self.brush_cursor.hide()
+            self.hide_brush_cursor()
         super().leaveEvent(event)
     # pylint: enable=C0103
 
@@ -561,8 +581,7 @@ class ViewStrategy(LayerCollectionHandler):
             master_view = self.get_master_view()
             if self.space_pressed:
                 master_view.setCursor(Qt.ClosedHandCursor)
-                if self.brush_cursor:
-                    self.brush_cursor.hide()
+                self.hide_brush_cursor()
             delta = position - self.last_mouse_pos
             self.last_mouse_pos = position
             self.scroll_view(master_view, delta.x(), delta.y())
@@ -579,8 +598,7 @@ class ViewStrategy(LayerCollectionHandler):
                 self.last_brush_pos = event.position()
                 self.brush_operation_started.emit(event.position().toPoint())
                 self.dragging = True
-            if self.brush_cursor:
-                self.brush_cursor.show()
+            self.show_brush_cursor()
 
     def mouse_release_event(self, event):
         if self.empty():
@@ -588,12 +606,10 @@ class ViewStrategy(LayerCollectionHandler):
         master_view = self.get_master_view()
         if self.space_pressed:
             master_view.setCursor(Qt.OpenHandCursor)
-            if self.brush_cursor:
-                self.brush_cursor.hide()
+            self.hide_brush_cursor()
         else:
             master_view.setCursor(Qt.BlankCursor)
-            if self.brush_cursor:
-                self.brush_cursor.show()
+            self.show_brush_cursor()
         if event.button() == Qt.LeftButton:
             if self.scrolling:
                 self.scrolling = False

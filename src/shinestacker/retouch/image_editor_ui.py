@@ -1,6 +1,5 @@
 # pylint: disable=C0114, C0115, C0116, E0611, R0902, R0914, R0915, R0904, W0108
 from functools import partial
-import numpy as np
 from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QFrame, QLabel, QMenu,
                                QListWidget, QSlider, QMainWindow, QMessageBox)
 from PySide6.QtGui import QShortcut, QKeySequence, QAction, QActionGroup
@@ -653,42 +652,6 @@ class ImageEditorUI(QMainWindow, LayerCollectionHandler):
             else:
                 restore_original()
         preview_check.toggled.connect(on_toggled)
-
-    def get_pixel_color_at(self, pos, radius=None):
-        item_pos = self.image_viewer.position_on_image(pos)
-        x = int(item_pos.x())
-        y = int(item_pos.y())
-        master_layer = self.master_layer()
-        if (0 <= x < self.master_layer().shape[1]) and \
-           (0 <= y < self.master_layer().shape[0]):
-            if radius is None:
-                radius = int(self.brush.size)
-            if radius > 0:
-                y_indices, x_indices = np.ogrid[-radius:radius + 1, -radius:radius + 1]
-                mask = x_indices**2 + y_indices**2 <= radius**2
-                x0 = max(0, x - radius)
-                x1 = min(master_layer.shape[1], x + radius + 1)
-                y0 = max(0, y - radius)
-                y1 = min(master_layer.shape[0], y + radius + 1)
-                mask = mask[radius - (y - y0): radius + (y1 - y),
-                            radius - (x - x0): radius + (x1 - x)]
-                region = master_layer[y0:y1, x0:x1]
-                if region.size == 0:
-                    pixel = master_layer[y, x]
-                else:
-                    if region.ndim == 3:
-                        pixel = [region[:, :, c][mask].mean() for c in range(region.shape[2])]
-                    else:
-                        pixel = region[mask].mean()
-            else:
-                pixel = self.master_layer()[y, x]
-            if np.isscalar(pixel):
-                pixel = [pixel, pixel, pixel]
-            pixel = [np.float32(x) for x in pixel]
-            if master_layer.dtype == np.uint16:
-                pixel = [x / 256.0 for x in pixel]
-            return tuple(int(v) for v in pixel)
-        return (0, 0, 0)
 
     def highlight_master_thumbnail(self, color):
         self.master_thumbnail_frame.setStyleSheet(
