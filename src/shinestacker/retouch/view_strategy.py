@@ -19,7 +19,7 @@ class BrushCursor(QGraphicsItemGroup):
         self._pen = pen
         self._radius = size / 2
         self._brush = brush
-        self._rect = QRectF(x, y, size, size)
+        self._rect = QRectF(-size / 2, -size / 2, size, size)
         self._arc_items = []
         self._create_arcs()
 
@@ -395,8 +395,10 @@ class ViewStrategy(LayerCollectionHandler):
         pen_width = gui_constants.BRUSH_LINE_WIDTH / self.zoom_factor()
         pen = QPen(QColor(*gui_constants.BRUSH_COLORS['pen']), pen_width, line_style)
         brush = Qt.NoBrush
+        scene_center = scene.sceneRect().center()
         brush_cursor = scene.addEllipse(
-            0, 0, self.brush.size, self.brush.size, pen, brush)
+            scene_center.x(), scene_center.y(),
+            self.brush.size, self.brush.size, pen, brush)
         brush_cursor.setZValue(1000)
         brush_cursor.hide()
         return brush_cursor
@@ -408,8 +410,10 @@ class ViewStrategy(LayerCollectionHandler):
         pen_width = gui_constants.BRUSH_LINE_WIDTH / self.zoom_factor()
         pen = QPen(QColor(*gui_constants.BRUSH_COLORS['pen']), pen_width, line_style)
         brush = Qt.NoBrush
+        scene_center = scene.sceneRect().center()
         brush_cursor = BrushCursor(
-            0, 0, self.brush.size, pen, brush
+            scene_center.x(), scene_center.y(),
+            self.brush.size, pen, brush
         )
         brush_cursor.setZValue(1000)
         brush_cursor.hide()
