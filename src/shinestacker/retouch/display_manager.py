@@ -158,14 +158,14 @@ class DisplayManager(QObject, LayerCollectionHandler):
             return
         self.view_mode = 'master'
         self._master_refresh_and_thumb()
-        self.status_message_requested.emit("View mode: Master")
+        self.status_message_requested.emit("View: Master")
 
     def set_view_individual(self):
         if self.has_no_master_layer():
             return
         self.view_mode = 'individual'
         self._current_refresh_and_thumb()
-        self.status_message_requested.emit("View mode: Individual layers")
+        self.status_message_requested.emit("View: Individual layers")
 
     def refresh_master_view(self):
         if self.has_no_master_layer():

@@ -8,6 +8,9 @@ This page reports the main releases only and the main changes therein.
 ### Fixed
 - fixed brush preview visiblity in view mode transitions
 
+### Changed
+- code cleanup
+
 ---
 
 ## [v1.5.1] - 2025-09-20
