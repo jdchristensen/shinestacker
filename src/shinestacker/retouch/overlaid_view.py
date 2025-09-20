@@ -215,8 +215,7 @@ class OverlaidView(ViewStrategy, ImageGraphicsViewBase, ViewSignals):
             handled = True
         if handled:
             event.accept()
-            return True
-        return False
+        return handled
 
     def handle_pan_gesture(self, pan_gesture):
         if pan_gesture.state() == Qt.GestureStarted:
@@ -225,7 +224,7 @@ class OverlaidView(ViewStrategy, ImageGraphicsViewBase, ViewSignals):
         elif pan_gesture.state() == Qt.GestureUpdated:
             delta = pan_gesture.delta() - self.last_scroll_pos
             self.last_scroll_pos = pan_gesture.delta()
-            scaled_delta = delta * (1.0 / self.get_current_scale())
+            scaled_delta = delta / self.get_current_scale()
             self.scroll_view(self, int(scaled_delta.x()), int(scaled_delta.y()))
         elif pan_gesture.state() == Qt.GestureFinished:
             self.gesture_active = False
