@@ -2,17 +2,21 @@
 
 This page reports the main releases only and the main changes therein.
 
-## [V-.-.-] - 2025-09-20
+## [V1.5.1] - 2025-09-20
+**Several bug fixes**
 
 ### Added
-- command-line parameters -v1, -v2, -v3 allow different view modes at startup
+- new command-line parameters -v1, -v2, -v3, allow different view modes at startup
 
 ### Fixed
-- consistent and restyled cursor for current layer view in overlaid view
+- consistent and restyled cursor for current layer view
 - fixed ghost cursors in side-by-side views
 - fixed cursor shift at startup
-- lower/upper case GUI labels
+- fixed brush preview at image borders
+- fixed lower/upper case GUI labels
 - improved help and description text
+
+---
 
 ## [v1.5.0] - 2025-09-16
 **GUI improvements and fixes**
@@ -380,6 +384,5 @@ This release is equivalent to v0.3.2, but resolves a problem for PyPI distributi
 ### Changes
 - several stability improvements
 - several bug fixes
-
 
 ---
