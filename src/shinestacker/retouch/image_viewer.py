@@ -20,7 +20,6 @@ class ImageViewer(QWidget):
         self.strategy = self._strategies['overlaid']
         self.layout = QVBoxLayout(self)
         self.layout.setContentsMargins(0, 0, 0, 0)
-        self.strategy = self._strategies['overlaid']
         self.layout.addWidget(self.strategy)
         self.strategy.show()
 
