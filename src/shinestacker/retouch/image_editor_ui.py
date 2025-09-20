@@ -461,6 +461,8 @@ class ImageEditorUI(QMainWindow, LayerCollectionHandler):
         self.image_viewer.set_strategy(strategy)
         enable_shortcuts = strategy == 'overlaid'
         self.display_manager.view_mode = 'master'
+        self.thumbnail_highlight = gui_constants.THUMB_MASTER_HI_COLOR
+        self.highlight_master_thumbnail()
         self.view_master_action.setEnabled(enable_shortcuts)
         self.view_individual_action.setEnabled(enable_shortcuts)
         self.toggle_view_master_individual_action.setEnabled(enable_shortcuts)
@@ -583,7 +585,7 @@ class ImageEditorUI(QMainWindow, LayerCollectionHandler):
 
     def copy_brush_area_to_master(self, view_pos):
         if self.layer_stack() is None or self.number_of_layers() == 0 \
-           or not self.display_manager.allow_cursor_preview():
+           or self.display_manager.view_mode != 'master':
             return
         area = self.brush_tool.apply_brush_operation(
             self.master_layer_copy(),
@@ -593,7 +595,7 @@ class ImageEditorUI(QMainWindow, LayerCollectionHandler):
         self.undo_manager.extend_undo_area(*area)
 
     def begin_copy_brush_area(self, pos):
-        if self.display_manager.allow_cursor_preview():
+        if self.display_manager.view_mode == 'master':
             self.mask_layer = self.io_gui_handler.blank_layer.copy()
             self.copy_master_layer()
             self.undo_manager.reset_undo_area()
@@ -604,7 +606,7 @@ class ImageEditorUI(QMainWindow, LayerCollectionHandler):
             self.mark_as_modified()
 
     def continue_copy_brush_area(self, pos):
-        if self.display_manager.allow_cursor_preview():
+        if self.display_manager.view_mode == 'master':
             self.copy_brush_area_to_master(pos)
             self.display_manager.needs_update = True
             if not self.display_manager.update_timer.isActive():

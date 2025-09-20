@@ -199,6 +199,3 @@ class DisplayManager(QObject, LayerCollectionHandler):
         else:
             self._current_refresh_and_thumb()
             self.status_message_requested.emit("View: Individual layer")
-
-    def allow_cursor_preview(self):
-        return self.view_mode == 'master'
