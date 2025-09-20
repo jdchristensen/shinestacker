@@ -110,6 +110,7 @@ class DisplayManager(QObject, LayerCollectionHandler):
             if ok and new_label and new_label != old_label:
                 label_widget.setText(new_label)
                 self.set_layer_label(i, new_label)
+                self.status_message_requested.emit("Label renamed")
 
         label_widget.double_clicked.connect(lambda: rename_label(label_widget, label, i))
         content_layout.addWidget(label_widget)
