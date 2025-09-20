@@ -5,11 +5,13 @@ import numpy as np
 from PySide6.QtWidgets import (
     QHBoxLayout, QLabel, QSlider, QDialog, QVBoxLayout, QCheckBox, QDialogButtonBox)
 from PySide6.QtCore import Qt, Signal, QThread, QTimer
+from .layer_collection import LayerCollectionHandler
 
 
-class BaseFilter(ABC):
-    def __init__(self, name, editor, image_viewer, allow_partial_preview=True,
+class BaseFilter(ABC, LayerCollectionHandler):
+    def __init__(self, name, editor, image_viewer, layer_collection, allow_partial_preview=True,
                  partial_preview_threshold=0.75, preview_at_startup=False):
+        LayerCollectionHandler.__init__(self, layer_collection)
         self.editor = editor
         self.image_viewer = image_viewer
         self.name = name
@@ -33,9 +35,9 @@ class BaseFilter(ABC):
         pass
 
     def run_with_preview(self, **kwargs):
-        if self.editor.has_no_master_layer():
+        if self.has_no_master_layer():
             return
-        self.editor.copy_master_layer()
+        self.copy_master_layer()
         dlg = QDialog(self.editor)
         layout = QVBoxLayout(dlg)
         active_worker = None
@@ -47,7 +49,7 @@ class BaseFilter(ABC):
         def cleanup():
             nonlocal active_worker, dialog_closed  # noqa
             dialog_closed = True
-            self.editor.restore_master_layer()
+            self.restore_master_layer()
             self.image_viewer.update_master_display()
             if active_worker and active_worker.isRunning():
                 active_worker.wait()
@@ -61,10 +63,10 @@ class BaseFilter(ABC):
             if region:
                 current_region = self.image_viewer.get_visible_image_portion()[1]
                 if current_region == region:
-                    self.editor.set_master_layer(img)
+                    self.set_master_layer(img)
                     self.image_viewer.update_master_display()
             else:
-                self.editor.set_master_layer(img)
+                self.set_master_layer(img)
                 self.image_viewer.update_master_display()
             try:
                 dlg.activateWindow()
@@ -88,7 +90,7 @@ class BaseFilter(ABC):
                 visible_data = self.editor.image_viewer.get_visible_image_portion()
                 if visible_data:
                     visible_img, visible_region = visible_data
-                    master_img = self.editor.master_layer_copy()
+                    master_img = self.master_layer_copy()
                     if visible_img.size < master_img.size * self.partial_preview_threshold:
                         params = tuple(self.get_params() or ())
                         worker = self.PreviewWorker(
@@ -108,14 +110,14 @@ class BaseFilter(ABC):
                     params = tuple(self.get_params() or ())
                     worker = self.PreviewWorker(
                         self.apply,
-                        args=(self.editor.master_layer_copy(), *params),
+                        args=(self.master_layer_copy(), *params),
                         request_id=current_id
                     )
             else:
                 params = tuple(self.get_params() or ())
                 worker = self.PreviewWorker(
                     self.apply,
-                    args=(self.editor.master_layer_copy(), *params),
+                    args=(self.master_layer_copy(), *params),
                     request_id=current_id
                 )
             active_worker = worker
@@ -124,7 +126,7 @@ class BaseFilter(ABC):
             active_worker.start()
 
         def restore_original():
-            self.editor.restore_master_layer()
+            self.restore_master_layer()
             self.editor.image_viewer.update_master_display()
             try:
                 dlg.activateWindow()
@@ -140,9 +142,9 @@ class BaseFilter(ABC):
         if accepted:
             params = tuple(self.get_params() or ())
             try:
-                h, w = self.editor.master_layer().shape[:2]
+                h, w = self.master_layer().shape[:2]
             except Exception:
-                h, w = self.editor.master_layer_copy().shape[:2]
+                h, w = self.master_layer_copy().shape[:2]
             try:
                 self.editor.undo_manager.extend_undo_area(0, 0, w, h)
                 self.editor.undo_manager.save_undo_state(
@@ -151,9 +153,9 @@ class BaseFilter(ABC):
                 )
             except Exception:
                 pass
-            final_img = self.apply(self.editor.master_layer_copy(), *params)
-            self.editor.set_master_layer(final_img)
-            self.editor.copy_master_layer()
+            final_img = self.apply(self.master_layer_copy(), *params)
+            self.set_master_layer(final_img)
+            self.copy_master_layer()
             self.editor.image_viewer.update_master_display()
             self.editor.display_manager.update_master_thumbnail()
             self.editor.mark_as_modified()
@@ -200,10 +202,11 @@ class BaseFilter(ABC):
 
 
 class OneSliderBaseFilter(BaseFilter):
-    def __init__(self, name, editor, image_viewer, max_value, initial_value, title,
+    def __init__(self, name, editor, image_viewer, layer_collection,
+                 max_value, initial_value, title,
                  allow_partial_preview=True, partial_preview_threshold=0.5,
                  preview_at_startup=True):
-        super().__init__(name, editor, image_viewer, allow_partial_preview,
+        super().__init__(name, editor, image_viewer, layer_collection, allow_partial_preview,
                          partial_preview_threshold, preview_at_startup)
         self.max_range = 500
         self.max_value = max_value
