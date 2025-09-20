@@ -110,7 +110,7 @@ class DisplayManager(QObject, LayerCollectionHandler):
                 self.thumbnail_list, "Rename Label", "New label name:", text=old_label)
             if ok and new_label and new_label != old_label:
                 label_widget.setText(new_label)
-                self.set_layer_labels(i, new_label)
+                self.set_layer_label(i, new_label)
 
         label_widget.double_clicked.connect(lambda: rename_label(label_widget, label, i))
         content_layout.addWidget(label_widget)
@@ -128,7 +128,7 @@ class DisplayManager(QObject, LayerCollectionHandler):
         if is_current:
             self.thumbnail_list.setCurrentItem(item)
 
-    def highlight_thumbnail(self, index):
+    def highlight_thumbnail(self, index, color=None):
         for i in range(self.thumbnail_list.count()):
             item = self.thumbnail_list.item(i)
             widget = self.thumbnail_list.itemWidget(item)
@@ -138,8 +138,12 @@ class DisplayManager(QObject, LayerCollectionHandler):
         if current_item:
             widget = self.thumbnail_list.itemWidget(current_item)
             if widget:
+                if color is None:
+                    color = self.thumbnail_highlight
+                else:
+                    self.thumbnail_highlight = color
                 widget.setStyleSheet(
-                    f"#thumbnailContainer{{ border: 2px solid {self.thumbnail_highlight}; }}")
+                    f"#thumbnailContainer{{ border: 2px solid {color}; }}")
         self.thumbnail_list.setCurrentRow(index)
         self.thumbnail_list.scrollToItem(
             self.thumbnail_list.item(index), QAbstractItemView.PositionAtCenter)
@@ -147,14 +151,12 @@ class DisplayManager(QObject, LayerCollectionHandler):
     def _master_refresh_and_thumb(self):
         self.image_viewer.show_master()
         self.refresh_master_view()
-        self.thumbnail_highlight = gui_constants.THUMB_LO_COLOR
-        self.highlight_thumbnail(self.current_layer_idx())
+        self.highlight_thumbnail(self.current_layer_idx(), gui_constants.THUMB_LO_COLOR)
 
     def _current_refresh_and_thumb(self):
         self.image_viewer.show_current()
         self.refresh_current_view()
-        self.thumbnail_highlight = gui_constants.THUMB_HI_COLOR
-        self.highlight_thumbnail(self.current_layer_idx())
+        self.highlight_thumbnail(self.current_layer_idx(), gui_constants.THUMB_HI_COLOR)
 
     def set_view_master(self):
         if self.has_no_master_layer():
