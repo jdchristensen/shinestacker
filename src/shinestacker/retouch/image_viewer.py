@@ -48,10 +48,6 @@ class ImageViewer(QWidget):
     def set_master_image_np(self, img):
         self.strategy.set_master_image_np(img)
 
-    def clear_image(self):
-        for st in self._strategies.values():
-            st.clear_image()
-
     def show_master(self):
         self.strategy.show_master()
 
@@ -69,14 +65,6 @@ class ImageViewer(QWidget):
 
     def refresh_display(self):
         self.strategy.refresh_display()
-
-    def set_brush(self, brush):
-        for st in self._strategies.values():
-            st.set_brush(brush)
-
-    def set_preview_brush(self, brush):
-        for st in self._strategies.values():
-            st.set_preview_brush(brush)
 
     def zoom_in(self):
         self.strategy.zoom_in()
@@ -96,15 +84,27 @@ class ImageViewer(QWidget):
     def get_cursor_style(self):
         return self.strategy.get_cursor_style()
 
-    def set_cursor_style(self, style):
-        for st in self._strategies.values():
-            st.set_cursor_style(style)
-
     def position_on_image(self, pos):
         return self.strategy.position_on_image(pos)
 
     def get_visible_image_portion(self):
         return self.strategy.get_visible_image_portion()
+
+    def clear_image(self):
+        for st in self._strategies.values():
+            st.clear_image()
+
+    def set_brush(self, brush):
+        for st in self._strategies.values():
+            st.set_brush(brush)
+
+    def set_preview_brush(self, brush):
+        for st in self._strategies.values():
+            st.set_preview_brush(brush)
+
+    def set_cursor_style(self, style):
+        for st in self._strategies.values():
+            st.set_cursor_style(style)
 
     def connect_signals(
             self, handle_temp_view, begin_copy_brush_area, continue_copy_brush_area,
