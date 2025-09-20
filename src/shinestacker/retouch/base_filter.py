@@ -8,9 +8,10 @@ from PySide6.QtCore import Qt, Signal, QThread, QTimer
 
 
 class BaseFilter(ABC):
-    def __init__(self, name, editor, allow_partial_preview=True,
+    def __init__(self, name, editor, image_viewer, allow_partial_preview=True,
                  partial_preview_threshold=0.75, preview_at_startup=False):
         self.editor = editor
+        self.image_viewer = image_viewer
         self.name = name
         self.allow_partial_preview = allow_partial_preview
         self.partial_preview_threshold = partial_preview_threshold
@@ -47,7 +48,7 @@ class BaseFilter(ABC):
             nonlocal active_worker, dialog_closed  # noqa
             dialog_closed = True
             self.editor.restore_master_layer()
-            self.editor.image_viewer.update_master_display()
+            self.image_viewer.update_master_display()
             if active_worker and active_worker.isRunning():
                 active_worker.wait()
             initial_timer.stop()
@@ -58,13 +59,13 @@ class BaseFilter(ABC):
             if dialog_closed or request_id != expected_id:
                 return
             if region:
-                current_region = self.editor.image_viewer.get_visible_image_portion()[1]
+                current_region = self.image_viewer.get_visible_image_portion()[1]
                 if current_region == region:
                     self.editor.set_master_layer(img)
-                    self.editor.image_viewer.update_master_display()
+                    self.image_viewer.update_master_display()
             else:
                 self.editor.set_master_layer(img)
-                self.editor.image_viewer.update_master_display()
+                self.image_viewer.update_master_display()
             try:
                 dlg.activateWindow()
             except Exception:
@@ -199,10 +200,10 @@ class BaseFilter(ABC):
 
 
 class OneSliderBaseFilter(BaseFilter):
-    def __init__(self, name, editor, max_value, initial_value, title,
+    def __init__(self, name, editor, image_viewer, max_value, initial_value, title,
                  allow_partial_preview=True, partial_preview_threshold=0.5,
                  preview_at_startup=True):
-        super().__init__(name, editor, allow_partial_preview,
+        super().__init__(name, editor, image_viewer, allow_partial_preview,
                          partial_preview_threshold, preview_at_startup)
         self.max_range = 500
         self.max_value = max_value

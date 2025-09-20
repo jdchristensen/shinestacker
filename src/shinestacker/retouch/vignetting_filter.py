@@ -7,8 +7,8 @@ from .base_filter import OneSliderBaseFilter
 
 
 class VignettingFilter(OneSliderBaseFilter):
-    def __init__(self, name, editor):
-        super().__init__(name, editor, 1.0, 0.90, "Vignetting correction",
+    def __init__(self, name, editor, image_viewer):
+        super().__init__(name, editor, image_viewer, 1.0, 0.90, "Vignetting correction",
                          allow_partial_preview=False, preview_at_startup=False)
         self.subsample_box = None
         self.fast_subsampling_check = None

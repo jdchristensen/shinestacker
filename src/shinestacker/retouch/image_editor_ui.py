@@ -41,11 +41,6 @@ class ImageEditorUI(QMainWindow, LayerCollectionHandler):
         self.undo_action = None
         self.redo_action = None
         self.undo_manager.stack_changed.connect(self.update_undo_redo_actions)
-        self.filter_manager = FilterManager(self)
-        self.filter_manager.register_filter("Denoise", DenoiseFilter)
-        self.filter_manager.register_filter("Unsharp Mask", UnsharpMaskFilter)
-        self.filter_manager.register_filter("White Balance", WhiteBalanceFilter)
-        self.filter_manager.register_filter("Vignetting Correction", VignettingFilter)
         self.shortcuts_help_dialog = None
         self.update_title()
         self.resize(1400, 900)
@@ -61,6 +56,11 @@ class ImageEditorUI(QMainWindow, LayerCollectionHandler):
             self.continue_copy_brush_area,
             self.end_copy_brush_area,
             self.handle_brush_size_change)
+        self.filter_manager = FilterManager(self)
+        self.filter_manager.register_filter("Denoise", DenoiseFilter)
+        self.filter_manager.register_filter("Unsharp Mask", UnsharpMaskFilter)
+        self.filter_manager.register_filter("White Balance", WhiteBalanceFilter)
+        self.filter_manager.register_filter("Vignetting Correction", VignettingFilter)
         side_panel = QWidget()
         side_layout = QVBoxLayout(side_panel)
         side_layout.setContentsMargins(0, 0, 0, 0)

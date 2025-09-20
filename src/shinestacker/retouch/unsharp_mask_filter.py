@@ -6,8 +6,8 @@ from .base_filter import BaseFilter
 
 
 class UnsharpMaskFilter(BaseFilter):
-    def __init__(self, name, editor):
-        super().__init__(name, editor, preview_at_startup=True)
+    def __init__(self, name, editor, image_viewer):
+        super().__init__(name, editor, image_viewer, preview_at_startup=True)
         self.max_range = 500.0
         self.max_radius = 4.0
         self.max_amount = 3.0

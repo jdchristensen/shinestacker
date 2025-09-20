@@ -8,8 +8,8 @@ from .base_filter import BaseFilter
 
 
 class WhiteBalanceFilter(BaseFilter):
-    def __init__(self, name, editor):
-        super().__init__(name, editor, preview_at_startup=True)
+    def __init__(self, name, editor, image_viewer):
+        super().__init__(name, editor, image_viewer, preview_at_startup=True)
         self.max_range = 255
         self.initial_val = (128, 128, 128)
         self.sliders = {}
@@ -108,14 +108,14 @@ class WhiteBalanceFilter(BaseFilter):
                 widget.hide()
                 widget.reject()
                 break
-        self.original_cursor_style = self.editor.image_viewer.get_cursor_style()
-        self.editor.image_viewer.set_cursor_style('outline')
-        self.editor.image_viewer.hide_brush_cursor()
-        self.editor.image_viewer.hide_brush_preview()
+        self.original_cursor_style = self.image_viewer.get_cursor_style()
+        self.image_viewer.set_cursor_style('outline')
+        self.image_viewer.hide_brush_cursor()
+        self.image_viewer.hide_brush_preview()
         QApplication.setOverrideCursor(QCursor(Qt.CrossCursor))
-        self.editor.image_viewer.strategy.setCursor(Qt.CrossCursor)
-        self.original_mouse_press = self.editor.image_viewer.strategy.get_mouse_callbacks()
-        self.editor.image_viewer.strategy.set_mouse_callbacks(self.pick_color_from_click)
+        self.image_viewer.strategy.setCursor(Qt.CrossCursor)
+        self.original_mouse_press = self.image_viewer.strategy.get_mouse_callbacks()
+        self.image_viewer.strategy.set_mouse_callbacks(self.pick_color_from_click)
         self.editor.view_strategy_menu.setEnabled(False)
 
     def pick_color_from_click(self, event):
@@ -124,15 +124,15 @@ class WhiteBalanceFilter(BaseFilter):
             bgr = self.editor.display_manager.get_pixel_color_at(
                 pos, radius=int(self.editor.brush.size))
             rgb = (bgr[2], bgr[1], bgr[0])
-            new_filter = WhiteBalanceFilter(self.name, self.editor)
+            new_filter = WhiteBalanceFilter(self.name, self.editor, self.image_viewer)
             new_filter.run_with_preview(init_val=rgb)
             QApplication.restoreOverrideCursor()
-            self.editor.image_viewer.unsetCursor()
-            self.editor.image_viewer.strategy.set_mouse_callbacks(self.original_mouse_press)
-            self.editor.image_viewer.set_cursor_style(self.original_cursor_style)
-            self.editor.image_viewer.show_brush_cursor()
-            self.editor.image_viewer.show_brush_preview()
-            self.editor.view_strategy_menu.setEnabled(True)
+            self.image_viewer.unsetCursor()
+            self.image_viewer.strategy.set_mouse_callbacks(self.original_mouse_press)
+            self.image_viewer.set_cursor_style(self.original_cursor_style)
+            self.image_viewer.show_brush_cursor()
+            self.image_viewer.show_brush_preview()
+            self.view_strategy_menu.setEnabled(True)
 
     def reset_rgb(self):
         for name, slider in self.sliders.items():
