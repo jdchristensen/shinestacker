@@ -38,7 +38,6 @@ class DisplayManager(QObject, LayerCollectionHandler):
         self.update_timer = QTimer()
         self.update_timer.setInterval(gui_constants.PAINT_REFRESH_TIMER)
         self.update_timer.timeout.connect(self.process_pending_updates)
-        self.thumbnail_highlight = gui_constants.THUMB_LO_COLOR
 
     def process_pending_updates(self):
         if self.needs_update:
@@ -117,7 +116,7 @@ class DisplayManager(QObject, LayerCollectionHandler):
         container_layout.addWidget(content_widget)
         if is_current:
             container.setStyleSheet(
-                f"#thumbnailContainer{{ border: 2px solid {self.thumbnail_highlight}; }}")
+                f"#thumbnailContainer{{ border: 2px solid {gui_constants.THUMB_HI_COLOR}; }}")
         else:
             container.setStyleSheet("#thumbnailContainer{ border: 2px solid transparent; }")
         item = QListWidgetItem()
@@ -128,7 +127,7 @@ class DisplayManager(QObject, LayerCollectionHandler):
         if is_current:
             self.thumbnail_list.setCurrentItem(item)
 
-    def highlight_thumbnail(self, index, color=None):
+    def highlight_thumbnail(self, index, color=gui_constants.THUMB_HI_COLOR):
         for i in range(self.thumbnail_list.count()):
             item = self.thumbnail_list.item(i)
             widget = self.thumbnail_list.itemWidget(item)
@@ -138,10 +137,6 @@ class DisplayManager(QObject, LayerCollectionHandler):
         if current_item:
             widget = self.thumbnail_list.itemWidget(current_item)
             if widget:
-                if color is None:
-                    color = self.thumbnail_highlight
-                else:
-                    self.thumbnail_highlight = color
                 widget.setStyleSheet(
                     f"#thumbnailContainer{{ border: 2px solid {color}; }}")
         self.thumbnail_list.setCurrentRow(index)
