@@ -362,7 +362,7 @@ class DoubleViewBase(ViewStrategy, QWidget, ViewSignals):
         self.set_zoom_factor(self.get_current_scale())
         self.set_zoom_factor(max(self.min_scale(), min(self.max_scale(), self.zoom_factor())))
         self.master_view.resetTransform()
-        self.master_scene.scale(self.zoom_factor(), self.zoom_factor())
+        self.master_view.scale(self.zoom_factor(), self.zoom_factor())
         self.master_view.centerOn(self.pixmap_item_master)
         center = self.master_scene.sceneRect().center()
         self.brush_preview.setPos(max(0, min(center.x(), img_width)),
@@ -377,7 +377,7 @@ class DoubleViewBase(ViewStrategy, QWidget, ViewSignals):
         self.current_scene.setSceneRect(QRectF(pixmap.rect()))
         self.pixmap_item_current.setPixmap(pixmap)
         self.current_view.resetTransform()
-        self.current_scene.scale(self.zoom_factor(), self.zoom_factor())
+        self.master_view.scale(self.zoom_factor(), self.zoom_factor())
         self.current_scene.setSceneRect(QRectF(self.pixmap_item_current.boundingRect()))
         self.center_image(self.current_view)
         self.update_cursor_pen_width()

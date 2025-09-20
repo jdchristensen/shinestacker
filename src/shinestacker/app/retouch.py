@@ -13,6 +13,7 @@ from shinestacker.app.gui_utils import (
     disable_macos_special_menu_items, fill_app_menu, set_css_style)
 from shinestacker.app.help_menu import add_help_action
 from shinestacker.app.open_frames import open_frames
+from .args import add_retouch_arguments
 
 
 class RetouchApp(ImageEditorUI):
@@ -44,10 +45,7 @@ def main():
 import frames from files.
 Multiple files can be specified separated by ';'.
 ''')
-    parser.add_argument('-p', '--path', nargs='?', help='''
-import frames from one or more directories.
-Multiple directories can be specified separated by ';'.
-''')
+    add_retouch_arguments(parser)
     args = vars(parser.parse_args(sys.argv[1:]))
     filename = args['filename']
     path = args['path']
@@ -65,6 +63,12 @@ Multiple directories can be specified separated by ';'.
     editor = RetouchApp()
     app.editor = editor
     editor.show()
+    if args['view_overlaid']:
+        editor.set_strategy('overlaid')
+    elif args['view_side_by_side']:
+        editor.set_strategy('sidebyside')
+    elif args['view_top_bottom']:
+        editor.set_strategy('topbottom')
     open_frames(editor, filename, path)
     sys.exit(app.exec())
 

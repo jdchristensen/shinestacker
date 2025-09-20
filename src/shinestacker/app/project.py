@@ -17,6 +17,7 @@ from shinestacker.gui.main_window import MainWindow
 from shinestacker.app.gui_utils import (
     disable_macos_special_menu_items, fill_app_menu, set_css_style)
 from shinestacker.app.help_menu import add_help_action
+from .args import add_project_arguments
 
 
 class ProjectApp(MainWindow):
@@ -52,9 +53,7 @@ def main():
     parser.add_argument('-f', '--filename', nargs='?', help='''
 project filename.
 ''')
-    parser.add_argument('-x', '--expert', action='store_true', help='''
-expert options are visible by default.
-''')
+    add_project_arguments(parser)
     args = vars(parser.parse_args(sys.argv[1:]))
     setup_logging(console_level=logging.DEBUG, file_level=logging.DEBUG, disable_console=True)
     app = Application(sys.argv)

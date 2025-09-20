@@ -1,4 +1,4 @@
-# pylint: disable=C0114, C0115, C0116, C0413, E0611, R0903, E1121, W0201
+# pylint: disable=C0114, C0115, C0116, C0413, E0611, R0903, E1121, W0201, R0915
 import sys
 import os
 import logging
@@ -20,6 +20,7 @@ from shinestacker.app.gui_utils import (
     disable_macos_special_menu_items, fill_app_menu, set_css_style)
 from shinestacker.app.help_menu import add_help_action
 from shinestacker.app.open_frames import open_frames
+from .args import add_project_arguments, add_retouch_arguments
 
 
 class SelectionDialog(QDialog):
@@ -211,16 +212,15 @@ if a single file is specified, it can be either a project or an image.
 Multiple frames can be specified as a list of files.
 Multiple files can be specified separated by ';'.
 ''')
-    parser.add_argument('-p', '--path', nargs='?', help='''
-import frames from one or more directories.
-Multiple directories can be specified separated by ';'.
+    app_group = parser.add_mutually_exclusive_group()
+    app_group.add_argument('-j', '--project', action='store_true', help='''
+open project window at startup instead of project windows (default).
 ''')
-    parser.add_argument('-r', '--retouch', action='store_true', help='''
+    app_group.add_argument('-r', '--retouch', action='store_true', help='''
 open retouch window at startup instead of project windows.
 ''')
-    parser.add_argument('-x', '--expert', action='store_true', help='''
-expert options are visible by default.
-''')
+    add_project_arguments(parser)
+    add_retouch_arguments(parser)
     args = vars(parser.parse_args(sys.argv[1:]))
     filename = args['filename']
     path = args['path']
@@ -239,6 +239,12 @@ expert options are visible by default.
     main_app.activateWindow()
     if args['expert']:
         main_app.project_window.set_expert_options()
+    if args['view_overlaid']:
+        main_app.retouch_window.set_strategy('overlaid')
+    elif args['view_side_by_side']:
+        main_app.retouch_window.set_strategy('sidebyside')
+    elif args['view_top_bottom']:
+        main_app.retouch_window.set_strategy('topbottom')
     if filename:
         filenames = filename.split(';')
         filename = filenames[0]
