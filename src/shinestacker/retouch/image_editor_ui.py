@@ -243,8 +243,6 @@ class ImageEditorUI(QMainWindow, LayerCollectionHandler):
         self.image_viewer.set_preview_brush(self.brush_tool.brush)
         self.brush_tool.update_brush_thumb()
         self.io_gui_handler.setup_ui(self.display_manager, self.image_viewer)
-        self.image_viewer.set_display_manager(self.display_manager)
-
         menubar = self.menuBar()
         file_menu = menubar.addMenu("&File")
         file_menu.addAction("&Open...", self.io_gui_handler.open_file, "Ctrl+O")
@@ -462,6 +460,7 @@ class ImageEditorUI(QMainWindow, LayerCollectionHandler):
     def set_strategy(self, strategy):
         self.image_viewer.set_strategy(strategy)
         enable_shortcuts = strategy == 'overlaid'
+        self.display_manager.view_mode = 'master'
         self.view_master_action.setEnabled(enable_shortcuts)
         self.view_individual_action.setEnabled(enable_shortcuts)
         self.toggle_view_master_individual_action.setEnabled(enable_shortcuts)

@@ -2,7 +2,15 @@
 
 This page reports the main releases only and the main changes therein.
 
-## [V1.5.1] - 2025-09-20
+## [v-.-.-] - 2025-09-20
+**Bug fixes**
+
+### Fixed
+- fixed brush preview visiblity in view mode transitions
+
+---
+
+## [v1.5.1] - 2025-09-20
 **Several bug fixes**
 
 ### Added

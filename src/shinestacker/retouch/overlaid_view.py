@@ -107,6 +107,10 @@ class OverlaidView(ViewStrategy, ImageGraphicsViewBase, ViewSignals):
             if self.brush_cursor:
                 self.brush_cursor.show()
         super().enterEvent(event)
+
+    def show(self):
+        self.show_master()
+        super().show()
     # pylint: enable=C0103
 
     def event(self, event):

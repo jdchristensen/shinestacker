@@ -100,14 +100,11 @@ class ImageGraphicsViewBase(QGraphicsView):
 class ViewStrategy(LayerCollectionHandler):
     def __init__(self, layer_collection, status):
         LayerCollectionHandler.__init__(self, layer_collection)
-        self.display_manager = None
         self.status = status
         self.brush = None
         self.brush_cursor = None
-        self.display_manager = None
         self.brush_preview = BrushPreviewItem(layer_collection)
         self.cursor_style = gui_constants.DEFAULT_CURSOR_STYLE
-        self.allow_cursor_preview = True
         self.control_pressed = False
         self.space_pressed = False
         self.gesture_active = False
@@ -180,41 +177,8 @@ class ViewStrategy(LayerCollectionHandler):
     def arrange_images(self):
         pass
 
-    def update_master_display(self):
-        if not self.empty():
-            master_qimage = self.numpy_to_qimage(self.master_layer())
-            if master_qimage:
-                pixmap = QPixmap.fromImage(master_qimage)
-                self.get_master_pixmap().setPixmap(pixmap)
-                self.get_master_scene().setSceneRect(QRectF(pixmap.rect()))
-                self.get_master_view().horizontalScrollBar().setValue(self.status.h_scroll)
-                self.get_master_view().verticalScrollBar().setValue(self.status.v_scroll)
-                self.arrange_images()
-
-    def update_current_display(self):
-        if not self.empty() and self.number_of_layers() > 0:
-            current_qimage = self.numpy_to_qimage(self.current_layer())
-            if current_qimage:
-                pixmap = QPixmap.fromImage(current_qimage)
-                self.get_current_pixmap().setPixmap(pixmap)
-                self.get_current_scene().setSceneRect(QRectF(pixmap.rect()))
-                self.get_current_view().horizontalScrollBar().setValue(self.status.h_scroll)
-                self.get_current_view().verticalScrollBar().setValue(self.status.v_scroll)
-                self.arrange_images()
-
     def current_line_width(self):
         return gui_constants.BRUSH_LINE_WIDTH / self.zoom_factor()
-
-    def update_cursor_pen_width(self):
-        width = self.current_line_width()
-        if self.brush_cursor is not None:
-            pen = self.brush_cursor.pen()
-            pen.setWidthF(width)
-            self.brush_cursor.setPen(pen)
-        return width
-
-    def set_allow_cursor_preview(self, state):
-        self.allow_cursor_preview = state
 
     def zoom_factor(self):
         return self.status.zoom_factor
@@ -246,9 +210,6 @@ class ViewStrategy(LayerCollectionHandler):
     def set_preview_brush(self, brush):
         self.brush_preview.brush = brush
 
-    def set_display_manager(self, dm):
-        self.display_manager = dm
-
     def set_cursor_style(self, style):
         self.cursor_style = style
         if self.brush_cursor:
@@ -263,6 +224,42 @@ class ViewStrategy(LayerCollectionHandler):
     def handle_key_release_event(self, _event):
         return True
 
+    def update_view_display(self, layer, pixmap_item, scene, view):
+        if self.empty():
+            return
+        qimage = self.numpy_to_qimage(layer)
+        if qimage:
+            pixmap = QPixmap.fromImage(qimage)
+            pixmap_item.setPixmap(pixmap)
+            scene.setSceneRect(QRectF(pixmap.rect()))
+            view.horizontalScrollBar().setValue(self.status.h_scroll)
+            view.verticalScrollBar().setValue(self.status.v_scroll)
+            self.arrange_images()
+
+    def update_master_display(self):
+        self.update_view_display(
+            self.master_layer(),
+            self.get_master_pixmap(),
+            self.get_master_scene(),
+            self.get_master_view())
+
+    def update_current_display(self):
+        if self.number_of_layers() <= 0:
+            return
+        self.update_view_display(
+            self.current_layer(),
+            self.get_current_pixmap(),
+            self.get_current_view(),
+            self.get_current_view())
+
+    def update_cursor_pen_width(self):
+        width = self.current_line_width()
+        if self.brush_cursor is not None:
+            pen = self.brush_cursor.pen()
+            pen.setWidthF(width)
+            self.brush_cursor.setPen(pen)
+        return width
+
     def clear_image(self):
         for scene in self.get_scenes():
             scene.clear()
@@ -272,13 +269,7 @@ class ViewStrategy(LayerCollectionHandler):
         self.brush_preview = BrushPreviewItem(self.layer_collection)
         self.get_master_scene().addItem(self.brush_preview)
         self.setCursor(Qt.ArrowCursor)
-        if self.brush_cursor:
-            self.brush_cursor.hide()
-
-    def cleanup_brush_preview(self):
-        if self.brush_cursor:
-            self.brush_cursor.hide()
-        self.brush_preview.hide()
+        self.brush_cursor.hide()
 
     def set_master_image_np(self, img):
         self.set_master_image(self.numpy_to_qimage(img))
@@ -443,9 +434,8 @@ class ViewStrategy(LayerCollectionHandler):
         size = self.brush.size
         radius = size / 2
         self.brush_cursor.setRect(scene_pos.x() - radius, scene_pos.y() - radius, size, size)
-        allow_cursor_preview = self.display_manager.allow_cursor_preview()
         if self.cursor_style == 'preview':
-            if allow_cursor_preview:
+            if self.brush_preview.isVisible():
                 self.brush_cursor.hide()
                 pos = QCursor.pos()
                 if isinstance(pos, QPointF):
@@ -458,8 +448,7 @@ class ViewStrategy(LayerCollectionHandler):
             self.brush_preview.hide()
             if self.cursor_style != 'outline':
                 self.setup_simple_brush_style(scene_pos.x(), scene_pos.y(), radius)
-        if not self.brush_cursor.isVisible():
-            self.brush_cursor.show()
+        self.brush_cursor.show()
 
     def position_on_image(self, pos):
         master_view = self.get_master_view()

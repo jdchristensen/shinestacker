@@ -35,7 +35,6 @@ class ImageViewer(QWidget):
         self.strategy.show()
         self.strategy.resize(self.size())
         if not self.strategy.empty():
-            self.strategy.cleanup_brush_preview()
             self.strategy.update_master_display()
             self.strategy.update_current_display()
             self.strategy.setup_brush_cursor()
@@ -79,13 +78,6 @@ class ImageViewer(QWidget):
     def set_preview_brush(self, brush):
         for st in self._strategies.values():
             st.set_preview_brush(brush)
-
-    def set_display_manager(self, dm):
-        for st in self._strategies.values():
-            st.set_display_manager(dm)
-
-    def set_allow_cursor_preview(self, state):
-        self.strategy.set_allow_cursor_preview(state)
 
     def zoom_in(self):
         self.strategy.zoom_in()
