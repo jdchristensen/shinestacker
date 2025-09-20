@@ -31,7 +31,6 @@ class ImageEditorUI(QMainWindow, LayerCollectionHandler):
         QMainWindow.__init__(self)
         LayerCollectionHandler.__init__(self, LayerCollection())
         self._recent_file_manager = RecentFileManager("shinestacker-recent-images-files.txt")
-        self.thumbnail_highlight = gui_constants.THUMB_MASTER_HI_COLOR
         self.io_gui_handler = None
         self.display_manager = None
         self.brush = Brush()
@@ -144,7 +143,7 @@ class ImageEditorUI(QMainWindow, LayerCollectionHandler):
         self.master_thumbnail_frame = QFrame()
         self.master_thumbnail_frame.setObjectName("thumbnailContainer")
         self.master_thumbnail_frame.setStyleSheet(
-            f"#thumbnailContainer{{ border: 2px solid {self.thumbnail_highlight}; }}")
+            f"#thumbnailContainer{{ border: 2px solid {gui_constants.THUMB_MASTER_HI_COLOR}; }}")
         self.master_thumbnail_frame.setFrameShape(QFrame.StyledPanel)
         master_thumbnail_layout = QVBoxLayout(self.master_thumbnail_frame)
         master_thumbnail_layout.setContentsMargins(8, 8, 8, 8)
@@ -461,8 +460,7 @@ class ImageEditorUI(QMainWindow, LayerCollectionHandler):
         self.image_viewer.set_strategy(strategy)
         enable_shortcuts = strategy == 'overlaid'
         self.display_manager.view_mode = 'master'
-        self.thumbnail_highlight = gui_constants.THUMB_MASTER_HI_COLOR
-        self.highlight_master_thumbnail()
+        self.highlight_master_thumbnail(gui_constants.THUMB_MASTER_HI_COLOR)
         self.view_master_action.setEnabled(enable_shortcuts)
         self.view_individual_action.setEnabled(enable_shortcuts)
         self.toggle_view_master_individual_action.setEnabled(enable_shortcuts)
@@ -692,9 +690,9 @@ class ImageEditorUI(QMainWindow, LayerCollectionHandler):
             return tuple(int(v) for v in pixel)
         return (0, 0, 0)
 
-    def highlight_master_thumbnail(self):
+    def highlight_master_thumbnail(self, color):
         self.master_thumbnail_frame.setStyleSheet(
-            f"#thumbnailContainer{{ border: 2px solid {self.thumbnail_highlight}; }}")
+            f"#thumbnailContainer{{ border: 2px solid {color}; }}")
 
     def save_actions_set_enabled(self, enabled):
         self.save_action.setEnabled(enabled)
@@ -710,13 +708,11 @@ class ImageEditorUI(QMainWindow, LayerCollectionHandler):
 
     def set_view_master(self):
         self.display_manager.set_view_master()
-        self.thumbnail_highlight = gui_constants.THUMB_MASTER_HI_COLOR
-        self.highlight_master_thumbnail()
+        self.highlight_master_thumbnail(gui_constants.THUMB_MASTER_HI_COLOR)
 
     def set_view_individual(self):
         self.display_manager.set_view_individual()
-        self.thumbnail_highlight = gui_constants.THUMB_MASTER_LO_COLOR
-        self.highlight_master_thumbnail()
+        self.highlight_master_thumbnail(gui_constants.THUMB_MASTER_LO_COLOR)
 
     def toggle_view_master_individual(self):
         if self.display_manager.view_mode == 'master':
@@ -751,12 +747,10 @@ class ImageEditorUI(QMainWindow, LayerCollectionHandler):
     def handle_temp_view(self, start):
         if start:
             self.display_manager.start_temp_view()
-            self.thumbnail_highlight = gui_constants.THUMB_MASTER_LO_COLOR
-            self.highlight_master_thumbnail()
+            self.highlight_master_thumbnail(gui_constants.THUMB_MASTER_LO_COLOR)
         else:
             self.display_manager.end_temp_view()
-            self.thumbnail_highlight = gui_constants.THUMB_MASTER_HI_COLOR
-            self.highlight_master_thumbnail()
+            self.highlight_master_thumbnail(gui_constants.THUMB_MASTER_HI_COLOR)
 
     def handle_brush_size_change(self, delta):
         if delta > 0:
