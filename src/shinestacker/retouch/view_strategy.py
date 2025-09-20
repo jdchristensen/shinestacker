@@ -202,8 +202,11 @@ class ViewStrategy(LayerCollectionHandler):
                 self.get_current_view().verticalScrollBar().setValue(self.status.v_scroll)
                 self.arrange_images()
 
+    def current_line_width(self):
+        return gui_constants.BRUSH_LINE_WIDTH / self.zoom_factor()
+
     def update_cursor_pen_width(self):
-        width = gui_constants.BRUSH_LINE_WIDTH / self.zoom_factor()
+        width = self.current_line_width()
         if self.brush_cursor is not None:
             pen = self.brush_cursor.pen()
             pen.setWidthF(width)
@@ -387,15 +390,15 @@ class ViewStrategy(LayerCollectionHandler):
     def setup_simple_brush_style(self, center_x, center_y, radius):
         gradient = create_default_brush_gradient(center_x, center_y, radius, self.brush)
         self.brush_cursor.setPen(QPen(QColor(*gui_constants.BRUSH_COLORS['pen']),
-                                      gui_constants.BRUSH_LINE_WIDTH / self.zoom_factor()))
+                                      self.current_line_width()))
         self.brush_cursor.setBrush(QBrush(gradient))
 
     def create_circle(self, scene, line_style=Qt.SolidLine):
         for item in scene.items():
             if isinstance(item, QGraphicsEllipseItem) and item != self.brush_preview:
                 scene.removeItem(item)
-        pen_width = gui_constants.BRUSH_LINE_WIDTH / self.zoom_factor()
-        pen = QPen(QColor(*gui_constants.BRUSH_COLORS['pen']), pen_width, line_style)
+        pen = QPen(QColor(*gui_constants.BRUSH_COLORS['pen']),
+                   self.current_line_width(), line_style)
         brush = Qt.NoBrush
         scene_center = scene.sceneRect().center()
         brush_cursor = scene.addEllipse(
@@ -409,8 +412,8 @@ class ViewStrategy(LayerCollectionHandler):
         for item in scene.items():
             if isinstance(item, BrushCursor) and item != self.brush_preview:
                 scene.removeItem(item)
-        pen_width = gui_constants.BRUSH_LINE_WIDTH / self.zoom_factor()
-        pen = QPen(QColor(*gui_constants.BRUSH_COLORS['pen']), pen_width, line_style)
+        pen = QPen(QColor(*gui_constants.BRUSH_COLORS['pen']),
+                   self.current_line_width(), line_style)
         brush = Qt.NoBrush
         scene_center = scene.sceneRect().center()
         brush_cursor = BrushCursor(
