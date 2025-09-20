@@ -66,7 +66,7 @@ class WhiteBalanceFilter(BaseFilter):
         for slider in self.sliders.values():
             slider.valueChanged.connect(self.on_slider_change)
         self.preview_timer.timeout.connect(do_preview)
-        self.editor.connect_preview_toggle(self.preview_check, do_preview, restore_original)
+        self.connect_preview_toggle(self.preview_check, do_preview, restore_original)
         pick_button.clicked.connect(self.start_color_pick)
         self.button_box.accepted.connect(dlg.accept)
         self.button_box.rejected.connect(dlg.reject)

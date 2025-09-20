@@ -162,6 +162,14 @@ class BaseFilter(ABC, LayerCollectionHandler):
         else:
             restore_original()
 
+    def connect_preview_toggle(self, preview_check, do_preview, restore_original):
+        def on_toggled(checked):
+            if checked:
+                do_preview()
+            else:
+                restore_original()
+        preview_check.toggled.connect(on_toggled)
+
     def create_base_widgets(self, layout, buttons, preview_latency, parent):
         self.preview_check = QCheckBox("Preview")
         self.preview_check.setChecked(self.preview_at_startup)
@@ -238,7 +246,7 @@ class OneSliderBaseFilter(BaseFilter):
         self.preview_timer.timeout.connect(do_preview)
 
         slider_local.valueChanged.connect(self.config_changed)
-        self.editor.connect_preview_toggle(
+        self.connect_preview_toggle(
             self.preview_check, self.do_preview_delayed, restore_original)
         self.button_box.accepted.connect(dlg.accept)
         self.button_box.rejected.connect(dlg.reject)

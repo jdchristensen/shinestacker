@@ -645,14 +645,6 @@ class ImageEditorUI(QMainWindow, LayerCollectionHandler):
     def vignetting_correction(self):
         self.filter_manager.apply("Vignetting Correction")
 
-    def connect_preview_toggle(self, preview_check, do_preview, restore_original):
-        def on_toggled(checked):
-            if checked:
-                do_preview()
-            else:
-                restore_original()
-        preview_check.toggled.connect(on_toggled)
-
     def highlight_master_thumbnail(self, color):
         self.master_thumbnail_frame.setStyleSheet(
             f"#thumbnailContainer{{ border: 2px solid {color}; }}")

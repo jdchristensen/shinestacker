@@ -62,7 +62,7 @@ class UnsharpMaskFilter(BaseFilter):
         self.threshold_slider.valueChanged.connect(
             lambda v: update_value("Threshold", v, self.max_threshold, params["Threshold"][2]))
         self.preview_timer.timeout.connect(do_preview)
-        self.editor.connect_preview_toggle(self.preview_check, do_preview, restore_original)
+        self.connect_preview_toggle(self.preview_check, do_preview, restore_original)
         self.button_box.accepted.connect(dlg.accept)
         self.button_box.rejected.connect(dlg.reject)
         QTimer.singleShot(0, do_preview)
