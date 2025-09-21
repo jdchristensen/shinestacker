@@ -97,6 +97,8 @@ class ImageGraphicsViewBase(QGraphicsView):
         self.setRenderHint(QPainter.Antialiasing)
         self.setRenderHint(QPainter.SmoothPixmapTransform)
         self.setCursor(Qt.BlankCursor)
+        self.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
+        self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
 
 
 class ViewStrategy(LayerCollectionHandler):

@@ -14,11 +14,6 @@ class ImageGraphicsView(ImageGraphicsViewBase):
     gesture_event = Signal(QEvent)
     wheel_event = Signal(QEvent)
 
-    def __init__(self, parent=None):
-        super().__init__(parent)
-        self.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
-        self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
-
     # pylint: disable=C0103
     def event(self, event):
         if event.type() == QEvent.Gesture:
