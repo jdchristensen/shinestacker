@@ -9,6 +9,7 @@ This page reports the main releases only and the main changes therein.
 - fixed glitch in zoom in/out
 - fixed mouse wheel zoom
 - fixed current layer brush cursor appearence when zooming in and out
+- fixed multiple color picking in white-balance filter
 
 ----
 

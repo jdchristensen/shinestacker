@@ -60,6 +60,8 @@ class WhiteBalanceFilter(BaseFilter):
         layout.addLayout(rbg_layout)
 
         pick_button = QPushButton("Pick Color")
+        if self._disable_pick_color:
+            pick_button.setEnabled(False)
         layout.addWidget(pick_button)
         self.create_base_widgets(
             layout,
@@ -126,17 +128,18 @@ class WhiteBalanceFilter(BaseFilter):
             bgr = self.get_pixel_color_at(
                 pos, radius=int(self.image_viewer.get_brush().size))
             rgb = (bgr[2], bgr[1], bgr[0])
+            QApplication.restoreOverrideCursor()
+            self.image_viewer.unsetCursor()
+            self.image_viewer.strategy.set_mouse_callbacks(self.original_mouse_press)
+            self.filter_gui_set_enabled_requested.emit(True)
+            self.image_viewer.hide_brush_preview()
             new_filter = WhiteBalanceFilter(
                 self.name, self.parent(), self.image_viewer, self.layer_collection,
                 self.undo_manager)
             new_filter.run_with_preview(init_val=rgb)
-            QApplication.restoreOverrideCursor()
-            self.image_viewer.unsetCursor()
-            self.image_viewer.strategy.set_mouse_callbacks(self.original_mouse_press)
             self.image_viewer.set_cursor_style(self.original_cursor_style)
             self.image_viewer.show_brush_cursor()
             self.image_viewer.show_brush_preview()
-            self.filter_gui_set_enabled_requested.emit(True)
 
     def reset_rgb(self):
         for name, slider in self.sliders.items():
