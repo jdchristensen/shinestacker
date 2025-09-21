@@ -9,8 +9,8 @@ from .base_filter import BaseFilter
 
 
 class WhiteBalanceFilter(BaseFilter):
-    def __init__(self, name, editor, image_viewer, layer_collection, undo_manager):
-        super().__init__(name, editor, image_viewer, layer_collection, undo_manager,
+    def __init__(self, name, parent, image_viewer, layer_collection, undo_manager):
+        super().__init__(name, parent, image_viewer, layer_collection, undo_manager,
                          preview_at_startup=True)
         self.max_range = 255
         self.initial_val = (128, 128, 128)
@@ -118,7 +118,7 @@ class WhiteBalanceFilter(BaseFilter):
         self.image_viewer.strategy.setCursor(Qt.CrossCursor)
         self.original_mouse_press = self.image_viewer.strategy.get_mouse_callbacks()
         self.image_viewer.strategy.set_mouse_callbacks(self.pick_color_from_click)
-        self.editor.view_strategy_menu.setEnabled(False)
+        self.filter_gui_set_enabled_requested.emit(False)
 
     def pick_color_from_click(self, event):
         if event.button() == Qt.LeftButton:
@@ -127,7 +127,7 @@ class WhiteBalanceFilter(BaseFilter):
                 pos, radius=int(self.image_viewer.get_brush().size))
             rgb = (bgr[2], bgr[1], bgr[0])
             new_filter = WhiteBalanceFilter(
-                self.name, self.editor, self.image_viewer, self.layer_collection,
+                self.name, self.parent(), self.image_viewer, self.layer_collection,
                 self.undo_manager)
             new_filter.run_with_preview(init_val=rgb)
             QApplication.restoreOverrideCursor()
@@ -136,7 +136,7 @@ class WhiteBalanceFilter(BaseFilter):
             self.image_viewer.set_cursor_style(self.original_cursor_style)
             self.image_viewer.show_brush_cursor()
             self.image_viewer.show_brush_preview()
-            self.editor.view_strategy_menu.setEnabled(True)
+            self.filter_gui_set_enabled_requested.emit(True)
 
     def reset_rgb(self):
         for name, slider in self.sliders.items():

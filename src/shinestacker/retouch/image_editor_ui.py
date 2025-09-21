@@ -31,7 +31,6 @@ class ImageEditorUI(QMainWindow, LayerCollectionHandler):
         LayerCollectionHandler.__init__(self, LayerCollection())
         self._recent_file_manager = RecentFileManager("shinestacker-recent-images-files.txt")
         self.io_gui_handler = None
-        self.display_manager = None
         self.brush = Brush()
         self.brush_tool = BrushTool()
         self.modified = False
@@ -56,11 +55,6 @@ class ImageEditorUI(QMainWindow, LayerCollectionHandler):
             self.continue_copy_brush_area,
             self.end_copy_brush_area,
             self.handle_brush_size_change)
-        self.filter_manager = FilterManager(self)
-        self.filter_manager.register_filter("Denoise", DenoiseFilter)
-        self.filter_manager.register_filter("Unsharp Mask", UnsharpMaskFilter)
-        self.filter_manager.register_filter("White Balance", WhiteBalanceFilter)
-        self.filter_manager.register_filter("Vignetting Correction", VignettingFilter)
         side_panel = QWidget()
         side_layout = QVBoxLayout(side_panel)
         side_layout.setContentsMargins(0, 0, 0, 0)
@@ -227,6 +221,7 @@ class ImageEditorUI(QMainWindow, LayerCollectionHandler):
         self.display_manager = DisplayManager(
             self.layer_collection, self.image_viewer,
             self.master_thumbnail_label, self.thumbnail_list, parent=self)
+        self.filter_manager = FilterManager(self)
         self.io_gui_handler = IOGuiHandler(self.layer_collection, self.undo_manager, parent=self)
         self.display_manager.status_message_requested.connect(self.show_status_message)
         self.io_gui_handler.status_message_requested.connect(self.show_status_message)
@@ -332,6 +327,20 @@ class ImageEditorUI(QMainWindow, LayerCollectionHandler):
         side_by_side_mode.triggered.connect(lambda: self.set_strategy('topbottom'))
         self.view_strategy_menu.addAction(side_by_side_mode)
         view_menu.addMenu(self.view_strategy_menu)
+
+        filter_handles = (
+            self.display_manager.update_master_thumbnail,
+            self.mark_as_modified,
+            self.view_strategy_menu.setEnabled
+        )
+        self.filter_manager.register_filter(
+            "Denoise", DenoiseFilter, *filter_handles)
+        self.filter_manager.register_filter(
+            "Unsharp Mask", UnsharpMaskFilter, *filter_handles)
+        self.filter_manager.register_filter(
+            "White Balance", WhiteBalanceFilter, *filter_handles)
+        self.filter_manager.register_filter(
+            "Vignetting Correction", VignettingFilter, *filter_handles)
 
         cursor_menu = view_menu.addMenu("Cursor Style")
 

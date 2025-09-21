@@ -1,19 +1,23 @@
 # pylint: disable=C0114, C0115, C0116, E0611, W0718, R0915, R0903, R0913, R0917, R0902, R0914
 import traceback
-from abc import ABC, abstractmethod
+from abc import abstractmethod
 import numpy as np
+from PySide6.QtCore import Qt, QThread, QTimer, QObject, Signal
 from PySide6.QtWidgets import (
     QHBoxLayout, QLabel, QSlider, QDialog, QVBoxLayout, QCheckBox, QDialogButtonBox)
-from PySide6.QtCore import Qt, Signal, QThread, QTimer
 from .layer_collection import LayerCollectionHandler
 
 
-class BaseFilter(ABC, LayerCollectionHandler):
-    def __init__(self, name, editor, image_viewer, layer_collection, undo_manager,
+class BaseFilter(QObject, LayerCollectionHandler):
+    update_master_thumbnail_requested = Signal()
+    mark_as_modified_requested = Signal()
+    filter_gui_set_enabled_requested = Signal(bool)
+
+    def __init__(self, name, parent, image_viewer, layer_collection, undo_manager,
                  allow_partial_preview=True,
                  partial_preview_threshold=0.75, preview_at_startup=False):
+        QObject.__init__(self, parent)
         LayerCollectionHandler.__init__(self, layer_collection)
-        self.editor = editor
         self.image_viewer = image_viewer
         self.undo_manager = undo_manager
         self.name = name
@@ -36,11 +40,16 @@ class BaseFilter(ABC, LayerCollectionHandler):
     def apply(self, image, *params):
         pass
 
+    def connect_signals(self, update_master_thumbnail, mark_as_modified, filter_gui_set_enabled):
+        self.update_master_thumbnail_requested.connect(update_master_thumbnail)
+        self.mark_as_modified_requested.connect(mark_as_modified)
+        self.filter_gui_set_enabled_requested.connect(filter_gui_set_enabled)
+
     def run_with_preview(self, **kwargs):
         if self.has_no_master_layer():
             return
         self.copy_master_layer()
-        dlg = QDialog(self.editor)
+        dlg = QDialog(self.parent())
         layout = QVBoxLayout(dlg)
         active_worker = None
         last_request_id = 0
@@ -159,8 +168,8 @@ class BaseFilter(ABC, LayerCollectionHandler):
             self.set_master_layer(final_img)
             self.copy_master_layer()
             self.image_viewer.update_master_display()
-            self.editor.display_manager.update_master_thumbnail()
-            self.editor.mark_as_modified()
+            self.update_master_thumbnail_requested.emit()
+            self.mark_as_modified_requested.emit()
         else:
             restore_original()
 
@@ -212,11 +221,11 @@ class BaseFilter(ABC, LayerCollectionHandler):
 
 
 class OneSliderBaseFilter(BaseFilter):
-    def __init__(self, name, editor, image_viewer, layer_collection, undo_manager,
+    def __init__(self, name, parent, image_viewer, layer_collection, undo_manager,
                  max_value, initial_value, title,
                  allow_partial_preview=True, partial_preview_threshold=0.5,
                  preview_at_startup=True):
-        super().__init__(name, editor, image_viewer, layer_collection, undo_manager,
+        super().__init__(name, parent, image_viewer, layer_collection, undo_manager,
                          allow_partial_preview,
                          partial_preview_threshold, preview_at_startup)
         self.max_range = 500

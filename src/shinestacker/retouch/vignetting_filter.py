@@ -1,4 +1,4 @@
-# pylint: disable=C0114, C0115, C0116, E0611, W0221, R0902
+# pylint: disable=C0114, C0115, C0116, E0611, W0221, R0902, R0913, R0917
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QSpinBox, QCheckBox, QLabel, QHBoxLayout, QSlider, QComboBox
 from .. config.constants import constants
@@ -7,8 +7,8 @@ from .base_filter import OneSliderBaseFilter
 
 
 class VignettingFilter(OneSliderBaseFilter):
-    def __init__(self, name, editor, image_viewer, layer_collection, undo_manager):
-        super().__init__(name, editor, image_viewer, layer_collection, undo_manager,
+    def __init__(self, name, parent, image_viewer, layer_collection, undo_manager):
+        super().__init__(name, parent, image_viewer, layer_collection, undo_manager,
                          1.0, 0.90, "Vignetting correction",
                          allow_partial_preview=False, preview_at_startup=False)
         self.subsample_box = None
