@@ -1,6 +1,5 @@
 # pylint: disable=C0114, C0115, C0116, E0611, E1101, R0904, R0912, R0914, R0902, E0202
 from PySide6.QtCore import Qt, QPointF, QEvent, QRectF
-from .. config.gui_constants import gui_constants
 from .view_strategy import ViewStrategy, ImageGraphicsViewBase, ViewSignals
 
 
@@ -69,26 +68,14 @@ class OverlaidView(ViewStrategy, ImageGraphicsViewBase, ViewSignals):
             if self.control_pressed:
                 self.brush_size_change_requested.emit(1 if event.angleDelta().y() > 0 else -1)
             else:
-                zoom_in_factor = gui_constants.ZOOM_IN_FACTOR
-                zoom_out_factor = gui_constants.ZOOM_OUT_FACTOR
-                current_scale = self.get_current_scale()
-                if event.angleDelta().y() > 0:  # Zoom in
-                    new_scale = current_scale * zoom_in_factor
-                    if new_scale <= self.max_scale():
-                        self.scale(zoom_in_factor, zoom_in_factor)
-                        self.set_zoom_factor(new_scale)
-                else:  # Zoom out
-                    new_scale = current_scale * zoom_out_factor
-                    if new_scale >= self.min_scale():
-                        self.scale(zoom_out_factor, zoom_out_factor)
-                        self.set_zoom_factor(new_scale)
+                self.handle_zoom_wheel(self, event)
             self.update_brush_cursor()
-        else:  # Touchpad event - fallback for systems without gesture recognition
+        else:  # Touchpad event
             if not self.control_pressed:
                 delta = event.pixelDelta() or event.angleDelta() / 8
                 if delta:
                     self.scroll_view(self, delta.x(), delta.y())
-            else:  # Control + touchpad scroll for zoom
+            else:
                 zoom_in = event.angleDelta().y() > 0
                 if zoom_in:
                     self.zoom_in()

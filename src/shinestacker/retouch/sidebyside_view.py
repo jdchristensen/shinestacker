@@ -3,6 +3,7 @@ import time
 from PySide6.QtCore import Qt, Signal, QEvent, QRectF
 from PySide6.QtGui import QCursor
 from PySide6.QtWidgets import QWidget, QHBoxLayout, QVBoxLayout, QFrame
+
 from .view_strategy import ViewStrategy, ImageGraphicsViewBase, ViewSignals
 
 
@@ -237,11 +238,19 @@ class DoubleViewBase(ViewStrategy, QWidget, ViewSignals):
             if self.control_pressed:
                 self.brush_size_change_requested.emit(1 if event.angleDelta().y() > 0 else -1)
             else:
-                if event.angleDelta().y() > 0:  # Zoom in
-                    self.zoom_in()
-                else:  # Zoom out
-                    self.zoom_out()
-        else:  # Touchpad event - handle scrolling
+                mouse_pos_global = event.position().toPoint()
+                mouse_pos_current = self.current_view.mapFromGlobal(mouse_pos_global)
+                mouse_pos_master = self.master_view.mapFromGlobal(mouse_pos_global)
+                current_has_mouse = self.current_view.rect().contains(mouse_pos_current)
+                master_has_mouse = self.master_view.rect().contains(mouse_pos_master)
+                if master_has_mouse:
+                    source_view = self.master_view
+                elif current_has_mouse:
+                    source_view = self.current_view
+                else:
+                    return
+                self.handle_zoom_wheel(source_view, event)
+        else:  # Touchpad event
             if not self.control_pressed:
                 delta = event.pixelDelta() or event.angleDelta() / 8
                 if delta:

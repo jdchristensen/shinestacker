@@ -707,3 +707,25 @@ class ViewStrategy(LayerCollectionHandler):
         elif pinch.state() in (Qt.GestureFinished, Qt.GestureCanceled):
             self.gesture_active = False
         self.update_cursor_pen_width()
+
+    def handle_zoom_wheel(self, view, event):
+        mouse_pos = event.position()
+        zoom_center_scene = view.mapToScene(mouse_pos.toPoint())
+        zoom_in_factor = gui_constants.ZOOM_IN_FACTOR
+        zoom_out_factor = gui_constants.ZOOM_OUT_FACTOR
+        current_scale = self.get_current_scale()
+        if event.angleDelta().y() > 0:  # Zoom in
+            new_scale = current_scale * zoom_in_factor
+        else:  # Zoom out
+            new_scale = current_scale * zoom_out_factor
+        new_scale = max(self.min_scale(), min(new_scale, self.max_scale()))
+        self.set_zoom_factor(new_scale)
+        self.apply_zoom()
+        new_center_view = view.mapToScene(mouse_pos.toPoint())
+        delta = zoom_center_scene - new_center_view
+        h_scroll = view.horizontalScrollBar().value() + \
+            int(delta.x() * self.zoom_factor())
+        v_scroll = view.verticalScrollBar().value() + \
+            int(delta.y() * self.zoom_factor())
+        self.status.set_scroll(h_scroll, v_scroll)
+        self.center_image(view)
