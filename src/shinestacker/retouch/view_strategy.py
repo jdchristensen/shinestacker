@@ -1,5 +1,6 @@
 # pylint: disable=C0114, C0115, C0116, E0611, R0904, R0903, R0902, E1101, R0914, R0913, R0917
 import math
+import time
 from abc import abstractmethod
 import numpy as np
 from PySide6.QtCore import Qt, QPointF, QTime, QPoint, Signal, QRectF
@@ -116,6 +117,7 @@ class ViewStrategy(LayerCollectionHandler):
         self.last_brush_pos = None
         self.last_mouse_pos = None
         self.last_update_time = QTime.currentTime()
+        self.last_color_update_time = 0
 
     @abstractmethod
     def create_pixmaps(self):
@@ -471,7 +473,55 @@ class ViewStrategy(LayerCollectionHandler):
             self.hide_brush_preview()
             if self.cursor_style != 'outline':
                 self.setup_simple_brush_style(scene_pos.x(), scene_pos.y(), radius)
+        self.update_master_cursor_color()
         self.show_brush_cursor()
+
+    def update_color_time(self):
+        current_time = time.time()
+        if current_time - self.last_color_update_time < 0.2:
+            return False
+        self.last_color_update_time = current_time
+        return True
+
+    def update_master_cursor_color(self):
+        self.update_cursor_color_based_on_background(
+            self.brush_cursor, self.master_layer(),
+            self.get_visible_image_region, self.get_master_pixmap,
+            self.update_color_time)
+
+    def update_cursor_color_based_on_background(
+            self, cursor, layer,
+            visible_region, get_pixmap, update_timer):
+        if not update_timer():
+            return
+        cursor_rect = cursor.rect()
+        image_region = visible_region()
+        if image_region and cursor_rect.intersects(image_region):
+            intersect_rect = cursor_rect.intersected(image_region)
+            top_left = get_pixmap().mapFromScene(intersect_rect.topLeft())
+            bottom_right = get_pixmap().mapFromScene(intersect_rect.bottomRight())
+            x1, y1 = max(0, int(top_left.x())), max(0, int(top_left.y()))
+            x2, y2 = min(layer.shape[1], int(bottom_right.x())), \
+                min(layer.shape[0], int(bottom_right.y()))
+            if x2 > x1 and y2 > y1:
+                region = layer[y1:y2, x1:x2]
+                if region.size > 10000:
+                    step = int(math.sqrt(region.size / 100))
+                    region = region[::step, ::step]
+                if region.ndim == 3:
+                    luminosity = np.dot(region[..., :3], [0.299, 0.587, 0.114])
+                    avg_luminosity = np.mean(luminosity)
+                else:
+                    avg_luminosity = np.mean(region)
+                if region.dtype == np.uint16:
+                    avg_luminosity /= 256.0
+                if avg_luminosity < 128:
+                    new_color = QColor(255, 255, 255)
+                else:
+                    new_color = QColor(0, 0, 0)
+                current_pen = cursor.pen()
+                current_pen.setColor(new_color)
+                cursor.setPen(current_pen)
 
     def position_on_image(self, pos):
         master_view = self.get_master_view()
@@ -485,11 +535,20 @@ class ViewStrategy(LayerCollectionHandler):
             return None
         master_view = self.get_master_view()
         master_pixmap = self.get_master_pixmap()
-        pixmap = self.get_master_pixmap()
         view_rect = master_view.viewport().rect()
         scene_rect = master_view.mapToScene(view_rect).boundingRect()
         image_rect = master_pixmap.mapFromScene(scene_rect).boundingRect().toRect()
-        return image_rect.intersected(pixmap.boundingRect().toRect())
+        return image_rect.intersected(master_pixmap.boundingRect().toRect())
+
+    def get_visible_current_image_region(self):
+        if self.empty():
+            return None
+        current_view = self.get_current_view()
+        current_pixmap = self.get_current_pixmap()
+        view_rect = current_view.viewport().rect()
+        scene_rect = current_pixmap.mapToScene(view_rect).boundingRect()
+        image_rect = current_pixmap.mapFromScene(scene_rect).boundingRect().toRect()
+        return image_rect.intersected(current_pixmap.boundingRect().toRect())
 
     def get_visible_image_portion(self):
         if self.has_no_master_layer():

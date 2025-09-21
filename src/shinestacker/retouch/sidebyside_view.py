@@ -1,4 +1,5 @@
 # pylint: disable=C0114, C0115, C0116, R0904, R0915, E0611, R0902, R0911, R0914, E1003
+import time
 from PySide6.QtCore import Qt, Signal, QEvent, QRectF
 from PySide6.QtGui import QCursor
 from PySide6.QtWidgets import QWidget, QHBoxLayout, QVBoxLayout, QFrame
@@ -58,6 +59,7 @@ class DoubleViewBase(ViewStrategy, QWidget, ViewSignals):
         self.current_view.setFocusPolicy(Qt.NoFocus)
         self.master_view.setFocusPolicy(Qt.NoFocus)
         self.current_brush_cursor = None
+        self.last_color_update_time_current = 0
 
     def setup_layout(self):
         raise NotImplementedError("Subclasses must implement setup_layout")
@@ -311,15 +313,30 @@ class DoubleViewBase(ViewStrategy, QWidget, ViewSignals):
             radius = size / 2
             self.current_brush_cursor.setRect(
                 scene_pos.x() - radius, scene_pos.y() - radius, size, size)
+            self.update_current_cursor_color()
             self.current_brush_cursor.show()
             self.brush_cursor.setRect(
                 scene_pos.x() - radius, scene_pos.y() - radius, size, size)
+            self.update_master_cursor_color()
             self.brush_cursor.show()
         else:
             self.brush_cursor.hide()
             self.current_brush_cursor.hide()
             self.master_view.setCursor(Qt.ArrowCursor)
             self.current_view.setCursor(Qt.ArrowCursor)
+
+    def update_current_cursor_color(self):
+        self.update_cursor_color_based_on_background(
+            self.current_brush_cursor, self.current_layer(),
+            self.get_visible_current_image_region, self.get_current_pixmap,
+            self.update_color_time_current)
+
+    def update_color_time_current(self):
+        current_time = time.time()
+        if current_time - self.last_color_update_time_current < 0.2:
+            return False
+        self.last_color_update_time_current = current_time
+        return True
 
     def handle_master_mouse_press(self, event):
         self.setFocus()
@@ -425,6 +442,7 @@ class DoubleViewBase(ViewStrategy, QWidget, ViewSignals):
             scene_pos.x() - radius, scene_pos.y() - radius,
             size, size)
         if self.brush_cursor.isVisible():
+            self.update_current_cursor_color()
             self.current_brush_cursor.show()
         else:
             self.current_brush_cursor.hide()
