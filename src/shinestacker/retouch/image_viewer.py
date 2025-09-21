@@ -78,6 +78,9 @@ class ImageViewer(QWidget):
     def actual_size(self):
         self.strategy.actual_size()
 
+    def get_brush(self):
+        return self.strategy.brush
+
     def get_current_scale(self):
         return self.strategy.get_current_scale()
 

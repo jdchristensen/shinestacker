@@ -124,7 +124,7 @@ class WhiteBalanceFilter(BaseFilter):
         if event.button() == Qt.LeftButton:
             pos = event.pos()
             bgr = self.get_pixel_color_at(
-                pos, radius=int(self.editor.brush.size))
+                pos, radius=int(self.image_viewer.get_brush().size))
             rgb = (bgr[2], bgr[1], bgr[0])
             new_filter = WhiteBalanceFilter(
                 self.name, self.editor, self.image_viewer, self.layer_collection,
