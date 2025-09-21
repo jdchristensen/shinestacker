@@ -2,6 +2,14 @@
 
 This page reports the main releases only and the main changes therein.
 
+## [v-.-.-] - 2025-09-21
+**Bug fixes**
+
+### Fixed
+- fixed current layer brush cursor appearence when zooming in and out
+
+----
+
 ## [v1.5.3] - 2025-09-21
 **Bug fixes**
 

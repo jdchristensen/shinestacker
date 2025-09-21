@@ -68,6 +68,7 @@ class BrushCursor(QGraphicsItemGroup):
 
     def setRect(self, x, y, w, h):
         self._rect = QRectF(x, y, w, h)
+        self._radius = min(w, h) / 2
         self._create_arcs()
 
     def rect(self):
