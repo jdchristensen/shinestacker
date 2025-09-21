@@ -60,8 +60,6 @@ class WhiteBalanceFilter(BaseFilter):
         layout.addLayout(rbg_layout)
 
         pick_button = QPushButton("Pick Color")
-        if self._disable_pick_color:
-            pick_button.setEnabled(False)
         layout.addWidget(pick_button)
         self.create_base_widgets(
             layout,
