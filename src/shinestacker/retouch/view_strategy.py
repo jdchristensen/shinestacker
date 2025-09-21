@@ -471,7 +471,7 @@ class ViewStrategy(LayerCollectionHandler):
                 self.brush_preview.update(scene_pos, int(size))
         else:
             self.hide_brush_preview()
-            if self.cursor_style != 'outline':
+            if self.cursor_style == 'simple':
                 self.setup_simple_brush_style(scene_pos.x(), scene_pos.y(), radius)
         self.update_master_cursor_color()
         self.show_brush_cursor()
@@ -546,7 +546,7 @@ class ViewStrategy(LayerCollectionHandler):
         current_view = self.get_current_view()
         current_pixmap = self.get_current_pixmap()
         view_rect = current_view.viewport().rect()
-        scene_rect = current_pixmap.mapToScene(view_rect).boundingRect()
+        scene_rect = current_view.mapToScene(view_rect).boundingRect()
         image_rect = current_pixmap.mapFromScene(scene_rect).boundingRect().toRect()
         return image_rect.intersected(current_pixmap.boundingRect().toRect())
 
