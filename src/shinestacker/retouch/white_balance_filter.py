@@ -49,7 +49,6 @@ class WhiteBalanceFilter(BaseFilter):
             self.value_labels[name] = val_label
         row_layout.addLayout(sliders_layout)
         layout.addLayout(row_layout)
-
         rbg_layout = QHBoxLayout()
         rbg_layout.addWidget(QLabel("RBG hex:"))
         self.rgb_hex = QLineEdit(self.hex_color(self.initial_val))
@@ -58,7 +57,6 @@ class WhiteBalanceFilter(BaseFilter):
         rbg_layout.addWidget(self.rgb_hex)
         rbg_layout.addStretch(1)
         layout.addLayout(rbg_layout)
-
         pick_button = QPushButton("Pick Color")
         layout.addWidget(pick_button)
         self.create_base_widgets(
