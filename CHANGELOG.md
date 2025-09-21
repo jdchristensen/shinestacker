@@ -2,6 +2,17 @@
 
 This page reports the main releases only and the main changes therein.
 
+## [v-.-.-] - 2025-09-21
+**Bug fixes**
+
+### Fixed
+- fixed brush preview visiblity in cursor style transitions
+
+### Changed
+- implemenrted cursor dynamic color based on background image luminosity
+
+---
+
 ## [v1.5.2] - 2025-09-21
 **Bug fixes**
 

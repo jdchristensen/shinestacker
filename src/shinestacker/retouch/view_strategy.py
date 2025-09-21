@@ -238,6 +238,8 @@ class ViewStrategy(LayerCollectionHandler):
 
     def set_cursor_style(self, style):
         self.cursor_style = style
+        if style == 'preview':
+            self.show_brush_preview()
         self.update_brush_cursor()
 
     def get_cursor_style(self):
@@ -404,9 +406,12 @@ class ViewStrategy(LayerCollectionHandler):
         self.update_cursor_pen_width()
 
     def setup_simple_brush_style(self, center_x, center_y, radius):
+        if self.brush_cursor:
+            pen = self.brush_cursor.pen()
+        else:
+            pen = QPen(QColor(*gui_constants.BRUSH_COLORS['pen']), self.current_line_width())
         gradient = create_default_brush_gradient(center_x, center_y, radius, self.brush)
-        self.brush_cursor.setPen(QPen(QColor(*gui_constants.BRUSH_COLORS['pen']),
-                                      self.current_line_width()))
+        self.brush_cursor.setPen(pen)
         self.brush_cursor.setBrush(QBrush(gradient))
 
     def create_circle(self, scene, line_style=Qt.SolidLine):
@@ -471,9 +476,9 @@ class ViewStrategy(LayerCollectionHandler):
                 self.brush_preview.update(scene_pos, int(size))
         else:
             self.hide_brush_preview()
-            if self.cursor_style == 'simple':
-                self.setup_simple_brush_style(scene_pos.x(), scene_pos.y(), radius)
         self.update_master_cursor_color()
+        if self.cursor_style == 'brush':
+            self.setup_simple_brush_style(scene_pos.x(), scene_pos.y(), radius)
         self.show_brush_cursor()
 
     def update_color_time(self):
