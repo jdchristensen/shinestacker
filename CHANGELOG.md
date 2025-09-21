@@ -6,7 +6,7 @@ This page reports the main releases only and the main changes therein.
 **Bug fixes**
 
 ### Fixed
-- fixed brush preview visiblity in cursor style transitions
+- fixed a critical bug that caused crash at startup in distrubution package due to a relative import in main app scripts
 - fixed relative import in main app scripts
 
 ### Changed
@@ -14,7 +14,7 @@ This page reports the main releases only and the main changes therein.
 
 ---
 
-## [v1.5.2] - 2025-09-21
+## [v1.5.2] - 2025-09-21 (⚠️ DEPRECATED — use 1.5.3)
 **Bug fixes**
 
 ### Fixed
@@ -26,7 +26,7 @@ This page reports the main releases only and the main changes therein.
 
 ---
 
-## [v1.5.1] - 2025-09-20
+## [v1.5.1] - 2025-09-20 (⚠️ DEPRECATED — use 1.5.3)
 **Several bug fixes**
 
 ### Added
