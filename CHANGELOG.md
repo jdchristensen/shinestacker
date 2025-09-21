@@ -2,11 +2,12 @@
 
 This page reports the main releases only and the main changes therein.
 
-## [v-.-.-] - 2025-09-21
+## [v1.5.3] - 2025-09-21
 **Bug fixes**
 
 ### Fixed
 - fixed brush preview visiblity in cursor style transitions
+- fixed relative import in main app scripts
 
 ### Changed
 - implemenrted cursor dynamic color based on background image luminosity

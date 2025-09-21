@@ -20,7 +20,7 @@ from shinestacker.app.gui_utils import (
     disable_macos_special_menu_items, fill_app_menu, set_css_style)
 from shinestacker.app.help_menu import add_help_action
 from shinestacker.app.open_frames import open_frames
-from .args import add_project_arguments, add_retouch_arguments
+from shinestacker.app.args_parser_opts import add_project_arguments, add_retouch_arguments
 
 
 class SelectionDialog(QDialog):

@@ -17,7 +17,7 @@ from shinestacker.gui.main_window import MainWindow
 from shinestacker.app.gui_utils import (
     disable_macos_special_menu_items, fill_app_menu, set_css_style)
 from shinestacker.app.help_menu import add_help_action
-from .args import add_project_arguments
+from shinestacker.app.args_parser_opts import add_project_arguments
 
 
 class ProjectApp(MainWindow):
