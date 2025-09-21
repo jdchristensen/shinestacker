@@ -341,21 +341,6 @@ class ViewStrategy(LayerCollectionHandler):
                                gui_constants.MIN_ZOOMED_IMG_HEIGHT / img_height))
         self.set_max_scale(gui_constants.MAX_ZOOMED_IMG_PX_SIZE)
 
-    def zoom_in(self):
-        if self.empty():
-            return
-        master_view = self.get_master_view()
-        old_center = master_view.mapToScene(master_view.viewport().rect().center())
-        current_scale = self.get_current_scale()
-        new_scale = current_scale * gui_constants.ZOOM_IN_FACTOR
-        if new_scale <= self.max_scale():
-            for view in self.get_views():
-                view.scale(gui_constants.ZOOM_IN_FACTOR, gui_constants.ZOOM_IN_FACTOR)
-            self.set_zoom_factor(new_scale)
-            master_view.centerOn(old_center)
-            self.update_brush_cursor()
-            self.update_cursor_pen_width()
-
     def apply_zoom(self):
         if self.empty():
             return
@@ -364,20 +349,64 @@ class ViewStrategy(LayerCollectionHandler):
             scale_factor = self.zoom_factor() / current_scale
             view.scale(scale_factor, scale_factor)
 
-    def zoom_out(self):
+    def handle_pinch_gesture(self, pinch):
+        master_view = self.get_master_view()
+        if pinch.state() == Qt.GestureStarted:
+            self.pinch_start_scale = self.zoom_factor()
+            self.pinch_center_view = pinch.centerPoint()
+            self.pinch_center_scene = master_view.mapToScene(self.pinch_center_view.toPoint())
+            self.gesture_active = True
+        elif pinch.state() == Qt.GestureUpdated:
+            new_scale = self.pinch_start_scale * pinch.totalScaleFactor()
+            new_scale = max(self.min_scale(), min(new_scale, self.max_scale()))
+            if abs(new_scale - self.zoom_factor()) > 0.01:
+                self.set_zoom_factor(new_scale)
+                self.apply_zoom()
+                new_center = master_view.mapToScene(self.pinch_center_view.toPoint())
+                delta = self.pinch_center_scene - new_center
+                h_scroll = master_view.horizontalScrollBar().value() + \
+                    int(delta.x() * self.zoom_factor())
+                v_scroll = master_view.verticalScrollBar().value() + \
+                    int(delta.y() * self.zoom_factor())
+                self.status.set_scroll(h_scroll, v_scroll)
+                self.center_image(master_view)
+        elif pinch.state() in (Qt.GestureFinished, Qt.GestureCanceled):
+            self.gesture_active = False
+        self.update_cursor_pen_width()
+
+    def do_zoom(self, new_scale, view=None):
         if self.empty():
             return
-        master_view = self.get_master_view()
-        old_center = master_view.mapToScene(master_view.viewport().rect().center())
+        if not self.min_scale() <= new_scale <= self.max_scale():
+            return
+        if view is None:
+            view = self.get_master_view()
+        mouse_pos = QCursor.pos()
+        zoom_center_scene = view.mapToScene(mouse_pos)
+        self.set_zoom_factor(new_scale)
+        self.apply_zoom()
+        new_center_view = view.mapToScene(mouse_pos)
+        delta = zoom_center_scene - new_center_view
+        self.status.set_scroll(
+            view.horizontalScrollBar().value() + int(delta.x() * self.zoom_factor()),
+            view.verticalScrollBar().value() + int(delta.y() * self.zoom_factor()))
+        self.center_image(view)
+        self.update_cursor_pen_width()
+
+    def handle_zoom_wheel(self, view, event):
         current_scale = self.get_current_scale()
-        new_scale = current_scale * gui_constants.ZOOM_OUT_FACTOR
-        if new_scale >= self.min_scale():
-            for view in self.get_views():
-                view.scale(gui_constants.ZOOM_OUT_FACTOR, gui_constants.ZOOM_OUT_FACTOR)
-            self.set_zoom_factor(new_scale)
-            master_view.centerOn(old_center)
-            self.update_brush_cursor()
-            self.update_cursor_pen_width()
+        if event.angleDelta().y() > 0:  # Zoom in
+            new_scale = current_scale * gui_constants.ZOOM_IN_FACTOR
+        else:  # Zoom out
+            new_scale = current_scale * gui_constants.ZOOM_OUT_FACTOR
+        new_scale = max(self.min_scale(), min(new_scale, self.max_scale()))
+        self.do_zoom(new_scale, view)
+
+    def zoom_in(self):
+        self.do_zoom(self.get_current_scale() * gui_constants.ZOOM_IN_FACTOR)
+
+    def zoom_out(self):
+        self.do_zoom(self.get_current_scale() * gui_constants.ZOOM_OUT_FACTOR)
 
     def reset_zoom(self):
         if self.empty():
@@ -682,50 +711,3 @@ class ViewStrategy(LayerCollectionHandler):
             elif self.dragging:
                 self.dragging = False
                 self.brush_operation_ended.emit()
-
-    def handle_pinch_gesture(self, pinch):
-        master_view = self.get_master_view()
-        if pinch.state() == Qt.GestureStarted:
-            self.pinch_start_scale = self.zoom_factor()
-            self.pinch_center_view = pinch.centerPoint()
-            self.pinch_center_scene = master_view.mapToScene(self.pinch_center_view.toPoint())
-            self.gesture_active = True
-        elif pinch.state() == Qt.GestureUpdated:
-            new_scale = self.pinch_start_scale * pinch.totalScaleFactor()
-            new_scale = max(self.min_scale(), min(new_scale, self.max_scale()))
-            if abs(new_scale - self.zoom_factor()) > 0.01:
-                self.set_zoom_factor(new_scale)
-                self.apply_zoom()
-                new_center = master_view.mapToScene(self.pinch_center_view.toPoint())
-                delta = self.pinch_center_scene - new_center
-                h_scroll = master_view.horizontalScrollBar().value() + \
-                    int(delta.x() * self.zoom_factor())
-                v_scroll = master_view.verticalScrollBar().value() + \
-                    int(delta.y() * self.zoom_factor())
-                self.status.set_scroll(h_scroll, v_scroll)
-                self.center_image(master_view)
-        elif pinch.state() in (Qt.GestureFinished, Qt.GestureCanceled):
-            self.gesture_active = False
-        self.update_cursor_pen_width()
-
-    def handle_zoom_wheel(self, view, event):
-        mouse_pos = event.position()
-        zoom_center_scene = view.mapToScene(mouse_pos.toPoint())
-        zoom_in_factor = gui_constants.ZOOM_IN_FACTOR
-        zoom_out_factor = gui_constants.ZOOM_OUT_FACTOR
-        current_scale = self.get_current_scale()
-        if event.angleDelta().y() > 0:  # Zoom in
-            new_scale = current_scale * zoom_in_factor
-        else:  # Zoom out
-            new_scale = current_scale * zoom_out_factor
-        new_scale = max(self.min_scale(), min(new_scale, self.max_scale()))
-        self.set_zoom_factor(new_scale)
-        self.apply_zoom()
-        new_center_view = view.mapToScene(mouse_pos.toPoint())
-        delta = zoom_center_scene - new_center_view
-        h_scroll = view.horizontalScrollBar().value() + \
-            int(delta.x() * self.zoom_factor())
-        v_scroll = view.verticalScrollBar().value() + \
-            int(delta.y() * self.zoom_factor())
-        self.status.set_scroll(h_scroll, v_scroll)
-        self.center_image(view)
