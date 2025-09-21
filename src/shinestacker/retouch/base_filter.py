@@ -9,11 +9,13 @@ from .layer_collection import LayerCollectionHandler
 
 
 class BaseFilter(ABC, LayerCollectionHandler):
-    def __init__(self, name, editor, image_viewer, layer_collection, allow_partial_preview=True,
+    def __init__(self, name, editor, image_viewer, layer_collection, undo_manager,
+                 allow_partial_preview=True,
                  partial_preview_threshold=0.75, preview_at_startup=False):
         LayerCollectionHandler.__init__(self, layer_collection)
         self.editor = editor
         self.image_viewer = image_viewer
+        self.undo_manager = undo_manager
         self.name = name
         self.allow_partial_preview = allow_partial_preview
         self.partial_preview_threshold = partial_preview_threshold
@@ -87,7 +89,7 @@ class BaseFilter(ABC, LayerCollectionHandler):
             current_id = last_request_id
             visible_region = None
             if kwargs.get('partial_preview', self.allow_partial_preview):
-                visible_data = self.editor.image_viewer.get_visible_image_portion()
+                visible_data = self.image_viewer.get_visible_image_portion()
                 if visible_data:
                     visible_img, visible_region = visible_data
                     master_img = self.master_layer_copy()
@@ -127,7 +129,7 @@ class BaseFilter(ABC, LayerCollectionHandler):
 
         def restore_original():
             self.restore_master_layer()
-            self.editor.image_viewer.update_master_display()
+            self.image_viewer.update_master_display()
             try:
                 dlg.activateWindow()
             except Exception:
@@ -146,9 +148,9 @@ class BaseFilter(ABC, LayerCollectionHandler):
             except Exception:
                 h, w = self.master_layer_copy().shape[:2]
             try:
-                self.editor.undo_manager.extend_undo_area(0, 0, w, h)
-                self.editor.undo_manager.save_undo_state(
-                    self.editor.master_layer_copy(),
+                self.undo_manager.extend_undo_area(0, 0, w, h)
+                self.undo_manager.save_undo_state(
+                    self.master_layer_copy(),
                     self.name
                 )
             except Exception:
@@ -156,7 +158,7 @@ class BaseFilter(ABC, LayerCollectionHandler):
             final_img = self.apply(self.master_layer_copy(), *params)
             self.set_master_layer(final_img)
             self.copy_master_layer()
-            self.editor.image_viewer.update_master_display()
+            self.image_viewer.update_master_display()
             self.editor.display_manager.update_master_thumbnail()
             self.editor.mark_as_modified()
         else:
@@ -210,11 +212,12 @@ class BaseFilter(ABC, LayerCollectionHandler):
 
 
 class OneSliderBaseFilter(BaseFilter):
-    def __init__(self, name, editor, image_viewer, layer_collection,
+    def __init__(self, name, editor, image_viewer, layer_collection, undo_manager,
                  max_value, initial_value, title,
                  allow_partial_preview=True, partial_preview_threshold=0.5,
                  preview_at_startup=True):
-        super().__init__(name, editor, image_viewer, layer_collection, allow_partial_preview,
+        super().__init__(name, editor, image_viewer, layer_collection, undo_manager,
+                         allow_partial_preview,
                          partial_preview_threshold, preview_at_startup)
         self.max_range = 500
         self.max_value = max_value

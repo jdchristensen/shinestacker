@@ -8,8 +8,9 @@ from .base_filter import BaseFilter
 
 
 class WhiteBalanceFilter(BaseFilter):
-    def __init__(self, name, editor, image_viewer, layer_collection):
-        super().__init__(name, editor, image_viewer, layer_collection, preview_at_startup=True)
+    def __init__(self, name, editor, image_viewer, layer_collection, undo_manager):
+        super().__init__(name, editor, image_viewer, layer_collection, undo_manager,
+                         preview_at_startup=True)
         self.max_range = 255
         self.initial_val = (128, 128, 128)
         self.sliders = {}
@@ -125,7 +126,8 @@ class WhiteBalanceFilter(BaseFilter):
                 pos, radius=int(self.editor.brush.size))
             rgb = (bgr[2], bgr[1], bgr[0])
             new_filter = WhiteBalanceFilter(
-                self.name, self.editor, self.image_viewer, self.layer_collection)
+                self.name, self.editor, self.image_viewer, self.layer_collection,
+                self.undo_manager)
             new_filter.run_with_preview(init_val=rgb)
             QApplication.restoreOverrideCursor()
             self.image_viewer.unsetCursor()

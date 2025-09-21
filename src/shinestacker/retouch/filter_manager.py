@@ -4,11 +4,12 @@ class FilterManager:
         self.editor = editor
         self.image_viewer = editor.image_viewer
         self.layer_collection = editor.layer_collection
+        self.undo_manager = editor.undo_manager
         self.filters = {}
 
     def register_filter(self, name, filter_class):
         self.filters[name] = filter_class(
-            name, self.editor, self.image_viewer, self.layer_collection)
+            name, self.editor, self.image_viewer, self.layer_collection, self.undo_manager)
 
     def apply(self, name, **kwargs):
         if name in self.filters:
