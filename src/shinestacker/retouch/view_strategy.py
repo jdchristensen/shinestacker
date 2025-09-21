@@ -364,11 +364,9 @@ class ViewStrategy(LayerCollectionHandler):
                 self.apply_zoom()
                 new_center = master_view.mapToScene(self.pinch_center_view.toPoint())
                 delta = self.pinch_center_scene - new_center
-                h_scroll = master_view.horizontalScrollBar().value() + \
-                    int(delta.x() * self.zoom_factor())
-                v_scroll = master_view.verticalScrollBar().value() + \
-                    int(delta.y() * self.zoom_factor())
-                self.status.set_scroll(h_scroll, v_scroll)
+                self.status.set_scroll(
+                    master_view.horizontalScrollBar().value() + int(delta.x() * self.zoom_factor()),
+                    master_view.verticalScrollBar().value() + int(delta.y() * self.zoom_factor()))
                 self.center_image(master_view)
         elif pinch.state() in (Qt.GestureFinished, Qt.GestureCanceled):
             self.gesture_active = False

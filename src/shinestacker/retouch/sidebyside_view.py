@@ -14,6 +14,11 @@ class ImageGraphicsView(ImageGraphicsViewBase):
     gesture_event = Signal(QEvent)
     wheel_event = Signal(QEvent)
 
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
+        self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
+
     # pylint: disable=C0103
     def event(self, event):
         if event.type() == QEvent.Gesture:
@@ -448,8 +453,7 @@ class DoubleViewBase(ViewStrategy, QWidget, ViewSignals):
         size = self.brush.size
         radius = size / 2
         self.current_brush_cursor.setRect(
-            scene_pos.x() - radius, scene_pos.y() - radius,
-            size, size)
+            scene_pos.x() - radius, scene_pos.y() - radius, size, size)
         if self.brush_cursor.isVisible():
             self.update_current_cursor_color()
             self.current_brush_cursor.show()

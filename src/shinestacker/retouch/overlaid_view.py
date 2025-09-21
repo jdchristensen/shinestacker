@@ -13,6 +13,8 @@ class OverlaidView(ViewStrategy, ImageGraphicsViewBase, ViewSignals):
         self.brush_cursor = None
         self.pinch_start_scale = 1.0
         self.last_scroll_pos = QPointF()
+        self.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
+        self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
 
     def create_pixmaps(self):
         self.pixmap_item_master = self.create_pixmap(self.scene)

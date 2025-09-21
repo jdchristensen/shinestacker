@@ -7,6 +7,7 @@ This page reports the main releases only and the main changes therein.
 
 ### Fixed
 - fixed current layer brush cursor appearence when zooming in and out
+- fixed glitch in zoom in/out
 
 ----
 
