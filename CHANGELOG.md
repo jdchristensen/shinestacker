@@ -7,11 +7,9 @@ This page reports the main releases only and the main changes therein.
 
 ### Fixed
 - fixed functionality of layer alphabetic sorting
-- fixed image jump in zoom in/out for two-view mode
-- fixed image centering in mouse wheel zoom and zoom in/out keyboard shortcuts
-- fixed current layer brush cursor appearence when zooming in and out
-- fixed bug in repeated use of color picking in white-balance filter
-- fixed cursor appearence when scrolling with space + mouse click
+- fixed image centering in zoom operations
+- fixed color picker reuse in white-balance filter
+- minor fixes and code cleanup
 
 ### Changed
 - menu actions that require a file are disabled when no file is open 
