@@ -96,14 +96,7 @@ class OverlaidView(ViewStrategy, ImageGraphicsViewBase, ViewSignals):
 
     def setup_scene_image(self, pixmap, pixmap_item):
         self.setSceneRect(QRectF(pixmap.rect()))
-        img_width, img_height = pixmap.width(), pixmap.height()
-        self.set_max_min_scales(img_width, img_height)
-        view_rect = self.viewport().rect()
-        scale_x = view_rect.width() / img_width
-        scale_y = view_rect.height() / img_height
-        scale_factor = min(scale_x, scale_y)
-        scale_factor = max(self.min_scale(), min(scale_factor, self.max_scale()))
-        self.set_zoom_factor(scale_factor)
+        _img_width, _img_height, scale_factor = self.setup_view_image(self, pixmap)
         self.resetTransform()
         self.scale(scale_factor, scale_factor)
         self.centerOn(pixmap_item)

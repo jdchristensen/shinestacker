@@ -326,6 +326,17 @@ class ViewStrategy(LayerCollectionHandler):
             return QImage(memoryview(array), width, height, 3 * width, QImage.Format_RGB888)
         return QImage()
 
+    def setup_view_image(self, view, pixmap):
+        img_width, img_height = pixmap.width(), pixmap.height()
+        self.set_max_min_scales(img_width, img_height)
+        view_rect = view.viewport().rect()
+        scale_x = view_rect.width() / img_width
+        scale_y = view_rect.height() / img_height
+        scale_factor = min(scale_x, scale_y)
+        scale_factor = max(self.min_scale(), min(scale_factor, self.max_scale()))
+        self.set_zoom_factor(scale_factor)
+        return img_width, img_height, scale_factor
+
     def create_scene(self, view):
         scene = QGraphicsScene()
         view.setScene(scene)
@@ -361,9 +372,11 @@ class ViewStrategy(LayerCollectionHandler):
             view.verticalScrollBar().value() + int(delta.y() * self.zoom_factor()))
         self.center_image(view)
 
-    def apply_zoom_and_center(self, view, delta, new_scale):
+    def apply_zoom_and_center(self, view, new_scale, ref_pos, old_center):
         self.set_zoom_factor(new_scale)
         self.apply_zoom()
+        new_center = view.mapToScene(ref_pos)
+        delta = old_center - new_center
         self.set_scroll_from_view_and_center(view, delta)
 
     def handle_pinch_gesture(self, pinch):
@@ -377,11 +390,9 @@ class ViewStrategy(LayerCollectionHandler):
             new_scale = self.pinch_start_scale * pinch.totalScaleFactor()
             new_scale = max(self.min_scale(), min(new_scale, self.max_scale()))
             if abs(new_scale - self.zoom_factor()) > 0.01:
-                self.set_zoom_factor(new_scale)
-                self.apply_zoom()
-                new_center = master_view.mapToScene(self.pinch_center_view.toPoint())
-                delta = self.pinch_center_scene - new_center
-                self.set_scroll_from_view_and_center(master_view, delta)
+                old_center = self.pinch_center_scene
+                ref_pos = self.pinch_center_view.toPoint()
+                self.apply_zoom_and_center(master_view, new_scale, ref_pos, old_center)
         elif pinch.state() in (Qt.GestureFinished, Qt.GestureCanceled):
             self.gesture_active = False
         self.update_cursor_pen_width()
@@ -393,13 +404,9 @@ class ViewStrategy(LayerCollectionHandler):
             return
         if view is None:
             view = self.get_master_view()
-        mouse_pos = QCursor.pos()
-        zoom_center_scene = view.mapToScene(mouse_pos)
-        self.set_zoom_factor(new_scale)
-        self.apply_zoom()
-        new_center_view = view.mapToScene(mouse_pos)
-        delta = zoom_center_scene - new_center_view
-        self.set_scroll_from_view_and_center(view, delta)
+        ref_pos = QCursor.pos()
+        old_center = view.mapToScene(ref_pos)
+        self.apply_zoom_and_center(view, new_scale, ref_pos, old_center)
         self.update_cursor_pen_width()
 
     def handle_wheel_event(self, event):

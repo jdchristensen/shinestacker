@@ -379,14 +379,7 @@ class DoubleViewBase(ViewStrategy, QWidget, ViewSignals):
         pixmap = self.status.pixmap_master
         self.master_view.setSceneRect(QRectF(pixmap.rect()))
         self.pixmap_item_master.setPixmap(pixmap)
-        img_width, img_height = pixmap.width(), pixmap.height()
-        self.set_max_min_scales(img_width, img_height)
-        view_rect = self.master_view.viewport().rect()
-        scale_x = view_rect.width() / img_width
-        scale_y = view_rect.height() / img_height
-        scale_factor = min(scale_x, scale_y)
-        scale_factor = max(self.min_scale(), min(scale_factor, self.max_scale()))
-        self.set_zoom_factor(scale_factor)
+        img_width, img_height, scale_factor = self.setup_view_image(self.master_view, pixmap)
         self.master_view.resetTransform()
         self.master_view.scale(scale_factor, scale_factor)
         self.master_view.centerOn(self.pixmap_item_master)
