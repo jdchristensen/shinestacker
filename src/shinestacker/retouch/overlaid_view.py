@@ -60,29 +60,9 @@ class OverlaidView(ViewStrategy, ImageGraphicsViewBase, ViewSignals):
         self.mouse_release_event(event)
         super().mouseReleaseEvent(event)
 
-    # pylint: enable=R0801
     def wheelEvent(self, event):
-        if self.empty() or self.gesture_active:
-            return
-        if event.source() == Qt.MouseEventNotSynthesized:  # Physical mouse
-            if self.control_pressed:
-                self.brush_size_change_requested.emit(1 if event.angleDelta().y() > 0 else -1)
-            else:
-                self.handle_zoom_wheel(self, event)
-            self.update_brush_cursor()
-        else:  # Touchpad event
-            if not self.control_pressed:
-                delta = event.pixelDelta() or event.angleDelta() / 8
-                if delta:
-                    self.scroll_view(self, delta.x(), delta.y())
-            else:
-                zoom_in = event.angleDelta().y() > 0
-                if zoom_in:
-                    self.zoom_in()
-                else:
-                    self.zoom_out()
+        self.handle_wheel_event(event)
         event.accept()
-        # pylint: disable=R0801
 
     def enterEvent(self, event):
         self.activateWindow()
@@ -101,10 +81,13 @@ class OverlaidView(ViewStrategy, ImageGraphicsViewBase, ViewSignals):
     def set_mouse_callbacks(self, callbacks):
         self.mousePressEvent = callbacks
 
+    def get_view_with_mouse(self, mouse_pos=None):
+        return self
+
+    # pylint: enable=C0103
     def show(self):
         self.show_master()
         super().show()
-    # pylint: enable=C0103
 
     def event(self, event):
         if event.type() == QEvent.Gesture:

@@ -10,6 +10,7 @@ This page reports the main releases only and the main changes therein.
 - fixed image centering in mouse wheel zoom
 - fixed current layer brush cursor appearence when zooming in and out
 - fixed repeated color picking in white-balance filter
+- cursor does no longer appear when scrolling with space + mouse click
 
 ----
 

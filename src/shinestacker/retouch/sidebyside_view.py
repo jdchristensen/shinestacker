@@ -230,33 +230,20 @@ class DoubleViewBase(ViewStrategy, QWidget, ViewSignals):
             self.current_view.mousePressEvent = callbacks
     # pylint: enable=C0103
 
-    # pylint: enable=R0801
-    def handle_wheel_event(self, event):
-        if self.empty() or self.gesture_active:
-            return
-        if event.source() == Qt.MouseEventNotSynthesized:  # Physical mouse
-            if self.control_pressed:
-                self.brush_size_change_requested.emit(1 if event.angleDelta().y() > 0 else -1)
-            else:
-                mouse_pos_global = event.position().toPoint()
-                mouse_pos_current = self.current_view.mapFromGlobal(mouse_pos_global)
-                mouse_pos_master = self.master_view.mapFromGlobal(mouse_pos_global)
-                current_has_mouse = self.current_view.rect().contains(mouse_pos_current)
-                master_has_mouse = self.master_view.rect().contains(mouse_pos_master)
-                if master_has_mouse:
-                    source_view = self.master_view
-                elif current_has_mouse:
-                    source_view = self.current_view
-                else:
-                    return
-                self.handle_zoom_wheel(source_view, event)
-        else:  # Touchpad event
-            if not self.control_pressed:
-                delta = event.pixelDelta() or event.angleDelta() / 8
-                if delta:
-                    self.scroll_view(self.master_view, delta.x(), delta.y())
-                    self.scroll_view(self.current_view, delta.x(), delta.y())
-    # pylint: disable=R0801
+    def get_view_with_mouse(self, mouse_pos=None):
+        if mouse_pos is None:
+            mouse_pos_global = QCursor.pos()
+        else:
+            mouse_pos_global = mouse_pos.toPoint()
+        mouse_pos_current = self.current_view.mapFromGlobal(mouse_pos_global)
+        mouse_pos_master = self.master_view.mapFromGlobal(mouse_pos_global)
+        current_has_mouse = self.current_view.rect().contains(mouse_pos_current)
+        master_has_mouse = self.master_view.rect().contains(mouse_pos_master)
+        if master_has_mouse:
+            return self.master_view
+        if current_has_mouse:
+            return self.current_view
+        return None
 
     def _apply_zoom_to_view(self, view, factor):
         view.scale(factor, factor)

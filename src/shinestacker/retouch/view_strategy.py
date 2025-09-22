@@ -190,6 +190,10 @@ class ViewStrategy(LayerCollectionHandler):
     def set_mouse_callbacks(self, callbacks):
         pass
 
+    @abstractmethod
+    def get_view_with_mouse(self, mouse_pos=None):
+        pass
+
     def hide_brush_cursor(self):
         if self.brush_cursor:
             self.brush_cursor.hide()
@@ -351,6 +355,17 @@ class ViewStrategy(LayerCollectionHandler):
             scale_factor = self.zoom_factor() / current_scale
             view.scale(scale_factor, scale_factor)
 
+    def set_scroll_from_view_and_center(self, view, delta):
+        self.status.set_scroll(
+            view.horizontalScrollBar().value() + int(delta.x() * self.zoom_factor()),
+            view.verticalScrollBar().value() + int(delta.y() * self.zoom_factor()))
+        self.center_image(view)
+
+    def apply_zoom_and_center(self, view, delta, new_scale):
+        self.set_zoom_factor(new_scale)
+        self.apply_zoom()
+        self.set_scroll_from_view_and_center(view, delta)
+
     def handle_pinch_gesture(self, pinch):
         master_view = self.get_master_view()
         if pinch.state() == Qt.GestureStarted:
@@ -366,15 +381,12 @@ class ViewStrategy(LayerCollectionHandler):
                 self.apply_zoom()
                 new_center = master_view.mapToScene(self.pinch_center_view.toPoint())
                 delta = self.pinch_center_scene - new_center
-                self.status.set_scroll(
-                    master_view.horizontalScrollBar().value() + int(delta.x() * self.zoom_factor()),
-                    master_view.verticalScrollBar().value() + int(delta.y() * self.zoom_factor()))
-                self.center_image(master_view)
+                self.set_scroll_from_view_and_center(master_view, delta)
         elif pinch.state() in (Qt.GestureFinished, Qt.GestureCanceled):
             self.gesture_active = False
         self.update_cursor_pen_width()
 
-    def do_zoom(self, new_scale, view=None):
+    def do_zoom(self, new_scale, view):
         if self.empty():
             return
         if not self.min_scale() <= new_scale <= self.max_scale():
@@ -387,26 +399,53 @@ class ViewStrategy(LayerCollectionHandler):
         self.apply_zoom()
         new_center_view = view.mapToScene(mouse_pos)
         delta = zoom_center_scene - new_center_view
-        self.status.set_scroll(
-            view.horizontalScrollBar().value() + int(delta.x() * self.zoom_factor()),
-            view.verticalScrollBar().value() + int(delta.y() * self.zoom_factor()))
-        self.center_image(view)
+        self.set_scroll_from_view_and_center(view, delta)
         self.update_cursor_pen_width()
 
+    def handle_wheel_event(self, event):
+        if self.empty() or self.gesture_active:
+            return
+        if event.source() == Qt.MouseEventNotSynthesized:  # Physical mouse
+            if self.control_pressed:
+                self.brush_size_change_requested.emit(1 if event.angleDelta().y() > 0 else -1)
+            else:
+                self.handle_zoom_wheel(self.get_view_with_mouse(event.position()), event)
+            self.update_brush_cursor()
+        else:
+            self.handle_wheel_touchpad_event(event)
+
+    def handle_wheel_touchpad_event(self, event):
+        if not self.control_pressed:
+            delta = event.pixelDelta() or event.angleDelta() / 8
+            if delta:
+                self.scroll_view(self.get_view_with_mouse(event.position()), delta.x(), delta.y())
+        else:
+            zoom_in = event.angleDelta().y() > 0
+            if zoom_in:
+                self.zoom_in()
+            else:
+                self.zoom_out()
+
     def handle_zoom_wheel(self, view, event):
+        if view is None:
+            return
         current_scale = self.get_current_scale()
-        if event.angleDelta().y() > 0:  # Zoom in
+        if event.angleDelta().y() > 0:
             new_scale = current_scale * gui_constants.ZOOM_IN_FACTOR
-        else:  # Zoom out
+        else:
             new_scale = current_scale * gui_constants.ZOOM_OUT_FACTOR
         new_scale = max(self.min_scale(), min(new_scale, self.max_scale()))
         self.do_zoom(new_scale, view)
 
     def zoom_in(self):
-        self.do_zoom(self.get_current_scale() * gui_constants.ZOOM_IN_FACTOR)
+        self.do_zoom(
+            self.get_current_scale() * gui_constants.ZOOM_IN_FACTOR,
+            self.get_master_view())
 
     def zoom_out(self):
-        self.do_zoom(self.get_current_scale() * gui_constants.ZOOM_OUT_FACTOR)
+        self.do_zoom(
+            self.get_current_scale() * gui_constants.ZOOM_OUT_FACTOR,
+            self.get_master_view())
 
     def reset_zoom(self):
         if self.empty():
@@ -509,7 +548,8 @@ class ViewStrategy(LayerCollectionHandler):
         self.update_master_cursor_color()
         if self.cursor_style == 'brush':
             self.setup_simple_brush_style(scene_pos.x(), scene_pos.y(), radius)
-        self.show_brush_cursor()
+        if not self.scrolling:
+            self.show_brush_cursor()
 
     def update_color_time(self):
         current_time = time.time()
@@ -692,7 +732,8 @@ class ViewStrategy(LayerCollectionHandler):
                 self.last_brush_pos = event.position()
                 self.brush_operation_started.emit(event.position().toPoint())
                 self.dragging = True
-            self.show_brush_cursor()
+            if not self.scrolling:
+                self.show_brush_cursor()
 
     def mouse_release_event(self, event):
         if self.empty():
