@@ -366,7 +366,11 @@ class ViewStrategy(LayerCollectionHandler):
             scale_factor = self.zoom_factor() / current_scale
             view.scale(scale_factor, scale_factor)
 
-    def set_scroll_from_view_and_center(self, view, delta):
+    def center_image(self, view):
+        view.horizontalScrollBar().setValue(self.status.h_scroll)
+        view.verticalScrollBar().setValue(self.status.v_scroll)
+
+    def set_scroll_and_center(self, view, delta):
         self.status.set_scroll(
             view.horizontalScrollBar().value() + int(delta.x() * self.zoom_factor()),
             view.verticalScrollBar().value() + int(delta.y() * self.zoom_factor()))
@@ -377,7 +381,7 @@ class ViewStrategy(LayerCollectionHandler):
         self.apply_zoom()
         new_center = view.mapToScene(ref_pos)
         delta = old_center - new_center
-        self.set_scroll_from_view_and_center(view, delta)
+        self.set_scroll_and_center(view, delta)
 
     def handle_pinch_gesture(self, pinch):
         master_view = self.get_master_view()
@@ -404,7 +408,8 @@ class ViewStrategy(LayerCollectionHandler):
             return
         if view is None:
             view = self.get_master_view()
-        ref_pos = QCursor.pos()
+        global_pos = QCursor.pos()
+        ref_pos = view.mapFromGlobal(global_pos)
         old_center = view.mapToScene(ref_pos)
         self.apply_zoom_and_center(view, new_scale, ref_pos, old_center)
         self.update_cursor_pen_width()
@@ -447,12 +452,12 @@ class ViewStrategy(LayerCollectionHandler):
     def zoom_in(self):
         self.do_zoom(
             self.get_current_scale() * gui_constants.ZOOM_IN_FACTOR,
-            self.get_master_view())
+            self.get_view_with_mouse())
 
     def zoom_out(self):
         self.do_zoom(
             self.get_current_scale() * gui_constants.ZOOM_OUT_FACTOR,
-            self.get_master_view())
+            self.get_view_with_mouse())
 
     def reset_zoom(self):
         if self.empty():
@@ -688,10 +693,6 @@ class ViewStrategy(LayerCollectionHandler):
             view.verticalScrollBar().value() - delta_y)
         self.status.set_scroll(view.horizontalScrollBar().value(),
                                view.verticalScrollBar().value())
-
-    def center_image(self, view):
-        view.horizontalScrollBar().setValue(self.status.h_scroll)
-        view.verticalScrollBar().setValue(self.status.v_scroll)
 
     def mouse_move_event(self, event):
         if self.empty():
