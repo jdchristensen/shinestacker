@@ -14,7 +14,7 @@ This page reports the main releases only and the main changes therein.
 - fixed cursor appearence when scrolling with space + mouse click
 
 ### Changed
-- in retouch mode, menu actions that require a file are disabled when no file is open 
+- menu actions that require a file are disabled when no file is open 
 
 ----
 

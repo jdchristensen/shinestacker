@@ -21,6 +21,7 @@ class ProjectController(QObject):
     enable_save_actions_requested = Signal(bool)
     enable_sub_actions_requested = Signal(bool)
     add_recent_file_requested = Signal(str)
+    set_enabled_file_open_close_actions_requested = Signal(bool)
 
     def __init__(self, parent):
         super().__init__(parent)
@@ -138,6 +139,7 @@ class ProjectController(QObject):
             self.clear_action_list()
             self.mark_as_modified(False)
             self.project_editor.reset_undo()
+            self.set_enabled_file_open_close_actions_requested.emit(False)
 
     def new_project(self):
         if not self.check_unsaved_changes():
@@ -250,6 +252,7 @@ class ProjectController(QObject):
                 project = Project.from_dict(json_obj['project'])
                 if project is None:
                     raise RuntimeError(f"Project from file {file_path} produced a null project.")
+                self.set_enabled_file_open_close_actions_requested.emit(True)
                 self.set_project(project)
                 self.mark_as_modified(False)
                 self.add_recent_file_requested.emit(abs_file_path)

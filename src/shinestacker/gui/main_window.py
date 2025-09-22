@@ -154,8 +154,13 @@ class MainWindow(QMainWindow, LogManager):
             self.menu_manager.set_enabled_sub_actions_gui)
         self.project_controller.add_recent_file_requested.connect(
             self.menu_manager.add_recent_file)
+        self.project_controller.set_enabled_file_open_close_actions_requested.connect(
+            self.set_enabled_file_open_close_actions)
+
         self.menu_manager.open_file_requested.connect(
             self.project_controller.open_project)
+
+        self.set_enabled_file_open_close_actions(False)
 
     def modified(self):
         return self.project_editor.modified()
@@ -571,3 +576,8 @@ class MainWindow(QMainWindow, LogManager):
                 self.menu_manager.set_enabled_sub_actions_gui(enable_sub_actions)
         else:
             self.menu_manager.set_enabled_sub_actions_gui(False)
+
+    def set_enabled_file_open_close_actions(self, enabled):
+        for action in self.findChildren(QAction):
+            if action.property("requires_file"):
+                action.setEnabled(enabled)

@@ -60,8 +60,10 @@ class MenuManager(QObject):
     def get_icon(self, icon):
         return QIcon(os.path.join(self.script_dir, f"img/{icon}.png"))
 
-    def action(self, name):
+    def action(self, name, requires_file=False):
         action = QAction(name, self.parent)
+        if requires_file:
+            action.setProperty("requires_file", True)
         shortcut = self.shortcuts.get(name, '')
         if shortcut:
             action.setShortcut(shortcut)
@@ -110,20 +112,20 @@ class MenuManager(QObject):
         self.undo_action.setEnabled(False)
         menu.addAction(self.undo_action)
         for name in ["&Cut", "Cop&y", "&Paste", "Duplicate"]:
-            menu.addAction(self.action(name))
-        self.delete_element_action = self.action("Delete")
+            menu.addAction(self.action(name, requires_file=True))
+        self.delete_element_action = self.action("Delete", requires_file=True)
         self.delete_element_action.setEnabled(False)
         menu.addAction(self.delete_element_action)
         menu.addSeparator()
         for name in ["Move &Up", "Move &Down"]:
-            menu.addAction(self.action(name))
+            menu.addAction(self.action(name, requires_file=True))
         menu.addSeparator()
-        self.enable_action = self.action("E&nable")
+        self.enable_action = self.action("E&nable", requires_file=True)
         menu.addAction(self.enable_action)
-        self.disable_action = self.action("Di&sable")
+        self.disable_action = self.action("Di&sable", requires_file=True)
         menu.addAction(self.disable_action)
         for name in ["Enable All", "Disable All"]:
-            menu.addAction(self.action(name))
+            menu.addAction(self.action(name, requires_file=True))
 
     def add_view_menu(self):
         menu = self.menubar.addMenu("&View")
@@ -133,13 +135,13 @@ class MenuManager(QObject):
 
     def add_job_menu(self):
         menu = self.menubar.addMenu("&Jobs")
-        self.add_job_action = self.action("Add Job")
+        self.add_job_action = self.action("Add Job", requires_file=True)
         menu.addAction(self.add_job_action)
         menu.addSeparator()
-        self.run_job_action = self.action("Run Job")
+        self.run_job_action = self.action("Run Job", requires_file=True)
         self.run_job_action.setEnabled(False)
         menu.addAction(self.run_job_action)
-        self.run_all_jobs_action = self.action("Run All Jobs")
+        self.run_all_jobs_action = self.action("Run All Jobs", requires_file=True)
         self.set_enabled_run_all_jobs(False)
         menu.addAction(self.run_all_jobs_action)
 
@@ -148,6 +150,7 @@ class MenuManager(QObject):
         add_action_menu = QMenu("Add Action", self.parent)
         for action in constants.ACTION_TYPES:
             entry_action = QAction(action, self.parent)
+            entry_action.setProperty("requires_file", True)
             entry_action.triggered.connect({
                 constants.ACTION_COMBO: self.add_action_combined_actions,
                 constants.ACTION_NOISEDETECTION: self.add_action_noise_detection,
@@ -161,6 +164,7 @@ class MenuManager(QObject):
         self.sub_action_menu_entries = []
         for action in constants.SUB_ACTION_TYPES:
             entry_action = QAction(action, self.parent)
+            entry_action.setProperty("requires_file", True)
             entry_action.triggered.connect({
                 constants.ACTION_MASKNOISE: self.add_sub_action_make_noise,
                 constants.ACTION_VIGNETTING: self.add_sub_action_vignetting,
