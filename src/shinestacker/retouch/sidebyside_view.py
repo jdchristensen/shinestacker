@@ -230,11 +230,11 @@ class DoubleViewBase(ViewStrategy, QWidget, ViewSignals):
             self.current_view.mousePressEvent = callbacks
     # pylint: enable=C0103
 
-    def get_view_with_mouse(self, mouse_pos=None):
-        if mouse_pos is None:
+    def get_view_with_mouse(self, event=None):
+        if event is None:
             mouse_pos_global = QCursor.pos()
         else:
-            mouse_pos_global = mouse_pos.toPoint()
+            mouse_pos_global = event.globalPosition().toPoint()
         mouse_pos_current = self.current_view.mapFromGlobal(mouse_pos_global)
         mouse_pos_master = self.master_view.mapFromGlobal(mouse_pos_global)
         current_has_mouse = self.current_view.rect().contains(mouse_pos_current)

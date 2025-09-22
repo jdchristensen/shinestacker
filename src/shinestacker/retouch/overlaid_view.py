@@ -81,7 +81,7 @@ class OverlaidView(ViewStrategy, ImageGraphicsViewBase, ViewSignals):
     def set_mouse_callbacks(self, callbacks):
         self.mousePressEvent = callbacks
 
-    def get_view_with_mouse(self, mouse_pos=None):
+    def get_view_with_mouse(self, event=None):
         return self
 
     # pylint: enable=C0103

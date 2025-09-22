@@ -2,12 +2,12 @@
 
 This page reports the main releases only and the main changes therein.
 
-## [v-.-.-] - 2025-09-21
+## [v-.-.-] - 2025-09-22
 **Bug fixes**
 
 ### Fixed
 - fixed jiggle in zoom in/out
-- fixed image centering in mouse wheel zoom
+- fixed image centering in mouse wheel zoom and zoom in/out keyboard shortcuts
 - fixed current layer brush cursor appearence when zooming in and out
 - fixed repeated color picking in white-balance filter
 - cursor does no longer appear when scrolling with space + mouse click

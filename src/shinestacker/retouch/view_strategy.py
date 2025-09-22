@@ -191,7 +191,7 @@ class ViewStrategy(LayerCollectionHandler):
         pass
 
     @abstractmethod
-    def get_view_with_mouse(self, mouse_pos=None):
+    def get_view_with_mouse(self, event=None):
         pass
 
     def hide_brush_cursor(self):
@@ -421,7 +421,7 @@ class ViewStrategy(LayerCollectionHandler):
             if self.control_pressed:
                 self.brush_size_change_requested.emit(1 if event.angleDelta().y() > 0 else -1)
             else:
-                self.handle_zoom_wheel(self.get_view_with_mouse(), event)
+                self.handle_zoom_wheel(self.get_view_with_mouse(event), event)
             self.update_brush_cursor()
         else:
             self.handle_wheel_touchpad_event(event)
@@ -430,7 +430,7 @@ class ViewStrategy(LayerCollectionHandler):
         if not self.control_pressed:
             delta = event.pixelDelta() or event.angleDelta() / 8
             if delta:
-                self.scroll_view(self.get_view_with_mouse(), delta.x(), delta.y())
+                self.scroll_view(self.get_view_with_mouse(event), delta.x(), delta.y())
         else:
             zoom_in = event.angleDelta().y() > 0
             if zoom_in:
