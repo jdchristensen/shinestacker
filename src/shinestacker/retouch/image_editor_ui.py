@@ -229,8 +229,8 @@ class ImageEditorUI(QMainWindow, LayerCollectionHandler):
         self.io_gui_handler.mark_as_modified_requested.connect(self.mark_as_modified)
         self.io_gui_handler.change_layer_requested.connect(self.change_layer)
         self.io_gui_handler.add_recent_file_requested.connect(self.add_recent_file)
-        self.io_gui_handler.set_enabled_view_toggles_requested.connect(
-            self.set_enabled_view_toggles)
+        self.io_gui_handler.set_enabled_file_open_close_actions_requested.connect(
+            self.set_enabled_file_open_close_actions)
         self.brush_tool.setup_ui(self.brush, self.brush_preview_widget, self.image_viewer,
                                  self.brush_size_slider, self.hardness_slider, self.opacity_slider,
                                  self.flow_slider)
@@ -420,15 +420,15 @@ class ImageEditorUI(QMainWindow, LayerCollectionHandler):
         view_menu.addAction(self.toggle_view_master_individual_action)
         view_menu.addSeparator()
 
-        self.set_strategy('overlaid', False)
+        self.set_strategy('overlaid')
 
-        sort_asc_action = QAction("Sort Layers A-Z", self)
-        sort_asc_action.triggered.connect(lambda: self.sort_layers('asc'))
-        view_menu.addAction(sort_asc_action)
+        self.sort_asc_action = QAction("Sort Layers A-Z", self)
+        self.sort_asc_action.triggered.connect(lambda: self.sort_layers_ui('asc'))
+        view_menu.addAction(self.sort_asc_action)
 
-        sort_desc_action = QAction("Sort Layers Z-A", self)
-        sort_desc_action.triggered.connect(lambda: self.sort_layers('desc'))
-        view_menu.addAction(sort_desc_action)
+        self.sort_desc_action = QAction("Sort Layers Z-A", self)
+        self.sort_desc_action.triggered.connect(lambda: self.sort_layers_ui('desc'))
+        view_menu.addAction(self.sort_desc_action)
 
         view_menu.addSeparator()
 
@@ -464,6 +464,8 @@ class ImageEditorUI(QMainWindow, LayerCollectionHandler):
         prev_layer.activated.connect(self.prev_layer)
         next_layer = QShortcut(QKeySequence(Qt.Key_Down), self, context=Qt.ApplicationShortcut)
         next_layer.activated.connect(self.next_layer)
+
+        self.set_enabled_file_open_close_actions(False)
         self.installEventFilter(self)
 
     def set_enabled_view_toggles(self, enabled):
@@ -471,16 +473,19 @@ class ImageEditorUI(QMainWindow, LayerCollectionHandler):
         self.view_individual_action.setEnabled(enabled)
         self.toggle_view_master_individual_action.setEnabled(enabled)
 
-    def set_strategy(self, strategy, enable_toggles=None):
-        if enable_toggles is None:
-            enable_toggles = strategy == 'overlaid'
+    def set_strategy(self, strategy):
         self.image_viewer.set_strategy(strategy)
         self.display_manager.view_mode = 'master'
         self.highlight_master_thumbnail(gui_constants.THUMB_MASTER_HI_COLOR)
-        self.set_enabled_view_toggles(enable_toggles)
+        self.set_enabled_view_toggles(strategy == 'overlaid')
         for label, mode in self.view_mode_actions.items():
             mode.setEnabled(label != strategy)
             mode.setChecked(label == strategy)
+
+    def set_enabled_file_open_close_actions(self, enabled):
+        self.set_enabled_view_toggles(enabled)
+        self.sort_asc_action.setEnabled(enabled)
+        self.sort_desc_action.setEnabled(enabled)
 
     def update_title(self):
         title = constants.APP_TITLE
@@ -550,10 +555,10 @@ class ImageEditorUI(QMainWindow, LayerCollectionHandler):
     def save_master_only(self, _checked):
         self.update_title()
 
-    def sort_layers(self, order):
+    def sort_layers_ui(self, order):
         self.sort_layers(order)
         self.display_manager.update_thumbnails()
-        self.change_layer(self.current_layer())
+        self.change_layer(self.current_layer_idx())
 
     def change_layer(self, layer_idx):
         if 0 <= layer_idx < self.number_of_layers():

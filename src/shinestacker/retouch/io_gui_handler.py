@@ -17,7 +17,7 @@ class IOGuiHandler(QObject, LayerCollectionHandler):
     mark_as_modified_requested = Signal(bool)
     change_layer_requested = Signal(int)
     add_recent_file_requested = Signal(str)
-    set_enabled_view_toggles_requested = Signal(bool)
+    set_enabled_file_open_close_actions_requested = Signal(bool)
 
     def __init__(self, layer_collection, undo_manager, parent):
         QObject.__init__(self, parent)
@@ -166,7 +166,7 @@ class IOGuiHandler(QObject, LayerCollectionHandler):
         self.change_layer_requested.emit(0)
         self.status_message_requested.emit(message)
         self.update_title_requested.emit()
-        self.set_enabled_view_toggles_requested.emit(True)
+        self.set_enabled_file_open_close_actions_requested.emit(True)
         self.add_recent_file_requested.emit(self.current_file_path_master)
 
     def save_file(self):
@@ -279,5 +279,5 @@ class IOGuiHandler(QObject, LayerCollectionHandler):
         self.display_manager.thumbnail_list.clear()
         self.display_manager.update_thumbnails()
         self.update_title_requested.emit()
-        self.set_enabled_view_toggles_requested.emit(False)
+        self.set_enabled_file_open_close_actions_requested.emit(False)
         self.status_message_requested.emit("File closed")
