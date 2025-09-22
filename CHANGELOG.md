@@ -13,6 +13,9 @@ This page reports the main releases only and the main changes therein.
 - fixed bug in repeated use of color picking in white-balance filter
 - fixed cursor appearence when scrolling with space + mouse click
 
+### Changed
+- in retouch mode, menu actions that require a file are disabled when no file is open 
+
 ----
 
 ## [v1.5.3] - 2025-09-21

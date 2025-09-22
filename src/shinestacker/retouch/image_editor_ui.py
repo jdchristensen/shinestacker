@@ -279,22 +279,26 @@ class ImageEditorUI(QMainWindow, LayerCollectionHandler):
 
         transf_menu = QMenu("&Transform")
         rotate_90_cw_action = QAction(gui_constants.ROTATE_90_CW_LABEL, self)
-        transf_menu.addAction(rotate_90_cw_action)
+        rotate_90_cw_action.setProperty("requires_file", True)
         rotate_90_cw_action.triggered.connect(lambda: self.transformation_manager.rotate_90_cw())
+        transf_menu.addAction(rotate_90_cw_action)
         rotate_90_ccw_action = QAction(gui_constants.ROTATE_90_CCW_LABEL, self)
-        transf_menu.addAction(rotate_90_ccw_action)
+        rotate_90_ccw_action.setProperty("requires_file", True)
         rotate_90_ccw_action.triggered.connect(lambda: self.transformation_manager.rotate_90_ccw())
+        transf_menu.addAction(rotate_90_ccw_action)
         rotate_180_action = QAction(gui_constants.ROTATE_180_LABEL, self)
         rotate_180_action.triggered.connect(lambda: self.transformation_manager.rotate_180())
+        rotate_180_action.setProperty("requires_file", True)
         transf_menu.addAction(rotate_180_action)
         edit_menu.addMenu(transf_menu)
 
         edit_menu.addSeparator()
 
-        copy_action = QAction("Copy Current Layer to Master", self)
-        copy_action.setShortcut("Ctrl+M")
-        copy_action.triggered.connect(self.copy_layer_to_master)
-        edit_menu.addAction(copy_action)
+        copy_current_to_master_action = QAction("Copy Current Layer to Master", self)
+        copy_current_to_master_action.setShortcut("Ctrl+M")
+        copy_current_to_master_action.setProperty("requires_file", True)
+        copy_current_to_master_action.triggered.connect(self.copy_layer_to_master)
+        edit_menu.addAction(copy_current_to_master_action)
 
         view_menu = menubar.addMenu("&View")
 
@@ -353,15 +357,18 @@ class ImageEditorUI(QMainWindow, LayerCollectionHandler):
         }
         brush_action = self.cursor_style_actions['brush']
         brush_action.setCheckable(True)
+        brush_action.setProperty("requires_file", True)
         brush_action.triggered.connect(lambda: set_cursor_style('brush'))
         cursor_menu.addAction(brush_action)
 
         preview_action = self.cursor_style_actions['preview']
+        preview_action.setProperty("requires_file", True)
         preview_action.setCheckable(True)
         preview_action.triggered.connect(lambda: set_cursor_style('preview'))
         cursor_menu.addAction(preview_action)
 
         outline_action = self.cursor_style_actions['outline']
+        outline_action.setProperty("requires_file", True)
         outline_action.setCheckable(True)
         outline_action.triggered.connect(lambda: set_cursor_style('outline'))
         cursor_menu.addAction(outline_action)
@@ -384,37 +391,44 @@ class ImageEditorUI(QMainWindow, LayerCollectionHandler):
 
         zoom_in_action = QAction("Zoom In", self)
         zoom_in_action.setShortcut("Ctrl++")
+        zoom_in_action.setProperty("requires_file", True)
         zoom_in_action.triggered.connect(self.image_viewer.zoom_in)
         view_menu.addAction(zoom_in_action)
 
         zoom_out_action = QAction("Zoom Out", self)
         zoom_out_action.setShortcut("Ctrl+-")
+        zoom_out_action.setProperty("requires_file", True)
         zoom_out_action.triggered.connect(self.image_viewer.zoom_out)
         view_menu.addAction(zoom_out_action)
 
         adapt_action = QAction("Adapt to Screen", self)
         adapt_action.setShortcut("Ctrl+0")
+        adapt_action.setProperty("requires_file", True)
         adapt_action.triggered.connect(self.image_viewer.reset_zoom)
         view_menu.addAction(adapt_action)
 
         actual_size_action = QAction("Actual Size", self)
         actual_size_action.setShortcut("Ctrl+R")
+        actual_size_action.setProperty("requires_file", True)
         actual_size_action.triggered.connect(self.image_viewer.actual_size)
         view_menu.addAction(actual_size_action)
         view_menu.addSeparator()
 
         self.view_master_action = QAction("View Master", self)
         self.view_master_action.setShortcut("M")
+        self.view_master_action.setProperty("requires_file", True)
         self.view_master_action.triggered.connect(self.set_view_master)
         view_menu.addAction(self.view_master_action)
 
         self.view_individual_action = QAction("View Individual", self)
         self.view_individual_action.setShortcut("L")
+        self.view_individual_action.setProperty("requires_file", True)
         self.view_individual_action.triggered.connect(self.set_view_individual)
         view_menu.addAction(self.view_individual_action)
 
         self.toggle_view_master_individual_action = QAction("Toggle Master/Individual", self)
         self.toggle_view_master_individual_action.setShortcut("T")
+        self.toggle_view_master_individual_action.setProperty("requires_file", True)
         self.toggle_view_master_individual_action.triggered.connect(
             self.toggle_view_master_individual)
         view_menu.addAction(self.toggle_view_master_individual_action)
@@ -422,28 +436,34 @@ class ImageEditorUI(QMainWindow, LayerCollectionHandler):
 
         self.set_strategy('overlaid')
 
-        self.sort_asc_action = QAction("Sort Layers A-Z", self)
-        self.sort_asc_action.triggered.connect(lambda: self.sort_layers_ui('asc'))
-        view_menu.addAction(self.sort_asc_action)
+        sort_asc_action = QAction("Sort Layers A-Z", self)
+        sort_asc_action.setProperty("requires_file", True)
+        sort_asc_action.triggered.connect(lambda: self.sort_layers_ui('asc'))
+        view_menu.addAction(sort_asc_action)
 
-        self.sort_desc_action = QAction("Sort Layers Z-A", self)
-        self.sort_desc_action.triggered.connect(lambda: self.sort_layers_ui('desc'))
-        view_menu.addAction(self.sort_desc_action)
+        sort_desc_action = QAction("Sort Layers Z-A", self)
+        sort_desc_action.setProperty("requires_file", True)
+        sort_desc_action.triggered.connect(lambda: self.sort_layers_ui('desc'))
+        view_menu.addAction(sort_desc_action)
 
         view_menu.addSeparator()
 
         filter_menu = menubar.addMenu("&Filter")
         filter_menu.setObjectName("Filter")
         denoise_action = QAction("Denoise", self)
+        denoise_action.setProperty("requires_file", True)
         denoise_action.triggered.connect(self.denoise_filter)
         filter_menu.addAction(denoise_action)
         unsharp_mask_action = QAction("Unsharp Mask", self)
+        unsharp_mask_action.setProperty("requires_file", True)
         unsharp_mask_action.triggered.connect(self.unsharp_mask)
         filter_menu.addAction(unsharp_mask_action)
         white_balance_action = QAction("White Balance", self)
+        white_balance_action.setProperty("requires_file", True)
         white_balance_action.triggered.connect(self.white_balance)
         filter_menu.addAction(white_balance_action)
         vignetting_action = QAction("Vignetting Correction", self)
+        vignetting_action.setProperty("requires_file", True)
         vignetting_action.triggered.connect(self.vignetting_correction)
         filter_menu.addAction(vignetting_action)
 
@@ -483,9 +503,9 @@ class ImageEditorUI(QMainWindow, LayerCollectionHandler):
             mode.setChecked(label == strategy)
 
     def set_enabled_file_open_close_actions(self, enabled):
-        self.set_enabled_view_toggles(enabled)
-        self.sort_asc_action.setEnabled(enabled)
-        self.sort_desc_action.setEnabled(enabled)
+        for action in self.findChildren(QAction):
+            if action.property("requires_file"):
+                action.setEnabled(enabled)
 
     def update_title(self):
         title = constants.APP_TITLE
