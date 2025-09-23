@@ -2,6 +2,14 @@
 
 This page reports the main releases only and the main changes therein.
 
+## [v-.-.-] -  2025-09.25
+**Unreleased changes**
+
+### Fixed
+- removed ghost brush gradient at cursor transition
+
+----
+
 ## [v1.5.4] - 2025-09-23
 **Bug fixes**
 

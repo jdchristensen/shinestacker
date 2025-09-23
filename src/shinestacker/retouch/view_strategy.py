@@ -245,6 +245,8 @@ class ViewStrategy(LayerCollectionHandler):
 
     def set_cursor_style(self, style):
         self.cursor_style = style
+        if style != 'simple' and self.brush_cursor:
+            self.brush_cursor.setBrush(Qt.NoBrush)
         if style == 'preview':
             self.show_brush_preview()
         self.update_brush_cursor()
