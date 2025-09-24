@@ -7,6 +7,7 @@ from PySide6.QtGui import QGuiApplication, QAction, QIcon
 from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel, QMessageBox,
                                QSplitter, QToolBar, QMenu, QMainWindow)
 from .. config.constants import constants
+from .. config.app_config import AppConfig
 from .. core.core_utils import running_under_windows, running_under_macos
 from .colors import ColorPalette
 from .project_model import Project
@@ -440,11 +441,14 @@ class MainWindow(QMainWindow, LogManager):
             return True
         return False
 
-    def toggle_expert_options(self):
-        pass
+    def handle_project_config(self):
+        self.menu_manager.expert_options_action.setChecked(
+            AppConfig.instance().config.get(
+                'expert_options', constants.DEFAULT_EXPERT_OPTIONS))
 
-    def expert_options(self):
-        return self.menu_manager.expert_options_action.isChecked()
+    def toggle_expert_options(self):
+        AppConfig.instance().config['expert_options'] = \
+            self.menu_manager.expert_options_action.isChecked()
 
     def before_thread_begins(self):
         self.menu_manager.run_job_action.setEnabled(False)

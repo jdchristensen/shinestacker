@@ -7,6 +7,7 @@ from PySide6.QtGui import QIcon
 from PySide6.QtCore import Qt
 from .. config.gui_constants import gui_constants
 from .. config.constants import constants
+from .. config.app_config import AppConfig
 from .. algorithms.utils import read_img, extension_tif_jpg
 from .. algorithms.stack import get_bunches
 from .folder_file_selection import FolderFileSelectionWidget
@@ -31,7 +32,8 @@ class NewProjectDialog(BaseFormDialog):
         self.selected_filenames = []
 
     def expert(self):
-        return self.parent().expert_options()
+        return AppConfig.instance().config.get(
+            'expert_options', constants.DEFAULT_EXPERT_OPTIONS)
 
     def add_bold_label(self, label):
         label = QLabel(label)

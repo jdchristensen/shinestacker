@@ -135,8 +135,7 @@ class MenuManager(QObject):
         self.expert_options_action.setCheckable(True)
         self.expert_options_action.setChecked(
             self.settings.settings.get(
-                'expert_options',
-                constants.DEFAULT_EXPERT_OPTIONS))
+                'expert_options', constants.DEFAULT_EXPERT_OPTIONS))
         menu.addAction(self.expert_options_action)
 
     def add_job_menu(self):

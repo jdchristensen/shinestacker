@@ -5,6 +5,7 @@ import traceback
 from PySide6.QtCore import QTimer
 from PySide6.QtWidgets import QWidget, QLabel, QMessageBox, QStackedWidget
 from .. config.constants import constants
+from .. config.app_config import AppConfig
 from .. algorithms.align import validate_align_config
 from . action_config import (
     DefaultActionConfigurator,
@@ -53,7 +54,8 @@ class ActionConfigDialog(ConfigDialog):
             builder.reset_to_defaults()
 
     def expert(self):
-        return self.parent().expert_options()
+        return AppConfig.instance().config.get(
+            'expert_options', constants.DEFAULT_EXPERT_OPTIONS)
 
 
 class JobConfigurator(DefaultActionConfigurator):
