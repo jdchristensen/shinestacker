@@ -4,6 +4,10 @@ def add_project_arguments(parser):
     parser.add_argument('-x', '--expert', action='store_true', help='''
 expert options are visible by default.
 ''')
+    parser.add_argument('-n', '--no-new-project', dest='new-project',
+                        action='store_false', default=True, help='''
+Do not open new project dialog at startup (default: open).
+''')
 
 
 def add_retouch_arguments(parser):
