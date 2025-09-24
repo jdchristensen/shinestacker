@@ -236,6 +236,8 @@ class _Constants:
     DEFAULT_PLOT_STACK_BUNCH = True
     DEFAULT_PLOT_STACK = True
 
+    DEFAULT_EXPERT_OPTIONS = False
+
     def __setattr__aux(self, name, value):
         raise AttributeError(f"Can't reassign constant '{name}'")
 

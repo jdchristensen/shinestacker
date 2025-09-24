@@ -86,7 +86,6 @@ class MainWindow(QMainWindow, LogManager):
         self._windows = []
         self._workers = []
         self.retouch_callback = None
-        self.expert_options = False
         self.job_list().setStyleSheet(LIST_STYLE_SHEET)
         self.action_list().setStyleSheet(LIST_STYLE_SHEET)
         self.menu_manager.add_menus()
@@ -442,11 +441,10 @@ class MainWindow(QMainWindow, LogManager):
         return False
 
     def toggle_expert_options(self):
-        self.expert_options = self.menu_manager.expert_options_action.isChecked()
+        pass
 
-    def set_expert_options(self):
-        self.menu_manager.expert_options_action.setChecked(True)
-        self.expert_options = True
+    def expert_options(self):
+        return self.menu_manager.expert_options_action.isChecked()
 
     def before_thread_begins(self):
         self.menu_manager.run_job_action.setEnabled(False)

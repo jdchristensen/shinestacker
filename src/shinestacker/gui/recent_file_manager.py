@@ -1,30 +1,12 @@
 # pylint: disable=C0114, C0115, C0116, E0611
 import os
-from PySide6.QtCore import QStandardPaths
+from .. config.settings import StdPathFile
 
 
-class RecentFileManager:
+class RecentFileManager(StdPathFile):
     def __init__(self, filename, max_entries=10):
-        self.filename = filename
+        super().__init__(filename)
         self.max_entries = max_entries
-        self._config_dir = None
-
-    def get_config_dir(self):
-        if self._config_dir is None:
-            config_dir = QStandardPaths.writableLocation(QStandardPaths.AppConfigLocation)
-            if not config_dir:
-                if os.name == 'nt':  # Windows
-                    config_dir = os.path.join(os.environ.get('APPDATA', ''), 'ShineStacker')
-                elif os.name == 'posix':  # macOS and Linux
-                    config_dir = os.path.expanduser('~/.config/shinestacker')
-                else:
-                    config_dir = os.path.join(os.path.expanduser('~'), '.shinestacker')
-            os.makedirs(config_dir, exist_ok=True)
-            self._config_dir = config_dir
-        return self._config_dir
-
-    def get_file_path(self):
-        return os.path.join(self.get_config_dir(), self.filename)
 
     def get_files(self):
         file_path = self.get_file_path()

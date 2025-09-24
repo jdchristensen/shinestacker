@@ -53,7 +53,7 @@ class ActionConfigDialog(ConfigDialog):
             builder.reset_to_defaults()
 
     def expert(self):
-        return self.parent().expert_options if hasattr(self.parent(), 'expert_options') else False
+        return self.parent().expert_options()
 
 
 class JobConfigurator(DefaultActionConfigurator):

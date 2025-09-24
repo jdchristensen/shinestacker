@@ -5,6 +5,7 @@ from PySide6.QtCore import Signal, QObject
 from PySide6.QtGui import QAction, QIcon
 from PySide6.QtWidgets import QMenu, QComboBox
 from .. config.constants import constants
+from .. config.settings import Settings
 from .recent_file_manager import RecentFileManager
 
 
@@ -21,6 +22,7 @@ class MenuManager(QObject):
         self.actions = actions
         self.action_selector = None
         self.sub_action_selector = None
+        self.settings = Settings()
         self.shortcuts = {
             "&New...": "Ctrl+N",
             "&Open...": "Ctrl+O",
@@ -131,6 +133,10 @@ class MenuManager(QObject):
         menu = self.menubar.addMenu("&View")
         self.expert_options_action = self.action("Expert Options")
         self.expert_options_action.setCheckable(True)
+        self.expert_options_action.setChecked(
+            self.settings.settings.get(
+                'expert_options',
+                constants.DEFAULT_EXPERT_OPTIONS))
         menu.addAction(self.expert_options_action)
 
     def add_job_menu(self):

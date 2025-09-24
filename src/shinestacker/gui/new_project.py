@@ -31,7 +31,7 @@ class NewProjectDialog(BaseFormDialog):
         self.selected_filenames = []
 
     def expert(self):
-        return self.parent().expert_options
+        return self.parent().expert_options()
 
     def add_bold_label(self, label):
         label = QLabel(label)
