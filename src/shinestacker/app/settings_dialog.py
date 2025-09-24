@@ -1,6 +1,6 @@
 # pylint: disable=C0114, C0115, C0116, E0611, W0718, R0903, E0611
 from PySide6.QtCore import Signal
-from PySide6.QtWidgets import QLabel, QCheckBox, QComboBox, QDoubleSpinBox, QSpinBox
+from PySide6.QtWidgets import QFrame, QLabel, QCheckBox, QComboBox, QDoubleSpinBox, QSpinBox
 from .. gui.config_dialog import ConfigDialog
 from .. config.settings import Settings
 from .. config.constants import constants
@@ -25,6 +25,11 @@ class SettingsDialog(ConfigDialog):
     def create_form_content(self):
         if self.project_settings:
             self.create_project_settings()
+        separator = QFrame()
+        separator.setFrameShape(QFrame.HLine)
+        separator.setFrameShadow(QFrame.Sunken)
+        separator.setLineWidth(1)
+        self.container_layout.addRow(separator)
         if self.retouch_settings:
             self.create_retouch_settings()
 
