@@ -441,7 +441,7 @@ class MainWindow(QMainWindow, LogManager):
             return True
         return False
 
-    def handle_project_config(self):
+    def handle_config(self):
         self.menu_manager.expert_options_action.setChecked(
             AppConfig.instance().config.get(
                 'expert_options', constants.DEFAULT_EXPERT_OPTIONS))

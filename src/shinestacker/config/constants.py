@@ -237,6 +237,7 @@ class _Constants:
     DEFAULT_PLOT_STACK = True
 
     DEFAULT_EXPERT_OPTIONS = False
+    DEFAULT_VIEW_STRATEGY = 'overlaid'
 
     def __setattr__aux(self, name, value):
         raise AttributeError(f"Can't reassign constant '{name}'")

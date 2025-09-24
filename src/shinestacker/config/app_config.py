@@ -6,6 +6,8 @@ class AppConfig:
     _instance = None
 
     def __init__(self):
+        if AppConfig._instance is not None:
+            raise RuntimeError("AppConfig is a singleton.")
         self.config = {}
         self.load_defaults()
 
@@ -16,5 +18,5 @@ class AppConfig:
     @classmethod
     def instance(cls):
         if cls._instance is None:
-            cls._instance = AppConfig()
+            cls._instance = cls()
         return cls._instance

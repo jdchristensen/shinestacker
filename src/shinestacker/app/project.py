@@ -31,7 +31,8 @@ class ProjectApp(MainWindow):
     def create_menu(self):
         app_menu = QMenu(constants.APP_STRING)
         fill_app_menu(self, app_menu, True, False,
-                      self.handle_project_config)
+                      self.handle_config,
+                      lambda: None)
         return app_menu
 
     def _retouch_callback(self, filename):

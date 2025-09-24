@@ -6,6 +6,7 @@ from PySide6.QtGui import QShortcut, QKeySequence, QAction, QActionGroup
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QGuiApplication
 from .. config.constants import constants
+from .. config.app_config import AppConfig
 from .. config.gui_constants import gui_constants
 from .. gui.recent_file_manager import RecentFileManager
 from .image_viewer import ImageViewer
@@ -434,7 +435,8 @@ class ImageEditorUI(QMainWindow, LayerCollectionHandler):
         view_menu.addAction(self.toggle_view_master_individual_action)
         view_menu.addSeparator()
 
-        self.set_strategy('overlaid')
+        self.set_strategy(AppConfig.instance().config.get(
+            'view_strategy', constants.DEFAULT_VIEW_STRATEGY))
 
         sort_asc_action = QAction("Sort Layers A-Z", self)
         sort_asc_action.setProperty("requires_file", True)
@@ -487,6 +489,10 @@ class ImageEditorUI(QMainWindow, LayerCollectionHandler):
 
         self.set_enabled_file_open_close_actions(False)
         self.installEventFilter(self)
+
+    def handle_config(self):
+        self.set_strategy(AppConfig.instance().config.get(
+            'view_strategy', constants.DEFAULT_VIEW_STRATEGY))
 
     def set_enabled_view_toggles(self, enabled):
         self.view_master_action.setEnabled(enabled)
