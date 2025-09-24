@@ -5,11 +5,15 @@ This page reports the main releases only and the main changes therein.
 ## [v-.-.-] -  2025-09.25
 **Unreleased changes**
 
+### Added
+- persistent settings dialog to configure app startup options
+- option ```-n``` prevents opening new project dialog
+
 ### Fixed
 - removed ghost brush gradient at cursor transition
 
 ### Changed
-- implemented cursor update throttling, limited to ~60 fps
+- cursor update throttling enabled, limited to ~60 fps
 
 ----
 
