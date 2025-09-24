@@ -140,7 +140,7 @@ class MainApp(QMainWindow):
         app_menu.addAction(self.switch_to_project_action)
         app_menu.addAction(self.switch_to_retouch_action)
         app_menu.addSeparator()
-        fill_app_menu(self, app_menu)
+        fill_app_menu(self, app_menu, True, True)
         return app_menu
 
     def quit(self):

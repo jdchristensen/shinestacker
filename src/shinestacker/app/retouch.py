@@ -25,7 +25,7 @@ class RetouchApp(ImageEditorUI):
 
     def create_menu(self):
         app_menu = QMenu(constants.APP_STRING)
-        fill_app_menu(self, app_menu)
+        fill_app_menu(self, app_menu, project_settings=False, retouch_settings=True)
         return app_menu
 
 

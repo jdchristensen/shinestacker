@@ -30,7 +30,7 @@ class ProjectApp(MainWindow):
 
     def create_menu(self):
         app_menu = QMenu(constants.APP_STRING)
-        fill_app_menu(self, app_menu)
+        fill_app_menu(self, app_menu, project_settings=True, retouch_settings=False)
         return app_menu
 
     def _retouch_callback(self, filename):
