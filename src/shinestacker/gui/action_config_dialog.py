@@ -2,87 +2,28 @@
 # pylint: disable=E0606, W0718, R1702, W0102, W0221, R0914, C0302
 import os
 import traceback
-from PySide6.QtCore import Qt, QTimer
-from PySide6.QtWidgets import (QWidget, QPushButton, QHBoxLayout, QLabel, QScrollArea, QMessageBox,
-                               QStackedWidget, QFormLayout, QDialog)
+from PySide6.QtCore import QTimer
+from PySide6.QtWidgets import QWidget, QLabel, QMessageBox, QStackedWidget
 from .. config.constants import constants
 from .. algorithms.align import validate_align_config
-from .base_form_dialog import create_form_layout
 from . action_config import (
     DefaultActionConfigurator,
     FIELD_TEXT, FIELD_ABS_PATH, FIELD_REL_PATH, FIELD_FLOAT,
     FIELD_INT, FIELD_INT_TUPLE, FIELD_BOOL, FIELD_COMBO, FIELD_REF_IDX
 )
 from .folder_file_selection import FolderFileSelectionWidget
+from .config_dialog import ConfigDialog
 
 
-class ActionConfigDialog(QDialog):
+class ActionConfigDialog(ConfigDialog):
     def __init__(self, action, current_wd, parent=None):
-        super().__init__(parent)
-        self.setWindowTitle(f"Configure {action.type_name}")
-        self.form_layout = create_form_layout(self)
-        self.current_wd = current_wd
         self.action = action
-        scroll_area = QScrollArea()
-        scroll_area.setWidgetResizable(True)
-        container_widget = QWidget()
-        self.container_layout = QFormLayout(container_widget)
-        self.container_layout.setFieldGrowthPolicy(QFormLayout.AllNonFixedFieldsGrow)
-        self.container_layout.setRowWrapPolicy(QFormLayout.DontWrapRows)
-        self.container_layout.setFormAlignment(Qt.AlignLeft | Qt.AlignTop)
-        self.container_layout.setLabelAlignment(Qt.AlignLeft)
-        self.configurator = self.get_configurator(action.type_name)
-        self.configurator.create_form(self.container_layout, action)
-        scroll_area.setWidget(container_widget)
-        button_box = QHBoxLayout()
-        ok_button = QPushButton("OK")
-        ok_button.setFocus()
-        cancel_button = QPushButton("Cancel")
-        reset_button = QPushButton("Reset")
-        button_box.addWidget(ok_button)
-        button_box.addWidget(cancel_button)
-        button_box.addWidget(reset_button)
-        reset_button.clicked.connect(self.reset_to_defaults)
-        self.form_layout.addRow(scroll_area)
-        self.form_layout.addRow(button_box)
-        QTimer.singleShot(0, self.adjust_dialog_size)
-        ok_button.clicked.connect(self.accept)
-        cancel_button.clicked.connect(self.reject)
+        self.current_wd = current_wd
+        super().__init__(f"Configure {action.type_name}", parent)
 
-    def adjust_dialog_size(self):
-        screen_geometry = self.screen().availableGeometry()
-        screen_height = screen_geometry.height()
-        screen_width = screen_geometry.width()
-        scroll_area = self.findChild(QScrollArea)
-        container_widget = scroll_area.widget()
-        container_size = container_widget.sizeHint()
-        container_height = container_size.height()
-        container_width = container_size.width()
-        button_row_height = 50  # Approx height of button row
-        margins_height = 40  # Approx. height of margins
-        total_height_needed = container_height + button_row_height + margins_height
-        if total_height_needed < screen_height * 0.8:
-            width = max(container_width + 40, 600)
-            height = total_height_needed
-            self.resize(width, height)
-            scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-        else:
-            max_height = int(screen_height * 0.9)
-            width = max(container_width + 40, 600)
-            width = min(width, int(screen_width * 0.9))
-            self.resize(width, max_height)
-            self.setMaximumHeight(max_height)
-            scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
-            self.setMinimumHeight(min(max_height, 500))
-            self.setMinimumWidth(width)
-        self.center_on_screen()
-
-    def center_on_screen(self):
-        screen_geometry = self.screen().availableGeometry()
-        center_point = screen_geometry.center()
-        frame_geometry = self.frameGeometry()
-        frame_geometry.moveCenter(center_point)
-        self.move(frame_geometry.topLeft())
+    def create_form_content(self):
+        self.configurator = self.get_configurator(self.action.type_name)
+        self.configurator.create_form(self.container_layout, self.action)
 
     def get_configurator(self, action_type):
         configurators = {
@@ -102,7 +43,8 @@ class ActionConfigDialog(QDialog):
 
     def accept(self):
         if self.configurator.update_params(self.action.params):
-            self.parent().mark_as_modified(True, "Modify Configuration")
+            if hasattr(self.parent(), 'mark_as_modified'):
+                self.parent().mark_as_modified(True, "Modify Configuration")
             super().accept()
 
     def reset_to_defaults(self):
@@ -111,7 +53,7 @@ class ActionConfigDialog(QDialog):
             builder.reset_to_defaults()
 
     def expert(self):
-        return self.parent().expert_options
+        return self.parent().expert_options if hasattr(self.parent(), 'expert_options') else False
 
 
 class JobConfigurator(DefaultActionConfigurator):
