@@ -9,6 +9,7 @@ from PySide6.QtWidgets import (
     QGraphicsEllipseItem, QGraphicsView, QGraphicsScene, QGraphicsPixmapItem,
     QGraphicsItemGroup, QGraphicsPathItem)
 from .. config.gui_constants import gui_constants
+from .. config.app_config import AppConfig
 from .layer_collection import LayerCollectionHandler
 from .brush_gradient import create_default_brush_gradient
 from .brush_preview import BrushPreviewItem
@@ -711,9 +712,14 @@ class ViewStrategy(LayerCollectionHandler):
             self.update_brush_cursor()
         if self.dragging and event.buttons() & Qt.LeftButton:
             current_time = QTime.currentTime()
-            if self.last_update_time.msecsTo(current_time) >= gui_constants.PAINT_REFRESH_TIMER:
-                min_step = brush_size * \
-                    gui_constants.MIN_MOUSE_STEP_BRUSH_FRACTION * self.zoom_factor()
+            paint_refresh_time = AppConfig.instance().config.get(
+                'paint_refresh_time',
+                gui_constants.DEFAULT_PAINT_REFRESH_TIME)
+            if self.last_update_time.msecsTo(current_time) >= paint_refresh_time:
+                min_step = AppConfig.instance().config.get(
+                    'min_mouse_step_brush_fraction',
+                    gui_constants.DEFAULT_MIN_MOUSE_STEP_BRUSH_FRACTION)
+                min_step = brush_size * min_step * self.zoom_factor()
                 x, y = position.x(), position.y()
                 xp, yp = self.last_brush_pos.x(), self.last_brush_pos.y()
                 distance = math.sqrt((x - xp)**2 + (y - yp)**2)

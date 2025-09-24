@@ -1,9 +1,10 @@
 # pylint: disable=C0114, C0115, C0116, E0611, W0718, R0903, E0611
 from PySide6.QtCore import Signal
-from PySide6.QtWidgets import QLabel, QCheckBox, QComboBox
+from PySide6.QtWidgets import QLabel, QCheckBox, QComboBox, QDoubleSpinBox, QSpinBox
 from .. gui.config_dialog import ConfigDialog
 from .. config.settings import Settings
 from .. config.constants import constants
+from .. config.gui_constants import gui_constants
 from .. config.app_config import AppConfig
 
 
@@ -17,6 +18,8 @@ class SettingsDialog(ConfigDialog):
         self.settings = Settings()
         self.expert_options = None
         self.view_strategy = None
+        self.min_mouse_step_brush_fraction = None
+        self.paint_refresh_time = None
         super().__init__("Settings", parent)
 
     def create_form_content(self):
@@ -49,6 +52,23 @@ class SettingsDialog(ConfigDialog):
         if idx >= 0:
             self.view_strategy.setCurrentIndex(idx)
         self.container_layout.addRow("View strategy:", self.view_strategy)
+        self.min_mouse_step_brush_fraction = QDoubleSpinBox()
+        self.min_mouse_step_brush_fraction.setValue(
+            self.settings.settings.get('min_mouse_step_brush_fraction',
+                                       gui_constants.DEFAULT_MIN_MOUSE_STEP_BRUSH_FRACTION))
+        self.min_mouse_step_brush_fraction.setRange(0, 1)
+        self.min_mouse_step_brush_fraction.setDecimals(2)
+        self.min_mouse_step_brush_fraction.setSingleStep(0.02)
+        self.container_layout.addRow("Min. mouse step in brush units:",
+                                     self.min_mouse_step_brush_fraction)
+
+        self.paint_refresh_time = QSpinBox()
+        self.paint_refresh_time.setRange(0, 1000)
+        self.paint_refresh_time.setValue(
+            self.settings.settings.get('paint_refresh_time',
+                                       gui_constants.DEFAULT_PAINT_REFRESH_TIME))
+        self.container_layout.addRow("Paint refresh time:",
+                                     self.paint_refresh_time)
 
     def accept(self):
         if self.project_settings:
@@ -57,6 +77,10 @@ class SettingsDialog(ConfigDialog):
         if self.retouch_settings:
             self.settings.settings['view_strategy'] = \
                 self.view_strategy.itemData(self.view_strategy.currentIndex())
+            self.settings.settings['min_mouse_step_brush_fraction'] = \
+                self.min_mouse_step_brush_fraction.value()
+            self.settings.settings['paint_refresh_time'] = \
+                self.paint_refresh_time.value()
         self.settings.save()
         AppConfig.instance().load_defaults()
         if self.project_settings:
@@ -66,7 +90,16 @@ class SettingsDialog(ConfigDialog):
         super().accept()
 
     def reset_to_defaults(self):
-        self.expert_options.setChecked(constants.DEFAULT_EXPERT_OPTIONS)
+        if self.project_settings:
+            self.expert_options.setChecked(constants.DEFAULT_EXPERT_OPTIONS)
+        if self.retouch_settings:
+            idx = self.view_strategy.findData(constants.DEFAULT_VIEW_STRATEGY)
+            if idx >= 0:
+                self.view_strategy.setCurrentIndex(idx)
+            self.min_mouse_step_brush_fraction.setValue(
+                gui_constants.DEFAULT_MIN_MOUSE_STEP_BRUSH_FRACTION)
+            self.paint_refresh_time.setValue(
+                gui_constants.DEFAULT_PAINT_REFRESH_TIME)
 
 
 def show_settings_dialog(parent, project_settings, retouch_settings,

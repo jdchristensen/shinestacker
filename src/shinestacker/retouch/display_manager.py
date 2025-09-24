@@ -36,7 +36,7 @@ class DisplayManager(QObject, LayerCollectionHandler):
         self.view_mode = 'master'
         self.needs_update = False
         self.update_timer = QTimer()
-        self.update_timer.setInterval(gui_constants.PAINT_REFRESH_TIMER)
+        self.update_timer.setInterval(gui_constants.DEFAULT_PAINT_REFRESH_TIME)
         self.update_timer.timeout.connect(self.process_pending_updates)
 
     def process_pending_updates(self):
