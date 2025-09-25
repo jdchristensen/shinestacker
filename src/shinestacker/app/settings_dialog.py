@@ -38,9 +38,7 @@ class SettingsDialog(ConfigDialog):
         label.setStyleSheet("font-weight: bold")
         self.container_layout.addRow(label)
         self.expert_options = QCheckBox()
-        self.expert_options.setChecked(
-            self.settings.settings.get('expert_options',
-                                       constants.DEFAULT_EXPERT_OPTIONS))
+        self.expert_options.setChecked(self.settings.get('expert_options'))
         self.container_layout.addRow("Expert options:", self.expert_options)
 
     def create_retouch_settings(self):
@@ -51,16 +49,13 @@ class SettingsDialog(ConfigDialog):
         self.view_strategy.addItem("Overlaid", "overlaid")
         self.view_strategy.addItem("Side by side", "sidebyside")
         self.view_strategy.addItem("Top-Bottom", "topbottom")
-        idx = self.view_strategy.findData(
-            self.settings.settings.get('view_strategy',
-                                       constants.DEFAULT_VIEW_STRATEGY))
+        idx = self.view_strategy.findData(self.settings.get('view_strategy'))
         if idx >= 0:
             self.view_strategy.setCurrentIndex(idx)
         self.container_layout.addRow("View strategy:", self.view_strategy)
         self.min_mouse_step_brush_fraction = QDoubleSpinBox()
         self.min_mouse_step_brush_fraction.setValue(
-            self.settings.settings.get('min_mouse_step_brush_fraction',
-                                       gui_constants.DEFAULT_MIN_MOUSE_STEP_BRUSH_FRACTION))
+            self.settings.get('min_mouse_step_brush_fraction'))
         self.min_mouse_step_brush_fraction.setRange(0, 1)
         self.min_mouse_step_brush_fraction.setDecimals(2)
         self.min_mouse_step_brush_fraction.setSingleStep(0.02)
@@ -70,22 +65,21 @@ class SettingsDialog(ConfigDialog):
         self.paint_refresh_time = QSpinBox()
         self.paint_refresh_time.setRange(0, 1000)
         self.paint_refresh_time.setValue(
-            self.settings.settings.get('paint_refresh_time',
-                                       gui_constants.DEFAULT_PAINT_REFRESH_TIME))
+            self.settings.get('paint_refresh_time'))
         self.container_layout.addRow("Paint refresh time:",
                                      self.paint_refresh_time)
 
     def accept(self):
         if self.project_settings:
-            self.settings.settings['expert_options'] = \
-                self.expert_options.isChecked()
+            self.settings.set(
+                'expert_options', self.expert_options.isChecked())
         if self.retouch_settings:
-            self.settings.settings['view_strategy'] = \
-                self.view_strategy.itemData(self.view_strategy.currentIndex())
-            self.settings.settings['min_mouse_step_brush_fraction'] = \
-                self.min_mouse_step_brush_fraction.value()
-            self.settings.settings['paint_refresh_time'] = \
-                self.paint_refresh_time.value()
+            self.settings.set(
+                'view_strategy', self.view_strategy.itemData(self.view_strategy.currentIndex()))
+            self.settings.set(
+                'min_mouse_step_brush_fraction', self.min_mouse_step_brush_fraction.value())
+            self.settings.set(
+                'paint_refresh_time', self.paint_refresh_time.value())
         self.settings.save()
         AppConfig.instance().load_defaults()
         if self.project_settings:

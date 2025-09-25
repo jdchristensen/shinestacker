@@ -53,6 +53,12 @@ class Settings(StdPathFile):
                 raise RuntimeError(f"Can't read file from path {file_path}") from e
             self.settings = {**self.settings, **json_obj}
 
+    def set(self, key, value):
+        self.settings[key] = value
+
+    def get(self, key):
+        return self.settings[key]
+
     def save(self):
         try:
             json_obj = jsonpickle.encode(self.settings)
