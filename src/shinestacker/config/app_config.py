@@ -22,8 +22,8 @@ class AppConfig:
         return cls._instance
 
     @classmethod
-    def get(cls, key):
-        return cls.instance().config.get(key, None)
+    def get(cls, key, default=None):
+        return cls.instance().config.get(key, default)
 
     @classmethod
     def set(cls, key, value):

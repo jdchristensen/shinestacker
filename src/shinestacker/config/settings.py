@@ -35,7 +35,10 @@ DEFAULT_SETTINGS = {
     'expert_options': constants.DEFAULT_EXPERT_OPTIONS,
     'view_strategy': constants.DEFAULT_VIEW_STRATEGY,
     'paint_refresh_time': gui_constants.DEFAULT_PAINT_REFRESH_TIME,
-    'min_mouse_step_brush_fraction': gui_constants.DEFAULT_MIN_MOUSE_STEP_BRUSH_FRACTION
+    'min_mouse_step_brush_fraction': gui_constants.DEFAULT_MIN_MOUSE_STEP_BRUSH_FRACTION,
+    'combined_actions_params': {
+        'max_threads': constants.DEFAULT_MAX_FWK_THREADS
+    }
 }
 
 

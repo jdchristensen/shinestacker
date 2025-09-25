@@ -1,12 +1,23 @@
 # pylint: disable=C0114, C0115, C0116, R0911
 from copy import deepcopy
 from .. config.constants import constants
+from .. config.app_config import AppConfig
+
+
+TYPE_NAME_APP_CONFIG_MAP = {
+    constants.ACTION_COMBO: 'combined_actions_params'
+}
 
 
 class ActionConfig:
     def __init__(self, type_name: str, params=None, parent=None):
         self.type_name = type_name
-        self.params = params or {}
+        app_config_params_key = TYPE_NAME_APP_CONFIG_MAP.get(type_name, '')
+        if app_config_params_key != '':
+            self.params = AppConfig.get(app_config_params_key, {})
+        else:
+            self.params = {}
+        self.params = {**self.params, **params}
         self.parent = parent
         self.sub_actions: list[ActionConfig] = []
 

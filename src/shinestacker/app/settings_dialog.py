@@ -40,6 +40,12 @@ class SettingsDialog(ConfigDialog):
         self.expert_options = QCheckBox()
         self.expert_options.setChecked(self.settings.get('expert_options'))
         self.container_layout.addRow("Expert options:", self.expert_options)
+        self.combined_actions_max_threads = QSpinBox()
+        self.combined_actions_max_threads.setRange(0, 64)
+        self.combined_actions_max_threads.setValue(
+            self.settings.get('combined_actions_params')['max_threads'])
+        self.container_layout.addRow("Max num. of cores, CombinedActions:",
+                                     self.combined_actions_max_threads)
 
     def create_retouch_settings(self):
         label = QLabel("Retouch settings")
@@ -61,7 +67,6 @@ class SettingsDialog(ConfigDialog):
         self.min_mouse_step_brush_fraction.setSingleStep(0.02)
         self.container_layout.addRow("Min. mouse step in brush units:",
                                      self.min_mouse_step_brush_fraction)
-
         self.paint_refresh_time = QSpinBox()
         self.paint_refresh_time.setRange(0, 1000)
         self.paint_refresh_time.setValue(
@@ -73,6 +78,10 @@ class SettingsDialog(ConfigDialog):
         if self.project_settings:
             self.settings.set(
                 'expert_options', self.expert_options.isChecked())
+            self.settings.set(
+                'combined_actions_params', {
+                    'max_threads': self.combined_actions_max_threads.value()
+                })
         if self.retouch_settings:
             self.settings.set(
                 'view_strategy', self.view_strategy.itemData(self.view_strategy.currentIndex()))
