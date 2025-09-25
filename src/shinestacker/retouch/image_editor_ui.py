@@ -237,6 +237,7 @@ class ImageEditorUI(QMainWindow, LayerCollectionHandler):
                                  self.flow_slider)
         self.image_viewer.set_brush(self.brush_tool.brush)
         self.image_viewer.set_preview_brush(self.brush_tool.brush)
+        self.image_viewer.status.set_zoom_factor_requested.connect(self.handle_set_zoom_factor)
         self.brush_tool.update_brush_thumb()
         self.io_gui_handler.setup_ui(self.display_manager, self.image_viewer)
         menubar = self.menuBar()
@@ -472,6 +473,8 @@ class ImageEditorUI(QMainWindow, LayerCollectionHandler):
         help_menu.setObjectName("Help")
         shortcuts_help_action = QAction("Shortcuts and Mouse", self)
 
+        self.zoom_factor_label = QLabel("")
+        self.statusBar().addPermanentWidget(self.zoom_factor_label)
         self.statusBar().showMessage("Shine Stacker ready.", 2000)
 
         def shortcuts_help():
@@ -704,6 +707,7 @@ class ImageEditorUI(QMainWindow, LayerCollectionHandler):
             self.io_gui_handler.close_file()
             self.set_master_layer(None)
             self.mark_as_modified(False)
+            self.zoom_factor_label.setText("")
 
     def set_view_master(self):
         self.display_manager.set_view_master()
@@ -756,3 +760,6 @@ class ImageEditorUI(QMainWindow, LayerCollectionHandler):
             self.brush_tool.increase_brush_size()
         else:
             self.brush_tool.decrease_brush_size()
+
+    def handle_set_zoom_factor(self, zoom_factor):
+        self.zoom_factor_label.setText(f"zoom: {zoom_factor:.1%}")

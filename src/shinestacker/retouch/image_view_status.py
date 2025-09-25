@@ -1,9 +1,11 @@
 # pylint: disable=C0114, C0115, C0116, E0611, R0902
-from PySide6.QtCore import QObject, QRectF
+from PySide6.QtCore import QObject, QRectF, Signal
 from PySide6.QtGui import QPixmap
 
 
 class ImageViewStatus(QObject):
+    set_zoom_factor_requested = Signal(float)
+
     def __init__(self, parent=None):
         super().__init__(parent)
         self.pixmap_master = QPixmap()
@@ -53,6 +55,7 @@ class ImageViewStatus(QObject):
 
     def set_zoom_factor(self, zoom_factor):
         self.zoom_factor = zoom_factor
+        self.set_zoom_factor_requested.emit(zoom_factor)
 
     def set_min_scale(self, min_scale):
         self.min_scale = min_scale

@@ -8,6 +8,7 @@ This page reports the main releases only and the main changes therein.
 ### Added
 - persistent settings dialog to configure app startup options
 - option ```-n``` prevents opening new project dialog
+- zoom factor reported in the status bar
 
 ### Fixed
 - removed ghost brush gradient at cursor transition
