@@ -73,6 +73,12 @@ class SettingsDialog(ConfigDialog):
             self.settings.get('paint_refresh_time'))
         self.container_layout.addRow("Paint refresh time:",
                                      self.paint_refresh_time)
+        self.display_refresh_time = QSpinBox()
+        self.display_refresh_time.setRange(0, 200)
+        self.display_refresh_time.setValue(
+            self.settings.get('display_refresh_time'))
+        self.container_layout.addRow("Diplay refresh time:",
+                                     self.display_refresh_time)
 
     def accept(self):
         if self.project_settings:
@@ -89,6 +95,8 @@ class SettingsDialog(ConfigDialog):
                 'min_mouse_step_brush_fraction', self.min_mouse_step_brush_fraction.value())
             self.settings.set(
                 'paint_refresh_time', self.paint_refresh_time.value())
+            self.settings.set(
+                'display_refresh_time', self.display_refresh_time.value())
         self.settings.save()
         AppConfig.instance().load_defaults()
         if self.project_settings:
@@ -100,6 +108,7 @@ class SettingsDialog(ConfigDialog):
     def reset_to_defaults(self):
         if self.project_settings:
             self.expert_options.setChecked(constants.DEFAULT_EXPERT_OPTIONS)
+            self.combined_actions_max_threads.setValue(constants.DEFAULT_MAX_FWK_THREADS)
         if self.retouch_settings:
             idx = self.view_strategy.findData(constants.DEFAULT_VIEW_STRATEGY)
             if idx >= 0:
@@ -108,6 +117,8 @@ class SettingsDialog(ConfigDialog):
                 gui_constants.DEFAULT_MIN_MOUSE_STEP_BRUSH_FRACTION)
             self.paint_refresh_time.setValue(
                 gui_constants.DEFAULT_PAINT_REFRESH_TIME)
+            self.display_refresh_time.setValue(
+                gui_constants.DEFAULT_DISPLAY_REFRESH_TIME)
 
 
 def show_settings_dialog(parent, project_settings, retouch_settings,

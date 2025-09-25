@@ -5,6 +5,7 @@ from PySide6.QtWidgets import (QWidget, QListWidgetItem, QVBoxLayout, QLabel, QI
 from PySide6.QtGui import QPixmap, QImage
 from PySide6.QtCore import Qt, QObject, QTimer, QSize, Signal
 from .. config.gui_constants import gui_constants
+from .. config.app_config import AppConfig
 from .layer_collection import LayerCollectionHandler
 
 
@@ -36,7 +37,7 @@ class DisplayManager(QObject, LayerCollectionHandler):
         self.view_mode = 'master'
         self.needs_update = False
         self.update_timer = QTimer()
-        self.update_timer.setInterval(gui_constants.DEFAULT_PAINT_REFRESH_TIME)
+        self.update_timer.setInterval(AppConfig.get('display_refresh_time'))
         self.update_timer.timeout.connect(self.process_pending_updates)
 
     def process_pending_updates(self):

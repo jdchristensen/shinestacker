@@ -34,6 +34,7 @@ class _GuiConstants:
 
     DEFAULT_MIN_MOUSE_STEP_BRUSH_FRACTION = 0.25
     DEFAULT_PAINT_REFRESH_TIME = 50  # milliseconds
+    DEFAULT_DISPLAY_REFRESH_TIME = 50  # milliseconds
 
     THUMB_WIDTH = 120  # px
     THUMB_HEIGHT = 80  # px

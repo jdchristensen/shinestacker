@@ -494,6 +494,7 @@ class ImageEditorUI(QMainWindow, LayerCollectionHandler):
 
     def handle_config(self):
         self.set_strategy(AppConfig.get('view_strategy'))
+        self.display_manager.update_timer.setInterval(AppConfig.get('display_refresh_time'))
 
     def set_enabled_view_toggles(self, enabled):
         self.view_master_action.setEnabled(enabled)
