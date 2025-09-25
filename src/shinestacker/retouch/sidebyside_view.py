@@ -377,7 +377,9 @@ class DoubleViewBase(ViewStrategy, QWidget, ViewSignals):
     def set_master_image(self, qimage):
         self.status.set_master_image(qimage)
         pixmap = self.status.pixmap_master
-        self.master_view.setSceneRect(QRectF(pixmap.rect()))
+        pixmap_rect = QRectF(pixmap.rect())
+        self.master_view.setSceneRect(pixmap_rect)
+        self.master_scene.setSceneRect(pixmap_rect)
         self.pixmap_item_master.setPixmap(pixmap)
         img_width, img_height, scale_factor = self.setup_view_image(self.master_view, pixmap)
         self.master_view.resetTransform()
@@ -386,18 +388,18 @@ class DoubleViewBase(ViewStrategy, QWidget, ViewSignals):
         center = self.master_scene.sceneRect().center()
         self.brush_preview.setPos(max(0, min(center.x(), img_width)),
                                   max(0, min(center.y(), img_height)))
-        self.master_scene.setSceneRect(QRectF(self.pixmap_item_master.boundingRect()))
         self.center_image(self.master_view)
         self.update_cursor_pen_width()
 
     def set_current_image(self, qimage):
         self.status.set_current_image(qimage)
         pixmap = self.status.pixmap_current
-        self.current_scene.setSceneRect(QRectF(pixmap.rect()))
+        pixmap_rect = QRectF(pixmap.rect())
+        self.current_scene.setSceneRect(pixmap_rect)
+        self.current_scene.setSceneRect(pixmap_rect)
         self.pixmap_item_current.setPixmap(pixmap)
         self.current_view.resetTransform()
-        self.master_view.scale(self.zoom_factor(), self.zoom_factor())
-        self.current_scene.setSceneRect(QRectF(self.pixmap_item_current.boundingRect()))
+        self.current_view.scale(self.zoom_factor(), self.zoom_factor())
         self.center_image(self.current_view)
 
     def arrange_images(self):
