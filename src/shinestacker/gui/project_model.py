@@ -17,7 +17,8 @@ class ActionConfig:
             self.params = AppConfig.get(app_config_params_key, {})
         else:
             self.params = {}
-        self.params = {**self.params, **params}
+        if params:
+            self.params = {**self.params, **params}
         self.parent = parent
         self.sub_actions: list[ActionConfig] = []
 

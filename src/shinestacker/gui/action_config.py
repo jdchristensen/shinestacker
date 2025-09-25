@@ -49,7 +49,7 @@ class FieldBuilder:
         self.fields = {}
 
     def add_field(self, tag, field_type, label,
-                  required=False, add_to_layout=None, **kwargs):
+                  required=False, add_to_layout=None, do_add=True, **kwargs):
         if field_type == FIELD_TEXT:
             widget = self.create_text_field(tag, **kwargs)
         elif field_type == FIELD_ABS_PATH:
@@ -99,9 +99,10 @@ class FieldBuilder:
             'default_value': default_value,
             **kwargs
         }
-        if add_to_layout is None:
-            add_to_layout = self.main_layout
-        add_to_layout.addRow(f"{label}:", widget)
+        if do_add:
+            if add_to_layout is None:
+                add_to_layout = self.main_layout
+            add_to_layout.addRow(f"{label}:", widget)
         return widget
 
     def reset_to_defaults(self):
@@ -499,7 +500,7 @@ class DefaultActionConfigurator(NoNameActionConfigurator):
         name_row = QHBoxLayout()
         name_row.setContentsMargins(0, 0, 0, 0)
         name_label = QLabel(f"{tag} name:")
-        name_field = self.builder.create_text_field('name', required=True)
+        name_field = self.add_field('name', FIELD_TEXT, f"{tag} name", required=False, do_add=False)
         name_row.addWidget(name_label)
         name_row.addWidget(name_field, 1)
         name_row.addStretch()
