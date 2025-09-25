@@ -4,6 +4,8 @@ import json
 import traceback
 import jsonpickle
 from PySide6.QtCore import QStandardPaths
+from .. config.constants import constants
+from .. config.gui_constants import gui_constants
 
 
 class StdPathFile:
@@ -29,9 +31,18 @@ class StdPathFile:
         return os.path.join(self.get_config_dir(), self.filename)
 
 
+DEFAULT_SETTINGS = {
+    'expert_options': constants.DEFAULT_EXPERT_OPTIONS,
+    'view_strategy': constants.DEFAULT_VIEW_STRATEGY,
+    'paint_refresh_time': gui_constants.DEFAULT_PAINT_REFRESH_TIME,
+    'min_mouse_step_brush_fraction': gui_constants.DEFAULT_MIN_MOUSE_STEP_BRUSH_FRACTION
+}
+
+
 class Settings(StdPathFile):
     def __init__(self, filename="shinestacker-settings.txt"):
         super().__init__(filename)
+        self.settings = DEFAULT_SETTINGS
         file_path = self.get_file_path()
         if os.path.isfile(file_path):
             try:
@@ -40,9 +51,7 @@ class Settings(StdPathFile):
             except Exception as e:
                 traceback.print_tb(e.__traceback__)
                 raise RuntimeError(f"Can't read file from path {file_path}") from e
-            self.settings = json_obj
-        else:
-            self.settings = {}
+            self.settings = {**self.settings, **json_obj}
 
     def save(self):
         try:

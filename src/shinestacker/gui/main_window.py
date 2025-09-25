@@ -443,12 +443,10 @@ class MainWindow(QMainWindow, LogManager):
 
     def handle_config(self):
         self.menu_manager.expert_options_action.setChecked(
-            AppConfig.instance().config.get(
-                'expert_options', constants.DEFAULT_EXPERT_OPTIONS))
+            AppConfig.get('expert_options'))
 
     def toggle_expert_options(self):
-        AppConfig.instance().config['expert_options'] = \
-            self.menu_manager.expert_options_action.isChecked()
+        AppConfig.set('expert_options', self.menu_manager.expert_options_action.isChecked())
 
     def before_thread_begins(self):
         self.menu_manager.run_job_action.setEnabled(False)

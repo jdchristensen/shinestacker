@@ -20,3 +20,11 @@ class AppConfig:
         if cls._instance is None:
             cls._instance = cls()
         return cls._instance
+
+    @classmethod
+    def get(cls, key):
+        return cls.instance().config[key]
+
+    @classmethod
+    def set(cls, key, value):
+        cls.instance().config[key] = value

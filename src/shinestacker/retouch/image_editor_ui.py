@@ -435,8 +435,7 @@ class ImageEditorUI(QMainWindow, LayerCollectionHandler):
         view_menu.addAction(self.toggle_view_master_individual_action)
         view_menu.addSeparator()
 
-        self.set_strategy(AppConfig.instance().config.get(
-            'view_strategy', constants.DEFAULT_VIEW_STRATEGY))
+        self.set_strategy(AppConfig.get('view_strategy'))
 
         sort_asc_action = QAction("Sort Layers A-Z", self)
         sort_asc_action.setProperty("requires_file", True)
@@ -491,8 +490,7 @@ class ImageEditorUI(QMainWindow, LayerCollectionHandler):
         self.installEventFilter(self)
 
     def handle_config(self):
-        self.set_strategy(AppConfig.instance().config.get(
-            'view_strategy', constants.DEFAULT_VIEW_STRATEGY))
+        self.set_strategy(AppConfig.get('view_strategy'))
 
     def set_enabled_view_toggles(self, enabled):
         self.view_master_action.setEnabled(enabled)

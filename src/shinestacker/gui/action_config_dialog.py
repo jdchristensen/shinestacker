@@ -54,8 +54,7 @@ class ActionConfigDialog(ConfigDialog):
             builder.reset_to_defaults()
 
     def expert(self):
-        return AppConfig.instance().config.get(
-            'expert_options', constants.DEFAULT_EXPERT_OPTIONS)
+        return AppConfig.get('expert_options')
 
 
 class JobConfigurator(DefaultActionConfigurator):

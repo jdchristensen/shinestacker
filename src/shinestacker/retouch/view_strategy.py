@@ -712,13 +712,9 @@ class ViewStrategy(LayerCollectionHandler):
             self.update_brush_cursor()
         if self.dragging and event.buttons() & Qt.LeftButton:
             current_time = QTime.currentTime()
-            paint_refresh_time = AppConfig.instance().config.get(
-                'paint_refresh_time',
-                gui_constants.DEFAULT_PAINT_REFRESH_TIME)
+            paint_refresh_time = AppConfig.get('paint_refresh_time')
             if self.last_update_time.msecsTo(current_time) >= paint_refresh_time:
-                min_step = AppConfig.instance().config.get(
-                    'min_mouse_step_brush_fraction',
-                    gui_constants.DEFAULT_MIN_MOUSE_STEP_BRUSH_FRACTION)
+                min_step = AppConfig.get('min_mouse_step_brush_fraction')
                 min_step = brush_size * min_step * self.zoom_factor()
                 x, y = position.x(), position.y()
                 xp, yp = self.last_brush_pos.x(), self.last_brush_pos.y()
