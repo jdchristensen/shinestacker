@@ -12,6 +12,7 @@ This page reports the main releases only and the main changes therein.
 
 ### Fixed
 - removed ghost brush gradient at cursor transition
+- fixed issue in setting the action and job name in input dialog
 
 ### Changed
 - cursor update throttling enabled, limited to ~60 fps

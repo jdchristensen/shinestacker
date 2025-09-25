@@ -36,9 +36,19 @@ DEFAULT_SETTINGS = {
     'view_strategy': constants.DEFAULT_VIEW_STRATEGY,
     'paint_refresh_time': gui_constants.DEFAULT_PAINT_REFRESH_TIME,
     'display_refresh_time': gui_constants.DEFAULT_DISPLAY_REFRESH_TIME,
+    'cursor_update_time': gui_constants.DEFAULT_CURSOR_UPDATE_TIME,
     'min_mouse_step_brush_fraction': gui_constants.DEFAULT_MIN_MOUSE_STEP_BRUSH_FRACTION,
     'combined_actions_params': {
         'max_threads': constants.DEFAULT_MAX_FWK_THREADS
+    },
+    'align_frames_params': {
+        'max_threads': constants.DEFAULT_ALIGN_MAX_THREADS
+    },
+    'focus_stack_params': {
+        'max_threads': constants.DEFAULT_PY_MAX_THREADS
+    },
+    'focus_stack_bunch_params': {
+        'max_threads': constants.DEFAULT_PY_MAX_THREADS
     }
 }
 

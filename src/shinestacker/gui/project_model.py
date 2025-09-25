@@ -5,7 +5,10 @@ from .. config.app_config import AppConfig
 
 
 TYPE_NAME_APP_CONFIG_MAP = {
-    constants.ACTION_COMBO: 'combined_actions_params'
+    constants.ACTION_COMBO: 'combined_actions_params',
+    constants.ACTION_ALIGNFRAMES: 'align_frames_params',
+    constants.ACTION_FOCUSSTACK: 'focus_stack_params',
+    constants.ACTION_FOCUSSTACKBUNCH: 'focus_stack_bunch_params'
 }
 
 

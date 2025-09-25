@@ -123,7 +123,6 @@ class ViewStrategy(LayerCollectionHandler):
         self.last_update_time = QTime.currentTime()
         self.last_color_update_time = 0
         self.last_cursor_update_time = 0
-        self.cursor_update_interval = 16  # ~60fps
 
     @abstractmethod
     def create_pixmaps(self):
@@ -703,7 +702,8 @@ class ViewStrategy(LayerCollectionHandler):
         if self.empty():
             return
         current_time = time.time() * 1000  # ms
-        if current_time - self.last_cursor_update_time < self.cursor_update_interval:
+        cursor_update_interval = AppConfig.get('cursor_update_time')
+        if current_time - self.last_cursor_update_time < cursor_update_interval:
             return
         self.last_cursor_update_time = current_time
         position = event.position()

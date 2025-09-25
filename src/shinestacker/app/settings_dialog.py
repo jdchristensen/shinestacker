@@ -1,4 +1,4 @@
-# pylint: disable=C0114, C0115, C0116, E0611, W0718, R0903, E0611
+# pylint: disable=C0114, C0115, C0116, E0611, W0718, R0903, E0611, R0902
 from PySide6.QtCore import Signal
 from PySide6.QtWidgets import QFrame, QLabel, QCheckBox, QComboBox, QDoubleSpinBox, QSpinBox
 from .. gui.config_dialog import ConfigDialog
@@ -17,9 +17,14 @@ class SettingsDialog(ConfigDialog):
         self.retouch_settings = retouch_settings
         self.settings = Settings()
         self.expert_options = None
+        self.combined_actions_max_threads = None
+        self.align_frames_max_threads = None
+        self.focus_stack_max_threads = None
         self.view_strategy = None
         self.min_mouse_step_brush_fraction = None
         self.paint_refresh_time = None
+        self.display_refresh_time = None
+        self.cursor_update_time = None
         super().__init__("Settings", parent)
 
     def create_form_content(self):
@@ -44,8 +49,22 @@ class SettingsDialog(ConfigDialog):
         self.combined_actions_max_threads.setRange(0, 64)
         self.combined_actions_max_threads.setValue(
             self.settings.get('combined_actions_params')['max_threads'])
-        self.container_layout.addRow("Max num. of cores, CombinedActions:",
+        self.container_layout.addRow("Max num. of cores, combined actions:",
                                      self.combined_actions_max_threads)
+
+        self.align_frames_max_threads = QSpinBox()
+        self.align_frames_max_threads.setRange(0, 64)
+        self.align_frames_max_threads.setValue(
+            self.settings.get('align_frames_params')['max_threads'])
+        self.container_layout.addRow("Max num. of cores, align frames:",
+                                     self.align_frames_max_threads)
+
+        self.focus_stack_max_threads = QSpinBox()
+        self.focus_stack_max_threads.setRange(0, 64)
+        self.focus_stack_max_threads.setValue(
+            self.settings.get('align_frames_params')['max_threads'])
+        self.container_layout.addRow("Max num. of cores, focus stacking:",
+                                     self.focus_stack_max_threads)
 
     def create_retouch_settings(self):
         label = QLabel("Retouch settings")
@@ -80,6 +99,13 @@ class SettingsDialog(ConfigDialog):
         self.container_layout.addRow("Diplay refresh time:",
                                      self.display_refresh_time)
 
+        self.cursor_update_time = QSpinBox()
+        self.cursor_update_time.setRange(0, 50)
+        self.cursor_update_time.setValue(
+            self.settings.get('cursor_update_time'))
+        self.container_layout.addRow("Cursor refresh time:",
+                                     self.cursor_update_time)
+
     def accept(self):
         if self.project_settings:
             self.settings.set(
@@ -87,6 +113,18 @@ class SettingsDialog(ConfigDialog):
             self.settings.set(
                 'combined_actions_params', {
                     'max_threads': self.combined_actions_max_threads.value()
+                })
+            self.settings.set(
+                'align_frames_params', {
+                    'max_threads': self.align_frames_max_threads.value()
+                })
+            self.settings.set(
+                'focus_stack_params', {
+                    'max_threads': self.focus_stack_max_threads.value()
+                })
+            self.settings.set(
+                'focus_stack_bunch:params', {
+                    'max_threads': self.focus_stack_max_threads.value()
                 })
         if self.retouch_settings:
             self.settings.set(
@@ -97,6 +135,8 @@ class SettingsDialog(ConfigDialog):
                 'paint_refresh_time', self.paint_refresh_time.value())
             self.settings.set(
                 'display_refresh_time', self.display_refresh_time.value())
+            self.settings.set(
+                'cursor_update_time', self.cursor_update_time.value())
         self.settings.save()
         AppConfig.instance().load_defaults()
         if self.project_settings:
@@ -109,6 +149,8 @@ class SettingsDialog(ConfigDialog):
         if self.project_settings:
             self.expert_options.setChecked(constants.DEFAULT_EXPERT_OPTIONS)
             self.combined_actions_max_threads.setValue(constants.DEFAULT_MAX_FWK_THREADS)
+            self.align_frames_max_threads.setValue(constants.DEFAULT_ALIGN_MAX_THREADS)
+            self.focus_stack_max_threads.setValue(constants.DEFAULT_PY_MAX_THREADS)
         if self.retouch_settings:
             idx = self.view_strategy.findData(constants.DEFAULT_VIEW_STRATEGY)
             if idx >= 0:
@@ -119,6 +161,8 @@ class SettingsDialog(ConfigDialog):
                 gui_constants.DEFAULT_PAINT_REFRESH_TIME)
             self.display_refresh_time.setValue(
                 gui_constants.DEFAULT_DISPLAY_REFRESH_TIME)
+            self.cursor_update_time.setValue(
+                gui_constants.DEFAULT_CURSOR_UPDATE_TIME)
 
 
 def show_settings_dialog(parent, project_settings, retouch_settings,
