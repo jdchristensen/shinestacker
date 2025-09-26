@@ -155,9 +155,9 @@ class ProjectController(QObject):
         if dialog.exec() == QDialog.Accepted:
             self.save_actions_set_enabled(True)
             self.project_editor.reset_undo()
-            input_folder = dialog.get_input_folder().split('/')
-            working_path = '/'.join(input_folder[:-1])
-            input_path = input_folder[-1]
+            input_folder = dialog.get_input_folder()
+            working_path = os.path.dirname(input_folder)
+            input_path = os.path.basename(input_folder)
             selected_filenames = dialog.get_selected_filenames()
             if dialog.get_noise_detection():
                 job_noise = ActionConfig(
