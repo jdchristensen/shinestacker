@@ -1,6 +1,6 @@
 # pylint: disable=C0114, C0115, C0116, R0913, R0917
 import os
-import numpy as np
+import traceback
 from .. config.constants import constants
 from .. core.framework import TaskBase
 from .. core.colors import color_str
@@ -34,13 +34,19 @@ class FocusStackBase(TaskBase, ImageSequenceManager):
             self.sub_message_r(': denoise image')
             stacked_img = denoise(stacked_img, self.denoise_amount, self.denoise_amount)
         write_img(out_filename, stacked_img)
-        if self.exif_path != '' and stacked_img.dtype == np.uint8:
+        if self.exif_path != '':
             self.sub_message_r(': copy exif data')
-            _dirpath, _, fnames = next(os.walk(self.exif_path))
-            fnames = [name for name in fnames if extension_tif_jpg(name)]
-            exif_filename = f"{self.exif_path}/{fnames[0]}"
-            copy_exif_from_file_to_file(exif_filename, out_filename)
-            self.sub_message_r(' ' * 60)
+            if not os.path.exists(self.exif_path):
+                raise RuntimeError(f"Path {self.exif_path} does not exist.")
+            try:
+                _dirpath, _, fnames = next(os.walk(self.exif_path))
+                fnames = [name for name in fnames if extension_tif_jpg(name)]
+                exif_filename = os.path.join(self.exif_path, fnames[0])
+                copy_exif_from_file_to_file(exif_filename, out_filename)
+                self.sub_message_r(' ' * 60)
+            except Exception as e:
+                traceback.print_tb(e.__traceback__)
+                raise RuntimeError("Can't copy EXIF data") from e
         if self.plot_stack:
             idx_str = f"{self.frame_count + 1:04d}" if self.frame_count >= 0 else ''
             name = f"{self.name}: {self.stack_algo.name()}"
@@ -51,11 +57,13 @@ class FocusStackBase(TaskBase, ImageSequenceManager):
             self.frame_count += 1
 
     def init(self, job, working_path=''):
+        if working_path == '':
+            working_path = job.working_path
         ImageSequenceManager.init(self, job)
         if self.exif_path is None:
             self.exif_path = job.action_path(0)
         if self.exif_path != '':
-            self.exif_path = working_path + "/" + self.exif_path
+            self.exif_path = os.path.join(working_path, self.exif_path)
 
 
 def get_bunches(collection, n_frames, n_overlap):

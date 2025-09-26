@@ -174,7 +174,7 @@ class MultiLayer(TaskBase, ImageSequenceManager):
         if self.exif_path == '':
             self.exif_path = job.action_path(0)
         if self.exif_path != '':
-            self.exif_path = self.working_path + "/" + self.exif_path
+            self.exif_path = os.path.join(self.working_path, self.exif_path)
 
     def run_core(self):
         if isinstance(self.input_full_path(), str):

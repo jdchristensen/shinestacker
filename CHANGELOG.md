@@ -15,6 +15,7 @@ This page reports the main releases only and the main changes therein.
 - fixed issue in setting the action and job name in input dialog
 - fixed image centering in viewport in double-view modes
 - fixed frame highlight when clicking on thumbnail
+- fixed EXIF data insertion into stacked output files
 
 ### Changed
 - cursor update throttling enabled, limited to ~60 fps
