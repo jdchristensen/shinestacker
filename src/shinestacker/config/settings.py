@@ -52,6 +52,7 @@ DEFAULT_SETTINGS = {
     }
 }
 
+CURRENT_VERSION = 1
 
 class Settings(StdPathFile):
     def __init__(self, filename="shinestacker-settings.txt"):
@@ -61,11 +62,13 @@ class Settings(StdPathFile):
         if os.path.isfile(file_path):
             try:
                 with open(file_path, 'r', encoding="utf-8") as file:
-                    json_obj = json.load(file)
+                    json_data = json.load(file)
+                    settings = json_data['settings']
             except Exception as e:
                 traceback.print_tb(e.__traceback__)
-                raise RuntimeError(f"Can't read file from path {file_path}") from e
-            self.settings = {**self.settings, **json_obj}
+                print(f"Can't read file from path {file_path}. Default settings ignored.")
+                settings = {}
+            self.settings = {**self.settings, **settings}
 
     def set(self, key, value):
         self.settings[key] = value
@@ -75,7 +78,8 @@ class Settings(StdPathFile):
 
     def save(self):
         try:
-            json_obj = jsonpickle.encode(self.settings)
+            json_data = {'version': CURRENT_VERSION, 'settings': self.settings}
+            json_obj = jsonpickle.encode(json_data)
             with open(self.get_file_path(), 'w', encoding="utf-8") as f:
                 f.write(json_obj)
         except IOError as e:
