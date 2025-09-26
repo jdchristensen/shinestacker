@@ -7,19 +7,19 @@ This page reports the main releases only and the main changes therein.
 
 ### Added
 - persistent settings dialog to configure app startup options
-- option ```-n``` prevents opening new project dialog
-- zoom factor reported in the status bar
+- command-line option ```-n``` to prevent opening the "new project" dialog
+- zoom factor display in the status bar
 
 ### Fixed
-- removed ghost brush gradient at cursor transition
-- fixed issue in setting the action and job name in input dialog
-- fixed image centering in viewport in double-view modes
-- fixed frame highlight when clicking on thumbnail
-- fixed EXIF data insertion into stacked output files
+- ghost brush gradient no longer appears at cursor transitions
+- action and job names are now correctly set in the input dialog
+- image centering fixed in viewport for double-view modes
+-f rame highlight works correctly when clicking on a thumbnail
+- EXIF data is now correctly inserted into stacked output files
 
 ### Changed
-- cursor update throttling enabled, limited to ~60 fps
-- new projects via dialog save EXIF data by default
+- cursor updates are now throttled (~60 fps) to improve responsiveness
+- new projects created via dialog save EXIF data by default
 
 ----
 
