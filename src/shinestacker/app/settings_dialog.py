@@ -96,7 +96,7 @@ class SettingsDialog(ConfigDialog):
         self.display_refresh_time.setRange(0, 200)
         self.display_refresh_time.setValue(
             self.settings.get('display_refresh_time'))
-        self.container_layout.addRow("Diplay refresh time:",
+        self.container_layout.addRow("Display refresh time:",
                                      self.display_refresh_time)
 
         self.cursor_update_time = QSpinBox()
