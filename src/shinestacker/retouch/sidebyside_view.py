@@ -405,15 +405,16 @@ class DoubleViewBase(ViewStrategy, QWidget, ViewSignals):
         self.status.set_current_image(qimage)
         pixmap = self.status.pixmap_current
         pixmap_rect = QRectF(pixmap.rect())
+        self.pixmap_item_current.setPos(0, 0)
         self.current_view.setSceneRect(pixmap_rect)
         self.current_scene.setSceneRect(pixmap_rect)
         self.pixmap_item_current.setPixmap(pixmap)
-        self.pixmap_item_current.setPos(0, 0)
+        _img_width, _img_height, scale_factor = self.setup_view_image(self.current_view, pixmap)
         self.current_view.resetTransform()
-        self.current_view.scale(self.zoom_factor(), self.zoom_factor())
+        self.current_view.scale(scale_factor, scale_factor)
         self.current_view.centerOn(self.pixmap_item_current)
-        self.current_scene.setSceneRect(pixmap_rect)
         self.center_image(self.current_view)
+        self.update_cursor_pen_width()
 
     def arrange_images(self):
         if self.status.empty():
