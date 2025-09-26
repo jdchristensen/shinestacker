@@ -54,6 +54,7 @@ DEFAULT_SETTINGS = {
 
 CURRENT_VERSION = 1
 
+
 class Settings(StdPathFile):
     def __init__(self, filename="shinestacker-settings.txt"):
         super().__init__(filename)
