@@ -185,6 +185,7 @@ class ImageEditorUI(QMainWindow, LayerCollectionHandler):
         def change_layer_item(item):
             layer_idx = self.thumbnail_list.row(item)
             self.change_layer(layer_idx)
+            self.display_manager.highlight_thumbnail(layer_idx)
 
         self.thumbnail_list.itemClicked.connect(change_layer_item)
         self.thumbnail_list.setStyleSheet("""

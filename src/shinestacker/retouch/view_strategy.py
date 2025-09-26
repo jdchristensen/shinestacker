@@ -287,7 +287,7 @@ class ViewStrategy(LayerCollectionHandler):
         self.update_view_display(
             self.current_layer(),
             self.get_current_pixmap(),
-            self.get_current_view(),
+            self.get_current_scene(),
             self.get_current_view())
 
     def update_cursor_pen_width(self):

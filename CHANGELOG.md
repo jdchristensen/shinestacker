@@ -2,7 +2,7 @@
 
 This page reports the main releases only and the main changes therein.
 
-## [v-.-.-] -  2025-09.25
+## [v-.-.-] -  2025-09.26
 **Unreleased changes**
 
 ### Added
@@ -13,6 +13,8 @@ This page reports the main releases only and the main changes therein.
 ### Fixed
 - removed ghost brush gradient at cursor transition
 - fixed issue in setting the action and job name in input dialog
+- fixed image centering in viewport in double-view modes
+- fixed frame highlight when clicking on thumbnail
 
 ### Changed
 - cursor update throttling enabled, limited to ~60 fps
