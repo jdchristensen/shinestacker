@@ -19,6 +19,7 @@ This page reports the main releases only and the main changes therein.
 
 ### Changed
 - cursor update throttling enabled, limited to ~60 fps
+- new projects via dialog save EXIF data by deafault
 
 ----
 

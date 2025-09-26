@@ -210,13 +210,15 @@ class ProjectController(QObject):
                 focus_pyramid_name = f'{input_path}-focus-stack-pyramid'
                 focus_pyramid = ActionConfig(constants.ACTION_FOCUSSTACK,
                                              {'name': focus_pyramid_name,
-                                              'stacker': constants.STACK_ALGO_PYRAMID})
+                                              'stacker': constants.STACK_ALGO_PYRAMID,
+                                              'exif_path': input_path})
                 job.add_sub_action(focus_pyramid)
             if dialog.get_focus_stack_depth_map():
                 focus_depth_map_name = f'{input_path}-focus-stack-depth-map'
                 focus_depth_map = ActionConfig(constants.ACTION_FOCUSSTACK,
                                                {'name': focus_depth_map_name,
-                                                'stacker': constants.STACK_ALGO_DEPTH_MAP})
+                                                'stacker': constants.STACK_ALGO_DEPTH_MAP,
+                                                'exif_path': input_path})
                 job.add_sub_action(focus_depth_map)
             if dialog.get_multi_layer():
                 multi_input_path = []
@@ -231,7 +233,7 @@ class ProjectController(QObject):
                 multi_layer = ActionConfig(
                     constants.ACTION_MULTILAYER,
                     {'name': f'{input_path}-multi-layer',
-                        'input_path': constants.PATH_SEPARATOR.join(multi_input_path)})
+                     'input_path': constants.PATH_SEPARATOR.join(multi_input_path)})
                 job.add_sub_action(multi_layer)
             self.add_job_to_project(job)
             self.project_editor.set_modified(True)

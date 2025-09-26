@@ -35,7 +35,7 @@ class FocusStackBase(TaskBase, ImageSequenceManager):
             stacked_img = denoise(stacked_img, self.denoise_amount, self.denoise_amount)
         write_img(out_filename, stacked_img)
         if self.exif_path != '':
-            self.sub_message_r(': copy exif data')
+            self.sub_message_r(color_str(': copy exif data', constants.LOG_COLOR_LEVEL_3))
             if not os.path.exists(self.exif_path):
                 raise RuntimeError(f"Path {self.exif_path} does not exist.")
             try:
