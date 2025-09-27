@@ -43,7 +43,7 @@ def test_settings_file_operations():
             mock_gui_constants.DEFAULT_CURSOR_UPDATE_TIME = 50
             mock_gui_constants.DEFAULT_MIN_MOUSE_STEP_BRUSH_FRACTION = 0.1
             from shinestacker.config.settings import Settings
-            settings = Settings("test-settings.txt")
+            settings = Settings.instance("test-settings.txt")
             settings.set('custom_setting', 'custom_value')
             settings.update()
             file_path = settings.get_file_path()
@@ -53,7 +53,7 @@ def test_settings_file_operations():
 def test_settings_with_actual_constants():
     with patch('shinestacker.config.settings.QStandardPaths') as MockQStandardPaths:
         MockQStandardPaths.writableLocation.return_value = tempfile.gettempdir()
-        settings = Settings("test-settings.txt")
+        settings = Settings.instance("test-settings.txt")
         original_value = settings.get('expert_options')
         settings.set('expert_options', not original_value)
         assert settings.get('expert_options') == (not original_value)
@@ -66,8 +66,9 @@ def test_settings_persistence():
         with patch('shinestacker.config.settings.QStandardPaths') as MockQStandardPaths:
             MockQStandardPaths.writableLocation.return_value = temp_dir
             from shinestacker.config.settings import Settings
-            settings1 = Settings("test-settings.txt")
+            settings1 = Settings.instance("test-settings.txt")
             settings1.set('custom_key', 'custom_value')
             settings1.update()
-            settings2 = Settings("test-settings.txt")
+            Settings.reset_instance_only_for_testing()
+            settings2 = Settings.instance("test-settings.txt")
             assert settings2.get('custom_key') == 'custom_value'
