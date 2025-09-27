@@ -38,7 +38,7 @@ class UndoManager(QObject):
             return
         self.redo_stack = []
         undo_state = {
-            'master': layer[self.y_start:self.y_end, self.x_start:self.x_end],
+            'master': layer[self.y_start:self.y_end, self.x_start:self.x_end].copy(),
             'area': (self.x_start, self.y_start, self.x_end, self.y_end),
             'description': description
         }

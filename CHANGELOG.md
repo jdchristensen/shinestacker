@@ -2,7 +2,7 @@
 
 This page reports the main releases only and the main changes therein.
 
-## [v-.-.-] -  2025-09.26
+## [v-.-.-] -  2025-09.27
 **Unreleased changes**
 
 ### Added
@@ -16,6 +16,7 @@ This page reports the main releases only and the main changes therein.
 - image centering fixed in viewport for double-view modes
 -f rame highlight works correctly when clicking on a thumbnail
 - EXIF data is now correctly inserted into stacked output files
+- fixed a bug in the retouch undo
 
 ### Changed
 - cursor updates are now throttled (~60 fps) to improve responsiveness
