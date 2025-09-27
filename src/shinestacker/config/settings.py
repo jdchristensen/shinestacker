@@ -89,8 +89,8 @@ class Settings(StdPathFile):
     def set(self, key, value):
         self.settings[key] = value
 
-    def get(self, key):
-        return self.settings[key]
+    def get(self, key, default=None):
+        return self.settings.get(key, default)
 
     def update(self):
         try:
