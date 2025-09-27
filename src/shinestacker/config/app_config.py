@@ -9,11 +9,11 @@ class AppConfig:
         if AppConfig._instance is not None:
             raise RuntimeError("AppConfig is a singleton.")
         self.config = {}
-        self.load_defaults()
+        Settings.add_observer(self)
+        self.update(Settings.instance().settings)
 
-    def load_defaults(self):
-        settings = Settings()
-        self.config = {**self.config, **settings.settings}
+    def update(self, settings):
+        self.config = {**self.config, **settings}
 
     @classmethod
     def instance(cls):

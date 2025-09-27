@@ -56,7 +56,12 @@ CURRENT_VERSION = 1
 
 
 class Settings(StdPathFile):
+    _instance = None
+    _observers = []
+
     def __init__(self, filename="shinestacker-settings.txt"):
+        if Settings._instance is not None:
+            raise RuntimeError("Settings is a singleton.")
         super().__init__(filename)
         self.settings = DEFAULT_SETTINGS
         file_path = self.get_file_path()
@@ -71,13 +76,23 @@ class Settings(StdPathFile):
                 settings = {}
             self.settings = {**self.settings, **settings}
 
+    @classmethod
+    def instance(cls):
+        if cls._instance is None:
+            cls._instance = cls()
+        return cls._instance
+
+    @classmethod
+    def add_observer(cls, observer):
+        cls._observers.append(observer)
+
     def set(self, key, value):
         self.settings[key] = value
 
     def get(self, key):
         return self.settings[key]
 
-    def save(self):
+    def update(self):
         try:
             json_data = {'version': CURRENT_VERSION, 'settings': self.settings}
             json_obj = jsonpickle.encode(json_data)
@@ -85,3 +100,5 @@ class Settings(StdPathFile):
                 f.write(json_obj)
         except IOError as e:
             raise e
+        for observer in Settings._observers:
+            observer.update(self.settings)

@@ -5,7 +5,6 @@ from .. gui.config_dialog import ConfigDialog
 from .. config.settings import Settings
 from .. config.constants import constants
 from .. config.gui_constants import gui_constants
-from .. config.app_config import AppConfig
 
 
 class SettingsDialog(ConfigDialog):
@@ -15,7 +14,7 @@ class SettingsDialog(ConfigDialog):
     def __init__(self, parent=None, project_settings=True, retouch_settings=True):
         self.project_settings = project_settings
         self.retouch_settings = retouch_settings
-        self.settings = Settings()
+        self.settings = Settings.instance()
         self.expert_options = None
         self.combined_actions_max_threads = None
         self.align_frames_max_threads = None
@@ -137,8 +136,7 @@ class SettingsDialog(ConfigDialog):
                 'display_refresh_time', self.display_refresh_time.value())
             self.settings.set(
                 'cursor_update_time', self.cursor_update_time.value())
-        self.settings.save()
-        AppConfig.instance().load_defaults()
+        self.settings.update()
         if self.project_settings:
             self.update_project_config_requested.emit()
         if self.retouch_settings:
