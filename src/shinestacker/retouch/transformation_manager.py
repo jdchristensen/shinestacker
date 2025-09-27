@@ -26,7 +26,6 @@ class TransfromationManager(LayerCollectionHandler):
         self.copy_master_layer()
         self.editor.image_viewer.update_master_display()
         self.editor.image_viewer.update_current_display()
-        self.editor.image_viewer.refresh_display()
         self.editor.display_manager.update_thumbnails()
         self.editor.mark_as_modified()
 

@@ -1,5 +1,4 @@
 # pylint: disable=C0114, C0115, C0116, E0611, R0903, R0913, R0917, E1121, R0902, R0914
-import time
 import numpy as np
 from PySide6.QtWidgets import (QWidget, QListWidgetItem, QVBoxLayout, QLabel, QInputDialog,
                                QAbstractItemView)
@@ -24,19 +23,20 @@ class ClickableLabel(QLabel):
         super().mouseDoubleClickEvent(event)
     # pylint: enable=C0103
 
+
 class ThumbnailWorker(QThread):
     thumbnail_ready = Signal(object)
-    
+
     def __init__(self, layer_data):
         super().__init__()
         self.layer_data = layer_data
-    
+
     def run(self):
         if self.layer_data is None:
             self.thumbnail_ready.emit(None)
             return
-            
-        source_layer = (self.layer_data // 256).astype(np.uint8) if self.layer_data.dtype == np.uint16 else self.layer_data
+        source_layer = (self.layer_data // 256).astype(np.uint8) \
+            if self.layer_data.dtype == np.uint16 else self.layer_data
         if not source_layer.flags.c_contiguous:
             source_layer = np.ascontiguousarray(source_layer)
         height, width = source_layer.shape[:2]
@@ -44,7 +44,6 @@ class ThumbnailWorker(QThread):
             qimg = QImage(source_layer.data, width, height, 3 * width, QImage.Format_RGB888)
         else:
             qimg = QImage(source_layer.data, width, height, width, QImage.Format_Grayscale8)
-        
         thumbnail = QPixmap.fromImage(
             qimg.scaledToWidth(
                 gui_constants.UI_SIZES['thumbnail_width'], Qt.SmoothTransformation))
@@ -216,21 +215,13 @@ class DisplayManager(QObject, LayerCollectionHandler):
     def refresh_master_view(self):
         if self.has_no_master_layer():
             return
-        t_start = time.perf_counter()
         self.image_viewer.update_master_display()
-        print(f"update master display: {time.perf_counter() - t_start}")
-        t_start = time.perf_counter()
-        self.image_viewer.refresh_display()
-        print(f"refresh display: {time.perf_counter() - t_start}")
-        t_start = time.perf_counter()
         self.update_master_thumbnail()
-        print(f"update master thumb: {time.perf_counter() - t_start}")
 
     def refresh_current_view(self):
         if self.number_of_layers() == 0:
             return
         self.image_viewer.update_current_display()
-        self.image_viewer.refresh_display()
 
     def start_temp_view(self):
         if self.view_mode == 'master':
