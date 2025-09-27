@@ -1,9 +1,10 @@
 # pylint: disable=C0114, C0115, C0116, E0611, R0903, R0913, R0917, E1121, R0902, R0914
+import time
 import numpy as np
 from PySide6.QtWidgets import (QWidget, QListWidgetItem, QVBoxLayout, QLabel, QInputDialog,
                                QAbstractItemView)
 from PySide6.QtGui import QPixmap, QImage
-from PySide6.QtCore import Qt, QObject, QTimer, QSize, Signal
+from PySide6.QtCore import Qt, QObject, QTimer, QSize, Signal, QThread
 from .. config.gui_constants import gui_constants
 from .. config.app_config import AppConfig
 from .layer_collection import LayerCollectionHandler
@@ -23,6 +24,32 @@ class ClickableLabel(QLabel):
         super().mouseDoubleClickEvent(event)
     # pylint: enable=C0103
 
+class ThumbnailWorker(QThread):
+    thumbnail_ready = Signal(object)
+    
+    def __init__(self, layer_data):
+        super().__init__()
+        self.layer_data = layer_data
+    
+    def run(self):
+        if self.layer_data is None:
+            self.thumbnail_ready.emit(None)
+            return
+            
+        source_layer = (self.layer_data // 256).astype(np.uint8) if self.layer_data.dtype == np.uint16 else self.layer_data
+        if not source_layer.flags.c_contiguous:
+            source_layer = np.ascontiguousarray(source_layer)
+        height, width = source_layer.shape[:2]
+        if self.layer_data.ndim == 3 and source_layer.shape[-1] == 3:
+            qimg = QImage(source_layer.data, width, height, 3 * width, QImage.Format_RGB888)
+        else:
+            qimg = QImage(source_layer.data, width, height, width, QImage.Format_Grayscale8)
+        
+        thumbnail = QPixmap.fromImage(
+            qimg.scaledToWidth(
+                gui_constants.UI_SIZES['thumbnail_width'], Qt.SmoothTransformation))
+        self.thumbnail_ready.emit(thumbnail)
+
 
 class DisplayManager(QObject, LayerCollectionHandler):
     status_message_requested = Signal(str)
@@ -39,6 +66,8 @@ class DisplayManager(QObject, LayerCollectionHandler):
         self.update_timer = QTimer()
         self.update_timer.setInterval(AppConfig.get('display_refresh_time'))
         self.update_timer.timeout.connect(self.process_pending_updates)
+        self.thumbnail_worker = None
+        self.thumbnail_update_pending = False
 
     def process_pending_updates(self):
         if self.needs_update:
@@ -78,7 +107,22 @@ class DisplayManager(QObject, LayerCollectionHandler):
         if self.has_no_master_layer():
             self._clear_master_thumbnail()
         else:
-            self._set_master_thumbnail(self.create_thumbnail(self.master_layer()))
+            self._start_async_thumbnail_generation()
+
+    def _start_async_thumbnail_generation(self):
+        if self.thumbnail_worker and self.thumbnail_worker.isRunning():
+            self.thumbnail_update_pending = True
+            return
+        self.thumbnail_worker = ThumbnailWorker(self.master_layer())
+        self.thumbnail_worker.thumbnail_ready.connect(self._on_thumbnail_ready)
+        self.thumbnail_worker.start()
+
+    def _on_thumbnail_ready(self, thumbnail):
+        if thumbnail is not None:
+            self._set_master_thumbnail(thumbnail)
+        if self.thumbnail_update_pending:
+            self.thumbnail_update_pending = False
+            self._start_async_thumbnail_generation()
 
     def _clear_master_thumbnail(self):
         self.master_thumbnail_label.clear()
@@ -172,9 +216,15 @@ class DisplayManager(QObject, LayerCollectionHandler):
     def refresh_master_view(self):
         if self.has_no_master_layer():
             return
+        t_start = time.perf_counter()
         self.image_viewer.update_master_display()
+        print(f"update master display: {time.perf_counter() - t_start}")
+        t_start = time.perf_counter()
         self.image_viewer.refresh_display()
+        print(f"refresh display: {time.perf_counter() - t_start}")
+        t_start = time.perf_counter()
         self.update_master_thumbnail()
+        print(f"update master thumb: {time.perf_counter() - t_start}")
 
     def refresh_current_view(self):
         if self.number_of_layers() == 0:

@@ -1,9 +1,21 @@
 # pylint: disable=C0114, C0115, C0116, E0611, R0904, R0902, R0914, R0912, R0913, R0917
-from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt, QThread, Signal
 from PySide6.QtWidgets import QWidget, QVBoxLayout
 from .image_view_status import ImageViewStatus
 from .overlaid_view import OverlaidView
 from .sidebyside_view import SideBySideView, TopBottomView
+
+
+class MasterDisplayWorker(QThread):
+    update_complete = Signal()
+    
+    def __init__(self, strategy):
+        super().__init__()
+        self.strategy = strategy
+    
+    def run(self):
+        self.strategy.update_master_display()
+        self.update_complete.emit()
 
 
 class ImageViewer(QWidget):
