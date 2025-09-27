@@ -18,7 +18,7 @@ def test_settings_basic_functionality():
             mock_gui_constants.DEFAULT_DISPLAY_REFRESH_TIME = 200
             mock_gui_constants.DEFAULT_CURSOR_UPDATE_TIME = 50
             mock_gui_constants.DEFAULT_MIN_MOUSE_STEP_BRUSH_FRACTION = 0.1
-            settings = Settings("test-settings.txt")
+            settings = Settings.instance("test-settings.txt")
             settings.set('test_key', 'test_value')
             assert settings.get('test_key') == 'test_value'
             file_path = settings.get_file_path()
