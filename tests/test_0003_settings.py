@@ -45,7 +45,7 @@ def test_settings_file_operations():
             from shinestacker.config.settings import Settings
             settings = Settings("test-settings.txt")
             settings.set('custom_setting', 'custom_value')
-            settings.save()
+            settings.update()
             file_path = settings.get_file_path()
             assert os.path.exists(file_path)
 
@@ -68,6 +68,6 @@ def test_settings_persistence():
             from shinestacker.config.settings import Settings
             settings1 = Settings("test-settings.txt")
             settings1.set('custom_key', 'custom_value')
-            settings1.save()
+            settings1.update()
             settings2 = Settings("test-settings.txt")
             assert settings2.get('custom_key') == 'custom_value'

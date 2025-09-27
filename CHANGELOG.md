@@ -2,8 +2,8 @@
 
 This page reports the main releases only and the main changes therein.
 
-## [v-.-.-] -  2025-09.27
-**Unreleased changes**
+## [v1.6.0] -  2025-09.27
+**Few more features and several fixes**
 
 ### Added
 - persistent settings dialog to configure app startup options
@@ -14,13 +14,13 @@ This page reports the main releases only and the main changes therein.
 - ghost brush gradient no longer appears at cursor transitions
 - action and job names are now correctly set in the input dialog
 - image centering fixed in viewport for double-view modes
--f rame highlight works correctly when clicking on a thumbnail
-- EXIF data is now correctly inserted into stacked output files
-- fixed a bug in the retouch undo
+- frame highlight works correctly when clicking on a thumbnail
+- exif data is now correctly inserted into stacked output files
+- bug in the retouch undo has been fixed
 
 ### Changed
 - cursor updates are now throttled (~60 fps) to improve responsiveness
-- new projects created via dialog save EXIF data by default
+- new projects created via dialog save exif data by default
 
 ----
 
