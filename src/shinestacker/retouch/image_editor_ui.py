@@ -14,6 +14,7 @@ from .shortcuts_help import ShortcutsHelp
 from .brush import Brush
 from .brush_tool import BrushTool
 from .layer_collection import LayerCollectionHandler
+from .paint_area_manager import PaintAreaManager
 from .undo_manager import UndoManager
 from .layer_collection import LayerCollection
 from .io_gui_handler import IOGuiHandler
@@ -37,7 +38,8 @@ class ImageEditorUI(QMainWindow, LayerCollectionHandler):
         self.modified = False
         self.mask_layer = None
         self.transformation_manager = TransfromationManager(self)
-        self.undo_manager = UndoManager(self.transformation_manager)
+        self.paint_area_manager = PaintAreaManager()
+        self.undo_manager = UndoManager(self.transformation_manager, self.paint_area_manager)
         self.undo_action = None
         self.redo_action = None
         self.undo_manager.stack_changed.connect(self.update_undo_redo_actions)
