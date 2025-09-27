@@ -630,8 +630,7 @@ class ImageEditorUI(QMainWindow, LayerCollectionHandler):
             self.statusBar().showMessage(f"Copied layer {self.current_layer_idx() + 1} to master")
 
     def copy_brush_area_to_master(self, view_pos):
-        if self.layer_stack() is None or self.number_of_layers() == 0 \
-           or self.display_manager.view_mode != 'master':
+        if self.layer_stack() is None or self.number_of_layers() == 0:
             return
         area = self.brush_tool.apply_brush_operation(
             self.master_layer_copy(),
@@ -640,24 +639,22 @@ class ImageEditorUI(QMainWindow, LayerCollectionHandler):
             view_pos)
         self.undo_manager.extend_undo_area(*area)
 
+    def handle_needs_update(self):
+        self.display_manager.needs_update = True
+        if not self.display_manager.update_timer.isActive():
+            self.display_manager.update_timer.start()
+        self.mark_as_modified()
+
     def begin_copy_brush_area(self, pos):
-        if self.display_manager.view_mode == 'master':
-            self.mask_layer = self.io_gui_handler.blank_layer.copy()
-            self.copy_master_layer()
-            self.undo_manager.reset_undo_area()
-            self.copy_brush_area_to_master(pos)
-            self.display_manager.needs_update = True
-            if not self.display_manager.update_timer.isActive():
-                self.display_manager.update_timer.start()
-            self.mark_as_modified()
+        self.mask_layer = self.display_manager.blank_layer().copy()
+        self.copy_master_layer()
+        self.undo_manager.reset_undo_area()
+        self.copy_brush_area_to_master(pos)
+        self.handle_needs_update()
 
     def continue_copy_brush_area(self, pos):
-        if self.display_manager.view_mode == 'master':
-            self.copy_brush_area_to_master(pos)
-            self.display_manager.needs_update = True
-            if not self.display_manager.update_timer.isActive():
-                self.display_manager.update_timer.start()
-            self.mark_as_modified()
+        self.copy_brush_area_to_master(pos)
+        self.handle_needs_update()
 
     def end_copy_brush_area(self):
         if self.display_manager.update_timer.isActive():

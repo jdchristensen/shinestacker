@@ -2,7 +2,16 @@
 
 This page reports the main releases only and the main changes therein.
 
-## [v1.6.0] -  2025-09.27
+
+## [v-.-.-] - 2025-09-27
+** Unreleased updates **
+
+### Changed
+- code refactoring
+
+-----
+
+## [v1.6.0] -  2025-09-27
 **Few more features and several fixes**
 
 ### Added

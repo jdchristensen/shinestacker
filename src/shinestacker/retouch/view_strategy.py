@@ -123,6 +123,7 @@ class ViewStrategy(LayerCollectionHandler):
         self.last_update_time = QTime.currentTime()
         self.last_color_update_time = 0
         self.last_cursor_update_time = 0
+        self.enable_paint = True
 
     @abstractmethod
     def create_pixmaps(self):
@@ -710,7 +711,7 @@ class ViewStrategy(LayerCollectionHandler):
         brush_size = self.brush.size
         if not self.space_pressed:
             self.update_brush_cursor()
-        if self.dragging and event.buttons() & Qt.LeftButton:
+        if self.enable_paint and self.dragging and event.buttons() & Qt.LeftButton:
             current_time = QTime.currentTime()
             paint_refresh_time = AppConfig.get('paint_refresh_time')
             if self.last_update_time.msecsTo(current_time) >= paint_refresh_time:
@@ -741,7 +742,7 @@ class ViewStrategy(LayerCollectionHandler):
     def mouse_press_event(self, event):
         if self.empty():
             return
-        if event.button() == Qt.LeftButton and self.has_master_layer():
+        if self.enable_paint and event.button() & Qt.LeftButton and self.has_master_layer():
             if self.space_pressed:
                 self.scrolling = True
                 self.last_mouse_pos = event.position()

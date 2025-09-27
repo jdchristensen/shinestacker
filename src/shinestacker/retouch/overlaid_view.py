@@ -121,6 +121,7 @@ class OverlaidView(ViewStrategy, ImageGraphicsViewBase, ViewSignals):
         self.pixmap_item_master.setVisible(True)
         self.pixmap_item_current.setVisible(False)
         self.show_brush_preview()
+        self.enable_paint = True
         if self.brush_cursor:
             self.scene.removeItem(self.brush_cursor)
             self.brush_cursor = self.create_circle(self.scene)
@@ -130,6 +131,7 @@ class OverlaidView(ViewStrategy, ImageGraphicsViewBase, ViewSignals):
         self.pixmap_item_master.setVisible(False)
         self.pixmap_item_current.setVisible(True)
         self.hide_brush_preview()
+        self.enable_paint = False
         if self.brush_cursor:
             self.scene.removeItem(self.brush_cursor)
             self.brush_cursor = self.create_alt_circle(self.scene)

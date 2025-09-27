@@ -28,7 +28,6 @@ class IOGuiHandler(QObject, LayerCollectionHandler):
         self.loader_thread = None
         self.display_manager = None
         self.image_viewer = None
-        self.blank_layer = None
         self.loading_dialog = None
         self.loading_timer = None
         self.exif_dialog = None
@@ -57,8 +56,8 @@ class IOGuiHandler(QObject, LayerCollectionHandler):
             self.set_layer_labels(labels)
         self.set_master_layer(master_layer)
         self.image_viewer.set_master_image_np(master_layer)
+        self.set_blank_layer()
         self.undo_manager.reset()
-        self.blank_layer = np.zeros(master_layer.shape[:2])
         self.finish_loading_setup(f"Loaded: {self.current_file_path()}")
         self.image_viewer.reset_zoom()
 
@@ -149,7 +148,7 @@ class IOGuiHandler(QObject, LayerCollectionHandler):
             else:
                 self.set_layer_labels(labels)
             self.set_master_layer(master)
-            self.blank_layer = np.zeros(master.shape[:2])
+            self.set_blank_layer()
         else:
             if labels is None:
                 labels = self.layer_labels()
@@ -270,7 +269,6 @@ class IOGuiHandler(QObject, LayerCollectionHandler):
 
     def close_file(self):
         self.mark_as_modified_requested.emit(False)
-        self.blank_layer = None
         self.layer_collection.reset()
         self.current_file_path_master = ''
         self.current_file_path_multi = ''

@@ -7,6 +7,7 @@ class LayerCollection:
         self.master_layer = None
         self.master_layer_copy = None
         self.layer_stack = None
+        self.blank_layer = None
         self.layer_labels = []
         self.current_layer_idx = 0
         self.sorted_indices = None
@@ -15,6 +16,7 @@ class LayerCollection:
         self.master_layer = None
         self.master_layer_copy = None
         self.layer_stack = None
+        self.blank_layer = None
         self.layer_labels = []
         self.current_layer_idx = 0
         self.sorted_indices = None
@@ -61,6 +63,10 @@ class LayerCollection:
 
     def set_master_layer(self, img):
         self.master_layer = img
+
+    def set_blank_layer(self):
+        if self.master_layer is not None:
+            self.blank_layer = np.zeros(self.master_layer.shape[:2])
 
     def restore_master_layer(self):
         self.master_layer = self.master_layer_copy.copy()
@@ -122,6 +128,9 @@ class LayerCollectionHandler:
     def current_layer(self):
         return self.layer_collection.current_layer()
 
+    def blank_layer(self):
+        return self.layer_collection.blank_layer
+
     def layer_stack(self):
         return self.layer_collection.layer_stack
 
@@ -151,6 +160,9 @@ class LayerCollectionHandler:
 
     def set_master_layer(self, img):
         self.layer_collection.set_master_layer(img)
+
+    def set_blank_layer(self):
+        self.layer_collection.set_blank_layer()
 
     def add_layer_label(self, label):
         self.layer_collection.add_layer_label(label)
