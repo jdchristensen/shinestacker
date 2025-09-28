@@ -1,4 +1,4 @@
-# pylint: disable=C0114, C0115, C0116, R0904, R0915, E0611, R0902, R0911, R0914, E1003
+# pylint: disable=C0114, C0115, C0116, R0904, R0915, E0611, R0902, R0911, R0914, E1003, R0913, R0917
 import time
 from PySide6.QtCore import Qt, Signal, QEvent, QRectF
 from PySide6.QtGui import QCursor
@@ -39,8 +39,8 @@ class ImageGraphicsView(ImageGraphicsViewBase):
 
 
 class DoubleViewBase(ViewStrategy, QWidget, ViewSignals):
-    def __init__(self, layer_collection, status, parent):
-        ViewStrategy.__init__(self, layer_collection, status)
+    def __init__(self, layer_collection, status, brush_tool, undo_manager, parent):
+        ViewStrategy.__init__(self, layer_collection, status, brush_tool, undo_manager)
         QWidget.__init__(self, parent)
         self.current_view = ImageGraphicsView(parent)
         self.master_view = ImageGraphicsView(parent)

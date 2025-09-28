@@ -1,11 +1,11 @@
-# pylint: disable=C0114, C0115, C0116, E0611, E1101, R0904, R0912, R0914, R0902, E0202
+# pylint: disable=C0114, C0115, C0116, E0611, E1101, R0904, R0912, R0914, R0902, E0202, R0913, R0917
 from PySide6.QtCore import Qt, QPointF, QEvent, QRectF
 from .view_strategy import ViewStrategy, ImageGraphicsViewBase, ViewSignals
 
 
 class OverlaidView(ViewStrategy, ImageGraphicsViewBase, ViewSignals):
-    def __init__(self, layer_collection, status, parent):
-        ViewStrategy.__init__(self, layer_collection, status)
+    def __init__(self, layer_collection, status, brush_tool, undo_manager, parent):
+        ViewStrategy.__init__(self, layer_collection, status, brush_tool, undo_manager)
         ImageGraphicsViewBase.__init__(self, parent)
         self.scene = self.create_scene(self)
         self.create_pixmaps()

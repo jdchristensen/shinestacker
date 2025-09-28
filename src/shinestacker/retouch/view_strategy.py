@@ -79,10 +79,9 @@ class BrushCursor(QGraphicsItemGroup):
 
 class ViewSignals:
     temp_view_requested = Signal(bool)
-    begin_copy_brush_area_requested = Signal(QPoint)
-    continue_copy_brush_area_requested = Signal(QPoint)
     end_copy_brush_area_requested = Signal()
     brush_size_change_requested = Signal(int)  # +1 or -1
+    needs_update_requested = Signal()
 
 
 class ImageGraphicsViewBase(QGraphicsView):
@@ -103,9 +102,12 @@ class ImageGraphicsViewBase(QGraphicsView):
 
 
 class ViewStrategy(LayerCollectionHandler):
-    def __init__(self, layer_collection, status):
+    def __init__(self, layer_collection, status, brush_tool, undo_manager):
         LayerCollectionHandler.__init__(self, layer_collection)
         self.status = status
+        self.brush_tool = brush_tool
+        self.undo_manager = undo_manager
+        self.mask_layer = None
         self.brush = None
         self.brush_cursor = None
         self.brush_preview = BrushPreviewItem(layer_collection)
@@ -699,6 +701,42 @@ class ViewStrategy(LayerCollectionHandler):
         self.status.set_scroll(view.horizontalScrollBar().value(),
                                view.verticalScrollBar().value())
 
+    def copy_brush_area_to_master(self, view_pos):
+        if self.layer_stack() is None or self.number_of_layers() == 0:
+            return
+        area = self.brush_tool.apply_brush_operation(
+            self.master_layer_copy(),
+            self.current_layer(),
+            self.master_layer(), self.mask_layer,
+            view_pos)
+        self.undo_manager.extend_undo_area(*area)
+
+    def begin_copy_brush_area(self, pos):
+        self.mask_layer = self.blank_layer().copy()
+        self.copy_master_layer()
+        self.undo_manager.reset_undo_area()
+        self.copy_brush_area_to_master(pos)
+        self.needs_update_requested.emit()
+
+    def continue_copy_brush_area(self, pos):
+        self.copy_brush_area_to_master(pos)
+        self.needs_update_requested.emit()
+
+    def mouse_press_event(self, event):
+        if self.empty():
+            return
+        if self.enable_paint and event.button() & Qt.LeftButton and self.has_master_layer():
+            if self.space_pressed:
+                self.scrolling = True
+                self.last_mouse_pos = event.position()
+                self.setCursor(Qt.ClosedHandCursor)
+            else:
+                self.last_brush_pos = event.position()
+                self.begin_copy_brush_area(event.position().toPoint())
+                self.dragging = True
+            if not self.scrolling:
+                self.show_brush_cursor()
+
     def mouse_move_event(self, event):
         if self.empty():
             return
@@ -727,7 +765,7 @@ class ViewStrategy(LayerCollectionHandler):
                     for i in range(0, n_steps + 1):
                         pos = QPoint(self.last_brush_pos.x() + i * delta_x,
                                      self.last_brush_pos.y() + i * delta_y)
-                        self.continue_copy_brush_area_requested.emit(pos)
+                        self.continue_copy_brush_area(pos)
                     self.last_brush_pos = position
                 self.last_update_time = current_time
         if self.scrolling and event.buttons() & Qt.LeftButton:
@@ -738,21 +776,6 @@ class ViewStrategy(LayerCollectionHandler):
             delta = position - self.last_mouse_pos
             self.last_mouse_pos = position
             self.scroll_view(master_view, delta.x(), delta.y())
-
-    def mouse_press_event(self, event):
-        if self.empty():
-            return
-        if self.enable_paint and event.button() & Qt.LeftButton and self.has_master_layer():
-            if self.space_pressed:
-                self.scrolling = True
-                self.last_mouse_pos = event.position()
-                self.setCursor(Qt.ClosedHandCursor)
-            else:
-                self.last_brush_pos = event.position()
-                self.begin_copy_brush_area_requested.emit(event.position().toPoint())
-                self.dragging = True
-            if not self.scrolling:
-                self.show_brush_cursor()
 
     def mouse_release_event(self, event):
         if self.empty():

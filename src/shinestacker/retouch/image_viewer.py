@@ -7,13 +7,16 @@ from .sidebyside_view import SideBySideView, TopBottomView
 
 
 class ImageViewer(QWidget):
-    def __init__(self, layer_collection, parent=None):
+    def __init__(self, layer_collection, brush_tool, undo_manager, parent=None):
         super().__init__(parent)
         self.status = ImageViewStatus()
         self._strategies = {
-            'overlaid': OverlaidView(layer_collection, self.status, self),
-            'sidebyside': SideBySideView(layer_collection, self.status, self),
-            'topbottom': TopBottomView(layer_collection, self.status, self)
+            'overlaid':
+                OverlaidView(layer_collection, self.status, brush_tool, undo_manager, self),
+            'sidebyside':
+                SideBySideView(layer_collection, self.status, brush_tool, undo_manager, self),
+            'topbottom':
+                TopBottomView(layer_collection, self.status, brush_tool, undo_manager, self)
         }
         for strategy in self._strategies.values():
             strategy.hide()
@@ -122,12 +125,11 @@ class ImageViewer(QWidget):
             st.set_cursor_style(style)
 
     def connect_signals(
-            self, handle_temp_view, begin_copy_brush_area, continue_copy_brush_area,
-            end_copy_brush_area, handle_brush_size_change):
+            self, handle_temp_view, end_copy_brush_area,
+            handle_brush_size_change, handle_needs_update):
         for st in self._strategies.values():
             st.temp_view_requested.connect(handle_temp_view)
-            st.begin_copy_brush_area_requested.connect(begin_copy_brush_area)
-            st.continue_copy_brush_area_requested.connect(continue_copy_brush_area)
             st.end_copy_brush_area_requested.connect(end_copy_brush_area)
             st.brush_size_change_requested.connect(handle_brush_size_change)
+            st.needs_update_requested.connect(handle_needs_update)
             st.setFocusPolicy(Qt.StrongFocus)
