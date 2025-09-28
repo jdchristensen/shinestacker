@@ -8,7 +8,7 @@ This page reports the main releases only and the main changes therein.
 
 ### Changed
 - improved performances of display update by only refreshing painted area
-- code refactoring
+- code refactoring and reduced dependencies
 
 -----
 
