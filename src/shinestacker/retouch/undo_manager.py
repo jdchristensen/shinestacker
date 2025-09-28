@@ -1,7 +1,7 @@
 # pylint: disable=C0114, C0115, C0116, E0611
 from PySide6.QtCore import QObject, Signal
 from .. config.gui_constants import gui_constants
-from .paint_area_manager import PaintAreaManager
+
 
 class UndoManager(QObject):
     stack_changed = Signal(bool, str, bool, str)

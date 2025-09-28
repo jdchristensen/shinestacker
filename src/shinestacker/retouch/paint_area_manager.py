@@ -21,4 +21,4 @@ class PaintAreaManager:
         self.y_end = max(self.y_end, y_end)
 
     def area(self):
-    	return self.x_start, self.y_start, self.x_end, self.y_end
+        return self.x_start, self.y_start, self.x_end, self.y_end

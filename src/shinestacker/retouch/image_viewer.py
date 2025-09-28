@@ -126,8 +126,8 @@ class ImageViewer(QWidget):
             end_copy_brush_area, handle_brush_size_change):
         for st in self._strategies.values():
             st.temp_view_requested.connect(handle_temp_view)
-            st.brush_operation_started.connect(begin_copy_brush_area)
-            st.brush_operation_continued.connect(continue_copy_brush_area)
-            st.brush_operation_ended.connect(end_copy_brush_area)
+            st.begin_copy_brush_area_requested.connect(begin_copy_brush_area)
+            st.continue_copy_brush_area_requested.connect(continue_copy_brush_area)
+            st.end_copy_brush_area_requested.connect(end_copy_brush_area)
             st.brush_size_change_requested.connect(handle_brush_size_change)
             st.setFocusPolicy(Qt.StrongFocus)

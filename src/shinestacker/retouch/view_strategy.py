@@ -79,9 +79,9 @@ class BrushCursor(QGraphicsItemGroup):
 
 class ViewSignals:
     temp_view_requested = Signal(bool)
-    brush_operation_started = Signal(QPoint)
-    brush_operation_continued = Signal(QPoint)
-    brush_operation_ended = Signal()
+    begin_copy_brush_area_requested = Signal(QPoint)
+    continue_copy_brush_area_requested = Signal(QPoint)
+    end_copy_brush_area_requested = Signal()
     brush_size_change_requested = Signal(int)  # +1 or -1
 
 
@@ -727,7 +727,7 @@ class ViewStrategy(LayerCollectionHandler):
                     for i in range(0, n_steps + 1):
                         pos = QPoint(self.last_brush_pos.x() + i * delta_x,
                                      self.last_brush_pos.y() + i * delta_y)
-                        self.brush_operation_continued.emit(pos)
+                        self.continue_copy_brush_area_requested.emit(pos)
                     self.last_brush_pos = position
                 self.last_update_time = current_time
         if self.scrolling and event.buttons() & Qt.LeftButton:
@@ -749,7 +749,7 @@ class ViewStrategy(LayerCollectionHandler):
                 self.setCursor(Qt.ClosedHandCursor)
             else:
                 self.last_brush_pos = event.position()
-                self.brush_operation_started.emit(event.position().toPoint())
+                self.begin_copy_brush_area_requested.emit(event.position().toPoint())
                 self.dragging = True
             if not self.scrolling:
                 self.show_brush_cursor()
@@ -770,4 +770,4 @@ class ViewStrategy(LayerCollectionHandler):
                 self.last_mouse_pos = None
             elif self.dragging:
                 self.dragging = False
-                self.brush_operation_ended.emit()
+                self.end_copy_brush_area_requested.emit()
