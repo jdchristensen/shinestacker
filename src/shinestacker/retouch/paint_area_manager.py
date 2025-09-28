@@ -22,3 +22,9 @@ class PaintAreaManager:
 
     def area(self):
         return self.x_start, self.y_start, self.x_end, self.y_end
+
+    def set_area(self, x_start, y_start, x_end, y_end):
+        self.x_start = x_start
+        self.y_start = y_start
+        self.x_end = x_end
+        self.y_end = y_end

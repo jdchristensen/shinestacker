@@ -157,7 +157,7 @@ class BaseFilter(QObject, LayerCollectionHandler):
             except Exception:
                 h, w = self.master_layer_copy().shape[:2]
             try:
-                self.undo_manager.extend_undo_area(0, 0, w, h)
+                self.undo_manager.set_paint_area(0, 0, w, h)
                 self.undo_manager.save_undo_state(
                     self.master_layer_copy(),
                     self.name

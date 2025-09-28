@@ -26,11 +26,17 @@ class UndoManager(QObject):
     def extend_undo_area(self, x_start, y_start, x_end, y_end):
         self.paint_area_manager.extend(x_start, y_start, x_end, y_end)
 
+    def paint_area(self):
+        return self.paint_area_manager.area()
+
+    def set_paint_area(self, x_start, y_start, x_end, y_end):
+        self.paint_area_manager.set_area(x_start, y_start, x_end, y_end)
+
     def save_undo_state(self, layer, description):
         if layer is None:
             return
         self.redo_stack = []
-        x_start, y_start, x_end, y_end = self.paint_area_manager.area()
+        x_start, y_start, x_end, y_end = self.paint_area()
         undo_state = {
             'master': layer[y_start:y_end, x_start:x_end].copy(),
             'area': (x_start, y_start, x_end, y_end),

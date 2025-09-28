@@ -16,8 +16,7 @@ class TransfromationManager(LayerCollectionHandler):
         if undoable:
             try:
                 undo = self.editor.undo_manager
-                undo.x_start, undo.x_stop = 0, 1
-                undo.y_start, undo.y_stop = 0, 1
+                undo.set_paint_area(0, 1, 0, 1)
                 undo.save_undo_state(self.editor.master_layer(), label)
             except Exception as e:
                 traceback.print_tb(e.__traceback__)
