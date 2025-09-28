@@ -50,7 +50,7 @@ class ImageEditorUI(QMainWindow, LayerCollectionHandler):
         central_widget = QWidget()
         self.setCentralWidget(central_widget)
         layout = QHBoxLayout(central_widget)
-        self.image_viewer = ImageViewer(self.layer_collection, self.brush_tool, self.undo_manager)
+        self.image_viewer = ImageViewer(self.layer_collection, self.brush_tool, self.paint_area_manager)
         self.image_viewer.connect_signals(
             self.handle_temp_view,
             self.end_copy_brush_area,

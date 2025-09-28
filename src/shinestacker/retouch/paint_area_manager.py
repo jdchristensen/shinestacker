@@ -14,7 +14,7 @@ class PaintAreaManager:
         self.x_end = self.y_end = 0
         self.x_start = self.y_start = gui_constants.MAX_UNDO_SIZE
 
-    def extend_undo_area(self, x_start, y_start, x_end, y_end):
+    def extend(self, x_start, y_start, x_end, y_end):
         self.x_start = min(self.x_start, x_start)
         self.y_start = min(self.y_start, y_start)
         self.x_end = max(self.x_end, x_end)

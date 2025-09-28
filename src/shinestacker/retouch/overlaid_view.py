@@ -4,8 +4,8 @@ from .view_strategy import ViewStrategy, ImageGraphicsViewBase, ViewSignals
 
 
 class OverlaidView(ViewStrategy, ImageGraphicsViewBase, ViewSignals):
-    def __init__(self, layer_collection, status, brush_tool, undo_manager, parent):
-        ViewStrategy.__init__(self, layer_collection, status, brush_tool, undo_manager)
+    def __init__(self, layer_collection, status, brush_tool, paint_area_manager, parent):
+        ViewStrategy.__init__(self, layer_collection, status, brush_tool, paint_area_manager)
         ImageGraphicsViewBase.__init__(self, parent)
         self.scene = self.create_scene(self)
         self.create_pixmaps()

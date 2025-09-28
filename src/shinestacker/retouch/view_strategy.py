@@ -102,11 +102,11 @@ class ImageGraphicsViewBase(QGraphicsView):
 
 
 class ViewStrategy(LayerCollectionHandler):
-    def __init__(self, layer_collection, status, brush_tool, undo_manager):
+    def __init__(self, layer_collection, status, brush_tool, paint_area_manager):
         LayerCollectionHandler.__init__(self, layer_collection)
         self.status = status
         self.brush_tool = brush_tool
-        self.undo_manager = undo_manager
+        self.paint_area_manager = paint_area_manager
         self.mask_layer = None
         self.brush = None
         self.brush_cursor = None
@@ -709,12 +709,12 @@ class ViewStrategy(LayerCollectionHandler):
             self.current_layer(),
             self.master_layer(), self.mask_layer,
             view_pos)
-        self.undo_manager.extend_undo_area(*area)
+        self.paint_area_manager.extend(*area)
 
     def begin_copy_brush_area(self, pos):
         self.mask_layer = self.blank_layer().copy()
         self.copy_master_layer()
-        self.undo_manager.reset_undo_area()
+        self.paint_area_manager.reset()
         self.copy_brush_area_to_master(pos)
         self.needs_update_requested.emit()
 

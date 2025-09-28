@@ -39,8 +39,8 @@ class ImageGraphicsView(ImageGraphicsViewBase):
 
 
 class DoubleViewBase(ViewStrategy, QWidget, ViewSignals):
-    def __init__(self, layer_collection, status, brush_tool, undo_manager, parent):
-        ViewStrategy.__init__(self, layer_collection, status, brush_tool, undo_manager)
+    def __init__(self, layer_collection, status, brush_tool, paint_area_manager, parent):
+        ViewStrategy.__init__(self, layer_collection, status, brush_tool, paint_area_manager)
         QWidget.__init__(self, parent)
         self.current_view = ImageGraphicsView(parent)
         self.master_view = ImageGraphicsView(parent)

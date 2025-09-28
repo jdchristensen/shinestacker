@@ -7,16 +7,16 @@ from .sidebyside_view import SideBySideView, TopBottomView
 
 
 class ImageViewer(QWidget):
-    def __init__(self, layer_collection, brush_tool, undo_manager, parent=None):
+    def __init__(self, layer_collection, brush_tool, paint_area_manager, parent=None):
         super().__init__(parent)
         self.status = ImageViewStatus()
         self._strategies = {
             'overlaid':
-                OverlaidView(layer_collection, self.status, brush_tool, undo_manager, self),
+                OverlaidView(layer_collection, self.status, brush_tool, paint_area_manager, self),
             'sidebyside':
-                SideBySideView(layer_collection, self.status, brush_tool, undo_manager, self),
+                SideBySideView(layer_collection, self.status, brush_tool, paint_area_manager, self),
             'topbottom':
-                TopBottomView(layer_collection, self.status, brush_tool, undo_manager, self)
+                TopBottomView(layer_collection, self.status, brush_tool, paint_area_manager, self)
         }
         for strategy in self._strategies.values():
             strategy.hide()
