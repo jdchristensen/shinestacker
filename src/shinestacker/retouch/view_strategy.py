@@ -277,6 +277,10 @@ class ViewStrategy(LayerCollectionHandler):
             view.verticalScrollBar().setValue(self.status.v_scroll)
             self.arrange_images()
 
+    def update_master_display_area(self):
+        # update only the area defined in self.paint_area_manager
+        self.update_master_display()
+
     def update_master_display(self):
         self.update_view_display(
             self.master_layer(),

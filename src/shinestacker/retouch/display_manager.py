@@ -215,7 +215,7 @@ class DisplayManager(QObject, LayerCollectionHandler):
     def refresh_master_view(self):
         if self.has_no_master_layer():
             return
-        self.image_viewer.update_master_display()
+        self.image_viewer.update_master_display_area()
         self.update_master_thumbnail()
 
     def refresh_current_view(self):

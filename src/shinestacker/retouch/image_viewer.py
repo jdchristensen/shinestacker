@@ -57,6 +57,9 @@ class ImageViewer(QWidget):
     def show_current(self):
         self.strategy.show_current()
 
+    def update_master_display_area(self):
+        self.strategy.update_master_display_area()
+
     def update_master_display(self):
         self.strategy.update_master_display()
 
