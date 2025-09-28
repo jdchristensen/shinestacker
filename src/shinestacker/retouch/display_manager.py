@@ -229,7 +229,6 @@ class DisplayManager(QObject, LayerCollectionHandler):
             self.status_message_requested.emit("Temporary view: Individual layer.")
         else:
             self._master_refresh_and_thumb()
-            self.image_viewer.strategy.brush_preview.hide()
             self.status_message_requested.emit("Temporary view: Master.")
 
     def end_temp_view(self):

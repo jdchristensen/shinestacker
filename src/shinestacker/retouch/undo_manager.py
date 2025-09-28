@@ -54,6 +54,7 @@ class UndoManager(QObject):
             return False
         undo_state = self.undo_stack.pop()
         x_start, y_start, x_end, y_end = undo_state['area']
+        self.set_paint_area(x_start, y_start, x_end, y_end)
         redo_state = {
             'master': layer[y_start:y_end, x_start:x_end].copy(),
             'area': (x_start, y_start, x_end, y_end),
@@ -80,6 +81,7 @@ class UndoManager(QObject):
             return False
         redo_state = self.redo_stack.pop()
         x_start, y_start, x_end, y_end = redo_state['area']
+        self.set_paint_area(x_start, y_start, x_end, y_end)
         undo_state = {
             'master': layer[y_start:y_end, x_start:x_end].copy(),
             'area': (x_start, y_start, x_end, y_end),

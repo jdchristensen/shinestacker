@@ -137,16 +137,22 @@ class OverlaidView(ViewStrategy, ImageGraphicsViewBase, ViewSignals):
             self.brush_cursor = self.create_alt_circle(self.scene)
             self.update_brush_cursor()
 
+    def master_is_visible(self):
+        return self.pixmap_item_master.isVisible()
+
+    def current_is_visible(self):
+        return self.pixmap_item_current.isVisible()
+
     def arrange_images(self):
         if self.empty():
             return
-        if self.pixmap_item_master.isVisible():
+        if self.master_is_visible():
             pixmap = self.pixmap_item_master.pixmap()
             if not pixmap.isNull():
                 self.setSceneRect(QRectF(pixmap.rect()))
                 self.centerOn(self.pixmap_item_master)
                 self.center_image(self)
-        elif self.pixmap_item_current.isVisible():
+        elif self.current_is_visible():
             pixmap = self.pixmap_item_current.pixmap()
             if not pixmap.isNull():
                 self.setSceneRect(QRectF(pixmap.rect()))

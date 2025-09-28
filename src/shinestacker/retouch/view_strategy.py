@@ -278,8 +278,23 @@ class ViewStrategy(LayerCollectionHandler):
             self.arrange_images()
 
     def update_master_display_area(self):
-        # update only the area defined in self.paint_area_manager
-        self.update_master_display()
+        if self.empty():
+            return
+        x_start, y_start, x_end, y_end = self.paint_area_manager.area()
+        dirty_region = self.master_layer()[y_start:y_end, x_start:x_end]
+        qimage = self.numpy_to_qimage(dirty_region)
+        if not qimage:
+            return
+        pixmap = QPixmap.fromImage(qimage)
+        master_pixmap_item = self.get_master_pixmap()
+        current_pixmap = master_pixmap_item.pixmap()
+        if current_pixmap.isNull():
+            self.update_master_display()
+            return
+        painter = QPainter(current_pixmap)
+        painter.drawPixmap(x_start, y_start, pixmap)
+        painter.end()
+        master_pixmap_item.setPixmap(current_pixmap)
 
     def update_master_display(self):
         self.update_view_display(
