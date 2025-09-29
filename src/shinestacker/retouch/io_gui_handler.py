@@ -1,14 +1,16 @@
-# pylint: disable=C0114, C0115, C0116, E0611, R0902, W0718, R0904
+# pylint: disable=C0114, C0115, C0116, E0611, R0902, W0718, R0904, E1101
 import os
 import traceback
 import numpy as np
+import cv2
 from PySide6.QtWidgets import (QFileDialog, QMessageBox, QVBoxLayout, QLabel, QDialog,
                                QApplication, QProgressBar)
 from PySide6.QtGui import QGuiApplication, QCursor
 from PySide6.QtCore import Qt, QObject, QTimer, Signal
+from .. algorithms.exif import get_exif, write_image_with_exif_data
 from .file_loader import FileLoader
 from .exif_data import ExifData
-from .io_manager import IOManager, FileMultilayerSaver, FrameImporter
+from .io_manager import FileMultilayerSaver, FrameImporter
 from .layer_collection import LayerCollectionHandler
 
 
@@ -23,7 +25,6 @@ class IOGuiHandler(QObject, LayerCollectionHandler):
     def __init__(self, layer_collection, undo_manager, parent):
         QObject.__init__(self, parent)
         LayerCollectionHandler.__init__(self)
-        self.io_manager = IOManager(layer_collection)
         self.undo_manager = undo_manager
         self.set_layer_collection(layer_collection)
         self.loader_thread = None
@@ -42,6 +43,8 @@ class IOGuiHandler(QObject, LayerCollectionHandler):
         self.frame_loading_timer = None
         self.progress_label = None
         self.progress_bar = None
+        self.exif_data = None
+        self.exif_path = ''
 
     def current_file_path(self):
         return self.current_file_path_master if self.save_master_only.isChecked() \
@@ -185,7 +188,7 @@ class IOGuiHandler(QObject, LayerCollectionHandler):
         self.frame_loading_timer.setSingleShot(True)
         self.frame_loading_timer.timeout.connect(self.frame_loading_dialog.show)
         self.frame_loading_timer.start(100)
-        self.frame_importer_thread = FrameImporter(file_paths, self.io_manager)
+        self.frame_importer_thread = FrameImporter(file_paths, self.master_layer())
         self.frame_importer_thread.finished.connect(self.on_frames_imported)
         self.frame_importer_thread.error.connect(self.on_frames_import_error)
         self.frame_importer_thread.progress.connect(self.update_import_progress)
@@ -248,7 +251,7 @@ class IOGuiHandler(QObject, LayerCollectionHandler):
             ))
             images_dict = {**master_layer, **individual_layers}
             self.saver_thread = FileMultilayerSaver(
-                images_dict, path, exif_path=self.io_manager.exif_path)
+                images_dict, path, exif_path=self.exif_path)
             self.saver_thread.finished.connect(self.on_multilayer_saved)
             self.saver_thread.error.connect(self.on_multilayer_save_error)
             QGuiApplication.setOverrideCursor(QCursor(Qt.BusyCursor))
@@ -287,12 +290,13 @@ class IOGuiHandler(QObject, LayerCollectionHandler):
 
     def save_master_to_path(self, path):
         try:
-            self.io_manager.save_master(path)
+            img = cv2.cvtColor(self.master_layer(), cv2.COLOR_RGB2BGR)
+            write_image_with_exif_data(self.exif_data, img, path)
             self.current_file_path_master = os.path.abspath(path)
-            self.mark_as_modified_requested.emit(False)
+            # self.mark_as_modified_requested.emit(False)
             self.update_title_requested.emit()
-            self.status_message_requested.emit(f"Saved master layer to: {path}")
             self.add_recent_file_requested.emit(self.current_file_path_master)
+            self.status_message_requested.emit(f"Saved master layer to: {path}")
         except Exception as e:
             traceback.print_tb(e.__traceback__)
             QMessageBox.critical(self.parent(), "Save Error", f"Could not save file: {str(e)}")
@@ -300,9 +304,10 @@ class IOGuiHandler(QObject, LayerCollectionHandler):
     def select_exif_path(self):
         path, _ = QFileDialog.getOpenFileName(None, "Select file with exif data")
         if path:
-            self.io_manager.set_exif_data(path)
+            self.exif_path = path
+            self.exif_data = get_exif(path)
             self.status_message_requested.emit(f"EXIF data extracted from {path}.")
-        self.exif_dialog = ExifData(self.io_manager.exif_data, self.parent())
+        self.exif_dialog = ExifData(self.exif_data, self.parent())
         self.exif_dialog.exec()
 
     def close_file(self):

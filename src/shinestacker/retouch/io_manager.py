@@ -6,9 +6,7 @@ import traceback
 import cv2
 from PySide6.QtCore import QThread, Signal
 from .. algorithms.utils import read_img, validate_image, get_img_metadata
-from .. algorithms.exif import get_exif, write_image_with_exif_data
 from .. algorithms.multilayer import write_multilayer_tiff_from_images
-from .layer_collection import LayerCollectionHandler
 
 
 class FileMultilayerSaver(QThread):
@@ -36,17 +34,17 @@ class FrameImporter(QThread):
     error = Signal(str)
     progress = Signal(int, str)
 
-    def __init__(self, file_paths, io_manager):
+    def __init__(self, file_paths, master_layer):
         super().__init__()
         self.file_paths = file_paths
-        self.io_manager = io_manager
+        self.master_layer = master_layer
 
     def run(self):
         try:
             stack = []
             labels = []
             master = None
-            current_master = self.io_manager.master_layer()
+            current_master = self.master_layer
             shape, dtype = None, None
             if current_master is not None:
                 shape, dtype = get_img_metadata(current_master)
@@ -78,18 +76,3 @@ class FrameImporter(QThread):
             self.finished.emit(stack, labels, master)
         except Exception as e:
             self.error.emit(str(e))
-
-
-class IOManager(LayerCollectionHandler):
-    def __init__(self, layer_collection):
-        super().__init__(layer_collection)
-        self.exif_path = ''
-        self.exif_data = None
-
-    def save_master(self, path):
-        img = cv2.cvtColor(self.master_layer(), cv2.COLOR_RGB2BGR)
-        write_image_with_exif_data(self.exif_data, img, path)
-
-    def set_exif_data(self, path):
-        self.exif_path = path
-        self.exif_data = get_exif(path)
