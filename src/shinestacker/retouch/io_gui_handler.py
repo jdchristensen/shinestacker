@@ -1,4 +1,4 @@
-# pylint: disable=C0114, C0115, C0116, E0611, R0902, W0718
+# pylint: disable=C0114, C0115, C0116, E0611, R0902, W0718, R0904
 import os
 import traceback
 import numpy as np
@@ -7,7 +7,7 @@ from PySide6.QtGui import QGuiApplication, QCursor
 from PySide6.QtCore import Qt, QObject, QTimer, Signal
 from .file_loader import FileLoader
 from .exif_data import ExifData
-from .io_manager import IOManager, FileMultilayerSaver
+from .io_manager import IOManager, FileMultilayerSaver, FrameImporter
 from .layer_collection import LayerCollectionHandler
 
 
@@ -36,6 +36,9 @@ class IOGuiHandler(QObject, LayerCollectionHandler):
         self.saving_timer = None
         self.current_file_path_master = ''
         self.current_file_path_multi = ''
+        self.frame_importer_thread = None
+        self.frame_loading_dialog = None
+        self.frame_loading_timer = None
 
     def current_file_path(self):
         return self.current_file_path_master if self.save_master_only.isChecked() \
@@ -70,6 +73,39 @@ class IOGuiHandler(QObject, LayerCollectionHandler):
         self.current_file_path_master = ''
         self.current_file_path_multi = ''
         self.status_message_requested.emit(f"Error loading: {self.current_file_path()}")
+
+    def on_frames_imported(self, stack, labels, master):
+        QApplication.restoreOverrideCursor()
+        self.frame_loading_timer.stop()
+        self.frame_loading_dialog.hide()
+        self.frame_loading_dialog.deleteLater()
+        empty_viewer = self.image_viewer.empty()
+        self.image_viewer.set_master_image_np(master)
+        if self.layer_stack() is None and len(stack) > 0:
+            self.set_layer_stack(np.array(stack))
+            if labels is None:
+                labels = self.layer_labels()
+            else:
+                self.set_layer_labels(labels)
+            self.set_master_layer(master)
+            self.set_blank_layer()
+        else:
+            if labels is None:
+                labels = self.layer_labels()
+            for img, label in zip(stack, labels):
+                self.add_layer_label(label)
+                self.add_layer(img)
+        self.finish_loading_setup("Selected frames imported")
+        if empty_viewer:
+            self.image_viewer.reset_zoom()
+
+    def on_frames_import_error(self, error_msg):
+        QApplication.restoreOverrideCursor()
+        self.frame_loading_timer.stop()
+        self.frame_loading_dialog.hide()
+        self.frame_loading_dialog.deleteLater()
+        QMessageBox.critical(self.parent(), "Import Error", error_msg)
+        self.status_message_requested.emit("Error importing frames")
 
     def on_multilayer_saved(self):
         QApplication.restoreOverrideCursor()
@@ -127,37 +163,24 @@ class IOGuiHandler(QObject, LayerCollectionHandler):
             "Images Images (*.tif *.tiff *.jpg *.jpeg);;All Files (*)")
         if file_paths:
             self.import_frames_from_files(file_paths)
-        self.status_message_requested.emit("Imported selected frames")
 
     def import_frames_from_files(self, file_paths):
-        empty_viewer = self.image_viewer.empty()
-        try:
-            stack, labels, master = self.io_manager.import_frames(file_paths)
-        except Exception as e:
-            msg = QMessageBox()
-            msg.setIcon(QMessageBox.Critical)
-            msg.setWindowTitle("Import error")
-            msg.setText(str(e))
-            msg.exec()
-            return
-        self.image_viewer.set_master_image_np(master)
-        if self.layer_stack() is None and len(stack) > 0:
-            self.set_layer_stack(np.array(stack))
-            if labels is None:
-                labels = self.layer_labels()
-            else:
-                self.set_layer_labels(labels)
-            self.set_master_layer(master)
-            self.set_blank_layer()
-        else:
-            if labels is None:
-                labels = self.layer_labels()
-            for img, label in zip(stack, labels):
-                self.add_layer_label(label)
-                self.add_layer(img)
-        self.finish_loading_setup("Selected frames imported")
-        if empty_viewer:
-            self.image_viewer.reset_zoom()
+        QGuiApplication.setOverrideCursor(QCursor(Qt.BusyCursor))
+        self.frame_loading_dialog = QDialog(self.parent())
+        self.frame_loading_dialog.setWindowTitle("Loading Frames")
+        self.frame_loading_dialog.setWindowFlags(Qt.Window | Qt.FramelessWindowHint)
+        self.frame_loading_dialog.setModal(True)
+        layout = QVBoxLayout()
+        layout.addWidget(QLabel("Frames loading..."))
+        self.frame_loading_dialog.setLayout(layout)
+        self.frame_loading_timer = QTimer()
+        self.frame_loading_timer.setSingleShot(True)
+        self.frame_loading_timer.timeout.connect(self.frame_loading_dialog.show)
+        self.frame_loading_timer.start(100)
+        self.frame_importer_thread = FrameImporter(file_paths, self.io_manager)
+        self.frame_importer_thread.finished.connect(self.on_frames_imported)
+        self.frame_importer_thread.error.connect(self.on_frames_import_error)
+        self.frame_importer_thread.start()
 
     def finish_loading_setup(self, message):
         self.display_manager.update_thumbnails()

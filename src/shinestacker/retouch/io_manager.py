@@ -28,6 +28,23 @@ class FileMultilayerSaver(QThread):
             self.error.emit(str(e))
 
 
+class FrameImporter(QThread):
+    finished = Signal(object, object, object)
+    error = Signal(str)
+
+    def __init__(self, file_paths, io_manager):
+        super().__init__()
+        self.file_paths = file_paths
+        self.io_manager = io_manager
+
+    def run(self):
+        try:
+            stack, labels, master = self.io_manager.import_frames(self.file_paths)
+            self.finished.emit(stack, labels, master)
+        except Exception as e:
+            self.error.emit(str(e))
+
+
 class IOManager(LayerCollectionHandler):
     def __init__(self, layer_collection):
         super().__init__(layer_collection)
