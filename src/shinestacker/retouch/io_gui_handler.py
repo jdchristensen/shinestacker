@@ -10,7 +10,7 @@ from PySide6.QtCore import Qt, QObject, QTimer, Signal
 from .. algorithms.exif import get_exif, write_image_with_exif_data
 from .file_loader import FileLoader
 from .exif_data import ExifData
-from .io_manager import FileMultilayerSaver, FrameImporter
+from .io_threads import FileMultilayerSaver, FrameImporter
 from .layer_collection import LayerCollectionHandler
 
 
