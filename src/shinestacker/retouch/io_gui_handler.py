@@ -71,7 +71,7 @@ class IOGuiHandler(QObject, LayerCollectionHandler):
         self.current_file_path_multi = ''
         self.status_message_requested.emit(f"Error loading: {self.current_file_path()}")
 
-    def on_multilayer_save_success(self):
+    def on_multilayer_saved(self):
         QApplication.restoreOverrideCursor()
         self.saving_timer.stop()
         self.saving_dialog.hide()
@@ -211,7 +211,7 @@ class IOGuiHandler(QObject, LayerCollectionHandler):
             images_dict = {**master_layer, **individual_layers}
             self.saver_thread = FileMultilayerSaver(
                 images_dict, path, exif_path=self.io_manager.exif_path)
-            self.saver_thread.finished.connect(self.on_multilayer_save_success)
+            self.saver_thread.finished.connect(self.on_multilayer_saved)
             self.saver_thread.error.connect(self.on_multilayer_save_error)
             QGuiApplication.setOverrideCursor(QCursor(Qt.BusyCursor))
             self.saving_dialog = QDialog(self.parent())
