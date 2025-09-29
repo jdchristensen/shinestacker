@@ -7,9 +7,9 @@ This page reports the main releases only and the main changes therein.
 ** Unreleased updates **
 
 ### Changed
-- improved performances of display update by only refreshing painted area
-- code refactoring and reduced dependencies
-- multiple frames imported in a separate thread
+- improved display update performance by refreshing only the painted area
+- multiple frame import now runs in a separate thread, avoiding UI freezes
+- reduced dependencies and code refactoring for more robust architecture
 
 -----
 
