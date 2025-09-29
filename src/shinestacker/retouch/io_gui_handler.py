@@ -2,7 +2,8 @@
 import os
 import traceback
 import numpy as np
-from PySide6.QtWidgets import QFileDialog, QMessageBox, QVBoxLayout, QLabel, QDialog, QApplication
+from PySide6.QtWidgets import (QFileDialog, QMessageBox, QVBoxLayout, QLabel, QDialog,
+                               QApplication, QProgressBar)
 from PySide6.QtGui import QGuiApplication, QCursor
 from PySide6.QtCore import Qt, QObject, QTimer, Signal
 from .file_loader import FileLoader
@@ -39,6 +40,8 @@ class IOGuiHandler(QObject, LayerCollectionHandler):
         self.frame_importer_thread = None
         self.frame_loading_dialog = None
         self.frame_loading_timer = None
+        self.progress_label = None
+        self.progress_bar = None
 
     def current_file_path(self):
         return self.current_file_path_master if self.save_master_only.isChecked() \
@@ -97,7 +100,7 @@ class IOGuiHandler(QObject, LayerCollectionHandler):
                 self.add_layer(img)
         self.finish_loading_setup("Selected frames imported")
         if empty_viewer:
-            self.image_viewer.reset_zoom()
+            self.image_viewer.update_master_display()
 
     def on_frames_import_error(self, error_msg):
         QApplication.restoreOverrideCursor()
@@ -171,7 +174,12 @@ class IOGuiHandler(QObject, LayerCollectionHandler):
         self.frame_loading_dialog.setWindowFlags(Qt.Window | Qt.FramelessWindowHint)
         self.frame_loading_dialog.setModal(True)
         layout = QVBoxLayout()
-        layout.addWidget(QLabel("Frames loading..."))
+        self.progress_label = QLabel("Frames loading...")
+        layout.addWidget(self.progress_label)
+        self.progress_bar = QProgressBar()
+        self.progress_bar.setRange(0, 100)
+        self.progress_bar.setValue(0)
+        layout.addWidget(self.progress_bar)
         self.frame_loading_dialog.setLayout(layout)
         self.frame_loading_timer = QTimer()
         self.frame_loading_timer.setSingleShot(True)
@@ -180,7 +188,14 @@ class IOGuiHandler(QObject, LayerCollectionHandler):
         self.frame_importer_thread = FrameImporter(file_paths, self.io_manager)
         self.frame_importer_thread.finished.connect(self.on_frames_imported)
         self.frame_importer_thread.error.connect(self.on_frames_import_error)
+        self.frame_importer_thread.progress.connect(self.update_import_progress)
         self.frame_importer_thread.start()
+
+    def update_import_progress(self, percent, filename):
+        if hasattr(self, 'progress_bar'):
+            self.progress_bar.setValue(percent)
+        if hasattr(self, 'progress_label'):
+            self.progress_label.setText(f"Loading: {filename} ({percent}%)")
 
     def finish_loading_setup(self, message):
         self.display_manager.update_thumbnails()

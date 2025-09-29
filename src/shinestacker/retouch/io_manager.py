@@ -1,4 +1,7 @@
-# pylint: disable=E1101, C0114, C0115, C0116, E0611, W0718, R0903
+# pylint: disable=C0114, C0115, C0116, E0611, E1101, W0718, R0903, R0914
+
+# import time
+import os
 import traceback
 import cv2
 from PySide6.QtCore import QThread, Signal
@@ -31,6 +34,7 @@ class FileMultilayerSaver(QThread):
 class FrameImporter(QThread):
     finished = Signal(object, object, object)
     error = Signal(str)
+    progress = Signal(int, str)
 
     def __init__(self, file_paths, io_manager):
         super().__init__()
@@ -39,7 +43,38 @@ class FrameImporter(QThread):
 
     def run(self):
         try:
-            stack, labels, master = self.io_manager.import_frames(self.file_paths)
+            stack = []
+            labels = []
+            master = None
+            current_master = self.io_manager.master_layer()
+            shape, dtype = None, None
+            if current_master is not None:
+                shape, dtype = get_img_metadata(current_master)
+            total_files = len(self.file_paths)
+            for i, path in enumerate(self.file_paths):
+                progress_percent = int((i / total_files) * 100)
+                self.progress.emit(progress_percent, os.path.basename(path))
+                try:
+                    label = path.split("/")[-1].split(".")[0]
+                    img = cv2.cvtColor(read_img(path), cv2.COLOR_BGR2RGB)
+                    if shape is not None and dtype is not None:
+                        validate_image(img, shape, dtype)
+                    else:
+                        shape, dtype = get_img_metadata(img)
+                    label_x = label
+                    counter = 0
+                    while label_x in labels:
+                        counter += 1
+                        label_x = f"{label} ({counter})"
+                    labels.append(label_x)
+                    stack.append(img)
+                    if master is None:
+                        master = img.copy()
+                    # Add delay for testing
+                    # time.sleep(0.2)
+                except Exception as e:
+                    raise RuntimeError(f"Error loading file: {path}.\n{str(e)}") from e
+            self.progress.emit(100, "Complete")
             self.finished.emit(stack, labels, master)
         except Exception as e:
             self.error.emit(str(e))
@@ -50,32 +85,6 @@ class IOManager(LayerCollectionHandler):
         super().__init__(layer_collection)
         self.exif_path = ''
         self.exif_data = None
-
-    def import_frames(self, file_paths):
-        stack = []
-        labels = []
-        master = None
-        shape, dtype = get_img_metadata(self.master_layer())
-        for path in file_paths:
-            try:
-                label = path.split("/")[-1].split(".")[0]
-                img = cv2.cvtColor(read_img(path), cv2.COLOR_BGR2RGB)
-                if shape is not None and dtype is not None:
-                    validate_image(img, shape, dtype)
-                else:
-                    shape, dtype = get_img_metadata(img)
-                label_x = label
-                i = 0
-                while label_x in labels:
-                    i += 1
-                    label_x = f"{label} ({i})"
-                labels.append(label_x)
-                stack.append(img)
-                if master is None:
-                    master = img.copy()
-            except Exception as e:
-                raise RuntimeError(f"Error loading file: {path}.\n{str(e)}") from e
-        return stack, labels, master
 
     def save_master(self, path):
         img = cv2.cvtColor(self.master_layer(), cv2.COLOR_RGB2BGR)

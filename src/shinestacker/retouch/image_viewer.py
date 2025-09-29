@@ -51,6 +51,9 @@ class ImageViewer(QWidget):
     def set_master_image_np(self, img):
         self.strategy.set_master_image_np(img)
 
+    def arrange_images(self):
+        self.strategy.arrange_images()
+
     def show_master(self):
         self.strategy.show_master()
 
