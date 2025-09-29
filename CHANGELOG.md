@@ -3,12 +3,13 @@
 This page reports the main releases only and the main changes therein.
 
 
-## [v-.-.-] - 2025-09-27
+## [v-.-.-] - 2025-09-29
 ** Unreleased updates **
 
 ### Changed
 - improved performances of display update by only refreshing painted area
 - code refactoring and reduced dependencies
+- multiple frames imported in a separate thread
 
 -----
 
