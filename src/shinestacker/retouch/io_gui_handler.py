@@ -131,6 +131,7 @@ class IOGuiHandler(QObject, LayerCollectionHandler):
         QMessageBox.critical(self.parent(), "Save Error", f"Could not save file: {error_msg}")
 
     def open_file(self, file_paths=None):
+        self.cleanup_old_threads()
         if file_paths is None:
             file_paths, _ = QFileDialog.getOpenFileNames(
                 self.parent(), "Open Image", "",
@@ -171,6 +172,7 @@ class IOGuiHandler(QObject, LayerCollectionHandler):
             self.import_frames_from_files(file_paths)
 
     def import_frames_from_files(self, file_paths):
+        self.cleanup_old_threads()
         QGuiApplication.setOverrideCursor(QCursor(Qt.BusyCursor))
         self.frame_loading_dialog = QDialog(self.parent())
         self.frame_loading_dialog.setWindowTitle("Loading Frames")
@@ -243,6 +245,7 @@ class IOGuiHandler(QObject, LayerCollectionHandler):
             self.save_multilayer_to_path(path)
 
     def save_multilayer_to_path(self, path):
+        self.cleanup_old_threads()
         try:
             master_layer = {'Master': self.master_layer().copy()}
             individual_layers = dict(zip(
@@ -322,3 +325,11 @@ class IOGuiHandler(QObject, LayerCollectionHandler):
         self.update_title_requested.emit()
         self.set_enabled_file_open_close_actions_requested.emit(False)
         self.status_message_requested.emit("File closed")
+
+    def cleanup_old_threads(self):
+        if self.loader_thread and self.loader_thread.isFinished():
+            self.loader_thread = None
+        if self.frame_importer_thread and self.frame_importer_thread.isFinished():
+            self.frame_importer_thread = None
+        if self.saver_thread and self.saver_thread.isFinished():
+            self.saver_thread = None
