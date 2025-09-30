@@ -17,9 +17,19 @@ package_dir = "shinestacker"
 
 sys_name = platform.system().lower()
 
-pyinstaller_cmd = ["pyinstaller", "--onedir", f"--name={app_name}", "--paths=src",
-                   f"--distpath=dist/{package_dir}", f"--collect-all={project_name}",
-                   "--collect-data=imagecodecs", "--collect-submodules=imagecodecs", "--copy-metadata=imagecodecs"]
+hooks_dir = "scripts/hooks"
+
+print("=== USING HOOKS ===")
+hook_files = list(Path(hooks_dir).glob("hook-*.py"))
+for hook in hook_files:
+    print(f"  - {hook.name}")
+
+pyinstaller_cmd = [
+    "pyinstaller", "--onedir", f"--name={app_name}", "--paths=src",
+    f"--distpath=dist/{package_dir}", f"--collect-all={project_name}",
+    "--collect-data=imagecodecs", "--collect-submodules=imagecodecs",
+    "--copy-metadata=imagecodecs", f"--additional-hooks-dir={hooks_dir}"
+]
 if sys_name == 'darwin':
     pyinstaller_cmd += ["--windowed", "--icon=src/shinestacker/gui/ico/shinestacker.icns"]
 elif sys_name == 'windows':
