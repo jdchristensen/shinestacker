@@ -91,17 +91,22 @@ if sys_name == 'windows':
         except (subprocess.CalledProcessError, FileNotFoundError):
             print("Chocolatey not available or installation failed.")
     if iscc_exe:
-        iss_script = project_root / "scripts" / "shinestacker-inno-setup.iss"
-        if iss_script.exists():
+        iss_script_source = project_root / "scripts" / "shinestacker-inno-setup.iss"
+        iss_script_temp = project_root / "shinestacker-inno-setup.iss"
+        if iss_script_source.exists():
+            print(f"Copying ISS script to project root: {iss_script_temp}")
+            shutil.copy2(iss_script_source, iss_script_temp)
             print(f"Compiling installer with: {iscc_exe}")
-            subprocess.run([iscc_exe, str(iss_script)], check=True)
+            subprocess.run([iscc_exe, str(iss_script_temp)], check=True)            
+            print("Removing temporary ISS script")
+            iss_script_temp.unlink()            
             if dist_dir.exists():
                 installer_files = list(dist_dir.glob("*.exe"))
                 if installer_files:
                     print(f"Installer created: {installer_files[0].name}")
         else:
-            print(f"ISS script not found at: {iss_script}")
+            print(f"ISS script not found at: {iss_script_source}")
     else:
         print("WARNING: Could not find or install Inno Setup. Skipping installer creation.")
         print("You can manually install Inno Setup from: https://jrsoftware.org/isdl.php")
-        print("Or install Chocolatey and run: choco install inno-setup -y")
+        print("Or install Chocolatey and run: choco install innosetup -y")
