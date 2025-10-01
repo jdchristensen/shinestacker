@@ -1,3 +1,4 @@
+import os
 import logging
 import time
 from tqdm import tqdm
@@ -38,7 +39,7 @@ def test_tqdm():
         setup_logging(
             console_level=logging.DEBUG,
             file_level=logging.DEBUG,
-            log_file=f"logs/{constants.APP_STRING.lower()}.log"
+            log_file=os.path.join('logs', f"{constants.APP_STRING.lower()}.log")
         )
         logger = logging.getLogger("tqdm")
         counts = 50

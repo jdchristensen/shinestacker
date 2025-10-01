@@ -80,7 +80,7 @@ class TestCoreUtils(unittest.TestCase):
             'C:\\deep\\path\\to\\shinestacker'
         ]
         result = get_app_base_path()
-        self.assertEqual(result, 'C:\\deep\\path\\to\\shinestacker')
+        self.assertEqual(result, 'C:\\deep\\path\\to\\shinestacker\\bin')
 
     @patch('platform.system')
     @patch('os.path.realpath')
@@ -97,7 +97,7 @@ class TestCoreUtils(unittest.TestCase):
             '/usr/local/shinestacker'
         ]
         result = get_app_base_path()
-        self.assertEqual(result, '/usr/local/shinestacker')
+        self.assertEqual(result, '/usr/local/shinestacker/bin')
 
 
 if __name__ == '__main__':

@@ -64,9 +64,9 @@ def setup_logging(console_level=logging.INFO, file_level=logging.DEBUG, log_file
     if log_file is not None:
         if log_file == '':
             today = datetime.date.today().strftime("%Y-%m-%d")
-            log_file = f"logs/{constants.APP_STRING.lower()}-{today}.log"
+            log_file = os.path.join('logs', f"{constants.APP_STRING.lower()}-{today}.log")
         if not os.path.isabs(log_file):
-            log_file = os.path.join(get_app_base_path(), {log_file})
+            log_file = os.path.join(get_app_base_path(), log_file)
         Path(log_file).parent.mkdir(parents=True, exist_ok=True)
         file_handler = logging.FileHandler(log_file)
         file_handler.setLevel(file_level)
