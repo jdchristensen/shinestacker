@@ -82,7 +82,8 @@ if sys_name == 'windows':
         try:
             subprocess.run(["choco", "--version"], check=True, capture_output=True)
             print("Installing Inno Setup via Chocolatey...")
-            subprocess.run(["choco", "install", "innosetup", "-y", "--no-progress", "--accept-license"], check=True)
+            subprocess.run(["choco", "install", "innosetup", "-y",
+                            "--no-progress", "--accept-license"], check=True)
             for path in inno_paths:
                 if os.path.exists(path):
                     iscc_exe = path
@@ -94,12 +95,30 @@ if sys_name == 'windows':
         iss_script_source = project_root / "scripts" / "shinestacker-inno-setup.iss"
         iss_script_temp = project_root / "shinestacker-inno-setup.iss"
         if iss_script_source.exists():
-            print(f"Copying ISS script to project root: {iss_script_temp}")
-            shutil.copy2(iss_script_source, iss_script_temp)
+            version_file = project_root / "src" / "shinestacker" / "_version.py"
+            version = "0.0.0"  # fallback
+            if version_file.exists():
+                with open(version_file, 'r') as f:
+                    content = f.read()
+                    import re
+                    match = re.search(r"__version__\s*=\s*['\"]([^'\"]+)['\"]", content)
+                    if match:
+                        version = match.group(1)
+                        print(f"Found version: {version}")
+                    else:
+                        print("WARNING: Could not extract version from _version.py, using fallback")
+            with open(iss_script_source, 'r') as f:
+                iss_content = f.read()
+            old_version_line = f'#define MyAppVersion "{"x.x.x"}"'
+            new_version_line = f'#define MyAppVersion "{version}"'
+            iss_content = iss_content.replace(old_version_line, new_version_line)
+            with open(iss_script_temp, 'w') as f:
+                f.write(iss_content)
+            print(f"Updated ISS script with version: {version}")
             print(f"Compiling installer with: {iscc_exe}")
-            subprocess.run([iscc_exe, str(iss_script_temp)], check=True)            
+            subprocess.run([iscc_exe, str(iss_script_temp)], check=True)
             print("Removing temporary ISS script")
-            iss_script_temp.unlink()            
+            iss_script_temp.unlink()
             if dist_dir.exists():
                 installer_files = list(dist_dir.glob("*.exe"))
                 if installer_files:

@@ -1,5 +1,5 @@
 #define MyAppName "ShineStacker"
-#define MyAppVersion "1.6.1"
+#define MyAppVersion "x.x.x"
 #define MyAppPublisher "Luca Lista"
 #define MyAppURL "https://shinestacker.wordpress.com/"
 #define MyAppExeName "shinestacker.exe"
