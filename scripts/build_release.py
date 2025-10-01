@@ -62,3 +62,55 @@ else:
             recursive=True,
             filter=lambda info: info
         )
+
+if sys_name == 'windows':
+    shutil.make_archive(
+        base_name=str(dist_dir / "shinestacker-release"),
+        format="zip",
+        root_dir=dist_dir,
+        base_dir=package_dir
+    )
+    print("=== CREATING WINDOWS INSTALLER ===")
+    inno_paths = [
+        r"C:\Program Files (x86)\Inno Setup 6\ISCC.exe",
+        r"C:\Program Files (x86)\Inno Setup 5\ISCC.exe",
+        r"C:\Program Files\Inno Setup 6\ISCC.exe",
+        r"C:\Program Files\Inno Setup 5\ISCC.exe"
+    ]
+    iscc_exe = None
+    for path in inno_paths:
+        if os.path.exists(path):
+            iscc_exe = path
+            print(f"Found Inno Setup at: {path}")
+            break
+    if not iscc_exe:
+        print("Inno Setup not found in standard locations. Checking for Chocolatey...")
+        try:
+            subprocess.run(["choco", "--version"], check=True, capture_output=True)
+            print("Installing Inno Setup via Chocolatey...")
+            subprocess.run(["choco", "install", "inno-setup", "-y", "--no-progress"], check=True)
+            for path in inno_paths:
+                if os.path.exists(path):
+                    iscc_exe = path
+                    print(f"Found Inno Setup at: {path}")
+                    break
+        except (subprocess.CalledProcessError, FileNotFoundError):
+            print("Chocolatey not available or installation failed.")
+    if iscc_exe:
+        iss_script = project_root / "scripts" / "shinestacker-inno-setup.iss"
+        if iss_script.exists():
+            print(f"Compiling installer with: {iscc_exe}")
+            subprocess.run([iscc_exe, str(iss_script)], check=True)
+            installer_dir = project_root / "installer"
+            if installer_dir.exists():
+                installer_files = list(installer_dir.glob("*.exe"))
+                if installer_files:
+                    print(f"Installer created: {installer_files[0].name}")
+                    shutil.copy2(installer_files[0], dist_dir / installer_files[0].name)
+                    print(f"Copied installer to: {dist_dir / installer_files[0].name}")
+        else:
+            print(f"ISS script not found at: {iss_script}")
+    else:
+        print("WARNING: Could not find or install Inno Setup. Skipping installer creation.")
+        print("You can manually install Inno Setup from: https://jrsoftware.org/isdl.php")
+        print("Or install Chocolatey and run: choco install inno-setup -y")

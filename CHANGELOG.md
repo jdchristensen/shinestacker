@@ -3,7 +3,7 @@
 This page reports the main releases only and the main changes therein.
 
 
-## [v-.-.-] - 2025-09-30
+## [v-.-.-] - 2025-10-01
 ** Unreleased updates **
 
 ### Changed
