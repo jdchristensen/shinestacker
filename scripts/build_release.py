@@ -82,7 +82,7 @@ if sys_name == 'windows':
         try:
             subprocess.run(["choco", "--version"], check=True, capture_output=True)
             print("Installing Inno Setup via Chocolatey...")
-            subprocess.run(["choco", "install", "inno-setup", "-y", "--no-progress"], check=True)
+            subprocess.run(["choco", "install", "innosetup", "-y", "--no-progress", "--accept-license"], check=True)
             for path in inno_paths:
                 if os.path.exists(path):
                     iscc_exe = path

@@ -31,7 +31,7 @@ jobs:
 
       - name: Install Inno Setup
         if: runner.os == 'Windows'
-        run: choco install inno-setup -y --no-progress
+        run: choco install innosetup -y --no-progress --accept-license
 
       - name: Install dependencies
         run: |
