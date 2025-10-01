@@ -2,8 +2,7 @@
 
 This page reports the main releases only and the main changes therein.
 
-
-## [v1.6.1-rc2] - 2025-10-01
+## [v1.6.1] - 2025-10-01
 ** Unreleased updates **
 
 ### Changed
@@ -11,6 +10,7 @@ This page reports the main releases only and the main changes therein.
 - multiple frame import now runs in a separate thread, avoiding UI freezes
 - reduced dependencies and code refactored for more robust architecture
 - added windows installer
+- dropped examples and test images reduces distribution file size
 
 -----
 
