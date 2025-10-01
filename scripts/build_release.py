@@ -39,12 +39,12 @@ pyinstaller_cmd += ["src/shinestacker/app/main.py"]
 print(" ".join(pyinstaller_cmd))
 subprocess.run(pyinstaller_cmd, check=True)
 
-examples_dir = project_root / "examples"
-target_examples = dist_dir / package_dir / "examples"
-target_examples.mkdir(exist_ok=True)
-for project_file in ["complete-project.fsp", "stack-from-frames.fsp"]:
-    shutil.copy(examples_dir / project_file, target_examples)
-    shutil.copytree(examples_dir / 'input', target_examples / 'input', dirs_exist_ok=True)
+# examples_dir = project_root / "examples"
+# target_examples = dist_dir / package_dir / "examples"
+# target_examples.mkdir(exist_ok=True)
+# for project_file in ["complete-project.fsp", "stack-from-frames.fsp"]:
+#     shutil.copy(examples_dir / project_file, target_examples)
+#    shutil.copytree(examples_dir / 'input', target_examples / 'input', dirs_exist_ok=True)
 
 if sys_name == 'windows':
     shutil.make_archive(
