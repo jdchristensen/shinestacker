@@ -10,7 +10,7 @@ This page reports the main releases only and the main changes therein.
 - multiple frame import now runs in a separate thread, avoiding UI freezes
 - reduced dependencies and code refactored for more robust architecture
 - added windows installer
-- dropped examples and test images reduces distribution file size
+- dropped examples and test images to reduce distribution file size
 
 -----
 
