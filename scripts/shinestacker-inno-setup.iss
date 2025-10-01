@@ -33,8 +33,8 @@ DisableProgramGroupPage=yes
 LicenseFile=.\LICENSE
 ; Uncomment the following line to run in non administrative install mode (install for current user only).
 ;PrivilegesRequired=lowest
-OutputBaseFilename=shiestacker-setup
-OutputDir=.\installer
+OutputBaseFilename=shinestacker-setup
+OutputDir=.\dist
 VersionInfoVersion={#MyAppVersion}
 VersionInfoCompany={#MyAppPublisher}
 SetupIconFile=.\src\shinestacker\gui\ico\shinestacker.ico

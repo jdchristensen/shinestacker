@@ -64,12 +64,6 @@ else:
         )
 
 if sys_name == 'windows':
-    shutil.make_archive(
-        base_name=str(dist_dir / "shinestacker-release"),
-        format="zip",
-        root_dir=dist_dir,
-        base_dir=package_dir
-    )
     print("=== CREATING WINDOWS INSTALLER ===")
     inno_paths = [
         r"C:\Program Files (x86)\Inno Setup 6\ISCC.exe",
@@ -101,13 +95,10 @@ if sys_name == 'windows':
         if iss_script.exists():
             print(f"Compiling installer with: {iscc_exe}")
             subprocess.run([iscc_exe, str(iss_script)], check=True)
-            installer_dir = project_root / "installer"
-            if installer_dir.exists():
-                installer_files = list(installer_dir.glob("*.exe"))
+            if dist_dir.exists():
+                installer_files = list(dist_dir.glob("*.exe"))
                 if installer_files:
                     print(f"Installer created: {installer_files[0].name}")
-                    shutil.copy2(installer_files[0], dist_dir / installer_files[0].name)
-                    print(f"Copied installer to: {dist_dir / installer_files[0].name}")
         else:
             print(f"ISS script not found at: {iss_script}")
     else:
