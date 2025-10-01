@@ -1,4 +1,5 @@
 # pylint: disable=C0114, C0115, C0116
+import os
 import logging
 import sys
 from pathlib import Path
@@ -64,8 +65,8 @@ def setup_logging(console_level=logging.INFO, file_level=logging.DEBUG, log_file
         if log_file == '':
             today = datetime.date.today().strftime("%Y-%m-%d")
             log_file = f"logs/{constants.APP_STRING.lower()}-{today}.log"
-        if log_file[0] != '/':
-            log_file = f'{get_app_base_path()}/{log_file}'
+        if not os.path.isabs(log_file):
+            log_file = os.path.join(get_app_base_path(), {log_file})
         Path(log_file).parent.mkdir(parents=True, exist_ok=True)
         file_handler = logging.FileHandler(log_file)
         file_handler.setLevel(file_level)

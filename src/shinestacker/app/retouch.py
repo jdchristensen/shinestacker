@@ -1,6 +1,7 @@
 # pylint: disable=C0114, C0115, C0116, C0413, E0611, R0903, E1121, W0201
 import os
 import sys
+import logging
 import argparse
 from PySide6.QtWidgets import QApplication, QMenu
 from PySide6.QtGui import QIcon
@@ -8,6 +9,8 @@ from PySide6.QtCore import Qt, QEvent
 from shinestacker.config.config import config
 config.init(DISABLE_TQDM=True, DONT_USE_NATIVE_MENU=True)
 from shinestacker.config.constants import constants
+from shinestacker.config.settings import StdPathFile
+from shinestacker.core.logging import setup_logging
 from shinestacker.retouch.image_editor_ui import ImageEditorUI
 from shinestacker.app.gui_utils import (
     disable_macos_special_menu_items, fill_app_menu, set_css_style)
@@ -54,6 +57,8 @@ Multiple files can be specified separated by ';'.
     if filename and path:
         print("can't specify both arguments --filename and --path", file=sys.stderr)
         sys.exit(1)
+    setup_logging(console_level=logging.DEBUG, file_level=logging.DEBUG, disable_console=True,
+                  log_file=StdPathFile('shinestacker.log').get_file_path())
     app = Application(sys.argv)
     if config.DONT_USE_NATIVE_MENU:
         app.setAttribute(Qt.AA_DontUseNativeMenuBar)
