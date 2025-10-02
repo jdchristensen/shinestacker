@@ -2,14 +2,22 @@
 
 This page reports the main releases only and the main changes therein.
 
-## [v1.6.1] - 2025-10-01
+## [-.-.-] - 2025-10-02
 ** Unreleased updates **
+
+### Added
+- added macOS dmg installer
+
+## [v1.6.1] - 2025-10-01
+** Performance improvements **
+
+### Added
+- windows installer
 
 ### Changed
 - improved display update performance by refreshing only the painted area
 - multiple frame import now runs in a separate thread, avoiding UI freezes
 - reduced dependencies and code refactored for more robust architecture
-- added windows installer
 - dropped examples and test images to reduce distribution file size
 
 -----
