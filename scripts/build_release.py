@@ -73,6 +73,7 @@ def package_macos(dist_dir, app_name, project_root):
     if not app_bundle.exists():
         print(f"ERROR: .app bundle not found at {app_bundle}")
         return
+    icon_source = project_root / "src" / "shinestacker" / "gui" / "ico" / "shinestacker.icns"
     dmg_temp_dir = dist_dir / "dmg_temp"
     if dmg_temp_dir.exists():
         shutil.rmtree(dmg_temp_dir)
@@ -89,6 +90,17 @@ def package_macos(dist_dir, app_name, project_root):
     ]
     subprocess.run(dmg_cmd, check=True)
     print(f"Created DMG: {dmg_path.name}")
+    if icon_source.exists():
+        print("Setting custom icon...")
+        try:
+            subprocess.run(["sips", "-i", str(icon_source)], check=True)
+            subprocess.run(["DeRez", "-only", "icns", str(icon_source)],
+                           stdout=open("/tmp/icon.r", "w"), check=True)
+            subprocess.run(["Rez", "-append", "/tmp/icon.r", "-o", str(dmg_path)], check=True)
+            subprocess.run(["SetFile", "-a", "C", str(dmg_path)], check=True)
+            print("Custom icon set successfully!")
+        except subprocess.CalledProcessError as e:
+            print(f"Could not set custom icon: {e}")
     shutil.rmtree(dmg_temp_dir)
     archive_path = dist_dir / "shinestacker-release.tar.gz"
     with tarfile.open(archive_path, "w:gz") as tar:
