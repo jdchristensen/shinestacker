@@ -1,5 +1,7 @@
 # pylint: disable=C0114, C0115, C0116, E0611
+import os
 from PySide6.QtCore import Qt, Signal
+from PySide6.QtGui import QPixmap
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QTabWidget, QLabel, QStackedWidget
 
 
@@ -17,7 +19,14 @@ class TabWidgetWithPlaceholder(QWidget):
         self.stacked_widget.addWidget(self.tab_widget)
         self.placeholder = QLabel()
         self.placeholder.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.placeholder.setText("Run logs will appear here.")
+        icon_path = f"{os.path.dirname(__file__)}/ico/shinestacker_bkg.png"
+        if os.path.exists(icon_path):
+            pixmap = QPixmap(icon_path)
+            pixmap = pixmap.scaled(250, 250, Qt.AspectRatioMode.KeepAspectRatio,
+                                   Qt.TransformationMode.SmoothTransformation)
+            self.placeholder.setPixmap(pixmap)
+        else:
+            self.placeholder.setText("Run logs will appear here.")
         self.stacked_widget.addWidget(self.placeholder)
         self.tab_widget.currentChanged.connect(self._on_current_changed)
         self.tab_widget.tabCloseRequested.connect(self._on_tab_close_requested)
