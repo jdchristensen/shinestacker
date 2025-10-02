@@ -34,10 +34,10 @@ LicenseFile=.\LICENSE
 ; Uncomment the following line to run in non administrative install mode (install for current user only).
 ;PrivilegesRequired=lowest
 OutputBaseFilename=shinestacker-setup
-OutputDir=.\dist
+OutputDir=dist
 VersionInfoVersion={#MyAppVersion}
 VersionInfoCompany={#MyAppPublisher}
-SetupIconFile=.\src\shinestacker\gui\ico\shinestacker.ico
+SetupIconFile=src\shinestacker\gui\ico\shinestacker.ico
 SolidCompression=yes
 WizardStyle=modern
 
@@ -49,8 +49,7 @@ Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{
 
 [Files]
 ; Copy the entire shinestacker folder structure that contains both the exe and _internal
-Source: ".\dist\shinestacker\shinestacker\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
-Source: ".\examples\*"; DestDir: "{app}\examples"; Flags: ignoreversion recursesubdirs
+Source: "dist\shinestacker\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
 ; NOTE: Don't use "Flags: ignoreversion" on any shared system files
 
 [Registry]
