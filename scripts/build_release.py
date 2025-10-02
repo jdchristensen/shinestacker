@@ -24,44 +24,102 @@ hook_files = list(Path(hooks_dir).glob("hook-*.py"))
 for hook in hook_files:
     print(f"  - {hook.name}")
 
-pyinstaller_cmd = [
-    "pyinstaller", "--onedir", f"--name={app_name}", "--paths=src",
-    f"--distpath=dist/{package_dir}", f"--collect-all={project_name}",
-    "--collect-data=imagecodecs", "--collect-submodules=imagecodecs",
-    "--copy-metadata=imagecodecs", f"--additional-hooks-dir={hooks_dir}"
-]
 if sys_name == 'darwin':
-    pyinstaller_cmd += ["--windowed", "--icon=src/shinestacker/gui/ico/shinestacker.icns"]
+    # macOS: Use --windowed to create ONLY the .app bundle
+    pyinstaller_cmd = [
+        "pyinstaller", "--windowed",
+        f"--name={app_name}",
+        f"--distpath={dist_dir}",
+        "--paths=src",
+        "--icon=src/shinestacker/gui/ico/shinestacker.icns",
+        f"--additional-hooks-dir={hooks_dir}",
+        # Collect specific modules instead of using --collect-all
+        f"--collect-all={project_name}",
+        "--collect-data=imagecodecs",
+        "--collect-submodules=imagecodecs",
+        "--copy-metadata=imagecodecs",
+        "src/shinestacker/app/main.py"
+    ]
 elif sys_name == 'windows':
-    pyinstaller_cmd += ["--windowed", "--icon=src/shinestacker/gui/ico/shinestacker.ico"]
-pyinstaller_cmd += ["src/shinestacker/app/main.py"]
+    # Windows: Use --onedir to create folder structure
+    pyinstaller_cmd = [
+        "pyinstaller", "--onedir", "--windowed",
+        f"--name={app_name}",
+        f"--distpath={dist_dir}",
+        "--paths=src",
+        "--icon=src/shinestacker/gui/ico/shinestacker.ico",
+        f"--collect-all={project_name}",
+        "--collect-data=imagecodecs", "--collect-submodules=imagecodecs",
+        "--copy-metadata=imagecodecs", f"--additional-hooks-dir={hooks_dir}",
+        "src/shinestacker/app/main.py"
+    ]
+else:
+    # Linux: Use --onedir to create folder structure
+    pyinstaller_cmd = [
+        "pyinstaller", "--onedir",
+        f"--name={app_name}",
+        f"--distpath={dist_dir}",
+        "--paths=src",
+        f"--collect-all={project_name}",
+        "--collect-data=imagecodecs", "--collect-submodules=imagecodecs",
+        "--copy-metadata=imagecodecs", f"--additional-hooks-dir={hooks_dir}",
+        "src/shinestacker/app/main.py"
+    ]
 
 print(" ".join(pyinstaller_cmd))
 subprocess.run(pyinstaller_cmd, check=True)
 
-# examples_dir = project_root / "examples"
-# target_examples = dist_dir / package_dir / "examples"
-# target_examples.mkdir(exist_ok=True)
-# for project_file in ["complete-project.fsp", "stack-from-frames.fsp"]:
-#     shutil.copy(examples_dir / project_file, target_examples)
-#    shutil.copytree(examples_dir / 'input', target_examples / 'input', dirs_exist_ok=True)
-
 if sys_name == 'windows':
+    # For Windows, package the folder created by --onedir
     shutil.make_archive(
         base_name=str(dist_dir / "shinestacker-release"),
         format="zip",
         root_dir=dist_dir,
-        base_dir=package_dir
+        base_dir=app_name
     )
+elif sys_name == 'darwin':
+    app_bundle = dist_dir / f"{app_name}.app"
+    if app_bundle.exists():
+        dmg_temp_dir = dist_dir / "dmg_temp"
+        if dmg_temp_dir.exists():
+            shutil.rmtree(dmg_temp_dir)
+        dmg_temp_dir.mkdir(exist_ok=True)
+        shutil.copytree(app_bundle, dmg_temp_dir / app_bundle.name, dirs_exist_ok=True)
+        os.symlink("/Applications", dmg_temp_dir / "Applications")
+        dmg_path = dist_dir / f"{app_name}-release.dmg"
+        dmg_cmd = [
+            "hdiutil", "create",
+            "-volname", app_name,
+            "-srcfolder", str(dmg_temp_dir),
+            "-ov", str(dmg_path),
+            "-format", "UDZO",
+            "-fs", "HFS+",
+            "-imagekey", "zlib-level=9"
+        ]
+        print("Creating DMG...")
+        subprocess.run(dmg_cmd, check=True)
+        print(f"Created DMG: {dmg_path.name}")
+        shutil.rmtree(dmg_temp_dir)
+        archive_path = dist_dir / "shinestacker-release.tar.gz"
+        with tarfile.open(archive_path, "w:gz") as tar:
+            tar.add(app_bundle, arcname=app_bundle.name, recursive=True)
+        print(f"Also created tar.gz: {archive_path.name}")
+    else:
+        print(f"ERROR: .app bundle not found at {app_bundle}")
 else:
+    # For Linux, package the folder created by --onedir
     archive_path = dist_dir / "shinestacker-release.tar.gz"
-    with tarfile.open(archive_path, "w:gz") as tar:
-        tar.add(
-            dist_dir / package_dir,
-            arcname=package_dir,
-            recursive=True,
-            filter=lambda info: info
-        )
+    linux_app_dir = dist_dir / app_name
+    if linux_app_dir.exists():
+        with tarfile.open(archive_path, "w:gz") as tar:
+            tar.add(
+                linux_app_dir,
+                arcname=app_name,
+                recursive=True
+            )
+        print(f"Packaged Linux application: {app_name}")
+    else:
+        print(f"ERROR: Linux app directory not found at {linux_app_dir}")
 
 if sys_name == 'windows':
     print("=== CREATING WINDOWS INSTALLER ===")
