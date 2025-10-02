@@ -68,7 +68,7 @@ def package_windows(dist_dir, app_name):
     )
 
 
-def package_macos(dist_dir, app_name):
+def package_macos(dist_dir, app_name, project_root):
     app_bundle = dist_dir / f"{app_name}.app"
     if not app_bundle.exists():
         print(f"ERROR: .app bundle not found at {app_bundle}")
@@ -169,7 +169,7 @@ def main():
     if sys_name == 'windows':
         package_windows(dist_dir, app_name)
     elif sys_name == 'darwin':
-        package_macos(dist_dir, app_name)
+        package_macos(dist_dir, app_name, project_root)
     else:
         package_linux(dist_dir, app_name)
     if sys_name == 'windows':

@@ -20,17 +20,7 @@ class TabWidgetWithPlaceholder(QWidget):
         self.stacked_widget.addWidget(self.tab_widget)
         self.placeholder = QLabel()
         self.placeholder.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        rel_path = 'ico/focus_stack_bkg.png'
-        icon_path = f'{get_app_base_path()}/{rel_path}'
-        if not os.path.exists(icon_path):
-            icon_path = f'{get_app_base_path()}/../{rel_path}'
-        if os.path.exists(icon_path):
-            pixmap = QPixmap(icon_path)
-            pixmap = pixmap.scaled(250, 250, Qt.AspectRatioMode.KeepAspectRatio,
-                                   Qt.TransformationMode.SmoothTransformation)
-            self.placeholder.setPixmap(pixmap)
-        else:
-            self.placeholder.setText("Run logs will appear here.")
+        self.placeholder.setText("Run logs will appear here.")
         self.stacked_widget.addWidget(self.placeholder)
         self.tab_widget.currentChanged.connect(self._on_current_changed)
         self.tab_widget.tabCloseRequested.connect(self._on_tab_close_requested)
