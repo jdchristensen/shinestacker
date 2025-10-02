@@ -92,9 +92,8 @@ elif sys_name == 'darwin':
             "-volname", app_name,
             "-srcfolder", str(dmg_temp_dir),
             "-ov", str(dmg_path),
-            "-format", "UDZO",
-            "-fs", "HFS+",
-            "-imagekey", "zlib-level=9"
+            "-format", "UDBZ",
+            "-fs", "HFS+"
         ]
         print("Creating DMG...")
         subprocess.run(dmg_cmd, check=True)
