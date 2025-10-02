@@ -83,8 +83,8 @@ elif sys_name == 'darwin':
         dmg_temp_dir = dist_dir / "dmg_temp"
         if dmg_temp_dir.exists():
             shutil.rmtree(dmg_temp_dir)
-        dmg_temp_dir.mkdir(exist_ok=True)
-        shutil.copytree(app_bundle, dmg_temp_dir / app_bundle.name, dirs_exist_ok=True)
+        print("Copying app bundle (preserving symlinks)...")
+        shutil.copytree(app_bundle, dmg_temp_dir / app_bundle.name, symlinks=True)
         os.symlink("/Applications", dmg_temp_dir / "Applications")
         dmg_path = dist_dir / f"{app_name}-release.dmg"
         dmg_cmd = [
@@ -98,28 +98,16 @@ elif sys_name == 'darwin':
         print("Creating DMG...")
         subprocess.run(dmg_cmd, check=True)
         print(f"Created DMG: {dmg_path.name}")
+        size_check = subprocess.run(["du", "-sh", str(dmg_temp_dir)],
+                                    capture_output=True, text=True, check=True)
+        print(f"DMG temp directory size: {size_check.stdout.strip()}")
         shutil.rmtree(dmg_temp_dir)
         archive_path = dist_dir / "shinestacker-release.tar.gz"
         with tarfile.open(archive_path, "w:gz") as tar:
             tar.add(app_bundle, arcname=app_bundle.name, recursive=True)
-        print(f"Also created tar.gz: {archive_path.name}")
+        print(f"Created tar.gz: {archive_path.name}")
     else:
         print(f"ERROR: .app bundle not found at {app_bundle}")
-else:
-    # For Linux, package the folder created by --onedir
-    archive_path = dist_dir / "shinestacker-release.tar.gz"
-    linux_app_dir = dist_dir / app_name
-    if linux_app_dir.exists():
-        with tarfile.open(archive_path, "w:gz") as tar:
-            tar.add(
-                linux_app_dir,
-                arcname=app_name,
-                recursive=True
-            )
-        print(f"Packaged Linux application: {app_name}")
-    else:
-        print(f"ERROR: Linux app directory not found at {linux_app_dir}")
-
 if sys_name == 'windows':
     print("=== CREATING WINDOWS INSTALLER ===")
     inno_paths = [
