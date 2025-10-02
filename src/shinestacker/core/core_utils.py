@@ -28,8 +28,7 @@ def make_tqdm_bar(name, size, ncols=80):
 def get_app_base_path():
     if getattr(sys, 'frozen', False):
         return os.path.dirname(os.path.abspath(sys.executable))
-    else:
-        return os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    return os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 
 def running_under_windows() -> bool:

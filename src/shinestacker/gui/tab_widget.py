@@ -1,9 +1,6 @@
 # pylint: disable=C0114, C0115, C0116, E0611
-import os
 from PySide6.QtCore import Qt, Signal
-from PySide6.QtGui import QPixmap
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QTabWidget, QLabel, QStackedWidget
-from .. core.core_utils import get_app_base_path
 
 
 class TabWidgetWithPlaceholder(QWidget):
