@@ -1,5 +1,5 @@
 #define MyAppName "ShineStacker"
-#define MyAppVersion "x.x.x"
+#define MyAppVersion "1.6.1"
 #define MyAppPublisher "Luca Lista"
 #define MyAppURL "https://shinestacker.wordpress.com/"
 #define MyAppExeName "shinestacker.exe"
@@ -57,7 +57,7 @@ Source: ".\examples\*"; DestDir: "{app}\examples"; Flags: ignoreversion recurses
 Root: HKA; Subkey: "Software\Classes\{#MyAppAssocExt}\OpenWithProgids"; ValueType: string; ValueName: "{#MyAppAssocKey}"; ValueData: ""; Flags: uninsdeletevalue
 Root: HKA; Subkey: "Software\Classes\{#MyAppAssocKey}"; ValueType: string; ValueName: ""; ValueData: "{#MyAppAssocName}"; Flags: uninsdeletekey
 Root: HKA; Subkey: "Software\Classes\{#MyAppAssocKey}\DefaultIcon"; ValueType: string; ValueName: ""; ValueData: "{app}\{#MyAppExeName},0"
-Root: HKA; Subkey: "Software\Classes\{#MyAppAssocKey}\shell\open\command"; ValueType: string; ValueName: ""; ValueData: """{app}\{#MyAppExeName}"" -f ""%1"""
+Root: HKA; Subkey: "Software\Classes\{#MyAppAssocKey}\shell\open\command"; ValueType: string; ValueName: ""; ValueData: """{app}\{#MyAppExeName}"" ""%1"""
 
 [Icons]
 Name: "{autoprograms}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"

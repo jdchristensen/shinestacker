@@ -26,19 +26,10 @@ def make_tqdm_bar(name, size, ncols=80):
 
 
 def get_app_base_path():
-    sep = '\\' if (platform.system() == 'Windows') else '/'
     if getattr(sys, 'frozen', False):
-        path = os.path.dirname(os.path.realpath(sys.executable))
-        dirs = path.split(sep)
-        last = -1
-        for i in range(len(dirs) - 1, -1, -1):
-            if dirs[i] == 'shinestacker':
-                last = i
-                break
-        path = sep.join(dirs if last == 1 else dirs[:last + 1])
-    elif __file__:
-        path = sep.join(os.path.dirname(os.path.abspath(__file__)).split(sep)[:-3])
-    return path
+        return os.path.dirname(os.path.abspath(sys.executable))
+    else:
+        return os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 
 def running_under_windows() -> bool:

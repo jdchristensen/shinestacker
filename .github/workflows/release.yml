@@ -29,6 +29,10 @@ jobs:
         with:
           python-version: "3.12"
 
+      - name: Install Inno Setup
+        if: runner.os == 'Windows'
+        run: choco install innosetup -y --no-progress --accept-license
+
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
@@ -40,12 +44,14 @@ jobs:
         run: |
           python build_release.py
 
-      - name: Upload artifact
+      - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
           name: shinestacker-${{ matrix.os }}
           path: |
             ${{ matrix.os == 'windows-latest' && 'dist/shinestacker-release.zip' || 'dist/shinestacker-release.tar.gz' }}
+            ${{ matrix.os == 'windows-latest' && 'dist/*.exe' || '' }}
+          if-no-files-found: ignore
   create-release:
     needs: publish-release
     runs-on: ubuntu-latest
@@ -61,6 +67,9 @@ jobs:
           cp artifacts/shinestacker-ubuntu-latest/shinestacker-release.tar.gz release_assets/shinestacker-ubuntu.tar.gz
           cp artifacts/shinestacker-macos-latest/shinestacker-release.tar.gz release_assets/shinestacker-macos.tar.gz
           cp artifacts/shinestacker-windows-latest/shinestacker-release.zip release_assets/shinestacker-windows.zip
+          if ls artifacts/shinestacker-windows-latest/shinestacker-setup.exe 1> /dev/null 2>&1; then
+            cp artifacts/shinestacker-windows-latest/shinestacker-setup.exe release_assets/
+          fi
           ls -la release_assets/
 
       - name: Create release
@@ -71,3 +80,4 @@ jobs:
             release_assets/shinestacker-ubuntu.tar.gz
             release_assets/shinestacker-macos.tar.gz
             release_assets/shinestacker-windows.zip
+            release_assets/shinestacker-setup.exe
