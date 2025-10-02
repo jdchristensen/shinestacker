@@ -53,7 +53,7 @@ In order to prevent this, follow the instructions below:
 1. Download the compressed archive ```shinestacker-macos.tar.gz``` in your ```Download``` folder.
 2. Double-click the archive to uncompress it. You will find a new folder ```shinestacker```.
 3. Open a terminal (*Applications > Utilities > Terminal*)
-4. Type the folliwng command on the terminal:
+4. Type the folliwng command on the terminal (assuming you have expanded the ```tar.gz``` under ```Downloads```):
 ```bash
 xattr -cr ~/Downloads/shinestacker/shinestacker.app
 ```
