@@ -6,7 +6,7 @@ This page reports the main releases only and the main changes therein.
 ** Unreleased updates **
 
 ### Added
-- added macOS dmg installer
+- macOS dmg installer
 
 ## [v1.6.1] - 2025-10-01
 ** Performance improvements **
