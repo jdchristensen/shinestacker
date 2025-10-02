@@ -8,6 +8,11 @@ This page reports the main releases only and the main changes therein.
 ### Added
 - macOS dmg installer
 
+### Changed
+- minor GUI cosmetic improvements
+
+-----
+
 ## [v1.6.1] - 2025-10-01
 ** Performance improvements **
 
