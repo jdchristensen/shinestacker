@@ -3,7 +3,7 @@
 This page reports the main releases only and the main changes therein.
 
 ## [-.-.-] - 2025-10-02
-** Unreleased updates **
+** Not yet released updates **
 
 ### Added
 - macOS dmg installer
