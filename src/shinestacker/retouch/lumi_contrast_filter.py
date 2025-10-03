@@ -56,6 +56,6 @@ class LumiContrastFilter(BaseFilter):
         )
 
     def apply(self, image, lumi, contrast):
-        img_corr = contrast_correction(image, contrast)
+        img_corr = contrast_correction(image, 0.5 * contrast)
         img_corr = gamma_correction(img_corr, math.exp(0.5 * lumi))
         return img_corr

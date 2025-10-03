@@ -17,11 +17,13 @@ def contrast_correction(img, contrast):
     normalized = 2.0 * (ar / max_px_val) - 1.0
     if contrast == 0:
         corrected = normalized
-    elif contrast > 0:
-        corrected = np.tanh(contrast * normalized) / np.tanh(contrast)
     else:
-        contrast_abs = -contrast
-        corrected = normalized / (1.0 + contrast_abs * (1.0 - abs(normalized)))
+        if contrast < 0:
+            corrected = np.sign(normalized) * \
+                (1.0 - (1.0 - np.abs(normalized)) ** (1.0 / (1.0 - contrast)))
+        else:
+            corrected = np.sign(normalized) * \
+                (1.0 - (1.0 - np.abs(normalized)) ** (1.0 + contrast))
     corrected = (corrected + 1.0) * 0.5 * max_px_val
     lut = corrected.astype(img.dtype)
     return cv2.LUT(img, lut) if img.dtype == np.uint8 else np.take(lut, img)
