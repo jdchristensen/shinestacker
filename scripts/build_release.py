@@ -27,6 +27,7 @@ def build_pyinstaller_command(sys_name, dist_dir, project_name, app_name, hooks_
             f"--distpath={dist_dir}",
             "--paths=src",
             "--icon=src/shinestacker/gui/ico/shinestacker.icns",
+            "--argv-emulation",
             f"--additional-hooks-dir={hooks_dir}",
             f"--collect-all={project_name}",
             "--collect-data=imagecodecs",
