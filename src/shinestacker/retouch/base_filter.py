@@ -27,6 +27,7 @@ class BaseFilter(QObject, LayerCollectionHandler):
         self.preview_check = None
         self.button_box = None
         self.preview_timer = None
+        self.max_range = 500
 
     @abstractmethod
     def setup_ui(self, dlg, layout, do_preview, restore_original, **kwargs):
@@ -39,6 +40,31 @@ class BaseFilter(QObject, LayerCollectionHandler):
     @abstractmethod
     def apply(self, image, *params):
         pass
+
+    def slider_from_value(self, value, min_val, max_val):
+        return (value - min_val) / (max_val - min_val) * self.max_range
+
+    def value_from_slider(self, slider_value, min_val, max_val):
+        return min_val + (max_val - min_val) * float(slider_value) / self.max_range
+
+    def create_sliders(self, params, dlg, layout, set_slider):
+        value_labels = {}
+        for name, (min_val, max_val, init_val, fmt) in params.items():
+            param_layout = QHBoxLayout()
+            name_label = QLabel(f"{name}:")
+            param_layout.addWidget(name_label)
+            slider = QSlider(Qt.Horizontal)
+            slider.setRange(0, self.max_range)
+            slider.setValue(self.slider_from_value(init_val, min_val, max_val))
+            param_layout.addWidget(slider)
+            value_label = QLabel(fmt.format(init_val))
+            param_layout.addWidget(value_label)
+            layout.addLayout(param_layout)
+            set_slider(name, slider)
+            value_labels[name] = value_label
+        self.create_base_widgets(
+            layout, QDialogButtonBox.Ok | QDialogButtonBox.Cancel, 200, dlg)
+        return value_labels
 
     def connect_signals(self, update_master_thumbnail, mark_as_modified, filter_gui_set_enabled):
         self.update_master_thumbnail_requested.connect(update_master_thumbnail)
@@ -191,6 +217,13 @@ class BaseFilter(QObject, LayerCollectionHandler):
         self.preview_timer.setSingleShot(True)
         self.preview_timer.setInterval(preview_latency)
 
+    def set_timer(self, do_preview, restore_original, dlg):
+        self.preview_timer.timeout.connect(do_preview)
+        self.connect_preview_toggle(self.preview_check, do_preview, restore_original)
+        self.button_box.accepted.connect(dlg.accept)
+        self.button_box.rejected.connect(dlg.reject)
+        QTimer.singleShot(0, do_preview)
+
     class PreviewWorker(QThread):
         finished = Signal(np.ndarray, int, tuple)
 
@@ -222,14 +255,14 @@ class BaseFilter(QObject, LayerCollectionHandler):
 
 class OneSliderBaseFilter(BaseFilter):
     def __init__(self, name, parent, image_viewer, layer_collection, undo_manager,
-                 max_value, initial_value, title,
+                 min_value, max_value, initial_value, title,
                  allow_partial_preview=True, partial_preview_threshold=0.5,
                  preview_at_startup=True):
         super().__init__(name, parent, image_viewer, layer_collection, undo_manager,
                          allow_partial_preview,
                          partial_preview_threshold, preview_at_startup)
-        self.max_range = 500
         self.max_value = max_value
+        self.min_value = min_value
         self.initial_value = initial_value
         self.slider = None
         self.value_label = None
@@ -239,6 +272,13 @@ class OneSliderBaseFilter(BaseFilter):
     def add_widgets(self, layout, dlg):
         pass
 
+    def slider_from_value_1(self, value):
+        return int((value - self.min_value) / (self.max_value - self.min_value) * self.max_range)
+
+    def value_from_slider_1(self, slider_value):
+        return self.min_value + \
+            (self.max_value - self.min_value) * float(slider_value) / self.max_range
+
     def setup_ui(self, dlg, layout, do_preview, restore_original, **kwargs):
         dlg.setWindowTitle(self.title)
         dlg.setMinimumWidth(600)
@@ -246,7 +286,7 @@ class OneSliderBaseFilter(BaseFilter):
         slider_layout.addWidget(QLabel("Amount:"))
         slider_local = QSlider(Qt.Horizontal)
         slider_local.setRange(0, self.max_range)
-        slider_local.setValue(int(self.initial_value / self.max_value * self.max_range))
+        slider_local.setValue(self.slider_from_value_1(self.initial_value))
         slider_layout.addWidget(slider_local)
         self.value_label = QLabel(self.format.format(self.initial_value))
         slider_layout.addWidget(self.value_label)
@@ -254,9 +294,7 @@ class OneSliderBaseFilter(BaseFilter):
         self.add_widgets(layout, dlg)
         self.create_base_widgets(
             layout, QDialogButtonBox.Ok | QDialogButtonBox.Cancel, 200, dlg)
-
         self.preview_timer.timeout.connect(do_preview)
-
         slider_local.valueChanged.connect(self.config_changed)
         self.connect_preview_toggle(
             self.preview_check, self.do_preview_delayed, restore_original)
@@ -269,7 +307,7 @@ class OneSliderBaseFilter(BaseFilter):
             self.do_preview_delayed()
 
     def config_changed(self, val):
-        float_val = self.max_value * float(val) / self.max_range
+        float_val = self.value_from_slider_1(val)
         self.value_label.setText(self.format.format(float_val))
         self.param_changed(val)
 
@@ -277,7 +315,7 @@ class OneSliderBaseFilter(BaseFilter):
         self.preview_timer.start()
 
     def get_params(self):
-        return (self.max_value * self.slider.value() / self.max_range,)
+        return (self.value_from_slider_1(self.slider.value()),)
 
     def apply(self, image, *params):
         assert False

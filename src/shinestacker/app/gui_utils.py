@@ -1,12 +1,15 @@
 # pylint: disable=C0114, C0116, E0611, R0913, R0917
 import os
 import sys
-from PySide6.QtCore import QCoreApplication, QProcess
-from PySide6.QtGui import QAction
+import logging
+from PySide6.QtCore import Qt, QCoreApplication, QProcess
+from PySide6.QtGui import QAction, QIcon
 from shinestacker.config.constants import constants
 from shinestacker.config.config import config
+from shinestacker.config.settings import StdPathFile
 from shinestacker.app.about_dialog import show_about_dialog
 from shinestacker.app.settings_dialog import show_settings_dialog
+from shinestacker.core.logging import setup_logging
 
 
 def disable_macos_special_menu_items():
@@ -71,3 +74,17 @@ def set_css_style(app):
         }
 """
     app.setStyleSheet(css_style)
+
+
+def make_app(application_class):
+    setup_logging(console_level=logging.DEBUG, file_level=logging.DEBUG, disable_console=True,
+                  log_file=StdPathFile('shinestacker.log').get_file_path())
+    app = application_class(sys.argv)
+    if config.DONT_USE_NATIVE_MENU:
+        app.setAttribute(Qt.AA_DontUseNativeMenuBar)
+    else:
+        disable_macos_special_menu_items()
+    icon_path = f"{os.path.dirname(__file__)}/../gui/ico/shinestacker.png"
+    app.setWindowIcon(QIcon(icon_path))
+    set_css_style(app)
+    return app

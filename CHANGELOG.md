@@ -2,14 +2,17 @@
 
 This page reports the main releases only and the main changes therein.
 
-## [-.-.-] - 2025-10-02
-** Not yet released updates **
+## [1.7.0] - 2025-10-03
+** New filter,  **
 
 ### Added
+- luminosity and contrast adjustment filter
 - macOS dmg installer
 
 ### Changed
+- improved windows installer
 - minor GUI cosmetic improvements
+- code refactoring
 
 -----
 

@@ -9,7 +9,7 @@ from .base_filter import OneSliderBaseFilter
 class VignettingFilter(OneSliderBaseFilter):
     def __init__(self, name, parent, image_viewer, layer_collection, undo_manager):
         super().__init__(name, parent, image_viewer, layer_collection, undo_manager,
-                         1.0, 0.90, "Vignetting correction",
+                         0.0, 1.0, 0.90, "Vignetting correction",
                          allow_partial_preview=False, preview_at_startup=False)
         self.subsample_box = None
         self.fast_subsampling_check = None

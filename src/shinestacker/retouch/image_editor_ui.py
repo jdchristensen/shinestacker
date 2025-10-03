@@ -24,6 +24,7 @@ from .denoise_filter import DenoiseFilter
 from .unsharp_mask_filter import UnsharpMaskFilter
 from .white_balance_filter import WhiteBalanceFilter
 from .vignetting_filter import VignettingFilter
+from .lumi_contrast_filter import LumiContrastFilter
 from .transformation_manager import TransfromationManager
 
 
@@ -344,6 +345,8 @@ class ImageEditorUI(QMainWindow, LayerCollectionHandler):
             self.view_strategy_menu.setEnabled
         )
         self.filter_manager.register_filter(
+            "Luminosity, Contrast", LumiContrastFilter, *filter_handles)
+        self.filter_manager.register_filter(
             "Denoise", DenoiseFilter, *filter_handles)
         self.filter_manager.register_filter(
             "Unsharp Mask", UnsharpMaskFilter, *filter_handles)
@@ -454,6 +457,10 @@ class ImageEditorUI(QMainWindow, LayerCollectionHandler):
 
         filter_menu = menubar.addMenu("&Filter")
         filter_menu.setObjectName("Filter")
+        luminosity_action = QAction("Luminosity, Contrast", self)
+        luminosity_action.setProperty("requires_file", True)
+        luminosity_action.triggered.connect(self.luminosity_filter)
+        filter_menu.addAction(luminosity_action)
         denoise_action = QAction("Denoise", self)
         denoise_action.setProperty("requires_file", True)
         denoise_action.triggered.connect(self.denoise_filter)
@@ -659,6 +666,9 @@ class ImageEditorUI(QMainWindow, LayerCollectionHandler):
             else:
                 self.redo_action.setText("Redo")
                 self.redo_action.setEnabled(False)
+
+    def luminosity_filter(self):
+        self.filter_manager.apply("Luminosity, Contrast")
 
     def denoise_filter(self):
         self.filter_manager.apply("Denoise")
