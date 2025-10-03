@@ -16,7 +16,10 @@ from shinestacker.app.gui_utils import (
     disable_macos_special_menu_items, fill_app_menu, set_css_style)
 from shinestacker.app.help_menu import add_help_action
 from shinestacker.app.open_frames import open_frames
-from shinestacker.app.args_parser_opts import add_retouch_arguments
+from shinestacker.app.args_parser_opts import (
+    add_retouch_arguments, extract_positional_filename,
+    setup_filename_argument, process_filename_argument
+)
 
 
 class RetouchApp(ImageEditorUI):
@@ -42,17 +45,18 @@ class Application(QApplication):
 
 
 def main():
+    positional_filename, filtered_argv = extract_positional_filename()
+    original_argv = sys.argv
+    sys.argv = filtered_argv
     parser = argparse.ArgumentParser(
         prog=f'{constants.APP_STRING.lower()}-retouch',
         description='Final retouch focus stack image from individual frames.',
         epilog=f'This app is part of the {constants.APP_STRING} package.')
-    parser.add_argument('-f', '--filename', nargs='?', help='''
-import frames from files.
-Multiple files can be specified separated by ';'.
-''')
+    setup_filename_argument(parser, use_const=True)
     add_retouch_arguments(parser)
-    args = vars(parser.parse_args(sys.argv[1:]))
-    filename = args['filename']
+    args = vars(parser.parse_args())
+    sys.argv = original_argv
+    filename = process_filename_argument(args, positional_filename)
     path = args['path']
     if filename and path:
         print("can't specify both arguments --filename and --path", file=sys.stderr)

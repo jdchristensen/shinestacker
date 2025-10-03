@@ -21,7 +21,10 @@ from shinestacker.app.gui_utils import (
     disable_macos_special_menu_items, fill_app_menu, set_css_style)
 from shinestacker.app.help_menu import add_help_action
 from shinestacker.app.open_frames import open_frames
-from shinestacker.app.args_parser_opts import add_project_arguments, add_retouch_arguments
+from shinestacker.app.args_parser_opts import (
+    add_project_arguments, add_retouch_arguments, extract_positional_filename,
+    setup_filename_argument, process_filename_argument
+)
 
 
 class SelectionDialog(QDialog):
@@ -206,15 +209,12 @@ class Application(QApplication):
 
 
 def main():
+    positional_filename, filtered_args = extract_positional_filename()
     parser = argparse.ArgumentParser(
-        prog=f'{constants.APP_STRING.lower()}-retouch',
+        prog=f'{constants.APP_STRING.lower()}',
         description='Focus stacking App.',
         epilog=f'This app is part of the {constants.APP_STRING} package.')
-    parser.add_argument('-f', '--filename', nargs='?', help='''
-if a single file is specified, it can be either a project or an image.
-Multiple frames can be specified as a list of files.
-Multiple files can be specified separated by ';'.
-''')
+    setup_filename_argument(parser, use_const=True)
     app_group = parser.add_mutually_exclusive_group()
     app_group.add_argument('-j', '--project', action='store_true', help='''
 open project window at startup instead of project windows (default).
@@ -224,8 +224,8 @@ open retouch window at startup instead of project windows.
 ''')
     add_project_arguments(parser)
     add_retouch_arguments(parser)
-    args = vars(parser.parse_args(sys.argv[1:]))
-    filename = args['filename']
+    args = vars(parser.parse_args(filtered_args))
+    filename = process_filename_argument(args, positional_filename)
     path = args['path']
     if filename and path:
         print("can't specify both arguments --filename and --path", file=sys.stderr)

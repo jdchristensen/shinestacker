@@ -18,7 +18,10 @@ from shinestacker.gui.main_window import MainWindow
 from shinestacker.app.gui_utils import (
     disable_macos_special_menu_items, fill_app_menu, set_css_style)
 from shinestacker.app.help_menu import add_help_action
-from shinestacker.app.args_parser_opts import add_project_arguments
+from shinestacker.app.args_parser_opts import (
+    add_project_arguments, extract_positional_filename,
+    setup_filename_argument, process_filename_argument
+)
 
 
 class ProjectApp(MainWindow):
@@ -49,15 +52,18 @@ class Application(QApplication):
 
 
 def main():
+    positional_filename, filtered_argv = extract_positional_filename()
+    original_argv = sys.argv
+    sys.argv = filtered_argv
     parser = argparse.ArgumentParser(
         prog=f'{constants.APP_STRING.lower()}-project',
         description='Manage and run focus stack jobs.',
         epilog=f'This app is part of the {constants.APP_STRING} package.')
-    parser.add_argument('-f', '--filename', nargs='?', help='''
-project filename.
-''')
+    setup_filename_argument(parser, use_const=True)
     add_project_arguments(parser)
-    args = vars(parser.parse_args(sys.argv[1:]))
+    args = vars(parser.parse_args())
+    sys.argv = original_argv
+    filename = process_filename_argument(args, positional_filename)
     setup_logging(console_level=logging.DEBUG, file_level=logging.DEBUG, disable_console=True,
                   log_file=StdPathFile('shinestacker.log').get_file_path())
     app = Application(sys.argv)
@@ -73,7 +79,6 @@ project filename.
         window.set_expert_options()
     app.window = window
     window.show()
-    filename = args['filename']
     if filename:
         QTimer.singleShot(100, lambda: window.project_controller.open_project(filename))
     elif args['new-project']:
