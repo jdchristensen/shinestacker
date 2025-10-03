@@ -16,6 +16,7 @@ def contrast_correction(img, k):
     ar = np.arange(0, max_px_val + 1, dtype=np.float64)
     x = 2.0 * (ar / max_px_val) - 1.0
     # f(x) = x * exp(k) / (1 + (exp(k) - 1)|x|),  -1 < x < +1
+    # note that: f(f(x, k), -k) = x
     exp_k = np.exp(k)
     numerator = x * exp_k
     denominator = 1 + (exp_k - 1) * np.abs(x)
