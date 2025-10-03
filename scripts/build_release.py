@@ -73,6 +73,22 @@ def package_macos(dist_dir, app_name, project_root):
     if not app_bundle.exists():
         print(f"ERROR: .app bundle not found at {app_bundle}")
         return
+    version = get_version(project_root)
+    build_number = version.replace('.', '') + '0'  # Convert x.y.z -> xyz0
+    info_plist_template = project_root / "scripts" / "Info.plist"
+    info_plist_target = app_bundle / "Contents" / "Info.plist"
+    if info_plist_template.exists():
+        print("Processing Info.plist...")
+        with open(info_plist_template, 'r') as f:
+            plist_content = f.read()
+        plist_content = plist_content.replace('{{VERSION}}', version)
+        plist_content = plist_content.replace('{{BUILD_NUMBER}}', build_number)
+        info_plist_target.parent.mkdir(parents=True, exist_ok=True)
+        with open(info_plist_target, 'w') as f:
+            f.write(plist_content)
+        print(f"Info.plist created at: {info_plist_target}")
+    else:
+        print(f"WARNING: Info.plist template not found at {info_plist_template}")
     icon_source = project_root / "src" / "shinestacker" / "gui" / "ico" / "shinestacker.icns"
     dmg_temp_dir = dist_dir / "dmg_temp"
     if dmg_temp_dir.exists():
@@ -119,6 +135,19 @@ def package_linux(dist_dir, app_name):
         print(f"ERROR: Linux app directory not found at {linux_app_dir}")
 
 
+def get_version(project_root):
+    version_file = project_root / "src" / "shinestacker" / "_version.py"
+    version = "0.0.0"
+    if version_file.exists():
+        with open(version_file, 'r') as f:
+            content = f.read()
+            import re
+            match = re.search(r"__version__\s*=\s*['\"]([^'\"]+)['\"]", content)
+            if match:
+                version = match.group(1)
+    return version
+
+
 def create_windows_installer(project_root, dist_dir):
     inno_paths = [
         r"C:\Program Files (x86)\Inno Setup 6\ISCC.exe",
@@ -146,15 +175,7 @@ def create_windows_installer(project_root, dist_dir):
         iss_script_source = project_root / "scripts" / "shinestacker-inno-setup.iss"
         iss_script_temp = project_root / "shinestacker-inno-setup.iss"
         if iss_script_source.exists():
-            version_file = project_root / "src" / "shinestacker" / "_version.py"
-            version = "0.0.0"
-            if version_file.exists():
-                with open(version_file, 'r') as f:
-                    content = f.read()
-                    import re
-                    match = re.search(r"__version__\s*=\s*['\"]([^'\"]+)['\"]", content)
-                    if match:
-                        version = match.group(1)
+            version = get_version(project_root)
             with open(iss_script_source, 'r') as f:
                 iss_content = f.read()
             old_version_line = f'#define MyAppVersion "{"x.x.x"}"'
