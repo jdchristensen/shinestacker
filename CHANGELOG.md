@@ -6,7 +6,7 @@ This page reports the main releases only and the main changes therein.
 ** Unreleased changes **
 
 ### Changed
-- minor stability fix
+- minor GUI stability fix
 
 -----
 
