@@ -297,6 +297,13 @@ class ImageEditorUI(QMainWindow, LayerCollectionHandler):
         transf_menu.addAction(rotate_180_action)
         edit_menu.addMenu(transf_menu)
 
+        adjust_menu = QMenu("&Adjust")
+        luminosity_action = QAction("Luminosity, Contrast", self)
+        luminosity_action.setProperty("requires_file", True)
+        luminosity_action.triggered.connect(self.luminosity_filter)
+        adjust_menu.addAction(luminosity_action)
+        edit_menu.addMenu(adjust_menu)
+
         edit_menu.addSeparator()
 
         copy_current_to_master_action = QAction("Copy Current Layer to Master", self)
@@ -457,10 +464,6 @@ class ImageEditorUI(QMainWindow, LayerCollectionHandler):
 
         filter_menu = menubar.addMenu("&Filter")
         filter_menu.setObjectName("Filter")
-        luminosity_action = QAction("Luminosity, Contrast", self)
-        luminosity_action.setProperty("requires_file", True)
-        luminosity_action.triggered.connect(self.luminosity_filter)
-        filter_menu.addAction(luminosity_action)
         denoise_action = QAction("Denoise", self)
         denoise_action.setProperty("requires_file", True)
         denoise_action.triggered.connect(self.denoise_filter)
