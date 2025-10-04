@@ -215,8 +215,7 @@ class RunWindow(QTextEditLogger):
                 raise RuntimeError(f"Can't visualize file type {os.path.splitext(path)[1]}.")
             self.image_views.append(image_view)
             self.image_layout.addWidget(image_view)
-            max_width = max(pv.size().width() for pv in self.image_views) if self.image_views else 0
-            needed_width = max_width + 20
+            needed_width = gui_constants.GUI_IMG_WIDTH + 20
             self.right_area.setFixedWidth(needed_width)
             self.image_area_widget.setFixedWidth(needed_width)
             self.right_area.updateGeometry()
