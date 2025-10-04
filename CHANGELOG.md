@@ -2,17 +2,17 @@
 
 This page reports the main releases only and the main changes therein.
 
-## [1.7.0 candidate] - 2025-10-04
-** New adjustment, new macOS dmg installer **
+## [v1.7.0] - 2025-10-04
+** New image adjustment actions and macOS dmg installer **
 
 ### Added
-- luminosity and contrast adjustment
-- saturation and vibrance adjustment
+- luminosity and contrast adjustment action
+- saturation and vibrance adjustment action
 - macOS dmg installer
 
 ### Changed
 - improved windows installer
-- White Balance moved from Filters to Edit > Adjust menu
+- white balance moved from filters to edit > adjust menu
 - minor GUI cosmetic improvements
 - code refactoring
 
