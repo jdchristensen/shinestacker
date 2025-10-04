@@ -3,7 +3,7 @@
 This page reports the main releases only and the main changes therein.
 
 ## [v1.7.0] - 2025-10-04
-** New image adjustment actions and macOS dmg installer **
+** New image adjustment actions and macOS dmg image installer **
 
 ### Added
 - luminosity and contrast adjustment action
