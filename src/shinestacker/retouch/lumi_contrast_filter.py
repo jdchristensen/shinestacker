@@ -4,7 +4,7 @@ from .base_filter import BaseFilter
 from .. algorithms.corrections import gamma_correction, contrast_correction
 
 
-class LumiContrastFilter(BaseFilter):
+class GammaSCurveFilter(BaseFilter):
     def __init__(self, name, parent, image_viewer, layer_collection, undo_manager):
         super().__init__(name, parent, image_viewer, layer_collection, undo_manager,
                          preview_at_startup=True)
@@ -59,3 +59,7 @@ class LumiContrastFilter(BaseFilter):
         img_corr = contrast_correction(image, 0.5 * contrast)
         img_corr = gamma_correction(img_corr, math.exp(0.5 * lumi))
         return img_corr
+
+
+class LumiContrastFilter(GammaSCurveFilter):
+    pass
