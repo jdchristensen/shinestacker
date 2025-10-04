@@ -44,6 +44,11 @@ WizardStyle=modern
 [Languages]
 Name: "english"; MessagesFile: "compiler:Default.isl"
 
+[Messages]
+WelcomeLabel1=Welcome to the {#MyAppName} Setup Wizard
+WelcomeLabel2=This wizard will install {#MyAppName} {#MyAppVersion}, an open-source focus stacking application developed by Luca Lista.%n%nThe source code is available on GitHub.
+FinishedLabel=Setup has finished installing {#MyAppName} on your computer. The application may be launched by selecting the installed shortcuts.%n%nClick Finish to exit Setup.
+
 [Tasks]
 Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked
 
