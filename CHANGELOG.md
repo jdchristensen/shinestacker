@@ -2,11 +2,12 @@
 
 This page reports the main releases only and the main changes therein.
 
-## [1.7.0] - 2025-10-03
-** New filter,  **
+## [1.7.0 candidate] - 2025-10-04
+** New adjustment, new macOS dmg installer **
 
 ### Added
-- luminosity and contrast adjustment filter
+- luminosity and contrast adjustment
+- saturation and vibrance adjustment
 - macOS dmg installer
 
 ### Changed

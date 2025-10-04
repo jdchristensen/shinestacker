@@ -1,13 +1,15 @@
-# pylint: disable=C0114, C0115, C0116, E0611, W0221, R0913, R0917, R0902, R0914
+# pylint: disable=C0114, C0115, C0116, E0611, W0221, R0913, R0917, R0902, R0914, E1101
 import math
+import cv2
 from .base_filter import BaseFilter
+from .. algorithms.utils import bgr_to_hls, hls_to_bgr
 from .. algorithms.corrections import gamma_correction, contrast_correction
 
 
 class GammaSCurveFilter(BaseFilter):
     def __init__(
-                self, name, parent, image_viewer, layer_collection, undo_manager,
-                window_title, gamma_label, scurve_label):
+            self, name, parent, image_viewer, layer_collection, undo_manager,
+            window_title, gamma_label, scurve_label):
         super().__init__(name, parent, image_viewer, layer_collection, undo_manager,
                          preview_at_startup=True)
         self.window_title = window_title
@@ -46,10 +48,12 @@ class GammaSCurveFilter(BaseFilter):
 
         self.lumi_slider.valueChanged.connect(
             lambda v: update_value(
-                self.gamma_label, v, self.min_gamma, self.max_gamma, params[self.gamma_label][3]))
+                self.gamma_label, v, self.min_gamma,
+                self.max_gamma, params[self.gamma_label][3]))
         self.contrast_slider.valueChanged.connect(
             lambda v: update_value(
-                self.scurve_label, v, self.min_scurve, self.max_scurve, params[self.scurve_label][3]))
+                self.scurve_label, v, self.min_scurve,
+                self.max_scurve, params[self.scurve_label][3]))
         self.set_timer(do_preview, restore_original, dlg)
 
     def get_params(self):
@@ -67,10 +71,9 @@ class LumiContrastFilter(GammaSCurveFilter):
             name, parent, image_viewer, layer_collection, undo_manager,
             "Luminosity, Contrast", "Luminosity", "Constrat")
 
-
-    def apply(self, image, lumi, contrast):
+    def apply(self, image, luminosity, contrast):
         img_corr = contrast_correction(image, 0.5 * contrast)
-        img_corr = gamma_correction(img_corr, math.exp(0.5 * lumi))
+        img_corr = gamma_correction(img_corr, math.exp(0.5 * luminosity))
         return img_corr
 
 
@@ -80,8 +83,11 @@ class SaturationVibranceFilter(GammaSCurveFilter):
             name, parent, image_viewer, layer_collection, undo_manager,
             "Saturation, Vibrance", "Saturation", "Vibrance")
 
-
-    def apply(self, image, lumi, contrast):
-        img_corr = contrast_correction(image, 0.5 * contrast)
-        img_corr = gamma_correction(img_corr, math.exp(0.5 * lumi))
+    def apply(self, image, stauration, vibrance):
+        img_corr = bgr_to_hls(image)
+        h, l, s = cv2.split(img_corr)
+        s_corr = contrast_correction(s, - vibrance)
+        s_corr = gamma_correction(s_corr, math.exp(0.5 * stauration))
+        img_corr = cv2.merge([h, l, s_corr])
+        img_corr = hls_to_bgr(img_corr)
         return img_corr

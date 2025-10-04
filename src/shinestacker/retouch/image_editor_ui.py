@@ -24,7 +24,7 @@ from .denoise_filter import DenoiseFilter
 from .unsharp_mask_filter import UnsharpMaskFilter
 from .white_balance_filter import WhiteBalanceFilter
 from .vignetting_filter import VignettingFilter
-from .lumi_contrast_filter import LumiContrastFilter, SaturationVibranceFilter
+from .adjustments import LumiContrastFilter, SaturationVibranceFilter
 from .transformation_manager import TransfromationManager
 
 
@@ -302,10 +302,10 @@ class ImageEditorUI(QMainWindow, LayerCollectionHandler):
         luminosity_action.setProperty("requires_file", True)
         luminosity_action.triggered.connect(self.luminosity_filter)
         adjust_menu.addAction(luminosity_action)
-        staturation_action = QAction("Saturation, Vibrance", self)
-        staturation_action.setProperty("requires_file", True)
-        staturation_action.triggered.connect(self.staturation_action)
-        adjust_menu.addAction(staturation_action)
+        saturation_action = QAction("Saturation, Vibrance", self)
+        saturation_action.setProperty("requires_file", True)
+        saturation_action.triggered.connect(self.saturation_filter)
+        adjust_menu.addAction(saturation_action)
         edit_menu.addMenu(adjust_menu)
 
         edit_menu.addSeparator()
