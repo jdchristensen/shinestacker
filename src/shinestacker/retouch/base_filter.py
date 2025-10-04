@@ -3,6 +3,7 @@ import traceback
 from abc import abstractmethod
 import numpy as np
 from PySide6.QtCore import Qt, QThread, QTimer, QObject, Signal
+from PySide6.QtGui import QFontMetrics
 from PySide6.QtWidgets import (
     QHBoxLayout, QLabel, QSlider, QDialog, QVBoxLayout, QCheckBox, QDialogButtonBox)
 from .layer_collection import LayerCollectionHandler
@@ -49,15 +50,31 @@ class BaseFilter(QObject, LayerCollectionHandler):
 
     def create_sliders(self, params, dlg, layout, set_slider):
         value_labels = {}
+        font_metrics = QFontMetrics(dlg.font())
+        max_name_width = 0
+        max_value_width = 0
+        for name, (min_val, max_val, init_val, fmt) in params.items():
+            name_width = font_metrics.horizontalAdvance(f"{name}:")
+            max_name_width = max(max_name_width, name_width)
+            sample_values = [min_val, max_val, init_val]
+            for val in sample_values:
+                value_width = font_metrics.horizontalAdvance(fmt.format(val))
+                max_value_width = max(max_value_width, value_width)
+        max_name_width += 10
+        max_value_width += 10
         for name, (min_val, max_val, init_val, fmt) in params.items():
             param_layout = QHBoxLayout()
             name_label = QLabel(f"{name}:")
+            name_label.setFixedWidth(max_name_width)
+            name_label.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
             param_layout.addWidget(name_label)
             slider = QSlider(Qt.Horizontal)
             slider.setRange(0, self.max_range)
             slider.setValue(self.slider_from_value(init_val, min_val, max_val))
-            param_layout.addWidget(slider)
+            param_layout.addWidget(slider, 1)
             value_label = QLabel(fmt.format(init_val))
+            value_label.setFixedWidth(max_value_width)
+            value_label.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
             param_layout.addWidget(value_label)
             layout.addLayout(param_layout)
             set_slider(name, slider)
