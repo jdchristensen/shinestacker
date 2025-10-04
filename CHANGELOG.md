@@ -12,6 +12,7 @@ This page reports the main releases only and the main changes therein.
 
 ### Changed
 - improved windows installer
+- white balance moved from filter to adjust menu
 - minor GUI cosmetic improvements
 - code refactoring
 
