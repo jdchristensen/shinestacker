@@ -60,14 +60,28 @@ class GammaSCurveFilter(BaseFilter):
                 self.contrast_slider.value(), self.min_scurve, self.max_scurve)
         )
 
-    def apply(self, image, lumi, contrast):
-        img_corr = contrast_correction(image, 0.5 * contrast)
-        img_corr = gamma_correction(img_corr, math.exp(0.5 * lumi))
-        return img_corr
-
 
 class LumiContrastFilter(GammaSCurveFilter):
     def __init__(self, name, parent, image_viewer, layer_collection, undo_manager):
         super().__init__(
             name, parent, image_viewer, layer_collection, undo_manager,
             "Luminosity, Contrast", "Luminosity", "Constrat")
+
+
+    def apply(self, image, lumi, contrast):
+        img_corr = contrast_correction(image, 0.5 * contrast)
+        img_corr = gamma_correction(img_corr, math.exp(0.5 * lumi))
+        return img_corr
+
+
+class SaturationVibranceFilter(GammaSCurveFilter):
+    def __init__(self, name, parent, image_viewer, layer_collection, undo_manager):
+        super().__init__(
+            name, parent, image_viewer, layer_collection, undo_manager,
+            "Saturation, Vibrance", "Saturation", "Vibrance")
+
+
+    def apply(self, image, lumi, contrast):
+        img_corr = contrast_correction(image, 0.5 * contrast)
+        img_corr = gamma_correction(img_corr, math.exp(0.5 * lumi))
+        return img_corr
