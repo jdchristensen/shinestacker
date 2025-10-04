@@ -2,6 +2,15 @@
 
 This page reports the main releases only and the main changes therein.
 
+## [v-.-.-] - 2025-10-04
+** Unreleased changes **
+
+### Changed
+- minor stability fix
+
+-----
+
+
 ## [v1.7.0] - 2025-10-04
 ** New image adjustment actions and macOS dmg image installer **
 
