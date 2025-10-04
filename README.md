@@ -57,7 +57,7 @@ In order to prevent this, follow the instructions below:
 ```bash
 xattr -cr /Applications/shinestacker/shinestacker.app
 ```
-5. Now you can double-click the Sine Stacker icon app in the ```shiestacker``` folder and it should run.
+5. Now you can double-click the Sine Stacker icon app and it should run.
 
 macOS adds a quarantine flag to all files downloaded from the internet. The above command removes that flag while preserving all other application functionality.
 
