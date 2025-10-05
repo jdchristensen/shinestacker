@@ -5,8 +5,7 @@ from .. config.settings import Settings
 from .. config.constants import constants
 from .. config.gui_constants import gui_constants
 from .. gui.config_dialog import ConfigDialog
-from .. gui.action_config_dialog import (
-    AlignFramesConfigBase, change_match_config_base)
+from .. gui.action_config_dialog import AlignFramesConfigBase
 
 
 class SettingsDialog(ConfigDialog, AlignFramesConfigBase):
@@ -65,7 +64,7 @@ class SettingsDialog(ConfigDialog, AlignFramesConfigBase):
                                      self.align_frames_max_threads)
 
         def change_match_config():
-            change_match_config_base(
+            self.change_match_config(
                 self.detector, self.descriptor,
                 self. matching_method, self.show_info)
 

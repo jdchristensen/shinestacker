@@ -490,39 +490,8 @@ class SubsampleActionConfigurator(DefaultActionConfigurator):
             self.subsample_field.currentText() not in constants.FIELD_SUBSAMPLE_OPTIONS[:2])
 
 
-MATCHING_METHOD_OPTIONS = ['K-nearest neighbors', 'Hamming distance']
-
-
-def change_match_config_base(detector_field, descriptor_field, matching_method_field, show_info):
-    detector = detector_field.currentText()
-    descriptor = descriptor_field.currentText()
-    match_method = dict(
-        zip(MATCHING_METHOD_OPTIONS,
-            constants.VALID_MATCHING_METHODS))[matching_method_field.currentText()]
-    try:
-        validate_align_config(detector, descriptor, match_method)
-    except Exception as e:
-        show_info(str(e))
-        if descriptor == constants.DETECTOR_SIFT and \
-           match_method == constants.MATCHING_NORM_HAMMING:
-            matching_method_field.setCurrentText(MATCHING_METHOD_OPTIONS[0])
-        if detector == constants.DETECTOR_ORB and descriptor == constants.DESCRIPTOR_AKAZE and \
-                match_method == constants.MATCHING_NORM_HAMMING:
-            matching_method_field.setCurrentText(constants.MATCHING_NORM_HAMMING)
-        if detector == constants.DETECTOR_BRISK and descriptor == constants.DESCRIPTOR_AKAZE:
-            descriptor_field.setCurrentText('BRISK')
-        if detector == constants.DETECTOR_SURF and descriptor == constants.DESCRIPTOR_AKAZE:
-            descriptor_field.setCurrentText('SIFT')
-        if detector == constants.DETECTOR_SIFT and descriptor != constants.DESCRIPTOR_SIFT:
-            descriptor_field.setCurrentText('SIFT')
-        if detector in constants.NOKNN_METHODS['detectors'] and \
-           descriptor in constants.NOKNN_METHODS['descriptors']:
-            if match_method == constants.MATCHING_KNN:
-                matching_method_field.setCurrentText(MATCHING_METHOD_OPTIONS[1])
-
-
 class AlignFramesConfigBase:
-    MATCHING_METHOD_OPTIONS = MATCHING_METHOD_OPTIONS
+    MATCHING_METHOD_OPTIONS = ['K-nearest neighbors', 'Hamming distance']
     DETECTOR_DESCRIPTOR_TOOLTIPS = {
         'detector':
             "SIFT: Requires SIFT descriptor and K-NN matching\n"
@@ -544,6 +513,34 @@ class AlignFramesConfigBase:
         timer.setSingleShot(True)
         timer.timeout.connect(lambda: self.info_label.setText(''))
         timer.start(timeout)
+
+    def change_match_config(
+            self, detector_field, descriptor_field, matching_method_field, show_info):
+        detector = detector_field.currentText()
+        descriptor = descriptor_field.currentText()
+        match_method = dict(
+            zip(self.MATCHING_METHOD_OPTIONS,
+                constants.VALID_MATCHING_METHODS))[matching_method_field.currentText()]
+        try:
+            validate_align_config(detector, descriptor, match_method)
+        except Exception as e:
+            show_info(str(e))
+            if descriptor == constants.DETECTOR_SIFT and \
+               match_method == constants.MATCHING_NORM_HAMMING:
+                matching_method_field.setCurrentText(self.MATCHING_METHOD_OPTIONS[0])
+            if detector == constants.DETECTOR_ORB and descriptor == constants.DESCRIPTOR_AKAZE and \
+                    match_method == constants.MATCHING_NORM_HAMMING:
+                matching_method_field.setCurrentText(constants.MATCHING_NORM_HAMMING)
+            if detector == constants.DETECTOR_BRISK and descriptor == constants.DESCRIPTOR_AKAZE:
+                descriptor_field.setCurrentText('BRISK')
+            if detector == constants.DETECTOR_SURF and descriptor == constants.DESCRIPTOR_AKAZE:
+                descriptor_field.setCurrentText('SIFT')
+            if detector == constants.DETECTOR_SIFT and descriptor != constants.DESCRIPTOR_SIFT:
+                descriptor_field.setCurrentText('SIFT')
+            if detector in constants.NOKNN_METHODS['detectors'] and \
+               descriptor in constants.NOKNN_METHODS['descriptors']:
+                if match_method == constants.MATCHING_KNN:
+                    matching_method_field.setCurrentText(self.MATCHING_METHOD_OPTIONS[1])
 
 
 class AlignFramesConfigurator(SubsampleActionConfigurator, AlignFramesConfigBase):
@@ -580,7 +577,7 @@ class AlignFramesConfigurator(SubsampleActionConfigurator, AlignFramesConfigBase
     def create_feature_tab(self, layout):
 
         def change_match_config():
-            change_match_config_base(
+            self.change_match_config(
                 self.detector_field, self.descriptor_field,
                 self. matching_method_field, self.show_info)
 
