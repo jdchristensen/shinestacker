@@ -5,6 +5,10 @@ This page reports the main releases only and the main changes therein.
 ## [v-.-.-] - 2025-10-04
 ** Unreleased changes **
 
+### Fixed
+- new project dialog displays well also with dark background settings
+
+
 ### Changed
 - minor GUI stability fix
 - more alignment parameters added to default settings
