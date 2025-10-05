@@ -587,10 +587,10 @@ class AlignFramesConfigurator(SubsampleActionConfigurator, AlignFramesConfigBase
         self.add_bold_label_to_layout(layout, "Feature identification:")
         self.detector_field = self.add_field_to_layout(
             layout, 'detector', FIELD_COMBO, 'Detector', required=False,
-            options=constants.VALID_DETECTORS, default=constants.DEFAULT_DETECTOR)
+            options=constants.VALID_DETECTORS, default=AppConfig.get('detector'))
         self.descriptor_field = self.add_field_to_layout(
             layout, 'descriptor', FIELD_COMBO, 'Descriptor', required=False,
-            options=constants.VALID_DESCRIPTORS, default=constants.DEFAULT_DESCRIPTOR)
+            options=constants.VALID_DESCRIPTORS, default=AppConfig.get('descriptor'))
         self.detector_field.setToolTip(self.DETECTOR_DESCRIPTOR_TOOLTIPS['detector'])
         self.descriptor_field.setToolTip(self.DETECTOR_DESCRIPTOR_TOOLTIPS['descriptor'])
         self.detector_field.currentIndexChanged.connect(change_match_config)
@@ -602,7 +602,7 @@ class AlignFramesConfigurator(SubsampleActionConfigurator, AlignFramesConfigBase
         self.matching_method_field = self.add_field_to_layout(
             layout, 'match_method', FIELD_COMBO, 'Match method', required=False,
             options=self.MATCHING_METHOD_OPTIONS, values=constants.VALID_MATCHING_METHODS,
-            default=constants.DEFAULT_MATCHING_METHOD)
+            default=AppConfig.get('match_method'))
         self.matching_method_field.setToolTip(self.DETECTOR_DESCRIPTOR_TOOLTIPS['match_method'])
         self.matching_method_field.currentIndexChanged.connect(change_match_config)
         self.add_field_to_layout(
