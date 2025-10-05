@@ -1,23 +1,29 @@
 # pylint: disable=C0114, C0115, C0116, E0611, W0718, R0903, E0611, R0902
 from PySide6.QtCore import Signal
 from PySide6.QtWidgets import QFrame, QLabel, QCheckBox, QComboBox, QDoubleSpinBox, QSpinBox
-from .. gui.config_dialog import ConfigDialog
 from .. config.settings import Settings
 from .. config.constants import constants
 from .. config.gui_constants import gui_constants
+from .. gui.config_dialog import ConfigDialog
+from .. gui.action_config_dialog import (
+    AlignFramesConfigBase, change_match_config_base)
 
 
-class SettingsDialog(ConfigDialog):
+class SettingsDialog(ConfigDialog, AlignFramesConfigBase):
     update_project_config_requested = Signal()
     update_retouch_config_requested = Signal()
 
     def __init__(self, parent=None, project_settings=True, retouch_settings=True):
+        AlignFramesConfigBase.__init__(self)
         self.project_settings = project_settings
         self.retouch_settings = retouch_settings
         self.settings = Settings.instance()
         self.expert_options = None
         self.combined_actions_max_threads = None
         self.align_frames_max_threads = None
+        self.detector = None
+        self.descriptor = None
+        self.matching_method = None
         self.focus_stack_max_threads = None
         self.view_strategy = None
         self.min_mouse_step_brush_fraction = None
@@ -57,6 +63,32 @@ class SettingsDialog(ConfigDialog):
             self.settings.get('align_frames_params')['max_threads'])
         self.container_layout.addRow("Max num. of cores, align frames:",
                                      self.align_frames_max_threads)
+
+        def change_match_config():
+            change_match_config_base(
+                self.detector, self.descriptor,
+                self. matching_method, self.show_info)
+
+        self.detector = QComboBox()
+        self.detector.addItems(constants.VALID_DETECTORS)
+        self.descriptor = QComboBox()
+        self.descriptor.addItems(constants.VALID_DESCRIPTORS)
+        self.matching_method = QComboBox()
+        self.info_label = QLabel()
+        self.info_label.setStyleSheet("color: orange; font-style: italic;")
+        self.matching_method = QComboBox()
+        for k, v in zip(self.MATCHING_METHOD_OPTIONS, constants.VALID_MATCHING_METHODS):
+            self.matching_method.addItem(k, v)
+        self.detector.setToolTip(self.DETECTOR_DESCRIPTOR_TOOLTIPS['detector'])
+        self.descriptor.setToolTip(self.DETECTOR_DESCRIPTOR_TOOLTIPS['descriptor'])
+        self.matching_method.setToolTip(self.DETECTOR_DESCRIPTOR_TOOLTIPS['match_method'])
+        self.detector.currentIndexChanged.connect(change_match_config)
+        self.descriptor.currentIndexChanged.connect(change_match_config)
+        self.matching_method.currentIndexChanged.connect(change_match_config)
+        self.container_layout.addRow('Detector:', self.detector)
+        self.container_layout.addRow('Descriptor:', self.descriptor)
+        self.container_layout.addRow(self.info_label)
+        self.container_layout.addRow('Match method:', self.matching_method)
 
         self.focus_stack_max_threads = QSpinBox()
         self.focus_stack_max_threads.setRange(0, 64)
@@ -115,7 +147,14 @@ class SettingsDialog(ConfigDialog):
                 })
             self.settings.set(
                 'align_frames_params', {
-                    'max_threads': self.align_frames_max_threads.value()
+                    'max_threads':
+                        self.align_frames_max_threads.value(),
+                    'detector':
+                        self.descriptor.currentText(),
+                    'descriptor':
+                        self.descriptor.currentText(),
+                    'match_method':
+                        self.matching_method.itemData(self.matching_method.currentIndex())
                 })
             self.settings.set(
                 'focus_stack_params', {
@@ -148,6 +187,11 @@ class SettingsDialog(ConfigDialog):
             self.expert_options.setChecked(constants.DEFAULT_EXPERT_OPTIONS)
             self.combined_actions_max_threads.setValue(constants.DEFAULT_MAX_FWK_THREADS)
             self.align_frames_max_threads.setValue(constants.DEFAULT_ALIGN_MAX_THREADS)
+            self.detector.setCurrentText(constants.DEFAULT_DETECTOR)
+            self.descriptor.setCurrentText(constants.DEFAULT_DESCRIPTOR)
+            idx = self.matching_method.findData(constants.DEFAULT_MATCHING_METHOD)
+            if idx >= 0:
+                self.matching_method.setCurrentIndex(idx)
             self.focus_stack_max_threads.setValue(constants.DEFAULT_PY_MAX_THREADS)
         if self.retouch_settings:
             idx = self.view_strategy.findData(constants.DEFAULT_VIEW_STRATEGY)

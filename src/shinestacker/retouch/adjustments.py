@@ -1,4 +1,5 @@
 # pylint: disable=C0114, C0115, C0116, E0611, W0221, R0913, R0917, R0902, R0914, E1101
+from abc import abstractmethod
 import math
 import cv2
 from .base_filter import BaseFilter
@@ -23,6 +24,10 @@ class GammaSCurveFilter(BaseFilter):
         self.initial_scurve = 0
         self.lumi_slider = None
         self.contrast_slider = None
+
+    @abstractmethod
+    def apply(self, image, *params):
+        pass
 
     def setup_ui(self, dlg, layout, do_preview, restore_original, **kwargs):
         dlg.setWindowTitle(self.window_title)

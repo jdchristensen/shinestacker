@@ -42,7 +42,10 @@ DEFAULT_SETTINGS = {
         'max_threads': constants.DEFAULT_MAX_FWK_THREADS
     },
     'align_frames_params': {
-        'max_threads': constants.DEFAULT_ALIGN_MAX_THREADS
+        'max_threads': constants.DEFAULT_ALIGN_MAX_THREADS,
+        'detector': constants.DEFAULT_DETECTOR,
+        'descriptor': constants.DEFAULT_DESCRIPTOR,
+        'match_method': constants.DEFAULT_MATCHING_METHOD
     },
     'focus_stack_params': {
         'max_threads': constants.DEFAULT_PY_MAX_THREADS

@@ -7,6 +7,7 @@ This page reports the main releases only and the main changes therein.
 
 ### Changed
 - minor GUI stability fix
+- more alignment parameters added to default settings
 
 -----
 

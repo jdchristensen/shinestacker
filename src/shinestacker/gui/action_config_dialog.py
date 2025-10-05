@@ -1,5 +1,5 @@
 # pylint: disable=C0114, C0115, C0116, E0611, R0913, R0917, R0915, R0912
-# pylint: disable=E0606, W0718, R1702, W0102, W0221, R0914, C0302
+# pylint: disable=E0606, W0718, R1702, W0102, W0221, R0914, C0302, R0903
 import os
 import traceback
 from PySide6.QtCore import QTimer
@@ -490,22 +490,53 @@ class SubsampleActionConfigurator(DefaultActionConfigurator):
             self.subsample_field.currentText() not in constants.FIELD_SUBSAMPLE_OPTIONS[:2])
 
 
-class AlignFramesConfigurator(SubsampleActionConfigurator):
-    BORDER_MODE_OPTIONS = ['Constant', 'Replicate', 'Replicate and blur']
-    TRANSFORM_OPTIONS = ['Rigid', 'Homography']
-    METHOD_OPTIONS = ['Random Sample Consensus (RANSAC)', 'Least Median (LMEDS)']
-    MATCHING_METHOD_OPTIONS = ['K-nearest neighbors', 'Hamming distance']
-    MODE_OPTIONS = ['Auto', 'Sequential', 'Parallel']
+MATCHING_METHOD_OPTIONS = ['K-nearest neighbors', 'Hamming distance']
 
-    def __init__(self, expert, current_wd):
-        super().__init__(expert, current_wd)
-        self.matching_method_field = None
+
+def change_match_config_base(detector_field, descriptor_field, matching_method_field, show_info):
+    detector = detector_field.currentText()
+    descriptor = descriptor_field.currentText()
+    match_method = dict(
+        zip(MATCHING_METHOD_OPTIONS,
+            constants.VALID_MATCHING_METHODS))[matching_method_field.currentText()]
+    try:
+        validate_align_config(detector, descriptor, match_method)
+    except Exception as e:
+        show_info(str(e))
+        if descriptor == constants.DETECTOR_SIFT and \
+           match_method == constants.MATCHING_NORM_HAMMING:
+            matching_method_field.setCurrentText(MATCHING_METHOD_OPTIONS[0])
+        if detector == constants.DETECTOR_ORB and descriptor == constants.DESCRIPTOR_AKAZE and \
+                match_method == constants.MATCHING_NORM_HAMMING:
+            matching_method_field.setCurrentText(constants.MATCHING_NORM_HAMMING)
+        if detector == constants.DETECTOR_BRISK and descriptor == constants.DESCRIPTOR_AKAZE:
+            descriptor_field.setCurrentText('BRISK')
+        if detector == constants.DETECTOR_SURF and descriptor == constants.DESCRIPTOR_AKAZE:
+            descriptor_field.setCurrentText('SIFT')
+        if detector == constants.DETECTOR_SIFT and descriptor != constants.DESCRIPTOR_SIFT:
+            descriptor_field.setCurrentText('SIFT')
+        if detector in constants.NOKNN_METHODS['detectors'] and \
+           descriptor in constants.NOKNN_METHODS['descriptors']:
+            if match_method == constants.MATCHING_KNN:
+                matching_method_field.setCurrentText(MATCHING_METHOD_OPTIONS[1])
+
+
+class AlignFramesConfigBase:
+    MATCHING_METHOD_OPTIONS = MATCHING_METHOD_OPTIONS
+    DETECTOR_DESCRIPTOR_TOOLTIPS = {
+        'detector':
+            "SIFT: Requires SIFT descriptor and K-NN matching\n"
+            "ORB/AKAZE: Work best with Hamming distance",
+        'descriptor':
+            "SIFT: Requires K-NN matching\n"
+            "ORB/AKAZE: Require Hamming distance with ORB/AKAZE detectors",
+        'match_method':
+            "Automatically selected based on detector/descriptor combination"
+
+    }
+
+    def __init__(self):
         self.info_label = None
-        self.detector_field = None
-        self.descriptor_field = None
-        self.matching_method_field = None
-        self.tab_widget = None
-        self.current_tab_layout = None
 
     def show_info(self, message, timeout=3000):
         self.info_label.setText(message)
@@ -514,32 +545,22 @@ class AlignFramesConfigurator(SubsampleActionConfigurator):
         timer.timeout.connect(lambda: self.info_label.setText(''))
         timer.start(timeout)
 
-    def change_match_config(self):
-        detector = self.detector_field.currentText()
-        descriptor = self.descriptor_field.currentText()
-        match_method = dict(
-            zip(self.MATCHING_METHOD_OPTIONS,
-                constants.VALID_MATCHING_METHODS))[self.matching_method_field.currentText()]
-        try:
-            validate_align_config(detector, descriptor, match_method)
-        except Exception as e:
-            self.show_info(str(e))
-            if descriptor == constants.DETECTOR_SIFT and \
-               match_method == constants.MATCHING_NORM_HAMMING:
-                self.matching_method_field.setCurrentText(self.MATCHING_METHOD_OPTIONS[0])
-            if detector == constants.DETECTOR_ORB and descriptor == constants.DESCRIPTOR_AKAZE and \
-                    match_method == constants.MATCHING_NORM_HAMMING:
-                self.matching_method_field.setCurrentText(constants.MATCHING_NORM_HAMMING)
-            if detector == constants.DETECTOR_BRISK and descriptor == constants.DESCRIPTOR_AKAZE:
-                self.descriptor_field.setCurrentText('BRISK')
-            if detector == constants.DETECTOR_SURF and descriptor == constants.DESCRIPTOR_AKAZE:
-                self.descriptor_field.setCurrentText('SIFT')
-            if detector == constants.DETECTOR_SIFT and descriptor != constants.DESCRIPTOR_SIFT:
-                self.descriptor_field.setCurrentText('SIFT')
-            if detector in constants.NOKNN_METHODS['detectors'] and \
-               descriptor in constants.NOKNN_METHODS['descriptors']:
-                if match_method == constants.MATCHING_KNN:
-                    self.matching_method_field.setCurrentText(self.MATCHING_METHOD_OPTIONS[1])
+
+class AlignFramesConfigurator(SubsampleActionConfigurator, AlignFramesConfigBase):
+    BORDER_MODE_OPTIONS = ['Constant', 'Replicate', 'Replicate and blur']
+    TRANSFORM_OPTIONS = ['Rigid', 'Homography']
+    METHOD_OPTIONS = ['Random Sample Consensus (RANSAC)', 'Least Median (LMEDS)']
+    MODE_OPTIONS = ['Auto', 'Sequential', 'Parallel']
+
+    def __init__(self, expert, current_wd):
+        SubsampleActionConfigurator.__init__(self, expert, current_wd)
+        AlignFramesConfigBase.__init__(self)
+        self.matching_method_field = None
+        self.detector_field = None
+        self.descriptor_field = None
+        self.matching_method_field = None
+        self.tab_widget = None
+        self.current_tab_layout = None
 
     def create_form(self, layout, action):
         super().create_form(layout, action)
@@ -557,6 +578,12 @@ class AlignFramesConfigurator(SubsampleActionConfigurator):
         self.create_miscellanea_tab(misc_layout)
 
     def create_feature_tab(self, layout):
+
+        def change_match_config():
+            change_match_config_base(
+                self.detector_field, self.descriptor_field,
+                self. matching_method_field, self.show_info)
+
         self.add_bold_label_to_layout(layout, "Feature identification:")
         self.detector_field = self.add_field_to_layout(
             layout, 'detector', FIELD_COMBO, 'Detector', required=False,
@@ -564,16 +591,10 @@ class AlignFramesConfigurator(SubsampleActionConfigurator):
         self.descriptor_field = self.add_field_to_layout(
             layout, 'descriptor', FIELD_COMBO, 'Descriptor', required=False,
             options=constants.VALID_DESCRIPTORS, default=constants.DEFAULT_DESCRIPTOR)
-        self.detector_field.setToolTip(
-            "SIFT: Requires SIFT descriptor and K-NN matching\n"
-            "ORB/AKAZE: Work best with Hamming distance"
-        )
-        self.descriptor_field.setToolTip(
-            "SIFT: Requires K-NN matching\n"
-            "ORB/AKAZE: Require Hamming distance with ORB/AKAZE detectors"
-        )
-        self.detector_field.currentIndexChanged.connect(self.change_match_config)
-        self.descriptor_field.currentIndexChanged.connect(self.change_match_config)
+        self.detector_field.setToolTip(self.DETECTOR_DESCRIPTOR_TOOLTIPS['detector'])
+        self.descriptor_field.setToolTip(self.DETECTOR_DESCRIPTOR_TOOLTIPS['descriptor'])
+        self.detector_field.currentIndexChanged.connect(change_match_config)
+        self.descriptor_field.currentIndexChanged.connect(change_match_config)
         self.info_label = QLabel()
         self.info_label.setStyleSheet("color: orange; font-style: italic;")
         layout.addRow(self.info_label)
@@ -582,10 +603,8 @@ class AlignFramesConfigurator(SubsampleActionConfigurator):
             layout, 'match_method', FIELD_COMBO, 'Match method', required=False,
             options=self.MATCHING_METHOD_OPTIONS, values=constants.VALID_MATCHING_METHODS,
             default=constants.DEFAULT_MATCHING_METHOD)
-        self.matching_method_field.setToolTip(
-            "Automatically selected based on detector/descriptor combination"
-        )
-        self.matching_method_field.currentIndexChanged.connect(self.change_match_config)
+        self.matching_method_field.setToolTip(self.DETECTOR_DESCRIPTOR_TOOLTIPS['match_method'])
+        self.matching_method_field.currentIndexChanged.connect(change_match_config)
         self.add_field_to_layout(
             layout, 'flann_idx_kdtree', FIELD_INT, 'Flann idx kdtree', required=False,
             expert=True,
