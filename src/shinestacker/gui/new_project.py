@@ -169,13 +169,11 @@ class NewProjectDialog(BaseFormDialog):
                 border-radius: 5px;
                 margin-top: 10px;
                 padding-top: 15px;
-                background-color: #f8f8f8;
             }
             QGroupBox::title {
                 subcontrol-origin: margin;
                 left: 10px;
                 padding: 0 5px 0 5px;
-                background-color: #f8f8f8;
             }
         """
         for group in [step1_group, step2_group, step3_group, step4_group]:
