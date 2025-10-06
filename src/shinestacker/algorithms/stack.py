@@ -66,7 +66,8 @@ class FocusStackBase(TaskBase, ImageSequenceManager):
             self.exif_path = os.path.join(working_path, self.exif_path)
 
     def end_job(self):
-        ImageSequenceManager.end_job(self)        
+        ImageSequenceManager.end_job(self)
+
 
 def get_bunches(collection, n_frames, n_overlap):
     bunches = [collection[x:x + n_frames]
@@ -134,5 +135,3 @@ class FocusStack(FocusStackBase):
 
     def end(self):
         FocusStackBase.end(self)
-
-

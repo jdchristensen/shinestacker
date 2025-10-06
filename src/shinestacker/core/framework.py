@@ -194,6 +194,7 @@ class Job(TaskBase):
         for a in self.__actions:
             a.end_job()
 
+
 class SequentialTask(TaskBase):
     def __init__(self, name, enabled=True, **kwargs):
         self.max_threads = kwargs.pop('max_threads', constants.DEFAULT_MAX_FWK_THREADS)

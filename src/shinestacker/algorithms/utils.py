@@ -151,6 +151,7 @@ def save_plot(filename, fig=None):
         plt.close(fig)
     gc.collect()
 
+
 def img_subsample(img, subsample, fast=True):
     if fast:
         img_sub = img[::subsample, ::subsample]
