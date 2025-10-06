@@ -141,7 +141,6 @@ class ImageSequenceManager:
             self.print_message(
                 color_str(f"module disabled, output directory {self.output_path}"
                           " not scratched", 'yellow'))
-        return
 
     def init(self, job):
         if self.working_path == '':

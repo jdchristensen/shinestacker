@@ -133,5 +133,5 @@ class FocusStack(FocusStackBase):
     def init(self, job, _working_path=''):
         FocusStackBase.init(self, job, self.working_path)
 
-    def end(self):
-        FocusStackBase.end(self)
+    def end_job(self):
+        FocusStackBase.end_job(self)
