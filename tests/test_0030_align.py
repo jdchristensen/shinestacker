@@ -1,4 +1,3 @@
-import logger
 import matplotlib
 matplotlib.use('Agg')
 from shinestacker.config.constants import constants
