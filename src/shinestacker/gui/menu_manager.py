@@ -1,4 +1,4 @@
-# pylint: disable=C0114, C0115, C0116, R0904, E0611, R0902, W0201
+# pylint: disable=C0114, C0115, C0116, R0904, E0611, R0902, W0201, R0913, R0917
 import os
 from functools import partial
 from PySide6.QtCore import Signal, QObject
@@ -12,11 +12,12 @@ from .recent_file_manager import RecentFileManager
 class MenuManager(QObject):
     open_file_requested = Signal(str)
 
-    def __init__(self, menubar, actions, project_editor, parent):
+    def __init__(self, menubar, actions, project_editor, dark_theme, parent):
         super().__init__(parent)
         self.script_dir = os.path.dirname(__file__)
         self._recent_file_manager = RecentFileManager("shinestacker-recent-project-files.txt")
         self.project_editor = project_editor
+        self.dark_theme = dark_theme
         self.parent = parent
         self.menubar = menubar
         self.actions = actions
@@ -58,8 +59,9 @@ class MenuManager(QObject):
             "Run All Jobs": "Run all jobs",
         }
 
-    def get_icon(self, icon):
-        return QIcon(os.path.join(self.script_dir, f"img/{icon}.png"))
+    def get_icon(self, icon_name):
+        icon_dir = 'dark' if self.dark_theme else 'light'
+        return QIcon(os.path.join(self.script_dir, f"img/{icon_dir}/{icon_name}.png"))
 
     def action(self, name, requires_file=False):
         action = QAction(name, self.parent)
@@ -68,9 +70,11 @@ class MenuManager(QObject):
         shortcut = self.shortcuts.get(name, '')
         if shortcut:
             action.setShortcut(shortcut)
-        icon = self.icons.get(name, '')
-        if icon:
-            action.setIcon(self.get_icon(icon))
+        icon_name = self.icons.get(name, '')
+        if icon_name:
+            action.setIcon(self.get_icon(icon_name))
+            action.setProperty('theme_dependent', True)
+            action.setProperty('base_icon_name', icon_name)
         tooltip = self.tooltips.get(name, '')
         if tooltip:
             action.setToolTip(tooltip)
@@ -78,6 +82,13 @@ class MenuManager(QObject):
         if action_fun is not None:
             action.triggered.connect(action_fun)
         return action
+
+    def change_theme(self, dark_theme):
+        self.dark_theme = dark_theme
+        for action in self.parent.findChildren(QAction):
+            if action.property("theme_dependent"):
+                base_name = action.property("base_icon_name")
+                action.setIcon(self.get_icon(base_name))
 
     def update_recent_files(self):
         self.recent_files_menu.clear()

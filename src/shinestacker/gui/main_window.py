@@ -3,9 +3,9 @@
 import os
 import subprocess
 from PySide6.QtCore import Qt
-from PySide6.QtGui import QGuiApplication, QAction, QIcon
+from PySide6.QtGui import QGuiApplication, QAction, QPalette
 from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel, QMessageBox,
-                               QSplitter, QToolBar, QMenu, QMainWindow)
+                               QSplitter, QToolBar, QMenu, QMainWindow, QApplication)
 from .. config.constants import constants
 from .. config.app_config import AppConfig
 from .. core.core_utils import running_under_windows, running_under_macos
@@ -82,7 +82,9 @@ class MainWindow(QMainWindow, LogManager):
             "Run Job": self.run_job,
             "Run All Jobs": self.run_all_jobs,
         }
-        self.menu_manager = MenuManager(self.menuBar(), actions, self.project_editor, self)
+        dark_theme = self.is_dark_theme()
+        self.menu_manager = MenuManager(
+            self.menuBar(), actions, self.project_editor, dark_theme, self)
         self.script_dir = os.path.dirname(__file__)
         self._windows = []
         self._workers = []
@@ -107,7 +109,7 @@ class MainWindow(QMainWindow, LogManager):
         top_widget = QWidget()
         top_widget.setLayout(h_layout)
         h_splitter.addWidget(top_widget)
-        self.tab_widget = TabWidgetWithPlaceholder()
+        self.tab_widget = TabWidgetWithPlaceholder(dark_theme)
         self.tab_widget.resize(1000, 500)
         h_splitter.addWidget(self.tab_widget)
         self.job_list().currentRowChanged.connect(self.project_editor.on_job_selected)
@@ -128,6 +130,7 @@ class MainWindow(QMainWindow, LogManager):
         layout.addWidget(h_splitter)
         self.central_widget.setLayout(layout)
         self.update_title()
+        QApplication.instance().paletteChanged.connect(self.on_theme_changed)
 
         def handle_modified(modified):
             self.save_actions_set_enabled(modified)
@@ -367,9 +370,6 @@ class MainWindow(QMainWindow, LogManager):
             menu.exec(event.globalPos())
     # pylint: enable=C0103
 
-    def get_icon(self, icon):
-        return QIcon(os.path.join(self.script_dir, f"img/{icon}.png"))
-
     def get_retouch_path(self, job):
         frames_path = [get_action_output_path(action)[0]
                        for action in job.sub_actions
@@ -581,3 +581,16 @@ class MainWindow(QMainWindow, LogManager):
         for action in self.findChildren(QAction):
             if action.property("requires_file"):
                 action.setEnabled(enabled)
+
+    def is_dark_theme(self):
+        palette = QApplication.palette()
+        window_color = palette.color(QPalette.Window)
+        brightness = (window_color.red() * 0.299 +
+                      window_color.green() * 0.587 +
+                      window_color.blue() * 0.114)
+        return brightness < 128
+
+    def on_theme_changed(self):
+        dark_theme = self.is_dark_theme()
+        self.menu_manager.change_theme(dark_theme)
+        self.tab_widget.change_theme(dark_theme)

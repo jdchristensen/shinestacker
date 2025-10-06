@@ -11,9 +11,9 @@ This page reports the main releases only and the main changes therein.
 ### Fixed
 - new project dialog displays well also with dark background settings
 
-
 ### Changed
 - minor GUI stability fix
+- icons change from light to dark when desktop theme changes
 - more alignment parameters added to default settings
 
 -----

@@ -9,8 +9,10 @@ class TabWidgetWithPlaceholder(QWidget):
     currentChanged = Signal(int)
     tabCloseRequested = Signal(int)
 
-    def __init__(self, parent=None):
+    def __init__(self, dark_theme, parent=None):
         super().__init__(parent)
+        self.script_dir = os.path.dirname(__file__)
+        self.dark_theme = dark_theme
         self.main_layout = QVBoxLayout(self)
         self.main_layout.setContentsMargins(0, 0, 0, 0)
         self.stacked_widget = QStackedWidget()
@@ -19,7 +21,15 @@ class TabWidgetWithPlaceholder(QWidget):
         self.stacked_widget.addWidget(self.tab_widget)
         self.placeholder = QLabel()
         self.placeholder.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        icon_path = f"{os.path.dirname(__file__)}/ico/shinestacker_bkg.png"
+        self.set_bkg_icon()
+        self.stacked_widget.addWidget(self.placeholder)
+        self.tab_widget.currentChanged.connect(self._on_current_changed)
+        self.tab_widget.tabCloseRequested.connect(self._on_tab_close_requested)
+        self.update_placeholder_visibility()
+
+    def set_bkg_icon(self):
+        icon_dir = 'dark' if self.dark_theme else 'light'
+        icon_path = os.path.join(self.script_dir, f"img/{icon_dir}/shinestacker_bkg.png")
         if os.path.exists(icon_path):
             pixmap = QPixmap(icon_path)
             pixmap = pixmap.scaled(250, 250, Qt.AspectRatioMode.KeepAspectRatio,
@@ -27,10 +37,10 @@ class TabWidgetWithPlaceholder(QWidget):
             self.placeholder.setPixmap(pixmap)
         else:
             self.placeholder.setText("Run logs will appear here.")
-        self.stacked_widget.addWidget(self.placeholder)
-        self.tab_widget.currentChanged.connect(self._on_current_changed)
-        self.tab_widget.tabCloseRequested.connect(self._on_tab_close_requested)
-        self.update_placeholder_visibility()
+
+    def change_theme(self, dark_theme):
+        self.dark_theme = dark_theme
+        self.set_bkg_icon()
 
     def _on_current_changed(self, index):
         self.currentChanged.emit(index)
