@@ -2,22 +2,21 @@
 
 This page reports the main releases only and the main changes therein.
 
-## [v-.-.-] - 2025-10-04
+## [v-.-.-] - 2025-10-06
 ** Minor improvements and accessibility fix **
 
 ### Added
-- temporary disk space can be cleaned up with the new option to scratch output files at the end of job 
+- temporary disk space can be cleaned up with the new option to scratch output files at the end of a job 
 
 ### Fixed
 - new project dialog displays well also with dark background settings
 
 ### Changed
-- minor GUI stability fix
 - icons change from light to dark when desktop theme changes
 - more alignment parameters added to default settings
+- minor GUI stability fix
 
 -----
-
 
 ## [v1.7.0] - 2025-10-04
 ** New image adjustment actions and macOS dmg image installer **
