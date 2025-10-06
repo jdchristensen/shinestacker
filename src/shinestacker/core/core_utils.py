@@ -52,4 +52,5 @@ def setup_matplotlib_mode():
         __IPYTHON__ # noqa
     except Exception:
         matplotlib.use('agg')
+    matplotlib.pyplot.set_loglevel("warning")
     matplotlib.rcParams['pdf.fonttype'] = 42

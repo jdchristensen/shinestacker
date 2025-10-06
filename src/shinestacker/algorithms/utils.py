@@ -140,13 +140,16 @@ def save_plot(filename, fig=None):
         if not os.path.isdir(dir_path):
             os.makedirs(dir_path)
         if fig is None:
+            logging_level = logging.getLogger().level
+            logger = logging.getLogger()
+            logger.setLevel(logging.WARNING)
             fig = plt.gcf()
-        fig.savefig(filename, dpi=150)
+            fig.savefig(filename, dpi=150)
+            logger.setLevel(logging_level)
         if config.JUPYTER_NOTEBOOK:
             plt.show()
         plt.close(fig)
     gc.collect()
-
 
 def img_subsample(img, subsample, fast=True):
     if fast:

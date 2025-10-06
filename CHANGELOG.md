@@ -5,6 +5,9 @@ This page reports the main releases only and the main changes therein.
 ## [v-.-.-] - 2025-10-04
 ** Unreleased changes **
 
+### Added
+- temporary disk space can be cleaned up with the new option to scratch output files at the end of job 
+
 ### Fixed
 - new project dialog displays well also with dark background settings
 

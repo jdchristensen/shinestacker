@@ -46,7 +46,8 @@ class StackJob(Job):
 class ImageSequenceManager:
     def __init__(self, name, input_path='', output_path='', working_path='',
                  plot_path=constants.DEFAULT_PLOTS_PATH,
-                 scratch_output_dir=True, resample=1,
+                 scratch_output_dir=True, delete_output_at_end=False,
+                 resample=1,
                  reverse_order=constants.DEFAULT_FILE_REVERSE_ORDER, **_kwargs):
         self.name = name
         self.working_path = working_path
@@ -56,6 +57,7 @@ class ImageSequenceManager:
         self._resample = resample
         self.reverse_order = reverse_order
         self.scratch_output_dir = scratch_output_dir
+        self.delete_output_at_end = delete_output_at_end
         self.enabled = None
         self.base_message = ''
         self._input_full_path = None
@@ -122,6 +124,25 @@ class ImageSequenceManager:
                                      constants.LOG_COLOR_LEVEL_2))
         self.base_message = color_str(self.name, constants.LOG_COLOR_LEVEL_1, "bold")
 
+    def scratch_outout_folder(self):
+        if self.enabled:
+            output_dir = self.output_full_path()
+            list_dir = os.listdir(output_dir)
+            n_files = len(list_dir)
+            if n_files > 0:
+                for filename in list_dir:
+                    file_path = os.path.join(output_dir, filename)
+                    if os.path.isfile(file_path):
+                        os.remove(file_path)
+            self.print_message(
+                color_str(f"output directory {self.output_path} content erased",
+                          'yellow'))
+        else:
+            self.print_message(
+                color_str(f"module disabled, output directory {self.output_path}"
+                          " not scratched", 'yellow'))
+        return
+
     def init(self, job):
         if self.working_path == '':
             self.working_path = job.working_path
@@ -130,22 +151,10 @@ class ImageSequenceManager:
         if not os.path.exists(output_dir):
             os.makedirs(output_dir)
         else:
-            list_dir = os.listdir(output_dir)
-            if len(list_dir) > 0:
+            if len(os.listdir(output_dir)):
                 if self.scratch_output_dir:
-                    if self.enabled:
-                        for filename in list_dir:
-                            file_path = os.path.join(output_dir, filename)
-                            if os.path.isfile(file_path):
-                                os.remove(file_path)
-                        self.print_message(
-                            color_str(f": output directory {self.output_path} content erased",
-                                      'yellow'))
-                    else:
-                        self.print_message(
-                            color_str(f": module disabled, output directory {self.output_path}"
-                                      " not scratched", 'yellow'))
-                else:
+                    self.scratch_outout_folder()
+                elif self.enabled:
                     self.print_message(
                         color_str(
                             f": output directory {self.output_path} not empty, "
@@ -167,6 +176,11 @@ class ImageSequenceManager:
                         filepath = os.path.join(self.input_full_path(), filepath)
                     self._input_filepaths.append(filepath)
         job.add_action_path(self.output_path)
+
+    def end_job(self):
+        if self.delete_output_at_end:
+            self.scratch_outout_folder()
+            os.rmdir(self.output_full_path())
 
     def folder_list_str(self):
         if isinstance(self.input_full_path(), list):
@@ -205,6 +219,9 @@ class ReferenceFrameTask(SequentialTask, ImageSequenceManager):
 
     def end(self):
         SequentialTask.end(self)
+
+    def end_job(self):
+        ImageSequenceManager.end_job(self)
 
     def run_frame(self, _idx, _ref_idx):
         return None
@@ -322,6 +339,9 @@ class CombinedActions(ReferenceFrameTask):
         for a in self._actions:
             if a.enabled:
                 a.end()
+
+    def end_job(self):
+        ReferenceFrameTask.end_job(self)
 
     def sequential_processing(self):
         for a in self._actions:

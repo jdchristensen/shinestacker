@@ -65,6 +65,8 @@ class FocusStackBase(TaskBase, ImageSequenceManager):
         if self.exif_path != '':
             self.exif_path = os.path.join(working_path, self.exif_path)
 
+    def end_job(self):
+        ImageSequenceManager.end_job(self)        
 
 def get_bunches(collection, n_frames, n_overlap):
     bunches = [collection[x:x + n_frames]
@@ -100,6 +102,9 @@ class FocusStackBunch(SequentialTask, FocusStackBase):
     def end(self):
         SequentialTask.end(self)
 
+    def end_job(self):
+        FocusStackBase.end_job(self)
+
     def run_step(self, action_count=-1):
         self.print_message(
             color_str(f"fusing bunch: {action_count + 1}/{self.total_action_counts}",
@@ -126,3 +131,8 @@ class FocusStack(FocusStackBase):
 
     def init(self, job, _working_path=''):
         FocusStackBase.init(self, job, self.working_path)
+
+    def end(self):
+        FocusStackBase.end(self)
+
+

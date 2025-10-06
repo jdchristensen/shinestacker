@@ -10,7 +10,9 @@ def test_jpg():
     try:
         job = StackJob("job", "examples", input_path="input/img-jpg")
         job.add_action(FocusStack("stack-pyramid", PyramidStack(),
-                                  output_path="output/img-jpg-stack", prefix='pyr_'))
+                                  output_path="output/img-jpg-stack",
+                                  delete_output_at_end=True,
+                                  prefix='pyr_'))
         job.run()
     except Exception:
         assert False
@@ -20,7 +22,9 @@ def test_tif():
     try:
         job = StackJob("job", "examples", input_path="input/img-tif")
         job.add_action(FocusStack("stack-pyramid-tiff", PyramidStack(),
-                                  output_path="output/img-tif-stack", prefix='pyr_'))
+                                  output_path="output/img-tif-stack",
+                                  delete_output_at_end=True,
+                                  prefix='pyr_'))
         job.run()
     except Exception:
         assert False
@@ -30,7 +34,9 @@ def test_jpg_dm():
     try:
         job = StackJob("job", "examples", input_path="input/img-jpg")
         job.add_action(FocusStack("stack-depthmap", DepthMapStack(),
-                                  output_path="output/img-jpg-stack", prefix='dm_'))
+                                  output_path="output/img-jpg-stack",
+                                  delete_output_at_end=True,
+                                  prefix='dm_'))
         job.run()
     except Exception:
         assert False
@@ -40,7 +46,9 @@ def test_jpg_pt_1():
     try:
         job = StackJob("job", "examples", input_path="input/img-jpg")
         job.add_action(FocusStack("stack-depthmap", PyramidTilesStack(),
-                                  output_path="output/img-jpg-stack", prefix='pyr_tiles_'))
+                                  output_path="output/img-jpg-stack",
+                                  delete_output_at_end=True,
+                                  prefix='pyr_tiles_'))
         job.run()
     except Exception:
         assert False
@@ -50,7 +58,9 @@ def test_jpg_pt_2():
     try:
         job = StackJob("job", "examples", input_path="input/img-jpg")
         job.add_action(FocusStack("stack-depthmap", PyramidTilesStack(max_threads=1),
-                                  output_path="output/img-jpg-stack", prefix='pyr_tiles_'))
+                                  output_path="output/img-jpg-stack",
+                                  delete_output_at_end=True,
+                                  prefix='pyr_tiles_'))
         job.run()
     except Exception:
         assert False
@@ -60,7 +70,9 @@ def test_jpg_auto_1():
     try:
         job = StackJob("job", "examples", input_path="input/img-jpg")
         job.add_action(FocusStack("stack-depthmap", PyramidAutoStack(),
-                                  output_path="output/img-jpg-stack", prefix='pyr_tiles_'))
+                                  output_path="output/img-jpg-stack",
+                                  delete_output_at_end=True,
+                                  prefix='pyr_tiles_'))
         job.run()
     except Exception:
         assert False
@@ -70,7 +82,9 @@ def test_jpg_auto_2():
     try:
         job = StackJob("job", "examples", input_path="input/img-jpg")
         job.add_action(FocusStack("stack-depthmap", PyramidAutoStack(memory_limit=0.2),
-                                  output_path="output/img-jpg-stack", prefix='pyr_tiles_'))
+                                  output_path="output/img-jpg-stack",
+                                  delete_output_at_end=True,
+                                  prefix='pyr_tiles_'))
         job.run()
     except Exception:
         assert False
@@ -80,7 +94,9 @@ def test_bunches():
     try:
         job = StackJob("job", "examples", input_path="input/img-jpg")
         job.add_action(FocusStackBunch("stack-pyramid-bunch", PyramidStack(),
-                                       output_path="output/img-jpg-bunches", frames=3))
+                                       output_path="output/img-jpg-bunches",
+                                       delete_output_at_end=True,
+                                       frames=3))
         job.run()
     except Exception:
         assert False

@@ -12,7 +12,8 @@ def test_tif_rgb_match():
                                        [BalanceFrames(channel=constants.BALANCE_RGB,
                                                       corr_map=constants.BALANCE_MATCH_HIST,
                                                       plot_histograms=True, plot_summary=True)],
-                                       output_path="output/img-tif-balance-rgb-match"))
+                                       output_path="output/img-tif-balance-rgb-match",
+                                       delete_output_at_end=True))
         job.run()
     except Exception:
         assert False
@@ -25,7 +26,8 @@ def test_jpg_lumi():
                                        [BalanceFrames(channel=constants.BALANCE_LUMI,
                                                       corr_map=constants.BALANCE_LINEAR,
                                                       plot_histograms=True, plot_summary=True)],
-                                       output_path="output/img-jpg-balance-lumi"))
+                                       output_path="output/img-jpg-balance-lumi",
+                                       delete_output_at_end=True))
         job.run()
     except Exception:
         assert False
@@ -38,7 +40,8 @@ def test_tif_lumi():
                                        [BalanceFrames(channel=constants.BALANCE_LUMI,
                                                       corr_map=constants.BALANCE_GAMMA,
                                                       plot_histograms=True, plot_summary=True)],
-                                       output_path="output/img-tif-balance-lumi"))
+                                       output_path="output/img-tif-balance-lumi",
+                                       delete_output_at_end=True))
         job.run()
     except Exception:
         assert False
@@ -51,7 +54,8 @@ def test_jpg_rgb():
                                        [BalanceFrames(channel=constants.BALANCE_RGB,
                                                       corr_map=constants.BALANCE_LINEAR,
                                                       plot_histograms=True, plot_summary=True)],
-                                       output_path="output/img-jpg-balance-rgb"))
+                                       output_path="output/img-jpg-balance-rgb",
+                                       delete_output_at_end=True))
         job.run()
     except Exception:
         assert False
@@ -64,7 +68,8 @@ def test_jpg_hsv():
                                        [BalanceFrames(channel=constants.BALANCE_HSV,
                                                       corr_map=constants.BALANCE_LINEAR,
                                                       plot_histograms=True, plot_summary=True)],
-                                       output_path="output/img-jpg-balance-sv"))
+                                       output_path="output/img-jpg-balance-sv",
+                                       delete_output_at_end=True))
         job.run()
     except Exception:
         assert False
@@ -77,7 +82,8 @@ def test_jpg_hls():
                                        [BalanceFrames(channel=constants.BALANCE_HLS,
                                                       corr_map=constants.BALANCE_LINEAR,
                                                       plot_histograms=True, plot_summary=True)],
-                                       output_path="output/img-jpg-balance-ls"))
+                                       output_path="output/img-jpg-balance-ls",
+                                       delete_output_at_end=True))
         job.run()
     except Exception:
         assert False
@@ -90,7 +96,8 @@ def test_jpg_lab():
                                        [BalanceFrames(channel=constants.BALANCE_LAB,
                                                       corr_map=constants.BALANCE_LINEAR,
                                                       plot_histograms=True, plot_summary=True)],
-                                       output_path="output/img-jpg-balance-ls"))
+                                       output_path="output/img-jpg-balance-ls",
+                                       delete_output_at_end=True))
         job.run()
     except Exception:
         assert False

@@ -146,6 +146,9 @@ class TaskBase:
     def sub_message_r(self, msg='', level=logging.INFO):
         self.sub_message(msg, level, self.end_r, self.begin_r, False)
 
+    def end_job(self):
+        pass
+
 
 class Job(TaskBase):
     def __init__(self, name, logger_name=None, log_file='', callbacks=None, **kwargs):
@@ -188,7 +191,8 @@ class Job(TaskBase):
                                  self.id, self.name) is False:
                     raise RunStopException(self.name)
                 a.run()
-
+        for a in self.__actions:
+            a.end_job()
 
 class SequentialTask(TaskBase):
     def __init__(self, name, enabled=True, **kwargs):
@@ -261,11 +265,11 @@ class SequentialTask(TaskBase):
                 try:
                     result = future.result()
                     if result:
-                        self.print_message(color_str(
+                        self.print_message_r(color_str(
                             f"completed processing step: {self.idx_tot_str(idx)}",
                             constants.LOG_COLOR_LEVEL_1))
                     else:
-                        self.print_message(color_str(
+                        self.print_message_r(color_str(
                             f"failed processing step: {self.idx_tot_str(idx)}",
                             constants.LOG_COLOR_WARNING))
                     self.current_action_count += 1

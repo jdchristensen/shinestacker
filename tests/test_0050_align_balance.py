@@ -11,7 +11,8 @@ def test_hls_gamma():
             "align",
             [AlignFrames(), BalanceFrames(channel=constants.BALANCE_HLS,
                                           corr_map=constants.BALANCE_GAMMA)],
-            output_path="output/img-jpg-align-balance-ls"))
+            output_path="output/img-jpg-align-balance-ls",
+            delete_output_at_end=True))
         job.run()
     except Exception:
         assert False
@@ -23,7 +24,8 @@ def test_hsv():
         job.add_action(CombinedActions(
             "align",
             [AlignFrames(), BalanceFrames(channel=constants.BALANCE_HSV)],
-            output_path="output/img-jpg-align-balance-sv"))
+            output_path="output/img-jpg-align-balance-sv",
+            delete_output_at_end=True))
         job.run()
     except Exception:
         assert False
@@ -35,7 +37,8 @@ def test_rgb():
         job.add_action(CombinedActions(
             "align",
             [AlignFrames(), BalanceFrames(channel=constants.BALANCE_RGB)],
-            output_path="output/img-jpg-align-balance-rgb"))
+            output_path="output/img-jpg-align-balance-rgb",
+            delete_output_at_end=True))
         job.run()
     except Exception:
         assert False
@@ -47,7 +50,8 @@ def test_lumi():
         job.add_action(CombinedActions(
             "align",
             [AlignFrames(), BalanceFrames(channel=constants.BALANCE_LUMI)],
-            output_path="output/img-jpg-align-balance-lumi"))
+            output_path="output/img-jpg-align-balance-lumi",
+            delete_output_at_end=True))
         job.run()
     except Exception:
         assert False

@@ -1,3 +1,4 @@
+import logger
 import matplotlib
 matplotlib.use('Agg')
 from shinestacker.config.constants import constants
@@ -55,7 +56,8 @@ def test_jpg():
     try:
         job = StackJob("job", "examples", input_path="input/img-jpg", callbacks='tqdm')
         job.add_action(CombinedActions("align-jpg", [AlignFrames(plot_summary=True)],
-                                       output_path="output/img-jpg-align"))
+                                       output_path="output/img-jpg-align",
+                                       delete_output_at_end=True))
         job.run()
     except Exception:
         assert False
@@ -70,7 +72,8 @@ def test_jpg_homo():
                 [AlignFrames(
                     alignment_config={'transform': constants.ALIGN_HOMOGRAPHY},
                     plot_summary=True)],
-                output_path="output/img-jpg-align"))
+                output_path="output/img-jpg-align",
+                delete_output_at_end=True))
         job.run()
     except Exception:
         assert False
@@ -80,7 +83,8 @@ def test_tif():
     try:
         job = StackJob("job", "examples", input_path="input/img-tif", callbacks='tqdm')
         job.add_action(CombinedActions("align-tif", [AlignFrames(plot_summary=True)],
-                                       output_path="output/img-tif-align"))
+                                       output_path="output/img-tif-align",
+                                       delete_output_at_end=True))
         job.run()
     except Exception:
         assert False
@@ -90,7 +94,8 @@ def test_parallel():
     try:
         job = StackJob("job", "examples", input_path="input/img-jpg", callbacks='tqdm')
         job.add_action(CombinedActions("align-jpg", [AlignFramesParallel(plot_summary=False)],
-                                       output_path="output/img-jpg-align"))
+                                       output_path="output/img-jpg-align",
+                                       delete_output_at_end=True))
         job.run()
     except Exception:
         assert False
@@ -100,7 +105,8 @@ def test_auto():
     try:
         job = StackJob("job", "examples", input_path="input/img-jpg", callbacks='tqdm')
         job.add_action(CombinedActions("align-jpg", [AlignFramesAuto(plot_summary=False)],
-                                       output_path="output/img-jpg-align"))
+                                       output_path="output/img-jpg-align",
+                                       delete_output_at_end=True))
         job.run()
     except Exception:
         assert False
