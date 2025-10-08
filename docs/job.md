@@ -43,6 +43,8 @@ Arguments for the constructor of ```CombinedActions``` are for the :
 * ```resample``` (optional, default: 1): take every *n*<sup>th</sup> frame in the selected directory. Default: take all frames.
 * ```reference_index``` (optional, default: 0): the index of the image used as reference. Images are numbered starting from one to N. -1 is interpreted as the last image, 0 as the median index.
 * ```step_process``` (optional): if equal to ```True``` (default), each image is processed with respect to the previous or next image, depending if its file is placed in alphabetic order after or befor the reference image.
-* ```enabled``` (optional, default: ```True```): allows to switch on and off this module. 
+* ```enabled``` (optional, default: ```True```): allows to switch on and off this module.
+* ```scratch_output_dir``` (optional, default: ```True```): scratch output directory before processing. This avoids that existing files pollute the output.
+* ```delete_output_at_end``` (optional, default: ```False```): delete output after processing. This cleans disk space in case of processing an intermediate step that is not part of the final output.
 * ```max_threads``` (optional, default: ```2```): number of parallel processes allowed. The number of actual threads will not be greater than the number of available CPU cores.
 * ```chunk_submit``` (optional, default: ```True```): submit at most ```max_threads``` parallel processes. If ```chunk_submit``` is greater than ```max_threads``` a moderate performance gain is achieved at the cost of a possibly large memory occupancy.
