@@ -7,7 +7,6 @@ import platform
 
 
 def setup_environment():
-    os.chdir("../")
     project_root = Path(__file__).resolve().parent.parent
     dist_dir = project_root / "dist"
     project_name = "shinestacker"
@@ -119,10 +118,6 @@ def package_macos(dist_dir, app_name, project_root):
         except subprocess.CalledProcessError as e:
             print(f"Could not set custom icon: {e}")
     shutil.rmtree(dmg_temp_dir)
-    archive_path = dist_dir / "shinestacker-release.tar.gz"
-    with tarfile.open(archive_path, "w:gz") as tar:
-        tar.add(app_bundle, arcname=app_bundle.name, recursive=True)
-    print(f"Created tar.gz: {archive_path.name}")
 
 
 def package_linux(dist_dir, app_name):

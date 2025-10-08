@@ -2,7 +2,7 @@
 
 This page reports the main releases only and the main changes therein.
 
-## [v-.-.-] - 2025-10-06
+## [v-.-.-] - 2025-10-08
 ** Minor improvements and accessibility fix **
 
 ### Added
@@ -15,6 +15,7 @@ This page reports the main releases only and the main changes therein.
 - icons change from light to dark when desktop theme changes
 - more alignment parameters added to default settings
 - minor GUI stability fix
+- removed reduntant distribution of tag.gz installer for macOS, replaced by dmg image
 
 -----
 

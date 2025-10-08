@@ -40,9 +40,8 @@ jobs:
           pip install -e .[dev]
 
       - name: Build and package release
-        working-directory: scripts
         run: |
-          python build_release.py
+          python scripts/build_release.py
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
@@ -70,8 +69,7 @@ jobs:
           mkdir -p release_assets
           # Linux
           cp artifacts/shinestacker-ubuntu-latest/shinestacker-release.tar.gz release_assets/shinestacker-ubuntu.tar.gz
-          # macOS - include both formats
-          cp artifacts/shinestacker-macos-latest/shinestacker-release.tar.gz release_assets/shinestacker-macos.tar.gz
+          # macOS
           cp artifacts/shinestacker-macos-latest/shinestacker-release.dmg release_assets/shinestacker-macos.dmg
           # Windows
           cp artifacts/shinestacker-windows-latest/shinestacker-release.zip release_assets/shinestacker-windows.zip
@@ -86,7 +84,6 @@ jobs:
           draft: true
           files: |
             release_assets/shinestacker-ubuntu.tar.gz
-            release_assets/shinestacker-macos.tar.gz
             release_assets/shinestacker-macos.dmg
             release_assets/shinestacker-windows.zip
             release_assets/shinestacker-setup.exe
