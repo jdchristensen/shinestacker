@@ -2,20 +2,20 @@
 
 This page reports the main releases only and the main changes therein.
 
-## [v-.-.-] - 2025-10-08
+## [v1.8.0] - 2025-10-08
 ** Minor improvements and accessibility fix **
 
 ### Added
-- temporary disk space can be cleaned up with the new option to scratch output files at the end of a job 
+- temporary disk space can be cleaned up with a new option to scratch output files at the end of a job 
 
 ### Fixed
 - new project dialog displays well also with dark background settings
 
 ### Changed
-- icons change from light to dark when desktop theme changes
-- more alignment parameters added to default settings
+- icons now adapt automatically to light or dark desktop theme
+- additional alignment parameters added to default settings
 - minor GUI stability fix
-- removed reduntant distribution of tag.gz installer for macOS, replaced by dmg image
+- redundant macOS .tar.gz installer removed, replaced by .dmg image
 
 -----
 
