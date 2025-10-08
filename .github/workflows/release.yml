@@ -51,7 +51,6 @@ jobs:
             ${{ matrix.os == 'windows-latest' && 'dist/shinestacker-release.zip' || '' }}
             ${{ matrix.os == 'windows-latest' && 'dist/*.exe' || '' }}
             ${{ matrix.os == 'ubuntu-latest' && 'dist/shinestacker-release.tar.gz' || '' }}
-            ${{ matrix.os == 'macos-latest' && 'dist/shinestacker-release.tar.gz' || '' }}
             ${{ matrix.os == 'macos-latest' && 'dist/shinestacker-release.dmg' || '' }}
           if-no-files-found: ignore
 
