@@ -50,7 +50,7 @@ The macOS system security protection prevent to run applications downloaded from
 
 In order to prevent this, follow the instructions below:
 
-1. Download the isntaller image ```shinestacker-macos.dmg```.
+1. Download the installer image ```shinestacker-macos.dmg```.
 2. Double-click the image and copy the app into the Application folder.
 3. Open a terminal (*Applications > Utilities > Terminal*)
 4. Type the folliwng command on the terminal:
