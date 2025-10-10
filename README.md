@@ -50,10 +50,10 @@ The macOS system security protection prevent to run applications downloaded from
 
 In order to prevent this, follow the instructions below:
 
-1. Download the compressed archive ```shinestacker-macos.tar.gz``` in your ```Download``` folder.
-2. Double-click the archive to uncompress it. You will find a new folder ```shinestacker```.
+1. Download the installer image ```shinestacker-macos.dmg```.
+2. Double-click the image and copy the app into the Application folder.
 3. Open a terminal (*Applications > Utilities > Terminal*)
-4. Type the folliwng command on the terminal (assuming you installed the app from the ```dmg``` image under ```Applications```):
+4. Type the folliwng command on the terminal:
 ```bash
 xattr -cr /Applications/shinestacker/shinestacker.app
 ```
