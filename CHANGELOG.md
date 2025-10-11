@@ -6,11 +6,11 @@ This page reports the main releases only and the main changes therein.
 ** Unreleased changes **
 
 ### Added
-- alignment algorithm using phase correlation as optional fallback solution in cases where no match is found
+- alignment algorithm based on phase correlation as optional fallback solution in cases where no feature match is found
 
 ### Fixed
 - minor fixes to logger messages
-- better tuning of parallel alignment processing based on image size
+- better tuning of parallel processing of frames alignment based
 
 -----
 
