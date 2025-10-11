@@ -126,6 +126,7 @@ def test_extract_features_fallback():
         'max_iters': 2000,
         'align_confidence': 0.99,
         'refine_iters': 10,
+        'phase_corr_fallback': False,
         'abort_abnormal': False
     }
     aligner._n_good_matches = [0] * 2
