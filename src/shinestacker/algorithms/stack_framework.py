@@ -330,7 +330,7 @@ class CombinedActions(ReferenceFrameTask):
             write_img(output_path, img)
             return img
         self.print_message(color_str(
-            f"no output file resulted from processing input file: {os.path.basename(input_path)}",
+            f"no output resulted from processing input file: {os.path.basename(input_path)}",
             constants.LOG_COLOR_ALERT), level=logging.WARNING)
         return None
 
