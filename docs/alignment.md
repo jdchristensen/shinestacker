@@ -67,7 +67,9 @@ alignment_config = {
     'border_blur': 50,
     'subsample': 0,
     'fast_subsampling': False,
-    'min_good_matches': 100
+    'min_good_matches': 100,
+    'phase_corr_fallback': False,
+    'abort_abnormal': False
 }
 ```
 * ```transform``` (optional, default: ```ALIGN_RIGID```): the transformation applied to register images. Possible values are:
@@ -83,6 +85,8 @@ alignment_config = {
 * ```subsample``` (optional, default: 0=automatic): subsample image for faster alignment. Faster, but alignment could be less accurate if only a small portion of the image is focused. It can save time, in particular for large images.
 * ```fast_subsampling``` (optional, default: ```False```): perform fast image subsampling without interpolation. Used if ```subsample``` is set to ```True```.
 * ```min_good_matches``` (optional, default: 100): if ```subsample```>1 and the number of good matches is below ```min_good_matches```, the alignment is retried without subsampling. This improbes robustness in case a too large subsampling factor is specified. 
+* ```phase_corr_fallback``` (optional, default: ```False```): use phase correlation alignment in case the number of matches is too low to allow to estimate the transformation. This algorithm is not very precise, and may help only in case of blurred images.
+* ```abort_abnormal``` (optional, default: ```False```): abort in case of anormal tansformation. By default, frames where abnormal transformation is found are skipped, and processing continunes to next frame.
 * ```border_mode``` (optional, default: ```BORDER_REPLICATE_BLUR```): border mode. See [Adding borders to your images](https://docs.opencv.org/3.4/dc/da3/tutorial_copyMakeBorder.html) for more details.  Possible values are:
   * ```BORDER_CONSTANT```: pad the image with a constant value. The border value is specified with the parameter ```border_value```.
   * ```BORDER_REPLICATE```: the rows and columns at the very edge of the original are replicated to the extra border.

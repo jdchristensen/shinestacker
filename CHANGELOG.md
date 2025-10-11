@@ -10,6 +10,7 @@ This page reports the main releases only and the main changes therein.
 
 ### Fixed
 - minor fixes to logger messages
+- better tuning of parallel alignment processing based on image size
 
 -----
 
