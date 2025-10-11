@@ -454,9 +454,9 @@ def align_images(img_ref, img_0, feature_config=None, matching_config=None, alig
         callbacks['save_transform_result'](result)
     if not is_valid:
         if callbacks and 'warning' in callbacks:
-            callbacks['warning'](f"invalid transformation: {reason}")
+            callbacks['warning'](f"invalid transformation: {reason}, alignment failed")
         if alignment_config['abort_abnormal']:
-            raise RuntimeError("invalid transformation: {reason}")
+            raise RuntimeError("invalid transformation: {reason}, alignment failed")
         return n_good_matches, None, None
     if callbacks and 'estimation_message' in callbacks:
         callbacks['estimation_message']()
