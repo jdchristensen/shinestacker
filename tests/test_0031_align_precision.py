@@ -6,7 +6,7 @@ if "pytest" in sys.modules:
     matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from shinestacker.config.constants import constants
-from shinestacker.algorithms.align import align_images
+from shinestacker.algorithms.align import align_images, align_images_phase_correlation
 np.random.seed(123456)
 
 
@@ -65,7 +65,7 @@ def compare_transformations(M_true, M_aligned):
     assert abs(scale_diff) < 0.0001
 
 
-def compare_alignment(color_test=False):
+def compare_alignment(feature_config, matching_config, alignment_config, color_test=False):
     original = create_test_image(color=color_test)
     transformed, M_true = apply_transform(original)
     original_bgr = ensure_3channel(original)
@@ -73,17 +73,9 @@ def compare_alignment(color_test=False):
     try:
         n_matches, M_recovered, aligned = align_images(
             transformed_bgr, original_bgr,
-            feature_config={
-                'detector': constants.SIFT_DETECTOR,
-                'descriptor': constants.SIFT_DESCRIPTOR
-            },
-            matching_config={
-                'match_method': constants.MATCHING_KNN
-            },
-            alignment_config={
-                'transform': constants.ALIGN_RIGID,
-                'subsample': 1
-            }
+            feature_config=feature_config,
+            matching_config=matching_config,
+            alignment_config=alignment_config
         )
     except Exception as e:
         print(f"Alignment failed: {e}")
@@ -106,12 +98,26 @@ def compare_alignment(color_test=False):
         plt.show()
 
 
+feature_config={
+    'detector': constants.DETECTOR_ORB,
+    'descriptor': constants.DESCRIPTOR_ORB
+}
+
+matching_config={
+    'match_method': constants.MATCHING_KNN
+}
+
+alignment_config={
+    'transform': constants.ALIGN_RIGID,
+    'subsample': 1
+}
+
 def test_alignment_bw():
-    compare_alignment(False)
+    compare_alignment(feature_config, matching_config, alignment_config, False)
 
 
 def test_alignment_color():
-    compare_alignment(True)
+    compare_alignment(feature_config, matching_config, alignment_config, True)
 
 
 if __name__ == "__main__":

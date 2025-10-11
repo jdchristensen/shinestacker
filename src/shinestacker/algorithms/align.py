@@ -10,6 +10,7 @@ from .. core.exceptions import InvalidOptionError
 from .. core.colors import color_str
 from .. core.core_utils import setup_matplotlib_mode
 from .utils import img_8bit, img_bw_8bit, save_plot, img_subsample
+from .utils import read_img, get_img_metadata, get_first_image_file
 from .stack_framework import SubAction
 setup_matplotlib_mode()
 
@@ -28,18 +29,19 @@ _DEFAULT_MATCHING_CONFIG = {
 
 _DEFAULT_ALIGNMENT_CONFIG = {
     'transform': constants.DEFAULT_TRANSFORM,
-    'align_method': constants.DEFAULT_ALIGN_METHOD,
+    'align_method': constants.DEFAULT_ESTIMATION_METHOD,
     'rans_threshold': constants.DEFAULT_RANS_THRESHOLD,
     'refine_iters': constants.DEFAULT_REFINE_ITERS,
     'align_confidence': constants.DEFAULT_ALIGN_CONFIDENCE,
     'max_iters': constants.DEFAULT_ALIGN_MAX_ITERS,
-    'abort_abnormal': constants.DEFAULT_ALIGN_ABORT_ABNORMAL,
     'border_mode': constants.DEFAULT_BORDER_MODE,
     'border_value': constants.DEFAULT_BORDER_VALUE,
     'border_blur': constants.DEFAULT_BORDER_BLUR,
     'subsample': constants.DEFAULT_ALIGN_SUBSAMPLE,
     'fast_subsampling': constants.DEFAULT_ALIGN_FAST_SUBSAMPLING,
-    'min_good_matches': constants.DEFAULT_ALIGN_MIN_GOOD_MATCHES
+    'min_good_matches': constants.DEFAULT_ALIGN_MIN_GOOD_MATCHES,
+    'phase_corr_fallback': constants.DEFAULT_PHASE_CORR_FALLBACK,
+    'abort_abnormal': constants.DEFAULT_ALIGN_ABORT_ABNORMAL
 }
 
 
@@ -227,7 +229,7 @@ def detect_and_compute_matches(img_ref, img_0, feature_config=None, matching_con
 
 
 def find_transform(src_pts, dst_pts, transform=constants.DEFAULT_TRANSFORM,
-                   method=constants.DEFAULT_ALIGN_METHOD,
+                   method=constants.DEFAULT_ESTIMATION_METHOD,
                    rans_threshold=constants.DEFAULT_RANS_THRESHOLD,
                    max_iters=constants.DEFAULT_ALIGN_MAX_ITERS,
                    align_confidence=constants.DEFAULT_ALIGN_CONFIDENCE,
@@ -288,6 +290,7 @@ def plot_matches(msk, img_ref_sub, img_0_sub, kp_ref, kp_0, good_matches, plot_p
     plt.imshow(img_match, 'gray')
     save_plot(plot_path)
 
+
 def find_transform_phase_correlation(img_ref, img_0):
     if len(img_ref.shape) == 3:
         ref_gray = cv2.cvtColor(img_ref, cv2.COLOR_BGR2GRAY)
@@ -307,38 +310,48 @@ def find_transform_phase_correlation(img_ref, img_0):
     mov_mag = np.fft.fftshift(np.abs(mov_fft))
     center = (w // 2, h // 2)
     radius = min(center[0], center[1])
-    logpolar_size = (360, radius)  # (theta, log(r))
-    ref_logpolar = cv2.warpPolar(
-        ref_mag, logpolar_size, center, radius,
-        flags=cv2.WARP_POLAR_LOG + cv2.INTER_LINEAR
-    )
-    mov_logpolar = cv2.warpPolar(
-        mov_mag, logpolar_size, center, radius,
-        flags=cv2.WARP_POLAR_LOG + cv2.INTER_LINEAR
-    )
-    shift_lp, response = cv2.phaseCorrelate(
-        np.float32(ref_logpolar),
-        np.float32(mov_logpolar)
-    )
-    rotation = -shift_lp[0]  # theta coordinate
-    scale = np.exp(shift_lp[1] / (radius / np.log(radius)))
-    m_rotate_scale = cv2.getRotationMatrix2D(center, rotation, scale)
-    rotated_scaled = cv2.warpAffine(img_0, m_rotate_scale, (w, h))
-    if len(img_ref.shape) == 3:
-        ref_gray_corr = cv2.cvtColor(img_ref, cv2.COLOR_BGR2GRAY)
-        mov_gray_corr = cv2.cvtColor(rotated_scaled, cv2.COLOR_BGR2GRAY)
+    y, x = np.ogrid[:h, :w]
+    dist_from_center = np.sqrt((x - center[0])**2 + (y - center[1])**2)
+    log_r_bins = np.logspace(0, np.log10(radius), 50, endpoint=False)
+    ref_profile = []
+    mov_profile = []
+    for i in range(len(log_r_bins) - 1):
+        mask = (dist_from_center >= log_r_bins[i]) & (dist_from_center < log_r_bins[i + 1])
+        if np.any(mask):
+            ref_profile.append(np.mean(ref_mag[mask]))
+            mov_profile.append(np.mean(mov_mag[mask]))
+    if len(ref_profile) < 5:
+        scale = 1.0
     else:
-        ref_gray_corr = img_ref
-        mov_gray_corr = rotated_scaled
-    ref_win_corr = ref_gray_corr.astype(np.float32) * window
-    mov_win_corr = mov_gray_corr.astype(np.float32) * window
-    shift_xy, trans_response = cv2.phaseCorrelate(
-        np.float32(ref_win_corr),
-        np.float32(mov_win_corr)
-    )
-    m = m_rotate_scale.copy()
-    m[0, 2] += shift_xy[0]
-    m[1, 2] += shift_xy[1]
+        ref_prof = np.array(ref_profile)
+        mov_prof = np.array(mov_profile)
+        ref_prof = (ref_prof - np.mean(ref_prof)) / (np.std(ref_prof) + 1e-8)
+        mov_prof = (mov_prof - np.mean(mov_prof)) / (np.std(mov_prof) + 1e-8)
+        correlation = np.correlate(ref_prof, mov_prof, mode='full')
+        shift_idx = np.argmax(correlation) - len(ref_prof) + 1
+        scale = np.exp(shift_idx * 0.1)  # Empirical scaling factor
+        scale = np.clip(scale, 0.9, 1.1)  # Limit to small scale changes
+    if abs(scale - 1.0) > 0.01:
+        scaled_size = (int(w * scale), int(h * scale))
+        mov_scaled = cv2.resize(img_0, scaled_size)
+        new_h, new_w = mov_scaled.shape[:2]
+        start_x = (w - new_w) // 2
+        start_y = (h - new_h) // 2
+        mov_centered = np.zeros_like(img_0)
+        mov_centered[start_y:start_y + new_h, start_x:start_x + new_w] = mov_scaled
+    else:
+        mov_centered = img_0
+        scale = 1.0
+    if len(img_ref.shape) == 3:
+        ref_gray_trans = cv2.cvtColor(img_ref, cv2.COLOR_BGR2GRAY)
+        mov_gray_trans = cv2.cvtColor(mov_centered, cv2.COLOR_BGR2GRAY)
+    else:
+        ref_gray_trans = img_ref
+        mov_gray_trans = mov_centered
+    ref_win_trans = ref_gray_trans.astype(np.float32) * window
+    mov_win_trans = mov_gray_trans.astype(np.float32) * window
+    shift, _response = cv2.phaseCorrelate(ref_win_trans, mov_win_trans)
+    m = np.float32([[scale, 0, shift[0]], [0, scale, shift[1]]])
     return m
 
 
@@ -380,72 +393,85 @@ def align_images(img_ref, img_0, feature_config=None, matching_config=None, alig
         kp_0, kp_ref, good_matches = detect_and_compute_matches(
             img_ref_sub, img_0_sub, feature_config, matching_config)
         n_good_matches = len(good_matches)
-        if n_good_matches > min_good_matches or subsample == 1:
+        if n_good_matches >= min_good_matches or subsample == 1:
             break
         subsample = 1
         if callbacks and 'warning' in callbacks:
             callbacks['warning'](
                 f"only {n_good_matches} < {min_good_matches} matches found, "
                 "retrying without subsampling")
+        else:
+            n_good_matches = 0
+            break
     if callbacks and 'matches_message' in callbacks:
         callbacks['matches_message'](n_good_matches)
     img_warp = None
     m = None
+
+    transform_type = alignment_config['transform']
     if n_good_matches >= min_matches:
-        transform = alignment_config['transform']
         src_pts = np.float32(
             [kp_0[match.queryIdx].pt for match in good_matches]).reshape(-1, 1, 2)
         dst_pts = np.float32(
             [kp_ref[match.trainIdx].pt for match in good_matches]).reshape(-1, 1, 2)
-        m, msk = find_transform(src_pts, dst_pts, transform, alignment_config['align_method'],
-                                *(alignment_config[k]
-                                  for k in ['rans_threshold', 'max_iters',
-                                            'align_confidence', 'refine_iters']))
+        m, msk = find_transform(
+            src_pts, dst_pts, transform_type, alignment_config['align_method'],
+            *(alignment_config[k]
+              for k in ['rans_threshold', 'max_iters',
+                        'align_confidence', 'refine_iters']))
         if plot_path is not None:
             plot_matches(msk, img_ref_sub, img_0_sub, kp_ref, kp_0, good_matches, plot_path)
             if callbacks and 'save_plot' in callbacks:
                 callbacks['save_plot'](plot_path)
-        h_sub, w_sub = img_0_sub.shape[:2]
-        if subsample > 1:
-            m = rescale_trasnsform(m, w0, h0, w_sub, h_sub, subsample, transform)
-            if m is None:
-                raise InvalidOptionError("transform", transform)
-        transform_type = alignment_config['transform']
-        is_valid, reason, result = check_transform(
-            m, img_0.shape, transform_type,
-            affine_thresholds, homography_thresholds)
-        if callbacks and 'save_transform_result' in callbacks:
-            callbacks['save_transform_result'](result)
-        if not is_valid:
-            if callbacks and 'warning' in callbacks:
-                callbacks['warning'](f"invalid transformation: {reason}")
-            if alignment_config['abort_abnormal']:
-                raise RuntimeError("invalid transformation: {reason}")
-            return n_good_matches, None, None
-        if callbacks and 'align_message' in callbacks:
-            callbacks['align_message']()
-        img_mask = np.ones_like(img_0, dtype=np.uint8)
-        if alignment_config['transform'] == constants.ALIGN_HOMOGRAPHY:
-            img_warp = cv2.warpPerspective(
-                img_0, m, (w_ref, h_ref),
-                borderMode=cv2_border_mode, borderValue=alignment_config['border_value'])
-            if alignment_config['border_mode'] == constants.BORDER_REPLICATE_BLUR:
-                mask = cv2.warpPerspective(img_mask, m, (w_ref, h_ref),
-                                           borderMode=cv2.BORDER_CONSTANT, borderValue=0)
-        elif alignment_config['transform'] == constants.ALIGN_RIGID:
-            img_warp = cv2.warpAffine(
-                img_0, m, (w_ref, h_ref),
-                borderMode=cv2_border_mode, borderValue=alignment_config['border_value'])
-            if alignment_config['border_mode'] == constants.BORDER_REPLICATE_BLUR:
-                mask = cv2.warpAffine(img_mask, m, (w_ref, h_ref),
-                                      borderMode=cv2.BORDER_CONSTANT, borderValue=0)
+    phase_corr_fallback = alignment_config['phase_corr_fallback']
+    if phase_corr_fallback and n_good_matches < min_matches:
+        if callbacks and 'warning' in callbacks:
+            callbacks['warning'](
+                f"only {n_good_matches} < {min_good_matches} matches found"
+                f"({len(kp_0)}, {len(kp_ref)}"
+                ", using phase correlation as fallback")
+        n_good_matches = 0
+        m = find_transform_phase_correlation(img_ref_sub, img_0_sub)
+    h_sub, w_sub = img_0_sub.shape[:2]
+    if subsample > 1:
+        m = rescale_trasnsform(m, w0, h0, w_sub, h_sub, subsample, transform_type)
+        if m is None:
+            raise InvalidOptionError("transform", transform_type)
+    is_valid, reason, result = check_transform(
+        m, img_0.shape, transform_type,
+        affine_thresholds, homography_thresholds)
+    if callbacks and 'save_transform_result' in callbacks:
+        callbacks['save_transform_result'](result)
+    if not is_valid:
+        if callbacks and 'warning' in callbacks:
+            callbacks['warning'](f"invalid transformation: {reason}")
+        if alignment_config['abort_abnormal']:
+            raise RuntimeError("invalid transformation: {reason}")
+        return n_good_matches, None, None
+    if callbacks and 'estimation_message' in callbacks:
+        callbacks['estimation_message']()
+    img_mask = np.ones_like(img_0, dtype=np.uint8)
+    if transform_type == constants.ALIGN_HOMOGRAPHY:
+        img_warp = cv2.warpPerspective(
+            img_0, m, (w_ref, h_ref),
+            borderMode=cv2_border_mode, borderValue=alignment_config['border_value'])
         if alignment_config['border_mode'] == constants.BORDER_REPLICATE_BLUR:
-            if callbacks and 'blur_message' in callbacks:
-                callbacks['blur_message']()
-            mask = cv2.cvtColor(mask, cv2.COLOR_BGR2GRAY)
-            blurred_warp = cv2.GaussianBlur(
-                img_warp, (21, 21), sigmaX=alignment_config['border_blur'])
-            img_warp[mask == 0] = blurred_warp[mask == 0]
+            mask = cv2.warpPerspective(img_mask, m, (w_ref, h_ref),
+                                       borderMode=cv2.BORDER_CONSTANT, borderValue=0)
+    elif transform_type == constants.ALIGN_RIGID:
+        img_warp = cv2.warpAffine(
+            img_0, m, (w_ref, h_ref),
+            borderMode=cv2_border_mode, borderValue=alignment_config['border_value'])
+        if alignment_config['border_mode'] == constants.BORDER_REPLICATE_BLUR:
+            mask = cv2.warpAffine(img_mask, m, (w_ref, h_ref),
+                                  borderMode=cv2.BORDER_CONSTANT, borderValue=0)
+    if alignment_config['border_mode'] == constants.BORDER_REPLICATE_BLUR:
+        if callbacks and 'blur_message' in callbacks:
+            callbacks['blur_message']()
+        mask = cv2.cvtColor(mask, cv2.COLOR_BGR2GRAY)
+        blurred_warp = cv2.GaussianBlur(
+            img_warp, (21, 21), sigmaX=alignment_config['border_blur'])
+        img_warp[mask == 0] = blurred_warp[mask == 0]
     return n_good_matches, m, img_warp
 
 
@@ -480,11 +506,13 @@ class AlignFramesBase(SubAction):
         self._translation_y = None
         self._rotation = None
         self._shear = None
+        self.shape = None
+        self.dtype = None
 
     def relative_transformation(self):
         return None
 
-    def align_images(self, idx, img_ref, img_0):
+    def align_images(self, _idx, _img_ref, _img_0):
         pass
 
     def print_message(self, msg, color=constants.LOG_COLOR_LEVEL_3, level=logging.INFO):
@@ -502,6 +530,8 @@ class AlignFramesBase(SubAction):
         self._translation_y = np.zeros(process.total_action_counts)
         self._rotation = np.zeros(process.total_action_counts)
         self._shear = np.zeros(process.total_action_counts)
+        filenames = sorted(self.process.input_filepaths())
+        self.shape, self.dtype = get_img_metadata(read_img(get_first_image_file(filenames)))
 
     def run_frame(self, idx, ref_idx, img_0):
         if idx == self.process.ref_idx:
@@ -701,14 +731,14 @@ class AlignFrames(AlignFramesBase):
     def align_images(self, idx, img_ref, img_0):
         idx_str = f"{idx:04d}"
         idx_tot_str = self.process.idx_tot_str(idx)
-
         callbacks = {
-            'message': lambda: self.print_message(f'{idx_tot_str}: find matches'),
+            'message': lambda: self.print_message(
+                f'{idx_tot_str}: estimate transform using feature matching'),
             'matches_message': lambda n: self.print_message(f'{idx_tot_str}: good matches: {n}'),
-            'align_message': lambda: self.print_message(f'{idx_tot_str}: align images'),
+            'estimation_message': lambda: self.print_message(f'{idx_tot_str}: align images'),
             'blur_message': lambda: self.print_message(f'{idx_tot_str}: blur borders'),
             'warning': lambda msg: self.print_message(
-                f': {msg}', constants.LOG_COLOR_WARNING),
+                f'{msg}', constants.LOG_COLOR_WARNING),
             'save_plot': lambda plot_path: self.process.callback(
                 constants.CALLBACK_SAVE_PLOT, self.process.id,
                 f"{self.process.name}: matches\nframe {idx_str}", plot_path),

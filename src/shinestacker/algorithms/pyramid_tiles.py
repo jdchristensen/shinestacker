@@ -222,7 +222,7 @@ class PyramidTilesStack(PyramidBase):
                         all_level_counts[img_index] = level_count
                         completed_count += 1
                         self.print_message(
-                            f": processing completed, {self.image_str(completed_count - 1)}")
+                            f": preprocessing completed, {self.image_str(completed_count - 1)}")
                     except Exception as e:
                         self.print_message(
                             f"Error processing {self.image_str(i)}: {str(e)}")

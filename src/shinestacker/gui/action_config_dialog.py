@@ -591,7 +591,6 @@ class AlignFramesConfigurator(SubsampleActionConfigurator, AlignFramesConfigBase
             self.change_match_config(
                 self.detector_field, self.descriptor_field,
                 self. matching_method_field, self.show_info)
-
         self.add_bold_label_to_layout(layout, "Feature identification:")
         self.detector_field = self.add_field_to_layout(
             layout, 'detector', FIELD_COMBO, 'Detector', required=False,
@@ -642,9 +641,9 @@ class AlignFramesConfigurator(SubsampleActionConfigurator, AlignFramesConfigBase
             options=self.TRANSFORM_OPTIONS, values=constants.VALID_TRANSFORMS,
             default=constants.DEFAULT_TRANSFORM)
         method = self.add_field_to_layout(
-            layout, 'align_method', FIELD_COMBO, 'Align method', required=False,
-            options=self.METHOD_OPTIONS, values=constants.VALID_ALIGN_METHODS,
-            default=constants.DEFAULT_ALIGN_METHOD)
+            layout, 'align_method', FIELD_COMBO, 'Estimation method', required=False,
+            options=self.METHOD_OPTIONS, values=constants.VALID_ESTIMATION_METHODS,
+            default=constants.DEFAULT_ESTIMATION_METHOD)
         rans_threshold = self.add_field_to_layout(
             layout, 'rans_threshold', FIELD_FLOAT, 'RANSAC threshold (px)', required=False,
             expert=True,
@@ -689,6 +688,9 @@ class AlignFramesConfigurator(SubsampleActionConfigurator, AlignFramesConfigBase
 
         transform.currentIndexChanged.connect(change_transform)
         change_transform()
+        self.add_field_to_layout(
+            layout, 'phase_corr_fallback', FIELD_BOOL, "Use phase correl. as fallback",
+            required=False, expert=True, default=constants.DEFAULT_PHASE_CORR_FALLBACK)
         self.add_field_to_layout(
             layout, 'abort_abnormal', FIELD_BOOL, 'Abort on abnormal transf.',
             expert=True,

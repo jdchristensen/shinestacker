@@ -2,6 +2,17 @@
 
 This page reports the main releases only and the main changes therein.
 
+## [v-.-.-] - 2025-10-11
+** Unreleased changes **
+
+### Added
+- alignment algorithm using phase correlation as optional fallback solution in cases where no match is found
+
+### Fixed
+- minor fixes to logger messages
+
+-----
+
 ## [v1.8.0] - 2025-10-08
 ** Minor improvements and accessibility fix **
 

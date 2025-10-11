@@ -317,8 +317,8 @@ class CombinedActions(ReferenceFrameTask):
                 if img is not None:
                     img = a.run_frame(idx, ref_idx, img)
                 else:
-                    self.sub_message(
-                        color_str(": null input received, action skipped",
+                    self.print_message(
+                        color_str("null input received, action skipped",
                                   constants.LOG_COLOR_ALERT),
                         level=logging.WARNING)
         if img is not None:

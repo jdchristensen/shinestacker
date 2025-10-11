@@ -36,6 +36,8 @@ class AlignFramesParallel(AlignFramesBase):
         super().__init__(enabled, feature_config, matching_config,
                          alignment_config, **kwargs)
         self.max_threads = kwargs.get('max_threads', constants.DEFAULT_ALIGN_MAX_THREADS)
+        self.memory_limit = kwargs.get('memory_limit', constants.DEFAULT_ALIGN_MEMORY_LIMIT_GB)
+        self.mem_per_gpx = 0.1
         self.chunk_submit = kwargs.get('chunk_submit', constants.DEFAULT_ALIGN_CHUNK_SUBMIT)
         self.bw_matching = kwargs.get('bw_matching', constants.DEFAULT_ALIGN_BW_MATCHING)
         self._img_cache = None
@@ -83,7 +85,7 @@ class AlignFramesParallel(AlignFramesBase):
                     color = constants.LOG_COLOR_LEVEL_3
                     level = logging.INFO
                     if len(warning_messages) > 0:
-                        message += ", " + color_str(", ".join(warning_messages), 'yellow')
+                        message += "; " + color_str(", ".join(warning_messages), 'yellow')
                         color = constants.LOG_COLOR_WARNING
                         level = logging.WARNING
                     self.print_message(message, color=color, level=level)
@@ -113,7 +115,16 @@ class AlignFramesParallel(AlignFramesBase):
                 "requested plot matches is not supported with parallel processing",
                 color=constants.LOG_COLOR_WARNING, level=logging.WARNING)
         n_frames = self.process.num_input_filepaths()
-        self.print_message(f"preprocess {n_frames} images in parallel, cores: {self.max_threads}")
+        max_threads = self.max_threads
+        if max_threads > 1 and \
+                self.feature_config['detector'] in \
+                [constants.DETECTOR_SIFT, constants.DETECTOR_AKAZE] or \
+                self.feature_config['descriptor'] in \
+                [constants.DESCRIPTOR_SIFT, constants.DESCRIPTOR_AKAZE]:
+            img_pxls = self.shape[0] * self.shape[1]
+            mem_gb = img_pxls / constants.ONE_MEGA * self.mem_per_gpx
+            max_threads = min(max_threads, int(self.memory_limit / mem_gb))
+        self.print_message(f"preprocess {n_frames} images in parallel, cores: {max_threads}")
         self.process.callback(constants.CALLBACK_STEP_COUNTS,
                               self.process.id, self.process.name, 2 * n_frames)
         input_filepaths = self.process.input_filepaths()
@@ -277,10 +288,11 @@ class AlignFramesParallel(AlignFramesBase):
         transform = self.alignment_config['transform']
         src_pts = np.float32([kp_0[m.queryIdx].pt for m in good_matches]).reshape(-1, 1, 2)
         dst_pts = np.float32([kp_ref[m.trainIdx].pt for m in good_matches]).reshape(-1, 1, 2)
-        m, _msk = find_transform(src_pts, dst_pts, transform, self.alignment_config['align_method'],
-                                 *(self.alignment_config[k]
-                                   for k in ['rans_threshold', 'max_iters',
-                                             'align_confidence', 'refine_iters']))
+        m, _msk = find_transform(
+            src_pts, dst_pts, transform, self.alignment_config['align_method'],
+            *(self.alignment_config[k]
+              for k in ['rans_threshold', 'max_iters',
+                        'align_confidence', 'refine_iters']))
         h_sub, w_sub = img_0_sub.shape[:2]
         if subsample > 1:
             m = rescale_trasnsform(m, w0, h0, w_sub, h_sub, subsample, transform)
