@@ -402,11 +402,11 @@ def align_images(img_ref, img_0, feature_config=None, matching_config=None, alig
         else:
             n_good_matches = 0
             break
-    if callbacks and 'matches_message' in callbacks:
+    phase_corr_fallback = alignment_config['phase_corr_fallback']
+    if not phase_corr_fallback and callbacks and 'matches_message' in callbacks:
         callbacks['matches_message'](n_good_matches)
     img_warp = None
     m = None
-
     transform_type = alignment_config['transform']
     if n_good_matches >= min_matches:
         src_pts = np.float32(
@@ -418,23 +418,35 @@ def align_images(img_ref, img_0, feature_config=None, matching_config=None, alig
             *(alignment_config[k]
               for k in ['rans_threshold', 'max_iters',
                         'align_confidence', 'refine_iters']))
-        if plot_path is not None:
+        if m is not None and plot_path is not None:
             plot_matches(msk, img_ref_sub, img_0_sub, kp_ref, kp_0, good_matches, plot_path)
             if callbacks and 'save_plot' in callbacks:
                 callbacks['save_plot'](plot_path)
-    phase_corr_fallback = alignment_config['phase_corr_fallback']
-    if phase_corr_fallback and n_good_matches < min_matches:
-        if callbacks and 'warning' in callbacks:
-            callbacks['warning'](
-                f"only {n_good_matches} < {min_good_matches} matches found"
-                ", using phase correlation as fallback")
-        n_good_matches = 0
-        m = find_transform_phase_correlation(img_ref_sub, img_0_sub)
+    if m is None or n_good_matches < min_matches:
+        if phase_corr_fallback:
+            if callbacks and 'warning' in callbacks:
+                callbacks['warning'](
+                    f"only {n_good_matches} < {min_good_matches} matches found"
+                    ", using phase correlation as fallback")
+            n_good_matches = 0
+            m = find_transform_phase_correlation(img_ref_sub, img_0_sub)
+            if m is None:
+                return n_good_matches, None, None
+        else:
+            if callbacks and 'warning' in callbacks:
+                if n_good_matches < min_matches:
+                    msg = f"only {n_good_matches} < {min_good_matches} matches found, alignment failed"
+                elif m is None:
+                    msg = f"no transformation found, alignment falied"
+                callbacks['warning'](msg)
+            return n_good_matches, None, None
     h_sub, w_sub = img_0_sub.shape[:2]
     if subsample > 1:
         m = rescale_trasnsform(m, w0, h0, w_sub, h_sub, subsample, transform_type)
         if m is None:
-            raise InvalidOptionError("transform", transform_type)
+            if callbacks and 'warning' in callbacks:
+                callbacks['warning'](f"can't rescale transformation matrix, alignment failed")
+            return n_good_matches, None, None
     is_valid, reason, result = check_transform(
         m, img_0.shape, transform_type,
         affine_thresholds, homography_thresholds)
@@ -757,11 +769,6 @@ class AlignFrames(AlignFramesBase):
             homography_thresholds=homography_thresholds
         )
         self._n_good_matches[idx] = n_good_matches
-        if n_good_matches < self.min_matches:
-            self.process.print_message(
-                f"{self.image_str(idx)} not aligned, too few matches found: "
-                f"{n_good_matches}")
-            return None
         return img
 
     def relative_transformation(self):
