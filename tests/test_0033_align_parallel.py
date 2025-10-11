@@ -136,7 +136,7 @@ def test_extract_features_fallback():
             np.ones((100, 100, 3), dtype=np.uint8),
             np.zeros((100, 100, 3), dtype=np.uint8)
         ]
-        _info, warnings = aligner.extract_features(1)
+        _info, warnings = aligner.find_transform(1)
         assert len(warnings) > 0
 
 
