@@ -2,6 +2,7 @@
 import os
 import math
 import logging
+import traceback
 import numpy as np
 import cv2
 import matplotlib.pyplot as plt
@@ -147,26 +148,32 @@ def check_transform(m, img_shape, transform_type,
     return False, f'invalid transfrom option {transform_type}', None
 
 
-def get_good_matches(des_0, des_ref, matching_config=None):
+def get_good_matches(des_0, des_ref, matching_config=None, callbacks=None):
     matching_config = {**_DEFAULT_MATCHING_CONFIG, **(matching_config or {})}
     match_method = matching_config['match_method']
     good_matches = []
-    if match_method == constants.MATCHING_KNN:
-        flann = cv2.FlannBasedMatcher(
-            {'algorithm': matching_config['flann_idx_kdtree'],
-             'trees': matching_config['flann_trees']},
-            {'checks': matching_config['flann_checks']})
-        matches = flann.knnMatch(des_0, des_ref, k=2)
-        good_matches = [m for m, n in matches
-                        if m.distance < matching_config['threshold'] * n.distance]
-    elif match_method == constants.MATCHING_NORM_HAMMING:
-        bf = cv2.BFMatcher(cv2.NORM_HAMMING, crossCheck=True)
-        good_matches = sorted(bf.match(des_0, des_ref), key=lambda x: x.distance)
-    else:
-        raise InvalidOptionError(
-            'match_method', match_method,
-            f". Valid options are: {constants.MATCHING_KNN}, {constants.MATCHING_NORM_HAMMING}"
-        )
+    try:
+        if match_method == constants.MATCHING_KNN:
+            flann = cv2.FlannBasedMatcher(
+                {'algorithm': matching_config['flann_idx_kdtree'],
+                 'trees': matching_config['flann_trees']},
+                {'checks': matching_config['flann_checks']})
+            matches = flann.knnMatch(des_0, des_ref, k=2)
+            good_matches = [m for m, n in matches
+                            if m.distance < matching_config['threshold'] * n.distance]
+        elif match_method == constants.MATCHING_NORM_HAMMING:
+            bf = cv2.BFMatcher(cv2.NORM_HAMMING, crossCheck=True)
+            good_matches = sorted(bf.match(des_0, des_ref), key=lambda x: x.distance)
+        else:
+            raise InvalidOptionError(
+                'match_method', match_method,
+                f". Valid options are: {constants.MATCHING_KNN}, {constants.MATCHING_NORM_HAMMING}"
+            )
+    except Exception as e:
+        traceback.print_tb(e.__traceback__)
+        if callbacks and 'warning' in callbacks:
+            callbacks['warning']("failed to compute matches")
+        return good_matches
     return good_matches
 
 
@@ -205,7 +212,8 @@ descriptor_map = {
 }
 
 
-def detect_and_compute_matches(img_ref, img_0, feature_config=None, matching_config=None):
+def detect_and_compute_matches(img_ref, img_0, feature_config=None, matching_config=None,
+                               callbacks=None):
     feature_config = {**_DEFAULT_FEATURE_CONFIG, **(feature_config or {})}
     matching_config = {**_DEFAULT_MATCHING_CONFIG, **(matching_config or {})}
     feature_config_detector = feature_config['detector']
@@ -224,7 +232,7 @@ def detect_and_compute_matches(img_ref, img_0, feature_config=None, matching_con
         descriptor = descriptor_map[feature_config_descriptor]()
         kp_0, des_0 = descriptor.compute(img_bw_0, detector.detect(img_bw_0, None))
         kp_ref, des_ref = descriptor.compute(img_bw_ref, detector.detect(img_bw_ref, None))
-    return kp_0, kp_ref, get_good_matches(des_0, des_ref, matching_config)
+    return kp_0, kp_ref, get_good_matches(des_0, des_ref, matching_config, callbacks)
 
 
 def find_transform(src_pts, dst_pts, transform=constants.DEFAULT_TRANSFORM,
@@ -390,7 +398,7 @@ def align_images(img_ref, img_0, feature_config=None, matching_config=None, alig
         else:
             img_0_sub, img_ref_sub = img_0, img_ref
         kp_0, kp_ref, good_matches = detect_and_compute_matches(
-            img_ref_sub, img_0_sub, feature_config, matching_config)
+            img_ref_sub, img_0_sub, feature_config, matching_config, callbacks)
         n_good_matches = len(good_matches)
         if n_good_matches >= min_good_matches or subsample == 1:
             break
@@ -435,9 +443,10 @@ def align_images(img_ref, img_0, feature_config=None, matching_config=None, alig
         else:
             if callbacks and 'warning' in callbacks:
                 if n_good_matches < min_matches:
-                    msg = f"only {n_good_matches} < {min_good_matches} matches found, alignment failed"
+                    msg = f"only {n_good_matches} < {min_good_matches} matches found, " \
+                        "alignment failed"
                 elif m is None:
-                    msg = f"no transformation found, alignment falied"
+                    msg = "no transformation found, alignment falied"
                 callbacks['warning'](msg)
             return n_good_matches, None, None
     h_sub, w_sub = img_0_sub.shape[:2]
@@ -445,7 +454,7 @@ def align_images(img_ref, img_0, feature_config=None, matching_config=None, alig
         m = rescale_trasnsform(m, w0, h0, w_sub, h_sub, subsample, transform_type)
         if m is None:
             if callbacks and 'warning' in callbacks:
-                callbacks['warning'](f"can't rescale transformation matrix, alignment failed")
+                callbacks['warning']("can't rescale transformation matrix, alignment failed")
             return n_good_matches, None, None
     is_valid, reason, result = check_transform(
         m, img_0.shape, transform_type,
