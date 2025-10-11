@@ -1,7 +1,7 @@
 from time import perf_counter
 from shinestacker.config.constants import constants
-from shinestacker.algorithms.utils import read_img
-from shinestacker.algorithms.align import align_images
+from shinestacker.algorithms.utils import read_img, write_img
+from shinestacker.algorithms.align import align_images, align_phase_correlation
 
 trap_exceptions = {
     ('AKAZE', 'AKAZE', 'KNN'):
@@ -89,8 +89,15 @@ def test_align():
     print("== time performance ==")
     for t, v in perf_map.items():
         print(f"{t:.4f}s: {v[0]}-{v[1]}-{v[2]}")
-    print("======================")
 
+def test_align_phase_correlation():
+    img_1, img_2 = [read_img(f"examples/input/img-jpg/000{i}.jpg") for i in (2, 3)]
+    t_start = perf_counter()
+    M, img_warp = align_phase_correlation(img_1, img_2)
+    t_elapsed = perf_counter() - t_start
+    print(f"{t_elapsed:.4f}s: phase correlation")
+    print("======================")
 
 if __name__ == '__main__':
     test_align()
+    test_align_phase_correlation()

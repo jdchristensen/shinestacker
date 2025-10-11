@@ -390,6 +390,61 @@ def align_images(img_ref, img_0, feature_config=None, matching_config=None, alig
     return n_good_matches, m, img_warp
 
 
+def align_phase_correlation(img_ref, img_0):
+    if len(img_ref.shape) == 3:
+        ref_gray = cv2.cvtColor(img_ref, cv2.COLOR_BGR2GRAY)
+        mov_gray = cv2.cvtColor(img_0, cv2.COLOR_BGR2GRAY)
+    else:
+        ref_gray = img_ref
+        mov_gray = img_0
+    h, w = ref_gray.shape
+    window_y = np.hanning(h)
+    window_x = np.hanning(w)
+    window = np.outer(window_y, window_x)
+    ref_win = ref_gray.astype(np.float32) * window
+    mov_win = mov_gray.astype(np.float32) * window
+    ref_fft = np.fft.fft2(ref_win)
+    mov_fft = np.fft.fft2(mov_win)
+    ref_mag = np.fft.fftshift(np.abs(ref_fft))
+    mov_mag = np.fft.fftshift(np.abs(mov_fft))
+    center = (w // 2, h // 2)
+    radius = min(center[0], center[1])
+    logpolar_size = (360, radius)  # (theta, log(r))
+    ref_logpolar = cv2.warpPolar(
+        ref_mag, logpolar_size, center, radius,
+        flags=cv2.WARP_POLAR_LOG + cv2.INTER_LINEAR
+    )
+    mov_logpolar = cv2.warpPolar(
+        mov_mag, logpolar_size, center, radius,
+        flags=cv2.WARP_POLAR_LOG + cv2.INTER_LINEAR
+    )
+    shift_lp, response = cv2.phaseCorrelate(
+        np.float32(ref_logpolar),
+        np.float32(mov_logpolar)
+    )
+    rotation = -shift_lp[0]  # theta coordinate
+    scale = np.exp(shift_lp[1] / (radius / np.log(radius)))
+    M_rotate_scale = cv2.getRotationMatrix2D(center, rotation, scale)
+    rotated_scaled = cv2.warpAffine(img_0, M_rotate_scale, (w, h))
+    if len(img_ref.shape) == 3:
+        ref_gray_corr = cv2.cvtColor(img_ref, cv2.COLOR_BGR2GRAY)
+        mov_gray_corr = cv2.cvtColor(rotated_scaled, cv2.COLOR_BGR2GRAY)
+    else:
+        ref_gray_corr = img_ref
+        mov_gray_corr = rotated_scaled
+    ref_win_corr = ref_gray_corr.astype(np.float32) * window
+    mov_win_corr = mov_gray_corr.astype(np.float32) * window
+    shift_xy, trans_response = cv2.phaseCorrelate(
+        np.float32(ref_win_corr),
+        np.float32(mov_win_corr)
+    )
+    m = M_rotate_scale.copy()
+    m[0, 2] += shift_xy[0]
+    m[1, 2] += shift_xy[1]
+    img_warp = cv2.warpAffine(img_0, m, (w, h))
+    return m, img_warp
+
+
 class AlignFramesBase(SubAction):
     def __init__(self, enabled=True, feature_config=None, matching_config=None,
                  alignment_config=None, **kwargs):
