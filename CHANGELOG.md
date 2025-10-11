@@ -9,6 +9,7 @@ This page reports the main releases only and the main changes therein.
 - alignment algorithm based on phase correlation as optional fallback solution in cases where no feature match is found
 
 ### Fixed
+- fixed reference frame indexing in sequential fallback from multithread run
 - minor fixes to logger messages
 - better tuning of parallel processing of frames alignment based
 
