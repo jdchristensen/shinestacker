@@ -10,7 +10,6 @@ from .. core.exceptions import InvalidOptionError
 from .. core.colors import color_str
 from .. core.core_utils import setup_matplotlib_mode
 from .utils import img_8bit, img_bw_8bit, save_plot, img_subsample
-from .utils import read_img, get_img_metadata, get_first_image_file
 from .stack_framework import SubAction
 setup_matplotlib_mode()
 
@@ -428,7 +427,6 @@ def align_images(img_ref, img_0, feature_config=None, matching_config=None, alig
         if callbacks and 'warning' in callbacks:
             callbacks['warning'](
                 f"only {n_good_matches} < {min_good_matches} matches found"
-                f"({len(kp_0)}, {len(kp_ref)}"
                 ", using phase correlation as fallback")
         n_good_matches = 0
         m = find_transform_phase_correlation(img_ref_sub, img_0_sub)
@@ -506,8 +504,6 @@ class AlignFramesBase(SubAction):
         self._translation_y = None
         self._rotation = None
         self._shear = None
-        self.shape = None
-        self.dtype = None
 
     def relative_transformation(self):
         return None
@@ -530,8 +526,6 @@ class AlignFramesBase(SubAction):
         self._translation_y = np.zeros(process.total_action_counts)
         self._rotation = np.zeros(process.total_action_counts)
         self._shear = np.zeros(process.total_action_counts)
-        filenames = sorted(self.process.input_filepaths())
-        self.shape, self.dtype = get_img_metadata(read_img(get_first_image_file(filenames)))
 
     def run_frame(self, idx, ref_idx, img_0):
         if idx == self.process.ref_idx:
@@ -543,7 +537,7 @@ class AlignFramesBase(SubAction):
         return _AFFINE_THRESHOLDS, _HOMOGRAPHY_THRESHOLDS
 
     def image_str(self, idx):
-        return f"image: {self.process.idx_tot_str(idx)}, " \
+        return f"frame {self.process.idx_tot_str(idx)}, " \
                f"{os.path.basename(self.process.input_filepath(idx))}"
 
     def end(self):
@@ -730,7 +724,7 @@ class AlignFramesBase(SubAction):
 class AlignFrames(AlignFramesBase):
     def align_images(self, idx, img_ref, img_0):
         idx_str = f"{idx:04d}"
-        idx_tot_str = self.process.idx_tot_str(idx)
+        idx_tot_str = f"frame {self.process.idx_tot_str(idx)}"
         callbacks = {
             'message': lambda: self.print_message(
                 f'{idx_tot_str}: estimate transform using feature matching'),

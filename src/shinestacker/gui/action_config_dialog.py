@@ -688,9 +688,14 @@ class AlignFramesConfigurator(SubsampleActionConfigurator, AlignFramesConfigBase
 
         transform.currentIndexChanged.connect(change_transform)
         change_transform()
-        self.add_field_to_layout(
-            layout, 'phase_corr_fallback', FIELD_BOOL, "Use phase correl. as fallback",
+        phase_corr_fallback = self.add_field_to_layout(
+            layout, 'phase_corr_fallback', FIELD_BOOL, "Phase correlation as fallback",
             required=False, expert=True, default=constants.DEFAULT_PHASE_CORR_FALLBACK)
+        phase_corr_fallback.setToolTip(
+            "Align using phase correlation algorithm if the number of matches\n"
+            "is too low to determine the transformation.\n"
+            "This algorithm is not very precise,\n"
+            "and may help only in case of blurred images.")
         self.add_field_to_layout(
             layout, 'abort_abnormal', FIELD_BOOL, 'Abort on abnormal transf.',
             expert=True,

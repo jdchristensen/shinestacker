@@ -297,7 +297,7 @@ class CombinedActions(ReferenceFrameTask):
     def run_frame(self, idx, ref_idx):
         input_path = self.input_filepath(idx)
         self.print_message(
-            color_str(f'read input image '
+            color_str(f'read input frame '
                       f'{idx + 1}/{self.total_action_counts}, '
                       f'{os.path.basename(input_path)}', constants.LOG_COLOR_LEVEL_3))
         img = read_img(input_path)
@@ -324,7 +324,7 @@ class CombinedActions(ReferenceFrameTask):
         if img is not None:
             output_path = os.path.join(self.output_full_path(), os.path.basename(input_path))
             self.print_message(
-                color_str(f'write output image '
+                color_str(f'write output frame '
                           f'{idx + 1}/{self.total_action_counts}, '
                           f'{os.path.basename(output_path)}', constants.LOG_COLOR_LEVEL_3))
             write_img(output_path, img)

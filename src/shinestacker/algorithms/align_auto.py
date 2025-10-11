@@ -22,12 +22,11 @@ class AlignFramesAuto(AlignFramesBase):
         self.num_threads = min(self.max_threads, available_cores)
         self._implementation = None
         self.overhead = 30.0
+        self.mem_per_gpx_sift = 0.1
 
     def begin(self, process):
         if self.mode == 'sequential' or self.num_threads == 1:
-            self._implementation = AlignFrames(
-                self.enabled, self.feature_config, self.matching_config, self.alignment_config,
-                **self.kwargs)
+            num_threads = 1
         else:
             if self.mode == 'parallel':
                 num_threads = self.num_threads
@@ -43,23 +42,26 @@ class AlignFramesAuto(AlignFramesBase):
                     descriptor = constants.DEFAULT_DESCRIPTOR
                 if detector in (constants.DETECTOR_SIFT, constants.DETECTOR_AKAZE) or \
                         descriptor in (constants.DESCRIPTOR_SIFT, constants.DESCRIPTOR_AKAZE):
-                    shape, dtype = get_img_metadata(
-                        read_img(get_first_image_file(process.input_filepaths())))
-                    bytes_per_pixel = 3 * np.dtype(dtype).itemsize
-                    img_memory = bytes_per_pixel * float(shape[0]) * float(shape[1]) * \
-                        self.overhead / constants.ONE_GIGA
-                    num_threads = max(
-                        1,
-                        int(round(self.memory_limit) / img_memory))
+                    shape, dtype = get_img_metadata(read_img(
+                        get_first_image_file(process.input_filepaths())))
+                    img_pxls = shape[0] * shape[1]
+                    mem_gb = img_pxls / constants.ONE_MEGA * self.mem_per_gpx_sift * \
+                        np.dtype(dtype).itemsize
+                    num_threads = min(self.num_threads, int(self.memory_limit / mem_gb))
                     num_threads = min(num_threads, self.num_threads)
                     chunk_submit = True
                 else:
                     num_threads = self.num_threads
                     chunk_submit = self.chunk_submit
+        if num_threads > 1:
             self._implementation = AlignFramesParallel(
                 self.enabled, self.feature_config, self.matching_config, self.alignment_config,
                 max_threads=num_threads, chunk_submit=chunk_submit,
                 bw_matching=self.bw_matching,
+                **self.kwargs)
+        else:
+            self._implementation = AlignFrames(
+                self.enabled, self.feature_config, self.matching_config, self.alignment_config,
                 **self.kwargs)
         self._implementation.begin(process)
 

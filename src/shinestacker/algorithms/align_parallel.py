@@ -13,7 +13,7 @@ from .. core.exceptions import InvalidOptionError, RunStopException
 from .. core.colors import color_str
 from .. core.core_utils import make_chunks
 from .utils import read_img, img_subsample, img_bw, img_bw_8bit
-from .align import (AlignFramesBase, find_transform,
+from .align import (AlignFramesBase, find_transform, find_transform_phase_correlation,
                     check_transform, _cv2_border_mode_map, rescale_trasnsform,
                     validate_align_config, detector_map, descriptor_map,
                     get_good_matches)
@@ -36,8 +36,6 @@ class AlignFramesParallel(AlignFramesBase):
         super().__init__(enabled, feature_config, matching_config,
                          alignment_config, **kwargs)
         self.max_threads = kwargs.get('max_threads', constants.DEFAULT_ALIGN_MAX_THREADS)
-        self.memory_limit = kwargs.get('memory_limit', constants.DEFAULT_ALIGN_MEMORY_LIMIT_GB)
-        self.mem_per_gpx = 0.1
         self.chunk_submit = kwargs.get('chunk_submit', constants.DEFAULT_ALIGN_CHUNK_SUBMIT)
         self.bw_matching = kwargs.get('bw_matching', constants.DEFAULT_ALIGN_BW_MATCHING)
         self._img_cache = None
@@ -115,16 +113,7 @@ class AlignFramesParallel(AlignFramesBase):
                 "requested plot matches is not supported with parallel processing",
                 color=constants.LOG_COLOR_WARNING, level=logging.WARNING)
         n_frames = self.process.num_input_filepaths()
-        max_threads = self.max_threads
-        if max_threads > 1 and \
-                self.feature_config['detector'] in \
-                [constants.DETECTOR_SIFT, constants.DETECTOR_AKAZE] or \
-                self.feature_config['descriptor'] in \
-                [constants.DESCRIPTOR_SIFT, constants.DESCRIPTOR_AKAZE]:
-            img_pxls = self.shape[0] * self.shape[1]
-            mem_gb = img_pxls / constants.ONE_MEGA * self.mem_per_gpx
-            max_threads = min(max_threads, int(self.memory_limit / mem_gb))
-        self.print_message(f"preprocess {n_frames} images in parallel, cores: {max_threads}")
+        self.print_message(f"preprocess {n_frames} images in parallel, cores: {self.max_threads}")
         self.process.callback(constants.CALLBACK_STEP_COUNTS,
                               self.process.id, self.process.name, 2 * n_frames)
         input_filepaths = self.process.input_filepaths()
@@ -280,6 +269,16 @@ class AlignFramesParallel(AlignFramesBase):
         m = None
         min_matches = 4 if self.alignment_config['transform'] == constants.ALIGN_HOMOGRAPHY else 3
         if n_good_matches < min_matches:
+            if self.alignment_config['phase_corr_fallback']:
+                self.print_message(
+                    f"warning: only {n_good_matches} found for "
+                    f"{self.image_str(idx)}, using phase correlation as fallback",
+                    color=constants.LOG_COLOR_WARNING, level=logging.WARNING)
+                n_good_matches = 0
+                m = find_transform_phase_correlation(img_ref_sub, img_0_sub)
+                self._transforms[idx] = m
+                self._target_indices[idx] = target_idx
+                return info_messages, warning_messages
             self.print_message(
                 f"warning: only {n_good_matches} found for "
                 f"{self.image_str(idx)}, trying next frame",

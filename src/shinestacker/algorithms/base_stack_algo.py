@@ -41,7 +41,7 @@ class BaseStackAlgo:
         return f"{idx + 1}/{len(self.filenames)}"
 
     def image_str(self, idx):
-        return f"image: {self.idx_tot_str(idx)}, " \
+        return f"frame {self.idx_tot_str(idx)}, " \
                f"{os.path.basename(self.filenames[idx])}"
 
     def num_images(self):
