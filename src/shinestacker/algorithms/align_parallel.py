@@ -70,7 +70,7 @@ class AlignFramesParallel(AlignFramesBase):
             for idx in idxs:
                 self.print_message(
                     f"submit alignment matches, {self.image_str(idx)}")
-                future = executor.submit(self.extract_features, idx)
+                future = executor.submit(self.find_transform, idx)
                 future_to_index[future] = idx
             for future in as_completed(future_to_index):
                 idx = future_to_index[future]
@@ -221,7 +221,7 @@ class AlignFramesParallel(AlignFramesBase):
             kp_ref, des_ref = descriptor.compute(img_bw_ref, detector.detect(img_bw_ref, None))
         return kp_0, kp_ref, get_good_matches(des_0, des_ref, matching_config)
 
-    def extract_features(self, idx, delta=1):
+    def find_transform(self, idx, delta=1):
         ref_idx = self.process.ref_idx
         pass_ref_err_msg = "cannot find path to reference frame"
         if idx < ref_idx:
@@ -273,7 +273,7 @@ class AlignFramesParallel(AlignFramesBase):
                 f"warning: only {n_good_matches} found for "
                 f"{self.image_str(idx)}, trying next frame",
                 color=constants.LOG_COLOR_WARNING, level=logging.WARNING)
-            return self.extract_features(idx, delta + 1)
+            return self.find_transform(idx, delta + 1)
         transform = self.alignment_config['transform']
         src_pts = np.float32([kp_0[m.queryIdx].pt for m in good_matches]).reshape(-1, 1, 2)
         dst_pts = np.float32([kp_ref[m.trainIdx].pt for m in good_matches]).reshape(-1, 1, 2)
@@ -289,7 +289,7 @@ class AlignFramesParallel(AlignFramesBase):
                     f"invalid option {transform} "
                     f"for {self.image_str(idx)}, trying next frame",
                     color=constants.LOG_COLOR_WARNING, level=logging.WARNING)
-                return self.extract_features(idx, delta + 1)
+                return self.find_transform(idx, delta + 1)
         transform_type = self.alignment_config['transform']
         thresholds = self.get_transform_thresholds()
         is_valid, _reason, _result = check_transform(m, img_0.shape, transform_type, *thresholds)
@@ -303,7 +303,7 @@ class AlignFramesParallel(AlignFramesBase):
                 msg, color=constants.LOG_COLOR_WARNING, level=logging.WARNING)
             if do_abort:
                 raise RuntimeError("invalid transformation: {reason}")
-            return self.extract_features(idx, delta + 1)
+            return self.find_transform(idx, delta + 1)
         self._transforms[idx] = m
         self._target_indices[idx] = target_idx
         return info_messages, warning_messages
