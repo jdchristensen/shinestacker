@@ -30,7 +30,7 @@ class AlignmentError(FocusStackError):
     def __init__(self, index, details):
         self.index = index
         self.details = details
-        super().__init__(f"Alignment failed for image {index}: {details}")
+        super().__init__(f"Alignment failed for frame {index}: {details}")
 
 
 class BitDepthError(FocusStackError):
