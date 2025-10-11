@@ -152,6 +152,7 @@ def get_good_matches(des_0, des_ref, matching_config=None, callbacks=None):
     matching_config = {**_DEFAULT_MATCHING_CONFIG, **(matching_config or {})}
     match_method = matching_config['match_method']
     good_matches = []
+    invalid_option = False
     try:
         if match_method == constants.MATCHING_KNN:
             flann = cv2.FlannBasedMatcher(
@@ -165,15 +166,16 @@ def get_good_matches(des_0, des_ref, matching_config=None, callbacks=None):
             bf = cv2.BFMatcher(cv2.NORM_HAMMING, crossCheck=True)
             good_matches = sorted(bf.match(des_0, des_ref), key=lambda x: x.distance)
         else:
-            raise InvalidOptionError(
-                'match_method', match_method,
-                f". Valid options are: {constants.MATCHING_KNN}, {constants.MATCHING_NORM_HAMMING}"
-            )
+            invalid_option = True
     except Exception as e:
         traceback.print_tb(e.__traceback__)
         if callbacks and 'warning' in callbacks:
             callbacks['warning']("failed to compute matches")
-        return good_matches
+    if invalid_option:
+        raise InvalidOptionError(
+            'match_method', match_method,
+            f". Valid options are: {constants.MATCHING_KNN}, {constants.MATCHING_NORM_HAMMING}"
+        )
     return good_matches
 
 
