@@ -14,6 +14,7 @@ class Action1(TaskBase):
     def end_job(self):
         self.print_message(color_str("run 1, end job", "magenta", "bold"))
 
+
 class Action2(TaskBase):
     def __init__(self):
         TaskBase.__init__(self, "action 2")
@@ -24,6 +25,7 @@ class Action2(TaskBase):
 
     def end_job(self):
         self.print_message(color_str("run 1, end job", "magenta", "bold"))
+
 
 class MySequence(SequentialTask):
     def __init__(self, name, enabled=True):
@@ -40,6 +42,7 @@ class MySequence(SequentialTask):
 
     def end_job(self):
         self.print_message(color_str("my sequence, end job", "magenta", "bold"))
+
 
 def test_run():
     try:

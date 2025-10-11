@@ -6,7 +6,7 @@ if "pytest" in sys.modules:
     matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from shinestacker.config.constants import constants
-from shinestacker.algorithms.align import align_images, align_images_phase_correlation
+from shinestacker.algorithms.align import align_images
 np.random.seed(123456)
 
 
@@ -98,19 +98,20 @@ def compare_alignment(feature_config, matching_config, alignment_config, color_t
         plt.show()
 
 
-feature_config={
+feature_config = {
     'detector': constants.DETECTOR_ORB,
     'descriptor': constants.DESCRIPTOR_ORB
 }
 
-matching_config={
+matching_config = {
     'match_method': constants.MATCHING_KNN
 }
 
-alignment_config={
+alignment_config = {
     'transform': constants.ALIGN_RIGID,
     'subsample': 1
 }
+
 
 def test_alignment_bw():
     compare_alignment(feature_config, matching_config, alignment_config, False)
