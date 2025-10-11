@@ -440,8 +440,7 @@ class CombinedActionsConfigurator(DefaultActionConfigurator):
             default=0)
         self.add_field(
             'step_process', FIELD_BOOL, 'Step process', required=False,
-            expert=True,
-            default=True)
+            expert=True, default=constants.DEFAULT_COMBINED_ACTIONS_STEP_PROCESS)
         self.add_field(
             'max_threads', FIELD_INT, 'Max num. of cores',
             required=False, default=AppConfig.get('combined_actions_params')['max_threads'],

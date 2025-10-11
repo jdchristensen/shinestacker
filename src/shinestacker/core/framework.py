@@ -300,8 +300,10 @@ class SequentialTask(TaskBase):
         self.print_message(color_str('begin run', constants.LOG_COLOR_LEVEL_2), end='\n')
         self.begin()
         if self.run_sequential():
+            self.print_message(color_str('run sequential', constants.LOG_COLOR_LEVEL_2))
             self.run_core_serial()
         else:
+            self.print_message(color_str('run parallel', constants.LOG_COLOR_LEVEL_2))
             if self.chunk_submit:
                 self.run_core_parallel_chunks()
             else:

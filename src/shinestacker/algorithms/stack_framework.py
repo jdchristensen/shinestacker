@@ -191,7 +191,8 @@ class ImageSequenceManager:
 
 
 class ReferenceFrameTask(SequentialTask, ImageSequenceManager):
-    def __init__(self, name, enabled=True, reference_index=0, step_process=False, **kwargs):
+    def __init__(self, name, enabled=True, reference_index=0,
+                 step_process=constants.DEFAULT_COMBINED_ACTIONS_STEP_PROCESS, **kwargs):
         ImageSequenceManager.__init__(self, name, **kwargs)
         SequentialTask.__init__(self, name, enabled)
         self.ref_idx = reference_index
@@ -276,7 +277,8 @@ class SubAction:
 
 class CombinedActions(ReferenceFrameTask):
     def __init__(self, name, actions=[], enabled=True, **kwargs):
-        ReferenceFrameTask.__init__(self, name, enabled, **kwargs)
+        step_process = kwargs.pop('step_process', constants.DEFAULT_COMBINED_ACTIONS_STEP_PROCESS)
+        ReferenceFrameTask.__init__(self, name, enabled, step_process=step_process, **kwargs)
         self._actions = actions
         self._metadata = (None, None)
 
