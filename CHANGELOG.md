@@ -13,8 +13,11 @@ This page reports the main releases only and the main changes therein.
 ### Fixed
 - fixed reference frame indexing in sequential fallback from multithread run
 - preview thumbnail now works also for very large images
-- better tuning of parallel processing of frames alignment based
 - minor fixes to logger messages
+
+### Changed
+- more robust alignment strategy in case of poorly focused images
+- better tuning of parallel processing of frames alignment
 
 -----
 
