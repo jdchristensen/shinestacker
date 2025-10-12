@@ -105,6 +105,7 @@ This class has extra parameters, in addition to the above ones:
 * ```max_threads``` (optional, default: ```2```): number of parallel processes allowed. The number of actual threads will not be greater than the number of available CPU cores.
 * ```chunk_submit``` (optional, default: ```True```): submit at most ```max_threads``` parallel processes. If ```chunk_submit``` is greater than ```max_threads``` a moderate performance gain is achieved at the cost of a possibly large memory occupancy.
 * ```bw_matching``` (optional, default: ```False```): perform matches on black and white version of the images in order to save memory. Preliminary tests indicate that the gain with this option is marginal, and this option may be dropped in the future.
+* ```delta_max``` (optional, defaut: 2): maximum consecutive frames skipped in case of too few matches found.
 
 ## Automatic selection of processing strategy
 

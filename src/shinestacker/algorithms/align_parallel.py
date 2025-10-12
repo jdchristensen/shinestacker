@@ -38,6 +38,7 @@ class AlignFramesParallel(AlignFramesBase):
         self.max_threads = kwargs.get('max_threads', constants.DEFAULT_ALIGN_MAX_THREADS)
         self.chunk_submit = kwargs.get('chunk_submit', constants.DEFAULT_ALIGN_CHUNK_SUBMIT)
         self.bw_matching = kwargs.get('bw_matching', constants.DEFAULT_ALIGN_BW_MATCHING)
+        self.delta_max = kwargs.get('delta_max', constants.DEFAULT_ALIGN_DELTA_MAX)
         self._img_cache = None
         self._img_shapes = None
         self._img_locks = None
@@ -83,7 +84,7 @@ class AlignFramesParallel(AlignFramesBase):
                     color = constants.LOG_COLOR_LEVEL_3
                     level = logging.INFO
                     if len(warning_messages) > 0:
-                        message += "; " + color_str(", ".join(warning_messages), 'yellow')
+                        message += "; " + color_str("; ".join(warning_messages), 'yellow')
                         color = constants.LOG_COLOR_WARNING
                         level = logging.WARNING
                     self.print_message(message, color=color, level=level)
@@ -223,6 +224,12 @@ class AlignFramesParallel(AlignFramesBase):
 
     def find_transform(self, idx, delta=1):
         ref_idx = self.process.ref_idx
+        if delta > self.delta_max:
+            if self.delta_max > 1:
+                msg = f"next {self.delta_max} frames not matched, frame skipped"
+            else:
+                msg = "next frame not matched, frame skipped"
+            return [], [msg]
         pass_ref_err_msg = "cannot find path to reference frame"
         if idx < ref_idx:
             target_idx = idx + delta
@@ -264,25 +271,31 @@ class AlignFramesParallel(AlignFramesBase):
             if n_good_matches > min_good_matches or subsample == 1:
                 break
             subsample = 1
-            warning_messages.append("too few matches, no subsampling applied")
+            s_str = 'es' if n_good_matches != 1 else ''
+            msg = f"{self.image_str(idx)}: only {n_good_matches} < {min_good_matches} " \
+                "match{s_str} found with {self.image_str(target_idx)}, retrying without subsampling"
+            self.print_message(msg, color=constants.LOG_COLOR_WARNING, level=logging.WARNING)
+            warning_messages.append("no subsampling applied")
         self._n_good_matches[idx] = n_good_matches
         m = None
         min_matches = 4 if self.alignment_config['transform'] == constants.ALIGN_HOMOGRAPHY else 3
         if n_good_matches < min_matches:
             if self.alignment_config['phase_corr_fallback']:
-                self.print_message(
-                    f"warning: only {n_good_matches} found for "
-                    f"{self.image_str(idx)}, using phase correlation as fallback",
-                    color=constants.LOG_COLOR_WARNING, level=logging.WARNING)
+                s_str = 'es' if n_good_matches != 1 else ''
+                msg = f"{self.image_str(idx)}: only {n_good_matches} good matches found " \
+                    f" with {self.image_str(target_idx)}, using phase correlation as fallback"
+                self.print_message(msg, color=constants.LOG_COLOR_WARNING, level=logging.WARNING)
+                warning_messages.append("used phase correlation as fallback")
                 n_good_matches = 0
                 m = find_transform_phase_correlation(img_ref_sub, img_0_sub)
                 self._transforms[idx] = m
                 self._target_indices[idx] = target_idx
                 return info_messages, warning_messages
-            self.print_message(
-                f"warning: only {n_good_matches} found for "
-                f"{self.image_str(idx)}, trying next frame",
-                color=constants.LOG_COLOR_WARNING, level=logging.WARNING)
+            s_str = 'es' if n_good_matches != 1 else ''
+            msg = f"{self.image_str(idx)}: only {n_good_matches} good match{s_str} found, " \
+                  f" with {self.image_str(target_idx)}, trying next frame"
+            self.print_message(msg, color=constants.LOG_COLOR_WARNING, level=logging.WARNING)
+            warning_messages.append(msg)
             return self.find_transform(idx, delta + 1)
         transform = self.alignment_config['transform']
         src_pts = np.float32([kp_0[m.queryIdx].pt for m in good_matches]).reshape(-1, 1, 2)

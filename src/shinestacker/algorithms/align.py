@@ -3,7 +3,6 @@
 import os
 import math
 import logging
-import traceback
 import numpy as np
 import cv2
 import matplotlib.pyplot as plt
@@ -168,8 +167,7 @@ def get_good_matches(des_0, des_ref, matching_config=None, callbacks=None):
             good_matches = sorted(bf.match(des_0, des_ref), key=lambda x: x.distance)
         else:
             invalid_option = True
-    except Exception as e:
-        traceback.print_tb(e.__traceback__)
+    except Exception:
         if callbacks and 'warning' in callbacks:
             callbacks['warning']("failed to compute matches")
     if invalid_option:
@@ -407,9 +405,9 @@ def align_images(img_ref, img_0, feature_config=None, matching_config=None, alig
             break
         subsample = 1
         if callbacks and 'warning' in callbacks:
-            s_str = 's' if n_good_matches > 1 else ''
+            s_str = 'es' if n_good_matches != 1 else ''
             callbacks['warning'](
-                f"only {n_good_matches} < {min_good_matches} matche{s_str} found, "
+                f"only {n_good_matches} < {min_good_matches} match{s_str} found, "
                 "retrying without subsampling")
         else:
             n_good_matches = 0

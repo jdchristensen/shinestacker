@@ -743,6 +743,10 @@ class AlignFramesConfigurator(SubsampleActionConfigurator, AlignFramesConfigBase
             layout, 'bw_matching', FIELD_BOOL, 'Match using black & white',
             expert=True,
             required=False, default=constants.DEFAULT_ALIGN_BW_MATCHING)
+        delta_max = self.add_field_to_layout(
+            layout, 'delta_max', FIELD_INT, 'Max frames skip',
+            required=False, default=constants.DEFAULT_ALIGN_DELTA_MAX,
+            min_val=1, max_val=128)
 
         def change_mode():
             text = mode.currentText()
@@ -751,6 +755,7 @@ class AlignFramesConfigurator(SubsampleActionConfigurator, AlignFramesConfigBase
             max_threads.setEnabled(enabled)
             chunk_submit.setEnabled(enabled)
             bw_matching.setEnabled(enabled)
+            delta_max.setEnabled(enabled)
 
         mode.currentIndexChanged.connect(change_mode)
 

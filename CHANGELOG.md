@@ -8,6 +8,7 @@ This page reports the main releases only and the main changes therein.
 ### Added
 - alignment algorithm based on phase correlation as optional fallback solution in cases where no feature match is found
 - more configurable parameters added to default settings
+- optimization for images with poor focus: maximum number of match retries to next frame limited to a new parameter delta_max for parallel alignment
 
 ### Fixed
 - fixed reference frame indexing in sequential fallback from multithread run
