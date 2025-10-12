@@ -57,7 +57,7 @@ def test_image_save_error():
 def test_alignment_error():
     with pytest.raises(AlignmentError) as excinfo:
         raise AlignmentError(2, "feature detection failed")
-    assert str(excinfo.value) == "Alignment failed for image 2: feature detection failed"
+    assert str(excinfo.value) == "Alignment failed for frame 2: feature detection failed"
     assert excinfo.value.index == 2
     assert excinfo.value.details == "feature detection failed"
 

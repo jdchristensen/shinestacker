@@ -77,12 +77,15 @@ class GuiImageView(QWidget):
         self.image_label.setAlignment(Qt.AlignCenter)
         self.main_layout.addWidget(self.image_label)
         self.setLayout(self.main_layout)
-        img = read_img(file_path)
-        height, width = img.shape[:2]
-        scale_factor = gui_constants.GUI_IMG_WIDTH / width
-        new_height = int(height * scale_factor)
-        img = cv2.resize(img, (gui_constants.GUI_IMG_WIDTH, new_height),
-                         interpolation=cv2.INTER_LINEAR)
+        try:
+            img = read_img(file_path)
+            height, width = img.shape[:2]
+            scale_factor = gui_constants.GUI_IMG_WIDTH / width
+            new_height = int(height * scale_factor)
+            img = cv2.resize(img, (gui_constants.GUI_IMG_WIDTH, new_height),
+                             interpolation=cv2.INTER_LINEAR)
+        except Exception:
+            raise RuntimeError(f"Can't load file: {file_path}.")
         if img.dtype == np.uint16:
             img = (img // 256).astype(np.uint8)
         if len(img.shape) == 3:

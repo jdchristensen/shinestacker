@@ -406,8 +406,9 @@ def align_images(img_ref, img_0, feature_config=None, matching_config=None, alig
             break
         subsample = 1
         if callbacks and 'warning' in callbacks:
+            s_str = 's' if n_good_matches > 1 else ''
             callbacks['warning'](
-                f"only {n_good_matches} < {min_good_matches} matches found, "
+                f"only {n_good_matches} < {min_good_matches} matche{s_str} found, "
                 "retrying without subsampling")
         else:
             n_good_matches = 0
