@@ -413,8 +413,7 @@ def align_images(img_ref, img_0, feature_config=None, matching_config=None, alig
             n_good_matches = 0
             break
     phase_corr_fallback = alignment_config['phase_corr_fallback']
-    if not phase_corr_fallback and callbacks and 'matches_message' in callbacks:
-        callbacks['matches_message'](n_good_matches)
+    phase_corr_called = False
     img_warp = None
     m = None
     transform_type = alignment_config['transform']
@@ -440,6 +439,7 @@ def align_images(img_ref, img_0, feature_config=None, matching_config=None, alig
                     ", using phase correlation as fallback")
             n_good_matches = 0
             m = find_transform_phase_correlation(img_ref_sub, img_0_sub)
+            phase_corr_called = True
             if m is None:
                 return n_good_matches, None, None
         else:
@@ -469,6 +469,8 @@ def align_images(img_ref, img_0, feature_config=None, matching_config=None, alig
         if alignment_config['abort_abnormal']:
             raise RuntimeError("invalid transformation: {reason}, alignment failed")
         return n_good_matches, None, None
+    if not phase_corr_called and callbacks and 'matches_message' in callbacks:
+        callbacks['matches_message'](n_good_matches)
     if callbacks and 'estimation_message' in callbacks:
         callbacks['estimation_message']()
     img_mask = np.ones_like(img_0, dtype=np.uint8)
