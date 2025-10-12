@@ -1,4 +1,4 @@
-# pylint: disable=C0114, C0115, C0116, E0611, W0718, E1101, C0103
+# pylint: disable=C0114, C0115, C0116, E0611, W0718, E1101, C0103, R0914
 import webbrowser
 import subprocess
 import os
@@ -84,8 +84,8 @@ class GuiImageView(QWidget):
             new_height = int(height * scale_factor)
             img = cv2.resize(img, (gui_constants.GUI_IMG_WIDTH, new_height),
                              interpolation=cv2.INTER_LINEAR)
-        except Exception:
-            raise RuntimeError(f"Can't load file: {file_path}.")
+        except Exception as e:
+            raise RuntimeError(f"Can't load file: {file_path}.") from e
         if img.dtype == np.uint16:
             img = (img // 256).astype(np.uint8)
         if len(img.shape) == 3:

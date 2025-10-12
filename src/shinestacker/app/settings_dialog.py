@@ -19,10 +19,12 @@ class SettingsDialog(ConfigDialog, AlignFramesConfigBase):
         self.settings = Settings.instance()
         self.expert_options = None
         self.combined_actions_max_threads = None
+        self.align_frames_memory_limit = None
         self.align_frames_max_threads = None
         self.detector = None
         self.descriptor = None
         self.matching_method = None
+        self.focus_stack_memory_limit = None
         self.focus_stack_max_threads = None
         self.view_strategy = None
         self.min_mouse_step_brush_fraction = None
@@ -49,18 +51,27 @@ class SettingsDialog(ConfigDialog, AlignFramesConfigBase):
         self.expert_options = QCheckBox()
         self.expert_options.setChecked(self.settings.get('expert_options'))
         self.container_layout.addRow("Expert options:", self.expert_options)
+
         self.combined_actions_max_threads = QSpinBox()
         self.combined_actions_max_threads.setRange(0, 64)
         self.combined_actions_max_threads.setValue(
             self.settings.get('combined_actions_params')['max_threads'])
-        self.container_layout.addRow("Max num. of cores, combined actions:",
+        self.container_layout.addRow("Combined actions, max num. of cores:",
                                      self.combined_actions_max_threads)
+
+        self.align_frames_memory_limit = QDoubleSpinBox()
+        self.align_frames_memory_limit.setRange(1.0, 64.0)
+        self.align_frames_memory_limit.setSingleStep(1.0)
+        self.align_frames_memory_limit.setValue(
+            self.settings.get('align_frames_params')['memory_limit'])
+        self.container_layout.addRow("Align frames, mem. limit (approx., GBytes):",
+                                     self.align_frames_memory_limit)
 
         self.align_frames_max_threads = QSpinBox()
         self.align_frames_max_threads.setRange(0, 64)
         self.align_frames_max_threads.setValue(
             self.settings.get('align_frames_params')['max_threads'])
-        self.container_layout.addRow("Max num. of cores, align frames:",
+        self.container_layout.addRow("Align frames, max num. of cores:",
                                      self.align_frames_max_threads)
 
         def change_match_config():
@@ -89,11 +100,19 @@ class SettingsDialog(ConfigDialog, AlignFramesConfigBase):
         self.container_layout.addRow(self.info_label)
         self.container_layout.addRow('Match method:', self.matching_method)
 
+        self.focus_stack_memory_limit = QDoubleSpinBox()
+        self.focus_stack_memory_limit.setRange(1.0, 64.0)
+        self.focus_stack_memory_limit.setSingleStep(1.0)
+        self.focus_stack_memory_limit.setValue(
+            self.settings.get('focus_stack_params')['memory_limit'])
+        self.container_layout.addRow("Focus stacking, mem. limit (approx., GBytes):",
+                                     self.focus_stack_memory_limit)
+
         self.focus_stack_max_threads = QSpinBox()
         self.focus_stack_max_threads.setRange(0, 64)
         self.focus_stack_max_threads.setValue(
-            self.settings.get('align_frames_params')['max_threads'])
-        self.container_layout.addRow("Max num. of cores, focus stacking:",
+            self.settings.get('focus_stack_params')['max_threads'])
+        self.container_layout.addRow("Focus stacking, max. num. of cores:",
                                      self.focus_stack_max_threads)
 
     def create_retouch_settings(self):
@@ -142,10 +161,13 @@ class SettingsDialog(ConfigDialog, AlignFramesConfigBase):
                 'expert_options', self.expert_options.isChecked())
             self.settings.set(
                 'combined_actions_params', {
-                    'max_threads': self.combined_actions_max_threads.value()
+                    'max_threads':
+                        self.combined_actions_max_threads.value()
                 })
             self.settings.set(
                 'align_frames_params', {
+                    'memory_limit':
+                        self.align_frames_memory_limit.value(),
                     'max_threads':
                         self.align_frames_max_threads.value(),
                     'detector':
@@ -157,11 +179,17 @@ class SettingsDialog(ConfigDialog, AlignFramesConfigBase):
                 })
             self.settings.set(
                 'focus_stack_params', {
-                    'max_threads': self.focus_stack_max_threads.value()
+                    'memory_limit':
+                        self.focus_stack_memory_limit.value(),
+                    'max_threads':
+                        self.focus_stack_max_threads.value()
                 })
             self.settings.set(
-                'focus_stack_bunch:params', {
-                    'max_threads': self.focus_stack_max_threads.value()
+                'focus_stack_bunch_params', {
+                    'memory_limit':
+                        self.focus_stack_memory_limit.value(),
+                    'max_threads':
+                        self.focus_stack_max_threads.value()
                 })
         if self.retouch_settings:
             self.settings.set(
@@ -184,13 +212,15 @@ class SettingsDialog(ConfigDialog, AlignFramesConfigBase):
     def reset_to_defaults(self):
         if self.project_settings:
             self.expert_options.setChecked(constants.DEFAULT_EXPERT_OPTIONS)
-            self.combined_actions_max_threads.setValue(constants.DEFAULT_MAX_FWK_THREADS)
+            self.combined_actions_max_threads.setValue(constants.DEFAULT_FWK_MAX_THREADS)
+            self.align_frames_memory_limit.setValue(constants.DEFAULT_ALIGN_MEMORY_LIMIT_GB)
             self.align_frames_max_threads.setValue(constants.DEFAULT_ALIGN_MAX_THREADS)
             self.detector.setCurrentText(constants.DEFAULT_DETECTOR)
             self.descriptor.setCurrentText(constants.DEFAULT_DESCRIPTOR)
             idx = self.matching_method.findData(constants.DEFAULT_MATCHING_METHOD)
             if idx >= 0:
                 self.matching_method.setCurrentIndex(idx)
+            self.focus_stack_memory_limit.setValue(constants.DEFAULT_PY_MEMORY_LIMIT_GB)
             self.focus_stack_max_threads.setValue(constants.DEFAULT_PY_MAX_THREADS)
         if self.retouch_settings:
             idx = self.view_strategy.findData(constants.DEFAULT_VIEW_STRATEGY)

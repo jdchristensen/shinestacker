@@ -197,8 +197,8 @@ class Job(TaskBase):
 
 class SequentialTask(TaskBase):
     def __init__(self, name, enabled=True, **kwargs):
-        self.max_threads = kwargs.pop('max_threads', constants.DEFAULT_MAX_FWK_THREADS)
-        self.chunk_submit = kwargs.pop('chunk_submit', constants.DEFAULT_MAX_FWK_CHUNK_SUBMIT)
+        self.max_threads = kwargs.pop('max_threads', constants.DEFAULT_FWK_MAX_THREADS)
+        self.chunk_submit = kwargs.pop('chunk_submit', constants.DEFAULT_FWK_CHUNK_SUBMIT)
         TaskBase.__init__(self, name, enabled, **kwargs)
         self.total_action_counts = None
         self.current_action_count = None

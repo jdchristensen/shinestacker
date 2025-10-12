@@ -7,12 +7,13 @@ This page reports the main releases only and the main changes therein.
 
 ### Added
 - alignment algorithm based on phase correlation as optional fallback solution in cases where no feature match is found
+- more configurable parameters added to default settings
 
 ### Fixed
 - fixed reference frame indexing in sequential fallback from multithread run
-- preview thumbnail works also for very large images
-- minor fixes to logger messages
+- preview thumbnail now works also for very large images
 - better tuning of parallel processing of frames alignment based
+- minor fixes to logger messages
 
 -----
 

@@ -1,4 +1,5 @@
-# pylint: disable=C0114, C0115, C0116, E1101, R0914, R0913, R0917, R0912, R0915, R0902, E1121, W0102
+# pylint: disable=C0114, C0115, C0116, E1101, R0914, R0913
+# pylint: disable=R0917, R0912, R0915, R0902, E1121, W0102, W0718
 import os
 import math
 import logging
@@ -445,6 +446,7 @@ def align_images(img_ref, img_0, feature_config=None, matching_config=None, alig
                 return n_good_matches, None, None
         else:
             if callbacks and 'warning' in callbacks:
+                msg = ""
                 if n_good_matches < min_matches:
                     msg = f"only {n_good_matches} < {min_good_matches} matches found, " \
                         "alignment failed"
@@ -761,7 +763,7 @@ class AlignFrames(AlignFramesBase):
                 f'{msg}', constants.LOG_COLOR_WARNING),
             'save_plot': lambda plot_path: self.process.callback(
                 constants.CALLBACK_SAVE_PLOT, self.process.id,
-                f"{self.process.name}: matches\{idx_str}", plot_path),
+                f"{self.process.name}: matches\nframe {idx_str}", plot_path),
             'save_transform_result': lambda result: self.save_transform_result(idx, result)
         }
         if self.plot_matches:

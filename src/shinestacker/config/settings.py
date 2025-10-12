@@ -39,18 +39,21 @@ DEFAULT_SETTINGS = {
     'cursor_update_time': gui_constants.DEFAULT_CURSOR_UPDATE_TIME,
     'min_mouse_step_brush_fraction': gui_constants.DEFAULT_MIN_MOUSE_STEP_BRUSH_FRACTION,
     'combined_actions_params': {
-        'max_threads': constants.DEFAULT_MAX_FWK_THREADS
+        'max_threads': constants.DEFAULT_FWK_MAX_THREADS
     },
     'align_frames_params': {
+        'memory_limit': constants.DEFAULT_ALIGN_MEMORY_LIMIT_GB,
         'max_threads': constants.DEFAULT_ALIGN_MAX_THREADS,
         'detector': constants.DEFAULT_DETECTOR,
         'descriptor': constants.DEFAULT_DESCRIPTOR,
         'match_method': constants.DEFAULT_MATCHING_METHOD
     },
     'focus_stack_params': {
+        'memory_limit': constants.DEFAULT_PY_MEMORY_LIMIT_GB,
         'max_threads': constants.DEFAULT_PY_MAX_THREADS
     },
     'focus_stack_bunch_params': {
+        'memory_limit': constants.DEFAULT_ALIGN_MEMORY_LIMIT_GB,
         'max_threads': constants.DEFAULT_PY_MAX_THREADS
     }
 }
@@ -73,11 +76,14 @@ class Settings(StdPathFile):
                 with open(file_path, 'r', encoding="utf-8") as file:
                     json_data = json.load(file)
                     settings = json_data['settings']
+                    self.settings = {**self.settings, **settings}
+                    for k, v in self.settings.items():
+                        if isinstance(v, dict) and k in DEFAULT_SETTINGS:
+                            self.settings[k] = {**DEFAULT_SETTINGS[k], **v}
             except Exception as e:
                 traceback.print_tb(e.__traceback__)
                 print(f"Can't read file from path {file_path}. Default settings ignored.")
                 settings = {}
-            self.settings = {**self.settings, **settings}
 
     @classmethod
     def instance(cls, filename="shinestacker-settings.txt"):
