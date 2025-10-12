@@ -563,7 +563,7 @@ class AlignFramesBase(SubAction):
         return _AFFINE_THRESHOLDS, _HOMOGRAPHY_THRESHOLDS
 
     def image_str(self, idx):
-        return f"frame {self.process.idx_tot_str(idx)}, " \
+        return f"{self.process.frame_str(idx)}, " \
                f"{os.path.basename(self.process.input_filepath(idx))}"
 
     def end(self):
@@ -750,7 +750,7 @@ class AlignFramesBase(SubAction):
 class AlignFrames(AlignFramesBase):
     def align_images(self, idx, img_ref, img_0):
         idx_str = f"{idx:04d}"
-        idx_tot_str = f"frame {self.process.idx_tot_str(idx)}"
+        idx_tot_str = self.process.frame_str(idx)
         callbacks = {
             'message': lambda: self.print_message(
                 f'{idx_tot_str}: estimate transform using feature matching'),
@@ -761,7 +761,7 @@ class AlignFrames(AlignFramesBase):
                 f'{msg}', constants.LOG_COLOR_WARNING),
             'save_plot': lambda plot_path: self.process.callback(
                 constants.CALLBACK_SAVE_PLOT, self.process.id,
-                f"{self.process.name}: matches\nframe {idx_str}", plot_path),
+                f"{self.process.name}: matches\{idx_str}", plot_path),
             'save_transform_result': lambda result: self.save_transform_result(idx, result)
         }
         if self.plot_matches:

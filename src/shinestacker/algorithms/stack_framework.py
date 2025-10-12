@@ -296,11 +296,15 @@ class CombinedActions(ReferenceFrameTask):
         self._metadata = get_img_metadata(img)
         return img
 
+    def frame_str(self, idx=-1):
+        if self.run_sequential():
+            idx = self.current_action_count
+        return f"frame {idx + 1}/{self.total_action_counts}"
+
     def run_frame(self, idx, ref_idx):
         input_path = self.input_filepath(idx)
         self.print_message(
-            color_str(f'read input frame '
-                      f'{idx + 1}/{self.total_action_counts}, '
+            color_str(f'read input {self.frame_str(idx)}, '
                       f'{os.path.basename(input_path)}', constants.LOG_COLOR_LEVEL_3))
         img = read_img(input_path)
         validate_image(img, *(self._metadata))
@@ -326,8 +330,7 @@ class CombinedActions(ReferenceFrameTask):
         if img is not None:
             output_path = os.path.join(self.output_full_path(), os.path.basename(input_path))
             self.print_message(
-                color_str(f'write output frame '
-                          f'{idx + 1}/{self.total_action_counts}, '
+                color_str(f'write output {self.frame_str(idx)}, '
                           f'{os.path.basename(output_path)}', constants.LOG_COLOR_LEVEL_3))
             write_img(output_path, img)
             return img
