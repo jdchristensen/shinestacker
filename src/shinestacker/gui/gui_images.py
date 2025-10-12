@@ -2,13 +2,16 @@
 import webbrowser
 import subprocess
 import os
+import numpy as np
+import cv2
 from PySide6.QtWidgets import QSizePolicy, QVBoxLayout, QWidget, QLabel, QStackedWidget
 from PySide6.QtPdf import QPdfDocument
 from PySide6.QtPdfWidgets import QPdfView
 from PySide6.QtCore import Qt, QMargins
-from PySide6.QtGui import QPixmap
+from PySide6.QtGui import QPixmap, QImage
 from .. config.gui_constants import gui_constants
 from .. core.core_utils import running_under_windows, running_under_macos
+from .. algorithms.utils import read_img
 
 
 def open_file(file_path):
@@ -74,7 +77,25 @@ class GuiImageView(QWidget):
         self.image_label.setAlignment(Qt.AlignCenter)
         self.main_layout.addWidget(self.image_label)
         self.setLayout(self.main_layout)
-        pixmap = QPixmap(file_path)
+        img = read_img(file_path)
+        height, width = img.shape[:2]
+        scale_factor = gui_constants.GUI_IMG_WIDTH / width
+        new_height = int(height * scale_factor)
+        img = cv2.resize(img, (gui_constants.GUI_IMG_WIDTH, new_height),
+                         interpolation=cv2.INTER_LINEAR)
+        if img.dtype == np.uint16:
+            img = (img // 256).astype(np.uint8)
+        if len(img.shape) == 3:
+            h, w, ch = img.shape
+            bytes_per_line = ch * w
+            rgb_image = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+            q_img = QImage(rgb_image.data, w, h, bytes_per_line, QImage.Format_RGB888)
+        else:
+            h, w = img.shape
+            bytes_per_line = w
+            q_img = QImage(img.data, w, h, bytes_per_line, QImage.Format_Grayscale8)
+        pixmap = QPixmap.fromImage(q_img)
+        self.image_label.setPixmap(pixmap)
         if pixmap:
             scaled_pixmap = pixmap.scaledToWidth(
                 gui_constants.GUI_IMG_WIDTH, Qt.SmoothTransformation)
