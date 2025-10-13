@@ -76,10 +76,15 @@ class JobConfigurator(DefaultActionConfigurator):
             input_filepaths = input_filepaths.split(constants.PATH_SEPARATOR)
         self.working_path_label = QLabel(working_path or "Not set")
         self.input_path_label = QLabel(input_path or "Not set")
-        self.input_widget.path_edit.setText('')
         if input_filepaths:
+            full_input_dir = os.path.join(working_path, input_path)
+            self.input_widget.selected_files = [os.path.join(full_input_dir, f)
+                                                for f in input_filepaths]
+            self.input_widget.path_edit.setText(full_input_dir)
             self.input_widget.files_mode_radio.setChecked(True)
         else:
+            full_input_dir = os.path.join(working_path, input_path)
+            self.input_widget.path_edit.setText(full_input_dir)
             self.input_widget.folder_mode_radio.setChecked(False)
         self.input_widget.text_changed_connect(self.update_paths_and_frames)
         self.input_widget.folder_mode_radio.toggled.connect(self.update_paths_and_frames)

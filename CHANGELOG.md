@@ -11,14 +11,15 @@ This page reports the main releases only and the main changes therein.
 - optimization for images with poor focus: limited maximum number of match retries to next frame in parallel alignment; the mamimum number is equal to a new configurable parameter delta_max
 
 ### Fixed
-- fixed reference frame indexing in sequential fallback from multithread run
-- management of noise map output folder is now consistent with other modules
+- reference frame indexing in sequential fallback from multithread run
+- job configuration dialog failure if input is aready selected
 - preview thumbnail now works also for very large images
 - minor fixes to logger messages
 
 ### Changed
 - more robust alignment strategy in case of poorly focused images
 - better tuning of parallel processing of frames alignment
+- management of noise map output folder is now consistent with other modules
 - more robust settings persistency
 
 -----
