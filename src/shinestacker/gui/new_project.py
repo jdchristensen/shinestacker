@@ -89,7 +89,7 @@ class NewProjectDialog(BaseFormDialog):
         self.input_widget.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
         self.frames_label.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
         input_form.addRow("Input:", self.input_widget)
-        input_form.addRow("Number of frames: ", self.frames_label)
+        input_form.addRow("Number of selected frames: ", self.frames_label)
         step1_layout.addLayout(input_form)
         step1_group.setLayout(step1_layout)
         self.form_layout.addRow(step1_group)
