@@ -164,8 +164,9 @@ class ProjectController(QObject):
                     constants.ACTION_JOB,
                     {'name': f'{input_path}-detect-noise', 'working_path': working_path,
                      'input_path': input_path})
+                noise_detection_name = f'{input_path}-detect-noise'
                 noise_detection = ActionConfig(constants.ACTION_NOISEDETECTION,
-                                               {'name': f'{input_path}-detect-noise'})
+                                               {'name': noise_detection_name})
                 job_noise.add_sub_action(noise_detection)
                 self.add_job_to_project(job_noise)
             job_params = {
@@ -184,7 +185,10 @@ class ProjectController(QObject):
                     constants.ACTION_COMBO, {'name': preprocess_name})
                 if dialog.get_noise_detection():
                     mask_noise = ActionConfig(
-                        constants.ACTION_MASKNOISE, {'name': 'mask-noise'})
+                        constants.ACTION_MASKNOISE,
+                        {'name': 'mask-noise',
+                         'noise_mask': os.path.join(noise_detection_name,
+                                                    constants.DEFAULT_NOISE_MAP_FILENAME)})
                     combo_action.add_sub_action(mask_noise)
                 if dialog.get_vignetting_correction():
                     vignetting = ActionConfig(

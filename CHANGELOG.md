@@ -2,16 +2,17 @@
 
 This page reports the main releases only and the main changes therein.
 
-## [v-.-.-] - 2025-10-12
+## [v-.-.-] - 2025-10-13
 ** Unreleased changes **
 
 ### Added
 - alignment algorithm based on phase correlation as optional fallback solution in cases where no feature match is found
-- more configurable parameters added to default settings
-- optimization for images with poor focus: maximum number of match retries to next frame limited to a new parameter delta_max for parallel alignment
+- more configurable parameters available in the default settings
+- optimization for images with poor focus: maximum number of match retries to next frame limited to a new configurable parameter delta_max for parallel alignment
 
 ### Fixed
 - fixed reference frame indexing in sequential fallback from multithread run
+- management of noise map output folder is now consistent with other modules
 - preview thumbnail now works also for very large images
 - minor fixes to logger messages
 

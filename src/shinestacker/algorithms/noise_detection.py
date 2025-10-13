@@ -109,13 +109,14 @@ class NoiseDetection(TaskBase, ImageSequenceManager):
                             {'rgb': 'black', 'r': 'red', 'g': 'green', 'b': 'blue'}[ch])
             msg.append(hpx)
         self.print_message(color_str("hot pixels: " + ", ".join(msg), constants.LOG_COLOR_LEVEL_2))
-        path = "/".join(self.file_name.split("/")[:-1])
-        if not os.path.exists(f"{self.working_path}/{path}"):
-            self.print_message(f"create directory: {path}")
-            os.mkdir(f"{self.working_path}/{path}")
-        self.print_message(color_str(f"writing hot pixels map file: {self.file_name}",
+        output_full_path = os.path.join(self.working_path, self.output_path)
+        if not os.path.exists(output_full_path):
+            self.print_message(f"create directory: {self.output_path}")
+            os.mkdir(output_full_path)
+        file_path = os.path.join(self.output_path, self.file_name)
+        self.print_message(color_str(f"writing hot pixels map file: {file_path}",
                                      constants.LOG_COLOR_LEVEL_2))
-        cv2.imwrite(f"{self.working_path}/{self.file_name}", hot_rgb)
+        cv2.imwrite(os.path.join(output_full_path, self.file_name), hot_rgb)
         plot_range = self.plot_range
         min_th, max_th = min(self.channel_thresholds), max(self.channel_thresholds)
         if min_th < plot_range[0]:
@@ -171,8 +172,9 @@ class MaskNoise(SubAction):
         else:
             raise ImageLoadError(path, "file not found.")
 
-    def run_frame(self, _idx, _ref_idx, image):
-        self.process.sub_message_r(color_str(': mask noisy pixels', constants.LOG_COLOR_LEVEL_3))
+    def run_frame(self, idx, _ref_idx, image):
+        self.process.print_message(color_str(
+            f'{self.process.frame_str(idx)}: mask noisy pixels', constants.LOG_COLOR_LEVEL_3))
         shape = image.shape[:2]
         if shape != self.expected_shape:
             raise ShapeError(self.expected_shape, shape)

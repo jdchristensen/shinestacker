@@ -273,7 +273,8 @@ class AlignFramesParallel(AlignFramesBase):
             subsample = 1
             s_str = 'es' if n_good_matches != 1 else ''
             msg = f"{self.image_str(idx)}: only {n_good_matches} < {min_good_matches} " \
-                f"match{s_str} found with {self.image_str(target_idx)}, retrying without subsampling"
+                f"match{s_str} found with {self.image_str(target_idx)}, " \
+                "retrying without subsampling"
             self.print_message(msg, color=constants.LOG_COLOR_WARNING, level=logging.WARNING)
             warning_messages.append("no subsampling applied")
         self._n_good_matches[idx] = n_good_matches
