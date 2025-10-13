@@ -58,7 +58,7 @@ DEFAULT_SETTINGS = {
     }
 }
 
-CURRENT_VERSION = 1
+CURRENT_SETTINGS_FILE_VERSION = 1
 
 
 class Settings(StdPathFile):
@@ -112,7 +112,10 @@ class Settings(StdPathFile):
         try:
             config_dir = self.get_config_dir()
             os.makedirs(config_dir, exist_ok=True)
-            json_data = {'version': CURRENT_VERSION, 'settings': self.settings}
+            json_data = {
+                'version': CURRENT_SETTINGS_FILE_VERSION,
+                'settings': self.settings
+            }
             json_obj = jsonpickle.encode(json_data)
             with open(self.get_file_path(), 'w', encoding="utf-8") as f:
                 f.write(json_obj)
