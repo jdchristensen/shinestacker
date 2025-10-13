@@ -75,15 +75,22 @@ class Settings(StdPathFile):
             try:
                 with open(file_path, 'r', encoding="utf-8") as file:
                     json_data = json.load(file)
-                    settings = json_data['settings']
-                    self.settings = {**self.settings, **settings}
-                    for k, v in self.settings.items():
-                        if isinstance(v, dict) and k in DEFAULT_SETTINGS:
-                            self.settings[k] = {**DEFAULT_SETTINGS[k], **v}
+                    file_settings = json_data['settings']
+                    filtered_settings = {}
+                    for key, value in file_settings.items():
+                        if key in DEFAULT_SETTINGS:
+                            if isinstance(value, dict) and isinstance(DEFAULT_SETTINGS[key], dict):
+                                filtered_settings[key] = {
+                                    k: v for k, v in value.items()
+                                    if k in DEFAULT_SETTINGS[key]
+                                }
+                            else:
+                                filtered_settings[key] = value
+                    self.settings = {**self.settings, **filtered_settings}
             except Exception as e:
                 traceback.print_tb(e.__traceback__)
                 print(f"Can't read file from path {file_path}. Default settings ignored.")
-                settings = {}
+                self.settings = {}
 
     @classmethod
     def instance(cls, filename="shinestacker-settings.txt"):

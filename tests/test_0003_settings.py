@@ -1,5 +1,6 @@
 import tempfile
 import os
+import json
 from unittest.mock import patch
 from shinestacker.config.settings import Settings
 
@@ -79,3 +80,43 @@ def test_settings_persistence():
             Settings.reset_instance_only_for_testing()
             settings2 = Settings.instance("test-settings.txt")
             assert settings2.get('custom_key') == 'custom_value'
+
+def test_settings_extra_keys_filtered():
+    with tempfile.TemporaryDirectory() as temp_dir:
+        with patch('shinestacker.config.settings.QStandardPaths') as MockQStandardPaths, \
+             patch('shinestacker.config.constants.constants') as mock_constants, \
+             patch('shinestacker.config.gui_constants.gui_constants') as mock_gui_constants:
+            MockQStandardPaths.writableLocation.return_value = temp_dir
+            mock_constants.DEFAULT_EXPERT_OPTIONS = True
+            mock_constants.DEFAULT_VIEW_STRATEGY = "default"
+            mock_constants.DEFAULT_FWK_MAX_THREADS = 4
+            mock_constants.DEFAULT_ALIGN_MAX_THREADS = 2
+            mock_constants.DEFAULT_PY_MAX_THREADS = 1
+            mock_constants.DEFAULT_ALIGN_MEMORY_LIMIT_GB = 8
+            mock_constants.DEFAULT_DETECTOR = 'ORB'
+            mock_constants.DEFAULT_DESCRIPTOR = 'ORB'
+            mock_constants.DEFAULT_MATCHING_METHOD = 'BF'
+            mock_constants.DEFAULT_PY_MEMORY_LIMIT_GB = 4
+            mock_gui_constants.DEFAULT_PAINT_REFRESH_TIME = 100
+            mock_gui_constants.DEFAULT_DISPLAY_REFRESH_TIME = 200
+            mock_gui_constants.DEFAULT_CURSOR_UPDATE_TIME = 50
+            mock_gui_constants.DEFAULT_MIN_MOUSE_STEP_BRUSH_FRACTION = 0.1            
+            extra_settings = {
+                'expert_options': False,
+                'view_strategy': 'new_strategy',
+                'extra_top_level_key': 'should_be_removed',
+                'combined_actions_params': {
+                    'max_threads': 10,
+                    'extra_nested_key': 'should_be_removed'
+                }
+            }
+            file_path = os.path.join(temp_dir, "test-settings.txt")
+            with open(file_path, 'w', encoding="utf-8") as f:
+                json.dump({'version': 1, 'settings': extra_settings}, f)
+            Settings.reset_instance_only_for_testing()
+            settings = Settings.instance("test-settings.txt")
+            assert 'extra_top_level_key' not in settings.settings
+            assert 'extra_nested_key' not in settings.settings['combined_actions_params']
+            assert not settings.get('expert_options')
+            assert settings.get('view_strategy') == 'new_strategy'
+            assert settings.get('combined_actions_params')['max_threads'] == 10
