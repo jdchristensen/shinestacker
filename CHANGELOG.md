@@ -15,6 +15,7 @@ This page reports the main releases only and the main changes therein.
 - job configuration dialog failure if input is aready selected
 - preview thumbnail now works also for very large images
 - minor fixes to logger messages
+- minor GUI fixes
 
 ### Changed
 - more robust alignment strategy in case of poorly focused images
