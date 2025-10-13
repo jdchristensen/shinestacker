@@ -19,6 +19,7 @@ This page reports the main releases only and the main changes therein.
 ### Changed
 - more robust alignment strategy in case of poorly focused images
 - better tuning of parallel processing of frames alignment
+- more robust settings persistency
 
 -----
 
