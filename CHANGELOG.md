@@ -20,6 +20,7 @@ This page reports the main releases only and the main changes therein.
 - more robust alignment strategy in case of poorly focused images
 - better tuning of parallel processing of frames alignment
 - management of noise map output folder is now consistent with other modules
+- improved module naming scheme for wizard-generated project
 - more robust settings persistency
 
 -----
