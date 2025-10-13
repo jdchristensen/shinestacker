@@ -165,7 +165,7 @@ class ProjectController(QObject):
             if dialog.get_noise_detection():
                 job_noise = ActionConfig(
                     constants.ACTION_JOB,
-                    {'name': f'{input_path}-detect-noise', 'working_path': working_path,
+                    {'name': f'{input_path}-noise-job', 'working_path': working_path,
                      'input_path': input_path})
                 noise_detection_name = f'{input_path}-detect-noise'
                 noise_detection = ActionConfig(constants.ACTION_NOISEDETECTION,
@@ -173,7 +173,7 @@ class ProjectController(QObject):
                 job_noise.add_sub_action(noise_detection)
                 self.add_job_to_project(job_noise)
             job_params = {
-                'name': f'{input_path}-focus-stack',
+                'name': f'{input_path}-stack-job',
                 'working_path': working_path,
                 'input_path': input_path
             }
