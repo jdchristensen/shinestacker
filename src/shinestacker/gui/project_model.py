@@ -62,10 +62,10 @@ class ActionConfig:
         return project_dict
 
     @classmethod
-    def from_dict(cls, data):
+    def from_dict(cls, data, version):
         a = ActionConfig(data['type_name'], data['params'])
         if 'sub_actions' in data.keys():
-            a.sub_actions = [ActionConfig.from_dict(s) for s in data['sub_actions']]
+            a.sub_actions = [ActionConfig.from_dict(s, version) for s in data['sub_actions']]
             for s in a.sub_actions:
                 s.parent = a
         return a
@@ -84,9 +84,9 @@ class Project:
         return [j.to_dict() for j in self.jobs]
 
     @classmethod
-    def from_dict(cls, data):
+    def from_dict(cls, data, version):
         p = Project()
-        p.jobs = [ActionConfig.from_dict(j) for j in data]
+        p.jobs = [ActionConfig.from_dict(j, version) for j in data]
         for j in p.jobs:
             for s in j.sub_actions:
                 s.parent = j

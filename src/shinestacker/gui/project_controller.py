@@ -14,6 +14,9 @@ from .project_model import Project
 from .project_editor import ProjectEditor
 
 
+CURRENT_PROJECT_FILE_VERSION = 1
+
+
 class ProjectController(QObject):
     update_title_requested = Signal()
     refresh_ui_requested = Signal(int, int)
@@ -255,7 +258,7 @@ class ProjectController(QObject):
                 self.set_current_file_path(file_path)
                 with open(self.current_file_path(), 'r', encoding="utf-8") as file:
                     json_obj = json.load(file)
-                project = Project.from_dict(json_obj['project'])
+                project = Project.from_dict(json_obj['project'], json_obj['version'])
                 if project is None:
                     raise RuntimeError(f"Project from file {file_path} produced a null project.")
                 self.set_enabled_file_open_close_actions_requested.emit(True)
@@ -317,7 +320,7 @@ class ProjectController(QObject):
     def do_save(self, file_path):
         try:
             json_obj = jsonpickle.encode({
-                'project': self.project().to_dict(), 'version': 1
+                'project': self.project().to_dict(), 'version': CURRENT_PROJECT_FILE_VERSION
             })
             with open(file_path, 'w', encoding="utf-8") as f:
                 f.write(json_obj)
