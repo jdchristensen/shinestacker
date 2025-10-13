@@ -1,8 +1,9 @@
 # pylint: disable=C0114, C0115, C0116, R0903, R0904, R1702, R0917, R0913, R0902, E0611, E1131, E1121
 import os
 from dataclasses import dataclass
-from PySide6.QtWidgets import QListWidget, QMessageBox, QDialog, QListWidgetItem, QLabel
-from PySide6.QtCore import Qt, QObject, Signal, QEvent
+from PySide6.QtWidgets import (QListWidget, QMessageBox, QDialog, QListWidgetItem, QLabel,
+                               QSizePolicy)
+from PySide6.QtCore import Qt, QObject, Signal, QEvent, QSize
 from .. config.constants import constants
 from .colors import ColorPalette
 from .action_config_dialog import ActionConfigDialog
@@ -105,6 +106,8 @@ class HandCursorListWidget(QListWidget):
         super().__init__(parent)
         self.setMouseTracking(True)
         self.viewport().setMouseTracking(True)
+        self.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+        self.setWordWrap(False)
 
     def event(self, event):
         if event.type() == QEvent.HoverMove:
@@ -503,6 +506,13 @@ class ProjectEditor(QObject):
                     if action.enabled() \
                     else f"🚫 <span style='color:#{ColorPalette.DARK_RED.hex()};'>{text}</span>"
         label = QLabel(html_text)
+        label.setTextFormat(Qt.RichText)
+        label.setWordWrap(False)
+        label.setSizePolicy(QSizePolicy.MinimumExpanding, QSizePolicy.Fixed)
+        label.adjustSize()
+        ideal_width = label.sizeHint().width()
+        widget_list.setItemWidget(item, label)
+        item.setSizeHint(QSize(ideal_width, label.sizeHint().height()))
         widget_list.setItemWidget(item, label)
 
     def add_sub_action(self, type_name):
