@@ -161,6 +161,14 @@ class NestedDoubleSpinBoxParameter(DoubleSpinBoxParameter, NestedParameter):
             self, parent_key, key, label, tooltip)
 
 
+class NestedCallbackComboBoxParameter(CallbackComboBoxParameter, NestedParameter):
+    def __init__(self, parent_key, key, label, default_value,
+                 options, tooltip="", on_change=None):
+        CallbackComboBoxParameter.__init__(
+            self, key, label, default_value, options, tooltip, on_change)
+        NestedParameter.__init__(self, parent_key, key, label, tooltip)
+
+
 class SettingsDialog(ConfigDialog, AlignFramesConfigBase):
     update_project_config_requested = Signal()
     update_retouch_config_requested = Signal()
@@ -193,18 +201,18 @@ class SettingsDialog(ConfigDialog, AlignFramesConfigBase):
                     'align_frames_params', 'max_threads',
                     'Align frames, max num. of cores:',
                     constants.DEFAULT_ALIGN_MAX_THREADS, 0, 64),
-                CallbackComboBoxParameter(
-                    'detector', 'Detector:',
+                NestedCallbackComboBoxParameter(
+                    'align_frames_params', 'detector', 'Detector:',
                     constants.DEFAULT_DETECTOR, [(d, d) for d in constants.VALID_DETECTORS],
                     tooltip=self.DETECTOR_DESCRIPTOR_TOOLTIPS['detector'],
                     on_change=self.change_match_config_settings),
-                CallbackComboBoxParameter(
-                    'descriptor', 'Descriptor:',
+                NestedCallbackComboBoxParameter(
+                    'align_frames_params', 'descriptor', 'Descriptor:',
                     constants.DEFAULT_DESCRIPTOR, [(d, d) for d in constants.VALID_DESCRIPTORS],
                     tooltip=self.DETECTOR_DESCRIPTOR_TOOLTIPS['descriptor'],
                     on_change=self.change_match_config_settings),
-                CallbackComboBoxParameter(
-                    'match_method', 'Match method:',
+                NestedCallbackComboBoxParameter(
+                    'align_frames_params', 'match_method', 'Match method:',
                     constants.DEFAULT_MATCHING_METHOD,
                     list(zip(self.MATCHING_METHOD_OPTIONS, constants.VALID_MATCHING_METHODS)),
                     tooltip=self.DETECTOR_DESCRIPTOR_TOOLTIPS['match_method'],
@@ -291,30 +299,23 @@ class SettingsDialog(ConfigDialog, AlignFramesConfigBase):
         descriptor_widget = None
         matching_method_widget = None
         for param in self.project_parameters:
-            if param.key == 'detector':
-                detector_widget = param.widget
-            elif param.key == 'descriptor':
-                descriptor_widget = param.widget
-            elif param.key == 'match_method':
-                matching_method_widget = param.widget
-        self.change_match_config(
-            detector_widget, descriptor_widget, matching_method_widget, self.show_info)
+            if (isinstance(param, NestedParameter) and
+                    param.parent_key == 'align_frames_params'):
+                if param.key == 'detector':
+                    detector_widget = param.widget
+                elif param.key == 'descriptor':
+                    descriptor_widget = param.widget
+                elif param.key == 'match_method':
+                    matching_method_widget = param.widget
+        if detector_widget and descriptor_widget and matching_method_widget:
+            self.change_match_config(
+                detector_widget, descriptor_widget, matching_method_widget, self.show_info)
 
     def accept(self):
         for param in self.project_parameters:
             self._set_current_value(param, param.get_value())
         for param in self.retouch_parameters:
             self._set_current_value(param, param.get_value())
-        align_params = self.settings.get('align_frames_params').copy()
-        align_params.update({
-            'detector':
-                next(p for p in self.project_parameters if p.key == 'detector').get_value(),
-            'descriptor':
-                next(p for p in self.project_parameters if p.key == 'descriptor').get_value(),
-            'match_method':
-                next(p for p in self.project_parameters if p.key == 'match_method').get_value()
-        })
-        self.settings.set('align_frames_params', align_params)
         self.settings.update()
         if self.project_settings:
             self.update_project_config_requested.emit()
