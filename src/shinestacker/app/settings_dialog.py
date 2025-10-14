@@ -1,11 +1,164 @@
-# pylint: disable=C0114, C0115, C0116, E0611, W0718, R0903, E0611, R0902
+# pylint: disable=C0114, C0115, C0116, E0611, R0913, R0917, E1121
+from abc import ABC, abstractmethod
 from PySide6.QtCore import Signal
-from PySide6.QtWidgets import QFrame, QLabel, QCheckBox, QComboBox, QDoubleSpinBox, QSpinBox
+from PySide6.QtWidgets import QLabel, QCheckBox, QComboBox, QDoubleSpinBox, QSpinBox
 from .. config.settings import Settings
 from .. config.constants import constants
 from .. config.gui_constants import gui_constants
 from .. gui.config_dialog import ConfigDialog
+from .. gui.action_config import add_tab, create_tab_widget
 from .. gui.action_config_dialog import AlignFramesConfigBase
+
+
+class BaseParameter(ABC):
+    def __init__(self, key, label, tooltip=""):
+        self.key = key
+        self.label = label
+        self.tooltip = tooltip
+        self.widget = None
+
+    @abstractmethod
+    def create_widget(self, parent):
+        pass
+
+    @abstractmethod
+    def get_value(self):
+        pass
+
+    @abstractmethod
+    def set_value(self, value):
+        pass
+
+    @abstractmethod
+    def set_default(self):
+        pass
+
+
+class NestedParameter(BaseParameter):
+    def __init__(self, parent_key, key, label, tooltip=""):
+        super().__init__(key, label, tooltip)
+        self.parent_key = parent_key
+
+    def get_nested_value(self, settings):
+        return settings.get(self.parent_key).get(self.key)
+
+    def set_nested_value(self, settings, value):
+        nested_dict = settings.get(self.parent_key).copy()
+        nested_dict[self.key] = value
+        settings.set(self.parent_key, nested_dict)
+
+
+class CheckBoxParameter(BaseParameter):
+    def __init__(self, key, label, default_value, tooltip=""):
+        super().__init__(key, label, tooltip)
+        self.default_value = default_value
+
+    def create_widget(self, parent):
+        self.widget = QCheckBox(parent)
+        if self.tooltip:
+            self.widget.setToolTip(self.tooltip)
+        return self.widget
+
+    def get_value(self):
+        return self.widget.isChecked()
+
+    def set_value(self, value):
+        self.widget.setChecked(value)
+
+    def set_default(self):
+        self.widget.setChecked(self.default_value)
+
+
+class SpinBoxParameter(BaseParameter):
+    def __init__(self, key, label, default_value, min_val, max_val, step=1, tooltip=""):
+        super().__init__(key, label, tooltip)
+        self.default_value = default_value
+        self.min_val = min_val
+        self.max_val = max_val
+        self.step = step
+
+    def create_widget(self, parent):
+        self.widget = QSpinBox(parent)
+        self.widget.setRange(self.min_val, self.max_val)
+        self.widget.setSingleStep(self.step)
+        if self.tooltip:
+            self.widget.setToolTip(self.tooltip)
+        return self.widget
+
+    def get_value(self):
+        return self.widget.value()
+
+    def set_value(self, value):
+        self.widget.setValue(value)
+
+    def set_default(self):
+        self.widget.setValue(self.default_value)
+
+
+class DoubleSpinBoxParameter(SpinBoxParameter):
+    def create_widget(self, parent):
+        self.widget = QDoubleSpinBox(parent)
+        self.widget.setRange(self.min_val, self.max_val)
+        self.widget.setSingleStep(self.step)
+        if self.tooltip:
+            self.widget.setToolTip(self.tooltip)
+        return self.widget
+
+
+class ComboBoxParameter(BaseParameter):
+    def __init__(self, key, label, default_value, options, tooltip=""):
+        super().__init__(key, label, tooltip)
+        self.default_value = default_value
+        self.options = options
+
+    def create_widget(self, parent):
+        self.widget = QComboBox(parent)
+        for display_text, data in self.options:
+            self.widget.addItem(display_text, data)
+        if self.tooltip:
+            self.widget.setToolTip(self.tooltip)
+        return self.widget
+
+    def get_value(self):
+        return self.widget.itemData(self.widget.currentIndex())
+
+    def set_value(self, value):
+        idx = self.widget.findData(value)
+        if idx >= 0:
+            self.widget.setCurrentIndex(idx)
+
+    def set_default(self):
+        idx = self.widget.findData(self.default_value)
+        if idx >= 0:
+            self.widget.setCurrentIndex(idx)
+
+
+class CallbackComboBoxParameter(ComboBoxParameter):
+    def __init__(self, key, label, default_value, options, tooltip="", on_change=None):
+        super().__init__(key, label, default_value, options, tooltip)
+        self.on_change = on_change
+
+    def create_widget(self, parent):
+        widget = super().create_widget(parent)
+        if self.on_change:
+            widget.currentIndexChanged.connect(self.on_change)
+        return widget
+
+
+class NestedSpinBoxParameter(SpinBoxParameter, NestedParameter):
+    def __init__(self, parent_key, key, label, default_value, min_val, max_val, step=1, tooltip=""):
+        SpinBoxParameter.__init__(
+            self, key, label, default_value, min_val, max_val, step, tooltip)
+        NestedParameter.__init__(
+            self, parent_key, key, label, tooltip)
+
+
+class NestedDoubleSpinBoxParameter(DoubleSpinBoxParameter, NestedParameter):
+    def __init__(self, parent_key, key, label, default_value, min_val, max_val, step=1, tooltip=""):
+        DoubleSpinBoxParameter.__init__(
+            self, key, label, default_value, min_val, max_val, step, tooltip)
+        NestedParameter.__init__(
+            self, parent_key, key, label, tooltip)
 
 
 class SettingsDialog(ConfigDialog, AlignFramesConfigBase):
@@ -17,191 +170,151 @@ class SettingsDialog(ConfigDialog, AlignFramesConfigBase):
         self.project_settings = project_settings
         self.retouch_settings = retouch_settings
         self.settings = Settings.instance()
-        self.expert_options = None
-        self.combined_actions_max_threads = None
-        self.align_frames_memory_limit = None
-        self.align_frames_max_threads = None
-        self.detector = None
-        self.descriptor = None
-        self.matching_method = None
-        self.focus_stack_memory_limit = None
-        self.focus_stack_max_threads = None
-        self.view_strategy = None
-        self.min_mouse_step_brush_fraction = None
-        self.paint_refresh_time = None
-        self.display_refresh_time = None
-        self.cursor_update_time = None
+        self.project_parameters = []
+        self.retouch_parameters = []
+        self._init_parameters()
         super().__init__("Settings", parent)
 
-    def create_form_content(self):
+    def _init_parameters(self):
         if self.project_settings:
-            self.create_project_settings()
-        separator = QFrame()
-        separator.setFrameShape(QFrame.HLine)
-        separator.setFrameShadow(QFrame.Sunken)
-        separator.setLineWidth(1)
-        self.container_layout.addRow(separator)
+            self.project_parameters = [
+                CheckBoxParameter(
+                    'expert_options', 'Expert options:',
+                    constants.DEFAULT_EXPERT_OPTIONS),
+                NestedSpinBoxParameter(
+                    'combined_actions_params', 'max_threads',
+                    'Combined actions, max num. of cores:',
+                    constants.DEFAULT_FWK_MAX_THREADS, 0, 64),
+                NestedDoubleSpinBoxParameter(
+                    'align_frames_params', 'memory_limit',
+                    'Align frames, mem. limit (approx., GBytes):',
+                    constants.DEFAULT_ALIGN_MEMORY_LIMIT_GB, 1.0, 64.0, 1.0),
+                NestedSpinBoxParameter(
+                    'align_frames_params', 'max_threads',
+                    'Align frames, max num. of cores:',
+                    constants.DEFAULT_ALIGN_MAX_THREADS, 0, 64),
+                CallbackComboBoxParameter(
+                    'detector', 'Detector:',
+                    constants.DEFAULT_DETECTOR, [(d, d) for d in constants.VALID_DETECTORS],
+                    tooltip=self.DETECTOR_DESCRIPTOR_TOOLTIPS['detector'],
+                    on_change=self.change_match_config_settings),
+                CallbackComboBoxParameter(
+                    'descriptor', 'Descriptor:',
+                    constants.DEFAULT_DESCRIPTOR, [(d, d) for d in constants.VALID_DESCRIPTORS],
+                    tooltip=self.DETECTOR_DESCRIPTOR_TOOLTIPS['descriptor'],
+                    on_change=self.change_match_config_settings),
+                CallbackComboBoxParameter(
+                    'match_method', 'Match method:',
+                    constants.DEFAULT_MATCHING_METHOD,
+                    list(zip(self.MATCHING_METHOD_OPTIONS, constants.VALID_MATCHING_METHODS)),
+                    tooltip=self.DETECTOR_DESCRIPTOR_TOOLTIPS['match_method'],
+                    on_change=self.change_match_config_settings),
+                NestedDoubleSpinBoxParameter(
+                    'focus_stack_params', 'memory_limit',
+                    'Focus stacking, mem. limit (approx., GBytes):',
+                    constants.DEFAULT_PY_MEMORY_LIMIT_GB, 1.0, 64.0, 1.0),
+                NestedSpinBoxParameter(
+                    'focus_stack_params', 'max_threads', 'Focus stacking, max. num. of cores:',
+                    constants.DEFAULT_PY_MAX_THREADS, 0, 64),
+            ]
         if self.retouch_settings:
-            self.create_retouch_settings()
+            self.retouch_parameters = [
+                ComboBoxParameter(
+                    'view_strategy', 'View strategy:',
+                    constants.DEFAULT_VIEW_STRATEGY,
+                    [
+                        ("Overlaid", "overlaid"),
+                        ("Side by side", "sidebyside"),
+                        ("Top-Bottom", "topbottom")
+                    ]),
+                DoubleSpinBoxParameter(
+                    'min_mouse_step_brush_fraction', 'Min. mouse step in brush units:',
+                    gui_constants.DEFAULT_MIN_MOUSE_STEP_BRUSH_FRACTION, 0, 1, 0.02),
+                SpinBoxParameter(
+                    'paint_refresh_time', 'Paint refresh time:',
+                    gui_constants.DEFAULT_PAINT_REFRESH_TIME, 0, 1000),
+                SpinBoxParameter(
+                    'display_refresh_time', 'Display refresh time:',
+                    gui_constants.DEFAULT_DISPLAY_REFRESH_TIME, 0, 200),
+                SpinBoxParameter(
+                    'cursor_update_time', 'Cursor refresh time:',
+                    gui_constants.DEFAULT_CURSOR_UPDATE_TIME, 0, 50),
+            ]
 
-    def create_project_settings(self):
-        label = QLabel("Project settings")
+    def create_form_content(self):
+        self.tab_widget = create_tab_widget(self.container_layout)
+        if self.project_settings:
+            project_tab_layout = add_tab(self.tab_widget, "Project Settings")
+            self.create_project_settings(project_tab_layout)
+        if self.retouch_settings:
+            retouch_tab_layout = add_tab(self.tab_widget, "Retouch Settings")
+            self.create_retouch_settings(retouch_tab_layout)
+
+    def create_project_settings(self, layout=None):
+        if layout is None:
+            layout = self.container_layout
+        label = QLabel("Project settings:")
         label.setStyleSheet("font-weight: bold")
-        self.container_layout.addRow(label)
-        self.expert_options = QCheckBox()
-        self.expert_options.setChecked(self.settings.get('expert_options'))
-        self.container_layout.addRow("Expert options:", self.expert_options)
-
-        self.combined_actions_max_threads = QSpinBox()
-        self.combined_actions_max_threads.setRange(0, 64)
-        self.combined_actions_max_threads.setValue(
-            self.settings.get('combined_actions_params')['max_threads'])
-        self.container_layout.addRow("Combined actions, max num. of cores:",
-                                     self.combined_actions_max_threads)
-
-        self.align_frames_memory_limit = QDoubleSpinBox()
-        self.align_frames_memory_limit.setRange(1.0, 64.0)
-        self.align_frames_memory_limit.setSingleStep(1.0)
-        self.align_frames_memory_limit.setValue(
-            self.settings.get('align_frames_params')['memory_limit'])
-        self.container_layout.addRow("Align frames, mem. limit (approx., GBytes):",
-                                     self.align_frames_memory_limit)
-
-        self.align_frames_max_threads = QSpinBox()
-        self.align_frames_max_threads.setRange(0, 64)
-        self.align_frames_max_threads.setValue(
-            self.settings.get('align_frames_params')['max_threads'])
-        self.container_layout.addRow("Align frames, max num. of cores:",
-                                     self.align_frames_max_threads)
-
-        def change_match_config():
-            self.change_match_config(
-                self.detector, self.descriptor,
-                self. matching_method, self.show_info)
-
-        self.detector = QComboBox()
-        self.detector.addItems(constants.VALID_DETECTORS)
-        self.descriptor = QComboBox()
-        self.descriptor.addItems(constants.VALID_DESCRIPTORS)
-        self.matching_method = QComboBox()
+        layout.addRow(label)
+        for param in self.project_parameters:
+            widget = param.create_widget(self)
+            param.set_value(self._get_current_value(param))
+            layout.addRow(param.label, widget)
         self.info_label = QLabel()
         self.info_label.setStyleSheet("color: orange; font-style: italic;")
-        self.matching_method = QComboBox()
-        for k, v in zip(self.MATCHING_METHOD_OPTIONS, constants.VALID_MATCHING_METHODS):
-            self.matching_method.addItem(k, v)
-        self.detector.setToolTip(self.DETECTOR_DESCRIPTOR_TOOLTIPS['detector'])
-        self.descriptor.setToolTip(self.DETECTOR_DESCRIPTOR_TOOLTIPS['descriptor'])
-        self.matching_method.setToolTip(self.DETECTOR_DESCRIPTOR_TOOLTIPS['match_method'])
-        self.detector.currentIndexChanged.connect(change_match_config)
-        self.descriptor.currentIndexChanged.connect(change_match_config)
-        self.matching_method.currentIndexChanged.connect(change_match_config)
-        self.container_layout.addRow('Detector:', self.detector)
-        self.container_layout.addRow('Descriptor:', self.descriptor)
-        self.container_layout.addRow(self.info_label)
-        self.container_layout.addRow('Match method:', self.matching_method)
+        layout.addRow(self.info_label)
 
-        self.focus_stack_memory_limit = QDoubleSpinBox()
-        self.focus_stack_memory_limit.setRange(1.0, 64.0)
-        self.focus_stack_memory_limit.setSingleStep(1.0)
-        self.focus_stack_memory_limit.setValue(
-            self.settings.get('focus_stack_params')['memory_limit'])
-        self.container_layout.addRow("Focus stacking, mem. limit (approx., GBytes):",
-                                     self.focus_stack_memory_limit)
-
-        self.focus_stack_max_threads = QSpinBox()
-        self.focus_stack_max_threads.setRange(0, 64)
-        self.focus_stack_max_threads.setValue(
-            self.settings.get('focus_stack_params')['max_threads'])
-        self.container_layout.addRow("Focus stacking, max. num. of cores:",
-                                     self.focus_stack_max_threads)
-
-    def create_retouch_settings(self):
-        label = QLabel("Retouch settings")
+    def create_retouch_settings(self, layout=None):
+        if layout is None:
+            layout = self.container_layout
+        label = QLabel("Retouch settings:")
         label.setStyleSheet("font-weight: bold")
-        self.container_layout.addRow(label)
-        self.view_strategy = QComboBox()
-        self.view_strategy.addItem("Overlaid", "overlaid")
-        self.view_strategy.addItem("Side by side", "sidebyside")
-        self.view_strategy.addItem("Top-Bottom", "topbottom")
-        idx = self.view_strategy.findData(self.settings.get('view_strategy'))
-        if idx >= 0:
-            self.view_strategy.setCurrentIndex(idx)
-        self.container_layout.addRow("View strategy:", self.view_strategy)
-        self.min_mouse_step_brush_fraction = QDoubleSpinBox()
-        self.min_mouse_step_brush_fraction.setValue(
-            self.settings.get('min_mouse_step_brush_fraction'))
-        self.min_mouse_step_brush_fraction.setRange(0, 1)
-        self.min_mouse_step_brush_fraction.setDecimals(2)
-        self.min_mouse_step_brush_fraction.setSingleStep(0.02)
-        self.container_layout.addRow("Min. mouse step in brush units:",
-                                     self.min_mouse_step_brush_fraction)
-        self.paint_refresh_time = QSpinBox()
-        self.paint_refresh_time.setRange(0, 1000)
-        self.paint_refresh_time.setValue(
-            self.settings.get('paint_refresh_time'))
-        self.container_layout.addRow("Paint refresh time:",
-                                     self.paint_refresh_time)
-        self.display_refresh_time = QSpinBox()
-        self.display_refresh_time.setRange(0, 200)
-        self.display_refresh_time.setValue(
-            self.settings.get('display_refresh_time'))
-        self.container_layout.addRow("Display refresh time:",
-                                     self.display_refresh_time)
+        layout.addRow(label)
+        for param in self.retouch_parameters:
+            widget = param.create_widget(self)
+            param.set_value(self._get_current_value(param))
+            layout.addRow(param.label, widget)
 
-        self.cursor_update_time = QSpinBox()
-        self.cursor_update_time.setRange(0, 50)
-        self.cursor_update_time.setValue(
-            self.settings.get('cursor_update_time'))
-        self.container_layout.addRow("Cursor refresh time:",
-                                     self.cursor_update_time)
+    def _get_current_value(self, param):
+        if isinstance(param, NestedParameter):
+            return param.get_nested_value(self.settings)
+        return self.settings.get(param.key)
+
+    def _set_current_value(self, param, value):
+        if isinstance(param, NestedParameter):
+            param.set_nested_value(self.settings, value)
+        else:
+            self.settings.set(param.key, value)
+
+    def change_match_config_settings(self):
+        detector_widget = None
+        descriptor_widget = None
+        matching_method_widget = None
+        for param in self.project_parameters:
+            if param.key == 'detector':
+                detector_widget = param.widget
+            elif param.key == 'descriptor':
+                descriptor_widget = param.widget
+            elif param.key == 'match_method':
+                matching_method_widget = param.widget
+        self.change_match_config(
+            detector_widget, descriptor_widget, matching_method_widget, self.show_info)
 
     def accept(self):
-        if self.project_settings:
-            self.settings.set(
-                'expert_options', self.expert_options.isChecked())
-            self.settings.set(
-                'combined_actions_params', {
-                    'max_threads':
-                        self.combined_actions_max_threads.value()
-                })
-            self.settings.set(
-                'align_frames_params', {
-                    'memory_limit':
-                        self.align_frames_memory_limit.value(),
-                    'max_threads':
-                        self.align_frames_max_threads.value(),
-                    'detector':
-                        self.descriptor.currentText(),
-                    'descriptor':
-                        self.descriptor.currentText(),
-                    'match_method':
-                        self.matching_method.itemData(self.matching_method.currentIndex())
-                })
-            self.settings.set(
-                'focus_stack_params', {
-                    'memory_limit':
-                        self.focus_stack_memory_limit.value(),
-                    'max_threads':
-                        self.focus_stack_max_threads.value()
-                })
-            self.settings.set(
-                'focus_stack_bunch_params', {
-                    'memory_limit':
-                        self.focus_stack_memory_limit.value(),
-                    'max_threads':
-                        self.focus_stack_max_threads.value()
-                })
-        if self.retouch_settings:
-            self.settings.set(
-                'view_strategy', self.view_strategy.itemData(self.view_strategy.currentIndex()))
-            self.settings.set(
-                'min_mouse_step_brush_fraction', self.min_mouse_step_brush_fraction.value())
-            self.settings.set(
-                'paint_refresh_time', self.paint_refresh_time.value())
-            self.settings.set(
-                'display_refresh_time', self.display_refresh_time.value())
-            self.settings.set(
-                'cursor_update_time', self.cursor_update_time.value())
+        for param in self.project_parameters:
+            self._set_current_value(param, param.get_value())
+        for param in self.retouch_parameters:
+            self._set_current_value(param, param.get_value())
+        align_params = self.settings.get('align_frames_params').copy()
+        align_params.update({
+            'detector':
+                next(p for p in self.project_parameters if p.key == 'detector').get_value(),
+            'descriptor':
+                next(p for p in self.project_parameters if p.key == 'descriptor').get_value(),
+            'match_method':
+                next(p for p in self.project_parameters if p.key == 'match_method').get_value()
+        })
+        self.settings.set('align_frames_params', align_params)
         self.settings.update()
         if self.project_settings:
             self.update_project_config_requested.emit()
@@ -210,34 +323,14 @@ class SettingsDialog(ConfigDialog, AlignFramesConfigBase):
         super().accept()
 
     def reset_to_defaults(self):
-        if self.project_settings:
-            self.expert_options.setChecked(constants.DEFAULT_EXPERT_OPTIONS)
-            self.combined_actions_max_threads.setValue(constants.DEFAULT_FWK_MAX_THREADS)
-            self.align_frames_memory_limit.setValue(constants.DEFAULT_ALIGN_MEMORY_LIMIT_GB)
-            self.align_frames_max_threads.setValue(constants.DEFAULT_ALIGN_MAX_THREADS)
-            self.detector.setCurrentText(constants.DEFAULT_DETECTOR)
-            self.descriptor.setCurrentText(constants.DEFAULT_DESCRIPTOR)
-            idx = self.matching_method.findData(constants.DEFAULT_MATCHING_METHOD)
-            if idx >= 0:
-                self.matching_method.setCurrentIndex(idx)
-            self.focus_stack_memory_limit.setValue(constants.DEFAULT_PY_MEMORY_LIMIT_GB)
-            self.focus_stack_max_threads.setValue(constants.DEFAULT_PY_MAX_THREADS)
-        if self.retouch_settings:
-            idx = self.view_strategy.findData(constants.DEFAULT_VIEW_STRATEGY)
-            if idx >= 0:
-                self.view_strategy.setCurrentIndex(idx)
-            self.min_mouse_step_brush_fraction.setValue(
-                gui_constants.DEFAULT_MIN_MOUSE_STEP_BRUSH_FRACTION)
-            self.paint_refresh_time.setValue(
-                gui_constants.DEFAULT_PAINT_REFRESH_TIME)
-            self.display_refresh_time.setValue(
-                gui_constants.DEFAULT_DISPLAY_REFRESH_TIME)
-            self.cursor_update_time.setValue(
-                gui_constants.DEFAULT_CURSOR_UPDATE_TIME)
+        for param in self.project_parameters:
+            param.set_default()
+        for param in self.retouch_parameters:
+            param.set_default()
 
 
-def show_settings_dialog(parent, project_settings, retouch_settings,
-                         handle_project_config, handle_retouch_config):
+def show_settings_dialog(
+        parent, project_settings, retouch_settings, handle_project_config, handle_retouch_config):
     dialog = SettingsDialog(parent, project_settings, retouch_settings)
     dialog.update_project_config_requested.connect(handle_project_config)
     dialog.update_retouch_config_requested.connect(handle_retouch_config)

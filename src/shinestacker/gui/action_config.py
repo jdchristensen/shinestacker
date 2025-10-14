@@ -416,6 +416,29 @@ class FieldBuilder:
         return checkbox
 
 
+def create_tab_layout():
+    tab_layout = QFormLayout()
+    tab_layout.setFieldGrowthPolicy(QFormLayout.AllNonFixedFieldsGrow)
+    tab_layout.setRowWrapPolicy(QFormLayout.DontWrapRows)
+    tab_layout.setFormAlignment(Qt.AlignLeft | Qt.AlignTop)
+    tab_layout.setLabelAlignment(Qt.AlignLeft)
+    return tab_layout
+
+
+def add_tab(tab_widget, title):
+    tab = QWidget()
+    tab_layout = create_tab_layout()
+    tab.setLayout(tab_layout)
+    tab_widget.addTab(tab, title)
+    return tab_layout
+
+
+def create_tab_widget(main_layout):
+    tab_widget = QTabWidget()
+    main_layout.addRow(tab_widget)
+    return tab_widget
+
+
 class NoNameActionConfigurator(ActionConfigurator):
     def __init__(self, current_wd):
         super().__init__(current_wd)
@@ -456,26 +479,6 @@ class NoNameActionConfigurator(ActionConfigurator):
 
     def add_labelled_row(self, label, widget):
         self.add_row(self.labelled_widget(label, widget))
-
-    def create_tab_widget(self, main_layout):
-        tab_widget = QTabWidget()
-        main_layout.addRow(tab_widget)
-        return tab_widget
-
-    def create_tab_layout(self):
-        tab_layout = QFormLayout()
-        tab_layout.setFieldGrowthPolicy(QFormLayout.AllNonFixedFieldsGrow)
-        tab_layout.setRowWrapPolicy(QFormLayout.DontWrapRows)
-        tab_layout.setFormAlignment(Qt.AlignLeft | Qt.AlignTop)
-        tab_layout.setLabelAlignment(Qt.AlignLeft)
-        return tab_layout
-
-    def add_tab(self, tab_widget, title):
-        tab = QWidget()
-        tab_layout = self.create_tab_layout()
-        tab.setLayout(tab_layout)
-        tab_widget.addTab(tab, title)
-        return tab_layout
 
     def add_field_to_layout(self, main_layout, tag, field_type, label, required=False, **kwargs):
         return self.add_field(tag, field_type, label, required, add_to_layout=main_layout, **kwargs)

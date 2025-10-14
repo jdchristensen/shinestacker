@@ -23,6 +23,7 @@ This page reports the main releases only and the main changes therein.
 - management of noise map output folder is now consistent with other modules
 - improved module naming scheme for wizard-generated project
 - more robust settings persistency
+- some code refactoring
 
 -----
 

@@ -8,7 +8,7 @@ from .. config.constants import constants
 from .. config.app_config import AppConfig
 from .. algorithms.align import validate_align_config
 from . action_config import (
-    DefaultActionConfigurator,
+    DefaultActionConfigurator, add_tab, create_tab_layout, create_tab_widget,
     FIELD_TEXT, FIELD_ABS_PATH, FIELD_REL_PATH, FIELD_FLOAT,
     FIELD_INT, FIELD_INT_TUPLE, FIELD_BOOL, FIELD_COMBO, FIELD_REF_IDX
 )
@@ -200,10 +200,10 @@ class FocusStackBaseConfigurator(DefaultActionConfigurator):
 
     def create_form(self, layout, action):
         super().create_form(layout, action)
-        self.tab_widget = self.create_tab_widget(layout)
-        self.general_tab_layout = self.add_tab(self.tab_widget, "General Parameters")
+        self.tab_widget = create_tab_widget(layout)
+        self.general_tab_layout = add_tab(self.tab_widget, "General Parameters")
         self.create_general_tab(self.general_tab_layout)
-        self.algorithm_tab_layout = self.add_tab(self.tab_widget, "Stacking Algorithm")
+        self.algorithm_tab_layout = add_tab(self.tab_widget, "Stacking Algorithm")
         self.create_algorithm_tab(self.algorithm_tab_layout)
 
     def create_general_tab(self, layout):
@@ -230,7 +230,7 @@ class FocusStackBaseConfigurator(DefaultActionConfigurator):
             default=constants.STACK_ALGO_DEFAULT)
         q_pyramid, q_depthmap = QWidget(), QWidget()
         for q in [q_pyramid, q_depthmap]:
-            q.setLayout(self.create_tab_layout())
+            q.setLayout(create_tab_layout())
         stacked = QStackedWidget()
         stacked.addWidget(q_pyramid)
         stacked.addWidget(q_depthmap)
@@ -579,14 +579,14 @@ class AlignFramesConfigurator(SubsampleActionConfigurator, AlignFramesConfigBase
         self.detector_field = None
         self.descriptor_field = None
         self.matching_method_field = None
-        self.tab_widget = self.create_tab_widget(layout)
-        feature_layout = self.add_tab(self.tab_widget, "Feature extraction")
+        self.tab_widget = create_tab_widget(layout)
+        feature_layout = add_tab(self.tab_widget, "Feature extraction")
         self.create_feature_tab(feature_layout)
-        transform_layout = self.add_tab(self.tab_widget, "Transform")
+        transform_layout = add_tab(self.tab_widget, "Transform")
         self.create_transform_tab(transform_layout)
-        border_layout = self.add_tab(self.tab_widget, "Border")
+        border_layout = add_tab(self.tab_widget, "Border")
         self.create_border_tab(border_layout)
-        misc_layout = self.add_tab(self.tab_widget, "Miscellanea")
+        misc_layout = add_tab(self.tab_widget, "Miscellanea")
         self.create_miscellanea_tab(misc_layout)
 
     def create_feature_tab(self, layout):
