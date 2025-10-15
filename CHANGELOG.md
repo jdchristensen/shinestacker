@@ -2,7 +2,7 @@
 
 This page reports the main releases only and the main changes therein.
 
-## [v-.-.-] - 2025-10-13
+## [v-.-.-] - 2025-10-15
 ** Alignment stability and performance improvements **
 
 ### Added
@@ -10,9 +10,12 @@ This page reports the main releases only and the main changes therein.
 - new configurable parameters in default settings, including delta_max for retry limits in parallel alignment
 
 ### Fixed
-- job configuration dialog crash when input was already selected
-- preview thumbnails now work also for very large images
-- minor GUI and logger fixes
+- reference frame indexing in sequential fallback from multithread run
+- job configuration dialog failure if input is aready selected
+- preview thumbnail now works also for very large images
+- minor fixes to logger messages
+- minor GUI fixes
+- minor fix to vignetting summary plot computations
 
 ### Changed
 - improved robustness of alignment strategy for poorly focused images

@@ -69,28 +69,33 @@ class Settings(StdPathFile):
         if Settings._instance is not None:
             raise RuntimeError("Settings is a singleton.")
         super().__init__(filename)
-        self.settings = DEFAULT_SETTINGS
+        self.settings = self._deep_copy_defaults()
         file_path = self.get_file_path()
         if os.path.isfile(file_path):
             try:
                 with open(file_path, 'r', encoding="utf-8") as file:
                     json_data = json.load(file)
                     file_settings = json_data['settings']
-                    filtered_settings = {}
-                    for key, value in file_settings.items():
-                        if key in DEFAULT_SETTINGS:
-                            if isinstance(value, dict) and isinstance(DEFAULT_SETTINGS[key], dict):
-                                filtered_settings[key] = {
-                                    k: v for k, v in value.items()
-                                    if k in DEFAULT_SETTINGS[key]
-                                }
-                            else:
-                                filtered_settings[key] = value
-                    self.settings = {**self.settings, **filtered_settings}
+                    self._deep_merge_settings(file_settings)
             except Exception as e:
                 traceback.print_tb(e.__traceback__)
                 print(f"Can't read file from path {file_path}. Default settings ignored.")
-                self.settings = {}
+        print(self.settings)
+
+    def _deep_copy_defaults(self):
+        return json.loads(json.dumps(DEFAULT_SETTINGS))
+
+    def _deep_merge_settings(self, file_settings, preserve_custom_keys=False):
+        for key, value in file_settings.items():
+            if key in self.settings:
+                if isinstance(value, dict) and isinstance(self.settings[key], dict):
+                    for sub_key, sub_value in value.items():
+                        if sub_key in self.settings[key] or preserve_custom_keys:
+                            self.settings[key][sub_key] = sub_value
+                else:
+                    self.settings[key] = value
+            elif preserve_custom_keys:
+                self.settings[key] = value
 
     @classmethod
     def instance(cls, filename="shinestacker-settings.txt"):

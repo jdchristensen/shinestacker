@@ -4,7 +4,7 @@ import traceback
 import logging
 import numpy as np
 import matplotlib.pyplot as plt
-from scipy.optimize import curve_fit, fsolve
+from scipy.optimize import curve_fit, bisect
 import cv2
 from .. core.colors import color_str
 from .. core.core_utils import setup_matplotlib_mode
@@ -181,9 +181,22 @@ class Vignetting(SubAction):
             self.process.callback(
                 constants.CALLBACK_SAVE_PLOT, self.process.id,
                 f"{self.process.name}: intensity\nframe {idx_str}", plot_path)
+
         for i, p in enumerate(self.percentiles):
-            self.corrections[i][idx] = fsolve(lambda x: sigmoid_model(x, *params) /
-                                              self.v0 - p, r0_fit)[0]
+            s1 = sigmoid_model(0, *params) / self.v0
+            s2 = sigmoid_model(self.r_max, *params) / self.v0
+            if s1 > p and s2 < p:
+                try:
+                    c = bisect(lambda x: sigmoid_model(x, *params) / self.v0 - p, 0, self.r_max)
+                except Exception as e:
+                    traceback.print_tb(e.__traceback__)
+                    self.process.sub_message(color_str(f": {str(e).lower()}", "yellow"),
+                                             level=logging.WARNING)
+            elif s1 <= p:
+                c = 0
+            else:
+                c = self.r_max
+            self.corrections[i][idx] = c
         self.process.print_message(
             color_str(f"{self.process.idx_tot_str(idx)}: correct vignetting", "cyan"))
         return correct_vignetting(
