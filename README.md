@@ -36,7 +36,7 @@ Ideal for users who want the power of scripting and the comfort of a modern UI.
 
 - 📦 [Install via PyPI](https://pypi.org/project/shinestacker/)
 - 💻 [Run the GUI app](https://shinestacker.readthedocs.io/en/latest/gui.html)
-- 🧠 [Reference](https://shinestacker.readthedocs.io/en/latest/api/)
+- 🧠 [Reference](https://shinestacker.readthedocs.io/en/)
 - 🐛 [Report an issue](https://github.com/lucalista/shinestacker/issues)
 
 ## Resources
