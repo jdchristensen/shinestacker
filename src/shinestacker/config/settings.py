@@ -80,22 +80,19 @@ class Settings(StdPathFile):
             except Exception as e:
                 traceback.print_tb(e.__traceback__)
                 print(f"Can't read file from path {file_path}. Default settings ignored.")
-        print(self.settings)
 
     def _deep_copy_defaults(self):
         return json.loads(json.dumps(DEFAULT_SETTINGS))
 
-    def _deep_merge_settings(self, file_settings, preserve_custom_keys=False):
+    def _deep_merge_settings(self, file_settings):
         for key, value in file_settings.items():
             if key in self.settings:
                 if isinstance(value, dict) and isinstance(self.settings[key], dict):
                     for sub_key, sub_value in value.items():
-                        if sub_key in self.settings[key] or preserve_custom_keys:
+                        if sub_key in self.settings[key]:
                             self.settings[key][sub_key] = sub_value
                 else:
                     self.settings[key] = value
-            elif preserve_custom_keys:
-                self.settings[key] = value
 
     @classmethod
     def instance(cls, filename="shinestacker-settings.txt"):
