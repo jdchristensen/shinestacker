@@ -16,6 +16,7 @@ This page reports the main releases only and the main changes therein.
 - preview thumbnail now works also for very large images
 - minor fixes to logger messages
 - minor GUI fixes
+- minor stability fix to vignetting summary plot code
 
 ### Changed
 - more robust alignment strategy in case of poorly focused images
