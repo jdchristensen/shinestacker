@@ -85,15 +85,17 @@ class Settings(StdPathFile):
     def _deep_copy_defaults(self):
         return json.loads(json.dumps(DEFAULT_SETTINGS))
 
-    def _deep_merge_settings(self, file_settings):
+    def _deep_merge_settings(self, file_settings, preserve_custom_keys=False):
         for key, value in file_settings.items():
             if key in self.settings:
                 if isinstance(value, dict) and isinstance(self.settings[key], dict):
                     for sub_key, sub_value in value.items():
-                        if sub_key in self.settings[key]:
+                        if sub_key in self.settings[key] or preserve_custom_keys:
                             self.settings[key][sub_key] = sub_value
                 else:
                     self.settings[key] = value
+            elif preserve_custom_keys:
+                self.settings[key] = value
 
     @classmethod
     def instance(cls, filename="shinestacker-settings.txt"):

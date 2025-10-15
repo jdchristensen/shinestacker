@@ -75,11 +75,12 @@ def test_settings_persistence():
             from shinestacker.config.settings import Settings
             Settings.reset_instance_only_for_testing()
             settings1 = Settings.instance("test-settings.txt")
-            settings1.set('custom_key', 'custom_value')
+            original_value = settings1.get('expert_options')
+            settings1.set('expert_options', not original_value)
             settings1.update()
             Settings.reset_instance_only_for_testing()
             settings2 = Settings.instance("test-settings.txt")
-            assert settings2.get('custom_key') == 'custom_value'
+            assert settings2.get('expert_options') == (not original_value)
 
 def test_settings_extra_keys_filtered():
     with tempfile.TemporaryDirectory() as temp_dir:
