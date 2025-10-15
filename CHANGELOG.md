@@ -3,27 +3,24 @@
 This page reports the main releases only and the main changes therein.
 
 ## [v-.-.-] - 2025-10-13
-** Unreleased changes **
+** Alignment stability and performance improvements **
 
 ### Added
-- alignment algorithm based on phase correlation as optional fallback solution in cases where no feature match is found
-- more configurable parameters available in the default settings
-- optimization for images with poor focus: limited maximum number of match retries to next frame in parallel alignment; the mamimum number is equal to a new configurable parameter delta_max
+- optional alignment algorithm based on phase correlation as fallback when no feature match is found
+- new configurable parameters in default settings, including delta_max for retry limits in parallel alignment
 
 ### Fixed
-- reference frame indexing in sequential fallback from multithread run
-- job configuration dialog failure if input is aready selected
-- preview thumbnail now works also for very large images
-- minor fixes to logger messages
-- minor GUI fixes
+- job configuration dialog crash when input was already selected
+- preview thumbnails now work also for very large images
+- minor GUI and logger fixes
 
 ### Changed
-- more robust alignment strategy in case of poorly focused images
-- better tuning of parallel processing of frames alignment
-- management of noise map output folder is now consistent with other modules
-- improved module naming scheme for wizard-generated project
-- more robust settings persistency
-- some code refactoring
+- improved robustness of alignment strategy for poorly focused images
+- better tuning of parallel frame alignment
+- consistent handling of noise map output folders
+- improved naming scheme for wizard-generated projects
+- more reliable settings persistency
+- code refactoring and cleanup
 
 -----
 
