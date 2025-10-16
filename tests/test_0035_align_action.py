@@ -163,7 +163,8 @@ def test_check_affine_matrix_combined_valid():
     angle_rad = math.radians(3.0)
     cos_a = math.cos(angle_rad)
     sin_a = math.sin(angle_rad)
-    m = np.array([[0.95 * cos_a, 0.95 * sin_a, 4.0], [-0.95 * sin_a, 1.05 * cos_a, -3.0]], dtype=np.float64)
+    m = np.array([[0.95 * cos_a, 0.95 * sin_a, 4.0],
+                  [-0.95 * sin_a, 1.05 * cos_a, -3.0]], dtype=np.float64)
     img_shape = (100, 100)
     is_valid, reason, result = check_affine_matrix(m, img_shape)
     assert is_valid
@@ -192,6 +193,139 @@ def test_check_homography_distortion_valid_skew():
     is_valid, reason, result = check_homography_distortion(m, img_shape)
     assert is_valid
     assert "within acceptable limits" in reason
+
+
+def test_check_affine_matrix_combined_invalid():
+    angle_rad = math.radians(15.0)
+    cos_a = math.cos(angle_rad)
+    sin_a = math.sin(angle_rad)
+    m = np.array([[0.8 * cos_a, 0.8 * sin_a, 20.0],
+                  [-0.8 * sin_a, 1.2 * cos_a, 15.0]], dtype=np.float64)
+    img_shape = (100, 100)
+    is_valid, reason, result = check_affine_matrix(m, img_shape)
+    assert not is_valid
+    assert "rotation too large" in reason
+    assert "x-scale out of range" in reason
+    assert "y-scale out of range" in reason
+    assert "translation too large" in reason
+
+
+def test_check_transform_rigid_valid():
+    from shinestacker.config import constants
+    m = np.array([[1.0, 0.0, 5.0], [0.0, 1.0, 5.0]], dtype=np.float64)
+    img_shape = (100, 100)
+    is_valid, reason, result = check_transform(
+        m, img_shape, constants.ALIGN_RIGID, _AFFINE_THRESHOLDS, _HOMOGRAPHY_THRESHOLDS)
+    assert is_valid
+    assert "within acceptable limits" in reason
+
+
+def test_check_transform_homography_valid():
+    from shinestacker.config import constants
+    m = np.eye(3, dtype=np.float64)
+    img_shape = (100, 100)
+    is_valid, reason, result = check_transform(
+        m, img_shape, constants.ALIGN_HOMOGRAPHY, _AFFINE_THRESHOLDS, _HOMOGRAPHY_THRESHOLDS)
+    assert is_valid
+    assert "within acceptable limits" in reason
+
+
+def test_check_transform_homography_invalid_area():
+    from shinestacker.config import constants
+    m = np.array([[2.0, 0.0, 0.0], [0.0, 2.0, 0.0], [0.0, 0.0, 1.0]], dtype=np.float64)
+    img_shape = (100, 100)
+    is_valid, reason, result = check_transform(
+        m, img_shape, constants.ALIGN_HOMOGRAPHY, _AFFINE_THRESHOLDS, _HOMOGRAPHY_THRESHOLDS)
+    assert not is_valid
+    assert "area change too large" in reason
+
+
+def test_check_transform_homography_invalid_aspect():
+    from shinestacker.config import constants
+    m = np.array([[2.0, 0.0, 0.0], [0.0, 0.5, 0.0], [0.0, 0.0, 1.0]], dtype=np.float64)
+    img_shape = (100, 100)
+    is_valid, reason, result = check_transform(
+        m, img_shape, constants.ALIGN_HOMOGRAPHY, _AFFINE_THRESHOLDS, _HOMOGRAPHY_THRESHOLDS)
+    assert not is_valid
+    assert "aspect ratio change too large" in reason
+
+
+def test_check_transform_invalid_type():
+    m = np.eye(3, dtype=np.float64)
+    img_shape = (100, 100)
+    is_valid, reason, result = check_transform(
+        m, img_shape, 'invalid_type', _AFFINE_THRESHOLDS, _HOMOGRAPHY_THRESHOLDS)
+    assert not is_valid
+    assert "invalid transfrom option" in reason
+
+
+def test_check_transform_rigid_invalid_rotation():
+    from shinestacker.config import constants
+    angle_rad = math.radians(25.0)
+    cos_a = math.cos(angle_rad)
+    sin_a = math.sin(angle_rad)
+    m = np.array([[cos_a, sin_a, 0], [-sin_a, cos_a, 0]], dtype=np.float64)
+    img_shape = (100, 100)
+    is_valid, reason, result = check_transform(
+        m, img_shape, constants.ALIGN_RIGID, _AFFINE_THRESHOLDS, _HOMOGRAPHY_THRESHOLDS)
+    assert not is_valid
+    assert "rotation too large" in reason
+
+
+def test_check_transform_rigid_invalid_translation():
+    from shinestacker.config import constants
+    m = np.array([[1.0, 0.0, 20.0], [0.0, 1.0, 15.0]], dtype=np.float64)
+    img_shape = (100, 100)
+    is_valid, reason, result = check_transform(
+        m, img_shape, constants.ALIGN_RIGID, _AFFINE_THRESHOLDS, _HOMOGRAPHY_THRESHOLDS)
+    assert not is_valid
+    assert "translation too large" in reason
+
+
+def test_check_transform_rigid_invalid_scale():
+    from shinestacker.config import constants
+    m = np.array([[0.8, 0.0, 0.0], [0.0, 1.2, 0.0]], dtype=np.float64)
+    img_shape = (100, 100)
+    is_valid, reason, result = check_transform(
+        m, img_shape, constants.ALIGN_RIGID, _AFFINE_THRESHOLDS, _HOMOGRAPHY_THRESHOLDS)
+    assert not is_valid
+    assert "x-scale out of range" in reason
+
+
+def test_check_transform_homography_invalid_skew():
+    from shinestacker.config import constants
+    m = np.array([[1.0, 0.5, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]], dtype=np.float64)
+    img_shape = (100, 100)
+    is_valid, reason, result = check_transform(
+        m, img_shape, constants.ALIGN_HOMOGRAPHY, _AFFINE_THRESHOLDS, _HOMOGRAPHY_THRESHOLDS)
+    assert not is_valid
+    assert "angle distortion too large" in reason
+
+
+def test_check_transform_rigid_combined_invalid():
+    from shinestacker.config import constants
+    angle_rad = math.radians(15.0)
+    cos_a = math.cos(angle_rad)
+    sin_a = math.sin(angle_rad)
+    m = np.array([[0.8 * cos_a, 0.8 * sin_a, 20.0],
+                  [-0.8 * sin_a, 1.2 * cos_a, 15.0]], dtype=np.float64)
+    img_shape = (100, 100)
+    is_valid, reason, result = check_transform(
+        m, img_shape, constants.ALIGN_RIGID, _AFFINE_THRESHOLDS, _HOMOGRAPHY_THRESHOLDS)
+    assert not is_valid
+    assert "rotation too large" in reason
+    assert "x-scale out of range" in reason
+    assert "y-scale out of range" in reason
+    assert "translation too large" in reason
+
+
+def test_check_transform_none_thresholds():
+    from shinestacker.config import constants
+    m = np.array([[2.0, 0.0, 100.0], [0.0, 2.0, 100.0]], dtype=np.float64)
+    img_shape = (100, 100)
+    is_valid, reason, result = check_transform(m, img_shape, constants.ALIGN_RIGID, None, None)
+    assert is_valid
+    assert "No thresholds provided" in reason
 
 
 if __name__ == "__main__":
