@@ -353,6 +353,66 @@ def test_detect_and_compute_matches_with_cached_features():
     assert good_matches is not None
 
 
+def test_find_transform_successful():
+    aligner = AlignFramesParallel()
+    process = Mock()
+    process.ref_idx = 0
+    process.idx_tot_str = Mock(return_value="1/2")
+    process.input_filepath = Mock(side_effect=lambda idx: f"img{idx}.jpg")
+    aligner.process = process
+    aligner.print_message = Mock()
+    aligner.alignment_config = {
+        'transform': constants.ALIGN_RIGID,
+        'subsample': 1,
+        'fast_subsampling': False,
+        'min_good_matches': 4,
+        'align_method': 'RANSAC',
+        'rans_threshold': 3.0,
+        'max_iters': 2000,
+        'align_confidence': 0.99,
+        'refine_iters': 10,
+        'phase_corr_fallback': False,
+        'abort_abnormal': False
+    }
+    aligner.get_transform_thresholds = Mock(return_value=(100, 0.5))
+    img1, img2 = create_test_images()
+    aligner._img_cache = [img1, img2]
+    aligner._img_shapes = [img1.shape, img2.shape]
+    aligner._img_locks = [1, 1]
+    aligner._cache_locks = [threading.Lock(), threading.Lock()]
+    aligner._n_good_matches = [0, 0]
+    aligner._target_indices = [None, None]
+    aligner._transforms = [None, None]
+    aligner._kp = [None, None]
+    aligner._des = [None, None]
+    with patch.object(aligner, 'cache_img') as mock_cache:
+        mock_cache.side_effect = [img1, img2]
+        with patch.object(aligner, 'detect_and_compute_matches') as mock_detect:
+            mock_kp_0 = []
+            mock_kp_ref = []
+            mock_good_matches = []            
+            for i in range(10):
+                kp_0 = Mock()
+                kp_0.pt = (float(i * 10), float(i * 10))
+                mock_kp_0.append(kp_0)
+                kp_ref = Mock()
+                kp_ref.pt = (float(i * 10 + 5), float(i * 10 + 5))
+                mock_kp_ref.append(kp_ref)                
+                match = Mock()
+                match.queryIdx = i
+                match.trainIdx = i
+                mock_good_matches.append(match)
+            mock_detect.return_value = (mock_kp_0, mock_kp_ref, mock_good_matches)
+            with patch('shinestacker.algorithms.align_parallel.find_transform') as mock_find:
+                mock_find.return_value = (np.eye(2, 3, dtype=np.float32), None)                
+                with patch('shinestacker.algorithms.align_parallel.check_transform') as mock_check:
+                    mock_check.return_value = (True, "test reason", "test result")
+                    info, warnings = aligner.find_transform(1, delta=1)                    
+                    assert aligner._transforms[1] is not None
+                    assert aligner._target_indices[1] == 0
+
+
+
 if __name__ == '__main__':
     test_compose_transforms()
     test_align_frames_parallel_initialization()
@@ -364,4 +424,8 @@ if __name__ == '__main__':
     test_submit_threads_with_exceptions()
     test_begin_initialization()
     test_begin_transform_combination()
+    test_detect_and_compute_matches()
+    test_detect_and_compute_matches_orb()
+    test_detect_and_compute_matches_with_cached_features()
+    test_find_transform_successful()
     print("All tests passed!")
