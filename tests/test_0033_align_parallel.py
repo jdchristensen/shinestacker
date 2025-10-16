@@ -235,6 +235,85 @@ def test_submit_threads_runstop_exception():
             with pytest.raises(RunStopException):
                 aligner.submit_threads(idxs, imgs)
 
+def test_begin_method():
+    aligner = AlignFramesParallel()
+    process = Mock()
+    process.num_input_filepaths = Mock(return_value=3)
+    process.ref_idx = 1
+    process.input_filepaths = Mock(return_value=["img0.jpg", "img1.jpg", "img2.jpg"])
+    process.input_filepath = Mock(side_effect=lambda idx: f"img{idx}.jpg")
+    process.callback = Mock()
+    process.id = "test_id"
+    process.name = "test_name"
+    process.add_begin_steps = Mock()
+
+    aligner.process = process
+    aligner.print_message = Mock()
+    aligner.submit_threads = Mock()
+    aligner.get_transform_thresholds = Mock(return_value=(10, 0.5))
+    aligner.save_transform_result = Mock()
+
+    # Mock the parent's begin method to avoid initialization issues
+    with patch.object(AlignFramesBase, 'begin') as mock_parent_begin:
+        # Mock the internal state initialization that happens in begin()
+        with patch.object(aligner, '_img_shapes', [(100, 100), (100, 100), (100, 100)]):
+            with patch.object(aligner, '_cumulative_transforms', [
+                np.eye(2, 3, dtype=np.float32),
+                np.eye(2, 3, dtype=np.float32),  # ref_idx
+                np.eye(2, 3, dtype=np.float32)
+            ]):
+                with patch.object(aligner, '_target_indices', [1, None, 1]):
+                    with patch.object(aligner, '_n_good_matches', [10, 0, 15]):
+                        # Mock check_transform to avoid the actual validation
+                        with patch('shinestacker.algorithms.align_parallel.check_transform') as mock_check_transform:
+                            mock_check_transform.return_value = (True, "test reason", "test result")
+                            
+                            aligner.begin(process)
+
+                            # Verify calls
+                            mock_parent_begin.assert_called_once_with(process)
+                            assert aligner.submit_threads.called
+                            assert process.add_begin_steps.called
+
+
+def test_begin_with_missing_transforms():
+    aligner = AlignFramesParallel()
+    process = Mock()
+    process.num_input_filepaths = Mock(return_value=3)
+    process.ref_idx = 1
+    process.input_filepaths = Mock(return_value=["img0.jpg", "img1.jpg", "img2.jpg"])
+    process.input_filepath = Mock(side_effect=lambda idx: f"img{idx}.jpg")
+    process.callback = Mock()
+    process.id = "test_id"
+    process.name = "test_name"
+    process.add_begin_steps = Mock()
+
+    aligner.process = process
+    aligner.print_message = Mock()
+    aligner.submit_threads = Mock()
+    aligner.get_transform_thresholds = Mock(return_value=(10, 0.5))
+    aligner.save_transform_result = Mock()
+
+    # Mock the parent's begin method
+    with patch.object(AlignFramesBase, 'begin') as mock_parent_begin:
+        # Set up scenario with missing transforms
+        with patch.object(aligner, '_img_shapes', [(100, 100), (100, 100), (100, 100)]):
+            with patch.object(aligner, '_cumulative_transforms', [
+                None,  # Missing transform
+                np.eye(2, 3, dtype=np.float32),  # ref_idx
+                np.eye(2, 3, dtype=np.float32)
+            ]):
+                with patch.object(aligner, '_target_indices', [None, None, 1]):  # idx 0 has no target
+                    with patch.object(aligner, '_n_good_matches', [0, 0, 15]):
+                        # Mock check_transform
+                        with patch('shinestacker.algorithms.align_parallel.check_transform') as mock_check_transform:
+                            mock_check_transform.return_value = (True, "test reason", "test result")
+                            
+                            aligner.begin(process)
+
+                            # Should handle missing transforms gracefully
+                            assert aligner.save_transform_result.call_count == 2  # Only 2 valid transforms
+                            
 
 if __name__ == '__main__':
     test_compose_transforms()
