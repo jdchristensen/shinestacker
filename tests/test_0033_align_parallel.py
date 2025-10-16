@@ -235,6 +235,76 @@ def test_submit_threads_runstop_exception():
             with pytest.raises(RunStopException):
                 aligner.submit_threads(idxs, imgs)
 
+def test_begin_method():
+    aligner = AlignFramesParallel()
+    process = Mock()
+    process.num_input_filepaths = Mock(return_value=3)
+    process.ref_idx = 1
+    process.input_filepaths = Mock(return_value=["img0.jpg", "img1.jpg", "img2.jpg"])
+    process.callback = Mock()
+    process.id = "test_id"
+    process.name = "test_name"
+    process.add_begin_steps = Mock()
+
+    aligner.process = process
+    aligner.print_message = Mock()
+    aligner.submit_threads = Mock()
+    aligner.get_transform_thresholds = Mock(return_value=(10, 0.5, 0.5))
+    aligner.save_transform_result = Mock()
+
+    # Mock the parent's begin method to avoid initialization issues
+    with patch.object(AlignFramesBase, 'begin') as mock_parent_begin:
+        # Mock internal state - these would be set by submit_threads
+        aligner._img_shapes = [(100, 100, 3), (100, 100, 3), (100, 100, 3)]
+        aligner._cumulative_transforms = [
+            np.eye(2, 3, dtype=np.float32),
+            np.eye(2, 3, dtype=np.float32),  # ref_idx
+            np.eye(2, 3, dtype=np.float32)
+        ]
+        aligner._target_indices = [1, None, 1]
+        aligner._n_good_matches = [10, 0, 15]
+
+        aligner.begin(process)
+
+        # Verify calls
+        mock_parent_begin.assert_called_once_with(process)
+        assert aligner.submit_threads.called
+        assert process.add_begin_steps.called
+
+
+def test_begin_with_missing_transforms():
+    aligner = AlignFramesParallel()
+    process = Mock()
+    process.num_input_filepaths = Mock(return_value=3)
+    process.ref_idx = 1
+    process.input_filepaths = Mock(return_value=["img0.jpg", "img1.jpg", "img2.jpg"])
+    process.callback = Mock()
+    process.id = "test_id"
+    process.name = "test_name"
+    process.add_begin_steps = Mock()
+
+    aligner.process = process
+    aligner.print_message = Mock()
+    aligner.submit_threads = Mock()
+    aligner.get_transform_thresholds = Mock(return_value=(10, 0.5, 0.5))
+    aligner.save_transform_result = Mock()
+
+    # Mock the parent's begin method
+    with patch.object(AlignFramesBase, 'begin') as mock_parent_begin:
+        # Set up scenario with missing transforms
+        aligner._img_shapes = [(100, 100, 3), (100, 100, 3), (100, 100, 3)]
+        aligner._cumulative_transforms = [
+            None,  # Missing transform
+            np.eye(2, 3, dtype=np.float32),  # ref_idx
+            np.eye(2, 3, dtype=np.float32)
+        ]
+        aligner._target_indices = [None, None, 1]  # idx 0 has no target
+        aligner._n_good_matches = [0, 0, 15]
+
+        aligner.begin(process)
+
+        # Should handle missing transforms gracefully
+        assert aligner.save_transform_result.call_count == 2  # Only 2 valid transforms
 
 if __name__ == '__main__':
     test_compose_transforms()
@@ -245,5 +315,5 @@ if __name__ == '__main__':
     test_extract_features_fallback()
     test_submit_threads()
     test_submit_threads_with_exceptions()
-    
+
     print("All tests passed!")
