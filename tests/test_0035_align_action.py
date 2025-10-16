@@ -1,11 +1,13 @@
 # pylint: disable= C0116, C0114, W0212, E1101
-import numpy as np
 import math
+import logging
+import unittest
+import numpy as np
 from shinestacker.config import constants
 from shinestacker.algorithms.align import (
     decompose_affine_matrix, check_affine_matrix, check_homography_distortion, check_transform,
     _AFFINE_THRESHOLDS, _HOMOGRAPHY_THRESHOLDS, _DEFAULT_FEATURE_CONFIG, _DEFAULT_MATCHING_CONFIG,
-    _DEFAULT_ALIGNMENT_CONFIG, AlignFramesBase
+    _DEFAULT_ALIGNMENT_CONFIG, AlignFramesBase, AlignFrames
 )
 
 
@@ -454,6 +456,310 @@ def test_align_frames_base_get_transform_thresholds():
     affine_thresholds, homography_thresholds = align_base.get_transform_thresholds()
     assert affine_thresholds == _AFFINE_THRESHOLDS
     assert homography_thresholds == _HOMOGRAPHY_THRESHOLDS
+
+
+def test_align_frames_base_save_transform_result_rigid():
+    align_base = AlignFramesBase(alignment_config={'transform': constants.ALIGN_RIGID})
+    align_base._scale_x = np.ones(5)
+    align_base._scale_y = np.ones(5)
+    align_base._translation_x = np.zeros(5)
+    align_base._translation_y = np.zeros(5)
+    align_base._rotation = np.zeros(5)
+    align_base._shear = np.zeros(5)
+    result = (1.1, 0.9, 10.0, -5.0, 2.0, 1.0)
+    align_base.save_transform_result(2, result)
+    assert align_base._scale_x[2] == 1.1
+    assert align_base._scale_y[2] == 0.9
+    assert align_base._translation_x[2] == 10.0
+    assert align_base._translation_y[2] == -5.0
+    assert align_base._rotation[2] == 2.0
+    assert align_base._shear[2] == 1.0
+
+
+def test_align_frames_base_save_transform_result_homography():
+    align_base = AlignFramesBase(alignment_config={'transform': constants.ALIGN_HOMOGRAPHY})
+    align_base._area_ratio = np.ones(5)
+    align_base._aspect_ratio = np.ones(5)
+    align_base._max_angle_dev = np.zeros(5)
+    result = (1.2, 1.5, 3.0)
+    align_base.save_transform_result(3, result)
+    assert align_base._area_ratio[3] == 1.2
+    assert align_base._aspect_ratio[3] == 1.5
+    assert align_base._max_angle_dev[3] == 3.0
+
+
+def test_align_frames_base_save_transform_result_none():
+    align_base = AlignFramesBase()
+    align_base._scale_x = np.ones(5)
+    align_base._scale_y = np.ones(5)
+    align_base.save_transform_result(1, None)
+    assert align_base._scale_x[1] == 1.0
+    assert align_base._scale_y[1] == 1.0
+
+
+def test_align_frames_initialization():
+    align_frames = AlignFrames()
+    assert not align_frames.relative_transformation()
+    assert align_frames.sequential_processing()
+
+
+def test_align_frames_run_frame_reference_frame():
+    align_frames = AlignFrames()
+
+    class MockProcess:
+        ref_idx = 0
+
+        def img_ref(self, idx):
+            return np.ones((10, 10, 3))
+
+    align_frames.process = MockProcess()
+    test_image = np.ones((10, 10, 3))
+    result = align_frames.run_frame(0, 0, test_image)
+    assert np.array_equal(result, test_image)
+
+
+def test_align_frames_run_frame_non_reference():
+    align_frames = AlignFrames()
+
+    class MockProcess:
+        ref_idx = 0
+
+        def img_ref(self, idx):
+            return np.ones((10, 10, 3))
+
+    align_frames.process = MockProcess()
+    align_frames.align_images = lambda idx, img_ref, img_0: np.zeros((10, 10, 3))
+    test_image = np.ones((10, 10, 3))
+    result = align_frames.run_frame(1, 0, test_image)
+    assert np.array_equal(result, np.zeros((10, 10, 3)))
+
+
+def test_align_frames_run_frame_align_images_exception():
+    align_frames = AlignFrames()
+
+    class MockProcess:
+        ref_idx = 0
+
+        def img_ref(self, idx):
+            return np.ones((10, 10, 3))
+
+    align_frames.process = MockProcess()
+    align_frames.align_images = lambda idx, img_ref, img_0: \
+        (_ for _ in ()).throw(Exception("Test exception"))
+    test_image = np.ones((10, 10, 3))
+    try:
+        align_frames.run_frame(1, 0, test_image)
+        assert False
+    except Exception as e:
+        assert str(e) == "Test exception"
+
+
+def test_align_frames_begin_initializes_arrays():
+    align_frames = AlignFrames()
+
+    class MockProcess:
+        total_action_counts = 5
+
+    align_frames.begin(MockProcess())
+    assert len(align_frames._n_good_matches) == 5
+    assert len(align_frames._area_ratio) == 5
+    assert len(align_frames._aspect_ratio) == 5
+    assert len(align_frames._max_angle_dev) == 5
+    assert len(align_frames._scale_x) == 5
+    assert len(align_frames._scale_y) == 5
+    assert len(align_frames._translation_x) == 5
+    assert len(align_frames._translation_y) == 5
+    assert len(align_frames._rotation) == 5
+    assert len(align_frames._shear) == 5
+
+
+def test_align_frames_end_no_plot_summary():
+    align_frames = AlignFrames(plot_summary=False)
+
+    class MockProcess:
+        ref_idx = 1
+        working_path = "/tmp"
+        plot_path = "plots"
+        name = "test"
+        id = 1
+
+        def callback(self, callback_type, process_id, description, plot_path):
+            pass
+
+    align_frames.process = MockProcess()
+    align_frames._n_good_matches = np.array([10, 0, 15, 20])
+    align_frames._area_ratio = np.array([1.0, 1.0, 1.1, 0.9])
+    align_frames._aspect_ratio = np.array([1.0, 1.0, 1.2, 0.8])
+    align_frames._max_angle_dev = np.array([0.0, 0.0, 1.0, 2.0])
+    align_frames._scale_x = np.array([1.0, 1.0, 1.05, 0.95])
+    align_frames._scale_y = np.array([1.0, 1.0, 0.95, 1.05])
+    align_frames._translation_x = np.array([0.0, 0.0, 5.0, -5.0])
+    align_frames._translation_y = np.array([0.0, 0.0, -3.0, 3.0])
+    align_frames._rotation = np.array([0.0, 0.0, 1.0, -1.0])
+    align_frames._shear = np.array([0.0, 0.0, 0.5, -0.5])
+    align_frames.end()
+
+
+def test_align_frames_end_with_plot_summary_rigid():
+    align_frames = AlignFrames(
+        plot_summary=True, alignment_config={'transform': constants.ALIGN_RIGID})
+
+    class MockProcess:
+        ref_idx = 2
+        working_path = "/tmp"
+        plot_path = "plots"
+        name = "test"
+        id = 1
+        callback_calls = []
+
+        def callback(self, callback_type, process_id, description, plot_path):
+            self.callback_calls.append((callback_type, description, plot_path))
+
+    process = MockProcess()
+    align_frames.process = process
+    align_frames._n_good_matches = np.array([10, 20, 0, 15, 25])
+    align_frames._scale_x = np.array([1.0, 1.05, 1.0, 0.95, 1.02])
+    align_frames._scale_y = np.array([1.0, 0.95, 1.0, 1.05, 0.98])
+    align_frames._translation_x = np.array([0.0, 5.0, 0.0, -3.0, 2.0])
+    align_frames._translation_y = np.array([0.0, -2.0, 0.0, 4.0, -1.0])
+    align_frames._rotation = np.array([0.0, 1.5, 0.0, -2.0, 0.5])
+    align_frames._shear = np.array([0.0, 0.3, 0.0, -0.4, 0.1])
+    align_frames.end()
+    assert len(process.callback_calls) == 4
+
+
+def test_align_frames_end_with_plot_summary_homography():
+    align_frames = AlignFrames(
+        plot_summary=True, alignment_config={'transform': constants.ALIGN_HOMOGRAPHY})
+
+    class MockProcess:
+        ref_idx = 1
+        working_path = "/tmp"
+        plot_path = "plots"
+        name = "test"
+        id = 1
+        callback_calls = []
+
+        def callback(self, callback_type, process_id, description, plot_path):
+            self.callback_calls.append((callback_type, description, plot_path))
+
+    process = MockProcess()
+    align_frames.process = process
+    align_frames._n_good_matches = np.array([15, 0, 20, 25])
+    align_frames._area_ratio = np.array([1.0, 1.0, 1.1, 0.9])
+    align_frames._aspect_ratio = np.array([1.0, 1.0, 1.2, 0.8])
+    align_frames._max_angle_dev = np.array([0.0, 0.0, 1.0, 2.0])
+    align_frames.end()
+    assert len(process.callback_calls) == 4
+
+
+def test_align_frames_image_str():
+    align_frames = AlignFrames()
+
+    class MockProcess:
+        def frame_str(self, idx):
+            return f"Frame {idx}"
+
+        def input_filepath(self, idx):
+            return f"/path/to/file_{idx:04d}.jpg"
+
+    align_frames.process = MockProcess()
+    result = align_frames.image_str(5)
+    assert result == "Frame 5, file_0005.jpg"
+
+
+def test_align_frames_print_message():
+    align_frames = AlignFrames()
+
+    class MockProcess:
+        messages = []
+
+        def print_message(self, msg, level=None):
+            self.messages.append((msg, level))
+
+    align_frames.process = MockProcess()
+    align_frames.print_message("Test message", constants.LOG_COLOR_LEVEL_3, logging.WARNING)
+    assert len(align_frames.process.messages) == 1
+    assert "Test message" in align_frames.process.messages[0][0]
+
+
+def test_align_frames_align_images_successful():
+    align_frames = AlignFrames()
+
+    class MockProcess:
+        name = "test_process"
+        id = 1
+        working_path = "/tmp"
+        plot_path = "plots"
+        callback_calls = []
+
+        def callback(self, callback_type, process_id, description, plot_path):
+            self.callback_calls.append((callback_type, description, plot_path))
+
+        def frame_str(self, idx):
+            return f"Frame {idx}"
+
+    align_frames.process = MockProcess()
+    align_frames._n_good_matches = np.zeros(10)
+    align_frames.save_transform_result = lambda idx, result: None
+    with unittest.mock.patch('shinestacker.algorithms.align.align_images') as mock_align:
+        mock_align.return_value = (50, np.eye(3), np.ones((10, 10, 3)))
+        align_frames.align_images(5, np.ones((10, 10, 3)), np.ones((10, 10, 3)))
+        assert mock_align.called
+        assert align_frames._n_good_matches[5] == 50
+
+
+def test_align_frames_align_images_failed():
+    align_frames = AlignFrames()
+
+    class MockProcess:
+        name = "test_process"
+        id = 1
+        working_path = "/tmp"
+        plot_path = "plots"
+        callback_calls = []
+
+        def callback(self, callback_type, process_id, description, plot_path):
+            self.callback_calls.append((callback_type, description, plot_path))
+
+        def frame_str(self, idx):
+            return f"Frame {idx}"
+
+    align_frames.process = MockProcess()
+    align_frames._n_good_matches = np.zeros(10)
+    align_frames.save_transform_result = lambda idx, result: None
+    with unittest.mock.patch('shinestacker.algorithms.align.align_images') as mock_align:
+        mock_align.return_value = (0, None, None)
+        result = align_frames.align_images(5, np.ones((10, 10, 3)), np.ones((10, 10, 3)))
+        assert mock_align.called
+        assert align_frames._n_good_matches[5] == 0
+        assert result is None
+
+
+def test_align_frames_align_images_phase_correlation_fallback():
+    align_frames = AlignFrames(alignment_config={'phase_corr_fallback': True})
+
+    class MockProcess:
+        name = "test_process"
+        id = 1
+        working_path = "/tmp"
+        plot_path = "plots"
+        callback_calls = []
+
+        def callback(self, callback_type, process_id, description, plot_path):
+            self.callback_calls.append((callback_type, description, plot_path))
+
+        def frame_str(self, idx):
+            return f"Frame {idx}"
+
+    align_frames.process = MockProcess()
+    align_frames._n_good_matches = np.zeros(10)
+    align_frames.save_transform_result = lambda idx, result: None
+    with unittest.mock.patch('shinestacker.algorithms.align.align_images') as mock_align:
+        mock_align.return_value = (2, np.eye(3), np.ones((10, 10, 3)))
+        align_frames.align_images(5, np.ones((10, 10, 3)), np.ones((10, 10, 3)))
+        assert mock_align.called
+        assert align_frames._n_good_matches[5] == 2
 
 
 if __name__ == "__main__":
