@@ -1,9 +1,11 @@
 # pylint: disable= C0116, C0114, W0212, E1101
 import threading
+import pytest
 from unittest.mock import Mock, patch
 import cv2
 import numpy as np
 from shinestacker.config.constants import constants
+from shinestacker.core.exceptions import RunStopException
 from shinestacker.algorithms.align_parallel import AlignFramesParallel, compose_transforms
 
 
@@ -141,6 +143,99 @@ def test_extract_features_fallback():
         assert len(warnings) > 0
 
 
+def test_submit_threads():
+    aligner = AlignFramesParallel()
+    aligner.process = Mock()
+    aligner.process.idx_tot_str = Mock(return_value="1/2")
+    aligner.process.input_filepath = Mock(side_effect=lambda idx: f"img{idx}.jpg")
+    aligner.process.num_input_filepaths = Mock(return_value=3)  # Add this
+    aligner.print_message = Mock()
+    aligner.find_transform = Mock(return_value=([], []))
+    aligner.step_counter = 0
+    aligner.process.after_step = Mock()
+    aligner.process.check_running = Mock()
+    aligner._n_good_matches = [0] * 3
+    aligner._img_locks = [0] * 3
+    aligner._img_cache = [None] * 3
+    idxs = [1, 2]
+    imgs = ["img1.jpg", "img2.jpg"]
+
+    def create_mock_future(result):
+        future = Mock()
+        future.result.return_value = result
+        return future
+
+    with patch('shinestacker.algorithms.align_parallel.ThreadPoolExecutor') as mock_executor_class:
+        mock_executor = Mock()
+        mock_executor_class.return_value.__enter__.return_value = mock_executor
+        futures = []
+        for idx in idxs:
+            future = create_mock_future(([], []))
+            futures.append(future)
+        mock_executor.submit.side_effect = lambda fn, idx: futures.pop(0) \
+            if futures else create_mock_future(([], []))
+        with patch('shinestacker.algorithms.align_parallel.as_completed') as mock_as_completed:
+            mock_as_completed.return_value = futures.copy()
+            aligner.submit_threads(idxs, imgs)
+            assert mock_executor.submit.call_count == len(idxs)
+            assert aligner.process.after_step.call_count == len(idxs)
+
+
+def test_submit_threads_with_exceptions():
+    aligner = AlignFramesParallel()
+    aligner.process = Mock()
+    aligner.process.idx_tot_str = Mock(return_value="1/2")
+    aligner.process.input_filepath = Mock(side_effect=lambda idx: f"img{idx}.jpg")
+    aligner.process.num_input_filepaths = Mock(return_value=3)  # Add this
+    aligner.print_message = Mock()
+    aligner.step_counter = 0
+    aligner.process.after_step = Mock()
+    aligner.process.check_running = Mock()
+    aligner._n_good_matches = [0] * 3
+    aligner._img_locks = [0] * 3
+    aligner._img_cache = [None] * 3
+    idxs = [1]
+    imgs = ["img1.jpg"]
+    with patch('shinestacker.algorithms.align_parallel.ThreadPoolExecutor') as mock_executor_class:
+        mock_executor = Mock()
+        mock_executor_class.return_value.__enter__.return_value = mock_executor
+        future = Mock()
+        future.result.side_effect = Exception("Test exception")
+        mock_executor.submit.return_value = future
+        with patch('shinestacker.algorithms.align_parallel.as_completed') as mock_as_completed:
+            mock_as_completed.return_value = [future]
+            aligner.submit_threads(idxs, imgs)
+            aligner.print_message.assert_called()
+            assert "failed processing" in aligner.print_message.call_args[0][0]
+
+
+def test_submit_threads_runstop_exception():
+    aligner = AlignFramesParallel()
+    aligner.process = Mock()
+    aligner.process.idx_tot_str = Mock(return_value="1/2")
+    aligner.process.input_filepath = Mock(side_effect=lambda idx: f"img{idx}.jpg")
+    aligner.process.num_input_filepaths = Mock(return_value=3)  # Add this
+    aligner.print_message = Mock()
+    aligner.step_counter = 0
+    aligner.process.after_step = Mock()
+    aligner.process.check_running = Mock()
+    aligner._n_good_matches = [0] * 3
+    aligner._img_locks = [0] * 3
+    aligner._img_cache = [None] * 3
+    idxs = [1]
+    imgs = ["img1.jpg"]
+    with patch('shinestacker.algorithms.align_parallel.ThreadPoolExecutor') as mock_executor_class:
+        mock_executor = Mock()
+        mock_executor_class.return_value.__enter__.return_value = mock_executor
+        future = Mock()
+        future.result.side_effect = RunStopException("Stop requested")
+        mock_executor.submit.return_value = future
+        with patch('shinestacker.algorithms.align_parallel.as_completed') as mock_as_completed:
+            mock_as_completed.return_value = [future]
+            with pytest.raises(RunStopException):
+                aligner.submit_threads(idxs, imgs)
+
+
 if __name__ == '__main__':
     test_compose_transforms()
     test_align_frames_parallel_initialization()
@@ -148,4 +243,7 @@ if __name__ == '__main__':
     test_align_images_method()
     test_align_images_border_modes()
     test_extract_features_fallback()
+    test_submit_threads()
+    test_submit_threads_with_exceptions()
+    
     print("All tests passed!")
