@@ -521,6 +521,48 @@ def test_find_transform_invalid_transform_abort():
                         aligner.find_transform(1, delta=1)
 
 
+def test_find_transform_rescale_failure():
+    aligner = AlignFramesParallel()
+    process = Mock()
+    process.ref_idx = 0
+    process.idx_tot_str = Mock(return_value="1/2")
+    process.input_filepath = Mock(side_effect=lambda idx: f"img{idx}.jpg")
+    aligner.process = process
+    aligner.print_message = Mock()
+    aligner.alignment_config = {
+        'transform': constants.ALIGN_RIGID,
+        'subsample': 2,
+        'fast_subsampling': False,
+        'min_good_matches': 4,
+        'align_method': 'RANSAC',
+        'rans_threshold': 3.0,
+        'max_iters': 2000,
+        'align_confidence': 0.99,
+        'refine_iters': 10,
+        'phase_corr_fallback': False,
+        'abort_abnormal': False
+    }
+    aligner.get_transform_thresholds = Mock(return_value=(100, 0.5))
+    aligner._n_good_matches = [0, 0]
+    aligner._target_indices = [None, None]
+    aligner._transforms = [None, None]
+    with patch.object(aligner, 'cache_img') as mock_cache:
+        with patch.object(aligner, 'detect_and_compute_matches') as mock_detect:
+            with patch('shinestacker.algorithms.align_parallel.find_transform') as mock_find:
+                with patch('shinestacker.algorithms.'
+                           'align_parallel.rescale_trasnsform') as mock_rescale:
+                    mock_kp_0 = [Mock(pt=(i * 10.0, i * 10.0)) for i in range(10)]
+                    mock_kp_ref = [Mock(pt=(i * 10.0 + 5, i * 10.0 + 5)) for i in range(10)]
+                    mock_matches = [Mock(queryIdx=i, trainIdx=i) for i in range(10)]
+                    mock_detect.return_value = (mock_kp_0, mock_kp_ref, mock_matches)
+                    mock_cache.return_value = np.ones((100, 100, 3), dtype=np.uint8)
+                    mock_find.return_value = (np.eye(2, 3, dtype=np.float32), None)
+                    mock_rescale.return_value = None
+                    info, warnings = aligner.find_transform(1, delta=1)
+                    assert len(warnings) > 0
+                    assert aligner._transforms[1] is None
+
+
 if __name__ == '__main__':
     test_compose_transforms()
     test_align_frames_parallel_initialization()
@@ -538,4 +580,5 @@ if __name__ == '__main__':
     test_find_transform_successful()
     test_find_transform_max_delta_reached()
     test_find_transform_phase_correlation_fallback()
+    test_find_transform_invalid_transform_abort()
     print("All tests passed!")
