@@ -2,27 +2,28 @@
 
 This page reports the main releases only and the main changes therein.
 
-## [v-.-.-] - 2025-10-15
+## [v1.8.1] - 2025-10-16
 ** Alignment stability and performance improvements **
 
 ### Added
 - optional alignment algorithm based on phase correlation as fallback when no feature match is found
-- new configurable parameters in default settings, including delta_max for retry limits in parallel alignment
+- retry limits in parallel alignment, determined by new configurable parameter delta_max
+- new configurable parameters in persistent default settings
 
 ### Fixed
-- reference frame indexing in sequential fallback from multithread run
+- reference frame indexing if sequential processing is applied as fallback from multithread run
 - job configuration dialog failure if input is aready selected
-- preview thumbnail now works also for very large images
-- minor fixes to logger messages
-- minor GUI fixes
-- minor fix to vignetting summary plot computations
+- preview thumbnail failure for very large images
+- minor inaccuracies in logger messages
+- minor GUI issues
+- computations for vignetting summary plot
 
 ### Changed
 - improved robustness of alignment strategy for poorly focused images
 - better tuning of parallel frame alignment
 - consistent handling of noise map output folders
 - improved naming scheme for wizard-generated projects
-- more reliable settings persistency
+- more reliable default settings persistency
 - code refactoring and cleanup
 
 -----
