@@ -445,7 +445,53 @@ def test_find_transform_max_delta_reached():
             assert len(warnings) > 0
             assert "frame skipped" in warnings[0].lower()
 
-
+def test_find_transform_phase_correlation_fallback():
+    """Test phase correlation fallback when feature matching fails"""
+    aligner = AlignFramesParallel()
+    process = Mock()
+    process.ref_idx = 0
+    process.idx_tot_str = Mock(return_value="1/2")
+    process.input_filepath = Mock(side_effect=lambda idx: f"img{idx}.jpg")
+    aligner.process = process
+    aligner.print_message = Mock()
+    
+    # Set up alignment config to enable phase correlation fallback
+    aligner.alignment_config = {
+        'transform': constants.ALIGN_RIGID,
+        'subsample': 1,
+        'fast_subsampling': False,
+        'min_good_matches': 4,  # Higher than our mock will return
+        'phase_corr_fallback': True,  # Enable fallback
+        'abort_abnormal': False
+    }
+    
+    # Initialize internal state
+    aligner._n_good_matches = [0, 0]
+    aligner._target_indices = [None, None]
+    aligner._transforms = [None, None]
+    
+    # Mock to return insufficient matches but phase correlation works
+    with patch.object(aligner, 'cache_img') as mock_cache:
+        with patch.object(aligner, 'detect_and_compute_matches') as mock_detect:
+            with patch('shinestacker.algorithms.align_parallel.find_transform_phase_correlation') as mock_phase:
+                # Return only 1 match (below minimum)
+                mock_kp_0 = [Mock(pt=(10.0, 10.0))]
+                mock_kp_ref = [Mock(pt=(15.0, 15.0))]
+                mock_matches = [Mock(queryIdx=0, trainIdx=0)]
+                
+                mock_detect.return_value = (mock_kp_0, mock_kp_ref, mock_matches)
+                mock_cache.return_value = np.ones((100, 100, 3), dtype=np.uint8)
+                
+                # Mock phase correlation to return a valid transform
+                mock_phase.return_value = np.eye(2, 3, dtype=np.float32)
+                
+                info, warnings = aligner.find_transform(1, delta=1)
+                
+                # Should have used phase correlation fallback
+                assert any("phase correlation" in msg.lower() for msg in warnings)
+                assert aligner._transforms[1] is not None
+                assert aligner._target_indices[1] == 0
+                
 if __name__ == '__main__':
     test_compose_transforms()
     test_align_frames_parallel_initialization()
