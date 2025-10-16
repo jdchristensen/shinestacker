@@ -1,5 +1,6 @@
 # pylint: disable= C0116, C0114, W0212, E1101
 import threading
+import logging
 import pytest
 from unittest.mock import Mock, patch
 import cv2
@@ -248,13 +249,14 @@ def test_begin_initialization():
     process.id = "test_id"
     process.name = "test_name"
     aligner.process = process
-    aligner.print_message = Mock()    
+    aligner.print_message = Mock()
     with patch.object(AlignFramesBase, 'begin'):
         # Call just the initialization part of begin
         n_frames = aligner.process.num_input_filepaths()
-        aligner.print_message(f"preprocess {n_frames} images in parallel, cores: {aligner.max_threads}")
+        aligner.print_message(
+            f"preprocess {n_frames} images in parallel, cores: {aligner.max_threads}")
         aligner.process.callback(constants.CALLBACK_STEP_COUNTS,
-                                aligner.process.id, aligner.process.name, 2 * n_frames)        
+                                 aligner.process.id, aligner.process.name, 2 * n_frames)
         assert n_frames == 3
         aligner.print_message.assert_called()
         aligner.process.callback.assert_called()
@@ -263,7 +265,7 @@ def test_begin_initialization():
 def test_begin_transform_combination():
     aligner = AlignFramesParallel()
     aligner.process = Mock()
-    aligner.print_message = Mock()    
+    aligner.print_message = Mock()
     n_frames = 3
     ref_idx = 1
     aligner._img_shapes = [(100, 100)] * n_frames
@@ -273,7 +275,7 @@ def test_begin_transform_combination():
         np.array([[1.0, 0.0, 10.0], [0.0, 1.0, 5.0]], dtype=np.float64),
         None,
         np.array([[1.0, 0.0, -5.0], [0.0, 1.0, -2.0]], dtype=np.float64)
-    ]    
+    ]
     transform_type = constants.ALIGN_RIGID
     identity = np.array([[1.0, 0.0, 0.0], [0.0, 1.0, 0.0]], dtype=np.float64)
     aligner._cumulative_transforms[ref_idx] = identity
@@ -390,27 +392,58 @@ def test_find_transform_successful():
         with patch.object(aligner, 'detect_and_compute_matches') as mock_detect:
             mock_kp_0 = []
             mock_kp_ref = []
-            mock_good_matches = []            
+            mock_good_matches = []
             for i in range(10):
                 kp_0 = Mock()
                 kp_0.pt = (float(i * 10), float(i * 10))
                 mock_kp_0.append(kp_0)
                 kp_ref = Mock()
                 kp_ref.pt = (float(i * 10 + 5), float(i * 10 + 5))
-                mock_kp_ref.append(kp_ref)                
+                mock_kp_ref.append(kp_ref)
                 match = Mock()
                 match.queryIdx = i
                 match.trainIdx = i
                 mock_good_matches.append(match)
             mock_detect.return_value = (mock_kp_0, mock_kp_ref, mock_good_matches)
             with patch('shinestacker.algorithms.align_parallel.find_transform') as mock_find:
-                mock_find.return_value = (np.eye(2, 3, dtype=np.float32), None)                
+                mock_find.return_value = (np.eye(2, 3, dtype=np.float32), None)
                 with patch('shinestacker.algorithms.align_parallel.check_transform') as mock_check:
                     mock_check.return_value = (True, "test reason", "test result")
-                    info, warnings = aligner.find_transform(1, delta=1)                    
+                    info, warnings = aligner.find_transform(1, delta=1)
                     assert aligner._transforms[1] is not None
                     assert aligner._target_indices[1] == 0
 
+
+def test_find_transform_max_delta_reached():
+    aligner = AlignFramesParallel()
+    aligner.delta_max = 1
+    process = Mock()
+    process.ref_idx = 2
+    process.idx_tot_str = Mock(return_value="1/3")
+    process.input_filepath = Mock(side_effect=lambda idx: f"img{idx}.jpg")
+    aligner.process = process
+    aligner.print_message = Mock()
+    aligner.alignment_config = {
+        'transform': constants.ALIGN_RIGID,
+        'subsample': 1,
+        'fast_subsampling': False,
+        'min_good_matches': 4,
+        'phase_corr_fallback': False,
+        'abort_abnormal': False
+    }
+    aligner._n_good_matches = [0, 0, 0]
+    aligner._target_indices = [None, None, None]
+    aligner._transforms = [None, None, None]
+    with patch.object(aligner, 'cache_img') as mock_cache:
+        with patch.object(aligner, 'detect_and_compute_matches') as mock_detect:
+            mock_kp_0 = [Mock(pt=(10.0, 10.0))]
+            mock_kp_ref = [Mock(pt=(15.0, 15.0))]
+            mock_matches = [Mock(queryIdx=0, trainIdx=0)]
+            mock_detect.return_value = (mock_kp_0, mock_kp_ref, mock_matches)
+            mock_cache.return_value = np.ones((100, 100, 3), dtype=np.uint8)
+            info, warnings = aligner.find_transform(1, delta=1)
+            assert len(warnings) > 0
+            assert "frame skipped" in warnings[0].lower()
 
 
 if __name__ == '__main__':
