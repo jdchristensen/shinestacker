@@ -237,6 +237,122 @@ def test_submit_threads_runstop_exception():
                 aligner.submit_threads(idxs, imgs)
 
 
+def test_begin_initialization():
+    aligner = AlignFramesParallel()
+    process = Mock()
+    process.num_input_filepaths = Mock(return_value=3)
+    process.ref_idx = 1
+    process.input_filepaths = Mock(return_value=["img0.jpg", "img1.jpg", "img2.jpg"])
+    process.input_filepath = Mock(side_effect=lambda idx: f"img{idx}.jpg")
+    process.callback = Mock()
+    process.id = "test_id"
+    process.name = "test_name"
+    aligner.process = process
+    aligner.print_message = Mock()    
+    with patch.object(AlignFramesBase, 'begin'):
+        # Call just the initialization part of begin
+        n_frames = aligner.process.num_input_filepaths()
+        aligner.print_message(f"preprocess {n_frames} images in parallel, cores: {aligner.max_threads}")
+        aligner.process.callback(constants.CALLBACK_STEP_COUNTS,
+                                aligner.process.id, aligner.process.name, 2 * n_frames)        
+        assert n_frames == 3
+        aligner.print_message.assert_called()
+        aligner.process.callback.assert_called()
+
+
+def test_begin_transform_combination():
+    aligner = AlignFramesParallel()
+    aligner.process = Mock()
+    aligner.print_message = Mock()    
+    n_frames = 3
+    ref_idx = 1
+    aligner._img_shapes = [(100, 100)] * n_frames
+    aligner._cumulative_transforms = [None] * n_frames
+    aligner._target_indices = [1, None, 1]
+    aligner._transforms = [
+        np.array([[1.0, 0.0, 10.0], [0.0, 1.0, 5.0]], dtype=np.float64),
+        None,
+        np.array([[1.0, 0.0, -5.0], [0.0, 1.0, -2.0]], dtype=np.float64)
+    ]    
+    transform_type = constants.ALIGN_RIGID
+    identity = np.array([[1.0, 0.0, 0.0], [0.0, 1.0, 0.0]], dtype=np.float64)
+    aligner._cumulative_transforms[ref_idx] = identity
+    frames_to_process = []
+    for i in range(n_frames):
+        if i != ref_idx:
+            frames_to_process.append((i, abs(i - ref_idx)))
+    frames_to_process.sort(key=lambda x: x[1])
+    for i, _ in frames_to_process:
+        target_idx = aligner._target_indices[i]
+        if target_idx is not None and aligner._cumulative_transforms[target_idx] is not None:
+            aligner._cumulative_transforms[i] = compose_transforms(
+                aligner._transforms[i], aligner._cumulative_transforms[target_idx], transform_type)
+        else:
+            aligner._cumulative_transforms[i] = None
+            aligner.print_message(
+                f"warning: no cumulative transform for {i}",
+                color=constants.LOG_COLOR_WARNING, level=logging.WARNING)
+    assert aligner._cumulative_transforms[0] is not None
+    assert aligner._cumulative_transforms[1] is not None
+    assert aligner._cumulative_transforms[2] is not None
+
+
+def test_detect_and_compute_matches():
+    aligner = AlignFramesParallel()
+    aligner.feature_config = {
+        'detector': constants.DETECTOR_SIFT,
+        'descriptor': constants.DESCRIPTOR_SIFT
+    }
+    aligner.matching_config = {'match_method': constants.MATCHING_KNN}
+    img_ref = np.random.randint(0, 255, (100, 100, 3), dtype=np.uint8)
+    img_0 = np.random.randint(0, 255, (100, 100, 3), dtype=np.uint8)
+    aligner._kp = [None, None]
+    aligner._des = [None, None]
+    kp_0, kp_ref, good_matches = aligner.detect_and_compute_matches(
+        img_ref, 0, img_0, 1
+    )
+    assert kp_0 is not None
+    assert kp_ref is not None
+    assert good_matches is not None
+
+
+def test_detect_and_compute_matches_orb():
+    aligner = AlignFramesParallel()
+    aligner.feature_config = {
+        'detector': constants.DETECTOR_ORB,
+        'descriptor': constants.DESCRIPTOR_ORB
+    }
+    aligner.matching_config = {'match_method': constants.MATCHING_NORM_HAMMING}
+    img_ref = np.random.randint(0, 255, (100, 100, 3), dtype=np.uint8)
+    img_0 = np.random.randint(0, 255, (100, 100, 3), dtype=np.uint8)
+    kp_0, kp_ref, good_matches = aligner.detect_and_compute_matches(
+        img_ref, 0, img_0, 1
+    )
+    assert good_matches is not None
+
+
+def test_detect_and_compute_matches_with_cached_features():
+    aligner = AlignFramesParallel()
+    aligner.feature_config = {
+        'detector': constants.DETECTOR_SIFT,
+        'descriptor': constants.DESCRIPTOR_SIFT
+    }
+    aligner.matching_config = {'match_method': constants.MATCHING_KNN}
+    img_ref = np.random.randint(0, 255, (100, 100, 3), dtype=np.uint8)
+    img_0 = np.random.randint(0, 255, (100, 100, 3), dtype=np.uint8)
+    detector = cv2.SIFT_create()
+    kp_0_cached, des_0_cached = detector.detectAndCompute(img_0, None)
+    kp_ref_cached, des_ref_cached = detector.detectAndCompute(img_ref, None)
+    aligner._kp = [kp_ref_cached, kp_0_cached]
+    aligner._des = [des_ref_cached, des_0_cached]
+    kp_0, kp_ref, good_matches = aligner.detect_and_compute_matches(
+        img_ref, 0, img_0, 1
+    )
+    assert kp_0 is kp_0_cached
+    assert kp_ref is kp_ref_cached
+    assert good_matches is not None
+
+
 if __name__ == '__main__':
     test_compose_transforms()
     test_align_frames_parallel_initialization()
@@ -246,5 +362,6 @@ if __name__ == '__main__':
     test_extract_features_fallback()
     test_submit_threads()
     test_submit_threads_with_exceptions()
-
+    test_begin_initialization()
+    test_begin_transform_combination()
     print("All tests passed!")
