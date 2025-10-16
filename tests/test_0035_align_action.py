@@ -1,7 +1,7 @@
 # pylint: disable= C0116, C0114, W0212, E1101
 import math
 import logging
-import unittest
+from unittest import mock
 import numpy as np
 from shinestacker.config import constants
 from shinestacker.algorithms.align import (
@@ -702,7 +702,7 @@ def test_align_frames_align_images_successful():
     align_frames.process = MockProcess()
     align_frames._n_good_matches = np.zeros(10)
     align_frames.save_transform_result = lambda idx, result: None
-    with unittest.mock.patch('shinestacker.algorithms.align.align_images') as mock_align:
+    with mock.patch('shinestacker.algorithms.align.align_images') as mock_align:
         mock_align.return_value = (50, np.eye(3), np.ones((10, 10, 3)))
         align_frames.align_images(5, np.ones((10, 10, 3)), np.ones((10, 10, 3)))
         assert mock_align.called
@@ -728,7 +728,7 @@ def test_align_frames_align_images_failed():
     align_frames.process = MockProcess()
     align_frames._n_good_matches = np.zeros(10)
     align_frames.save_transform_result = lambda idx, result: None
-    with unittest.mock.patch('shinestacker.algorithms.align.align_images') as mock_align:
+    with mock.patch('shinestacker.algorithms.align.align_images') as mock_align:
         mock_align.return_value = (0, None, None)
         result = align_frames.align_images(5, np.ones((10, 10, 3)), np.ones((10, 10, 3)))
         assert mock_align.called
@@ -755,11 +755,95 @@ def test_align_frames_align_images_phase_correlation_fallback():
     align_frames.process = MockProcess()
     align_frames._n_good_matches = np.zeros(10)
     align_frames.save_transform_result = lambda idx, result: None
-    with unittest.mock.patch('shinestacker.algorithms.align.align_images') as mock_align:
+    with mock.patch('shinestacker.algorithms.align.align_images') as mock_align:
         mock_align.return_value = (2, np.eye(3), np.ones((10, 10, 3)))
         align_frames.align_images(5, np.ones((10, 10, 3)), np.ones((10, 10, 3)))
         assert mock_align.called
         assert align_frames._n_good_matches[5] == 2
+
+
+def test_align_frames_align_images_with_plot_matches():
+    align_frames = AlignFrames(plot_matches=True)
+
+    class MockProcess:
+        name = "test_process"
+        id = 1
+        working_path = "/tmp"
+        plot_path = "plots"
+        callback_calls = []
+
+        def callback(self, callback_type, process_id, description, plot_path):
+            self.callback_calls.append((callback_type, description, plot_path))
+
+        def frame_str(self, idx):
+            return f"Frame {idx}"
+
+    align_frames.process = MockProcess()
+    align_frames._n_good_matches = np.zeros(10)
+    align_frames.save_transform_result = lambda idx, result: None
+    with mock.patch('shinestacker.algorithms.align.align_images') as mock_align:
+        mock_align.return_value = (50, np.eye(3), np.ones((10, 10, 3)))
+        align_frames.align_images(5, np.ones((10, 10, 3)), np.ones((10, 10, 3)))
+        assert mock_align.called
+        call_kwargs = mock_align.call_args[1]
+        assert call_kwargs['plot_path'] is not None
+        assert "test_process-matches-0005.pdf" in call_kwargs['plot_path']
+
+
+def test_align_frames_align_images_no_transform_no_fallback():
+    align_frames = AlignFrames(alignment_config={'phase_corr_fallback': False})
+
+    class MockProcess:
+        name = "test_process"
+        id = 1
+        working_path = "/tmp"
+        plot_path = "plots"
+        callback_calls = []
+
+        def callback(self, callback_type, process_id, description, plot_path):
+            self.callback_calls.append((callback_type, description, plot_path))
+
+        def frame_str(self, idx):
+            return f"Frame {idx}"
+
+    align_frames.process = MockProcess()
+    align_frames._n_good_matches = np.zeros(10)
+    align_frames.save_transform_result = lambda idx, result: None
+    with mock.patch('shinestacker.algorithms.align.align_images') as mock_align:
+        mock_align.return_value = (2, None, None)
+        result = align_frames.align_images(5, np.ones((10, 10, 3)), np.ones((10, 10, 3)))
+        assert mock_align.called
+        assert align_frames._n_good_matches[5] == 2
+        assert result is None
+
+
+def test_align_frames_align_images_invalid_transform_abort():
+    align_frames = AlignFrames(alignment_config={'abort_abnormal': True})
+
+    class MockProcess:
+        name = "test_process"
+        id = 1
+        working_path = "/tmp"
+        plot_path = "plots"
+        callback_calls = []
+
+        def callback(self, callback_type, process_id, description, plot_path):
+            self.callback_calls.append((callback_type, description, plot_path))
+
+        def frame_str(self, idx):
+            return f"Frame {idx}"
+
+    align_frames.process = MockProcess()
+    align_frames._n_good_matches = np.zeros(10)
+    align_frames.save_transform_result = lambda idx, result: None
+    with mock.patch('shinestacker.algorithms.align.align_images') as mock_align:
+        mock_align.side_effect = RuntimeError(
+            "invalid transformation: test reason, alignment failed")
+        try:
+            align_frames.align_images(5, np.ones((10, 10, 3)), np.ones((10, 10, 3)))
+            assert False
+        except RuntimeError as e:
+            assert "invalid transformation: test reason, alignment failed" in str(e)
 
 
 if __name__ == "__main__":
@@ -767,3 +851,62 @@ if __name__ == "__main__":
     test_translation_only()
     test_rotation_only()
     test_scale_only()
+    test_check_affine_matrix_valid()
+    test_check_affine_matrix_invalid_rotation()
+    test_check_affine_matrix_invalid_scale()
+    test_check_affine_matrix_invalid_translation()
+    test_check_homography_distortion_valid()
+    test_check_homography_distortion_invalid_area()
+    test_check_homography_distortion_invalid_aspect()
+    test_check_homography_distortion_skew()
+    test_check_affine_matrix_valid_rotation()
+    test_check_affine_matrix_valid_scale()
+    test_check_affine_matrix_valid_translation()
+    test_check_affine_matrix_valid_shear()
+    test_check_affine_matrix_combined_valid()
+    test_check_homography_distortion_valid_scale()
+    test_check_homography_distortion_valid_aspect()
+    test_check_homography_distortion_valid_skew()
+    test_check_affine_matrix_combined_invalid()
+    test_check_transform_rigid_valid()
+    test_check_transform_homography_valid()
+    test_check_transform_homography_invalid_area()
+    test_check_transform_homography_invalid_aspect()
+    test_check_transform_invalid_type()
+    test_check_transform_rigid_invalid_rotation()
+    test_check_transform_rigid_invalid_translation()
+    test_check_transform_rigid_invalid_scale()
+    test_check_transform_homography_invalid_skew()
+    test_check_transform_rigid_combined_invalid()
+    test_check_transform_none_thresholds()
+    test_check_transform_homography_none_thresholds()
+    test_decompose_affine_matrix_shear()
+    test_decompose_affine_matrix_combined()
+    test_check_affine_matrix_zero_matrix()
+    test_check_homography_distortion_identity()
+    test_check_homography_distortion_translation()
+    test_check_homography_distortion_rotation_scale()
+    test_align_frames_base_initialization()
+    test_align_frames_base_custom_initialization()
+    test_align_frames_base_homography_initialization()
+    test_align_frames_base_relative_transformation()
+    test_align_frames_base_get_transform_thresholds()
+    test_align_frames_base_save_transform_result_rigid()
+    test_align_frames_base_save_transform_result_homography()
+    test_align_frames_base_save_transform_result_none()
+    test_align_frames_initialization()
+    test_align_frames_run_frame_reference_frame()
+    test_align_frames_run_frame_non_reference()
+    test_align_frames_run_frame_align_images_exception()
+    test_align_frames_begin_initializes_arrays()
+    test_align_frames_end_no_plot_summary()
+    test_align_frames_end_with_plot_summary_rigid()
+    test_align_frames_end_with_plot_summary_homography()
+    test_align_frames_image_str()
+    test_align_frames_print_message()
+    test_align_frames_align_images_successful()
+    test_align_frames_align_images_failed()
+    test_align_frames_align_images_phase_correlation_fallback()
+    test_align_frames_align_images_with_plot_matches()
+    test_align_frames_align_images_no_transform_no_fallback()
+    test_align_frames_align_images_invalid_transform_abort()
