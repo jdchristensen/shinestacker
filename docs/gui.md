@@ -12,24 +12,28 @@ noisy pixel masking.
 
 ## Starting
 
-* If the python package is donwloaded and installed, the GUI can start either from a console command line :
+* The python package can be installed from [PyPI](https://pypi.org/project/shinestacker/) using ```pip```:
 
 ```console
-> focusstack
+> pip install shinestacker
+```
+ Onace installed, the GUI app can start either from a console command line :
+
+```console
+> shinestacker
 ```
 
-* If the app is dowloaded from the [releases page](https://github.com/lucalista/focusstack/releases), after the  ```zip``` archive is uncompressed, just double-click the app icon.
-
-<img src='https://raw.githubusercontent.com/lucalista/shinestacker/main/img/gui-finder.png' width="300" referrerpolicy="no-referrer">
-
-**Platform Tip**: Windows apps are inside `/focusstack/`, macOS/Linux apps are directly in the uncompressed folder.
+* The app can be dowloaded from the [releases page](https://github.com/lucalista/shinestacker/releases):
+   - Windows: as installer or  ```zip``` archive for local installation
+   - macOS: as ```dmg``` disk image, where the app can be dragged to the Application folder
+   - Linux: as ```tar.gz``` archive
 
 The GUI has two main working areas: 
 
 * *Project* 
 * *Retouch*
 
-Switching from *Project* to *Retouch* can be done from the *FocusStack* main menu.
+Switching from *Project* to *Retouch* can be done from the *ShineStacker* main menu.
 
 ## Project area
 
@@ -48,16 +52,12 @@ When the app starts, it proposes to create a new project.
 
 > **Large Set Tip**: For 100+ images:
 > - Split into 10-15 image "bunches" 
-> - Set frame overlap (default: 2 frames)
+> - Set number of overlapping frame from consecutive bunches
 > - Combine intermediate results later
-
-> 💡 **RAM Warning**: >15 images of 20Mpx resolution may need 16GB+ RAM. Combine smaller bunches first, if needed, to stack up to hundreds of frames.
 
 The newly created project consists of a single job that contains more actions.
 Each action produces a folder as output that has, by default, the action's name.
 Some actions can be combined in order to produce a single intermediate output (alignment, balancing, etc.).
-
-**Action Outputs**: 📁 `aligned-balanced/` | 📁 `bunches/` | 📁 `stacked/`
 
 > **Pro Tip**: Duplicate jobs when processing similar image sets to save configuration time. You can run multiple jobs in sequence.
 
@@ -67,7 +67,7 @@ It is possible to run a single job, or all jobs within a project.
 
 ### Project Run Tabs
 
-1. Job progress bar
+1. Job progress bar with CPU and RAM usage monitor
 2. Real-time log viewer
 3. Retouch button (enabled after processing)
 

@@ -846,6 +846,8 @@ def test_align_frames_align_images_invalid_transform_abort():
             assert "invalid transformation: test reason, alignment failed" in str(e)
 
 
+
+
 if __name__ == "__main__":
     test_identity_matrix()
     test_translation_only()
