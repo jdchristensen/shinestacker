@@ -43,7 +43,7 @@ def test_align_rescale():
 def test_jpg():
     try:
         job = StackJob("job", "examples", input_path="input/img-jpg", callbacks='tqdm')
-        job.add_action(CombinedActions("align-jpg", [AlignFrames(plot_summary=True)],
+        job.add_action(CombinedActions("align-jpg", [AlignFrames(plot_summary=True, plot_matches=True)],
                                        output_path="output/img-jpg-align",
                                        delete_output_at_end=True))
         job.run()
