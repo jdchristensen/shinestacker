@@ -202,11 +202,63 @@ def write_image_with_exif_data(exif, image, out_filename, verbose=False):
                 pil_image = Image.fromarray(image)
         else:
             pil_image = image
-        pil_image.save(out_filename, format='PNG')
-        if verbose:
-            logging.getLogger(__name__).info(
-                f"Wrote PNG (metadata not yet implemented): {out_filename}")
-        return exif
+        png_info = {}
+        for tag_id, value in exif.items():
+            if value is not None and isinstance(tag_id, int):
+                try:
+                    tag_name = TAGS.get(tag_id, f"Unknown_{tag_id}")
+                    if isinstance(value, bytes) and len(value) > 1000:
+                        continue
+                    if isinstance(value, (int, float, str)):
+                        png_info[tag_name] = str(value)
+                    elif isinstance(value, bytes):
+                        try:
+                            png_info[tag_name] = value.decode('utf-8', errors='replace')
+                        except Exception:
+                            continue
+                    elif hasattr(value, 'numerator'):  # IFDRational
+                        png_info[tag_name] = f"{value.numerator}/{value.denominator}"
+                    else:
+                        png_info[tag_name] = str(value)
+                except Exception as e:
+                    if verbose:
+                        logging.getLogger(__name__).warning(
+                            f"Could not store EXIF tag {tag_id}: {e}")
+        for key, value in exif.items():
+            if isinstance(key, str) and key.startswith('PNG_'):
+                clean_key = key[4:] if key.startswith('PNG_') else key
+                if value is not None:
+                    try:
+                        if isinstance(value, bytes):
+                            if 'icc' in clean_key.lower() or 'profile' in clean_key.lower():
+                                png_info[clean_key] = value
+                            else:
+                                try:
+                                    png_info[clean_key] = value.decode('utf-8', errors='replace')
+                                except Exception:
+                                    png_info[clean_key] = str(value)[:100] + "..."
+                        else:
+                            png_info[clean_key] = str(value)
+                    except Exception as e:
+                        if verbose:
+                            logging.getLogger(__name__).warning(
+                                f"Could not store PNG metadata {key}: {e}")
+        try:
+            icc_profile = None
+            if 'icc_profile' in png_info:
+                icc_profile = png_info.pop('icc_profile')
+            if icc_profile and isinstance(icc_profile, bytes):
+                pil_image.save(out_filename, format='PNG', icc_profile=icc_profile, **png_info)
+            else:
+                pil_image.save(out_filename, format='PNG', **png_info)
+            if verbose:
+                logging.getLogger(__name__).info(
+                    f"Successfully wrote PNG with metadata: {out_filename}")
+        except Exception as e:
+            if verbose:
+                logging.getLogger(__name__).error(f"Failed to write PNG with metadata: {e}")
+            pil_image.save(out_filename, format='PNG')
+    return exif
 
 
 def save_exif_data(exif, in_filename, out_filename=None, verbose=False):

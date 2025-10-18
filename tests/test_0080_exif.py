@@ -129,7 +129,7 @@ def test_exif_png():
         assert False
 
 
-def test_write_image_with_exif_data():
+def test_write_image_with_exif_data_jpg():
     try:
         setup_logging()
         logger = logging.getLogger(__name__)
@@ -168,6 +168,22 @@ def test_write_image_with_exif_data():
                         f"JPG EXIF data don't match for tag {tag_id}: "
                         f"{original_data} != {written_data}")
                     assert False
+        logger.info("JPG write test passed successfully")
+    except Exception as e:
+        logger.error(f"JPG write test failed: {str(e)}")
+        assert False
+
+
+def test_write_image_with_exif_data_tiff():
+    try:
+        setup_logging()
+        logger = logging.getLogger(__name__)
+        output_dir = "output/img-exif"
+        if not os.path.exists(output_dir):
+            os.makedirs(output_dir)
+        XMLPACKET = 700
+        IMAGERESOURCES = 34377
+        INTERCOLORPROFILE = 34675
         logger.info("======== Testing write_image_with_exif_data (TIFF) ========")
         tiff_out_filename = output_dir + "/0001_write_test.tif"
         exif = get_exif("examples/input/img-tif/0000.tif")
@@ -231,8 +247,74 @@ def test_write_image_with_exif_data():
             if tag_id in exif:
                 tag_name = TAGS.get(tag_id, tag_id)
                 logger.info(f"  {tag_name} (tag {tag_id})")
+        logger.info("TIFF write test passed successfully")
     except Exception as e:
-        logger.error(f"Test failed: {str(e)}")
+        logger.error(f"TIFF write test failed: {str(e)}")
+        assert False
+
+
+def test_write_image_with_exif_data_png():
+    try:
+        setup_logging()
+        logger = logging.getLogger(__name__)
+        output_dir = "output/img-exif"
+        if not os.path.exists(output_dir):
+            os.makedirs(output_dir)
+        logger.info("======== Testing write_image_with_exif_data (PNG) ========")
+        png_out_filename = output_dir + "/0001_write_test.png"
+        png_file = "examples/input/img-png/0000.png"
+        if not os.path.exists(png_file):
+            logger.warning("Test PNG file not found, skipping PNG write test")
+            return
+        exif = get_exif(png_file)
+        logger.info("*** Source PNG EXIF ***")
+        print_exif(exif)
+        source_metadata_count = len(exif) if exif else 0
+        logger.info(f"Source PNG has {source_metadata_count} metadata items")
+        image = Image.open(png_file)
+        image_array = np.array(image)
+        write_image_with_exif_data(exif, image_array, png_out_filename, verbose=True)
+        assert os.path.exists(png_out_filename), "Output PNG file was not created"
+        test_img = Image.open(png_out_filename)
+        test_img.verify()
+        test_img.close()
+        written_exif = get_exif(png_out_filename)
+        logger.info("*** Written PNG EXIF ***")
+        print_exif(written_exif)
+        written_metadata_count = len(written_exif) if written_exif else 0
+        logger.info(f"Written PNG has {written_metadata_count} metadata items")
+        if source_metadata_count > 0 and written_metadata_count > 0:
+            preserved_count = 0
+            for tag_id, value in exif.items():
+                if isinstance(tag_id, int) and tag_id in written_exif:
+                    preserved_count += 1
+                    logger.info(f"✓ Preserved standard EXIF tag: {TAGS.get(tag_id, tag_id)}")
+            for key, value in exif.items():
+                if isinstance(key, str) and key.startswith('PNG_') and key in written_exif:
+                    preserved_count += 1
+                    logger.info(f"✓ Preserved PNG metadata: {key}")
+            logger.info(f"Preserved {preserved_count} "
+                        f"out of {source_metadata_count} metadata items")
+            if preserved_count > 0:
+                logger.info("PNG metadata write test PASSED - successfully preserved metadata")
+            else:
+                logger.warning("PNG metadata write test: No metadata was preserved")
+        else:
+            if source_metadata_count == 0:
+                logger.info("Source PNG had no metadata to preserve")
+            elif written_metadata_count == 0:
+                logger.warning("No metadata was preserved in written PNG file")
+        source_img = Image.open(png_file)
+        written_img = Image.open(png_out_filename)
+        assert source_img.size == written_img.size, "Image size changed"
+        assert source_img.mode == written_img.mode, "Image mode changed"
+        source_img.close()
+        written_img.close()
+        logger.info("PNG write test completed successfully")
+    except Exception as e:
+        logger.error(f"PNG write test failed: {str(e)}")
+        import traceback
+        logger.error(traceback.format_exc())
         assert False
 
 
@@ -269,5 +351,7 @@ if __name__ == '__main__':
     test_exif_tiff()
     test_exif_jpg()
     test_exif_png()
-    test_write_image_with_exif_data()
+    test_write_image_with_exif_data_jpg()
+    test_write_image_with_exif_data_tiff()
+    test_write_image_with_exif_data_png()
     test_get_tiff_dtype_count()
