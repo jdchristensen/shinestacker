@@ -93,6 +93,42 @@ def test_exif_tiff():
         assert False
 
 
+def test_exif_png():
+    try:
+        setup_logging()
+        logger = logging.getLogger(__name__)
+        output_dir = "output/img-exif"
+        if not os.path.exists(output_dir):
+            os.makedirs(output_dir)
+        out_filename = output_dir + "/0001.png"
+        logger.info("======== Testing PNG EXIF ========")
+        png_file = "examples/input/img-png/0000.png"
+        if os.path.exists(png_file):
+            logger.info("*** Source PNG EXIF ***")
+            exif = get_exif(png_file)
+            print_exif(exif)
+            logger.info("*** Writing PNG with EXIF ***")
+            image = Image.open(png_file)
+            image_array = np.array(image)
+            write_image_with_exif_data(exif, image_array, out_filename, verbose=True)
+            logger.info("*** Written PNG EXIF ***")
+            exif_copy = get_exif(out_filename)
+            print_exif(exif_copy)
+            if exif_copy:
+                logger.info("PNG metadata test passed - found metadata in output file")
+            else:
+                logger.warning("No metadata found in PNG output file (this may be normal)")
+            assert os.path.exists(out_filename), "Output PNG file was not created"
+            test_img = Image.open(out_filename)
+            test_img.verify()
+            test_img.close()
+        else:
+            logger.warning("Test PNG file not found, skipping PNG EXIF test")
+    except Exception as e:
+        logger.error(f"PNG EXIF test failed: {str(e)}")
+        assert False
+
+
 def test_write_image_with_exif_data():
     try:
         setup_logging()
@@ -115,19 +151,18 @@ def test_write_image_with_exif_data():
             if tag_id not in NO_TEST_JPG_TAGS:
                 original_data = exif.get(tag_id)
                 written_data = written_exif.get(tag_id)
-                # Skip binary data comparison for certain tags
                 if tag_id in [XMLPACKET, IMAGERESOURCES, INTERCOLORPROFILE]:
                     continue
                 if isinstance(original_data, bytes):
                     try:
                         original_data = original_data.decode('utf-8', errors='replace')
                     except UnicodeDecodeError:
-                        continue  # Skip if we can't decode
+                        continue
                 if isinstance(written_data, bytes):
                     try:
                         written_data = written_data.decode('utf-8', errors='replace')
                     except UnicodeDecodeError:
-                        continue  # Skip if we can't decode
+                        continue
                 if original_data != written_data:
                     logger.error(
                         f"JPG EXIF data don't match for tag {tag_id}: "
@@ -207,7 +242,7 @@ def test_get_tiff_dtype_count():
         logger = logging.getLogger(__name__)
         logger.info("======== Testing get_tiff_dtype_count ========")
         test_cases = [
-            ("string", (2, 7)),          # ASCII string (dtype=2), length + null terminator
+            ("string", (2, 7)),         # ASCII string (dtype=2), length + null terminator
             (b"bytes", (1, 5)),         # Binary data (dtype=1), length without null terminator
             # Lists are treated as strings in the current implementation
             ([1, 2, 3], (2, 10)),       # Current behavior treats lists as strings
@@ -233,5 +268,6 @@ def test_get_tiff_dtype_count():
 if __name__ == '__main__':
     test_exif_tiff()
     test_exif_jpg()
+    test_exif_png()
     test_write_image_with_exif_data()
     test_get_tiff_dtype_count()

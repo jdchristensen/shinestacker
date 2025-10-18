@@ -82,6 +82,7 @@ def test_settings_persistence():
             settings2 = Settings.instance("test-settings.txt")
             assert settings2.get('expert_options') == (not original_value)
 
+
 def test_settings_extra_keys_filtered():
     with tempfile.TemporaryDirectory() as temp_dir:
         with patch('shinestacker.config.settings.QStandardPaths') as MockQStandardPaths, \
@@ -101,7 +102,7 @@ def test_settings_extra_keys_filtered():
             mock_gui_constants.DEFAULT_PAINT_REFRESH_TIME = 100
             mock_gui_constants.DEFAULT_DISPLAY_REFRESH_TIME = 200
             mock_gui_constants.DEFAULT_CURSOR_UPDATE_TIME = 50
-            mock_gui_constants.DEFAULT_MIN_MOUSE_STEP_BRUSH_FRACTION = 0.1            
+            mock_gui_constants.DEFAULT_MIN_MOUSE_STEP_BRUSH_FRACTION = 0.1
             extra_settings = {
                 'expert_options': False,
                 'view_strategy': 'new_strategy',

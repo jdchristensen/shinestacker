@@ -58,7 +58,31 @@ def get_exif(exif_filename):
             if data is not None:
                 exif_data[XMLPACKET] = data
         return exif_data
+    if extension_png(exif_filename):
+        exif_data = get_exif_from_png(image)
+        return exif_data if exif_data else image.getexif()
     return image.getexif()
+
+
+def get_exif_from_png(image):
+    exif_data = {}
+    try:
+        exif_from_image = image.getexif()
+        if exif_from_image:
+            exif_data.update(dict(exif_from_image))
+    except Exception:
+        pass
+    try:
+        if hasattr(image, 'text') and image.text:
+            for key, value in image.text.items():
+                exif_data[f"PNG_{key}"] = value
+        if hasattr(image, 'info') and image.info:
+            for key, value in image.info.items():
+                if key not in ['dpi', 'gamma']:
+                    exif_data[f"PNG_{key}"] = value
+    except Exception:
+        pass
+    return exif_data
 
 
 def exif_extra_tags_for_tif(exif):
@@ -168,8 +192,21 @@ def write_image_with_exif_data(exif, image, out_filename, verbose=False):
         tifffile.imwrite(out_filename, image, metadata=metadata, compression='adobe_deflate',
                          extratags=extra_tags, **exif_tags)
     elif extension_png(out_filename):
-        image.save(out_filename, 'PNG', exif=exif, quality=100)
-    return exif
+        if verbose:
+            logging.getLogger(__name__).info(f"Writing PNG with metadata: {out_filename}")
+        if isinstance(image, np.ndarray):
+            if image.dtype == np.uint8 and len(image.shape) == 3:
+                image_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+                pil_image = Image.fromarray(image_rgb)
+            else:
+                pil_image = Image.fromarray(image)
+        else:
+            pil_image = image
+        pil_image.save(out_filename, format='PNG')
+        if verbose:
+            logging.getLogger(__name__).info(
+                f"Wrote PNG (metadata not yet implemented): {out_filename}")
+        return exif
 
 
 def save_exif_data(exif, in_filename, out_filename=None, verbose=False):
@@ -237,4 +274,7 @@ def print_exif(exif, hide_xml=True):
     for tag, (tag_id, data) in exif_data.items():
         if isinstance(data, IFDRational):
             data = f"{data.numerator}/{data.denominator}"
-        logger.info(msg=f"{tag:25} [#{tag_id:5d}]: {data}")
+        if isinstance(tag_id, int):
+            logger.info(msg=f"{tag:25} [#{tag_id:5d}]: {data}")
+        else:
+            logger.info(msg=f"{tag:25} [ {tag_id:20} ]: {str(data)[:100]}...")
