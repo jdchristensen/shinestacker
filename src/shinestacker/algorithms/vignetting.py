@@ -185,7 +185,7 @@ class Vignetting(SubAction):
         for i, p in enumerate(self.percentiles):
             s1 = sigmoid_model(0, *params) / self.v0
             s2 = sigmoid_model(self.r_max, *params) / self.v0
-            if s1 > p and s2 < p:
+            if s1 > p > s2:
                 try:
                     c = bisect(lambda x: sigmoid_model(x, *params) / self.v0 - p, 0, self.r_max)
                 except Exception as e:
