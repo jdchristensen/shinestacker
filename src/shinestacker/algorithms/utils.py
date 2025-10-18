@@ -73,7 +73,10 @@ def write_img(file_path, img):
     elif extension_tif(file_path):
         cv2.imwrite(file_path, img, [int(cv2.IMWRITE_TIFF_COMPRESSION), 1])
     elif extension_png(file_path):
-        cv2.imwrite(file_path, img)
+        cv2.imwrite(file_path, img, [
+            int(cv2.IMWRITE_PNG_COMPRESSION), 9,
+            int(cv2.IMWRITE_PNG_STRATEGY), cv2.IMWRITE_PNG_STRATEGY_HUFFMAN_ONLY
+        ])
 
 
 def img_8bit(img):
