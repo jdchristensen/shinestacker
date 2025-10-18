@@ -73,11 +73,13 @@ Pyramid methods in image processing
 - **Logo**: The Shine Stacker logo was designed by [Alessandro Lista](https://linktr.ee/alelista). Copyright © Alessandro Lista. All rights reserved. The logo is not covered by the LGPL-3.0 license of this project.
 
 ## Attribution request
+
 📸 If you publish images created with Shine Stacker, please consider adding a note such as:
 
 *Created with Shine Stacker – https://github.com/lucalista/shinestacker*
 
 This is not mandatory, but highly appreciated.
+
 ---
 > Developed and maintained by [Luca Lista](https://github.com/lucalista).
 > 💡 Contributions, feedback, and feature suggestions are warmly welcome.
