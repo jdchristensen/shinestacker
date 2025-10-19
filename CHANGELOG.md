@@ -4,7 +4,7 @@ This page reports the main releases only and the main changes therein.
 
 
 ## [v1.9.0] - 2025-10-19
-** Added PNG format support and EXIF failure fix**
+** Added PNG format support and EXIF failure fix **
 
 ### Added
 - support of images in PNG format, both in 8 bit and 16 bit depth. Note: EXIF data are not supported for 16 bit PNG because of limitations in the PIL and Open CV python libraries.
