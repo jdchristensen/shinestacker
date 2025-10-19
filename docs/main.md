@@ -103,5 +103,6 @@ pip install ipywidgets
 
 | Issue    |  Workaround    |
 |----------|----------------|
-| PNG and RAW unsupported  | Convert to TIFF/JPEG first |
+| RAW format unsupported  | Convert to TIFF/JPEG first |
+| EXIF data not supported for 16-bit PNG files | convert to 16-bit TIFF |
 | GUI tests limited     | Report any bugs as GitHub issuse |
