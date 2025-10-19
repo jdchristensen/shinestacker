@@ -123,7 +123,7 @@ class JobConfigurator(DefaultActionConfigurator):
             return 0
         count = 0
         for filename in os.listdir(path):
-            if os.path.splittext(filename)[-1][1:].lower() in EXTENSIONS_SUPPORTED:
+            if os.path.splitext(filename)[-1][1:].lower() in EXTENSIONS_SUPPORTED:
                 count += 1
         return count
 
