@@ -1,12 +1,14 @@
-# pylint: disable=C0114, C0116, W0718, R0911, R0912, E1101, R0915, R1702
+# pylint: disable=C0114, C0116, W0718, R0911, R0912, E1101, R0915, R1702, R0914
 import os
 import re
 import io
 import logging
+import traceback
 import cv2
 import numpy as np
 from PIL import Image
 from PIL.TiffImagePlugin import IFDRational
+from PIL.PngImagePlugin import PngInfo
 from PIL.ExifTags import TAGS
 import tifffile
 from .. config.constants import constants
@@ -177,7 +179,82 @@ def add_exif_data_to_jpg_file(exif, in_filenama, out_filename, verbose=False):
     return exif
 
 
-def write_image_with_exif_data_png(exif, image, out_filename, verbose=False):
+def create_xmp_from_exif(exif_data):
+    xmp_elements = []
+    if exif_data:
+        for tag_id, value in exif_data.items():
+            if isinstance(tag_id, int):
+                if tag_id == 270 and value:  # ImageDescription
+                    desc = value
+                    if isinstance(desc, bytes):
+                        desc = desc.decode('utf-8', errors='ignore')
+                    xmp_elements.append(
+                        f'<dc:description><rdf:Alt><rdf:li xml:lang="x-default">{desc}</rdf:li>'
+                        '</rdf:Alt></dc:description>')
+                elif tag_id == 315 and value:  # Artist
+                    artist = value
+                    if isinstance(artist, bytes):
+                        artist = artist.decode('utf-8', errors='ignore')
+                    xmp_elements.append(
+                        f'<dc:creator><rdf:Seq><rdf:li>{artist}</rdf:li>'
+                        '</rdf:Seq></dc:creator>')
+                elif tag_id == 33432 and value:  # Copyright
+                    copyright_tag = value
+                    if isinstance(copyright_tag, bytes):
+                        copyright_tag = copyright_tag.decode('utf-8', errors='ignore')
+                    xmp_elements.append(
+                        f'<dc:rights><rdf:Alt><rdf:li xml:lang="x-default">{copyright_tag}</rdf:li>'
+                        '</rdf:Alt></dc:rights>')
+                elif tag_id == 271 and value:  # Make
+                    make = value
+                    if isinstance(make, bytes):
+                        make = make.decode('utf-8', errors='ignore')
+                    xmp_elements.append(f'<tiff:Make>{make}</tiff:Make>')
+                elif tag_id == 272 and value:  # Model
+                    model = value
+                    if isinstance(model, bytes):
+                        model = model.decode('utf-8', errors='ignore')
+                    xmp_elements.append(f'<tiff:Model>{model}</tiff:Model>')
+                elif tag_id == 306 and value:  # DateTime
+                    datetime_val = value
+                    if isinstance(datetime_val, bytes):
+                        datetime_val = datetime_val.decode('utf-8', errors='ignore')
+                    if ':' in datetime_val:
+                        datetime_val = datetime_val.replace(':', '-', 2).replace(' ', 'T')
+                    xmp_elements.append(f'<xmp:CreateDate>{datetime_val}</xmp:CreateDate>')
+                elif tag_id == 305 and value:  # Software
+                    software = value
+                    if isinstance(software, bytes):
+                        software = software.decode('utf-8', errors='ignore')
+                    xmp_elements.append(f'<xmp:CreatorTool>{software}</xmp:CreatorTool>')
+    if xmp_elements:
+        xmp_content = '\n    '.join(xmp_elements)
+        xmp_template = f"""<?xpacket begin='﻿' id='W5M0MpCehiHzreSzNTczkc9d'?>
+<x:xmpmeta xmlns:x='adobe:ns:meta/'
+ x:xmptk='Adobe XMP Core 5.6-c140 79.160451, 2017/05/06-01:08:21'>
+ <rdf:RDF xmlns:rdf='http://www.w3.org/1999/02/22-rdf-syntax-ns#'>
+  <rdf:Description rdf:about=''
+    xmlns:dc='http://purl.org/dc/elements/1.1/'
+    xmlns:xmp='http://ns.adobe.com/xap/1.0/'
+    xmlns:tiff='http://ns.adobe.com/tiff/1.0/'
+    xmlns:exif='http://ns.adobe.com/exif/1.0/'>
+    {xmp_content}
+  </rdf:Description>
+ </rdf:RDF>
+</x:xmpmeta>
+<?xpacket end='w'?>"""
+        return xmp_template
+    return """<?xpacket begin='﻿' id='W5M0MpCehiHzreSzNTczkc9d'?>
+<x:xmpmeta xmlns:x='adobe:ns:meta/'
+ x:xmptk='Adobe XMP Core 5.6-c140 79.160451, 2017/05/06-01:08:21'>
+ <rdf:RDF xmlns:rdf='http://www.w3.org/1999/02/22-rdf-syntax-ns#'>
+  <rdf:Description rdf:about=''/>
+ </rdf:RDF>
+</x:xmpmeta>
+<?xpacket end='w'?>"""
+
+
+def write_image_with_exif_data_png(exif, image, out_filename, verbose=False, color_order='auto'):
     if verbose:
         logging.getLogger(__name__).info(msg=f"Writing PNG with metadata: {out_filename}")
     if isinstance(image, np.ndarray) and image.dtype == np.uint16:
@@ -187,14 +264,51 @@ def write_image_with_exif_data_png(exif, image, out_filename, verbose=False):
         write_img(out_filename, image)
         return
     if isinstance(image, np.ndarray):
-        if image.dtype == np.uint8 and len(image.shape) == 3:
-            image_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-            pil_image = Image.fromarray(image_rgb)
+        if len(image.shape) == 3 and image.shape[2] == 3:
+            if color_order == 'auto':
+                color_order = 'bgr'
+            if color_order == 'bgr':
+                image_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+                pil_image = Image.fromarray(image_rgb)
+                if verbose:
+                    logging.getLogger(__name__).info("Converted BGR to RGB for PIL")
+            else:
+                pil_image = Image.fromarray(image)
+                if verbose:
+                    logging.getLogger(__name__).info("Using RGB image directly")
         else:
             pil_image = Image.fromarray(image)
     else:
         pil_image = image
-    png_info = {}
+    pnginfo = PngInfo()
+    added_chunks = []
+    xmp_data = None
+    for key, value in exif.items():
+        if isinstance(key, str) and ('xmp' in key.lower() or 'xml' in key.lower()):
+            if isinstance(value, bytes):
+                try:
+                    xmp_data = value.decode('utf-8', errors='ignore')
+                    if verbose:
+                        logging.getLogger(__name__).info(
+                            msg=f"Found existing XMP data in source: {key}")
+                    break
+                except Exception:
+                    continue
+            elif isinstance(value, str):
+                xmp_data = value
+                if verbose:
+                    logging.getLogger(__name__).info(
+                        msg=f"Found existing XMP data in source: {key}")
+                break
+    if not xmp_data:
+        xmp_data = create_xmp_from_exif(exif)
+        if verbose:
+            logging.getLogger(__name__).info("Generated new XMP data from EXIF")
+    if xmp_data:
+        pnginfo.add_text("XML:com.adobe.xmp", xmp_data)
+        added_chunks.append("XML:com.adobe.xmp")
+        if verbose:
+            logging.getLogger(__name__).info("Added XMP data to PNG info")
     for tag_id, value in exif.items():
         if value is not None and isinstance(tag_id, int):
             try:
@@ -202,57 +316,79 @@ def write_image_with_exif_data_png(exif, image, out_filename, verbose=False):
                 if isinstance(value, bytes) and len(value) > 1000:
                     continue
                 if isinstance(value, (int, float, str)):
-                    png_info[tag_name] = str(value)
+                    pnginfo.add_text(tag_name, str(value))
+                    added_chunks.append(tag_name)
                 elif isinstance(value, bytes):
                     try:
-                        png_info[tag_name] = value.decode('utf-8', errors='replace')
+                        decoded_value = value.decode('utf-8', errors='replace')
+                        pnginfo.add_text(tag_name, decoded_value)
+                        added_chunks.append(tag_name)
                     except Exception:
                         continue
                 elif hasattr(value, 'numerator'):
-                    png_info[tag_name] = f"{value.numerator}/{value.denominator}"
+                    rational_str = f"{value.numerator}/{value.denominator}"
+                    pnginfo.add_text(tag_name, rational_str)
+                    added_chunks.append(tag_name)
                 else:
-                    png_info[tag_name] = str(value)
+                    pnginfo.add_text(tag_name, str(value))
+                    added_chunks.append(tag_name)
             except Exception as e:
                 if verbose:
                     logging.getLogger(__name__).warning(
                         msg=f"Could not store EXIF tag {tag_id}: {e}")
+    icc_profile = None
     for key, value in exif.items():
-        if isinstance(key, str) and key.startswith('PNG_'):
+        if isinstance(key, str):
+            if 'xmp' in key.lower() or 'xml' in key.lower():
+                continue
             clean_key = key[4:] if key.startswith('PNG_') else key
             if value is not None:
                 try:
                     if isinstance(value, bytes):
                         if 'icc' in clean_key.lower() or 'profile' in clean_key.lower():
-                            png_info[clean_key] = value
+                            icc_profile = value
+                            if verbose:
+                                logging.getLogger(__name__).info(
+                                    mgs=f"Found ICC profile: {clean_key}")
                         else:
                             try:
-                                png_info[clean_key] = value.decode('utf-8', errors='replace')
+                                decoded_value = value.decode('utf-8', errors='replace')
+                                pnginfo.add_text(clean_key, decoded_value)
+                                added_chunks.append(clean_key)
                             except Exception:
-                                png_info[clean_key] = str(value)[:100] + "..."
+                                truncated_value = str(value)[:100] + "..."
+                                pnginfo.add_text(clean_key, truncated_value)
+                                added_chunks.append(clean_key)
                     else:
-                        png_info[clean_key] = str(value)
+                        pnginfo.add_text(clean_key, str(value))
+                        added_chunks.append(clean_key)
                 except Exception as e:
                     if verbose:
                         logging.getLogger(__name__).warning(
                             msg=f"Could not store PNG metadata {key}: {e}")
+    if verbose:
+        logging.getLogger(__name__).info(
+            msg=f"PNGInfo text chunks to be saved ({len(added_chunks)}): {', '.join(added_chunks)}")
     try:
-        icc_profile = None
-        if 'icc_profile' in png_info:
-            icc_profile = png_info.pop('icc_profile')
         if icc_profile and isinstance(icc_profile, bytes):
-            pil_image.save(out_filename, format='PNG', icc_profile=icc_profile, **png_info)
+            pil_image.save(out_filename, format='PNG', icc_profile=icc_profile, pnginfo=pnginfo)
+            if verbose:
+                logging.getLogger(__name__).info("Saved PNG with ICC profile and metadata")
         else:
-            pil_image.save(out_filename, format='PNG', **png_info)
+            pil_image.save(out_filename, format='PNG', pnginfo=pnginfo)
+            if verbose:
+                logging.getLogger(__name__).info("Saved PNG without ICC profile but with metadata")
         if verbose:
             logging.getLogger(__name__).info(
                 msg=f"Successfully wrote PNG with metadata: {out_filename}")
     except Exception as e:
         if verbose:
             logging.getLogger(__name__).error(msg=f"Failed to write PNG with metadata: {e}")
+            logging.getLogger(__name__).error(traceback.format_exc())
         pil_image.save(out_filename, format='PNG')
 
 
-def write_image_with_exif_data(exif, image, out_filename, verbose=False):
+def write_image_with_exif_data(exif, image, out_filename, verbose=False, color_order='auto'):
     if exif is None:
         write_img(out_filename, image)
         return None
@@ -267,7 +403,7 @@ def write_image_with_exif_data(exif, image, out_filename, verbose=False):
         tifffile.imwrite(out_filename, image, metadata=metadata, compression='adobe_deflate',
                          extratags=extra_tags, **exif_tags)
     elif extension_png(out_filename):
-        write_image_with_exif_data_png(exif, image, out_filename, verbose)
+        write_image_with_exif_data_png(exif, image, out_filename, verbose, color_order=color_order)
     return exif
 
 

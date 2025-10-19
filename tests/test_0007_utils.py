@@ -17,7 +17,7 @@ class TestUtils(unittest.TestCase):
         self.test_files = {
             'jpg': 'examples/input/img-jpg/0000.jpg',
             'tif': 'examples/input/img-tif/0000.tif',
-            'png': 'examples/input/img-png/0000.png'
+            'png': 'examples/input/img-png-16/0000.png'
         }
         self.test_color_img = np.random.randint(0, 255, (100, 100, 3), dtype=np.uint8)
         self.test_color_img_16bit = np.random.randint(0, 65535, (100, 100, 3), dtype=np.uint16)

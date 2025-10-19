@@ -1,9 +1,9 @@
 # pylint: disable=C0114, C0115, C0116, E0611
 import os
-from .. algorithms.utils import EXTENSIONS_GUI_STR
+from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (QWidget, QRadioButton, QButtonGroup, QLineEdit,
                                QPushButton, QHBoxLayout, QVBoxLayout, QFileDialog, QMessageBox)
-from PySide6.QtCore import Qt
+from .. algorithms.utils import EXTENSIONS_GUI_STR
 
 
 class FolderFileSelectionWidget(QWidget):
