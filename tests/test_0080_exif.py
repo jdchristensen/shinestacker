@@ -1,12 +1,14 @@
 import os
 import logging
 import numpy as np
-from PIL import Image
+from PIL import Image, TiffImagePlugin
 from PIL.ExifTags import TAGS
+from PIL.PngImagePlugin import PngInfo
 from shinestacker.core.logging import setup_logging
 from shinestacker.algorithms.exif import (
     get_exif, copy_exif_from_file_to_file, print_exif, write_image_with_exif_data,
-    get_tiff_dtype_count)
+    get_tiff_dtype_count, save_exif_data, exif_dict, exif_extra_tags_for_tif,
+    extract_enclosed_data_for_jpg, IFDRational)
 
 
 NO_TEST_TIFF_TAGS = [
@@ -335,6 +337,276 @@ def test_get_tiff_dtype_count():
         assert False
 
 
+def test_get_exif_from_png_with_metadata():
+    try:
+        setup_logging()
+        logger = logging.getLogger(__name__)
+        logger.info("======== Testing get_exif_from_png with metadata ========")        
+        output_dir = "output/img-exif"
+        if not os.path.exists(output_dir):
+            os.makedirs(output_dir)
+        test_png = output_dir + "/test_metadata.png"        
+        img = Image.new('RGB', (100, 100), color='red')        
+        pnginfo = PngInfo()
+        pnginfo.add_text("Title", "Test Image")
+        pnginfo.add_text("Author", "Test Author")
+        pnginfo.add_text("Description", "A test image for metadata")
+        pnginfo.add_text("Software", "Test Software")        
+        img.save(test_png, pnginfo=pnginfo)
+        exif = get_exif(test_png)
+        logger.info("*** PNG Metadata extracted ***")
+        print_exif(exif)        
+        assert exif is not None, "Should extract metadata from PNG"
+        logger.info("✓ PNG metadata extraction test passed")
+    except Exception as e:
+        logger.error(f"PNG metadata test failed: {str(e)}")
+        import traceback
+        logger.error(traceback.format_exc())
+        assert False
+
+
+def test_extract_enclosed_data_for_jpg():
+    try:
+        setup_logging()
+        logger = logging.getLogger(__name__)
+        logger.info("======== Testing extract_enclosed_data_for_jpg ========")        
+        test_data = b'Some header data <?xpacket begin="test"?>XMP content here<?xpacket end="w"?> trailer data'
+        result = extract_enclosed_data_for_jpg(test_data, b'<?xpacket', b'<?xpacket end="w"?>')
+        assert result is not None, "Should extract XMP data"
+        assert b'XMP content here' in result, "Should contain the XMP content"
+        logger.info("✓ Valid XMP extraction test passed")        
+        test_data = b'Just some regular data without XMP'
+        result = extract_enclosed_data_for_jpg(test_data, b'<?xpacket', b'<?xpacket end="w"?>')
+        assert result is None, "Should return None when no XMP found"
+        logger.info("✓ No XMP data test passed")        
+        test_data = b'Data with <?xpacket begin but no end'
+        result = extract_enclosed_data_for_jpg(test_data, b'<?xpacket', b'<?xpacket end="w"?>')
+        assert result is None, "Should return None when only start marker found"
+        logger.info("✓ Partial XMP data test passed")
+        logger.info("All extract_enclosed_data_for_jpg tests passed")
+    except Exception as e:
+        logger.error(f"XMP extraction test failed: {str(e)}")
+        assert False
+
+
+def test_exif_extra_tags_for_tif():
+    try:
+        setup_logging()
+        logger = logging.getLogger(__name__)
+        logger.info("======== Testing exif_extra_tags_for_tif ========")        
+        test_exif = {
+            256: 1000,  # ImageWidth
+            257: 2000,  # ImageLength
+            282: IFDRational(72, 1),  # XResolution
+            283: IFDRational(72, 1),  # YResolution
+            296: 2,     # ResolutionUnit (inches)
+            305: b'Test Software',  # Software
+            270: 'Test Image Description',  # ImageDescription
+            271: 'Test Camera Make',  # Make
+            272: 'Test Camera Model',  # Model
+            306: '2023:01:01 12:00:00',  # DateTime
+            33432: 'Test Copyright',  # Copyright
+            700: b'Test XML data',  # XMLPacket
+        }        
+        extra_tags, exif_tags = exif_extra_tags_for_tif(test_exif)
+        logger.info(f"Generated {len(extra_tags)} extra tags")
+        logger.info(f"EXIF tags: {exif_tags}")        
+        assert 'resolution' in exif_tags
+        assert 'resolutionunit' in exif_tags
+        assert 'software' in exif_tags
+        assert 'photometric' in exif_tags        
+        res_x, res_y = exif_tags['resolution']
+        assert isinstance(res_x, tuple) and len(res_x) == 2
+        assert isinstance(res_y, tuple) and len(res_y) == 2
+        # XMLPacket (700) should be included in extra_tags, not excluded
+        # Check that some expected tags are included
+        included_tags = [270, 271, 272, 306, 33432]  # Should be included
+        found_tags = [tag_id for tag_id, dtype, count, value, write_once in extra_tags]
+        for tag_id in included_tags:
+            assert tag_id in found_tags, f"Tag {tag_id} should be included but was not found"
+        logger.info("✓ exif_extra_tags_for_tif test passed")
+    except Exception as e:
+        logger.error(f"exif_extra_tags_for_tif test failed: {str(e)}")
+        import traceback
+        logger.error(traceback.format_exc())
+        assert False
+
+
+def test_write_image_with_exif_data_png_edge_cases():
+    try:
+        setup_logging()
+        logger = logging.getLogger(__name__)
+        output_dir = "output/img-exif"
+        if not os.path.exists(output_dir):
+            os.makedirs(output_dir)
+        logger.info("======== Testing PNG EXIF edge cases ========")        
+        empty_exif = {}
+        test_img = np.ones((50, 50, 3), dtype=np.uint8) * 128
+        out_file = output_dir + "/test_empty_exif.png"
+        write_image_with_exif_data(empty_exif, test_img, out_file, verbose=True)
+        assert os.path.exists(out_file), "Should create file with empty EXIF"
+        logger.info("✓ Empty EXIF test passed")        
+        special_exif = {
+            270: 'Test with special chars: ñáéíóú',  # ImageDescription
+            305: 'Test Software v1.0',  # Software
+            315: 'Test Artist',  # Artist
+        }
+        out_file2 = output_dir + "/test_special_chars.png"
+        write_image_with_exif_data(special_exif, test_img, out_file2, verbose=True)
+        assert os.path.exists(out_file2), "Should create file with special chars"
+        logger.info("✓ Special characters test passed")        
+        long_exif = {
+            270: 'A' * 500,  # Very long description
+            305: 'B' * 200,  # Long software name
+        }
+        out_file3 = output_dir + "/test_long_values.png"
+        write_image_with_exif_data(long_exif, test_img, out_file3, verbose=True)
+        assert os.path.exists(out_file3), "Should create file with long values"
+        logger.info("✓ Long values test passed")
+        logger.info("All PNG edge case tests passed")
+    except Exception as e:
+        logger.error(f"PNG edge cases test failed: {str(e)}")
+        import traceback
+        logger.error(traceback.format_exc())
+        assert False
+
+
+def test_save_exif_data_different_formats():
+    try:
+        setup_logging()
+        logger = logging.getLogger(__name__)
+        output_dir = "output/img-exif"
+        if not os.path.exists(output_dir):
+            os.makedirs(output_dir)
+        logger.info("======== Testing save_exif_data with different formats ========")        
+        source_file = "examples/input/img-jpg/0000.jpg"
+        if not os.path.exists(source_file):
+            logger.warning("Source file not found, skipping test")
+            return
+        exif = get_exif(source_file)        
+        jpg_out = output_dir + "/test_save_exif.jpg"
+        if os.path.exists("examples/input/img-jpg/0001.jpg"):
+            save_exif_data(exif, "examples/input/img-jpg/0001.jpg", jpg_out, verbose=True)
+            assert os.path.exists(jpg_out), "Should save JPG with EXIF"
+            logger.info("✓ JPG save_exif_data test passed")        
+        tiff_out = output_dir + "/test_save_exif.tif"
+        if os.path.exists("examples/input/img-tif/0001.tif"):
+            save_exif_data(exif, "examples/input/img-tif/0001.tif", tiff_out, verbose=True)
+            assert os.path.exists(tiff_out), "Should save TIFF with EXIF"
+            logger.info("✓ TIFF save_exif_data test passed")            
+        png_out = output_dir + "/test_save_exif.png"
+        if os.path.exists("examples/input/img-png-8/0000.png"):
+            save_exif_data(exif, "examples/input/img-png-8/0000.png", png_out, verbose=True)
+            assert os.path.exists(png_out), "Should save PNG with EXIF"
+            logger.info("✓ PNG save_exif_data test passed")
+        logger.info("All save_exif_data format tests passed")
+    except Exception as e:
+        logger.error(f"save_exif_data test failed: {str(e)}")
+        import traceback
+        logger.error(traceback.format_exc())
+        assert False
+
+
+def test_exif_dict_functionality():
+    try:
+        setup_logging()
+        logger = logging.getLogger(__name__)
+        logger.info("======== Testing exif_dict functionality ========")        
+        test_exif = {
+            256: 1000,  # ImageWidth
+            257: 2000,  # ImageLength
+            270: 'Test Description',  # ImageDescription
+            282: IFDRational(72, 1),  # XResolution
+            283: IFDRational(72, 1),  # YResolution
+            296: 2,     # ResolutionUnit
+            700: b'Test XML data',  # XMLPacket
+            34377: b'Photoshop data',  # ImageResources
+        }        
+        result_hidden = exif_dict(test_exif, hide_xml=True)
+        assert result_hidden is not None, "Should return dict with hide_xml=True"
+        xml_hidden = any('<<< XML data >>>' in str(v) for v in result_hidden.values())
+        photoshop_hidden = any('<<< Photoshop data >>>' in str(v) for v in result_hidden.values())
+        assert xml_hidden or photoshop_hidden, "Should hide some data with hide_xml=True"
+        logger.info("✓ exif_dict with hide_xml=True test passed")        
+        result_visible = exif_dict(test_exif, hide_xml=False)
+        assert result_visible is not None, "Should return dict with hide_xml=False"
+        logger.info("✓ exif_dict with hide_xml=False test passed")        
+        result_none = exif_dict(None)
+        assert result_none is None, "Should return None for None input"
+        logger.info("✓ exif_dict with None input test passed")
+        logger.info("All exif_dict functionality tests passed")
+    except Exception as e:
+        logger.error(f"exif_dict test failed: {str(e)}")
+        import traceback
+        logger.error(traceback.format_exc())
+        assert False
+
+
+def test_error_handling():
+    try:
+        setup_logging()
+        logger = logging.getLogger(__name__)
+        logger.info("======== Testing error handling ========")        
+        try:
+            get_exif("non_existent_file.jpg")
+            assert False, "Should raise exception for non-existent file"
+        except RuntimeError as e:
+            assert "File does not exist" in str(e)
+            logger.info("✓ Non-existent file error handling works")        
+        try:
+            copy_exif_from_file_to_file("non_existent.jpg", "examples/input/img-jpg/0001.jpg")
+            assert False, "Should raise exception for non-existent source"
+        except RuntimeError as e:
+            assert "File does not exist" in str(e)
+            logger.info("✓ Non-existent source error handling works")            
+        try:
+            copy_exif_from_file_to_file("examples/input/img-jpg/0000.jpg", "non_existent.jpg")
+            assert False, "Should raise exception for non-existent input"
+        except RuntimeError as e:
+            assert "File does not exist" in str(e)
+            logger.info("✓ Non-existent input error handling works")            
+        try:
+            save_exif_data(None, "examples/input/img-jpg/0001.jpg")
+            assert False, "Should raise exception for None EXIF"
+        except RuntimeError as e:
+            assert "No exif data provided" in str(e)
+            logger.info("✓ None EXIF error handling works")
+        logger.info("All error handling tests passed")
+    except Exception as e:
+        logger.error(f"Error handling test failed: {str(e)}")
+        import traceback
+        logger.error(traceback.format_exc())
+        assert False
+
+
+def test_print_exif_edge_cases():
+    try:
+        setup_logging()
+        logger = logging.getLogger(__name__)
+        logger.info("======== Testing print_exif edge cases ========")        
+        rational_exif = {
+            282: IFDRational(72, 1),  # XResolution
+            283: IFDRational(96, 1),  # YResolution
+        }        
+        print_exif(rational_exif, hide_xml=True)
+        logger.info("✓ IFDRational printing test passed")        
+        string_exif = {
+            "CustomTag1": "Custom Value 1",
+            "CustomTag2": "Custom Value 2",
+        }        
+        print_exif(string_exif, hide_xml=True)
+        logger.info("✓ String tag IDs printing test passed")        
+        empty_exif = {}        
+        print_exif(empty_exif, hide_xml=True)
+        logger.info("✓ Empty EXIF printing test passed")
+        logger.info("All print_exif edge case tests passed")
+    except Exception as e:
+        logger.error(f"print_exif edge cases test failed: {str(e)}")
+        import traceback
+        logger.error(traceback.format_exc())
+        assert False
+
+
 if __name__ == '__main__':
     test_exif_tiff()
     test_exif_jpg()
@@ -343,3 +615,12 @@ if __name__ == '__main__':
     test_write_image_with_exif_data_tiff()
     test_write_image_with_exif_data_png()
     test_get_tiff_dtype_count()
+    test_get_exif_from_png_with_metadata()
+    test_extract_enclosed_data_for_jpg()
+    test_exif_extra_tags_for_tif()
+    test_write_image_with_exif_data_png_edge_cases()
+    test_save_exif_data_different_formats()
+    test_exif_dict_functionality()
+    test_error_handling()
+    test_print_exif_edge_cases()
+
