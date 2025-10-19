@@ -10,7 +10,7 @@ This page reports the main releases only and the main changes therein.
 - support of images in PNG format, both in 8 bit and 16 bit depth. Note: EXIF data are not supported for 16 bit PNG because of limitations in the PIL and Open CV python libraries.
 
 ### Fixed
-- in case saving EXIF data fails, a warning is reported instead of a crash
+- in case saving EXIF data fails, a warning is reported instead of stopping the run
 
 -----
 
