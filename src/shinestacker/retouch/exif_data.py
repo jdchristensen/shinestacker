@@ -42,8 +42,11 @@ class ExifData(BaseFormDialog):
             data = exif_dict(self.exif)
         if len(data) > 0:
             for k, (_, d) in data.items():
+                print(k, type(d))
                 if isinstance(d, IFDRational):
                     d = f"{d.numerator}/{d.denominator}"
+                elif len(str(d)) > 40:
+                    d = f"{str(d):.40}..."
                 else:
                     d = f"{d}"
                 if "<<<" not in d and k != 'IPTCNAA':
