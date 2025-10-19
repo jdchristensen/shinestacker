@@ -64,6 +64,8 @@ packages = [
     "shinestacker.algorithms",
     "shinestacker.gui",
     "shinestacker.gui.img",
+    "shinestacker.gui.img.dark",
+    "shinestacker.gui.img.light",
     "shinestacker.retouch"
 ]
 include-package-data = true
