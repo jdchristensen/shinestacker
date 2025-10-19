@@ -1,4 +1,4 @@
-# pylint: disable=C0114, C0116, W0718, R0911, R0912, E1101, R0915, R1702, R0914
+# pylint: disable=C0114, C0116, W0718, R0911, R0912, E1101, R0915, R1702, R0914, R0917, R0913
 import os
 import re
 import io
@@ -255,136 +255,142 @@ def create_xmp_from_exif(exif_data):
 
 
 def write_image_with_exif_data_png(exif, image, out_filename, verbose=False, color_order='auto'):
-    if verbose:
-        logging.getLogger(__name__).info(msg=f"Writing PNG with metadata: {out_filename}")
+    logger = logging.getLogger(__name__)
     if isinstance(image, np.ndarray) and image.dtype == np.uint16:
         if verbose:
-            logging.getLogger(__name__).warning(
-                msg="EXIF data not supported for 16-bit PNG format")
+            logger.warning(msg="EXIF data not supported for 16-bit PNG format")
         write_img(out_filename, image)
         return
+    pil_image = _convert_to_pil_image(image, color_order, verbose, logger)
+    pnginfo, icc_profile = _prepare_png_metadata(exif, verbose, logger)
+    _save_png_with_metadata(pil_image, out_filename, pnginfo, icc_profile, verbose, logger)
+
+
+def _convert_to_pil_image(image, color_order, verbose, logger):
     if isinstance(image, np.ndarray):
         if len(image.shape) == 3 and image.shape[2] == 3:
-            if color_order == 'auto':
-                color_order = 'bgr'
-            if color_order == 'bgr':
+            if color_order in ['auto', 'bgr']:
                 image_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-                pil_image = Image.fromarray(image_rgb)
                 if verbose:
-                    logging.getLogger(__name__).info("Converted BGR to RGB for PIL")
-            else:
-                pil_image = Image.fromarray(image)
-                if verbose:
-                    logging.getLogger(__name__).info("Using RGB image directly")
-        else:
-            pil_image = Image.fromarray(image)
-    else:
-        pil_image = image
+                    logger.info(msg="Converted BGR to RGB for PIL")
+                return Image.fromarray(image_rgb)
+        return Image.fromarray(image)
+    return image
+
+
+def _prepare_png_metadata(exif, verbose, logger):
     pnginfo = PngInfo()
-    added_chunks = []
-    xmp_data = None
+    icc_profile = None
+    xmp_data = _extract_xmp_data(exif, verbose, logger)
+    if xmp_data:
+        pnginfo.add_text("XML:com.adobe.xmp", xmp_data)
+        if verbose:
+            logger.info(msg="Added XMP data to PNG info")
+    _add_exif_tags_to_pnginfo(exif, pnginfo, verbose, logger)
+    icc_profile = _extract_icc_profile(exif, verbose, logger)
+    return pnginfo, icc_profile
+
+
+def _extract_xmp_data(exif, verbose, logger):
     for key, value in exif.items():
         if isinstance(key, str) and ('xmp' in key.lower() or 'xml' in key.lower()):
             if isinstance(value, bytes):
                 try:
                     xmp_data = value.decode('utf-8', errors='ignore')
                     if verbose:
-                        logging.getLogger(__name__).info(
-                            msg=f"Found existing XMP data in source: {key}")
-                    break
+                        logger.info(msg=f"Found existing XMP data in source: {key}")
+                    return xmp_data
                 except Exception:
                     continue
             elif isinstance(value, str):
-                xmp_data = value
                 if verbose:
-                    logging.getLogger(__name__).info(
-                        msg=f"Found existing XMP data in source: {key}")
-                break
-    if not xmp_data:
-        xmp_data = create_xmp_from_exif(exif)
-        if verbose:
-            logging.getLogger(__name__).info("Generated new XMP data from EXIF")
-    if xmp_data:
-        pnginfo.add_text("XML:com.adobe.xmp", xmp_data)
-        added_chunks.append("XML:com.adobe.xmp")
-        if verbose:
-            logging.getLogger(__name__).info("Added XMP data to PNG info")
-    for tag_id, value in exif.items():
-        if value is not None and isinstance(tag_id, int):
-            try:
-                tag_name = TAGS.get(tag_id, f"Unknown_{tag_id}")
-                if isinstance(value, bytes) and len(value) > 1000:
-                    continue
-                if isinstance(value, (int, float, str)):
-                    pnginfo.add_text(tag_name, str(value))
-                    added_chunks.append(tag_name)
-                elif isinstance(value, bytes):
-                    try:
-                        decoded_value = value.decode('utf-8', errors='replace')
-                        pnginfo.add_text(tag_name, decoded_value)
-                        added_chunks.append(tag_name)
-                    except Exception:
-                        continue
-                elif hasattr(value, 'numerator'):
-                    rational_str = f"{value.numerator}/{value.denominator}"
-                    pnginfo.add_text(tag_name, rational_str)
-                    added_chunks.append(tag_name)
-                else:
-                    pnginfo.add_text(tag_name, str(value))
-                    added_chunks.append(tag_name)
-            except Exception as e:
-                if verbose:
-                    logging.getLogger(__name__).warning(
-                        msg=f"Could not store EXIF tag {tag_id}: {e}")
-    icc_profile = None
-    for key, value in exif.items():
-        if isinstance(key, str):
-            if 'xmp' in key.lower() or 'xml' in key.lower():
-                continue
-            clean_key = key[4:] if key.startswith('PNG_') else key
-            if value is not None:
-                try:
-                    if isinstance(value, bytes):
-                        if 'icc' in clean_key.lower() or 'profile' in clean_key.lower():
-                            icc_profile = value
-                            if verbose:
-                                logging.getLogger(__name__).info(
-                                    mgs=f"Found ICC profile: {clean_key}")
-                        else:
-                            try:
-                                decoded_value = value.decode('utf-8', errors='replace')
-                                pnginfo.add_text(clean_key, decoded_value)
-                                added_chunks.append(clean_key)
-                            except Exception:
-                                truncated_value = str(value)[:100] + "..."
-                                pnginfo.add_text(clean_key, truncated_value)
-                                added_chunks.append(clean_key)
-                    else:
-                        pnginfo.add_text(clean_key, str(value))
-                        added_chunks.append(clean_key)
-                except Exception as e:
-                    if verbose:
-                        logging.getLogger(__name__).warning(
-                            msg=f"Could not store PNG metadata {key}: {e}")
+                    logger.info(msg=f"Found existing XMP data in source: {key}")
+                return value
     if verbose:
-        logging.getLogger(__name__).info(
-            msg=f"PNGInfo text chunks to be saved ({len(added_chunks)}): {', '.join(added_chunks)}")
+        logger.info("Generated new XMP data from EXIF")
+    return create_xmp_from_exif(exif)
+
+
+def _add_exif_tags_to_pnginfo(exif, pnginfo, verbose, logger):
+    for tag_id, value in exif.items():
+        if value is None:
+            continue
+        if isinstance(tag_id, int):
+            _add_exif_tag(pnginfo, tag_id, value, verbose, logger)
+        elif isinstance(tag_id, str) and not tag_id.lower().startswith(('xmp', 'xml')):
+            _add_png_text_tag(pnginfo, tag_id, value, verbose, logger)
+
+
+def _add_exif_tag(pnginfo, tag_id, value, verbose, logger):
     try:
-        if icc_profile and isinstance(icc_profile, bytes):
-            pil_image.save(out_filename, format='PNG', icc_profile=icc_profile, pnginfo=pnginfo)
-            if verbose:
-                logging.getLogger(__name__).info("Saved PNG with ICC profile and metadata")
+        tag_name = TAGS.get(tag_id, f"Unknown_{tag_id}")
+        if isinstance(value, bytes) and len(value) > 1000:
+            return
+        if isinstance(value, (int, float, str)):
+            pnginfo.add_text(tag_name, str(value))
+        elif isinstance(value, bytes):
+            try:
+                decoded_value = value.decode('utf-8', errors='replace')
+                pnginfo.add_text(tag_name, decoded_value)
+            except Exception:
+                pass
+        elif hasattr(value, 'numerator'):  # IFDRational
+            rational_str = f"{value.numerator}/{value.denominator}"
+            pnginfo.add_text(tag_name, rational_str)
         else:
-            pil_image.save(out_filename, format='PNG', pnginfo=pnginfo)
-            if verbose:
-                logging.getLogger(__name__).info("Saved PNG without ICC profile but with metadata")
-        if verbose:
-            logging.getLogger(__name__).info(
-                msg=f"Successfully wrote PNG with metadata: {out_filename}")
+            pnginfo.add_text(tag_name, str(value))
     except Exception as e:
         if verbose:
-            logging.getLogger(__name__).error(msg=f"Failed to write PNG with metadata: {e}")
-            logging.getLogger(__name__).error(traceback.format_exc())
+            logger.warning(f"Could not store EXIF tag {tag_id}: {e}")
+
+
+def _add_png_text_tag(pnginfo, key, value, verbose, logger):
+    try:
+        clean_key = key[4:] if key.startswith('PNG_') else key
+        if 'icc' in clean_key.lower() or 'profile' in clean_key.lower():
+            return
+        if isinstance(value, bytes):
+            try:
+                decoded_value = value.decode('utf-8', errors='replace')
+                pnginfo.add_text(clean_key, decoded_value)
+            except Exception:
+                truncated_value = str(value)[:100] + "..."
+                pnginfo.add_text(clean_key, truncated_value)
+        else:
+            pnginfo.add_text(clean_key, str(value))
+    except Exception as e:
+        if verbose:
+            logger.warning(msg=f"Could not store PNG metadata {key}: {e}")
+
+
+def _extract_icc_profile(exif, verbose, logger):
+    for key, value in exif.items():
+        if (isinstance(key, str) and
+            isinstance(value, bytes) and
+                ('icc' in key.lower() or 'profile' in key.lower())):
+            if verbose:
+                logger.info(f"Found ICC profile: {key}")
+            return value
+    return None
+
+
+def _save_png_with_metadata(pil_image, out_filename, pnginfo, icc_profile, verbose, logger):
+    try:
+        save_args = {'format': 'PNG', 'pnginfo': pnginfo}
+        if icc_profile:
+            save_args['icc_profile'] = icc_profile
+            if verbose:
+                logger.info(msg="Saved PNG with ICC profile and metadata")
+        else:
+            if verbose:
+                logger.info(msg="Saved PNG without ICC profile but with metadata")
+        pil_image.save(out_filename, **save_args)
+        if verbose:
+            logger.info(msg=f"Successfully wrote PNG with metadata: {out_filename}")
+    except Exception as e:
+        if verbose:
+            logger.error(msg=f"Failed to write PNG with metadata: {e}")
+            logger.error(traceback.format_exc())
         pil_image.save(out_filename, format='PNG')
 
 
