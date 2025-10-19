@@ -1,5 +1,6 @@
 # pylint: disable=C0114, C0115, C0116, E0611
 import os
+from .. algorithms.utils import EXTENSIONS_GUI_STR
 from PySide6.QtWidgets import (QWidget, QRadioButton, QButtonGroup, QLineEdit,
                                QPushButton, QHBoxLayout, QVBoxLayout, QFileDialog, QMessageBox)
 from PySide6.QtCore import Qt
@@ -73,7 +74,7 @@ class FolderFileSelectionWidget(QWidget):
     def browse_files(self):
         files, _ = QFileDialog.getOpenFileNames(
             self, "Select Input Files", "",
-            "Image files (*.png *.jpg *.jpeg *.tif *.tiff)"
+            f"Image files ({EXTENSIONS_GUI_STR})"
         )
         if files:
             parent_dir = os.path.dirname(files[0])

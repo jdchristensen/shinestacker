@@ -6,6 +6,7 @@ from PySide6.QtCore import QTimer
 from PySide6.QtWidgets import QWidget, QLabel, QMessageBox, QStackedWidget
 from .. config.constants import constants
 from .. config.app_config import AppConfig
+from .. algorithms.utils import EXTENSIONS_SUPPORTED
 from .. algorithms.align import validate_align_config
 from . action_config import (
     DefaultActionConfigurator, add_tab, create_tab_layout, create_tab_widget,
@@ -122,7 +123,7 @@ class JobConfigurator(DefaultActionConfigurator):
             return 0
         count = 0
         for filename in os.listdir(path):
-            if filename.lower().endswith(('.png', '.jpg', '.jpeg', '.tif', '.tiff')):
+            if os.path.splittext(filename)[-1][1:].lower() in EXTENSIONS_SUPPORTED:
                 count += 1
         return count
 

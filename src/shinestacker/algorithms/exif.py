@@ -180,6 +180,12 @@ def add_exif_data_to_jpg_file(exif, in_filenama, out_filename, verbose=False):
 def write_image_with_exif_data_png(exif, image, out_filename, verbose=False):
     if verbose:
         logging.getLogger(__name__).info(msg=f"Writing PNG with metadata: {out_filename}")
+    if isinstance(image, np.ndarray) and image.dtype == np.uint16:
+        if verbose:
+            logging.getLogger(__name__).warning(
+                msg="EXIF data not supported for 16-bit PNG format")
+        write_img(out_filename, image)
+        return
     if isinstance(image, np.ndarray):
         if image.dtype == np.uint8 and len(image.shape) == 3:
             image_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
@@ -274,8 +280,10 @@ def save_exif_data(exif, in_filename, out_filename=None, verbose=False):
         print_exif(exif)
     if extension_tif(in_filename):
         image_new = tifffile.imread(in_filename)
-    else:
+    elif extension_jpg(in_filename):
         image_new = Image.open(in_filename)
+    elif extension_png(in_filename):
+        image_new = cv2.imread(in_filename, cv2.IMREAD_UNCHANGED)
     if extension_jpg(in_filename):
         add_exif_data_to_jpg_file(exif, in_filename, out_filename, verbose)
     elif extension_tif(in_filename):
@@ -284,7 +292,7 @@ def save_exif_data(exif, in_filename, out_filename=None, verbose=False):
         tifffile.imwrite(out_filename, image_new, metadata=metadata, compression='adobe_deflate',
                          extratags=extra_tags, **exif_tags)
     elif extension_png(in_filename):
-        image_new.save(out_filename, 'PNG', exif=exif, quality=100)
+        write_image_with_exif_data_png(exif, image_new, out_filename, verbose)
     return exif
 
 

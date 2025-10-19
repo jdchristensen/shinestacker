@@ -8,7 +8,7 @@ from PySide6.QtCore import Qt
 from .. config.gui_constants import gui_constants
 from .. config.constants import constants
 from .. config.app_config import AppConfig
-from .. algorithms.utils import read_img, extension_tif_jpg
+from .. algorithms.utils import read_img, extension_supported
 from .. algorithms.stack import get_bunches
 from .folder_file_selection import FolderFileSelectionWidget
 from .base_form_dialog import BaseFormDialog
@@ -208,7 +208,7 @@ class NewProjectDialog(BaseFormDialog):
                 return 0
             count = 0
             for filename in os.listdir(path):
-                if extension_tif_jpg(filename):
+                if extension_supported(filename):
                     count += 1
             return count
         if self.input_widget.get_selection_mode() == 'files' and \
@@ -273,7 +273,7 @@ class NewProjectDialog(BaseFormDialog):
                 file_path = None
                 for filename in files:
                     full_path = os.path.join(path, filename)
-                    if extension_tif_jpg(full_path):
+                    if extension_supported(full_path):
                         file_path = full_path
                         break
             if file_path is None:

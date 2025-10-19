@@ -7,7 +7,6 @@ import os
 class _Constants:
     APP_TITLE = "Shine Stacker"
     APP_STRING = "ShineStacker"
-    EXTENSIONS = set(["jpeg", "jpg", "png", "tif", "tiff"])
 
     NUM_UINT8 = 256
     NUM_UINT16 = 65536

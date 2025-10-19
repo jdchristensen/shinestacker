@@ -18,6 +18,15 @@ EXTENSIONS_TIF = ['tif', 'tiff']
 EXTENSIONS_JPG = ['jpg', 'jpeg']
 EXTENSIONS_PNG = ['png']
 EXTENSIONS_PDF = ['pdf']
+EXTENSIONS_SUPPORTED = EXTENSIONS_TIF + EXTENSIONS_JPG + EXTENSIONS_PNG
+EXTENSIONS_GUI_STR = " ".join([f"*.{ext}" for ext in EXTENSIONS_SUPPORTED])
+EXTENSION_GUI_TIF = " ".join([f"*.{ext}" for ext in EXTENSIONS_TIF])
+EXTENSION_GUI_JPG = " ".join([f"*.{ext}" for ext in EXTENSIONS_JPG])
+EXTENSION_GUI_PNG = " ".join([f"*.{ext}" for ext in EXTENSIONS_PNG])
+EXTENSIONS_GUI_SAVE_STR = f"TIFF Files ({EXTENSION_GUI_TIF});;" \
+                          f"JPEG Files ({EXTENSION_GUI_JPG});;" \
+                          f"PNG Files ({EXTENSION_GUI_PNG});;" \
+                          "All Files (*)"
 
 
 def extension_in(path, exts):
@@ -54,6 +63,10 @@ def extension_jpg_png(path):
 
 def extension_jpg_tif_png(path):
     return extension_in(path, EXTENSIONS_JPG + EXTENSIONS_TIF + EXTENSIONS_PNG)
+
+
+def extension_supported(path):
+    return extension_in(path, EXTENSIONS_SUPPORTED)
 
 
 def read_img(file_path):
@@ -99,7 +112,7 @@ def img_bw(img):
 def get_first_image_file(filenames):
     first_img_file = None
     for filename in filenames:
-        if os.path.isfile(filename) and extension_tif_jpg(filename):
+        if os.path.isfile(filename) and extension_supported(filename):
             first_img_file = filename
             break
     if first_img_file is None:

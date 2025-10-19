@@ -7,7 +7,7 @@ from .. core.colors import color_str
 from .. core.framework import Job, SequentialTask
 from .. core.core_utils import check_path_exists
 from .. core.exceptions import RunStopException
-from .utils import read_img, write_img, extension_tif_jpg, get_img_metadata, validate_image
+from .utils import read_img, write_img, extension_supported, get_img_metadata, validate_image
 
 
 class StackJob(Job):
@@ -95,7 +95,7 @@ class ImageSequenceManager:
                 filelist = []
                 for _dirpath, _, filenames in os.walk(d):
                     filelist = [os.path.join(_dirpath, name)
-                                for name in filenames if extension_tif_jpg(name)]
+                                for name in filenames if extension_supported(name)]
                     filelist.sort()
                     if self.reverse_order:
                         filelist.reverse()

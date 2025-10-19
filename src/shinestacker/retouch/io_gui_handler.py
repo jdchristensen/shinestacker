@@ -7,6 +7,7 @@ from PySide6.QtWidgets import (QFileDialog, QMessageBox, QVBoxLayout, QLabel, QD
                                QApplication, QProgressBar)
 from PySide6.QtGui import QGuiApplication, QCursor
 from PySide6.QtCore import Qt, QObject, QTimer, Signal
+from .. algorithms.utils import EXTENSIONS_GUI_STR, EXTENSIONS_GUI_SAVE_STR
 from .. algorithms.exif import get_exif, write_image_with_exif_data
 from .file_loader import FileLoader
 from .exif_data import ExifData
@@ -135,7 +136,7 @@ class IOGuiHandler(QObject, LayerCollectionHandler):
         if file_paths is None:
             file_paths, _ = QFileDialog.getOpenFileNames(
                 self.parent(), "Open Image", "",
-                "Images (*.tif *.tiff *.jpg *.jpeg);;All Files (*)")
+                F"Images ({EXTENSIONS_GUI_STR});;All Files (*)")
         if not file_paths:
             return
         if self.loader_thread and self.loader_thread.isRunning():
@@ -167,7 +168,7 @@ class IOGuiHandler(QObject, LayerCollectionHandler):
     def import_frames(self):
         file_paths, _ = QFileDialog.getOpenFileNames(
             self.parent(), "Select frames", "",
-            "Images Images (*.tif *.tiff *.jpg *.jpeg);;All Files (*)")
+            f"Images Images ({EXTENSIONS_GUI_STR});;All Files (*)")
         if file_paths:
             self.import_frames_from_files(file_paths)
 
@@ -286,8 +287,7 @@ class IOGuiHandler(QObject, LayerCollectionHandler):
         if self.layer_stack() is None:
             return
         path, _ = QFileDialog.getSaveFileName(
-            self.parent(), "Save Image", "",
-            "TIFF Files (*.tif *.tiff);;JPEG Files (*.jpg *.jpeg);;All Files (*)")
+            self.parent(), "Save Image", "", EXTENSIONS_GUI_SAVE_STR)
         if path:
             self.save_master_to_path(path)
 

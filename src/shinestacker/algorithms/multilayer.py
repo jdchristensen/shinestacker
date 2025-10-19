@@ -13,7 +13,7 @@ from .. config.constants import constants
 from .. config.config import config
 from .. core.colors import color_str
 from .. core.framework import TaskBase
-from .utils import EXTENSIONS_TIF, EXTENSIONS_JPG, EXTENSIONS_PNG
+from .utils import EXTENSIONS_TIF, EXTENSIONS_JPG, EXTENSIONS_PNG, EXTENSIONS_SUPPORTED
 from .stack_framework import ImageSequenceManager
 from .exif import exif_extra_tags_for_tif, get_exif
 
@@ -142,14 +142,16 @@ def write_multilayer_tiff_from_images(image_dict, output_file, exif_path='', cal
         elif os.path.isdir(exif_path):
             _dirpath, _, fnames = next(os.walk(exif_path))
             fnames = [name for name in fnames
-                      if os.path.splitext(name)[-1][1:].lower() in constants.EXTENSIONS]
-            extra_tags, exif_tags = exif_extra_tags_for_tif(get_exif(exif_path + '/' + fnames[0]))
+                      if os.path.splitext(name)[-1][1:].lower() in EXTENSIONS_SUPPORTED]
+            file_path = os.path.join(exif_path, fnames[0])
+            extra_tags, exif_tags = exif_extra_tags_for_tif(get_exif(file_path))
+        extra_tags = [tag for tag in extra_tags if isinstance(tag[0], int)]
         tiff_tags['extratags'] += extra_tags
         tiff_tags = {**tiff_tags, **exif_tags}
     if callbacks:
         callback = callbacks.get('write_msg', None)
         if callback:
-            callback(output_file.split('/')[-1])
+            callback(os.path.basename(output_file))
     compression = 'adobe_deflate'
     overlayed_images = overlay(
         *((np.concatenate((image, np.expand_dims(transp, axis=-1)),
