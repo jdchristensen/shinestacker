@@ -54,7 +54,9 @@ class FocusStackBase(TaskBase, ImageSequenceManager):
                     self.sub_message_r(' ' * 60)
                 except Exception as e:
                     traceback.print_tb(e.__traceback__)
-                    raise RuntimeError("Can't copy EXIF data") from e
+                    self.sub_message_r(color_str(f': failed to copy EXIF data: {str(e)}',
+                                                 constants.LOG_COLOR_WARNING),
+                                       level=logging.WARNING)
         if self.plot_stack:
             idx_str = f"{self.frame_count + 1:04d}" if self.frame_count >= 0 else ''
             name = f"{self.name}: {self.stack_algo.name()}"
