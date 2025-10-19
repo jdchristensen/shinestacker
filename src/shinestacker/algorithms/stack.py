@@ -1,6 +1,8 @@
 # pylint: disable=C0114, C0115, C0116, R0913, R0917
 import os
 import traceback
+import logging
+import numpy as np
 from .. config.constants import constants
 from .. core.framework import TaskBase
 from .. core.colors import color_str
@@ -35,18 +37,24 @@ class FocusStackBase(TaskBase, ImageSequenceManager):
             stacked_img = denoise(stacked_img, self.denoise_amount, self.denoise_amount)
         write_img(out_filename, stacked_img)
         if self.exif_path != '':
-            self.sub_message_r(color_str(': copy exif data', constants.LOG_COLOR_LEVEL_3))
-            if not os.path.exists(self.exif_path):
-                raise RuntimeError(f"Path {self.exif_path} does not exist.")
-            try:
-                _dirpath, _, fnames = next(os.walk(self.exif_path))
-                fnames = [name for name in fnames if extension_supported(name)]
-                exif_filename = os.path.join(self.exif_path, fnames[0])
-                copy_exif_from_file_to_file(exif_filename, out_filename)
-                self.sub_message_r(' ' * 60)
-            except Exception as e:
-                traceback.print_tb(e.__traceback__)
-                raise RuntimeError("Can't copy EXIF data") from e
+            if stacked_img.dtype == np.uint16 and \
+               os.path.splitext(out_filename)[-1].lower() == '.png':
+                self.sub_message_r(color_str(': exif not supported for 16-bit PNG format',
+                                             constants.LOG_COLOR_WARNING),
+                                   level=logging.WARNING)
+            else:
+                self.sub_message_r(color_str(': copy exif data', constants.LOG_COLOR_LEVEL_3))
+                if not os.path.exists(self.exif_path):
+                    raise RuntimeError(f"Path {self.exif_path} does not exist.")
+                try:
+                    _dirpath, _, fnames = next(os.walk(self.exif_path))
+                    fnames = [name for name in fnames if extension_supported(name)]
+                    exif_filename = os.path.join(self.exif_path, fnames[0])
+                    copy_exif_from_file_to_file(exif_filename, out_filename)
+                    self.sub_message_r(' ' * 60)
+                except Exception as e:
+                    traceback.print_tb(e.__traceback__)
+                    raise RuntimeError("Can't copy EXIF data") from e
         if self.plot_stack:
             idx_str = f"{self.frame_count + 1:04d}" if self.frame_count >= 0 else ''
             name = f"{self.name}: {self.stack_algo.name()}"
