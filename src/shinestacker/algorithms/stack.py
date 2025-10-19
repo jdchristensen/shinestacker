@@ -45,10 +45,12 @@ class FocusStackBase(TaskBase, ImageSequenceManager):
             else:
                 self.sub_message_r(color_str(': copy exif data', constants.LOG_COLOR_LEVEL_3))
                 if not os.path.exists(self.exif_path):
-                    raise RuntimeError(f"Path {self.exif_path} does not exist.")
+                    raise RuntimeError(f"path {self.exif_path} does not exist.")
                 try:
                     _dirpath, _, fnames = next(os.walk(self.exif_path))
                     fnames = [name for name in fnames if extension_supported(name)]
+                    if len(fnames) == 0:
+                        raise RuntimeError(f"path {self.exif_path} does not contain image files.")
                     exif_filename = os.path.join(self.exif_path, fnames[0])
                     copy_exif_from_file_to_file(exif_filename, out_filename)
                     self.sub_message_r(' ' * 60)
