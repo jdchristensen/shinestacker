@@ -284,8 +284,8 @@ class NewProjectDialog(BaseFormDialog):
             height, width = img.shape[:2]
             n_bytes = 1 if img.dtype == np.uint8 else 2
             n_bits = 8 if img.dtype == np.uint8 else 16
-            n_gbytes = float(n_bytes * height * width * self.n_image_files) / constants.ONE_GIGA
-            if n_gbytes > 1 and not self.bunch_stack.isChecked():
+            n_gbytes = 3.0 * n_bytes * height * width * self.n_image_files / constants.ONE_GIGA
+            if n_gbytes > 4 and not self.bunch_stack.isChecked():
                 msg = QMessageBox()
                 msg.setStyleSheet("""
                     QMessageBox {
