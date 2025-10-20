@@ -2,6 +2,14 @@
 
 This page reports the main releases only and the main changes therein.
 
+## [v-.-.-] - 2025-10-20
+** Unreleased changes **
+
+### Fixed
+- if saving EXIF data fails, a warning is issued instead of stopping the run
+- removed duplicated parameter from config dialog (FocusStackBunch)
+
+-----
 
 ## [v1.9.0] - 2025-10-19
 ** Added PNG format support and fixed EXIF failure **
@@ -11,7 +19,6 @@ This page reports the main releases only and the main changes therein.
 
 ### Fixed
 - if saving EXIF data fails, a warning is issued instead of stopping the run
-- removed duplicated parameter from config dialog (FocusStackBunch)
 
 -----
 
