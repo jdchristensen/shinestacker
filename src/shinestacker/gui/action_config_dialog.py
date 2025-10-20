@@ -373,10 +373,6 @@ class FocusStackBunchConfigurator(FocusStackBaseConfigurator):
             self.general_tab_layout, 'overlap', FIELD_INT, 'Overlapping frames', required=False,
             default=constants.DEFAULT_OVERLAP, min_val=0, max_val=100)
         self.add_field_to_layout(
-            self.general_tab_layout, 'scratch_output_dir', FIELD_BOOL,
-            'Scratch output folder before run',
-            required=False, default=True)
-        self.add_field_to_layout(
             self.general_tab_layout, 'delete_output_at_end', FIELD_BOOL,
             'Delete output at end of job',
             required=False, default=False)
