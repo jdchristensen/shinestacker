@@ -8,6 +8,7 @@ This page reports the main releases only and the main changes therein.
 ### Fixed
 - if saving EXIF data fails, a warning is issued instead of stopping the run
 - removed duplicated parameter from config dialog (FocusStackBunch)
+- suppressed unnecessary system warning on macOS related to file dialogs
 
 -----
 
