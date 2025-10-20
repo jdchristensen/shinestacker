@@ -1,4 +1,5 @@
 # pylint: disable=C0114, C0115, C0116, C0413, E0611, R0903, E1121, W0201
+import os
 import sys
 import argparse
 from PySide6.QtWidgets import QApplication, QMenu
@@ -15,6 +16,8 @@ from shinestacker.app.args_parser_opts import (
     setup_filename_argument, process_filename_argument
 )
 from shinestacker.app.gui_utils import make_app
+
+os.environ["QT_LOGGING_RULES"] = "qt.nsobject*.debug=false"
 
 
 class RetouchApp(ImageEditorUI):
