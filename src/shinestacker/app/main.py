@@ -1,5 +1,4 @@
 # pylint: disable=C0114, C0115, C0116, C0413, E0611, R0903, E1121, W0201, R0915, R0912
-import os
 import sys
 import argparse
 import matplotlib
@@ -23,7 +22,6 @@ from shinestacker.app.args_parser_opts import (
 )
 from shinestacker.app.gui_utils import make_app
 
-os.environ["QT_LOGGING_RULES"] = "qt.nsobject*.debug=false"
 
 class SelectionDialog(QDialog):
     selection_made = Signal(str, bool)

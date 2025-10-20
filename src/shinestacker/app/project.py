@@ -19,8 +19,6 @@ from shinestacker.app.args_parser_opts import (
 )
 from shinestacker.app.gui_utils import make_app
 
-os.environ["QT_LOGGING_RULES"] = "qt.nsobject*.debug=false"
-
 
 class ProjectApp(MainWindow):
     def __init__(self):
