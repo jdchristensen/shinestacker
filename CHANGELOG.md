@@ -2,15 +2,20 @@
 
 This page reports the main releases only and the main changes therein.
 
-## [v-.-.-] - 2025-10-20
+## [v-.-.-] - 2025-10-21
 ** Unreleased changes **
 
 ### Added
-- action "Show EXIF Data"
+- missing action "Show EXIF Data"
 
 ### Fixed
 - if saving EXIF data fails, a warning is issued instead of stopping the run
+- exif data correctly loaded when opening image file in retouch mode
 - removed duplicated parameter from config dialog (FocusStackBunch)
+- fixed thread warning when the application quits
+
+### Changed
+- improved EXIF data dialog
 
 -----
 
