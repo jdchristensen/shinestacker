@@ -1,6 +1,6 @@
 # pylint: disable=C0114, C0115, C0116, E0611
 from PIL.TiffImagePlugin import IFDRational
-from PySide6.QtWidgets import QWidget, QHBoxLayout, QPushButton, QLabel
+from PySide6.QtWidgets import QWidget, QHBoxLayout, QPushButton, QLabel, QTextEdit
 from PySide6.QtCore import Qt
 from .. algorithms.exif import exif_dict
 from .icon_container import icon_container
@@ -45,11 +45,19 @@ class ExifData(BaseFormDialog):
                 print(k, type(d))
                 if isinstance(d, IFDRational):
                     d = f"{d.numerator}/{d.denominator}"
-                elif len(str(d)) > 40:
-                    d = f"{str(d):.40}..."
-                else:
-                    d = f"{d}"
-                if "<<<" not in d and k != 'IPTCNAA':
-                    self.form_layout.addRow(f"<b>{k}:</b>", QLabel(d))
+                d_str = str(d)
+                if "<<<" not in d_str and k != 'IPTCNAA':
+                    if len(d_str) <= 40:
+                        self.form_layout.addRow(f"<b>{k}:</b>", QLabel(d_str))
+                    else:
+                        text_edit = QTextEdit()
+                        text_edit.setPlainText(d_str)
+                        text_edit.setReadOnly(True)
+                        text_edit.setMaximumHeight(200)
+                        text_edit.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+                        text_edit.setLineWrapMode(QTextEdit.WidgetWidth)
+                        text_edit.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+                        text_edit.setFixedWidth(400)
+                        self.form_layout.addRow(f"<b>{k}:</b>", text_edit)
         else:
             self.form_layout.addRow("-", QLabel("Empty EXIF dictionary"))
