@@ -44,10 +44,10 @@ class ExifData(BaseFormDialog):
             for k, (_, d) in data.items():
                 if isinstance(d, IFDRational):
                     d = f"{d.numerator}/{d.denominator}"
-                elif len(str(d)) > 40:
-                    d = f"{str(d):.40}..."
                 else:
                     d = f"{d}"
+                    if len(d) > 40:
+                        d = f"{d:.40}..."
                 if "<<<" not in d and k != 'IPTCNAA':
                     self.form_layout.addRow(f"<b>{k}:</b>", QLabel(d))
         else:

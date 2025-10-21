@@ -199,7 +199,7 @@ class MainApp(QMainWindow):
 class Application(QApplication):
     def event(self, event):
         if event.type() == QEvent.Quit and event.spontaneous():
-            if not self.quit():
+            if not self.main_app.quit():
                 return True
         return super().event(event)
 

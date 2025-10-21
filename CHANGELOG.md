@@ -12,6 +12,7 @@ This page reports the main releases only and the main changes therein.
 - if saving EXIF data fails, a warning is issued instead of stopping the run
 - exif data correctly loaded when opening image file in retouch mode
 - removed duplicated parameter from config dialog (FocusStackBunch)
+- fixed thread warning when the application quits
 
 -----
 
