@@ -2,7 +2,7 @@
 
 This page reports the main releases only and the main changes therein.
 
-## [v-.-.-] - 2025-10-20
+## [v-.-.-] - 2025-10-21
 ** Unreleased changes **
 
 ### Added
@@ -10,6 +10,7 @@ This page reports the main releases only and the main changes therein.
 
 ### Fixed
 - if saving EXIF data fails, a warning is issued instead of stopping the run
+- exif data correctly loaded when opening image file in retouch mode
 - removed duplicated parameter from config dialog (FocusStackBunch)
 
 -----

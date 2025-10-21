@@ -162,6 +162,8 @@ class IOGuiHandler(QObject, LayerCollectionHandler):
         self.loader_thread.finished.connect(self.on_file_loaded)
         self.loader_thread.error.connect(self.on_file_error)
         self.loader_thread.start()
+        self.exif_path = self.current_file_path_master
+        self.exif_data = get_exif(self.exif_path)
 
     def import_frames(self):
         file_paths, _ = QFileDialog.getOpenFileNames(
@@ -194,6 +196,9 @@ class IOGuiHandler(QObject, LayerCollectionHandler):
         self.frame_importer_thread.error.connect(self.on_frames_import_error)
         self.frame_importer_thread.progress.connect(self.update_import_progress)
         self.frame_importer_thread.start()
+        if self.exif_data is None:
+            self.exif_path = file_paths[0]
+            self.exif_data = get_exif(self.exif_path)
 
     def update_import_progress(self, percent, filename):
         if hasattr(self, 'progress_bar'):
