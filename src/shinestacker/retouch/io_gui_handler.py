@@ -10,7 +10,6 @@ from PySide6.QtCore import Qt, QObject, QTimer, Signal
 from .. algorithms.utils import EXTENSIONS_GUI_STR, EXTENSIONS_GUI_SAVE_STR
 from .. algorithms.exif import get_exif, write_image_with_exif_data
 from .file_loader import FileLoader
-from .exif_data import ExifData
 from .io_threads import FileMultilayerSaver, FrameImporter
 from .layer_collection import LayerCollectionHandler
 
@@ -33,7 +32,6 @@ class IOGuiHandler(QObject, LayerCollectionHandler):
         self.image_viewer = None
         self.loading_dialog = None
         self.loading_timer = None
-        self.exif_dialog = None
         self.saver_thread = None
         self.saving_dialog = None
         self.saving_timer = None
@@ -309,9 +307,7 @@ class IOGuiHandler(QObject, LayerCollectionHandler):
         if path:
             self.exif_path = path
             self.exif_data = get_exif(path)
-            self.status_message_requested.emit(f"EXIF data extracted from {path}.")
-        self.exif_dialog = ExifData(self.exif_data, self.parent())
-        self.exif_dialog.exec()
+        return path
 
     def close_file(self):
         self.mark_as_modified_requested.emit(False)

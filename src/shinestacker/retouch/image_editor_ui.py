@@ -26,6 +26,7 @@ from .white_balance_filter import WhiteBalanceFilter
 from .vignetting_filter import VignettingFilter
 from .adjustments import LumiContrastFilter, SaturationVibranceFilter
 from .transformation_manager import TransfromationManager
+from .exif_data import ExifData
 
 
 class ImageEditorUI(QMainWindow, LayerCollectionHandler):
@@ -183,6 +184,7 @@ class ImageEditorUI(QMainWindow, LayerCollectionHandler):
         self.thumbnail_list.setFixedWidth(gui_constants.THUMB_WIDTH)
         self.thumbnail_list.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.thumbnail_list.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+        self.exif_dialog = None
 
         def change_layer_item(item):
             layer_idx = self.thumbnail_list.row(item)
@@ -266,8 +268,13 @@ class ImageEditorUI(QMainWindow, LayerCollectionHandler):
 
         file_menu.addAction("&Close", self.close_file, "Ctrl+W")
         file_menu.addSeparator()
+        show_exif_action = QAction("Show EXIF Data", self)
+        show_exif_action.triggered.connect(self.show_exif_data)
+        show_exif_action.setProperty("requires_file", True)
+        file_menu.addAction(show_exif_action)
+        file_menu.addSeparator()
         file_menu.addAction("&Import Frames", self.io_gui_handler.import_frames)
-        file_menu.addAction("Import &EXIF Data", self.io_gui_handler.select_exif_path)
+        file_menu.addAction("Import &EXIF Data", self.select_exif_path)
 
         edit_menu = menubar.addMenu("&Edit")
         self.undo_action = QAction("Undo", self)
@@ -675,6 +682,16 @@ class ImageEditorUI(QMainWindow, LayerCollectionHandler):
             else:
                 self.redo_action.setText("Redo")
                 self.redo_action.setEnabled(False)
+
+    def select_exif_path(self):
+        path = self.io_gui_handler.select_exif_path()
+        if path:
+            self.show_status_message(f"EXIF data extracted from {path}.")
+        self.show_exif_data()
+
+    def show_exif_data(self):
+        self.exif_dialog = ExifData(self.io_gui_handler.exif_data, self.parent())
+        self.exif_dialog.exec()
 
     def luminosity_filter(self):
         self.filter_manager.apply("Luminosity, Contrast")

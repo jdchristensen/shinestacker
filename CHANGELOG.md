@@ -5,6 +5,9 @@ This page reports the main releases only and the main changes therein.
 ## [v-.-.-] - 2025-10-20
 ** Unreleased changes **
 
+### Added
+- action "Show EXIF Data"
+
 ### Fixed
 - if saving EXIF data fails, a warning is issued instead of stopping the run
 - removed duplicated parameter from config dialog (FocusStackBunch)
