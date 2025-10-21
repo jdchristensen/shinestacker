@@ -61,7 +61,6 @@ class ExifData(ConfigDialog):
                         text_edit.setLineWrapMode(QTextEdit.WidgetWidth)
                         text_edit.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
                         text_edit.setFixedWidth(400)
-
                         if self.is_likely_xml(d_str):
                             font = text_edit.font()
                             font.setFamily("Courier")
@@ -71,3 +70,5 @@ class ExifData(ConfigDialog):
                         else:
                             text_edit.setFixedHeight(100)
                         self.container_layout.addRow(f"<b>{k}:</b>", text_edit)
+        else:
+            self.container_layout.addRow("No EXIF Data", QLabel(''))
