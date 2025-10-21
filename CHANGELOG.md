@@ -6,7 +6,7 @@ This page reports the main releases only and the main changes therein.
 ** Unreleased changes **
 
 ### Added
-- action "Show EXIF Data"
+- missing action "Show EXIF Data"
 
 ### Fixed
 - if saving EXIF data fails, a warning is issued instead of stopping the run
