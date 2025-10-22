@@ -118,15 +118,19 @@ def exif_extra_tags_for_tif(exif):
     phint = exif.get(PHOTOMETRICINTERPRETATION)
     photometric = phint if phint is not None else None
     extra = []
-
     for tag_id in exif:
         tag, data = TAGS.get(tag_id, tag_id), exif.get(tag_id)
         if isinstance(data, bytes):
             try:
                 if tag_id not in (IMAGERESOURCES, INTERCOLORPROFILE):
                     if tag_id == XMLPACKET:
-                        data = re.sub(b'[^\x20-\x7E]', b'', data)
-                    data = safe_decode_bytes(data)
+                        try:
+                            decoded = data.decode('utf-8')
+                            data = decoded.encode('utf-8')
+                        except UnicodeDecodeError:
+                            logger.debug(f"XMLPACKET contains non-UTF8 data, preserving as bytes")
+                    else:
+                        data = safe_decode_bytes(data)
             except Exception:
                 logger.warning(msg=f"Copy: can't decode EXIF tag {tag:25} [#{tag_id}]")
                 data = '<<< decode error >>>'
