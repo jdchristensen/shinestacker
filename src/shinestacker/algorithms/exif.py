@@ -447,20 +447,15 @@ def copy_exif_from_file_to_file(exif_filename, in_filename, out_filename=None, v
     return save_exif_data(exif, in_filename, out_filename, verbose)
 
 
-def exif_dict(exif, hide_xml=True):
+def exif_dict(exif, hide_xml=False):
     if exif is None:
         return None
     exif_data = {}
     for tag_id in exif:
         tag = TAGS.get(tag_id, tag_id)
+        print("tag: ", tag_id, tag)
         if tag_id == XMLPACKET and hide_xml:
             data = "<<< XML data >>>"
-        elif tag_id in (IMAGERESOURCES, INTERCOLORPROFILE):
-            data = "<<< Photoshop data >>>"
-        elif tag_id == STRIPOFFSETS:
-            data = "<<< Strip offsets >>>"
-        elif tag_id == STRIPBYTECOUNTS:
-            data = "<<< Strip byte counts >>>"
         else:
             data = exif.get(tag_id) if hasattr(exif, 'get') else exif[tag_id]
         if isinstance(data, bytes):
@@ -472,7 +467,7 @@ def exif_dict(exif, hide_xml=True):
     return exif_data
 
 
-def print_exif(exif, hide_xml=True):
+def print_exif(exif, hide_xml=False):
     exif_data = exif_dict(exif, hide_xml)
     if exif_data is None:
         raise RuntimeError('Image has no exif data.')
@@ -480,7 +475,11 @@ def print_exif(exif, hide_xml=True):
     for tag, (tag_id, data) in exif_data.items():
         if isinstance(data, IFDRational):
             data = f"{data.numerator}/{data.denominator}"
+        data_str = f"{data}"
+        if len(data_str) > 40:
+            data_str = f"{data_str[:40]}..."
         if isinstance(tag_id, int):
-            logger.info(msg=f"{tag:25} [#{tag_id:5d}]: {data}")
+            tag_id_str = f"[#{tag_id:5d}]"
         else:
-            logger.info(msg=f"{tag:25} [ {tag_id:20} ]: {str(data)[:100]}...")
+            tag_id_str = f"[ {tag_id:20} ]"
+        logger.info(msg=f"{tag:25} {tag_id_str}: {data_str}")

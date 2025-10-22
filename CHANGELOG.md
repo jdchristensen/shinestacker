@@ -15,7 +15,7 @@ This page reports the main releases only and the main changes therein.
 - fixed thread warning when the application quits
 
 ### Changed
-- improved EXIF data dialog
+- improved EXIF data dialog, and added more displayed data
 
 -----
 

@@ -1,4 +1,4 @@
-# pylint: disable=C0114, C0115, C0116, E0611
+# pylint: disable=C0114, C0115, C0116, E0611, W0718
 from xml.dom import minidom
 from PIL.TiffImagePlugin import IFDRational
 from PySide6.QtWidgets import QLabel, QTextEdit
@@ -61,14 +61,12 @@ class ExifData(ConfigDialog):
                         text_edit.setLineWrapMode(QTextEdit.WidgetWidth)
                         text_edit.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
                         text_edit.setFixedWidth(400)
-                        if self.is_likely_xml(d_str):
-                            font = text_edit.font()
-                            font.setFamily("Courier")
-                            font.setPointSize(11)
-                            text_edit.setFont(font)
-                            text_edit.setFixedHeight(200)
-                        else:
-                            text_edit.setFixedHeight(100)
+                        font = text_edit.font()
+                        font.setFamily("Courier")
+                        font.setPointSize(11)
+                        text_edit.setFont(font)
+                        text_edit.setFixedHeight(200)
+                        text_edit.setFixedHeight(100)
                         self.container_layout.addRow(f"<b>{k}:</b>", text_edit)
         else:
             self.container_layout.addRow("No EXIF Data", QLabel(''))
