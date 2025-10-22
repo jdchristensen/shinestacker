@@ -2,8 +2,8 @@
 
 This page reports the main releases only and the main changes therein.
 
-## [v-.-.-] - 2025-10-21
-** Unreleased changes **
+## [v-.-.-] - 2025-10-22
+** Improved EXIF data handling **
 
 ### Added
 - missing action "Show EXIF Data"
@@ -15,7 +15,7 @@ This page reports the main releases only and the main changes therein.
 - fixed thread warning when the application quits
 
 ### Changed
-- improved EXIF data dialog, and added more displayed data
+- improved EXIF data dialog and added more displayed data
 
 -----
 
