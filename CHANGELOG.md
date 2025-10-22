@@ -13,6 +13,7 @@ This page reports the main releases only and the main changes therein.
 - exif data correctly loaded when opening image file in retouch mode
 - removed duplicated parameter from config dialog (FocusStackBunch)
 - fixed thread warning when the application quits
+- more robust EXIF data code for JPG format prevents possible errors
 
 ### Changed
 - improved EXIF data dialog and added more displayed data

@@ -439,6 +439,7 @@ def write_image_with_exif_data_jpg(exif, image, out_filename, verbose):
 def write_image_with_exif_data_tif(exif, image, out_filename):
     metadata = {"description": f"image generated with {constants.APP_STRING} package"}
     extra_tags, exif_tags = exif_extra_tags_for_tif(exif)
+    image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
     tifffile.imwrite(out_filename, image, metadata=metadata, compression='adobe_deflate',
                      extratags=extra_tags, **exif_tags)
 

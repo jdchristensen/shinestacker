@@ -1,11 +1,11 @@
 import os
 import logging
 import numpy as np
-import cv2
 from PIL import Image
 from PIL.ExifTags import TAGS
 from PIL.PngImagePlugin import PngInfo
 from shinestacker.core.logging import setup_logging
+from shinestacker.algorithms.utils import read_img
 from shinestacker.algorithms.exif import (
     get_exif, copy_exif_from_file_to_file, print_exif, write_image_with_exif_data,
     get_tiff_dtype_count, save_exif_data, exif_dict, exif_extra_tags_for_tif,
@@ -146,8 +146,7 @@ def test_write_image_with_exif_data_jpg():
         logger.info("======== Testing write_image_with_exif_data (JPG) ========")
         jpg_out_filename = output_dir + "/0001_write_test.jpg"
         exif = get_exif("examples/input/img-jpg/0000.jpg")
-        image = Image.open("examples/input/img-jpg/0001.jpg")
-        image = cv2.cvtColor(np.array(image), cv2.COLOR_RGB2BGR)
+        image = read_img("examples/input/img-jpg/0001.jpg")
         write_image_with_exif_data(exif, image, jpg_out_filename, verbose=True)
         written_exif = get_exif(jpg_out_filename)
         logger.info("*** Written JPG EXIF ***")
@@ -192,17 +191,8 @@ def test_write_image_with_exif_data_tiff():
         logger.info("======== Testing write_image_with_exif_data (TIFF) ========")
         tiff_out_filename = output_dir + "/0001_write_test.tif"
         exif = get_exif("examples/input/img-tif/0000.tif")
-        image = Image.open("examples/input/img-tif/0001.tif")
-        if image.mode == 'I;16':
-            image_array = np.array(image, dtype=np.uint16)
-        elif image.mode == 'RGB':
-            if image.getexif().get(258, (8, 8, 8))[0] == 16:
-                image_array = np.array(image, dtype=np.uint16)
-            else:
-                image_array = np.array(image)
-        else:
-            image_array = np.array(image)
-        write_image_with_exif_data(exif, image_array, tiff_out_filename, verbose=True)
+        image = read_img("examples/input/img-tif/0001.tif")
+        write_image_with_exif_data(exif, image, tiff_out_filename, verbose=True)
         written_image = Image.open(tiff_out_filename)
         written_exif = written_image.tag_v2 \
             if hasattr(written_image, 'tag_v2') else \
@@ -274,9 +264,8 @@ def test_write_image_with_exif_data_png():
         exif = get_exif(png_file)
         logger.info("*** Source PNG EXIF ***")
         print_exif(exif)
-        with Image.open(png_file) as source_img:
-            image_array = cv2.cvtColor(np.array(source_img), cv2.COLOR_RGB2BGR)
-            write_image_with_exif_data(exif, image_array, png_out_filename, verbose=True)
+        image_array = read_img(png_file)
+        write_image_with_exif_data(exif, image_array, png_out_filename, verbose=True)
         logger.info("*** Verifying PNG file integrity ***")
         try:
             with Image.open(png_out_filename) as verify_img:
