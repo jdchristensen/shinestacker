@@ -9,7 +9,7 @@ from shinestacker.algorithms.utils import read_img
 from shinestacker.algorithms.exif import (
     get_exif, copy_exif_from_file_to_file, print_exif, write_image_with_exif_data,
     get_tiff_dtype_count, save_exif_data, exif_dict, exif_extra_tags_for_tif,
-    extract_enclosed_data_for_jpg, IFDRational)
+    extract_enclosed_data_for_jpg, safe_decode_bytes, IFDRational)
 
 
 NO_TEST_TIFF_TAGS = [
@@ -589,6 +589,31 @@ def test_exif_decoding_error():
     assert extra_tags is not None
 
 
+def test_safe_decode_bytes():
+    try:
+        setup_logging()
+        logger = logging.getLogger(__name__)
+        logger.info("======== Testing safe_decode_bytes ========")
+        test_cases = [
+            (b"Hello World", "Hello World"),  # ASCII
+            (b"Caf\xe9", "Café"),  # Latin-1 with accent
+            (b"Test \xa9 2024", "Test © 2024"),  # Latin-1 with copyright
+            (b"\xe9", "é"),
+            (b"Invalid \xff\xfe bytes", "Invalid ÿþ bytes"),  # FIXED: Expect Latin-1 decoding
+        ]
+        for input_bytes, expected in test_cases:
+            result = safe_decode_bytes(input_bytes)
+            logger.info(f"Testing {input_bytes!r} => Expected: {expected!r}, Got: {result!r}")
+            assert result == expected, f"Failed for {input_bytes!r}"
+        assert safe_decode_bytes("Already a string") == "Already a string"
+        assert safe_decode_bytes(123) == 123
+        assert safe_decode_bytes(None) is None
+        logger.info("✓ All safe_decode_bytes tests passed")
+    except Exception as e:
+        logger.error(f"safe_decode_bytes test failed: {str(e)}")
+        assert False
+
+
 if __name__ == '__main__':
     test_exif_tiff()
     test_exif_jpg()
@@ -606,3 +631,4 @@ if __name__ == '__main__':
     test_error_handling()
     test_print_exif_edge_cases()
     test_exif_decoding_error()
+    test_safe_decode_bytes()

@@ -89,6 +89,21 @@ def get_exif_from_png(image):
     return exif_data
 
 
+def safe_decode_bytes(data, encoding='utf-8'):
+    if not isinstance(data, bytes):
+        return data
+    encodings = [encoding, 'latin-1', 'cp1252', 'utf-16', 'ascii']
+    for enc in encodings:
+        try:
+            return data.decode(enc, errors='strict')
+        except UnicodeDecodeError:
+            continue
+    try:
+        return data.decode('utf-8', errors='replace')
+    except Exception:
+        return "<<< decode error >>>"
+
+
 def exif_extra_tags_for_tif(exif):
     logger = logging.getLogger(__name__)
     res_x, res_y = exif.get(RESOLUTIONX), exif.get(RESOLUTIONY)
@@ -103,6 +118,7 @@ def exif_extra_tags_for_tif(exif):
     phint = exif.get(PHOTOMETRICINTERPRETATION)
     photometric = phint if phint is not None else None
     extra = []
+
     for tag_id in exif:
         tag, data = TAGS.get(tag_id, tag_id), exif.get(tag_id)
         if isinstance(data, bytes):
@@ -110,7 +126,7 @@ def exif_extra_tags_for_tif(exif):
                 if tag_id not in (IMAGERESOURCES, INTERCOLORPROFILE):
                     if tag_id == XMLPACKET:
                         data = re.sub(b'[^\x20-\x7E]', b'', data)
-                    data = data.decode()
+                    data = safe_decode_bytes(data)
             except Exception:
                 logger.warning(msg=f"Copy: can't decode EXIF tag {tag:25} [#{tag_id}]")
                 data = '<<< decode error >>>'
