@@ -523,15 +523,6 @@ def test_exif_dict_functionality():
             700: b'Test XML data',  # XMLPacket
             34377: b'Photoshop data',  # ImageResources
         }
-        result_hidden = exif_dict(test_exif, hide_xml=True)
-        assert result_hidden is not None, "Should return dict with hide_xml=True"
-        xml_hidden = any('<<< XML data >>>' in str(v) for v in result_hidden.values())
-        photoshop_hidden = any('<<< Photoshop data >>>' in str(v) for v in result_hidden.values())
-        assert xml_hidden or photoshop_hidden, "Should hide some data with hide_xml=True"
-        logger.info("✓ exif_dict with hide_xml=True test passed")
-        result_visible = exif_dict(test_exif, hide_xml=False)
-        assert result_visible is not None, "Should return dict with hide_xml=False"
-        logger.info("✓ exif_dict with hide_xml=False test passed")
         result_none = exif_dict(None)
         assert result_none is None, "Should return None for None input"
         logger.info("✓ exif_dict with None input test passed")
@@ -589,16 +580,16 @@ def test_print_exif_edge_cases():
             282: IFDRational(72, 1),  # XResolution
             283: IFDRational(96, 1),  # YResolution
         }
-        print_exif(rational_exif, hide_xml=True)
+        print_exif(rational_exif)
         logger.info("✓ IFDRational printing test passed")
         string_exif = {
             "CustomTag1": "Custom Value 1",
             "CustomTag2": "Custom Value 2",
         }
-        print_exif(string_exif, hide_xml=True)
+        print_exif(string_exif)
         logger.info("✓ String tag IDs printing test passed")
         empty_exif = {}
-        print_exif(empty_exif, hide_xml=True)
+        print_exif(empty_exif)
         logger.info("✓ Empty EXIF printing test passed")
         logger.info("All print_exif edge case tests passed")
     except Exception as e:

@@ -263,7 +263,23 @@ def write_image_with_exif_data_png(exif, image, out_filename, verbose=False, col
         return
     pil_image = _convert_to_pil_image(image, color_order, verbose, logger)
     pnginfo, icc_profile = _prepare_png_metadata(exif, verbose, logger)
-    _save_png_with_metadata(pil_image, out_filename, pnginfo, icc_profile, verbose, logger)
+    try:
+        save_args = {'format': 'PNG', 'pnginfo': pnginfo}
+        if icc_profile:
+            save_args['icc_profile'] = icc_profile
+            if verbose:
+                logger.info(msg="Saved PNG with ICC profile and metadata")
+        else:
+            if verbose:
+                logger.info(msg="Saved PNG without ICC profile but with metadata")
+        pil_image.save(out_filename, **save_args)
+        if verbose:
+            logger.info(msg=f"Successfully wrote PNG with metadata: {out_filename}")
+    except Exception as e:
+        if verbose:
+            logger.error(msg=f"Failed to write PNG with metadata: {e}")
+            logger.error(traceback.format_exc())
+        pil_image.save(out_filename, format='PNG')
 
 
 def _convert_to_pil_image(image, color_order, verbose, logger):
@@ -374,24 +390,16 @@ def _extract_icc_profile(exif, verbose, logger):
     return None
 
 
-def _save_png_with_metadata(pil_image, out_filename, pnginfo, icc_profile, verbose, logger):
-    try:
-        save_args = {'format': 'PNG', 'pnginfo': pnginfo}
-        if icc_profile:
-            save_args['icc_profile'] = icc_profile
-            if verbose:
-                logger.info(msg="Saved PNG with ICC profile and metadata")
-        else:
-            if verbose:
-                logger.info(msg="Saved PNG without ICC profile but with metadata")
-        pil_image.save(out_filename, **save_args)
-        if verbose:
-            logger.info(msg=f"Successfully wrote PNG with metadata: {out_filename}")
-    except Exception as e:
-        if verbose:
-            logger.error(msg=f"Failed to write PNG with metadata: {e}")
-            logger.error(traceback.format_exc())
-        pil_image.save(out_filename, format='PNG')
+def write_image_with_exif_data_jpg(exif, image, out_filename, verbose):
+    cv2.imwrite(out_filename, image, [int(cv2.IMWRITE_JPEG_QUALITY), 100])
+    add_exif_data_to_jpg_file(exif, out_filename, out_filename, verbose)
+
+
+def write_image_with_exif_data_tif(exif, image, out_filename):
+    metadata = {"description": f"image generated with {constants.APP_STRING} package"}
+    extra_tags, exif_tags = exif_extra_tags_for_tif(exif)
+    tifffile.imwrite(out_filename, image, metadata=metadata, compression='adobe_deflate',
+                     extratags=extra_tags, **exif_tags)
 
 
 def write_image_with_exif_data(exif, image, out_filename, verbose=False, color_order='auto'):
@@ -401,13 +409,9 @@ def write_image_with_exif_data(exif, image, out_filename, verbose=False, color_o
     if verbose:
         print_exif(exif)
     if extension_jpg(out_filename):
-        cv2.imwrite(out_filename, image, [int(cv2.IMWRITE_JPEG_QUALITY), 100])
-        add_exif_data_to_jpg_file(exif, out_filename, out_filename, verbose)
+        write_image_with_exif_data_jpg(exif, image, out_filename, verbose)
     elif extension_tif(out_filename):
-        metadata = {"description": f"image generated with {constants.APP_STRING} package"}
-        extra_tags, exif_tags = exif_extra_tags_for_tif(exif)
-        tifffile.imwrite(out_filename, image, metadata=metadata, compression='adobe_deflate',
-                         extratags=extra_tags, **exif_tags)
+        write_image_with_exif_data_tif(exif, image, out_filename)
     elif extension_png(out_filename):
         write_image_with_exif_data_png(exif, image, out_filename, verbose, color_order=color_order)
     return exif
@@ -447,17 +451,14 @@ def copy_exif_from_file_to_file(exif_filename, in_filename, out_filename=None, v
     return save_exif_data(exif, in_filename, out_filename, verbose)
 
 
-def exif_dict(exif, hide_xml=False):
+def exif_dict(exif):
     if exif is None:
         return None
     exif_data = {}
     for tag_id in exif:
         tag = TAGS.get(tag_id, tag_id)
         print("tag: ", tag_id, tag)
-        if tag_id == XMLPACKET and hide_xml:
-            data = "<<< XML data >>>"
-        else:
-            data = exif.get(tag_id) if hasattr(exif, 'get') else exif[tag_id]
+        data = exif.get(tag_id) if hasattr(exif, 'get') else exif[tag_id]
         if isinstance(data, bytes):
             try:
                 data = data.decode()
@@ -467,8 +468,8 @@ def exif_dict(exif, hide_xml=False):
     return exif_data
 
 
-def print_exif(exif, hide_xml=False):
-    exif_data = exif_dict(exif, hide_xml)
+def print_exif(exif):
+    exif_data = exif_dict(exif)
     if exif_data is None:
         raise RuntimeError('Image has no exif data.')
     logger = logging.getLogger(__name__)
