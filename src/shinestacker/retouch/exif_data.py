@@ -3,6 +3,7 @@ from xml.dom import minidom
 from PIL.TiffImagePlugin import IFDRational
 from PySide6.QtWidgets import QLabel, QTextEdit
 from PySide6.QtCore import Qt
+from PySide6.QtGui import QFontDatabase
 from .. algorithms.exif import exif_dict
 from .. gui.config_dialog import ConfigDialog
 
@@ -61,8 +62,9 @@ class ExifData(ConfigDialog):
                         text_edit.setLineWrapMode(QTextEdit.WidgetWidth)
                         text_edit.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
                         text_edit.setFixedWidth(400)
-                        font = text_edit.font()
-                        font.setFamily("Courier")
+                        font = QFontDatabase.systemFont(QFontDatabase.FixedFont)
+                        font.setPointSize(10)
+                        text_edit.setFont(font)
                         font.setPointSize(11)
                         text_edit.setFont(font)
                         text_edit.setFixedHeight(200)

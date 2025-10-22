@@ -1,7 +1,6 @@
 # pylint: disable=C0114, C0116, W0718, R0911, R0912, E1101, R0915, R1702, R0914, R0917, R0913
 import os
 import re
-import io
 import logging
 import traceback
 import cv2
@@ -37,14 +36,17 @@ NO_COPY_TIFF_TAGS = ["Compression", "StripOffsets", "RowsPerStrip", "StripByteCo
 
 
 def extract_enclosed_data_for_jpg(data, head, foot):
-    size = len(foot.decode('ascii'))
-    xmp_start, xmp_end = data.find(head), data.find(foot)
-    if xmp_start != -1 and xmp_end != -1:
-        return re.sub(
-            b'[^\x20-\x7E]', b'',
-            data[xmp_start:xmp_end + size]
-        ).decode().replace('\x00', '').encode()
-    return None
+    try:
+        xmp_start = data.find(head)
+        if xmp_start == -1:
+            return None
+        xmp_end = data.find(foot, xmp_start)
+        if xmp_end == -1:
+            return None
+        xmp_end += len(foot)
+        return data[xmp_start:xmp_end]
+    except Exception:
+        return None
 
 
 def get_exif(exif_filename):
@@ -151,32 +153,71 @@ def get_tiff_dtype_count(value):
     return 2, len(str(value)) + 1  # Default for othre cases (ASCII string)
 
 
-def add_exif_data_to_jpg_file(exif, in_filenama, out_filename, verbose=False):
+def add_exif_data_to_jpg_file(exif, in_filename, out_filename, verbose=False):
     logger = logging.getLogger(__name__)
     if exif is None:
         raise RuntimeError('No exif data provided.')
     if verbose:
         print_exif(exif)
-    xmp_data = extract_enclosed_data_for_jpg(exif[XMLPACKET], b'<x:xmpmeta', b'</x:xmpmeta>')
-    with Image.open(in_filenama) as image:
-        with io.BytesIO() as buffer:
-            image.save(buffer, format="JPEG", exif=exif.tobytes(), quality=100)
-            jpeg_data = buffer.getvalue()
-            if xmp_data is not None:
-                app1_marker_pos = jpeg_data.find(b'\xFF\xE1')
-                if app1_marker_pos == -1:
-                    app1_marker_pos = len(jpeg_data) - 2
-                updated_data = (
-                    jpeg_data[:app1_marker_pos] +
-                    b'\xFF\xE1' + len(xmp_data).to_bytes(2, 'big') +
-                    xmp_data + jpeg_data[app1_marker_pos:]
-                )
-            else:
-                logger.warning("Copy: can't find XMLPacket in JPG EXIF data")
-                updated_data = jpeg_data
-            with open(out_filename, 'wb') as f:
-                f.write(updated_data)
-    return exif
+    xmp_data = None
+    if XMLPACKET in exif:
+        xmp_data = exif[XMLPACKET]
+        if isinstance(xmp_data, bytes):
+            xmp_start = xmp_data.find(b'<x:xmpmeta')
+            xmp_end = xmp_data.find(b'</x:xmpmeta>')
+            if xmp_start != -1 and xmp_end != -1:
+                xmp_end += len(b'</x:xmpmeta>')
+                xmp_data = xmp_data[xmp_start:xmp_end]
+    with Image.open(in_filename) as image:
+        if hasattr(exif, 'tobytes'):
+            exif_bytes = exif.tobytes()
+        else:
+            exif_bytes = exif
+        image.save(out_filename, "JPEG", exif=exif_bytes, quality=100)
+        if xmp_data and isinstance(xmp_data, bytes):
+            try:
+                _insert_xmp_into_jpeg(out_filename, xmp_data, verbose)
+            except Exception as e:
+                if verbose:
+                    logger.warning(f"Failed to insert XMP data: {e}")
+
+
+def _insert_xmp_into_jpeg(jpeg_path, xmp_data, verbose=False):
+    logger = logging.getLogger(__name__)
+    with open(jpeg_path, 'rb') as f:
+        jpeg_data = f.read()
+    soi_pos = jpeg_data.find(b'\xFF\xD8')
+    if soi_pos == -1:
+        if verbose:
+            logger.warning("No SOI marker found, cannot insert XMP")
+        return
+    insert_pos = soi_pos + 2
+    current_pos = insert_pos
+    while current_pos < len(jpeg_data) - 4:
+        if jpeg_data[current_pos] != 0xFF:
+            break
+        marker = jpeg_data[current_pos + 1]
+        if marker == 0xDA:
+            break
+        segment_length = int.from_bytes(jpeg_data[current_pos + 2:current_pos + 4], 'big')
+        if marker == 0xE1:
+            insert_pos = current_pos + 2 + segment_length
+            current_pos = insert_pos
+            continue
+        current_pos += 2 + segment_length
+    xmp_identifier = b'http://ns.adobe.com/xap/1.0/\x00'
+    xmp_payload = xmp_identifier + xmp_data
+    segment_length = len(xmp_payload) + 2
+    xmp_segment = b'\xFF\xE1' + segment_length.to_bytes(2, 'big') + xmp_payload
+    updated_data = (
+        jpeg_data[:insert_pos] +
+        xmp_segment +
+        jpeg_data[insert_pos:]
+    )
+    with open(jpeg_path, 'wb') as f:
+        f.write(updated_data)
+    if verbose:
+        logger.info("Successfully inserted XMP data into JPEG")
 
 
 def create_xmp_from_exif(exif_data):
@@ -457,7 +498,6 @@ def exif_dict(exif):
     exif_data = {}
     for tag_id in exif:
         tag = TAGS.get(tag_id, tag_id)
-        print("tag: ", tag_id, tag)
         data = exif.get(tag_id) if hasattr(exif, 'get') else exif[tag_id]
         if isinstance(data, bytes):
             try:

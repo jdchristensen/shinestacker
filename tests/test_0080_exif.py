@@ -1,6 +1,7 @@
 import os
 import logging
 import numpy as np
+import cv2
 from PIL import Image
 from PIL.ExifTags import TAGS
 from PIL.PngImagePlugin import PngInfo
@@ -146,7 +147,8 @@ def test_write_image_with_exif_data_jpg():
         jpg_out_filename = output_dir + "/0001_write_test.jpg"
         exif = get_exif("examples/input/img-jpg/0000.jpg")
         image = Image.open("examples/input/img-jpg/0001.jpg")
-        write_image_with_exif_data(exif, np.array(image), jpg_out_filename, verbose=True)
+        image = cv2.cvtColor(np.array(image), cv2.COLOR_RGB2BGR)
+        write_image_with_exif_data(exif, image, jpg_out_filename, verbose=True)
         written_exif = get_exif(jpg_out_filename)
         logger.info("*** Written JPG EXIF ***")
         print_exif(written_exif)
@@ -273,7 +275,7 @@ def test_write_image_with_exif_data_png():
         logger.info("*** Source PNG EXIF ***")
         print_exif(exif)
         with Image.open(png_file) as source_img:
-            image_array = np.array(source_img)
+            image_array = cv2.cvtColor(np.array(source_img), cv2.COLOR_RGB2BGR)
             write_image_with_exif_data(exif, image_array, png_out_filename, verbose=True)
         logger.info("*** Verifying PNG file integrity ***")
         try:
@@ -513,16 +515,6 @@ def test_exif_dict_functionality():
         setup_logging()
         logger = logging.getLogger(__name__)
         logger.info("======== Testing exif_dict functionality ========")
-        test_exif = {
-            256: 1000,  # ImageWidth
-            257: 2000,  # ImageLength
-            270: 'Test Description',  # ImageDescription
-            282: IFDRational(72, 1),  # XResolution
-            283: IFDRational(72, 1),  # YResolution
-            296: 2,     # ResolutionUnit
-            700: b'Test XML data',  # XMLPacket
-            34377: b'Photoshop data',  # ImageResources
-        }
         result_none = exif_dict(None)
         assert result_none is None, "Should return None for None input"
         logger.info("✓ exif_dict with None input test passed")
