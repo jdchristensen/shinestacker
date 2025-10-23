@@ -12,6 +12,7 @@ class ConfigDialog(QDialog):
         self.form_layout = create_form_layout(self)
         scroll_area = QScrollArea()
         scroll_area.setWidgetResizable(True)
+        scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         container_widget = QWidget()
         self.container_layout = QFormLayout(container_widget)
         self.container_layout.setFieldGrowthPolicy(QFormLayout.AllNonFixedFieldsGrow)
