@@ -2,11 +2,11 @@
 
 This page reports the main releases only and the main changes therein.
 
-## [v-.-.-] - 2025-10-22
+## [v-.-.-] - 2025-10-23
 ** Improved EXIF data handling **
 
 ### Added
-- missing action "Show EXIF Data"
+- missing actions "Show EXIF Data" and "Delete EXIF Data"
 
 ### Fixed
 - if saving EXIF data fails, a warning is issued instead of stopping the run

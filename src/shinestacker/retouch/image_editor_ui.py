@@ -272,6 +272,10 @@ class ImageEditorUI(QMainWindow, LayerCollectionHandler):
         show_exif_action.triggered.connect(self.show_exif_data)
         show_exif_action.setProperty("requires_file", True)
         file_menu.addAction(show_exif_action)
+        delete_exif_action = QAction("Delete EXIF Data", self)
+        delete_exif_action.triggered.connect(self.delete_exif_data)
+        delete_exif_action.setProperty("requires_file", True)
+        file_menu.addAction(delete_exif_action)
         file_menu.addSeparator()
         file_menu.addAction("&Import Frames", self.io_gui_handler.import_frames)
         file_menu.addAction("Import &EXIF Data", self.select_exif_path)
@@ -692,6 +696,18 @@ class ImageEditorUI(QMainWindow, LayerCollectionHandler):
     def show_exif_data(self):
         self.exif_dialog = ExifData(self.io_gui_handler.exif_data, self.parent())
         self.exif_dialog.exec()
+
+    def delete_exif_data(self):
+        reply = QMessageBox.question(
+            self,
+            "Confirm Delete",
+            "Warning: the current EXIF data will be erased.\n\nDo you want to continue?",
+            QMessageBox.Yes | QMessageBox.No,
+            QMessageBox.No
+        )
+        if reply == QMessageBox.Yes:
+            self.io_gui_handler.exif_data = None
+            self.io_gui_handler.exif_path = ''
 
     def luminosity_filter(self):
         self.filter_manager.apply("Luminosity, Contrast")

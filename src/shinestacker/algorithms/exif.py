@@ -1,6 +1,5 @@
 # pylint: disable=C0114, C0116, W0718, R0911, R0912, E1101, R0915, R1702, R0914, R0917, R0913
 import os
-import re
 import logging
 import traceback
 import cv2
@@ -128,7 +127,7 @@ def exif_extra_tags_for_tif(exif):
                             decoded = data.decode('utf-8')
                             data = decoded.encode('utf-8')
                         except UnicodeDecodeError:
-                            logger.debug(f"XMLPACKET contains non-UTF8 data, preserving as bytes")
+                            logger.debug("XMLPACKET contains non-UTF8 data, preserving as bytes")
                     else:
                         data = safe_decode_bytes(data)
             except Exception:
