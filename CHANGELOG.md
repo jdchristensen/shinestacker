@@ -2,8 +2,8 @@
 
 This page reports the main releases only and the main changes therein.
 
-## [v-.-.-] - 2025-10-23
-** Improved EXIF data handling **
+## [v1.9.1] - 2025-10-23
+** Improved EXIF data handling GUI refinements **
 
 ### Added
 - missing actions "Show EXIF Data" and "Delete EXIF Data"
@@ -16,7 +16,7 @@ This page reports the main releases only and the main changes therein.
 - more robust EXIF data code for JPG format prevents possible errors
 
 ### Changed
-- improved EXIF data dialog and added more displayed data
+- improved EXIF GUI: more data displayed and improved selection logic
 
 -----
 

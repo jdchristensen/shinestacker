@@ -198,7 +198,7 @@ def add_exif_data_to_jpg_file(exif, in_filename, out_filename, verbose=False):
                 _insert_xmp_into_jpeg(out_filename, xmp_data, verbose)
             except Exception as e:
                 if verbose:
-                    logger.warning(f"Failed to insert XMP data: {e}")
+                    logger.warning(msg=f"Failed to insert XMP data: {e}")
 
 
 def _insert_xmp_into_jpeg(jpeg_path, xmp_data, verbose=False):

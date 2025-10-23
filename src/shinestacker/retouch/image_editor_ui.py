@@ -1,7 +1,8 @@
 # pylint: disable=C0114, C0115, C0116, E0611, R0902, R0914, R0915, R0904, W0108
 from functools import partial
 from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QFrame, QLabel, QMenu,
-                               QListWidget, QSlider, QMainWindow, QMessageBox)
+                               QFileDialog, QListWidget, QSlider, QMainWindow, QMessageBox,
+                               QDialog)
 from PySide6.QtGui import QShortcut, QKeySequence, QAction, QActionGroup
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QGuiApplication
@@ -9,6 +10,7 @@ from .. config.constants import constants
 from .. config.app_config import AppConfig
 from .. config.gui_constants import gui_constants
 from .. gui.recent_file_manager import RecentFileManager
+from .. algorithms.exif import get_exif
 from .image_viewer import ImageViewer
 from .shortcuts_help import ShortcutsHelp
 from .brush import Brush
@@ -688,13 +690,21 @@ class ImageEditorUI(QMainWindow, LayerCollectionHandler):
                 self.redo_action.setEnabled(False)
 
     def select_exif_path(self):
-        path = self.io_gui_handler.select_exif_path()
+        path, _ = QFileDialog.getOpenFileName(None, "Select file with exif data")
         if path:
-            self.show_status_message(f"EXIF data extracted from {path}.")
-        self.show_exif_data()
+            temp_exif_data = get_exif(path)
+            self.exif_dialog = ExifData(temp_exif_data, "Import Selected EXIF Data",
+                                        self.parent(), show_buttons=True)
+            result = self.exif_dialog.exec()
+            if result == QDialog.Accepted:
+                self.io_gui_handler.set_exif_data(temp_exif_data, path)
+                self.show_status_message(f"EXIF data loaded from {path}.")
+            else:
+                self.show_status_message("EXIF data loading cancelled.")
 
     def show_exif_data(self):
-        self.exif_dialog = ExifData(self.io_gui_handler.exif_data, self.parent())
+        self.exif_dialog = ExifData(self.io_gui_handler.exif_data, "EXIF Data",
+                                    self.parent(), show_buttons=False)
         self.exif_dialog.exec()
 
     def delete_exif_data(self):

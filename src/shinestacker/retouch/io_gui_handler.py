@@ -45,6 +45,10 @@ class IOGuiHandler(QObject, LayerCollectionHandler):
         self.exif_data = None
         self.exif_path = ''
 
+    def set_exif_data(self, data, path):
+        self.exif_data = data
+        self.exif_path = path
+
     def current_file_path(self):
         return self.current_file_path_master if self.save_master_only.isChecked() \
             else self.current_file_path_multi
@@ -306,13 +310,6 @@ class IOGuiHandler(QObject, LayerCollectionHandler):
         except Exception as e:
             traceback.print_tb(e.__traceback__)
             QMessageBox.critical(self.parent(), "Save Error", f"Could not save file: {str(e)}")
-
-    def select_exif_path(self):
-        path, _ = QFileDialog.getOpenFileName(None, "Select file with exif data")
-        if path:
-            self.exif_path = path
-            self.exif_data = get_exif(path)
-        return path
 
     def close_file(self):
         self.mark_as_modified_requested.emit(False)

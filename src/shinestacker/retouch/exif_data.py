@@ -9,13 +9,14 @@ from .. gui.config_dialog import ConfigDialog
 
 
 class ExifData(ConfigDialog):
-    def __init__(self, exif, parent=None):
+    def __init__(self, exif, title="EXIF Data", parent=None, show_buttons=True):
         self.exif = exif
-        super().__init__("EXIF Data", parent)
+        super().__init__(title, parent)
         self.reset_button.setVisible(False)
-        self.cancel_button.setVisible(False)
-        self.ok_button.setFixedWidth(100)
-        self.button_box.setAlignment(Qt.AlignCenter)
+        self.cancel_button.setVisible(show_buttons)
+        if not show_buttons:
+            self.ok_button.setFixedWidth(100)
+            self.button_box.setAlignment(Qt.AlignCenter)
 
     def is_likely_xml(self, text):
         if not isinstance(text, str):
