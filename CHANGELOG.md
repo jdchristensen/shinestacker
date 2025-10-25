@@ -2,10 +2,12 @@
 
 This page reports the main releases only and the main changes therein.
 
-## [v1.9.1] - 2025-10-25
+## [v-.-.-] - 2025-10-25
 ** Unpublished changes **
 
 ### Fixed
+- enlarged too tight validity tolerance thresholds for composite tansformations
+- skipping frames with missing alignment transformation
 - focus bunch processing order is now sequential
 
 ---

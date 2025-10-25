@@ -104,7 +104,13 @@ class AlignFramesParallel(AlignFramesBase):
                     self._img_locks[i] = 0
                 elif self._img_cache[i] is not None:
                     cached_images += 1
-            # self.print_message(f"cached images: {cached_images}")
+        nt = 0
+        invalid = []
+        for i, t in enumerate(self._transforms):
+            if t is not None:
+                nt += 1
+            else:
+                invalid.append(i)
         gc.collect()
 
     def begin(self, process):
@@ -176,16 +182,21 @@ class AlignFramesParallel(AlignFramesBase):
             self._transforms[idx] = None
         gc.collect()
         missing_transforms = 0
-        thresholds = self.get_transform_thresholds()
+        thresholds = self.get_transform_thresholds_large()
         for i in range(n_frames):
             if self._cumulative_transforms[i] is not None:
                 self._cumulative_transforms[i] = self._cumulative_transforms[i].astype(np.float32)
-                is_valid, _reason, result = check_transform(
+                is_valid, reason, result = check_transform(
                     self._cumulative_transforms[i], self._img_shapes[i],
                     transform_type, *thresholds)
                 if is_valid:
                     self.save_transform_result(i, result)
                 else:
+                    self.print_message(
+                        f"invalid cumulative transform for {self.image_str(i)}",
+                        color=constants.LOG_COLOR_WARNING, level=logging.WARNING)
+                if self.alignment_config['abort_abnormal']:
+                    raise RuntimeError("invalid cumulative transformation: {reason}")
                     self._cumulative_transforms[i] = None
             else:
                 missing_transforms += 1
@@ -337,9 +348,9 @@ class AlignFramesParallel(AlignFramesBase):
         m = self._cumulative_transforms[idx]
         if m is None:
             self.print_message(
-                f"no transformation for {self.image_str(idx)}, skipping alignment",
+                f"no transformation for {self.image_str(idx)}, image skipped",
                 color=constants.LOG_COLOR_WARNING, level=logging.WARNING)
-            return img_0
+            return None
         transform_type = self.alignment_config['transform']
         if transform_type == constants.ALIGN_RIGID and m.shape != (2, 3):
             self.print_message(f"invalid matrix shape for rigid transform: {m.shape}")
