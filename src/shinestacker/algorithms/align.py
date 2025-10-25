@@ -496,7 +496,6 @@ def align_images(img_ref, img_0, feature_config=None, matching_config=None, alig
         blurred_warp = cv2.GaussianBlur(
             img_warp, (21, 21), sigmaX=alignment_config['border_blur'])
         img_warp[mask == 0] = blurred_warp[mask == 0]
-    print(f"align matches: {n_good_matches}, transform: ", m)
     return n_good_matches, m, img_warp
 
 
