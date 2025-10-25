@@ -2,6 +2,14 @@
 
 This page reports the main releases only and the main changes therein.
 
+## [v1.9.1] - 2025-10-25
+** Unpublished changes **
+
+### Fixed
+- focus bunch processing order is now sequential
+
+---
+
 ## [v1.9.1] - 2025-10-23
 ** Improved EXIF data handling GUI refinements **
 
