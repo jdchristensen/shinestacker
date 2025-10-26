@@ -196,8 +196,8 @@ class AlignFramesParallel(AlignFramesBase):
                         f"invalid cumulative transform for {self.image_str(i)}",
                         color=constants.LOG_COLOR_WARNING, level=logging.WARNING)
                 if self.alignment_config['abort_abnormal']:
-                    raise RuntimeError("invalid cumulative transformation: {reason}")
                     self._cumulative_transforms[i] = None
+                    raise RuntimeError(f"invalid cumulative transformation: {reason}")
             else:
                 missing_transforms += 1
         msg = "feature extaction completed"
