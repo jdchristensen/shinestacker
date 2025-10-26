@@ -6,7 +6,7 @@ This page reports the main releases only and the main changes therein.
 ** Unpublished changes **
 
 ### Added
-- new keyboard shortcuts, ",", ".", ";", ":" to control brush opacity and flow
+- new keyboard and mouse wheel shortcuts to control brush opacity and flow
 
 ### Fixed
 - enlarged too tight validity tolerance thresholds for composite tansformations

@@ -6,7 +6,7 @@ import numpy as np
 from PySide6.QtCore import Qt, QPointF, QTime, QPoint, Signal, QRectF
 from PySide6.QtGui import QImage, QPainter, QColor, QBrush, QPen, QCursor, QPixmap, QPainterPath
 from PySide6.QtWidgets import (
-    QGraphicsEllipseItem, QGraphicsView, QGraphicsScene, QGraphicsPixmapItem,
+    QGraphicsEllipseItem, QGraphicsView, QGraphicsScene, QGraphicsPixmapItem, QApplication,
     QGraphicsItemGroup, QGraphicsPathItem)
 from .. config.gui_constants import gui_constants
 from .. config.app_config import AppConfig
@@ -82,7 +82,7 @@ class ViewSignals:
     end_copy_brush_area_requested = Signal()
     brush_size_change_requested = Signal(int)  # +1 or -1
     brush_hardness_change_requested = Signal(int)
-    brush_opacity_change_requeted = Signal(int)
+    brush_opacity_change_requested = Signal(int)
     brush_flow_change_requested = Signal(int)
     needs_update_requested = Signal()
 
@@ -447,8 +447,15 @@ class ViewStrategy(LayerCollectionHandler):
         if self.empty() or self.gesture_active:
             return
         if event.source() == Qt.MouseEventNotSynthesized:  # Physical mouse
-            if self.control_pressed:
+            modifiers = QApplication.keyboardModifiers()
+            if modifiers & Qt.ControlModifier and modifiers & Qt.ShiftModifier:
+                self.brush_flow_change_requested.emit(1 if event.angleDelta().y() > 0 else -1)
+            elif modifiers & Qt.ControlModifier:
                 self.brush_size_change_requested.emit(1 if event.angleDelta().y() > 0 else -1)
+            elif modifiers & Qt.ShiftModifier:
+                self.brush_hardness_change_requested.emit(1 if event.angleDelta().y() > 0 else -1)
+            elif modifiers & Qt.AltModifier:
+                self.brush_opacity_change_requested.emit(1 if event.angleDelta().y() > 0 else -1)
             else:
                 self.handle_zoom_wheel(self.get_view_with_mouse(event), event)
             self.update_brush_cursor()
