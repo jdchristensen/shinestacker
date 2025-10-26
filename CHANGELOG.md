@@ -9,10 +9,11 @@ This page reports the main releases only and the main changes therein.
 - new keyboard and mouse wheel shortcuts to control brush opacity and flow
 
 ### Fixed
-- enlarged too tight validity tolerance thresholds for composite tansformations
+- enlarged previously too tight validity tolerance thresholds for composite tansformations
 - skipping frames with missing alignment transformation
 - focus bunch processing order is now sequential
-- fixed missing exposure data in JPEG EXIF data
+- missing exposure data in JPEG EXIF data
+- conversion from JPEG to TIFF EXIF formats
 
 ---
 

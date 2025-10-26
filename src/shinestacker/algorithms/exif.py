@@ -439,6 +439,7 @@ def clean_data_for_tiff(data):
 
 
 def exif_extra_tags_for_tif(exif):
+    logger = logging.getLogger(__name__)
     res_x, res_y = exif.get(RESOLUTIONX), exif.get(RESOLUTIONY)
     if not (res_x is None or res_y is None):
         resolution = ((res_x.numerator, res_x.denominator), (res_y.numerator, res_y.denominator))
@@ -447,7 +448,7 @@ def exif_extra_tags_for_tif(exif):
     res_u = exif.get(RESOLUTIONUNIT)
     resolutionunit = res_u if res_u is not None else 'inch'
     sw = exif.get(SOFTWARE)
-    software = sw if sw is not None else constants.APP_TITLE
+    software = clean_data_for_tiff(sw) if sw is not None else constants.APP_TITLE
     phint = exif.get(PHOTOMETRICINTERPRETATION)
     photometric = phint if phint is not None else None
     extra = []
@@ -458,20 +459,44 @@ def exif_extra_tags_for_tif(exif):
         if tag_id == SOFTWARE:
             continue
         if isinstance(data, IFDRational):
-            data = (data.numerator, data.denominator)
-        elif isinstance(data, bytes):
+            if data.denominator == 0:
+                data = (0, 1)  # Avoid division by zero
+            else:
+                data = (data.numerator, data.denominator)
+            dtype, count = 5, 1  # RATIONAL type in TIFF
+            extra.append((tag_id, dtype, count, data, False))
+            continue
+        if hasattr(data, '__iter__') and not isinstance(data, (str, bytes)):
             try:
-                if tag_id not in (IMAGERESOURCES, INTERCOLORPROFILE, XMLPACKET):
-                    data = data.decode('ascii', errors='ignore')
-                elif tag_id == XMLPACKET:
-                    pass
+                clean_data = []
+                for x in data:
+                    try:
+                        if hasattr(x, 'denominator') and x.denominator == 0:
+                            clean_data.append(float('nan'))
+                        else:
+                            clean_data.append(float(x))
+                    except (ZeroDivisionError, ValueError, TypeError):
+                        clean_data.append(float('nan'))
+                extra.append((tag_id, 12, len(clean_data), tuple(clean_data), False))
+                continue
+            except Exception as e:
+                logger.warning(msg=f"Failed to process tuple for tag {tag}: {e}")
+        if isinstance(data, bytes):
+            try:
+                data = data.decode('ascii', errors='ignore')
+                if not data:
+                    continue
             except Exception:
                 continue
         if isinstance(data, str):
             data = data.encode('ascii', 'ignore').decode('ascii')
             if not data:
                 continue
-        extra.append((tag_id, *get_tiff_dtype_count(data), data, False))
+        try:
+            dtype, count = get_tiff_dtype_count(data)
+            extra.append((tag_id, dtype, count, data, False))
+        except Exception as e:
+            logger.warning(msg=f"Failed to process tag {tag}: {e}")
     return extra, {
         'resolution': resolution,
         'resolutionunit': resolutionunit,
@@ -481,17 +506,17 @@ def exif_extra_tags_for_tif(exif):
 
 
 def write_image_with_exif_data_tif(exif, image, out_filename):
-    metadata = {"description": f"image generated with {constants.APP_STRING} package"}
-    extra_tags, exif_tags = exif_extra_tags_for_tif(exif)
+    logger = logging.getLogger(__name__)
     image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
     try:
+        metadata = {"description": f"image generated with {constants.APP_STRING} package"}
+        extra_tags, exif_tags = exif_extra_tags_for_tif(exif)
         tifffile.imwrite(out_filename, image, metadata=metadata, compression='adobe_deflate',
                          extratags=extra_tags, **exif_tags)
     except Exception as e:
-        logger = logging.getLogger(__name__)
-        logger.warning(
-            msg=f"Failed to write EXIF data into TIFF file: {str(e)}. "
-                "EXIF data not written with file.")
+        logger.error(
+            msg=f"Failed to write EXIF data into TIFF file: {e}. "
+            "EXIF data not written with file.")
         tifffile.imwrite(out_filename, image, compression='adobe_deflate')
 
 
