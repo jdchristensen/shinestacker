@@ -81,6 +81,9 @@ class ViewSignals:
     temp_view_requested = Signal(bool)
     end_copy_brush_area_requested = Signal()
     brush_size_change_requested = Signal(int)  # +1 or -1
+    brush_hardness_change_requested = Signal(int)
+    brush_opacity_change_requeted = Signal(int)
+    brush_flow_change_requested = Signal(int)
     needs_update_requested = Signal()
 
 
