@@ -12,6 +12,7 @@ This page reports the main releases only and the main changes therein.
 - enlarged too tight validity tolerance thresholds for composite tansformations
 - skipping frames with missing alignment transformation
 - focus bunch processing order is now sequential
+- fixed missing exposure data in JPEG EXIF data
 
 ---
 

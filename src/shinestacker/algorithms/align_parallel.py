@@ -105,12 +105,6 @@ class AlignFramesParallel(AlignFramesBase):
                 elif self._img_cache[i] is not None:
                     cached_images += 1
         nt = 0
-        invalid = []
-        for i, t in enumerate(self._transforms):
-            if t is not None:
-                nt += 1
-            else:
-                invalid.append(i)
         gc.collect()
 
     def begin(self, process):

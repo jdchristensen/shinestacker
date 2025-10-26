@@ -53,9 +53,19 @@ def get_exif(exif_filename):
         raise RuntimeError(f"File does not exist: {exif_filename}")
     image = Image.open(exif_filename)
     if extension_tif(exif_filename):
-        return image.tag_v2 if hasattr(image, 'tag_v2') else image.getexif()
+        return image.tag_v2 if hasattr(image, 'tag_v2') else image.getexif()    
     if extension_jpg(exif_filename):
-        exif_data = image.getexif()
+        exif_data = image.getexif()        
+        if hasattr(image, 'getexif') and image.getexif() is not None:
+            exif_dict = dict(image.getexif())
+            if 34665 in exif_dict:  # EXIF SubIFD pointer
+                try:
+                    exif_subifd = image.getexif().get_ifd(34665)
+                    for tag_id, value in exif_subifd.items():
+                        exif_data[tag_id] = value
+                except Exception as e:
+                    logger = logging.getLogger(__name__)
+                    logger.debug(f"Could not extract EXIF SubIFD: {e}")        
         with open(exif_filename, 'rb') as f:
             data = extract_enclosed_data_for_jpg(f.read(), b'<?xpacket', b'<?xpacket end="w"?>')
             if data is not None:

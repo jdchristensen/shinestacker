@@ -614,6 +614,136 @@ def test_safe_decode_bytes():
         assert False
 
 
+def test_exif_exposure_data_detection():
+    try:
+        setup_logging()
+        logger = logging.getLogger(__name__)
+        output_dir = "output/img-exif"
+        if not os.path.exists(output_dir):
+            os.makedirs(output_dir)
+        logger.info("======== Testing EXIF Exposure Data Detection (Including SubIFD) ========")
+        source_file = "examples/input/img-exif/0000.jpg"
+        if not os.path.exists(source_file):
+            logger.warning(f"Test file not found: {source_file}")
+            return
+        original_exif = get_exif(source_file)
+        logger.info("*** All EXIF Tags Found ***")
+        print_exif(original_exif)
+        exposure_tags = {
+            # Main EXIF directory
+            33434: "ExposureTime",
+            33437: "FNumber",
+            34855: "ISOSpeedRatings",
+            34850: "ExposureProgram",
+            # EXIF SubIFD tags
+            37377: "ShutterSpeedValue",
+            37378: "ApertureValue",
+            37379: "BrightnessValue",
+            37380: "ExposureBiasValue",
+            37381: "MaxApertureValue",
+            37382: "SubjectDistance",
+            37383: "MeteringMode",
+            37384: "LightSource",
+            37385: "Flash",
+            37386: "FocalLength",
+            41986: "ExposureMode",
+            41987: "WhiteBalance",
+            42034: "ExposureIndex"
+        }
+        found_exposure_data = {}
+        for tag_id, tag_name in exposure_tags.items():
+            if tag_id in original_exif:
+                found_exposure_data[tag_name] = original_exif[tag_id]
+        if found_exposure_data:
+            logger.info("=== FOUND EXPOSURE DATA ===")
+            for tag_name, value in found_exposure_data.items():
+                logger.info(f"  {tag_name}: {value}")
+            out_file = output_dir + "/test_exposure_preservation.jpg"
+            test_target = "examples/input/img-jpg/0001.jpg"
+            if os.path.exists(test_target):
+                copy_exif_from_file_to_file(source_file, test_target, out_file, verbose=True)
+                copied_exif = get_exif(out_file)
+                logger.info("=== VERIFYING COPIED EXPOSURE DATA ===")
+                preserved_count = 0
+                for tag_name in found_exposure_data.keys():
+                    tag_id = [k for k, v in exposure_tags.items() if v == tag_name][0]
+                    if tag_id in copied_exif:
+                        preserved_count += 1
+                        logger.info(f"  ✓ {tag_name} preserved: {copied_exif[tag_id]}")
+                    else:
+                        logger.warning(f"  ✗ {tag_name} NOT preserved")
+                logger.info(
+                    f"=== RESULT: {preserved_count}/{len(found_exposure_data)} "
+                    "exposure tags preserved ===")
+        else:
+            logger.warning("=== NO EXPOSURE DATA FOUND ===")
+            logger.warning("Even with SubIFD extraction, no exposure data was found.")
+            logger.warning("This could mean:")
+            logger.warning("1. The file was heavily processed and exposure data was stripped")
+            logger.warning("2. The camera didn't write exposure data to this particular file")
+            logger.warning("3. There's an issue with the EXIF SubIFD extraction")
+    except Exception as e:
+        logger.error(f"Exposure data detection test failed: {str(e)}")
+        import traceback
+        logger.error(traceback.format_exc())
+
+
+def test_exif_subifd_exposure_preservation():
+    try:
+        setup_logging()
+        logger = logging.getLogger(__name__)
+        output_dir = "output/img-exif"
+        if not os.path.exists(output_dir):
+            os.makedirs(output_dir)
+        logger.info("======== Testing EXIF SubIFD Exposure Data Preservation ========")
+        source_file = "examples/input/img-exif/0000.jpg"
+        if not os.path.exists(source_file):
+            logger.warning("Test file not found, skipping SubIFD test")
+            return
+        original_exif = get_exif(source_file)
+        subifd_exposure_tags = {
+            33434: "ExposureTime",
+            33437: "FNumber",
+            34855: "ISOSpeedRatings",
+            37377: "ShutterSpeedValue",
+            37378: "ApertureValue",
+            37386: "FocalLength"
+        }
+        found_tags = []
+        for tag_id, tag_name in subifd_exposure_tags.items():
+            if tag_id in original_exif:
+                found_tags.append(tag_name)
+                logger.info(f"✓ Found SubIFD tag: {tag_name} = {original_exif[tag_id]}")
+            else:
+                logger.error(f"✗ Missing SubIFD tag: {tag_name}")
+                assert False, f"SubIFD tag {tag_name} not found"
+        out_file = output_dir + "/test_subifd_preservation.jpg"
+        test_target = "examples/input/img-jpg/0001.jpg"
+        if os.path.exists(test_target):
+            copy_exif_from_file_to_file(source_file, test_target, out_file, verbose=False)
+            copied_exif = get_exif(out_file)
+            preserved_count = 0
+            for tag_id, tag_name in subifd_exposure_tags.items():
+                if tag_id in original_exif and tag_id in copied_exif:
+                    if original_exif[tag_id] == copied_exif[tag_id]:
+                        preserved_count += 1
+                    else:
+                        logger.error(
+                            f"SubIFD tag {tag_name} not preserved: "
+                            f"{original_exif[tag_id]} -> {copied_exif[tag_id]}")
+            logger.info(
+                f"=== RESULT: {preserved_count}/{len(subifd_exposure_tags)} "
+                "SubIFD exposure tags preserved ===")
+            assert preserved_count == len(subifd_exposure_tags), \
+                "Not all SubIFD exposure tags were preserved"
+        logger.info("✓ EXIF SubIFD exposure preservation test passed")
+    except Exception as e:
+        logger.error(f"SubIFD exposure test failed: {str(e)}")
+        import traceback
+        logger.error(traceback.format_exc())
+        assert False
+
+
 if __name__ == '__main__':
     test_exif_tiff()
     test_exif_jpg()
@@ -632,3 +762,5 @@ if __name__ == '__main__':
     test_print_exif_edge_cases()
     test_exif_decoding_error()
     test_safe_decode_bytes()
+    test_exif_exposure_data_detection()
+    test_exif_subifd_exposure_preservation()
