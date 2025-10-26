@@ -53,19 +53,19 @@ def get_exif(exif_filename):
         raise RuntimeError(f"File does not exist: {exif_filename}")
     image = Image.open(exif_filename)
     if extension_tif(exif_filename):
-        return image.tag_v2 if hasattr(image, 'tag_v2') else image.getexif()    
+        return image.tag_v2 if hasattr(image, 'tag_v2') else image.getexif()
     if extension_jpg(exif_filename):
-        exif_data = image.getexif()        
+        exif_data = image.getexif()
         if hasattr(image, 'getexif') and image.getexif() is not None:
-            exif_dict = dict(image.getexif())
-            if 34665 in exif_dict:  # EXIF SubIFD pointer
+            exif_data_dict = dict(image.getexif())
+            if 34665 in exif_data_dict:  # EXIF SubIFD pointer
                 try:
                     exif_subifd = image.getexif().get_ifd(34665)
                     for tag_id, value in exif_subifd.items():
                         exif_data[tag_id] = value
                 except Exception as e:
                     logger = logging.getLogger(__name__)
-                    logger.debug(f"Could not extract EXIF SubIFD: {e}")        
+                    logger.debug(msg=f"Could not extract EXIF SubIFD: {e}")
         with open(exif_filename, 'rb') as f:
             data = extract_enclosed_data_for_jpg(f.read(), b'<?xpacket', b'<?xpacket end="w"?>')
             if data is not None:
@@ -111,46 +111,6 @@ def safe_decode_bytes(data, encoding='utf-8'):
         return data.decode('utf-8', errors='replace')
     except Exception:
         return "<<< decode error >>>"
-
-
-def exif_extra_tags_for_tif(exif):
-    logger = logging.getLogger(__name__)
-    res_x, res_y = exif.get(RESOLUTIONX), exif.get(RESOLUTIONY)
-    if not (res_x is None or res_y is None):
-        resolution = ((res_x.numerator, res_x.denominator), (res_y.numerator, res_y.denominator))
-    else:
-        resolution = ((720000, 10000), (720000, 10000))
-    res_u = exif.get(RESOLUTIONUNIT)
-    resolutionunit = res_u if res_u is not None else 'inch'
-    sw = exif.get(SOFTWARE)
-    software = sw if sw is not None else "N/A"
-    phint = exif.get(PHOTOMETRICINTERPRETATION)
-    photometric = phint if phint is not None else None
-    extra = []
-    for tag_id in exif:
-        tag, data = TAGS.get(tag_id, tag_id), exif.get(tag_id)
-        if isinstance(data, bytes):
-            try:
-                if tag_id not in (IMAGERESOURCES, INTERCOLORPROFILE):
-                    if tag_id == XMLPACKET:
-                        try:
-                            decoded = data.decode('utf-8')
-                            data = decoded.encode('utf-8')
-                        except UnicodeDecodeError:
-                            logger.debug("XMLPACKET contains non-UTF8 data, preserving as bytes")
-                    else:
-                        data = safe_decode_bytes(data)
-            except Exception:
-                logger.warning(msg=f"Copy: can't decode EXIF tag {tag:25} [#{tag_id}]")
-                data = '<<< decode error >>>'
-        if isinstance(data, IFDRational):
-            data = (data.numerator, data.denominator)
-        if tag not in NO_COPY_TIFF_TAGS and tag_id not in NO_COPY_TIFF_TAGS_ID:
-            extra.append((tag_id, *get_tiff_dtype_count(data), data, False))
-        else:
-            logger.debug(msg=f"Skip tag {tag:25} [#{tag_id}]")
-    return extra, {'resolution': resolution, 'resolutionunit': resolutionunit,
-                   'software': software, 'photometric': photometric}
 
 
 def get_tiff_dtype_count(value):
@@ -465,12 +425,70 @@ def write_image_with_exif_data_jpg(exif, image, out_filename, verbose):
     add_exif_data_to_jpg_file(exif, out_filename, out_filename, verbose)
 
 
+def clean_data_for_tiff(data):
+    if isinstance(data, str):
+        return data.encode('ascii', 'ignore').decode('ascii')
+    if isinstance(data, bytes):
+        try:
+            return data.decode('utf-8', errors='ignore').encode('ascii', 'ignore').decode('ascii')
+        except Exception:
+            return ""
+    if isinstance(data, IFDRational):
+        return (data.numerator, data.denominator)
+    return data
+
+
+def exif_extra_tags_for_tif(exif):
+    res_x, res_y = exif.get(RESOLUTIONX), exif.get(RESOLUTIONY)
+    if not (res_x is None or res_y is None):
+        resolution = ((res_x.numerator, res_x.denominator), (res_y.numerator, res_y.denominator))
+    else:
+        resolution = ((720000, 10000), (720000, 10000))
+    res_u = exif.get(RESOLUTIONUNIT)
+    resolutionunit = res_u if res_u is not None else 'inch'
+    sw = exif.get(SOFTWARE)
+    software = sw if sw is not None else constants.APP_TITLE
+    phint = exif.get(PHOTOMETRICINTERPRETATION)
+    photometric = phint if phint is not None else None
+    extra = []
+    for tag_id in exif:
+        tag, data = TAGS.get(tag_id, tag_id), exif.get(tag_id)
+        if tag in NO_COPY_TIFF_TAGS or tag_id in NO_COPY_TIFF_TAGS_ID:
+            continue
+        if tag_id == SOFTWARE:
+            continue
+        if isinstance(data, IFDRational):
+            data = (data.numerator, data.denominator)
+        elif isinstance(data, bytes):
+            try:
+                if tag_id not in (IMAGERESOURCES, INTERCOLORPROFILE, XMLPACKET):
+                    data = data.decode('ascii', errors='ignore')
+                elif tag_id == XMLPACKET:
+                    pass
+            except Exception:
+                continue
+        if isinstance(data, str):
+            data = data.encode('ascii', 'ignore').decode('ascii')
+            if not data:
+                continue
+        extra.append((tag_id, *get_tiff_dtype_count(data), data, False))
+    return extra, {
+        'resolution': resolution,
+        'resolutionunit': resolutionunit,
+        'software': software,
+        'photometric': photometric
+    }
+
+
 def write_image_with_exif_data_tif(exif, image, out_filename):
     metadata = {"description": f"image generated with {constants.APP_STRING} package"}
     extra_tags, exif_tags = exif_extra_tags_for_tif(exif)
     image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-    tifffile.imwrite(out_filename, image, metadata=metadata, compression='adobe_deflate',
-                     extratags=extra_tags, **exif_tags)
+    try:
+        tifffile.imwrite(out_filename, image, metadata=metadata, compression='adobe_deflate',
+                         extratags=extra_tags, **exif_tags)
+    except Exception:
+        tifffile.imwrite(out_filename, image, compression='adobe_deflate')
 
 
 def write_image_with_exif_data(exif, image, out_filename, verbose=False, color_order='auto'):
@@ -548,7 +566,7 @@ def print_exif(exif):
             data = f"{data.numerator}/{data.denominator}"
         data_str = f"{data}"
         if len(data_str) > 40:
-            data_str = f"{data_str[:40]}..."
+            data_str = f"{data_str[:40]}... (truncated)"
         if isinstance(tag_id, int):
             tag_id_str = f"[#{tag_id:5d}]"
         else:
