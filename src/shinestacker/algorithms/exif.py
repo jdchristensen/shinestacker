@@ -61,16 +61,8 @@ def get_exif(exif_filename):
             if 34665 in exif_data_dict:  # EXIF SubIFD pointer
                 try:
                     exif_subifd = image.getexif().get_ifd(34665)
-                    logger = logging.getLogger(__name__)
-                    logger.info("=== SubIFD Tags Being Added ===")
                     for tag_id, value in exif_subifd.items():
-                        tag_name = TAGS.get(tag_id, f"Unknown_{tag_id}")
-                        value_str = str(value)
-                        if len(value_str) > 100:
-                            value_str = f"{value_str[:100]}..."
-                        logger.info(f"SubIFD tag: {tag_name} ({tag_id}) = {value_str}")
                         exif_data[tag_id] = value
-                    logger.info("=== End SubIFD Tags ===")
                 except Exception as e:
                     logger = logging.getLogger(__name__)
                     logger.debug(msg=f"Could not extract EXIF SubIFD: {e}")
