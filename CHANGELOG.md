@@ -2,8 +2,11 @@
 
 This page reports the main releases only and the main changes therein.
 
-## [v-.-.-] - 2025-10-25
+## [v-.-.-] - 2025-10-26
 ** Unpublished changes **
+
+### Added
+- new keyboard shortcuts, ",", ".", ";", ":" to control brush opacity and flow
 
 ### Fixed
 - enlarged too tight validity tolerance thresholds for composite tansformations

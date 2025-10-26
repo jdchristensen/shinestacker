@@ -608,6 +608,18 @@ class ImageEditorUI(QMainWindow, LayerCollectionHandler):
         if event.text() == '}':
             self.brush_tool.increase_brush_hardness()
             return
+        if event.text() == ',':
+            self.brush_tool.decrease_brush_opacity()
+            return
+        if event.text() == '.':
+            self.brush_tool.increase_brush_opacity()
+            return
+        if event.text() == ';':
+            self.brush_tool.decrease_brush_flow()
+            return
+        if event.text() == ':':
+            self.brush_tool.increase_brush_flow()
+            return
         super().keyPressEvent(event)
     # pylint: enable=C0103
 
