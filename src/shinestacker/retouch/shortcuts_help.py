@@ -90,7 +90,6 @@ class ShortcutsHelp(QDialog):
             "Space + Drag": "Move",
             "Wheel": "Zoom in/out",
             "Ctrl + Wheel": "Adjust brush size",
-            "Ctrl + Wheel": "Adjust brush size",
             "Shift + Wheel": "Adjust brush hardness",
             "Alt + Wheel": "Adjust brush opacity",
             "Ctrl + Shift + Wheel": "Adjust brush flow",
