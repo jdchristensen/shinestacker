@@ -487,7 +487,11 @@ def write_image_with_exif_data_tif(exif, image, out_filename):
     try:
         tifffile.imwrite(out_filename, image, metadata=metadata, compression='adobe_deflate',
                          extratags=extra_tags, **exif_tags)
-    except Exception:
+    except Exception as e:
+        logger = logging.getLogger(__name__)
+        logger.warning(
+            msg=f"Failed to write EXIF data into TIFF file: {str(e)}. "
+                "EXIF data not written with file.")
         tifffile.imwrite(out_filename, image, compression='adobe_deflate')
 
 
