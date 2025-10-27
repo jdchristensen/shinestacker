@@ -129,10 +129,19 @@ def _parse_xmp_value(exif_tag, value):
                 return float(value) if value else 0.0
         return float(value) if value else 0.0
     if exif_tag == 34855:  # ISO
+        if '<rdf:li>' in value:
+            import re
+            matches = re.findall(r'<rdf:li>([^<]+)</rdf:li>', value)
+            if matches:
+                value = matches[0]
         try:
             return int(value)
         except ValueError:
             return value
+    if exif_tag in [306, 36867]:  # DateTime and DateTimeOriginal
+        if 'T' in value:
+            value = value.replace('T', ' ').replace('-', ':')
+        return value
     return value
 
 
