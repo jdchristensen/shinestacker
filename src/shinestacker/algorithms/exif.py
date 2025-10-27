@@ -1,7 +1,6 @@
 # pylint: disable=C0114, C0116, W0718, R0911, R0912, E1101, R0915, R1702, R0914, R0917, R0913
 import os
 import logging
-import traceback
 import cv2
 import numpy as np
 from PIL import Image
@@ -272,7 +271,6 @@ def get_tiff_dtype_count(value):
 
 
 def add_exif_data_to_jpg_file(exif, in_filename, out_filename, verbose=False):
-    logger = logging.getLogger(__name__)
     if exif is None:
         raise RuntimeError('No exif data provided.')
     if verbose:
@@ -283,7 +281,7 @@ def add_exif_data_to_jpg_file(exif, in_filename, out_filename, verbose=False):
             exif_bytes = exif.tobytes()
         else:
             jpeg_exif = Image.Exif()
-            for tag_id, value in (exif.items() if hasattr(exif, 'items') else exif):
+            for tag_id, value in exif.items():
                 if tag_id != XMLPACKET:
                     try:
                         jpeg_exif[tag_id] = value
@@ -292,11 +290,7 @@ def add_exif_data_to_jpg_file(exif, in_filename, out_filename, verbose=False):
             exif_bytes = jpeg_exif.tobytes()
         image.save(out_filename, "JPEG", exif=exif_bytes, quality=100)
         if xmp_data and isinstance(xmp_data, bytes):
-            try:
-                _insert_xmp_into_jpeg(out_filename, xmp_data, verbose)
-            except Exception as e:
-                if verbose:
-                    logger.warning(msg=f"Failed to insert XMP data: {e}")
+            _insert_xmp_into_jpeg(out_filename, xmp_data, verbose)
 
 
 def _insert_xmp_into_jpeg(jpeg_path, xmp_data, verbose=False):
@@ -451,18 +445,10 @@ def write_image_with_exif_data_png(exif, image, out_filename, verbose=False, col
         save_args = {'format': 'PNG', 'pnginfo': pnginfo}
         if icc_profile:
             save_args['icc_profile'] = icc_profile
-            if verbose:
-                logger.info(msg="Saved PNG with ICC profile and metadata")
-        else:
-            if verbose:
-                logger.info(msg="Saved PNG without ICC profile but with metadata")
         pil_image.save(out_filename, **save_args)
-        if verbose:
-            logger.info(msg=f"Successfully wrote PNG with metadata: {out_filename}")
     except Exception as e:
         if verbose:
             logger.error(msg=f"Failed to write PNG with metadata: {e}")
-            logger.error(traceback.format_exc())
         pil_image.save(out_filename, format='PNG')
 
 
@@ -481,7 +467,7 @@ def _convert_to_pil_image(image, color_order, verbose, logger):
 def _prepare_png_metadata(exif, verbose, logger):
     pnginfo = PngInfo()
     icc_profile = None
-    xmp_data = _extract_xmp_data(exif, verbose, logger)
+    xmp_data = _extract_xmp_data(exif)
     if xmp_data:
         pnginfo.add_text("XML:com.adobe.xmp", xmp_data)
         if verbose:
@@ -491,23 +477,16 @@ def _prepare_png_metadata(exif, verbose, logger):
     return pnginfo, icc_profile
 
 
-def _extract_xmp_data(exif, verbose, logger):
+def _extract_xmp_data(exif):
     for key, value in exif.items():
         if isinstance(key, str) and ('xmp' in key.lower() or 'xml' in key.lower()):
             if isinstance(value, bytes):
                 try:
-                    xmp_data = value.decode('utf-8', errors='ignore')
-                    if verbose:
-                        logger.info(msg=f"Found existing XMP data in source: {key}")
-                    return xmp_data
+                    return value.decode('utf-8', errors='ignore')
                 except Exception:
                     continue
             elif isinstance(value, str):
-                if verbose:
-                    logger.info(msg=f"Found existing XMP data in source: {key}")
                 return value
-    if verbose:
-        logger.info("Generated new XMP data from EXIF")
     return create_xmp_from_exif(exif)
 
 
@@ -640,68 +619,52 @@ def write_image_with_exif_data_jpg(exif, image, out_filename, verbose):
 def exif_extra_tags_for_tif(exif):
     logger = logging.getLogger(__name__)
     res_x, res_y = exif.get(RESOLUTIONX), exif.get(RESOLUTIONY)
-    if not (res_x is None or res_y is None):
-        resolution = ((res_x.numerator, res_x.denominator), (res_y.numerator, res_y.denominator))
-    else:
-        resolution = ((720000, 10000), (720000, 10000))
-    res_u = exif.get(RESOLUTIONUNIT)
-    resolutionunit = res_u if res_u is not None else 'inch'
-    sw = exif.get(SOFTWARE)
-    software = clean_data_for_tiff(sw) if sw is not None else constants.APP_TITLE
-    phint = exif.get(PHOTOMETRICINTERPRETATION)
-    photometric = phint if phint is not None else None
+    resolution = ((res_x.numerator, res_x.denominator), (res_y.numerator, res_y.denominator)) \
+        if res_x and res_y else ((720000, 10000), (720000, 10000))
+    exif_tags = {
+        'resolution': resolution,
+        'resolutionunit': exif.get(RESOLUTIONUNIT, 'inch'),
+        'software': clean_data_for_tiff(exif.get(SOFTWARE)) or constants.APP_TITLE,
+        'photometric': exif.get(PHOTOMETRICINTERPRETATION)
+    }
     extra = []
     for tag_id in exif:
         tag, data = TAGS.get(tag_id, tag_id), exif.get(tag_id)
-        if tag in NO_COPY_TIFF_TAGS or tag_id in NO_COPY_TIFF_TAGS_ID:
-            continue
-        if tag_id == SOFTWARE:
+        if tag in NO_COPY_TIFF_TAGS or tag_id in NO_COPY_TIFF_TAGS_ID or tag_id == SOFTWARE:
             continue
         if isinstance(data, IFDRational):
-            if data.denominator == 0:
-                data = (0, 1)  # Avoid division by zero
-            else:
-                data = (data.numerator, data.denominator)
-            dtype, count = 5, 1  # RATIONAL type in TIFF
-            extra.append((tag_id, dtype, count, data, False))
+            data = (data.numerator, data.denominator) if data.denominator != 0 else (0, 1)
+            extra.append((tag_id, 5, 1, data, False))
             continue
-        if hasattr(data, '__iter__') and not isinstance(data, (str, bytes)):
-            try:
-                clean_data = []
-                for x in data:
-                    try:
-                        if hasattr(x, 'denominator') and x.denominator == 0:
-                            clean_data.append(float('nan'))
-                        else:
-                            clean_data.append(float(x))
-                    except (ZeroDivisionError, ValueError, TypeError):
-                        clean_data.append(float('nan'))
-                extra.append((tag_id, 12, len(clean_data), tuple(clean_data), False))
-                continue
-            except Exception as e:
-                logger.warning(msg=f"Failed to process tuple for tag {tag}: {e}")
-        if isinstance(data, bytes):
-            try:
-                data = data.decode('ascii', errors='ignore')
-                if not data:
-                    continue
-            except Exception:
-                continue
-        if isinstance(data, str):
-            data = data.encode('ascii', 'ignore').decode('ascii')
-            if not data:
-                continue
+        processed_data = _process_tiff_data(tag, data, logger)
+        if processed_data:
+            dtype, count, data_value = processed_data
+            extra.append((tag_id, dtype, count, data_value, False))
+    return extra, exif_tags
+
+
+def _process_tiff_data(tag, data, logger):
+    if isinstance(data, IFDRational):
+        data = (data.numerator, data.denominator) if data.denominator != 0 else (0, 1)
+        return 5, 1, data
+    if hasattr(data, '__iter__') and not isinstance(data, (str, bytes)):
         try:
-            dtype, count = get_tiff_dtype_count(data)
-            extra.append((tag_id, dtype, count, data, False))
+            clean_data = [float(x) if not hasattr(x, 'denominator') or x.denominator != 0
+                          else float('nan') for x in data]
+            return 12, len(clean_data), tuple(clean_data)
         except Exception as e:
-            logger.warning(msg=f"Failed to process tag {tag}: {e}")
-    return extra, {
-        'resolution': resolution,
-        'resolutionunit': resolutionunit,
-        'software': software,
-        'photometric': photometric
-    }
+            logger.warning(msg=f"Failed to process tuple for tag {tag}: {e}")
+            return None
+    if isinstance(data, (str, bytes)):
+        clean_data = clean_data_for_tiff(data)
+        if clean_data:
+            return 2, len(clean_data) + 1, clean_data
+    try:
+        dtype, count = get_tiff_dtype_count(data)
+        return dtype, count, data
+    except Exception as e:
+        logger.warning(msg=f"Failed to process tag {tag}: {e}")
+        return None
 
 
 def write_image_with_exif_data_tif(exif, image, out_filename):
@@ -741,21 +704,21 @@ def save_exif_data(exif, in_filename, out_filename=None, verbose=False):
         raise RuntimeError('No exif data provided.')
     if verbose:
         print_exif(exif)
-    if extension_tif(in_filename):
-        image_new = tifffile.imread(in_filename)
-    elif extension_jpg(in_filename):
-        image_new = Image.open(in_filename)
-    elif extension_png(in_filename):
-        image_new = cv2.imread(in_filename, cv2.IMREAD_UNCHANGED)
-    if extension_jpg(in_filename):
+    if extension_png(in_filename) or extension_tif(in_filename):
+        if extension_tif(in_filename):
+            image_new = tifffile.imread(in_filename)
+        elif extension_png(in_filename):
+            image_new = cv2.imread(in_filename, cv2.IMREAD_UNCHANGED)
+        if extension_tif(in_filename):
+            metadata = {"description": f"image generated with {constants.APP_STRING} package"}
+            extra_tags, exif_tags = exif_extra_tags_for_tif(exif)
+            tifffile.imwrite(
+                out_filename, image_new, metadata=metadata, compression='adobe_deflate',
+                extratags=extra_tags, **exif_tags)
+        elif extension_png(in_filename):
+            write_image_with_exif_data_png(exif, image_new, out_filename, verbose)
+    else:
         add_exif_data_to_jpg_file(exif, in_filename, out_filename, verbose)
-    elif extension_tif(in_filename):
-        metadata = {"description": f"image generated with {constants.APP_STRING} package"}
-        extra_tags, exif_tags = exif_extra_tags_for_tif(exif)
-        tifffile.imwrite(out_filename, image_new, metadata=metadata, compression='adobe_deflate',
-                         extratags=extra_tags, **exif_tags)
-    elif extension_png(in_filename):
-        write_image_with_exif_data_png(exif, image_new, out_filename, verbose)
     return exif
 
 
