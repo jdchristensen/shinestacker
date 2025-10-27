@@ -102,7 +102,11 @@ def parse_xmp_to_exif(xmp_data):
         'exif:FNumber': 33437, 'exif:ISOSpeedRatings': 34855, 'exif:FocalLength': 37386,
         'exif:DateTimeOriginal': 36867, 'xmp:CreateDate': 306, 'xmp:CreatorTool': 305,
         'aux:Lens': 42036, 'exif:Flash': 37385, 'exif:WhiteBalance': 41987,
-        'dc:description': 270, 'dc:creator': 315, 'dc:rights': 33432
+        'dc:description': 270, 'dc:creator': 315, 'dc:rights': 33432,
+        'exif:ShutterSpeedValue': 37377, 'exif:ApertureValue': 37378,
+        'exif:ExposureBiasValue': 37380, 'exif:MaxApertureValue': 37381,
+        'exif:MeteringMode': 37383, 'exif:ExposureMode': 41986,
+        'exif:SceneCaptureType': 41990
     }
     for xmp_tag, exif_tag in xmp_to_exif_map.items():
         start_tag = f'<{xmp_tag}>'
@@ -163,6 +167,10 @@ def parse_typed_png_text(value):
                 return value[6:]
         elif value.startswith('STRING:'):
             return value[7:]
+        elif value.startswith('BYTES:'):
+            return value[6:].encode('utf-8')
+        elif value.startswith('ARRAY:'):
+            return [x.strip() for x in value[6:].split(',')]
     return value
 
 
@@ -177,7 +185,29 @@ def get_enhanced_exif_from_png(image):
         xmp_data = basic_exif[700]
     if xmp_data:
         enhanced_exif.update(parse_xmp_to_exif(xmp_data))
+    if hasattr(image, 'text') and image.text:
+        for key, value in image.text.items():
+            if key.startswith('EXIF_'):
+                parsed_value = parse_typed_png_text(value)
+                tag_id = _get_tag_id_from_png_key(key)
+                if tag_id:
+                    enhanced_exif[tag_id] = parsed_value
     return {k: v for k, v in enhanced_exif.items() if isinstance(k, int)}
+
+
+def _get_tag_id_from_png_key(key):
+    tag_map = {
+        'EXIF_CameraMake': 271, 'EXIF_CameraModel': 272, 'EXIF_Software': 305,
+        'EXIF_DateTime': 306, 'EXIF_Artist': 315, 'EXIF_Copyright': 33432,
+        'EXIF_ExposureTime': 33434, 'EXIF_FNumber': 33437, 'EXIF_ISOSpeed': 34855,
+        'EXIF_ShutterSpeedValue': 37377, 'EXIF_ApertureValue': 37378,
+        'EXIF_FocalLength': 37386, 'EXIF_LensModel': 42036,
+        'EXIF_ExposureBiasValue': 37380, 'EXIF_MaxApertureValue': 37381,
+        'EXIF_MeteringMode': 37383, 'EXIF_Flash': 37385, 'EXIF_WhiteBalance': 41987,
+        'EXIF_ExposureMode': 41986, 'EXIF_SceneCaptureType': 41990,
+        'EXIF_DateTimeOriginal': 36867
+    }
+    return tag_map.get(key)
 
 
 def reconstruct_exif_for_jpeg_with_exposure(exif_dict_data, verbose=False):
@@ -342,17 +372,19 @@ def create_xmp_from_exif(exif_data):
                 if tag_id == 270 and value:  # ImageDescription
                     desc = safe_decode_bytes(value)
                     xmp_elements.append(
-                        f'<dc:description><rdf:Alt><rdf:li xml:lang="x-default">{desc}</rdf:li>'
+                        '<dc:description><rdf:Alt>'
+                        f'<rdf:li xml:lang="x-default">{desc}</rdf:li>'
                         '</rdf:Alt></dc:description>')
                 elif tag_id == 315 and value:  # Artist
                     artist = safe_decode_bytes(value)
                     xmp_elements.append(
-                        f'<dc:creator><rdf:Seq><rdf:li>{artist}</rdf:li>'
-                        '</rdf:Seq></dc:creator>')
+                        '<dc:creator><rdf:Seq>'
+                        f'<rdf:li>{artist}</rdf:li></rdf:Seq></dc:creator>')
                 elif tag_id == 33432 and value:  # Copyright
                     copyright_tag = safe_decode_bytes(value)
                     xmp_elements.append(
-                        f'<dc:rights><rdf:Alt><rdf:li xml:lang="x-default">{copyright_tag}</rdf:li>'
+                        '<dc:rights><rdf:Alt>'
+                        f'<rdf:li xml:lang="x-default">{copyright_tag}</rdf:li>'
                         '</rdf:Alt></dc:rights>')
                 elif tag_id == 271 and value:  # Make
                     make = safe_decode_bytes(value)
@@ -388,8 +420,8 @@ def create_xmp_from_exif(exif_data):
                     xmp_elements.append(f'<exif:FNumber>{fnumber}</exif:FNumber>')
                 elif tag_id == 34855 and value:  # ISOSpeedRatings
                     xmp_elements.append(
-                        f'<exif:ISOSpeedRatings><rdf:Seq><rdf:li>{value}</rdf:li>'
-                        '</rdf:Seq></exif:ISOSpeedRatings>')
+                        '<exif:ISOSpeedRatings><rdf:Seq>'
+                        f'<rdf:li>{value}</rdf:li></rdf:Seq></exif:ISOSpeedRatings>')
                 elif tag_id == 37386 and value:  # FocalLength
                     if hasattr(value, 'numerator'):
                         focal = float(value)
@@ -399,40 +431,67 @@ def create_xmp_from_exif(exif_data):
                 elif tag_id == 42036 and value:  # LensModel
                     lens_model = safe_decode_bytes(value)
                     xmp_elements.append(f'<aux:Lens>{lens_model}</aux:Lens>')
-                elif tag_id == 34853 and value:  # GPSInfo (not implemented)
-                    pass
+                elif tag_id == 37377 and value:  # ShutterSpeedValue
+                    if hasattr(value, 'numerator'):
+                        shutter = float(value)
+                    else:
+                        shutter = float(value) if value else 0
+                    xmp_elements.append(
+                        f'<exif:ShutterSpeedValue>{shutter}</exif:ShutterSpeedValue>')
+                elif tag_id == 37378 and value:  # ApertureValue
+                    if hasattr(value, 'numerator'):
+                        aperture = float(value)
+                    else:
+                        aperture = float(value) if value else 0
+                    xmp_elements.append(f'<exif:ApertureValue>{aperture}</exif:ApertureValue>')
+                elif tag_id == 37380 and value:  # ExposureBiasValue
+                    if hasattr(value, 'numerator'):
+                        bias = float(value)
+                    else:
+                        bias = float(value) if value else 0
+                    xmp_elements.append(f'<exif:ExposureBiasValue>{bias}</exif:ExposureBiasValue>')
+                elif tag_id == 37381 and value:  # MaxApertureValue
+                    if hasattr(value, 'numerator'):
+                        max_aperture = float(value)
+                    else:
+                        max_aperture = float(value) if value else 0
+                    xmp_elements.append(
+                        f'<exif:MaxApertureValue>{max_aperture}</exif:MaxApertureValue>')
+                elif tag_id == 37383 and value:  # MeteringMode
+                    xmp_elements.append(f'<exif:MeteringMode>{value}</exif:MeteringMode>')
                 elif tag_id == 37385 and value:  # Flash
                     xmp_elements.append(f'<exif:Flash>{value}</exif:Flash>')
                 elif tag_id == 41987 and value:  # WhiteBalance
                     wb_map = {0: 'Auto', 1: 'Manual'}
                     wb = wb_map.get(value, str(value))
                     xmp_elements.append(f'<exif:WhiteBalance>{wb}</exif:WhiteBalance>')
+                elif tag_id == 41986 and value:  # ExposureMode
+                    mode_map = {0: 'Auto', 1: 'Manual', 2: 'Auto bracket'}
+                    mode = mode_map.get(value, str(value))
+                    xmp_elements.append(f'<exif:ExposureMode>{mode}</exif:ExposureMode>')
+                elif tag_id == 41990 and value:  # SceneCaptureType
+                    scene_map = {0: 'Standard', 1: 'Landscape', 2: 'Portrait', 3: 'Night scene'}
+                    scene = scene_map.get(value, str(value))
+                    xmp_elements.append(f'<exif:SceneCaptureType>{scene}</exif:SceneCaptureType>')
     if xmp_elements:
         xmp_content = '\n    '.join(xmp_elements)
         xmp_template = f"""<?xpacket begin='﻿' id='W5M0MpCehiHzreSzNTczkc9d'?>
-<x:xmpmeta xmlns:x='adobe:ns:meta/'
- x:xmptk='Adobe XMP Core 5.6-c140 79.160451, 2017/05/06-01:08:21'>
+<x:xmpmeta xmlns:x='adobe:ns:meta/' x:xmptk='Adobe XMP Core 5.6-c140 79.160451, 2017/05/06-01:08:21'>
  <rdf:RDF xmlns:rdf='http://www.w3.org/1999/02/22-rdf-syntax-ns#'>
-  <rdf:Description rdf:about=''
-    xmlns:dc='http://purl.org/dc/elements/1.1/'
-    xmlns:xmp='http://ns.adobe.com/xap/1.0/'
-    xmlns:tiff='http://ns.adobe.com/tiff/1.0/'
-    xmlns:exif='http://ns.adobe.com/exif/1.0/'
-    xmlns:aux='http://ns.adobe.com/exif/1.0/aux/'>
+  <rdf:Description rdf:about='' xmlns:dc='http://purl.org/dc/elements/1.1/' xmlns:xmp='http://ns.adobe.com/xap/1.0/' xmlns:tiff='http://ns.adobe.com/tiff/1.0/' xmlns:exif='http://ns.adobe.com/exif/1.0/' xmlns:aux='http://ns.adobe.com/exif/1.0/aux/'>
     {xmp_content}
   </rdf:Description>
  </rdf:RDF>
 </x:xmpmeta>
-<?xpacket end='w'?>"""
+<?xpacket end='w'?>"""  # noqa: E501
         return xmp_template
     return """<?xpacket begin='﻿' id='W5M0MpCehiHzreSzNTczkc9d'?>
-<x:xmpmeta xmlns:x='adobe:ns:meta/'
- x:xmptk='Adobe XMP Core 5.6-c140 79.160451, 2017/05/06-01:08:21'>
+<x:xmpmeta xmlns:x='adobe:ns:meta/' x:xmptk='Adobe XMP Core 5.6-c140 79.160451, 2017/05/06-01:08:21'>
  <rdf:RDF xmlns:rdf='http://www.w3.org/1999/02/22-rdf-syntax-ns#'>
   <rdf:Description rdf:about=''/>
  </rdf:RDF>
 </x:xmpmeta>
-<?xpacket end='w'?>"""
+<?xpacket end='w'?>"""  # noqa: E501
 
 
 def write_image_with_exif_data_png(exif, image, out_filename, verbose=False, color_order='auto'):
@@ -495,8 +554,11 @@ def _add_exif_tags_to_pnginfo(exif, pnginfo):
         306: 'DateTime', 315: 'Artist', 33432: 'Copyright'
     }
     exposure_tags = {
-        33434: 'ExposureTime', 33437: 'FNumber', 34855: 'ISOSpeed', 37377: 'ShutterSpeedValue',
-        37378: 'ApertureValue', 37386: 'FocalLength', 42036: 'LensModel'
+        33434: 'ExposureTime', 33437: 'FNumber', 34855: 'ISOSpeed',
+        37377: 'ShutterSpeedValue', 37378: 'ApertureValue', 37386: 'FocalLength',
+        42036: 'LensModel', 37380: 'ExposureBiasValue', 37381: 'MaxApertureValue',
+        37383: 'MeteringMode', 37385: 'Flash', 41987: 'WhiteBalance',
+        41986: 'ExposureMode', 41990: 'SceneCaptureType', 36867: 'DateTimeOriginal'
     }
     for tag_id, value in exif.items():
         if value is None:
