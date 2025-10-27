@@ -95,14 +95,11 @@ def get_exif_from_png(image):
 
 
 def parse_xmp_to_exif(xmp_data):
-    logger = logging.getLogger(__name__)
     exif_data = {}
     if not xmp_data:
         return exif_data
-    
     if isinstance(xmp_data, bytes):
         xmp_data = xmp_data.decode('utf-8', errors='ignore')
-    
     xmp_to_exif_map = {
         'tiff:Make': 271, 'tiff:Model': 272, 'exif:ExposureTime': 33434,
         'exif:FNumber': 33437, 'exif:ISOSpeedRatings': 34855, 'exif:FocalLength': 37386,
@@ -110,7 +107,6 @@ def parse_xmp_to_exif(xmp_data):
         'aux:Lens': 42036, 'exif:Flash': 37385, 'exif:WhiteBalance': 41987,
         'dc:description': 270, 'dc:creator': 315, 'dc:rights': 33432
     }
-    
     for xmp_tag, exif_tag in xmp_to_exif_map.items():
         start_tag = f'<{xmp_tag}>'
         end_tag = f'</{xmp_tag}>'
@@ -121,8 +117,8 @@ def parse_xmp_to_exif(xmp_data):
                 value = xmp_data[start:end].strip()
                 if value:
                     exif_data[exif_tag] = _parse_xmp_value(exif_tag, value)
-    
     return exif_data
+
 
 def _parse_xmp_value(exif_tag, value):
     if exif_tag in [33434, 33437, 37386]:  # Rational values
@@ -133,7 +129,7 @@ def _parse_xmp_value(exif_tag, value):
             except (ValueError, ZeroDivisionError):
                 return float(value) if value else 0.0
         return float(value) if value else 0.0
-    elif exif_tag == 34855:  # ISO
+    if exif_tag == 34855:  # ISO
         try:
             return int(value)
         except ValueError:
@@ -300,7 +296,7 @@ def add_exif_data_to_jpg_file(exif, in_filename, out_filename, verbose=False):
                 _insert_xmp_into_jpeg(out_filename, xmp_data, verbose)
             except Exception as e:
                 if verbose:
-                    logger.warning(f"Failed to insert XMP data: {e}")
+                    logger.warning(msg=f"Failed to insert XMP data: {e}")
 
 
 def _insert_xmp_into_jpeg(jpeg_path, xmp_data, verbose=False):
