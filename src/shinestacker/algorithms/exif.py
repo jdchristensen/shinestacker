@@ -538,7 +538,7 @@ def _add_exif_tag(pnginfo, tag_id, value):
         pass
 
 
-def _add_png_text_tag(pnginfo, key, value, verbose, logger):
+def _add_png_text_tag(pnginfo, key, value):
     try:
         clean_key = key[4:] if key.startswith('PNG_') else key
         if 'icc' in clean_key.lower() or 'profile' in clean_key.lower():
@@ -552,9 +552,8 @@ def _add_png_text_tag(pnginfo, key, value, verbose, logger):
                 pnginfo.add_text(clean_key, truncated_value)
         else:
             pnginfo.add_text(clean_key, str(value))
-    except Exception as e:
-        if verbose:
-            logger.warning(msg=f"Could not store PNG metadata {key}: {e}")
+    except Exception:
+        pass
 
 
 def _extract_icc_profile(exif, verbose, logger):
