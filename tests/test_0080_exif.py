@@ -86,6 +86,7 @@ def test_exif_tiff():
                     except Exception:
                         logger.warning("Test: can't decode EXIF tag {tag:25} [#{tag_id}]")
                         data = '<<< decode error >>>'
+                        assert False
             if isinstance(data_copy, bytes):
                 data_copy = data_copy.decode()
             meta[tag], meta_copy[tag_copy] = data, data_copy
@@ -135,6 +136,7 @@ def test_exif_png():
             test_img.close()
         else:
             logger.warning("Test PNG file not found, skipping PNG EXIF test")
+            assert False
     except Exception as e:
         logger.error(f"PNG EXIF test failed: {str(e)}")
         assert False
@@ -268,7 +270,7 @@ def test_write_image_with_exif_data_png():
         png_file = "examples/input/img-png-8/0000.png"
         if not os.path.exists(png_file):
             logger.warning("Test PNG file not found, skipping PNG write test")
-            return
+            assert False
         exif = get_exif(png_file)
         logger.info("*** Source PNG EXIF ***")
         print_exif(exif)
@@ -479,7 +481,7 @@ def test_save_exif_data_different_formats():
         source_file = "examples/input/img-jpg/0000.jpg"
         if not os.path.exists(source_file):
             logger.warning("Source file not found, skipping test")
-            return
+            assert False
         exif = get_exif(source_file)
         jpg_out = output_dir + "/test_save_exif.jpg"
         if os.path.exists("examples/input/img-jpg/0001.jpg"):
@@ -630,7 +632,7 @@ def test_exif_exposure_data_detection():
         source_file = "examples/input/img-exif/0000.jpg"
         if not os.path.exists(source_file):
             logger.warning(f"Test file not found: {source_file}")
-            return
+            assert False
         original_exif = get_exif(source_file)
         logger.info("*** All EXIF Tags Found ***")
         print_exif(original_exif)
@@ -675,6 +677,7 @@ def test_exif_exposure_data_detection():
                         logger.info(f"  ✓ {tag_name} preserved: {copied_exif[tag_id]}")
                     else:
                         logger.warning(f"  ✗ {tag_name} NOT preserved")
+                        assert False
                 logger.info(
                     f"=== RESULT: {preserved_count}/{len(found_exposure_data)} "
                     "exposure tags preserved ===")
@@ -685,10 +688,12 @@ def test_exif_exposure_data_detection():
             logger.warning("1. The file was heavily processed and exposure data was stripped")
             logger.warning("2. The camera didn't write exposure data to this particular file")
             logger.warning("3. There's an issue with the EXIF SubIFD extraction")
+            assert False
     except Exception as e:
         logger.error(f"Exposure data detection test failed: {str(e)}")
         import traceback
         logger.error(traceback.format_exc())
+        assert False
 
 
 def test_exif_subifd_exposure_preservation():
@@ -702,7 +707,7 @@ def test_exif_subifd_exposure_preservation():
         source_file = "examples/input/img-exif/0000.jpg"
         if not os.path.exists(source_file):
             logger.warning("Test file not found, skipping SubIFD test")
-            return
+            assert False
         original_exif = get_exif(source_file)
         subifd_exposure_tags = {
             33434: "ExposureTime",
@@ -719,6 +724,7 @@ def test_exif_subifd_exposure_preservation():
                 logger.info(f"✓ Found SubIFD tag: {tag_name} = {original_exif[tag_id]}")
             else:
                 logger.warning(f"✗ Missing SubIFD tag: {tag_name}")
+                assert False
         out_file = output_dir + "/test_subifd_preservation.jpg"
         test_target = "examples/input/img-jpg/0001.jpg"
         if os.path.exists(test_target):
@@ -733,6 +739,7 @@ def test_exif_subifd_exposure_preservation():
                         logger.warning(
                             f"SubIFD tag {tag_name} not preserved: "
                             f"{original_exif[tag_id]} -> {copied_exif[tag_id]}")
+                        assert False
             logger.info(
                 f"=== RESULT: {preserved_count}/{len(subifd_exposure_tags)} "
                 "SubIFD exposure tags preserved ===")
@@ -744,6 +751,7 @@ def test_exif_subifd_exposure_preservation():
         logger.warning(f"SubIFD exposure test failed: {str(e)}")
         import traceback
         logger.error(traceback.format_exc())
+        assert False
 
 
 def test_exif_tiff_with_subifd_data():
@@ -757,7 +765,7 @@ def test_exif_tiff_with_subifd_data():
         source_file = "examples/input/img-exif/0000.jpg"
         if not os.path.exists(source_file):
             logger.warning("Test file not found, skipping TIFF SubIFD test")
-            return
+            assert False
         exif = get_exif(source_file)
         logger.info("*** Source EXIF with SubIFD ***")
         exposure_tags = [33434, 33437, 34855, 37377, 37378, 37386]
@@ -776,6 +784,7 @@ def test_exif_tiff_with_subifd_data():
                 logger.info(f"✓ TIFF preserved: {TAGS.get(tag_id, tag_id)} = {tiff_exif[tag_id]}")
             else:
                 logger.warning(f"✗ TIFF missing: {TAGS.get(tag_id, tag_id)}")
+                assert False
         logger.info(
             f"=== RESULT: {preserved_count}/{len(found_exposure)} "
             "exposure tags preserved in TIFF ===")
@@ -787,6 +796,7 @@ def test_exif_tiff_with_subifd_data():
             logger.warning(
                 f"Only {preserved_count}/{len(found_exposure)} "
                 "exposure tags preserved in TIFF")
+            assert False
         else:
             logger.info("✓ TIFF writing with SubIFD data test passed")
     except Exception as e:
@@ -794,6 +804,7 @@ def test_exif_tiff_with_subifd_data():
         import traceback
         logger.error(traceback.format_exc())
         logger.warning("TIFF SubIFD test encountered an error but continuing...")
+        assert False
 
 
 def test_real_world_tiff_with_exif():
@@ -807,7 +818,7 @@ def test_real_world_tiff_with_exif():
         source_file = "examples/input/img-exif/0000.jpg"
         if not os.path.exists(source_file):
             logger.warning("Test file not found, skipping real-world test")
-            return
+            assert False
         exif = get_exif(source_file)
         logger.info(f"*** EXIF extracted from {os.path.basename(source_file)} ***")
         logger.info("=== Testing TIFF write with write_image_with_exif_data ===")
@@ -832,6 +843,7 @@ def test_real_world_tiff_with_exif():
                 logger.info(f"✓ TIFF preserved: {tag_name} = {tiff_exif[tag_id]}")
             else:
                 logger.warning(f"✗ TIFF missing: {tag_name}")
+                assert False
         logger.info(
             f"=== RESULT: {preserved_count}/{len(exposure_tags)}"
             " exposure tags preserved in TIFF ===")
@@ -841,7 +853,7 @@ def test_real_world_tiff_with_exif():
             logger.info("✓ TIFF file verification passed")
         except Exception as e:
             logger.error(f"TIFF verification failed: {e}")
-            assert False, "TIFF file verification failed"
+            assert False
         logger.info("✓ Real-world TIFF test passed")
     except Exception as e:
         logger.error(f"Real-world TIFF test failed: {str(e)}")
@@ -861,7 +873,7 @@ def test_exif_round_trip_tiff_to_jpg():
         source_jpg = "examples/input/img-exif/0000.jpg"
         if not os.path.exists(source_jpg):
             logger.warning(f"Source file not found: {source_jpg}")
-            return
+            assert False
         original_exif = get_exif(source_jpg)
         logger.info("*** Original JPG EXIF ***")
         print_exif(original_exif)
@@ -930,6 +942,7 @@ def test_exif_round_trip_tiff_to_jpg():
             logger.info("✗ LOST/CHANGED TAGS:")
             for tag_name, orig_val, final_val, reason in lost_tags:
                 logger.info(f"  {tag_name}: {orig_val} -> {final_val} ({reason})")
+            assert False
         else:
             logger.info("✓ All exposure tags perfectly preserved!")
         total_tags = len(preserved_tags) + len(lost_tags)
@@ -942,6 +955,7 @@ def test_exif_round_trip_tiff_to_jpg():
                 logger.warning(
                     "⚠ TIFF->JPEG EXIF round-trip test: "
                     f"Low preservation rate ({preservation_rate:.1f}%)")
+                assert False
         else:
             logger.warning("No exposure tags found to compare")
         for temp_file in [temp_tiff, temp_jpg]:
@@ -952,6 +966,7 @@ def test_exif_round_trip_tiff_to_jpg():
         logger.error(f"TIFF->JPEG round-trip test failed: {str(e)}")
         import traceback
         logger.error(traceback.format_exc())
+        assert False
 
 
 def test_pil_exif_basic():
@@ -976,10 +991,12 @@ def test_pil_exif_basic():
             logger.info("✓ Basic PIL EXIF writing works")
         else:
             logger.error("✗ Basic PIL EXIF writing FAILED")
+            assert False
     except Exception as e:
         logger.error(f"Basic PIL test failed: {e}")
         import traceback
         logger.error(traceback.format_exc())
+        assert False
 
 
 def test_jpg_to_jpg_vs_tiff_to_jpg():
@@ -993,7 +1010,7 @@ def test_jpg_to_jpg_vs_tiff_to_jpg():
         source_jpg = "examples/input/img-exif/0000.jpg"
         if not os.path.exists(source_jpg):
             logger.warning("Source file not found")
-            return
+            assert False
         logger.info("*** Test 1: Direct JPG→JPG ***")
         direct_out = output_dir + "/direct_jpg_to_jpg.jpg"
         exif = get_exif(source_jpg)
@@ -1021,6 +1038,7 @@ def test_jpg_to_jpg_vs_tiff_to_jpg():
         logger.error(f"Comparison test failed: {e}")
         import traceback
         logger.error(traceback.format_exc())
+        assert False
 
 
 def test_png_metadata_enhancement():
@@ -1034,7 +1052,7 @@ def test_png_metadata_enhancement():
         source_jpg = "examples/input/img-exif/0000.jpg"
         if not os.path.exists(source_jpg):
             logger.warning("Source file not found, skipping test")
-            return
+            assert False
         original_exif = get_exif(source_jpg)
         logger.info("*** Original EXIF ***")
         print_exif(original_exif)
@@ -1055,6 +1073,7 @@ def test_png_metadata_enhancement():
         logger.error(f"Enhanced PNG metadata test failed: {e}")
         import traceback
         logger.error(traceback.format_exc())
+        assert False
 
 
 def test_enhanced_png_exif():
@@ -1068,7 +1087,7 @@ def test_enhanced_png_exif():
         source_jpg = "examples/input/img-exif/0000.jpg"
         if not os.path.exists(source_jpg):
             logger.warning("Source file not found")
-            return
+            assert False
         original_exif = get_exif(source_jpg)
         test_image = np.ones((100, 100, 3), dtype=np.uint8) * 128
         png_out = output_dir + "/test_enhanced.png"
@@ -1090,10 +1109,12 @@ def test_enhanced_png_exif():
             logger.info("✓ Enhanced EXIF extraction successful")
         else:
             logger.info("⚠ No improvement with enhanced extraction")
+            assert False
     except Exception as e:
         logger.error(f"Enhanced PNG EXIF test failed: {e}")
         import traceback
         logger.error(traceback.format_exc())
+        assert False
 
 
 def test_unified_exif_with_enhanced_png():
@@ -1107,7 +1128,7 @@ def test_unified_exif_with_enhanced_png():
         source_jpg = "examples/input/img-exif/0000.jpg"
         if not os.path.exists(source_jpg):
             logger.warning("Source file not found")
-            return
+            assert False
         original_exif = get_exif(source_jpg)
         test_image = np.ones((100, 100, 3), dtype=np.uint8) * 128
         png_out = output_dir + "/test_unified.png"
@@ -1135,10 +1156,12 @@ def test_unified_exif_with_enhanced_png():
             logger.info(f"Key tags preserved in PNG→JPG: {roundtrip_count}/{unified_count}")
         else:
             logger.info("⚠ No improvement with unified EXIF")
+            assert False
     except Exception as e:
         logger.error(f"Unified EXIF test failed: {e}")
         import traceback
         logger.error(traceback.format_exc())
+        assert False
 
 
 if __name__ == '__main__':

@@ -1,5 +1,6 @@
 # pylint: disable=C0114, C0116, W0718, R0911, R0912, E1101, R0915, R1702, R0914, R0917, R0913
 import os
+import re
 import logging
 import cv2
 import numpy as np
@@ -55,16 +56,13 @@ def get_exif(exif_filename, enhanced_png_parsing=True):
         return image.tag_v2 if hasattr(image, 'tag_v2') else image.getexif()
     if extension_jpg(exif_filename):
         exif_data = image.getexif()
-        if hasattr(image, 'getexif') and image.getexif() is not None:
-            exif_data_dict = dict(image.getexif())
-            if 34665 in exif_data_dict:
-                try:
-                    exif_subifd = image.getexif().get_ifd(34665)
-                    for tag_id, value in exif_subifd.items():
-                        exif_data[tag_id] = value
-                except Exception as e:
-                    logger = logging.getLogger(__name__)
-                    logger.debug(msg=f"Could not extract EXIF SubIFD: {e}")
+        try:
+            exif_subifd = image.getexif().get_ifd(34665)
+            for tag_id, value in exif_subifd.items():
+                exif_data[tag_id] = value
+        except Exception as e:
+            logger = logging.getLogger(__name__)
+            logger.debug(msg=f"Could not extract EXIF SubIFD: {e}")
         with open(exif_filename, 'rb') as f:
             data = extract_enclosed_data_for_jpg(f.read(), b'<?xpacket', b'<?xpacket end="w"?>')
             if data is not None:
@@ -130,7 +128,6 @@ def _parse_xmp_value(exif_tag, value):
         return float(value) if value else 0.0
     if exif_tag == 34855:  # ISO
         if '<rdf:li>' in value:
-            import re
             matches = re.findall(r'<rdf:li>([^<]+)</rdf:li>', value)
             if matches:
                 value = matches[0]
@@ -187,13 +184,14 @@ def reconstruct_exif_for_jpeg_with_exposure(exif_dict_data, verbose=False):
     logger = logging.getLogger(__name__)
     main_exif = Image.Exif()
     main_ifd_tags = {
-        256, 257, 258, 259, 262, 274, 277, 282, 283,
-        284, 296, 270, 271, 272, 305, 306, 315, 33432
+        256, 257, 258, 259, 262, 274, 277, 282, 283, 284,
+        296, 270, 271, 272, 305, 306, 315, 33432
     }
     exif_subifd_tags = {
-        33434, 33437, 34855, 37377, 37378, 37386, 36864, 36867, 36868, 37380,
-        37381, 37383, 37385, 40961, 40962, 40963, 41985, 41986, 41987, 41990,
-        42033, 42034, 42036, 37521, 37522, 36880, 41486, 41487, 41488
+        33434, 33437, 34855, 37377, 37378, 37386, 36864, 36867,
+        36868, 37380, 37381, 37383, 37385, 40961, 40962, 40963,
+        41985, 41986, 41987, 41990, 42033, 42034, 42036, 37521,
+        37522, 36880, 41486, 41487, 41488
     }
     for tag_id in main_ifd_tags:
         if tag_id in exif_dict_data:
@@ -202,17 +200,18 @@ def reconstruct_exif_for_jpeg_with_exposure(exif_dict_data, verbose=False):
             except Exception:
                 if verbose:
                     logger.warning(msg=f"Failed to add {TAGS.get(tag_id, tag_id)} to main IFD")
-    if any(tag_id in exif_dict_data for tag_id in exif_subifd_tags):
+    subifd_exif = Image.Exif()
+    subifd_found = False
+    for tag_id in exif_subifd_tags:
+        if tag_id in exif_dict_data:
+            try:
+                subifd_exif[tag_id] = exif_dict_data[tag_id]
+                subifd_found = True
+            except Exception:
+                if verbose:
+                    logger.warning(msg=f"Failed to add {TAGS.get(tag_id, tag_id)} to SubIFD")
+    if subifd_found:
         try:
-            subifd_exif = Image.Exif()
-            for tag_id in exif_subifd_tags:
-                if tag_id in exif_dict_data:
-                    try:
-                        subifd_exif[tag_id] = exif_dict_data[tag_id]
-                    except Exception:
-                        if verbose:
-                            logger.warning(
-                                msg=f"Failed to add {TAGS.get(tag_id, tag_id)} to SubIFD")
             main_exif[34665] = subifd_exif
         except Exception as e:
             if verbose:
@@ -267,11 +266,20 @@ def get_tiff_dtype_count(value):
 def add_exif_data_to_jpg_file(exif, in_filename, out_filename, verbose=False):
     if exif is None:
         raise RuntimeError('No exif data provided.')
-    if verbose:
-        print_exif(exif)
+    logger = logging.getLogger(__name__)
     xmp_data = exif.get(XMLPACKET) if hasattr(exif, 'get') else None
     with Image.open(in_filename) as image:
-        if hasattr(exif, 'tobytes'):
+        if hasattr(exif, 'tobytes') and 'TiffImagePlugin' in str(type(exif)):
+            jpeg_exif = Image.Exif()
+            for tag_id in exif:
+                if tag_id != XMLPACKET:
+                    try:
+                        jpeg_exif[tag_id] = exif[tag_id]
+                    except Exception as e:
+                        if verbose:
+                            logger.warning(msg=f"Failed to add tag {tag_id}: {e}")
+            exif_bytes = jpeg_exif.tobytes()
+        elif hasattr(exif, 'tobytes'):
             exif_bytes = exif.tobytes()
         else:
             jpeg_exif = Image.Exif()
@@ -279,8 +287,9 @@ def add_exif_data_to_jpg_file(exif, in_filename, out_filename, verbose=False):
                 if tag_id != XMLPACKET:
                     try:
                         jpeg_exif[tag_id] = value
-                    except Exception:
-                        pass
+                    except Exception as e:
+                        if verbose:
+                            logger.warning(msg=f"Failed to add tag {tag_id}: {e}")
             exif_bytes = jpeg_exif.tobytes()
         image.save(out_filename, "JPEG", exif=exif_bytes, quality=100)
         if xmp_data and isinstance(xmp_data, bytes):
@@ -433,7 +442,7 @@ def write_image_with_exif_data_png(exif, image, out_filename, verbose=False, col
             logger.warning(msg="EXIF data not supported for 16-bit PNG format")
         write_img(out_filename, image)
         return
-    pil_image = _convert_to_pil_image(image, color_order, verbose, logger)
+    pil_image = _convert_to_pil_image(image, color_order)
     pnginfo, icc_profile = _prepare_png_metadata(exif, verbose, logger)
     try:
         save_args = {'format': 'PNG', 'pnginfo': pnginfo}
@@ -446,7 +455,7 @@ def write_image_with_exif_data_png(exif, image, out_filename, verbose=False, col
         pil_image.save(out_filename, format='PNG')
 
 
-def _convert_to_pil_image(image, color_order, verbose, logger):
+def _convert_to_pil_image(image, color_order):
     if isinstance(image, np.ndarray):
         if len(image.shape) == 3 and image.shape[2] == 3:
             if color_order in ['auto', 'bgr']:
@@ -462,7 +471,7 @@ def _prepare_png_metadata(exif, verbose, logger):
     xmp_data = _extract_xmp_data(exif)
     if xmp_data:
         pnginfo.add_text("XML:com.adobe.xmp", xmp_data)
-    _add_exif_tags_to_pnginfo(exif, pnginfo, verbose, logger)
+    _add_exif_tags_to_pnginfo(exif, pnginfo)
     icc_profile = _extract_icc_profile(exif, verbose, logger)
     return pnginfo, icc_profile
 
@@ -480,7 +489,7 @@ def _extract_xmp_data(exif):
     return create_xmp_from_exif(exif)
 
 
-def _add_exif_tags_to_pnginfo(exif, pnginfo, verbose, logger):
+def _add_exif_tags_to_pnginfo(exif, pnginfo):
     camera_tags = {
         271: 'CameraMake', 272: 'CameraModel', 305: 'Software',
         306: 'DateTime', 315: 'Artist', 33432: 'Copyright'
@@ -596,8 +605,12 @@ def write_image_with_exif_data_jpg(exif, image, out_filename, verbose):
 
 def exif_extra_tags_for_tif(exif):
     res_x, res_y = exif.get(RESOLUTIONX), exif.get(RESOLUTIONY)
-    resolution = ((res_x.numerator, res_x.denominator), (res_y.numerator, res_y.denominator)) \
-        if res_x and res_y else ((720000, 10000), (720000, 10000))
+    resolution = (
+        (res_x.numerator, res_x.denominator),
+        (res_y.numerator, res_y.denominator)
+    ) if res_x and res_y else (
+        (720000, 10000), (720000, 10000)
+    )
     exif_tags = {
         'resolution': resolution,
         'resolutionunit': exif.get(RESOLUTIONUNIT, 'inch'),
@@ -613,20 +626,21 @@ def exif_extra_tags_for_tif(exif):
             data = (data.numerator, data.denominator) if data.denominator != 0 else (0, 1)
             extra.append((tag_id, 5, 1, data, False))
             continue
-        processed_data = _process_tiff_data(tag, data)
+        processed_data = _process_tiff_data(data)
         if processed_data:
             dtype, count, data_value = processed_data
             extra.append((tag_id, dtype, count, data_value, False))
     return extra, exif_tags
 
 
-def _process_tiff_data(tag, data):
+def _process_tiff_data(data):
     if isinstance(data, IFDRational):
         data = (data.numerator, data.denominator) if data.denominator != 0 else (0, 1)
         return 5, 1, data
     if hasattr(data, '__iter__') and not isinstance(data, (str, bytes)):
         try:
-            clean_data = [float(x) if not hasattr(x, 'denominator') or x.denominator != 0
+            clean_data = [float(x)
+                          if not hasattr(x, 'denominator') or x.denominator != 0
                           else float('nan') for x in data]
             return 12, len(clean_data), tuple(clean_data)
         except Exception:
