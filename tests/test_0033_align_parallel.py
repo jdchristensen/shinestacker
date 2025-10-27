@@ -79,7 +79,7 @@ def test_align_images_method():
     img_0 = np.ones((100, 100, 3), dtype=np.uint8)
     aligner._cumulative_transforms = [None]
     result = aligner.align_images(0, img_ref, img_0)
-    assert np.array_equal(result, img_0)
+    assert result is None
     aligner._cumulative_transforms = [np.eye(2, 3, dtype=np.float32)]
     result = aligner.align_images(0, img_ref, img_0)
     assert result.shape == img_ref.shape

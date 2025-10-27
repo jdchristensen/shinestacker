@@ -1,4 +1,4 @@
-# pylint: disable=C0114, C0115, C0116, E0611, R0902, R0914, R0915, R0904, W0108
+# pylint: disable=C0114, C0115, C0116, E0611, R0902, R0914, R0915, R0904, W0108, R0911
 from functools import partial
 from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QFrame, QLabel, QMenu,
                                QFileDialog, QListWidget, QSlider, QMainWindow, QMessageBox,
@@ -60,6 +60,9 @@ class ImageEditorUI(QMainWindow, LayerCollectionHandler):
             self.handle_temp_view,
             self.end_copy_brush_area,
             self.handle_brush_size_change,
+            self.handle_brush_hardness_change,
+            self.handle_brush_opacity_change,
+            self.handle_brush_flow_change,
             self.handle_needs_update)
         side_panel = QWidget()
         side_layout = QVBoxLayout(side_panel)
@@ -608,6 +611,18 @@ class ImageEditorUI(QMainWindow, LayerCollectionHandler):
         if event.text() == '}':
             self.brush_tool.increase_brush_hardness()
             return
+        if event.text() == ',':
+            self.brush_tool.decrease_brush_opacity()
+            return
+        if event.text() == '.':
+            self.brush_tool.increase_brush_opacity()
+            return
+        if event.text() == ';':
+            self.brush_tool.decrease_brush_flow()
+            return
+        if event.text() == ':':
+            self.brush_tool.increase_brush_flow()
+            return
         super().keyPressEvent(event)
     # pylint: enable=C0103
 
@@ -805,6 +820,24 @@ class ImageEditorUI(QMainWindow, LayerCollectionHandler):
             self.brush_tool.increase_brush_size()
         else:
             self.brush_tool.decrease_brush_size()
+
+    def handle_brush_hardness_change(self, delta):
+        if delta > 0:
+            self.brush_tool.increase_brush_hardness()
+        else:
+            self.brush_tool.decrease_brush_hardness()
+
+    def handle_brush_opacity_change(self, delta):
+        if delta > 0:
+            self.brush_tool.increase_brush_opacity()
+        else:
+            self.brush_tool.decrease_brush_opacity()
+
+    def handle_brush_flow_change(self, delta):
+        if delta > 0:
+            self.brush_tool.increase_brush_flow()
+        else:
+            self.brush_tool.decrease_brush_flow()
 
     def handle_set_zoom_factor(self, zoom_factor):
         self.zoom_factor_label.setText(f"zoom: {zoom_factor:.1%}")

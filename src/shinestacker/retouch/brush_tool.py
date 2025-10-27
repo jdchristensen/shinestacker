@@ -75,6 +75,26 @@ class BrushTool:
         self.hardness_slider.setValue(val)
         self.update_brush_hardness(val)
 
+    def increase_brush_opacity(self, amount=2):
+        val = min(self.opacity_slider.value() + amount, self.opacity_slider.maximum())
+        self.opacity_slider.setValue(val)
+        self.update_brush_opacity(val)
+
+    def decrease_brush_opacity(self, amount=2):
+        val = max(self.opacity_slider.value() - amount, self.opacity_slider.minimum())
+        self.opacity_slider.setValue(val)
+        self.update_brush_opacity(val)
+
+    def increase_brush_flow(self, amount=2):
+        val = min(self.flow_slider.value() + amount, self.flow_slider.maximum())
+        self.flow_slider.setValue(val)
+        self.update_brush_flow(val)
+
+    def decrease_brush_flow(self, amount=2):
+        val = max(self.flow_slider.value() - amount, self.flow_slider.minimum())
+        self.flow_slider.setValue(val)
+        self.update_brush_flow(val)
+
     def update_brush_hardness(self, hardness):
         self.brush.hardness = hardness
         self.update_brush_thumb()

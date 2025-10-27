@@ -61,7 +61,10 @@ class ShortcutsHelp(QDialog):
             "Ctrl + +": "Zoom in",
             "Ctrl + -": "Zoom out",
             "Ctrl + 0": "Fit to screen",
-            "Ctrl + R": "Actual size"
+            "Ctrl + R": "Actual size",
+            "Ctrl + 1": "View: overlaid",
+            "Ctrl + 2": "View: side by side",
+            "Ctrl + 3": "View: top-bottom",
         }
 
         self.add_bold_label(left_layout, "Keyboard Shortcuts")
@@ -69,13 +72,14 @@ class ShortcutsHelp(QDialog):
             left_layout.addRow(f"<b>{k}</b>", QLabel(v))
 
         shortcuts = {
-            "Ctrl + 1": "View: overlaid",
-            "Ctrl + 2": "View: side by side",
-            "Ctrl + 3": "View: top-bottom",
-            "[": "Increase brush size",
-            "]": "Decrease brush size",
-            "{": "Increase brush hardness",
-            "}": "Decrease brush hardness"
+            "[": "Decrease brush size",
+            "]": "Increase brush size",
+            "{": "Decrease brush hardness",
+            "}": "Increase brush hardness",
+            ",": "Decrease brush opacity",
+            ".": "Increase brush opacity",
+            ";": "Decrease brush flow",
+            ":": "Increase brush flow"
         }
 
         self.add_bold_label(right_layout, "Keyboard Shortcuts")
@@ -86,6 +90,9 @@ class ShortcutsHelp(QDialog):
             "Space + Drag": "Move",
             "Wheel": "Zoom in/out",
             "Ctrl + Wheel": "Adjust brush size",
+            "Shift + Wheel": "Adjust brush hardness",
+            "Alt + Wheel": "Adjust brush opacity",
+            "Ctrl + Shift + Wheel": "Adjust brush flow",
             "Left Click": "Use brush to copy from selected layer to master",
         }
 

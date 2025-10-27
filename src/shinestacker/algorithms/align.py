@@ -65,6 +65,20 @@ _HOMOGRAPHY_THRESHOLDS = {
     'max_aspect_ratio': 2.0,  # max aspect ratio change
 }
 
+_AFFINE_THRESHOLDS_LARGE = {
+    'max_rotation': 20.0,  # degrees
+    'min_scale': 0.5,
+    'max_scale': 1.5,
+    'max_shear': 10.0,  # degrees
+    'max_translation_ratio': 0.2,  # 20% of image dimension
+}
+
+_HOMOGRAPHY_THRESHOLDS_LARGE = {
+    'max_skew': 12.0,  # degrees
+    'max_scale_change': 2.0,  # max area change ratio
+    'max_aspect_ratio': 4.0,  # max aspect ratio change
+}
+
 
 def decompose_affine_matrix(m):
     a, b, tx = m[0, 0], m[0, 1], m[0, 2]
@@ -562,6 +576,9 @@ class AlignFramesBase(SubAction):
     def get_transform_thresholds(self):
         return _AFFINE_THRESHOLDS, _HOMOGRAPHY_THRESHOLDS
 
+    def get_transform_thresholds_large(self):
+        return _AFFINE_THRESHOLDS_LARGE, _HOMOGRAPHY_THRESHOLDS_LARGE
+
     def image_str(self, idx):
         return f"{self.process.frame_str(idx)}, " \
                f"{os.path.basename(self.process.input_filepath(idx))}"
@@ -771,7 +788,7 @@ class AlignFrames(AlignFramesBase):
                 f"{self.process.name}-matches-{idx_str}.pdf")
         else:
             plot_path = None
-        affine_thresholds, homography_thresholds = self.get_transform_thresholds()
+        affine_thresholds, homography_thresholds = self.get_transform_thresholds_large()
         n_good_matches, _m, img = align_images(
             img_ref, img_0,
             feature_config=self.feature_config,

@@ -132,10 +132,15 @@ class ImageViewer(QWidget):
 
     def connect_signals(
             self, handle_temp_view, end_copy_brush_area,
-            handle_brush_size_change, handle_needs_update):
+            handle_brush_size_change, handle_brush_hardness_change,
+            handle_brush_opacity_change, handle_brush_flow_change,
+            handle_needs_update):
         for st in self._strategies.values():
             st.temp_view_requested.connect(handle_temp_view)
             st.end_copy_brush_area_requested.connect(end_copy_brush_area)
             st.brush_size_change_requested.connect(handle_brush_size_change)
+            st.brush_hardness_change_requested.connect(handle_brush_hardness_change)
+            st.brush_opacity_change_requested.connect(handle_brush_opacity_change)
+            st.brush_flow_change_requested.connect(handle_brush_flow_change)
             st.needs_update_requested.connect(handle_needs_update)
             st.setFocusPolicy(Qt.StrongFocus)

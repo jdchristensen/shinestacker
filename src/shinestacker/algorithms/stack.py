@@ -82,6 +82,10 @@ class FocusStackBase(TaskBase, ImageSequenceManager):
 
 
 def get_bunches(collection, n_frames, n_overlap):
+    if n_frames == n_overlap:
+        raise RuntimeError(
+            f"Can't get bunch collection, total number of frames ({n_frames}) "
+            "is equal to the number of overlapping grames")
     bunches = [collection[x:x + n_frames]
                for x in range(0, len(collection) - n_overlap, n_frames - n_overlap)]
     return bunches
@@ -109,7 +113,7 @@ class FocusStackBunch(SequentialTask, FocusStackBase):
 
     def begin(self):
         SequentialTask.begin(self)
-        self._chunks = get_bunches(self.input_filepaths(), self.frames, self.overlap)
+        self._chunks = get_bunches(sorted(self.input_filepaths()), self.frames, self.overlap)
         self.set_counts(len(self._chunks))
 
     def end(self):
@@ -122,9 +126,9 @@ class FocusStackBunch(SequentialTask, FocusStackBase):
         self.print_message(
             color_str(f"fusing bunch: {action_count + 1}/{self.total_action_counts}",
                       constants.LOG_COLOR_LEVEL_2))
-        img_files = self._chunks[action_count - 1]
+        img_files = self._chunks[action_count]
         self.stack_algo.init(img_files)
-        self.focus_stack(self._chunks[action_count - 1])
+        self.focus_stack(self._chunks[action_count])
         return True
 
 

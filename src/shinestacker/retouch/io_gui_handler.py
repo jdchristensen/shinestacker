@@ -303,7 +303,6 @@ class IOGuiHandler(QObject, LayerCollectionHandler):
             img = cv2.cvtColor(self.master_layer(), cv2.COLOR_RGB2BGR)
             write_image_with_exif_data(self.exif_data, img, path)
             self.current_file_path_master = os.path.abspath(path)
-            # self.mark_as_modified_requested.emit(False)
             self.update_title_requested.emit()
             self.add_recent_file_requested.emit(self.current_file_path_master)
             self.status_message_requested.emit(f"Saved master layer to: {path}")

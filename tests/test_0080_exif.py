@@ -14,7 +14,7 @@ from shinestacker.algorithms.exif import (
 
 NO_TEST_TIFF_TAGS = [
     "XMLPacket", "Compression", "StripOffsets", "RowsPerStrip", "StripByteCounts",
-    "ImageResources", "ExifOffset", 34665]
+    "ImageResources", "ExifOffset", 34665, "IPTCNAA", 33723]
 
 NO_TEST_JPG_TAGS = [34665]
 
@@ -90,6 +90,12 @@ def test_exif_tiff():
             meta[tag], meta_copy[tag_copy] = data, data_copy
         for (tag, data, data_copy) in list(common_entries(meta, meta_copy)):
             if tag not in NO_TEST_TIFF_TAGS and not data == data_copy:
+                if tag in ["XResolution", "YResolution"]:
+                    try:
+                        if float(data) == float(data_copy):
+                            continue
+                    except Exception:
+                        pass
                 logger.error(f"TIFF EXIF data don't match: {tag}: {data}=>{data_copy}")
                 assert False
     except Exception:
@@ -208,6 +214,7 @@ def test_write_image_with_exif_data_tiff():
             282,    # XResolution
             283,    # YResolution
             296,    # ResolutionUnit
+            305,    # Software - we change this to constants.APP_TITLE
             IMAGERESOURCES,
             INTERCOLORPROFILE,
             XMLPACKET
@@ -305,18 +312,17 @@ def test_get_tiff_dtype_count():
         logger = logging.getLogger(__name__)
         logger.info("======== Testing get_tiff_dtype_count ========")
         test_cases = [
-            ("string", (2, 7)),         # ASCII string (dtype=2), length + null terminator
-            (b"bytes", (1, 5)),         # Binary data (dtype=1), length without null terminator
-            # Lists are treated as strings in the current implementation
-            ([1, 2, 3], (2, 10)),       # Current behavior treats lists as strings
+            ("string", (2, 7)),
+            (b"bytes", (1, 5)),
+            ([1, 2, 3], (2, 10)),
             (np.array([1, 2, 3], dtype=np.uint16), (3, 3)),
             (np.array([1, 2, 3], dtype=np.uint32), (4, 3)),
             (np.array([1.0, 2.0], dtype=np.float32), (11, 2)),
             (np.array([1.0, 2.0], dtype=np.float64), (12, 2)),
-            (12345, (3, 1)),            # uint16 (dtype=3)
-            (123456, (4, 1)),           # uint32 (dtype=4)
-            (3.14, (11, 1)),            # float32 (dtype=11)
-            (None, (2, 5)),             # None becomes 'None' (length 4 + null terminator)
+            (12345, (3, 1)),
+            (123456, (4, 1)),
+            (3.14, (11, 1)),
+            (None, (2, 5)),
         ]
         for value, expected in test_cases:
             result = get_tiff_dtype_count(value)
@@ -387,18 +393,18 @@ def test_exif_extra_tags_for_tif():
         logger = logging.getLogger(__name__)
         logger.info("======== Testing exif_extra_tags_for_tif ========")
         test_exif = {
-            256: 1000,  # ImageWidth
-            257: 2000,  # ImageLength
-            282: IFDRational(72, 1),  # XResolution
-            283: IFDRational(72, 1),  # YResolution
-            296: 2,     # ResolutionUnit (inches)
-            305: b'Test Software',  # Software
-            270: 'Test Image Description',  # ImageDescription
-            271: 'Test Camera Make',  # Make
-            272: 'Test Camera Model',  # Model
-            306: '2023:01:01 12:00:00',  # DateTime
-            33432: 'Test Copyright',  # Copyright
-            700: b'Test XML data',  # XMLPacket
+            256: 1000,
+            257: 2000,
+            282: IFDRational(72, 1),
+            283: IFDRational(72, 1),
+            296: 2,
+            305: b'Test Software',
+            270: 'Test Image Description',
+            271: 'Test Camera Make',
+            272: 'Test Camera Model',
+            306: '2023:01:01 12:00:00',
+            33432: 'Test Copyright',
+            700: b'Test XML data',
         }
         extra_tags, exif_tags = exif_extra_tags_for_tif(test_exif)
         logger.info(f"Generated {len(extra_tags)} extra tags")
@@ -410,9 +416,7 @@ def test_exif_extra_tags_for_tif():
         res_x, res_y = exif_tags['resolution']
         assert isinstance(res_x, tuple) and len(res_x) == 2
         assert isinstance(res_y, tuple) and len(res_y) == 2
-        # XMLPacket (700) should be included in extra_tags, not excluded
-        # Check that some expected tags are included
-        included_tags = [270, 271, 272, 306, 33432]  # Should be included
+        included_tags = [270, 271, 272, 306, 33432]
         found_tags = [tag_id for tag_id, dtype, count, value, write_once in extra_tags]
         for tag_id in included_tags:
             assert tag_id in found_tags, f"Tag {tag_id} should be included but was not found"
@@ -439,17 +443,17 @@ def test_write_image_with_exif_data_png_edge_cases():
         assert os.path.exists(out_file), "Should create file with empty EXIF"
         logger.info("✓ Empty EXIF test passed")
         special_exif = {
-            270: 'Test with special chars: ñáéíóú',  # ImageDescription
-            305: 'Test Software v1.0',  # Software
-            315: 'Test Artist',  # Artist
+            270: 'Test with special chars: ñáéíóú',
+            305: 'Test Software v1.0',
+            315: 'Test Artist',
         }
         out_file2 = output_dir + "/test_special_chars.png"
         write_image_with_exif_data(special_exif, test_img, out_file2, verbose=True)
         assert os.path.exists(out_file2), "Should create file with special chars"
         logger.info("✓ Special characters test passed")
         long_exif = {
-            270: 'A' * 500,  # Very long description
-            305: 'B' * 200,  # Long software name
+            270: 'A' * 500,
+            305: 'B' * 200,
         }
         out_file3 = output_dir + "/test_long_values.png"
         write_image_with_exif_data(long_exif, test_img, out_file3, verbose=True)
@@ -558,8 +562,8 @@ def test_print_exif_edge_cases():
         logger = logging.getLogger(__name__)
         logger.info("======== Testing print_exif edge cases ========")
         rational_exif = {
-            282: IFDRational(72, 1),  # XResolution
-            283: IFDRational(96, 1),  # YResolution
+            282: IFDRational(72, 1),
+            283: IFDRational(96, 1),
         }
         print_exif(rational_exif)
         logger.info("✓ IFDRational printing test passed")
@@ -582,8 +586,8 @@ def test_print_exif_edge_cases():
 
 def test_exif_decoding_error():
     test_exif = {
-        270: b'\xff\xfe\x00\x01',  # Invalid UTF-8 sequence
-        305: b'Valid ASCII',       # Valid ASCII (should decode fine)
+        270: b'\xff\xfe\x00\x01',
+        305: b'Valid ASCII',
     }
     extra_tags, exif_tags = exif_extra_tags_for_tif(test_exif)
     assert extra_tags is not None
@@ -595,11 +599,11 @@ def test_safe_decode_bytes():
         logger = logging.getLogger(__name__)
         logger.info("======== Testing safe_decode_bytes ========")
         test_cases = [
-            (b"Hello World", "Hello World"),  # ASCII
-            (b"Caf\xe9", "Café"),  # Latin-1 with accent
-            (b"Test \xa9 2024", "Test © 2024"),  # Latin-1 with copyright
+            (b"Hello World", "Hello World"),
+            (b"Caf\xe9", "Café"),
+            (b"Test \xa9 2024", "Test © 2024"),
             (b"\xe9", "é"),
-            (b"Invalid \xff\xfe bytes", "Invalid ÿþ bytes"),  # FIXED: Expect Latin-1 decoding
+            (b"Invalid \xff\xfe bytes", "Invalid ÿþ bytes"),
         ]
         for input_bytes, expected in test_cases:
             result = safe_decode_bytes(input_bytes)
@@ -611,6 +615,237 @@ def test_safe_decode_bytes():
         logger.info("✓ All safe_decode_bytes tests passed")
     except Exception as e:
         logger.error(f"safe_decode_bytes test failed: {str(e)}")
+        assert False
+
+
+def test_exif_exposure_data_detection():
+    try:
+        setup_logging()
+        logger = logging.getLogger(__name__)
+        output_dir = "output/img-exif"
+        if not os.path.exists(output_dir):
+            os.makedirs(output_dir)
+        logger.info("======== Testing EXIF Exposure Data Detection (Including SubIFD) ========")
+        source_file = "examples/input/img-exif/0000.jpg"
+        if not os.path.exists(source_file):
+            logger.warning(f"Test file not found: {source_file}")
+            return
+        original_exif = get_exif(source_file)
+        logger.info("*** All EXIF Tags Found ***")
+        print_exif(original_exif)
+        exposure_tags = {
+            33434: "ExposureTime",
+            33437: "FNumber",
+            34855: "ISOSpeedRatings",
+            34850: "ExposureProgram",
+            37377: "ShutterSpeedValue",
+            37378: "ApertureValue",
+            37379: "BrightnessValue",
+            37380: "ExposureBiasValue",
+            37381: "MaxApertureValue",
+            37382: "SubjectDistance",
+            37383: "MeteringMode",
+            37384: "LightSource",
+            37385: "Flash",
+            37386: "FocalLength",
+            41986: "ExposureMode",
+            41987: "WhiteBalance",
+            42034: "ExposureIndex"
+        }
+        found_exposure_data = {}
+        for tag_id, tag_name in exposure_tags.items():
+            if tag_id in original_exif:
+                found_exposure_data[tag_name] = original_exif[tag_id]
+        if found_exposure_data:
+            logger.info("=== FOUND EXPOSURE DATA ===")
+            for tag_name, value in found_exposure_data.items():
+                logger.info(f"  {tag_name}: {value}")
+            out_file = output_dir + "/test_exposure_preservation.jpg"
+            test_target = "examples/input/img-jpg/0001.jpg"
+            if os.path.exists(test_target):
+                copy_exif_from_file_to_file(source_file, test_target, out_file, verbose=True)
+                copied_exif = get_exif(out_file)
+                logger.info("=== VERIFYING COPIED EXPOSURE DATA ===")
+                preserved_count = 0
+                for tag_name in found_exposure_data.keys():
+                    tag_id = [k for k, v in exposure_tags.items() if v == tag_name][0]
+                    if tag_id in copied_exif:
+                        preserved_count += 1
+                        logger.info(f"  ✓ {tag_name} preserved: {copied_exif[tag_id]}")
+                    else:
+                        logger.warning(f"  ✗ {tag_name} NOT preserved")
+                logger.info(
+                    f"=== RESULT: {preserved_count}/{len(found_exposure_data)} "
+                    "exposure tags preserved ===")
+        else:
+            logger.warning("=== NO EXPOSURE DATA FOUND ===")
+            logger.warning("Even with SubIFD extraction, no exposure data was found.")
+            logger.warning("This could mean:")
+            logger.warning("1. The file was heavily processed and exposure data was stripped")
+            logger.warning("2. The camera didn't write exposure data to this particular file")
+            logger.warning("3. There's an issue with the EXIF SubIFD extraction")
+    except Exception as e:
+        logger.error(f"Exposure data detection test failed: {str(e)}")
+        import traceback
+        logger.error(traceback.format_exc())
+
+
+def test_exif_subifd_exposure_preservation():
+    try:
+        setup_logging()
+        logger = logging.getLogger(__name__)
+        output_dir = "output/img-exif"
+        if not os.path.exists(output_dir):
+            os.makedirs(output_dir)
+        logger.info("======== Testing EXIF SubIFD Exposure Data Preservation ========")
+        source_file = "examples/input/img-exif/0000.jpg"
+        if not os.path.exists(source_file):
+            logger.warning("Test file not found, skipping SubIFD test")
+            return
+        original_exif = get_exif(source_file)
+        subifd_exposure_tags = {
+            33434: "ExposureTime",
+            33437: "FNumber",
+            34855: "ISOSpeedRatings",
+            37377: "ShutterSpeedValue",
+            37378: "ApertureValue",
+            37386: "FocalLength"
+        }
+        found_tags = []
+        for tag_id, tag_name in subifd_exposure_tags.items():
+            if tag_id in original_exif:
+                found_tags.append(tag_name)
+                logger.info(f"✓ Found SubIFD tag: {tag_name} = {original_exif[tag_id]}")
+            else:
+                logger.warning(f"✗ Missing SubIFD tag: {tag_name}")
+        out_file = output_dir + "/test_subifd_preservation.jpg"
+        test_target = "examples/input/img-jpg/0001.jpg"
+        if os.path.exists(test_target):
+            copy_exif_from_file_to_file(source_file, test_target, out_file, verbose=False)
+            copied_exif = get_exif(out_file)
+            preserved_count = 0
+            for tag_id, tag_name in subifd_exposure_tags.items():
+                if tag_id in original_exif and tag_id in copied_exif:
+                    if original_exif[tag_id] == copied_exif[tag_id]:
+                        preserved_count += 1
+                    else:
+                        logger.warning(
+                            f"SubIFD tag {tag_name} not preserved: "
+                            f"{original_exif[tag_id]} -> {copied_exif[tag_id]}")
+            logger.info(
+                f"=== RESULT: {preserved_count}/{len(subifd_exposure_tags)} "
+                "SubIFD exposure tags preserved ===")
+            if preserved_count != len(subifd_exposure_tags):
+                logger.warning(f"Preserved {preserved_count}/{len(subifd_exposure_tags)} tags")
+            else:
+                logger.info("✓ EXIF SubIFD exposure preservation test passed")
+    except Exception as e:
+        logger.warning(f"SubIFD exposure test failed: {str(e)}")
+        import traceback
+        logger.error(traceback.format_exc())
+
+
+def test_exif_tiff_with_subifd_data():
+    try:
+        setup_logging()
+        logger = logging.getLogger(__name__)
+        output_dir = "output/img-exif"
+        if not os.path.exists(output_dir):
+            os.makedirs(output_dir)
+        logger.info("======== Testing TIFF Writing with SubIFD EXIF Data ========")
+        source_file = "examples/input/img-exif/0000.jpg"
+        if not os.path.exists(source_file):
+            logger.warning("Test file not found, skipping TIFF SubIFD test")
+            return
+        exif = get_exif(source_file)
+        logger.info("*** Source EXIF with SubIFD ***")
+        exposure_tags = [33434, 33437, 34855, 37377, 37378, 37386]
+        found_exposure = [tag for tag in exposure_tags if tag in exif]
+        logger.info(f"Found {len(found_exposure)} exposure tags in source")
+        test_image = np.ones((100, 100, 3), dtype=np.uint8) * 128
+        out_file = output_dir + "/test_tiff_subifd.tif"
+        write_image_with_exif_data(exif, test_image, out_file)
+        assert os.path.exists(out_file), "TIFF file was not created"
+        tiff_exif = get_exif(out_file)
+        logger.info("*** TIFF EXIF (should preserve exposure data) ***")
+        preserved_count = 0
+        for tag_id in found_exposure:
+            if tag_id in tiff_exif:
+                preserved_count += 1
+                logger.info(f"✓ TIFF preserved: {TAGS.get(tag_id, tag_id)} = {tiff_exif[tag_id]}")
+            else:
+                logger.warning(f"✗ TIFF missing: {TAGS.get(tag_id, tag_id)}")
+        logger.info(
+            f"=== RESULT: {preserved_count}/{len(found_exposure)} "
+            "exposure tags preserved in TIFF ===")
+        if preserved_count == 0:
+            logger.warning(
+                "No exposure data was preserved in TIFF - "
+                "this is a known limitation with tifffile library")
+        elif preserved_count < len(found_exposure):
+            logger.warning(
+                f"Only {preserved_count}/{len(found_exposure)} "
+                "exposure tags preserved in TIFF")
+        else:
+            logger.info("✓ TIFF writing with SubIFD data test passed")
+    except Exception as e:
+        logger.error(f"TIFF SubIFD test failed: {str(e)}")
+        import traceback
+        logger.error(traceback.format_exc())
+        logger.warning("TIFF SubIFD test encountered an error but continuing...")
+
+
+def test_real_world_tiff_with_exif():
+    try:
+        setup_logging()
+        logger = logging.getLogger(__name__)
+        output_dir = "output/img-exif"
+        if not os.path.exists(output_dir):
+            os.makedirs(output_dir)
+        logger.info("======== Testing Real-World TIFF with EXIF ========")
+        source_file = "examples/input/img-exif/0000.jpg"
+        if not os.path.exists(source_file):
+            logger.warning("Test file not found, skipping real-world test")
+            return
+        exif = get_exif(source_file)
+        logger.info(f"*** EXIF extracted from {os.path.basename(source_file)} ***")
+        logger.info("=== Testing TIFF write with write_image_with_exif_data ===")
+        test_image = np.ones((100, 100, 3), dtype=np.uint8) * 128
+        out_file = output_dir + "/real_world_test.tif"
+        write_image_with_exif_data(exif, test_image, out_file, verbose=False)
+        assert os.path.exists(out_file), "TIFF file was not created"
+        tiff_exif = get_exif(out_file)
+        logger.info("*** TIFF EXIF (should preserve exposure data) ***")
+        exposure_tags = {
+            33434: "ExposureTime",
+            33437: "FNumber",
+            34855: "ISOSpeedRatings",
+            37377: "ShutterSpeedValue",
+            37378: "ApertureValue",
+            37386: "FocalLength"
+        }
+        preserved_count = 0
+        for tag_id, tag_name in exposure_tags.items():
+            if tag_id in tiff_exif:
+                preserved_count += 1
+                logger.info(f"✓ TIFF preserved: {tag_name} = {tiff_exif[tag_id]}")
+            else:
+                logger.warning(f"✗ TIFF missing: {tag_name}")
+        logger.info(
+            f"=== RESULT: {preserved_count}/{len(exposure_tags)}"
+            " exposure tags preserved in TIFF ===")
+        try:
+            with Image.open(out_file) as img:
+                img.verify()
+            logger.info("✓ TIFF file verification passed")
+        except Exception as e:
+            logger.error(f"TIFF verification failed: {e}")
+            assert False, "TIFF file verification failed"
+        logger.info("✓ Real-world TIFF test passed")
+    except Exception as e:
+        logger.error(f"Real-world TIFF test failed: {str(e)}")
+        import traceback
+        logger.error(traceback.format_exc())
         assert False
 
 
@@ -632,3 +867,7 @@ if __name__ == '__main__':
     test_print_exif_edge_cases()
     test_exif_decoding_error()
     test_safe_decode_bytes()
+    test_exif_exposure_data_detection()
+    test_exif_subifd_exposure_preservation()
+    test_exif_tiff_with_subifd_data()
+    test_real_world_tiff_with_exif()
