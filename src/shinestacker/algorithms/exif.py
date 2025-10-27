@@ -614,7 +614,8 @@ def clean_data_for_tiff(data):
         return data.encode('ascii', 'ignore').decode('ascii')
     if isinstance(data, bytes):
         try:
-            return data.decode('utf-8', errors='ignore').encode('ascii', 'ignore').decode('ascii')
+            decoded = data.decode('utf-8', errors='ignore')
+            return decoded.encode('ascii', 'ignore').decode('ascii')
         except Exception:
             return ""
     if isinstance(data, IFDRational):
