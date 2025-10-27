@@ -35,17 +35,14 @@ NO_COPY_TIFF_TAGS = ["Compression", "StripOffsets", "RowsPerStrip", "StripByteCo
 
 
 def extract_enclosed_data_for_jpg(data, head, foot):
-    try:
-        xmp_start = data.find(head)
-        if xmp_start == -1:
-            return None
-        xmp_end = data.find(foot, xmp_start)
-        if xmp_end == -1:
-            return None
-        xmp_end += len(foot)
-        return data[xmp_start:xmp_end]
-    except Exception:
+    xmp_start = data.find(head)
+    if xmp_start == -1:
         return None
+    xmp_end = data.find(foot, xmp_start)
+    if xmp_end == -1:
+        return None
+    xmp_end += len(foot)
+    return data[xmp_start:xmp_end]
 
 
 def get_exif(exif_filename, enhanced_png_parsing=True):
@@ -58,11 +55,9 @@ def get_exif(exif_filename, enhanced_png_parsing=True):
         exif_data = image.getexif()
         try:
             exif_subifd = image.getexif().get_ifd(34665)
-            for tag_id, value in exif_subifd.items():
-                exif_data[tag_id] = value
-        except Exception as e:
-            logger = logging.getLogger(__name__)
-            logger.debug(msg=f"Could not extract EXIF SubIFD: {e}")
+            exif_data.update(exif_subifd)
+        except Exception:
+            pass  # EXIF SubIFD is optional
         with open(exif_filename, 'rb') as f:
             data = extract_enclosed_data_for_jpg(f.read(), b'<?xpacket', b'<?xpacket end="w"?>')
             if data is not None:
