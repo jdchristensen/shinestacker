@@ -1181,12 +1181,12 @@ def test_exif_round_trip_jpg_to_png_to_jpg():
         print_exif(original_exif)
         key_exif_tags = {
             271: "Make",
-            272: "Model", 
+            272: "Model",
             306: "DateTime",
             315: "Artist",
             33432: "Copyright",
             33434: "ExposureTime",
-            33437: "FNumber", 
+            33437: "FNumber",
             34855: "ISOSpeedRatings",
             37377: "ShutterSpeedValue",
             37378: "ApertureValue",
@@ -1227,19 +1227,18 @@ def test_exif_round_trip_jpg_to_png_to_jpg():
         for tag_id, tag_name in key_exif_tags.items():
             if tag_id in original_exif:
                 original_value = original_exif[tag_id]
-                png_value = png_exif.get(tag_id)
+                png_exif.get(tag_id)
                 final_value = final_exif.get(tag_id)
                 if final_value is not None:
-                    if (hasattr(original_value, 'numerator') and 
-                        hasattr(final_value, 'numerator')):
+                    if (hasattr(original_value, 'numerator') and hasattr(final_value, 'numerator')):
                         if abs(float(original_value) - float(final_value)) < 0.001:
                             preserved_tags.append((tag_name, original_value, final_value))
                         else:
                             value_changed_tags.append(
-                                (tag_name, original_value, final_value, 
+                                (tag_name, original_value, final_value,
                                  f"value changed: {original_value} -> {final_value}")
                             )
-                    elif (isinstance(original_value, (str, bytes)) and 
+                    elif (isinstance(original_value, (str, bytes)) and
                           isinstance(final_value, (str, bytes))):
                         orig_str = safe_decode_bytes(original_value)
                         final_str = safe_decode_bytes(final_value)
@@ -1274,16 +1273,24 @@ def test_exif_round_trip_jpg_to_png_to_jpg():
         assert total_tested > 0, "No EXIF tags were tested in round-trip"
         perfect_preservation_rate = len(preserved_tags) / total_tested * 100
         any_preservation_rate = (len(preserved_tags) + len(value_changed_tags)) / total_tested * 100
-        logger.info(f"=== ROUND-TRIP PRESERVATION RESULTS ===")
-        logger.info(f"Perfect preservation: {perfect_preservation_rate:.1f}% ({len(preserved_tags)}/{total_tested})")
-        logger.info(f"Any preservation: {any_preservation_rate:.1f}% ({len(preserved_tags) + len(value_changed_tags)}/{total_tested})")
-        logger.info(f"Completely lost: {len(lost_tags)}/{total_tested}")
-        png_preservation = sum(1 for tag_id in key_exif_tags 
-                             if tag_id in original_exif and tag_id in png_exif)
+        logger.info("=== ROUND-TRIP PRESERVATION RESULTS ===")
+        logger.info(
+            f"Perfect preservation: {perfect_preservation_rate:.1f}% "
+            f"({len(preserved_tags)}/{total_tested})")
+        logger.info(
+            f"Any preservation: {any_preservation_rate:.1f}% "
+            f"({len(preserved_tags) + len(value_changed_tags)}/{total_tested})")
+        logger.info(
+            f"Completely lost: {len(lost_tags)}/{total_tested}")
+        png_preservation = sum(1 for tag_id in key_exif_tags
+                               if tag_id in original_exif and tag_id in png_exif)
         png_preservation_rate = png_preservation / total_tested * 100
-        logger.info(f"PNG preservation: {png_preservation_rate:.1f}% ({png_preservation}/{total_tested})")
-        assert perfect_preservation_rate >= 60, f"Perfect preservation rate too low: {perfect_preservation_rate:.1f}%"
-        assert any_preservation_rate >= 70, f"Any preservation rate too low: {any_preservation_rate:.1f}%"
+        logger.info(
+            f"PNG preservation: {png_preservation_rate:.1f}% ({png_preservation}/{total_tested})")
+        assert perfect_preservation_rate >= 60, \
+            f"Perfect preservation rate too low: {perfect_preservation_rate:.1f}%"
+        assert any_preservation_rate >= 70, \
+            f"Any preservation rate too low: {any_preservation_rate:.1f}%"
         for temp_file in [temp_png, final_jpg]:
             if os.path.exists(temp_file):
                 os.remove(temp_file)

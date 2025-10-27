@@ -367,112 +367,81 @@ def _insert_xmp_into_jpeg(jpeg_path, xmp_data, verbose=False):
 def create_xmp_from_exif(exif_data):
     xmp_elements = []
     if exif_data:
+        xmp_tag_map = {
+            270: {'format': 'dc:description', 'type': 'rdf_alt', 'processor': safe_decode_bytes},
+            315: {'format': 'dc:creator', 'type': 'rdf_seq', 'processor': safe_decode_bytes},
+            33432: {'format': 'dc:rights', 'type': 'rdf_alt', 'processor': safe_decode_bytes},
+            271: {'format': 'tiff:Make', 'type': 'simple', 'processor': safe_decode_bytes},
+            272: {'format': 'tiff:Model', 'type': 'simple', 'processor': safe_decode_bytes},
+            306: {'format': 'xmp:CreateDate', 'type': 'datetime', 'processor': safe_decode_bytes},
+            36867: {
+                'format': 'exif:DateTimeOriginal',
+                'type': 'datetime',
+                'processor': safe_decode_bytes
+            },
+            305: {'format': 'xmp:CreatorTool', 'type': 'simple', 'processor': safe_decode_bytes},
+            33434: {'format': 'exif:ExposureTime', 'type': 'rational', 'processor': None},
+            33437: {'format': 'exif:FNumber', 'type': 'rational', 'processor': None},
+            34855: {'format': 'exif:ISOSpeedRatings', 'type': 'rdf_seq', 'processor': None},
+            37386: {'format': 'exif:FocalLength', 'type': 'rational', 'processor': None},
+            42036: {'format': 'aux:Lens', 'type': 'simple', 'processor': safe_decode_bytes},
+            37377: {'format': 'exif:ShutterSpeedValue', 'type': 'rational', 'processor': None},
+            37378: {'format': 'exif:ApertureValue', 'type': 'rational', 'processor': None},
+            37380: {'format': 'exif:ExposureBiasValue', 'type': 'rational', 'processor': None},
+            37381: {'format': 'exif:MaxApertureValue', 'type': 'rational', 'processor': None},
+            37383: {'format': 'exif:MeteringMode', 'type': 'simple', 'processor': None},
+            37385: {'format': 'exif:Flash', 'type': 'simple', 'processor': None},
+            41987: {
+                'format': 'exif:WhiteBalance',
+                'type': 'mapped',
+                'processor': None,
+                'map': {0: 'Auto', 1: 'Manual'}
+            },
+            41986: {
+                'format': 'exif:ExposureMode',
+                'type': 'mapped',
+                'processor': None,
+                'map': {0: 'Auto', 1: 'Manual', 2: 'Auto bracket'}
+            },
+            41990: {
+                'format': 'exif:SceneCaptureType',
+                'type': 'mapped',
+                'processor': None,
+                'map': {0: 'Standard', 1: 'Landscape', 2: 'Portrait', 3: 'Night scene'}
+            }
+        }
         for tag_id, value in exif_data.items():
-            if isinstance(tag_id, int):
-                if tag_id == 270 and value:  # ImageDescription
-                    desc = safe_decode_bytes(value)
+            if isinstance(tag_id, int) and value and tag_id in xmp_tag_map:
+                config = xmp_tag_map[tag_id]
+                processed_value = config['processor'](value) if config['processor'] else value
+                if config['type'] == 'simple':
                     xmp_elements.append(
-                        '<dc:description><rdf:Alt>'
-                        f'<rdf:li xml:lang="x-default">{desc}</rdf:li>'
-                        '</rdf:Alt></dc:description>')
-                elif tag_id == 315 and value:  # Artist
-                    artist = safe_decode_bytes(value)
+                        f'<{config["format"]}>{processed_value}</{config["format"]}>')
+                elif config['type'] == 'rdf_alt':
                     xmp_elements.append(
-                        '<dc:creator><rdf:Seq>'
-                        f'<rdf:li>{artist}</rdf:li></rdf:Seq></dc:creator>')
-                elif tag_id == 33432 and value:  # Copyright
-                    copyright_tag = safe_decode_bytes(value)
+                        f'<{config["format"]}><rdf:Alt>'
+                        f'<rdf:li xml:lang="x-default">{processed_value}</rdf:li>'
+                        f'</rdf:Alt></{config["format"]}>')
+                elif config['type'] == 'rdf_seq':
                     xmp_elements.append(
-                        '<dc:rights><rdf:Alt>'
-                        f'<rdf:li xml:lang="x-default">{copyright_tag}</rdf:li>'
-                        '</rdf:Alt></dc:rights>')
-                elif tag_id == 271 and value:  # Make
-                    make = safe_decode_bytes(value)
-                    xmp_elements.append(f'<tiff:Make>{make}</tiff:Make>')
-                elif tag_id == 272 and value:  # Model
-                    model = safe_decode_bytes(value)
-                    xmp_elements.append(f'<tiff:Model>{model}</tiff:Model>')
-                elif tag_id == 306 and value:  # DateTime
-                    datetime_val = safe_decode_bytes(value)
-                    if ':' in datetime_val:
-                        datetime_val = datetime_val.replace(':', '-', 2).replace(' ', 'T')
-                    xmp_elements.append(f'<xmp:CreateDate>{datetime_val}</xmp:CreateDate>')
-                elif tag_id == 36867 and value:  # DateTimeOriginal
-                    datetime_orig = safe_decode_bytes(value)
-                    if ':' in datetime_orig:
-                        datetime_orig = datetime_orig.replace(':', '-', 2).replace(' ', 'T')
+                        f'<{config["format"]}><rdf:Seq>'
+                        f'<rdf:li>{processed_value}</rdf:li>'
+                        f'</rdf:Seq></{config["format"]}>')
+                elif config['type'] == 'datetime':
+                    if ':' in processed_value:
+                        processed_value = processed_value.replace(':', '-', 2).replace(' ', 'T')
                     xmp_elements.append(
-                        f'<exif:DateTimeOriginal>{datetime_orig}</exif:DateTimeOriginal>')
-                elif tag_id == 305 and value:  # Software
-                    software = safe_decode_bytes(value)
-                    xmp_elements.append(f'<xmp:CreatorTool>{software}</xmp:CreatorTool>')
-                elif tag_id == 33434 and value:  # ExposureTime
-                    if hasattr(value, 'numerator'):
-                        exposure = float(value)
-                    else:
-                        exposure = float(value) if value else 0
-                    xmp_elements.append(f'<exif:ExposureTime>{exposure}</exif:ExposureTime>')
-                elif tag_id == 33437 and value:  # FNumber
-                    if hasattr(value, 'numerator'):
-                        fnumber = float(value)
-                    else:
-                        fnumber = float(value) if value else 0
-                    xmp_elements.append(f'<exif:FNumber>{fnumber}</exif:FNumber>')
-                elif tag_id == 34855 and value:  # ISOSpeedRatings
+                        f'<{config["format"]}>{processed_value}</{config["format"]}>')
+                elif config['type'] == 'rational':
+                    float_value = float(value) \
+                        if hasattr(value, 'numerator') \
+                        else (float(value) if value else 0)
                     xmp_elements.append(
-                        '<exif:ISOSpeedRatings><rdf:Seq>'
-                        f'<rdf:li>{value}</rdf:li></rdf:Seq></exif:ISOSpeedRatings>')
-                elif tag_id == 37386 and value:  # FocalLength
-                    if hasattr(value, 'numerator'):
-                        focal = float(value)
-                    else:
-                        focal = float(value) if value else 0
-                    xmp_elements.append(f'<exif:FocalLength>{focal}</exif:FocalLength>')
-                elif tag_id == 42036 and value:  # LensModel
-                    lens_model = safe_decode_bytes(value)
-                    xmp_elements.append(f'<aux:Lens>{lens_model}</aux:Lens>')
-                elif tag_id == 37377 and value:  # ShutterSpeedValue
-                    if hasattr(value, 'numerator'):
-                        shutter = float(value)
-                    else:
-                        shutter = float(value) if value else 0
+                        f'<{config["format"]}>{float_value}</{config["format"]}>')
+                elif config['type'] == 'mapped':
+                    mapped_value = config['map'].get(value, str(value))
                     xmp_elements.append(
-                        f'<exif:ShutterSpeedValue>{shutter}</exif:ShutterSpeedValue>')
-                elif tag_id == 37378 and value:  # ApertureValue
-                    if hasattr(value, 'numerator'):
-                        aperture = float(value)
-                    else:
-                        aperture = float(value) if value else 0
-                    xmp_elements.append(f'<exif:ApertureValue>{aperture}</exif:ApertureValue>')
-                elif tag_id == 37380 and value:  # ExposureBiasValue
-                    if hasattr(value, 'numerator'):
-                        bias = float(value)
-                    else:
-                        bias = float(value) if value else 0
-                    xmp_elements.append(f'<exif:ExposureBiasValue>{bias}</exif:ExposureBiasValue>')
-                elif tag_id == 37381 and value:  # MaxApertureValue
-                    if hasattr(value, 'numerator'):
-                        max_aperture = float(value)
-                    else:
-                        max_aperture = float(value) if value else 0
-                    xmp_elements.append(
-                        f'<exif:MaxApertureValue>{max_aperture}</exif:MaxApertureValue>')
-                elif tag_id == 37383 and value:  # MeteringMode
-                    xmp_elements.append(f'<exif:MeteringMode>{value}</exif:MeteringMode>')
-                elif tag_id == 37385 and value:  # Flash
-                    xmp_elements.append(f'<exif:Flash>{value}</exif:Flash>')
-                elif tag_id == 41987 and value:  # WhiteBalance
-                    wb_map = {0: 'Auto', 1: 'Manual'}
-                    wb = wb_map.get(value, str(value))
-                    xmp_elements.append(f'<exif:WhiteBalance>{wb}</exif:WhiteBalance>')
-                elif tag_id == 41986 and value:  # ExposureMode
-                    mode_map = {0: 'Auto', 1: 'Manual', 2: 'Auto bracket'}
-                    mode = mode_map.get(value, str(value))
-                    xmp_elements.append(f'<exif:ExposureMode>{mode}</exif:ExposureMode>')
-                elif tag_id == 41990 and value:  # SceneCaptureType
-                    scene_map = {0: 'Standard', 1: 'Landscape', 2: 'Portrait', 3: 'Night scene'}
-                    scene = scene_map.get(value, str(value))
-                    xmp_elements.append(f'<exif:SceneCaptureType>{scene}</exif:SceneCaptureType>')
+                        f'<{config["format"]}>{mapped_value}</{config["format"]}>')
     if xmp_elements:
         xmp_content = '\n    '.join(xmp_elements)
         xmp_template = f"""<?xpacket begin='﻿' id='W5M0MpCehiHzreSzNTczkc9d'?>
