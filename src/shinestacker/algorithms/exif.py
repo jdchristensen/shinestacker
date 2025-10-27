@@ -95,12 +95,11 @@ def get_exif_from_png(image):
     exif_from_image = image.getexif()
     if exif_from_image:
         exif_data.update(dict(exif_from_image))
-    if hasattr(image, 'text') and image.text:
-        for key, value in image.text.items():
-            exif_data[f"PNG_{key}"] = value
-    if hasattr(image, 'info') and image.info:
-        for key, value in image.info.items():
-            if key not in ['dpi', 'gamma']:
+    for attr_name in ['text', 'info']:
+        if hasattr(image, attr_name) and getattr(image, attr_name):
+            for key, value in getattr(image, attr_name).items():
+                if attr_name == 'info' and key in ['dpi', 'gamma']:
+                    continue
                 exif_data[f"PNG_{key}"] = value
     return exif_data
 
@@ -471,15 +470,10 @@ def write_image_with_exif_data_png(exif, image, out_filename, verbose=False, col
         return
     pil_image = _convert_to_pil_image(image, color_order)
     pnginfo, icc_profile = _prepare_png_metadata(exif, verbose, logger)
-    try:
-        save_args = {'format': 'PNG', 'pnginfo': pnginfo}
-        if icc_profile:
-            save_args['icc_profile'] = icc_profile
-        pil_image.save(out_filename, **save_args)
-    except Exception as e:
-        if verbose:
-            logger.error(msg=f"Failed to write PNG with metadata: {e}")
-        pil_image.save(out_filename, format='PNG')
+    save_args = {'format': 'PNG', 'pnginfo': pnginfo}
+    if icc_profile:
+        save_args['icc_profile'] = icc_profile
+    pil_image.save(out_filename, **save_args)
 
 
 def _convert_to_pil_image(image, color_order):
