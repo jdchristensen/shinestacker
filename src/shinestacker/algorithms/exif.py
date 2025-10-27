@@ -289,48 +289,73 @@ def create_xmp_from_exif(exif_data):
         for tag_id, value in exif_data.items():
             if isinstance(tag_id, int):
                 if tag_id == 270 and value:  # ImageDescription
-                    desc = value
-                    if isinstance(desc, bytes):
-                        desc = desc.decode('utf-8', errors='ignore')
+                    desc = safe_decode_bytes(value)
                     xmp_elements.append(
                         f'<dc:description><rdf:Alt><rdf:li xml:lang="x-default">{desc}</rdf:li>'
                         '</rdf:Alt></dc:description>')
                 elif tag_id == 315 and value:  # Artist
-                    artist = value
-                    if isinstance(artist, bytes):
-                        artist = artist.decode('utf-8', errors='ignore')
+                    artist = safe_decode_bytes(value)
                     xmp_elements.append(
                         f'<dc:creator><rdf:Seq><rdf:li>{artist}</rdf:li>'
                         '</rdf:Seq></dc:creator>')
                 elif tag_id == 33432 and value:  # Copyright
-                    copyright_tag = value
-                    if isinstance(copyright_tag, bytes):
-                        copyright_tag = copyright_tag.decode('utf-8', errors='ignore')
+                    copyright_tag = safe_decode_bytes(value)
                     xmp_elements.append(
                         f'<dc:rights><rdf:Alt><rdf:li xml:lang="x-default">{copyright_tag}</rdf:li>'
                         '</rdf:Alt></dc:rights>')
                 elif tag_id == 271 and value:  # Make
-                    make = value
-                    if isinstance(make, bytes):
-                        make = make.decode('utf-8', errors='ignore')
+                    make = safe_decode_bytes(value)
                     xmp_elements.append(f'<tiff:Make>{make}</tiff:Make>')
                 elif tag_id == 272 and value:  # Model
-                    model = value
-                    if isinstance(model, bytes):
-                        model = model.decode('utf-8', errors='ignore')
+                    model = safe_decode_bytes(value)
                     xmp_elements.append(f'<tiff:Model>{model}</tiff:Model>')
                 elif tag_id == 306 and value:  # DateTime
-                    datetime_val = value
-                    if isinstance(datetime_val, bytes):
-                        datetime_val = datetime_val.decode('utf-8', errors='ignore')
+                    datetime_val = safe_decode_bytes(value)
                     if ':' in datetime_val:
                         datetime_val = datetime_val.replace(':', '-', 2).replace(' ', 'T')
                     xmp_elements.append(f'<xmp:CreateDate>{datetime_val}</xmp:CreateDate>')
+                elif tag_id == 36867 and value:  # DateTimeOriginal
+                    datetime_orig = safe_decode_bytes(value)
+                    if ':' in datetime_orig:
+                        datetime_orig = datetime_orig.replace(':', '-', 2).replace(' ', 'T')
+                    xmp_elements.append(
+                        f'<exif:DateTimeOriginal>{datetime_orig}</exif:DateTimeOriginal>')
                 elif tag_id == 305 and value:  # Software
-                    software = value
-                    if isinstance(software, bytes):
-                        software = software.decode('utf-8', errors='ignore')
+                    software = safe_decode_bytes(value)
                     xmp_elements.append(f'<xmp:CreatorTool>{software}</xmp:CreatorTool>')
+                elif tag_id == 33434 and value:  # ExposureTime
+                    if hasattr(value, 'numerator'):
+                        exposure = float(value)
+                    else:
+                        exposure = float(value) if value else 0
+                    xmp_elements.append(f'<exif:ExposureTime>{exposure}</exif:ExposureTime>')
+                elif tag_id == 33437 and value:  # FNumber
+                    if hasattr(value, 'numerator'):
+                        fnumber = float(value)
+                    else:
+                        fnumber = float(value) if value else 0
+                    xmp_elements.append(f'<exif:FNumber>{fnumber}</exif:FNumber>')
+                elif tag_id == 34855 and value:  # ISOSpeedRatings
+                    xmp_elements.append(
+                        f'<exif:ISOSpeedRatings><rdf:Seq><rdf:li>{value}</rdf:li>'
+                        '</rdf:Seq></exif:ISOSpeedRatings>')
+                elif tag_id == 37386 and value:  # FocalLength
+                    if hasattr(value, 'numerator'):
+                        focal = float(value)
+                    else:
+                        focal = float(value) if value else 0
+                    xmp_elements.append(f'<exif:FocalLength>{focal}</exif:FocalLength>')
+                elif tag_id == 42036 and value:  # LensModel
+                    lens_model = safe_decode_bytes(value)
+                    xmp_elements.append(f'<aux:Lens>{lens_model}</aux:Lens>')
+                elif tag_id == 34853 and value:  # GPSInfo (not implemented)
+                    pass
+                elif tag_id == 37385 and value:  # Flash
+                    xmp_elements.append(f'<exif:Flash>{value}</exif:Flash>')
+                elif tag_id == 41987 and value:  # WhiteBalance
+                    wb_map = {0: 'Auto', 1: 'Manual'}
+                    wb = wb_map.get(value, str(value))
+                    xmp_elements.append(f'<exif:WhiteBalance>{wb}</exif:WhiteBalance>')
     if xmp_elements:
         xmp_content = '\n    '.join(xmp_elements)
         xmp_template = f"""<?xpacket begin='﻿' id='W5M0MpCehiHzreSzNTczkc9d'?>
@@ -341,7 +366,8 @@ def create_xmp_from_exif(exif_data):
     xmlns:dc='http://purl.org/dc/elements/1.1/'
     xmlns:xmp='http://ns.adobe.com/xap/1.0/'
     xmlns:tiff='http://ns.adobe.com/tiff/1.0/'
-    xmlns:exif='http://ns.adobe.com/exif/1.0/'>
+    xmlns:exif='http://ns.adobe.com/exif/1.0/'
+    xmlns:aux='http://ns.adobe.com/exif/1.0/aux/'>
     {xmp_content}
   </rdf:Description>
  </rdf:RDF>
@@ -432,13 +458,58 @@ def _extract_xmp_data(exif, verbose, logger):
 
 
 def _add_exif_tags_to_pnginfo(exif, pnginfo, verbose, logger):
+    camera_tags = {
+        271: 'CameraMake',
+        272: 'CameraModel',
+        305: 'Software',
+        306: 'DateTime',
+        315: 'Artist',
+        33432: 'Copyright'
+    }
+    exposure_tags = {
+        33434: 'ExposureTime',
+        33437: 'FNumber',
+        34855: 'ISOSpeed',
+        37377: 'ShutterSpeedValue',
+        37378: 'ApertureValue',
+        37386: 'FocalLength',
+        42036: 'LensModel'
+    }
     for tag_id, value in exif.items():
         if value is None:
             continue
         if isinstance(tag_id, int):
-            _add_exif_tag(pnginfo, tag_id, value, verbose, logger)
+            if tag_id in camera_tags:
+                _add_typed_tag(pnginfo, f"EXIF_{camera_tags[tag_id]}", value, verbose, logger)
+            elif tag_id in exposure_tags:
+                _add_typed_tag(pnginfo, f"EXIF_{exposure_tags[tag_id]}", value, verbose, logger)
+            else:
+                _add_exif_tag(pnginfo, tag_id, value, verbose, logger)
         elif isinstance(tag_id, str) and not tag_id.lower().startswith(('xmp', 'xml')):
             _add_png_text_tag(pnginfo, tag_id, value, verbose, logger)
+
+
+def _add_typed_tag(pnginfo, key, value, verbose, logger):
+    try:
+        if hasattr(value, 'numerator'):  # IFDRational
+            stored_value = f"RATIONAL:{value.numerator}/{value.denominator}"
+        elif isinstance(value, bytes):
+            try:
+                stored_value = f"STRING:{value.decode('utf-8', errors='replace')}"
+            except Exception:
+                stored_value = f"BYTES:{str(value)[:100]}"
+        elif isinstance(value, (list, tuple)):
+            stored_value = f"ARRAY:{','.join(str(x) for x in value)}"
+        elif isinstance(value, int):
+            stored_value = f"INT:{value}"
+        elif isinstance(value, float):
+            stored_value = f"FLOAT:{value}"
+        else:
+            stored_value = f"STRING:{str(value)}"
+        pnginfo.add_text(key, stored_value)
+    except Exception as e:
+        if verbose:
+            logger.warning(f"Could not store typed tag {key}: {e}")
 
 
 def _add_exif_tag(pnginfo, tag_id, value, verbose, logger):

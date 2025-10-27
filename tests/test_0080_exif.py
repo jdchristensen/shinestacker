@@ -1022,6 +1022,40 @@ def test_jpg_to_jpg_vs_tiff_to_jpg():
         logger.error(traceback.format_exc())
 
 
+def test_png_metadata_enhancement():
+    try:
+        setup_logging()
+        logger = logging.getLogger(__name__)
+        output_dir = "output/img-exif"
+        if not os.path.exists(output_dir):
+            os.makedirs(output_dir)
+        logger.info("======== Testing Enhanced PNG Metadata ========")
+        source_jpg = "examples/input/img-exif/0000.jpg"
+        if not os.path.exists(source_jpg):
+            logger.warning("Source file not found, skipping test")
+            return
+        original_exif = get_exif(source_jpg)
+        logger.info("*** Original EXIF ***")
+        print_exif(original_exif)
+        test_image = np.ones((100, 100, 3), dtype=np.uint8) * 128
+        png_out = output_dir + "/enhanced_metadata.png"
+        write_image_with_exif_data(original_exif, test_image, png_out, verbose=True)
+        png_exif = get_exif(png_out)
+        logger.info("*** PNG EXIF (should have enhanced metadata) ***")
+        print_exif(png_exif)
+        with Image.open(png_out) as img:
+            if hasattr(img, 'text') and img.text:
+                logger.info("*** PNG Text Chunks Found ***")
+                for key, value in img.text.items():
+                    if 'xmp' in key.lower() or 'exif' in key.lower():
+                        logger.info(f"  {key}: {str(value)[:200]}...")
+        logger.info("✓ Enhanced PNG metadata test completed")
+    except Exception as e:
+        logger.error(f"Enhanced PNG metadata test failed: {e}")
+        import traceback
+        logger.error(traceback.format_exc())
+
+
 if __name__ == '__main__':
     test_exif_tiff()
     test_exif_jpg()
@@ -1047,3 +1081,4 @@ if __name__ == '__main__':
     test_exif_round_trip_tiff_to_jpg()
     test_pil_exif_basic()
     test_jpg_to_jpg_vs_tiff_to_jpg()
+    test_png_metadata_enhancement()
