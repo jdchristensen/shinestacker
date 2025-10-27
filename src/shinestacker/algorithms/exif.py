@@ -74,9 +74,8 @@ def get_exif(exif_filename, enhanced_png_parsing=True):
     if extension_png(exif_filename):
         if enhanced_png_parsing:
             return get_enhanced_exif_from_png(image)
-        else:
-            exif_data = get_exif_from_png(image)
-            return exif_data if exif_data else image.getexif()
+        exif_data = get_exif_from_png(image)
+        return exif_data if exif_data else image.getexif()
     return image.getexif()
 
 
@@ -159,7 +158,7 @@ def parse_xmp_to_exif(xmp_data):
                 except ValueError:
                     exif_data[34855] = iso_value
     except Exception as e:
-        logger.debug(f"XMP parsing failed: {e}")
+        logger.debug(msg=f"XMP parsing failed: {e}")
     return exif_data
 
 
@@ -231,9 +230,8 @@ def get_enhanced_exif_from_png(image):
     return clean_exif
 
 
-def reconstruct_exif_for_jpeg_with_exposure(exif_dict, verbose=False):
+def reconstruct_exif_for_jpeg_with_exposure(exif_dict_data, verbose=False):
     logger = logging.getLogger(__name__)
-    from PIL import Image
     main_exif = Image.Exif()
     main_ifd_tags = {
         256, 257, 258, 259, 262, 274, 277, 282, 283, 284, 296,  # Basic image tags
@@ -251,22 +249,22 @@ def reconstruct_exif_for_jpeg_with_exposure(exif_dict, verbose=False):
         41486, 41487, 41488,  # FocalPlane resolution tags
     }
     for tag_id in main_ifd_tags:
-        if tag_id in exif_dict:
+        if tag_id in exif_dict_data:
             try:
-                main_exif[tag_id] = exif_dict[tag_id]
+                main_exif[tag_id] = exif_dict_data[tag_id]
                 if verbose:
                     logger.info(msg=f"Added to main IFD: {TAGS.get(tag_id, tag_id)}")
             except Exception as e:
                 if verbose:
                     logger.warning(msg=f"Failed to add {TAGS.get(tag_id, tag_id)} to main IFD: {e}")
-    if any(tag_id in exif_dict for tag_id in exif_subifd_tags):
+    if any(tag_id in exif_dict_data for tag_id in exif_subifd_tags):
         try:
             subifd_exif = Image.Exif()
             subifd_count = 0
             for tag_id in exif_subifd_tags:
-                if tag_id in exif_dict:
+                if tag_id in exif_dict_data:
                     try:
-                        subifd_exif[tag_id] = exif_dict[tag_id]
+                        subifd_exif[tag_id] = exif_dict_data[tag_id]
                         subifd_count += 1
                         if verbose:
                             logger.info(msg=f"Added to SubIFD: {TAGS.get(tag_id, tag_id)}")
