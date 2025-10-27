@@ -178,48 +178,33 @@ def reconstruct_exif_for_jpeg_with_exposure(exif_dict_data, verbose=False):
     logger = logging.getLogger(__name__)
     main_exif = Image.Exif()
     main_ifd_tags = {
-        256, 257, 258, 259, 262, 274, 277, 282, 283, 284, 296,  # Basic image tags
-        270, 271, 272, 305, 306, 315, 33432,  # Description, make, model, software, etc.
+        256, 257, 258, 259, 262, 274, 277, 282, 283,
+        284, 296, 270, 271, 272, 305, 306, 315, 33432
     }
     exif_subifd_tags = {
-        33434, 33437, 34855,  # ExposureTime, FNumber, ISOSpeedRatings
-        37377, 37378, 37386,  # ShutterSpeedValue, ApertureValue, FocalLength
-        36864, 36867, 36868,  # ExifVersion, DateTimeOriginal, DateTimeDigitized
-        37380, 37381, 37383, 37385,  # ExposureBias, MaxAperture, MeteringMode, Flash
-        40961, 40962, 40963,  # ColorSpace, ExifImageWidth, ExifImageHeight
-        41985, 41986, 41987, 41990,  # CustomRendered, ExposureMode, WhiteBalance, SceneCaptureType
-        42033, 42034, 42036,  # BodySerialNumber, LensSpecification, LensModel
-        37521, 37522, 36880,  # SubsecTimeOriginal, SubsecTimeDigitized, OffsetTime
-        41486, 41487, 41488,  # FocalPlane resolution tags
+        33434, 33437, 34855, 37377, 37378, 37386, 36864, 36867, 36868, 37380,
+        37381, 37383, 37385, 40961, 40962, 40963, 41985, 41986, 41987, 41990,
+        42033, 42034, 42036, 37521, 37522, 36880, 41486, 41487, 41488
     }
     for tag_id in main_ifd_tags:
         if tag_id in exif_dict_data:
             try:
                 main_exif[tag_id] = exif_dict_data[tag_id]
+            except Exception:
                 if verbose:
-                    logger.info(msg=f"Added to main IFD: {TAGS.get(tag_id, tag_id)}")
-            except Exception as e:
-                if verbose:
-                    logger.warning(msg=f"Failed to add {TAGS.get(tag_id, tag_id)} to main IFD: {e}")
+                    logger.warning(msg=f"Failed to add {TAGS.get(tag_id, tag_id)} to main IFD")
     if any(tag_id in exif_dict_data for tag_id in exif_subifd_tags):
         try:
             subifd_exif = Image.Exif()
-            subifd_count = 0
             for tag_id in exif_subifd_tags:
                 if tag_id in exif_dict_data:
                     try:
                         subifd_exif[tag_id] = exif_dict_data[tag_id]
-                        subifd_count += 1
-                        if verbose:
-                            logger.info(msg=f"Added to SubIFD: {TAGS.get(tag_id, tag_id)}")
-                    except Exception as e:
+                    except Exception:
                         if verbose:
                             logger.warning(
-                                msg=f"Failed to add {TAGS.get(tag_id, tag_id)} to SubIFD: {e}")
-            if subifd_count > 0:
-                main_exif[34665] = subifd_exif  # EXIF SubIFD pointer
-                if verbose:
-                    logger.info(msg=f"Created EXIF SubIFD with {subifd_count} exposure tags")
+                                msg=f"Failed to add {TAGS.get(tag_id, tag_id)} to SubIFD")
+            main_exif[34665] = subifd_exif
         except Exception as e:
             if verbose:
                 logger.warning(msg=f"Failed to create EXIF SubIFD: {e}")
@@ -457,8 +442,6 @@ def _convert_to_pil_image(image, color_order, verbose, logger):
         if len(image.shape) == 3 and image.shape[2] == 3:
             if color_order in ['auto', 'bgr']:
                 image_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-                if verbose:
-                    logger.info(msg="Converted BGR to RGB for PIL")
                 return Image.fromarray(image_rgb)
         return Image.fromarray(image)
     return image
@@ -470,8 +453,6 @@ def _prepare_png_metadata(exif, verbose, logger):
     xmp_data = _extract_xmp_data(exif)
     if xmp_data:
         pnginfo.add_text("XML:com.adobe.xmp", xmp_data)
-        if verbose:
-            logger.info(msg="Added XMP data to PNG info")
     _add_exif_tags_to_pnginfo(exif, pnginfo, verbose, logger)
     icc_profile = _extract_icc_profile(exif, verbose, logger)
     return pnginfo, icc_profile
@@ -492,39 +473,30 @@ def _extract_xmp_data(exif):
 
 def _add_exif_tags_to_pnginfo(exif, pnginfo, verbose, logger):
     camera_tags = {
-        271: 'CameraMake',
-        272: 'CameraModel',
-        305: 'Software',
-        306: 'DateTime',
-        315: 'Artist',
-        33432: 'Copyright'
+        271: 'CameraMake', 272: 'CameraModel', 305: 'Software',
+        306: 'DateTime', 315: 'Artist', 33432: 'Copyright'
     }
     exposure_tags = {
-        33434: 'ExposureTime',
-        33437: 'FNumber',
-        34855: 'ISOSpeed',
-        37377: 'ShutterSpeedValue',
-        37378: 'ApertureValue',
-        37386: 'FocalLength',
-        42036: 'LensModel'
+        33434: 'ExposureTime', 33437: 'FNumber', 34855: 'ISOSpeed', 37377: 'ShutterSpeedValue',
+        37378: 'ApertureValue', 37386: 'FocalLength', 42036: 'LensModel'
     }
     for tag_id, value in exif.items():
         if value is None:
             continue
         if isinstance(tag_id, int):
             if tag_id in camera_tags:
-                _add_typed_tag(pnginfo, f"EXIF_{camera_tags[tag_id]}", value, verbose, logger)
+                _add_typed_tag(pnginfo, f"EXIF_{camera_tags[tag_id]}", value)
             elif tag_id in exposure_tags:
-                _add_typed_tag(pnginfo, f"EXIF_{exposure_tags[tag_id]}", value, verbose, logger)
+                _add_typed_tag(pnginfo, f"EXIF_{exposure_tags[tag_id]}", value)
             else:
-                _add_exif_tag(pnginfo, tag_id, value, verbose, logger)
+                _add_exif_tag(pnginfo, tag_id, value)
         elif isinstance(tag_id, str) and not tag_id.lower().startswith(('xmp', 'xml')):
-            _add_png_text_tag(pnginfo, tag_id, value, verbose, logger)
+            _add_png_text_tag(pnginfo, tag_id, value)
 
 
-def _add_typed_tag(pnginfo, key, value, verbose, logger):
+def _add_typed_tag(pnginfo, key, value):
     try:
-        if hasattr(value, 'numerator'):  # IFDRational
+        if hasattr(value, 'numerator'):
             stored_value = f"RATIONAL:{value.numerator}/{value.denominator}"
         elif isinstance(value, bytes):
             try:
@@ -540,12 +512,11 @@ def _add_typed_tag(pnginfo, key, value, verbose, logger):
         else:
             stored_value = f"STRING:{str(value)}"
         pnginfo.add_text(key, stored_value)
-    except Exception as e:
-        if verbose:
-            logger.warning(f"Could not store typed tag {key}: {e}")
+    except Exception:
+        pass
 
 
-def _add_exif_tag(pnginfo, tag_id, value, verbose, logger):
+def _add_exif_tag(pnginfo, tag_id, value):
     try:
         tag_name = TAGS.get(tag_id, f"Unknown_{tag_id}")
         if isinstance(value, bytes) and len(value) > 1000:
@@ -558,14 +529,13 @@ def _add_exif_tag(pnginfo, tag_id, value, verbose, logger):
                 pnginfo.add_text(tag_name, decoded_value)
             except Exception:
                 pass
-        elif hasattr(value, 'numerator'):  # IFDRational
+        elif hasattr(value, 'numerator'):
             rational_str = f"{value.numerator}/{value.denominator}"
             pnginfo.add_text(tag_name, rational_str)
         else:
             pnginfo.add_text(tag_name, str(value))
-    except Exception as e:
-        if verbose:
-            logger.warning(f"Could not store EXIF tag {tag_id}: {e}")
+    except Exception:
+        pass
 
 
 def _add_png_text_tag(pnginfo, key, value, verbose, logger):
@@ -617,7 +587,6 @@ def write_image_with_exif_data_jpg(exif, image, out_filename, verbose):
 
 
 def exif_extra_tags_for_tif(exif):
-    logger = logging.getLogger(__name__)
     res_x, res_y = exif.get(RESOLUTIONX), exif.get(RESOLUTIONY)
     resolution = ((res_x.numerator, res_x.denominator), (res_y.numerator, res_y.denominator)) \
         if res_x and res_y else ((720000, 10000), (720000, 10000))
@@ -636,14 +605,14 @@ def exif_extra_tags_for_tif(exif):
             data = (data.numerator, data.denominator) if data.denominator != 0 else (0, 1)
             extra.append((tag_id, 5, 1, data, False))
             continue
-        processed_data = _process_tiff_data(tag, data, logger)
+        processed_data = _process_tiff_data(tag, data)
         if processed_data:
             dtype, count, data_value = processed_data
             extra.append((tag_id, dtype, count, data_value, False))
     return extra, exif_tags
 
 
-def _process_tiff_data(tag, data, logger):
+def _process_tiff_data(tag, data):
     if isinstance(data, IFDRational):
         data = (data.numerator, data.denominator) if data.denominator != 0 else (0, 1)
         return 5, 1, data
@@ -652,8 +621,7 @@ def _process_tiff_data(tag, data, logger):
             clean_data = [float(x) if not hasattr(x, 'denominator') or x.denominator != 0
                           else float('nan') for x in data]
             return 12, len(clean_data), tuple(clean_data)
-        except Exception as e:
-            logger.warning(msg=f"Failed to process tuple for tag {tag}: {e}")
+        except Exception:
             return None
     if isinstance(data, (str, bytes)):
         clean_data = clean_data_for_tiff(data)
@@ -662,8 +630,7 @@ def _process_tiff_data(tag, data, logger):
     try:
         dtype, count = get_tiff_dtype_count(data)
         return dtype, count, data
-    except Exception as e:
-        logger.warning(msg=f"Failed to process tag {tag}: {e}")
+    except Exception:
         return None
 
 
