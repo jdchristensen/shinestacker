@@ -34,6 +34,25 @@ NO_COPY_TIFF_TAGS_ID = [IMAGEWIDTH, IMAGELENGTH, RESOLUTIONX, RESOLUTIONY, BITSP
 NO_COPY_TIFF_TAGS = ["Compression", "StripOffsets", "RowsPerStrip", "StripByteCounts"]
 
 
+XMP_TEMPLATE = """<?xpacket begin='﻿' id='W5M0MpCehiHzreSzNTczkc9d'?>
+<x:xmpmeta xmlns:x='adobe:ns:meta/' x:xmptk='Adobe XMP Core 5.6-c140 79.160451, 2017/05/06-01:08:21'>
+ <rdf:RDF xmlns:rdf='http://www.w3.org/1999/02/22-rdf-syntax-ns#'>
+  <rdf:Description rdf:about='' xmlns:dc='http://purl.org/dc/elements/1.1/' xmlns:xmp='http://ns.adobe.com/xap/1.0/' xmlns:tiff='http://ns.adobe.com/tiff/1.0/' xmlns:exif='http://ns.adobe.com/exif/1.0/' xmlns:aux='http://ns.adobe.com/exif/1.0/aux/'>
+    {content}
+  </rdf:Description>
+ </rdf:RDF>
+</x:xmpmeta>
+<?xpacket end='w'?>"""  # noqa
+
+XMP_EMPTY_TEMPLATE = """<?xpacket begin='﻿' id='W5M0MpCehiHzreSzNTczkc9d'?>
+<x:xmpmeta xmlns:x='adobe:ns:meta/' x:xmptk='Adobe XMP Core 5.6-c140 79.160451, 2017/05/06-01:08:21'>
+ <rdf:RDF xmlns:rdf='http://www.w3.org/1999/02/22-rdf-syntax-ns#'>
+  <rdf:Description rdf:about=''/>
+ </rdf:RDF>
+</x:xmpmeta>
+<?xpacket end='w'?>"""  # noqa
+
+
 def extract_enclosed_data_for_jpg(data, head, foot):
     xmp_start = data.find(head)
     if xmp_start == -1:
@@ -439,23 +458,8 @@ def create_xmp_from_exif(exif_data):
                         f'<{config["format"]}>{mapped_value}</{config["format"]}>')
     if xmp_elements:
         xmp_content = '\n    '.join(xmp_elements)
-        xmp_template = f"""<?xpacket begin='﻿' id='W5M0MpCehiHzreSzNTczkc9d'?>
-<x:xmpmeta xmlns:x='adobe:ns:meta/' x:xmptk='Adobe XMP Core 5.6-c140 79.160451, 2017/05/06-01:08:21'>
- <rdf:RDF xmlns:rdf='http://www.w3.org/1999/02/22-rdf-syntax-ns#'>
-  <rdf:Description rdf:about='' xmlns:dc='http://purl.org/dc/elements/1.1/' xmlns:xmp='http://ns.adobe.com/xap/1.0/' xmlns:tiff='http://ns.adobe.com/tiff/1.0/' xmlns:exif='http://ns.adobe.com/exif/1.0/' xmlns:aux='http://ns.adobe.com/exif/1.0/aux/'>
-    {xmp_content}
-  </rdf:Description>
- </rdf:RDF>
-</x:xmpmeta>
-<?xpacket end='w'?>"""  # noqa: E501
-        return xmp_template
-    return """<?xpacket begin='﻿' id='W5M0MpCehiHzreSzNTczkc9d'?>
-<x:xmpmeta xmlns:x='adobe:ns:meta/' x:xmptk='Adobe XMP Core 5.6-c140 79.160451, 2017/05/06-01:08:21'>
- <rdf:RDF xmlns:rdf='http://www.w3.org/1999/02/22-rdf-syntax-ns#'>
-  <rdf:Description rdf:about=''/>
- </rdf:RDF>
-</x:xmpmeta>
-<?xpacket end='w'?>"""  # noqa: E501
+        return XMP_TEMPLATE.format(content=xmp_content)
+    return XMP_EMPTY_TEMPLATE
 
 
 def write_image_with_exif_data_png(exif, image, out_filename, verbose=False, color_order='auto'):
