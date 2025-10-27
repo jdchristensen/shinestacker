@@ -1164,6 +1164,138 @@ def test_unified_exif_with_enhanced_png():
         assert False
 
 
+def test_exif_round_trip_jpg_to_png_to_jpg():
+    try:
+        setup_logging()
+        logger = logging.getLogger(__name__)
+        output_dir = "output/img-exif"
+        if not os.path.exists(output_dir):
+            os.makedirs(output_dir)
+        logger.info("======== Testing EXIF Round-Trip: JPG -> PNG -> JPG ========")
+        source_jpg = "examples/input/img-exif/0000.jpg"
+        if not os.path.exists(source_jpg):
+            logger.error(f"Source file not found: {source_jpg}")
+            assert False, f"Source file not found: {source_jpg}"
+        original_exif = get_exif(source_jpg)
+        logger.info("*** Original JPG EXIF ***")
+        print_exif(original_exif)
+        key_exif_tags = {
+            271: "Make",
+            272: "Model", 
+            306: "DateTime",
+            315: "Artist",
+            33432: "Copyright",
+            33434: "ExposureTime",
+            33437: "FNumber", 
+            34855: "ISOSpeedRatings",
+            37377: "ShutterSpeedValue",
+            37378: "ApertureValue",
+            37386: "FocalLength",
+            42036: "LensModel",
+            36867: "DateTimeOriginal",
+            37385: "Flash",
+            41987: "WhiteBalance"
+        }
+        original_count = sum(1 for tag_id in key_exif_tags if tag_id in original_exif)
+        logger.info(f"Found {original_count}/{len(key_exif_tags)} key EXIF tags in original JPG")
+        assert original_count > 0, "No key EXIF tags found in original JPG"
+        temp_png = output_dir + "/roundtrip_temp.png"
+        test_image = np.ones((100, 100, 3), dtype=np.uint8) * 128
+        logger.info("*** Writing PNG with original EXIF ***")
+        write_image_with_exif_data(original_exif, test_image, temp_png, verbose=False)
+        assert os.path.exists(temp_png), "PNG file was not created"
+        png_exif = get_exif(temp_png)
+        logger.info("*** PNG EXIF (after JPG->PNG) ***")
+        print_exif(png_exif)
+        png_count = sum(1 for tag_id in key_exif_tags if tag_id in png_exif)
+        logger.info(f"Preserved {png_count}/{original_count} key tags in PNG")
+        assert png_count > 0, "No EXIF tags preserved in PNG"
+        final_jpg = output_dir + "/roundtrip_final.jpg"
+        logger.info("*** Writing JPG with PNG EXIF ***")
+        write_image_with_exif_data(png_exif, test_image, final_jpg, verbose=False)
+        assert os.path.exists(final_jpg), "Final JPG file was not created"
+        final_exif = get_exif(final_jpg)
+        logger.info("*** Final JPG EXIF (after PNG->JPG) ***")
+        print_exif(final_exif)
+        final_count = sum(1 for tag_id in key_exif_tags if tag_id in final_exif)
+        logger.info(f"Preserved {final_count}/{original_count} key tags in final JPG")
+        assert final_count > 0, "No EXIF tags preserved in final JPG"
+        logger.info("=== Detailed JPG->PNG->JPG EXIF Preservation Analysis ===")
+        preserved_tags = []
+        lost_tags = []
+        value_changed_tags = []
+        for tag_id, tag_name in key_exif_tags.items():
+            if tag_id in original_exif:
+                original_value = original_exif[tag_id]
+                png_value = png_exif.get(tag_id)
+                final_value = final_exif.get(tag_id)
+                if final_value is not None:
+                    if (hasattr(original_value, 'numerator') and 
+                        hasattr(final_value, 'numerator')):
+                        if abs(float(original_value) - float(final_value)) < 0.001:
+                            preserved_tags.append((tag_name, original_value, final_value))
+                        else:
+                            value_changed_tags.append(
+                                (tag_name, original_value, final_value, 
+                                 f"value changed: {original_value} -> {final_value}")
+                            )
+                    elif (isinstance(original_value, (str, bytes)) and 
+                          isinstance(final_value, (str, bytes))):
+                        orig_str = safe_decode_bytes(original_value)
+                        final_str = safe_decode_bytes(final_value)
+                        if orig_str == final_str:
+                            preserved_tags.append((tag_name, original_value, final_value))
+                        else:
+                            value_changed_tags.append(
+                                (tag_name, original_value, final_value,
+                                 f"value changed: {orig_str} -> {final_str}")
+                            )
+                    elif original_value == final_value:
+                        preserved_tags.append((tag_name, original_value, final_value))
+                    else:
+                        value_changed_tags.append(
+                            (tag_name, original_value, final_value,
+                             f"value changed: {original_value} -> {final_value}")
+                        )
+                else:
+                    lost_tags.append((tag_name, original_value, None, "tag missing in final JPG"))
+        logger.info("✓ PERFECTLY PRESERVED TAGS:")
+        for tag_name, orig_val, final_val in preserved_tags:
+            logger.info(f"  {tag_name}: {orig_val}")
+        if value_changed_tags:
+            logger.info("⚠ VALUE CHANGED TAGS:")
+            for tag_name, orig_val, final_val, reason in value_changed_tags:
+                logger.info(f"  {tag_name}: {reason}")
+        if lost_tags:
+            logger.info("✗ COMPLETELY LOST TAGS:")
+            for tag_name, orig_val, final_val, reason in lost_tags:
+                logger.info(f"  {tag_name}: {reason}")
+        total_tested = len(preserved_tags) + len(value_changed_tags) + len(lost_tags)
+        assert total_tested > 0, "No EXIF tags were tested in round-trip"
+        perfect_preservation_rate = len(preserved_tags) / total_tested * 100
+        any_preservation_rate = (len(preserved_tags) + len(value_changed_tags)) / total_tested * 100
+        logger.info(f"=== ROUND-TRIP PRESERVATION RESULTS ===")
+        logger.info(f"Perfect preservation: {perfect_preservation_rate:.1f}% ({len(preserved_tags)}/{total_tested})")
+        logger.info(f"Any preservation: {any_preservation_rate:.1f}% ({len(preserved_tags) + len(value_changed_tags)}/{total_tested})")
+        logger.info(f"Completely lost: {len(lost_tags)}/{total_tested}")
+        png_preservation = sum(1 for tag_id in key_exif_tags 
+                             if tag_id in original_exif and tag_id in png_exif)
+        png_preservation_rate = png_preservation / total_tested * 100
+        logger.info(f"PNG preservation: {png_preservation_rate:.1f}% ({png_preservation}/{total_tested})")
+        assert perfect_preservation_rate >= 60, f"Perfect preservation rate too low: {perfect_preservation_rate:.1f}%"
+        assert any_preservation_rate >= 70, f"Any preservation rate too low: {any_preservation_rate:.1f}%"
+        for temp_file in [temp_png, final_jpg]:
+            if os.path.exists(temp_file):
+                os.remove(temp_file)
+                logger.info(f"Cleaned up: {temp_file}")
+        logger.info("✓ JPG->PNG->JPG round-trip test completed")
+    except Exception as e:
+        logger.error(f"JPG->PNG->JPG round-trip test failed: {str(e)}")
+        import traceback
+        logger.error(traceback.format_exc())
+        assert False, f"JPG->PNG->JPG round-trip test failed: {str(e)}"
+
+
 if __name__ == '__main__':
     test_exif_tiff()
     test_exif_jpg()
@@ -1192,3 +1324,4 @@ if __name__ == '__main__':
     test_png_metadata_enhancement()
     test_enhanced_png_exif()
     test_unified_exif_with_enhanced_png()
+    test_exif_round_trip_jpg_to_png_to_jpg()
