@@ -98,6 +98,59 @@ def get_exif_from_png(image):
     return exif_data
 
 
+def reconstruct_exif_for_jpeg_with_exposure(exif_dict, verbose=False):
+    logger = logging.getLogger(__name__)
+    from PIL import Image
+    main_exif = Image.Exif()
+    main_ifd_tags = {
+        256, 257, 258, 259, 262, 274, 277, 282, 283, 284, 296,  # Basic image tags
+        270, 271, 272, 305, 306, 315, 33432,  # Description, make, model, software, etc.
+    }
+    exif_subifd_tags = {
+        33434, 33437, 34855,  # ExposureTime, FNumber, ISOSpeedRatings
+        37377, 37378, 37386,  # ShutterSpeedValue, ApertureValue, FocalLength
+        36864, 36867, 36868,  # ExifVersion, DateTimeOriginal, DateTimeDigitized
+        37380, 37381, 37383, 37385,  # ExposureBias, MaxAperture, MeteringMode, Flash
+        40961, 40962, 40963,  # ColorSpace, ExifImageWidth, ExifImageHeight
+        41985, 41986, 41987, 41990,  # CustomRendered, ExposureMode, WhiteBalance, SceneCaptureType
+        42033, 42034, 42036,  # BodySerialNumber, LensSpecification, LensModel
+        37521, 37522, 36880,  # SubsecTimeOriginal, SubsecTimeDigitized, OffsetTime
+        41486, 41487, 41488,  # FocalPlane resolution tags
+    }
+    for tag_id in main_ifd_tags:
+        if tag_id in exif_dict:
+            try:
+                main_exif[tag_id] = exif_dict[tag_id]
+                if verbose:
+                    logger.info(msg=f"Added to main IFD: {TAGS.get(tag_id, tag_id)}")
+            except Exception as e:
+                if verbose:
+                    logger.warning(msg=f"Failed to add {TAGS.get(tag_id, tag_id)} to main IFD: {e}")
+    if any(tag_id in exif_dict for tag_id in exif_subifd_tags):
+        try:
+            subifd_exif = Image.Exif()
+            subifd_count = 0
+            for tag_id in exif_subifd_tags:
+                if tag_id in exif_dict:
+                    try:
+                        subifd_exif[tag_id] = exif_dict[tag_id]
+                        subifd_count += 1
+                        if verbose:
+                            logger.info(msg=f"Added to SubIFD: {TAGS.get(tag_id, tag_id)}")
+                    except Exception as e:
+                        if verbose:
+                            logger.warning(
+                                msg=f"Failed to add {TAGS.get(tag_id, tag_id)} to SubIFD: {e}")
+            if subifd_count > 0:
+                main_exif[34665] = subifd_exif  # EXIF SubIFD pointer
+                if verbose:
+                    logger.info(msg=f"Created EXIF SubIFD with {subifd_count} exposure tags")
+        except Exception as e:
+            if verbose:
+                logger.warning(msg=f"Failed to create EXIF SubIFD: {e}")
+    return main_exif
+
+
 def safe_decode_bytes(data, encoding='utf-8'):
     if not isinstance(data, bytes):
         return data
@@ -149,7 +202,7 @@ def add_exif_data_to_jpg_file(exif, in_filename, out_filename, verbose=False):
     if verbose:
         print_exif(exif)
     xmp_data = None
-    if XMLPACKET in exif:
+    if hasattr(exif, 'get') and XMLPACKET in exif:
         xmp_data = exif[XMLPACKET]
         if isinstance(xmp_data, bytes):
             xmp_start = xmp_data.find(b'<x:xmpmeta')
@@ -159,7 +212,28 @@ def add_exif_data_to_jpg_file(exif, in_filename, out_filename, verbose=False):
                 xmp_data = xmp_data[xmp_start:xmp_end]
     with Image.open(in_filename) as image:
         if hasattr(exif, 'tobytes'):
-            exif_bytes = exif.tobytes()
+            if isinstance(exif, Image.Exif):
+                exif_bytes = exif.tobytes()
+            else:
+                jpeg_exif = Image.Exif()
+                for tag_id in exif:
+                    try:
+                        if tag_id in [XMLPACKET]:
+                            continue
+                        jpeg_exif[tag_id] = exif[tag_id]
+                    except Exception:
+                        pass
+                exif_bytes = jpeg_exif.tobytes()
+        elif hasattr(exif, 'items'):
+            jpeg_exif = Image.Exif()
+            for tag_id, value in exif.items():
+                if tag_id == XMLPACKET:
+                    continue
+                try:
+                    jpeg_exif[tag_id] = value
+                except Exception:
+                    pass
+            exif_bytes = jpeg_exif.tobytes()
         else:
             exif_bytes = exif
         image.save(out_filename, "JPEG", exif=exif_bytes, quality=100)
@@ -420,11 +494,6 @@ def _extract_icc_profile(exif, verbose, logger):
     return None
 
 
-def write_image_with_exif_data_jpg(exif, image, out_filename, verbose):
-    cv2.imwrite(out_filename, image, [int(cv2.IMWRITE_JPEG_QUALITY), 100])
-    add_exif_data_to_jpg_file(exif, out_filename, out_filename, verbose)
-
-
 def clean_data_for_tiff(data):
     if isinstance(data, str):
         return data.encode('ascii', 'ignore').decode('ascii')
@@ -436,6 +505,11 @@ def clean_data_for_tiff(data):
     if isinstance(data, IFDRational):
         return (data.numerator, data.denominator)
     return data
+
+
+def write_image_with_exif_data_jpg(exif, image, out_filename, verbose):
+    cv2.imwrite(out_filename, image, [int(cv2.IMWRITE_JPEG_QUALITY), 100])
+    add_exif_data_to_jpg_file(exif, out_filename, out_filename, verbose)
 
 
 def exif_extra_tags_for_tif(exif):

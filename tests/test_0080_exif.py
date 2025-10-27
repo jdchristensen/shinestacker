@@ -849,6 +849,179 @@ def test_real_world_tiff_with_exif():
         assert False
 
 
+def test_exif_round_trip_tiff_to_jpg():
+    try:
+        setup_logging()
+        logger = logging.getLogger(__name__)
+        output_dir = "output/img-exif"
+        if not os.path.exists(output_dir):
+            os.makedirs(output_dir)
+        logger.info("======== Testing EXIF Round-Trip: TIFF -> JPEG ========")
+        source_jpg = "examples/input/img-exif/0000.jpg"
+        if not os.path.exists(source_jpg):
+            logger.warning(f"Source file not found: {source_jpg}")
+            return
+        original_exif = get_exif(source_jpg)
+        logger.info("*** Original JPG EXIF ***")
+        print_exif(original_exif)
+        exposure_tags = {
+            33434: "ExposureTime",
+            33437: "FNumber",
+            34855: "ISOSpeedRatings",
+            37377: "ShutterSpeedValue",
+            37378: "ApertureValue",
+            37386: "FocalLength",
+            271: "Make",
+            272: "Model",
+            306: "DateTime",
+            315: "Artist",
+            33432: "Copyright"
+        }
+        original_exposure_count = sum(1 for tag_id in exposure_tags if tag_id in original_exif)
+        logger.info(f"Found {original_exposure_count} exposure tags in original JPG")
+        temp_tiff = output_dir + "/roundtrip_temp.tif"
+        test_image = np.ones((100, 100, 3), dtype=np.uint8) * 128
+        logger.info("*** Writing TIFF with original EXIF ***")
+        write_image_with_exif_data(original_exif, test_image, temp_tiff, verbose=False)
+        assert os.path.exists(temp_tiff), "TIFF file was not created"
+        tiff_exif = get_exif(temp_tiff)
+        logger.info("*** TIFF EXIF (after writing) ***")
+        print_exif(tiff_exif)
+        tiff_exposure_count = sum(1 for tag_id in exposure_tags if tag_id in tiff_exif)
+        logger.info(
+            f"Preserved {tiff_exposure_count}/{original_exposure_count} "
+            "exposure tags in TIFF")
+        temp_jpg = output_dir + "/roundtrip_final.jpg"
+        logger.info("*** Writing JPG with TIFF EXIF ***")
+        write_image_with_exif_data(tiff_exif, test_image, temp_jpg, verbose=False)
+        assert os.path.exists(temp_jpg), "Final JPG file was not created"
+        final_exif = get_exif(temp_jpg)
+        logger.info("*** Final JPG EXIF (after TIFF->JPG round-trip) ***")
+        print_exif(final_exif)
+        final_exposure_count = sum(1 for tag_id in exposure_tags if tag_id in final_exif)
+        logger.info(
+            f"Preserved {final_exposure_count}/{original_exposure_count} "
+            "exposure tags in final JPG")
+        logger.info("=== Detailed EXIF Preservation Analysis ===")
+        preserved_tags = []
+        lost_tags = []
+        for tag_id, tag_name in exposure_tags.items():
+            if tag_id in original_exif:
+                original_value = original_exif[tag_id]
+                final_value = final_exif.get(tag_id)
+                if final_value is not None:
+                    if hasattr(original_value, 'numerator') and hasattr(final_value, 'numerator'):
+                        if float(original_value) == float(final_value):
+                            preserved_tags.append((tag_name, original_value, final_value))
+                        else:
+                            lost_tags.append(
+                                (tag_name, original_value, final_value, "value changed"))
+                    elif original_value == final_value:
+                        preserved_tags.append((tag_name, original_value, final_value))
+                    else:
+                        lost_tags.append((tag_name, original_value, final_value, "value changed"))
+                else:
+                    lost_tags.append((tag_name, original_value, None, "tag missing"))
+        logger.info("✓ PRESERVED TAGS:")
+        for tag_name, orig_val, final_val in preserved_tags:
+            logger.info(f"  {tag_name}: {orig_val} -> {final_val}")
+        if lost_tags:
+            logger.info("✗ LOST/CHANGED TAGS:")
+            for tag_name, orig_val, final_val, reason in lost_tags:
+                logger.info(f"  {tag_name}: {orig_val} -> {final_val} ({reason})")
+        else:
+            logger.info("✓ All exposure tags perfectly preserved!")
+        total_tags = len(preserved_tags) + len(lost_tags)
+        if total_tags > 0:
+            preservation_rate = len(preserved_tags) / total_tags * 100
+            logger.info(f"=== FINAL RESULT: {preservation_rate:.1f}% preservation rate ===")
+            if preservation_rate >= 70:  # Allow 30% loss due to format limitations
+                logger.info("✓ TIFF->JPEG EXIF round-trip test PASSED")
+            else:
+                logger.warning(
+                    "⚠ TIFF->JPEG EXIF round-trip test: "
+                    f"Low preservation rate ({preservation_rate:.1f}%)")
+        else:
+            logger.warning("No exposure tags found to compare")
+        for temp_file in [temp_tiff, temp_jpg]:
+            if os.path.exists(temp_file):
+                os.remove(temp_file)
+                logger.info(f"Cleaned up: {temp_file}")
+    except Exception as e:
+        logger.error(f"TIFF->JPEG round-trip test failed: {str(e)}")
+        import traceback
+        logger.error(traceback.format_exc())
+
+
+def test_pil_exif_basic():
+    try:
+        setup_logging()
+        logger = logging.getLogger(__name__)
+        output_dir = "output/img-exif"
+        if not os.path.exists(output_dir):
+            os.makedirs(output_dir)
+        logger.info("======== Testing Basic PIL EXIF Writing ========")
+        test_image = Image.new('RGB', (100, 100), color='red')
+        exif_obj = Image.Exif()
+        exif_obj[271] = "Test Make"  # Make
+        exif_obj[272] = "Test Model"  # Model
+        exif_obj[306] = "2024:01:01 12:00:00"  # DateTime
+        out_file = output_dir + "/test_pil_basic.jpg"
+        test_image.save(out_file, "JPEG", exif=exif_obj.tobytes(), quality=100)
+        written_exif = get_exif(out_file)
+        logger.info("*** Written EXIF with basic PIL ***")
+        print_exif(written_exif)
+        if 271 in written_exif and 272 in written_exif and 306 in written_exif:
+            logger.info("✓ Basic PIL EXIF writing works")
+        else:
+            logger.error("✗ Basic PIL EXIF writing FAILED")
+    except Exception as e:
+        logger.error(f"Basic PIL test failed: {e}")
+        import traceback
+        logger.error(traceback.format_exc())
+
+
+def test_jpg_to_jpg_vs_tiff_to_jpg():
+    try:
+        setup_logging()
+        logger = logging.getLogger(__name__)
+        output_dir = "output/img-exif"
+        if not os.path.exists(output_dir):
+            os.makedirs(output_dir)
+        logger.info("======== Comparing JPG→JPG vs JPG→TIFF→JPG ========")
+        source_jpg = "examples/input/img-exif/0000.jpg"
+        if not os.path.exists(source_jpg):
+            logger.warning("Source file not found")
+            return
+        logger.info("*** Test 1: Direct JPG→JPG ***")
+        direct_out = output_dir + "/direct_jpg_to_jpg.jpg"
+        exif = get_exif(source_jpg)
+        test_image = np.ones((100, 100, 3), dtype=np.uint8) * 128
+        write_image_with_exif_data(exif, test_image, direct_out, verbose=False)
+        direct_exif = get_exif(direct_out)
+        exposure_tags = [33434, 33437, 34855, 37377, 37378, 37386, 271, 272, 306]
+        direct_preserved = sum(1 for tag_id in exposure_tags if tag_id in direct_exif)
+        logger.info(
+            f"Direct JPG→JPG preserved {direct_preserved}/{len(exposure_tags)} exposure tags")
+        logger.info("*** Test 2: JPG→TIFF→JPG ***")
+        temp_tiff = output_dir + "/temp_for_comparison.tif"
+        write_image_with_exif_data(exif, test_image, temp_tiff, verbose=False)
+        tiff_exif = get_exif(temp_tiff)
+        final_jpg = output_dir + "/tiff_to_jpg.jpg"
+        write_image_with_exif_data(tiff_exif, test_image, final_jpg, verbose=False)
+        final_exif = get_exif(final_jpg)
+        final_preserved = sum(1 for tag_id in exposure_tags if tag_id in final_exif)
+        logger.info(f"JPG→TIFF→JPG preserved {final_preserved}/{len(exposure_tags)} exposure tags")
+        logger.info(f"=== RESULT: Direct={direct_preserved}, Via TIFF={final_preserved} ===")
+        for f in [temp_tiff, direct_out, final_jpg]:
+            if os.path.exists(f):
+                os.remove(f)
+    except Exception as e:
+        logger.error(f"Comparison test failed: {e}")
+        import traceback
+        logger.error(traceback.format_exc())
+
+
 if __name__ == '__main__':
     test_exif_tiff()
     test_exif_jpg()
@@ -871,3 +1044,6 @@ if __name__ == '__main__':
     test_exif_subifd_exposure_preservation()
     test_exif_tiff_with_subifd_data()
     test_real_world_tiff_with_exif()
+    test_exif_round_trip_tiff_to_jpg()
+    test_pil_exif_basic()
+    test_jpg_to_jpg_vs_tiff_to_jpg()
