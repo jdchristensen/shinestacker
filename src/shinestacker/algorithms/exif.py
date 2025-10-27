@@ -48,7 +48,7 @@ def extract_enclosed_data_for_jpg(data, head, foot):
         return None
 
 
-def get_exif(exif_filename):
+def get_exif(exif_filename, enhanced_png_parsing=True):
     if not os.path.isfile(exif_filename):
         raise RuntimeError(f"File does not exist: {exif_filename}")
     image = Image.open(exif_filename)
@@ -58,7 +58,7 @@ def get_exif(exif_filename):
         exif_data = image.getexif()
         if hasattr(image, 'getexif') and image.getexif() is not None:
             exif_data_dict = dict(image.getexif())
-            if 34665 in exif_data_dict:  # EXIF SubIFD pointer
+            if 34665 in exif_data_dict:
                 try:
                     exif_subifd = image.getexif().get_ifd(34665)
                     for tag_id, value in exif_subifd.items():
@@ -72,8 +72,11 @@ def get_exif(exif_filename):
                 exif_data[XMLPACKET] = data
         return exif_data
     if extension_png(exif_filename):
-        exif_data = get_exif_from_png(image)
-        return exif_data if exif_data else image.getexif()
+        if enhanced_png_parsing:
+            return get_enhanced_exif_from_png(image)
+        else:
+            exif_data = get_exif_from_png(image)
+            return exif_data if exif_data else image.getexif()
     return image.getexif()
 
 
@@ -96,6 +99,136 @@ def get_exif_from_png(image):
     except Exception:
         pass
     return exif_data
+
+
+def parse_xmp_to_exif(xmp_data):
+    logger = logging.getLogger(__name__)
+    exif_data = {}
+    if not xmp_data:
+        return exif_data
+    try:
+        if isinstance(xmp_data, bytes):
+            xmp_data = xmp_data.decode('utf-8', errors='ignore')
+        xmp_to_exif_map = {
+            'tiff:Make': 271,
+            'tiff:Model': 272,
+            'exif:ExposureTime': 33434,
+            'exif:FNumber': 33437,
+            'exif:ISOSpeedRatings': 34855,
+            'exif:FocalLength': 37386,
+            'exif:DateTimeOriginal': 36867,
+            'xmp:CreateDate': 306,
+            'xmp:CreatorTool': 305,
+            'aux:Lens': 42036,
+            'exif:Flash': 37385,
+            'exif:WhiteBalance': 41987,
+            'dc:description': 270,
+            'dc:creator': 315,
+            'dc:rights': 33432
+        }
+        for xmp_tag, exif_tag in xmp_to_exif_map.items():
+            if f'<{xmp_tag}>' in xmp_data:
+                start = xmp_data.find(f'<{xmp_tag}>') + len(f'<{xmp_tag}>')
+                end = xmp_data.find(f'</{xmp_tag}>', start)
+                if start != -1 and end != -1:
+                    value = xmp_data[start:end].strip()
+                    if value:
+                        if exif_tag in [33434, 33437, 37386]:
+                            try:
+                                if '/' in value:
+                                    num, den = value.split('/')
+                                    exif_data[exif_tag] = IFDRational(int(num), int(den))
+                                else:
+                                    exif_data[exif_tag] = float(value)
+                            except (ValueError, ZeroDivisionError):
+                                exif_data[exif_tag] = value
+                        elif exif_tag == 34855:
+                            try:
+                                exif_data[exif_tag] = int(value)
+                            except ValueError:
+                                exif_data[exif_tag] = value
+                        else:
+                            exif_data[exif_tag] = value
+        if 'exif:ISOSpeedRatings' in xmp_data and '<rdf:li>' in xmp_data:
+            iso_start = xmp_data.find('<rdf:li>') + len('<rdf:li>')
+            iso_end = xmp_data.find('</rdf:li>', iso_start)
+            if iso_start != -1 and iso_end != -1:
+                iso_value = xmp_data[iso_start:iso_end].strip()
+                try:
+                    exif_data[34855] = int(iso_value)
+                except ValueError:
+                    exif_data[34855] = iso_value
+    except Exception as e:
+        logger.debug(f"XMP parsing failed: {e}")
+    return exif_data
+
+
+def parse_typed_png_text(value):
+    if isinstance(value, str):
+        if value.startswith('RATIONAL:'):
+            parts = value[9:].split('/')
+            if len(parts) == 2:
+                try:
+                    return IFDRational(int(parts[0]), int(parts[1]))
+                except (ValueError, ZeroDivisionError):
+                    return value
+        elif value.startswith('INT:'):
+            try:
+                return int(value[4:])
+            except ValueError:
+                return value[4:]
+        elif value.startswith('FLOAT:'):
+            try:
+                return float(value[6:])
+            except ValueError:
+                return value[6:]
+        elif value.startswith('STRING:'):
+            return value[7:]
+    return value
+
+
+def get_enhanced_exif_from_png(image):
+    basic_exif = get_exif_from_png(image)
+    enhanced_exif = {}
+    enhanced_exif.update(basic_exif)
+    xmp_data = None
+    if hasattr(image, 'text') and image.text:
+        for key, value in image.text.items():
+            if key.lower() == 'xml:com.adobe.xmp':
+                xmp_data = value
+                break
+    if not xmp_data and 700 in basic_exif:
+        xmp_data = basic_exif[700]
+    if xmp_data:
+        xmp_exif = parse_xmp_to_exif(xmp_data)
+        for tag_id, value in xmp_exif.items():
+            if tag_id not in enhanced_exif or enhanced_exif[tag_id] is None:
+                enhanced_exif[tag_id] = value
+    if hasattr(image, 'text') and image.text:
+        for key, value in image.text.items():
+            if key.startswith('EXIF_'):
+                clean_key = key[5:]
+                tag_map = {
+                    'CameraMake': 271,
+                    'CameraModel': 272,
+                    'Software': 305,
+                    'DateTime': 306,
+                    'ExposureTime': 33434,
+                    'FNumber': 33437,
+                    'ISOSpeed': 34855,
+                    'FocalLength': 37386,
+                    'LensModel': 42036
+                }
+                if clean_key in tag_map:
+                    tag_id = tag_map[clean_key]
+                    parsed_value = parse_typed_png_text(value)
+                    if tag_id not in enhanced_exif or enhanced_exif[tag_id] is None:
+                        enhanced_exif[tag_id] = parsed_value
+    clean_exif = {}
+    for key, value in enhanced_exif.items():
+        if isinstance(key, int):
+            clean_exif[key] = value
+    return clean_exif
 
 
 def reconstruct_exif_for_jpeg_with_exposure(exif_dict, verbose=False):
@@ -714,20 +847,28 @@ def copy_exif_from_file_to_file(exif_filename, in_filename, out_filename=None, v
     return save_exif_data(exif, in_filename, out_filename, verbose)
 
 
-def exif_dict(exif):
-    if exif is None:
+def exif_dict(exif_data):
+    if exif_data is None:
         return None
-    exif_data = {}
-    for tag_id in exif:
-        tag = TAGS.get(tag_id, tag_id)
-        data = exif.get(tag_id) if hasattr(exif, 'get') else exif[tag_id]
-        if isinstance(data, bytes):
-            try:
-                data = data.decode()
-            except Exception:
-                pass
-        exif_data[tag] = (tag_id, data)
-    return exif_data
+    result = {}
+    for tag, value in exif_data.items():
+        if isinstance(tag, int):
+            tag_name = TAGS.get(tag, str(tag))
+            tag_id = tag
+        else:
+            tag_name = str(tag)
+            tag_id = tag_name
+        if 'PNG_EXIF_' in tag_name:
+            standard_tag = tag_name.replace('PNG_EXIF_', '')
+            result[standard_tag] = (tag_id, value)
+        elif 'EXIF_' in tag_name:
+            standard_tag = tag_name.replace('EXIF_', '')
+            result[standard_tag] = (tag_id, value)
+        elif tag_name.startswith('PNG_') and not tag_name.startswith('PNG_EXIF_'):
+            continue
+        else:
+            result[tag_name] = (tag_id, value)
+    return result
 
 
 def print_exif(exif):

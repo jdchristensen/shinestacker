@@ -13,7 +13,7 @@ This page reports the main releases only and the main changes therein.
 - skipping frames with missing alignment transformation
 - focus bunch processing order is now sequential
 - missing exposure data in JPEG EXIF data
-- conversion from JPEG to TIFF and TIFF to JPEG EXIF formats
+- conversion of EXIF data between formats JPEG, TIFF and PNG
 
 ---
 

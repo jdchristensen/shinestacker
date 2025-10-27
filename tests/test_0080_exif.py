@@ -9,6 +9,7 @@ from shinestacker.algorithms.utils import read_img
 from shinestacker.algorithms.exif import (
     get_exif, copy_exif_from_file_to_file, print_exif, write_image_with_exif_data,
     get_tiff_dtype_count, save_exif_data, exif_dict, exif_extra_tags_for_tif,
+    get_exif_from_png, get_enhanced_exif_from_png,
     extract_enclosed_data_for_jpg, safe_decode_bytes, IFDRational)
 
 
@@ -1056,6 +1057,90 @@ def test_png_metadata_enhancement():
         logger.error(traceback.format_exc())
 
 
+def test_enhanced_png_exif():
+    try:
+        setup_logging()
+        logger = logging.getLogger(__name__)
+        output_dir = "output/img-exif"
+        if not os.path.exists(output_dir):
+            os.makedirs(output_dir)
+        logger.info("======== Testing Enhanced PNG EXIF Extraction ========")
+        source_jpg = "examples/input/img-exif/0000.jpg"
+        if not os.path.exists(source_jpg):
+            logger.warning("Source file not found")
+            return
+        original_exif = get_exif(source_jpg)
+        test_image = np.ones((100, 100, 3), dtype=np.uint8) * 128
+        png_out = output_dir + "/test_enhanced.png"
+        write_image_with_exif_data(original_exif, test_image, png_out, verbose=False)
+        with Image.open(png_out) as png_image:
+            basic_exif = get_exif_from_png(png_image)
+            enhanced_exif = get_enhanced_exif_from_png(png_image)
+        logger.info("*** Basic PNG EXIF ***")
+        print_exif(basic_exif)
+        logger.info("*** Enhanced PNG EXIF ***")
+        print_exif(enhanced_exif)
+        key_tags = [271, 272, 33434, 33437, 34855, 37386, 42036]
+        basic_count = sum(1 for tag in key_tags
+                          if tag in basic_exif and basic_exif[tag] is not None)
+        enhanced_count = sum(1 for tag in key_tags
+                             if tag in enhanced_exif and enhanced_exif[tag] is not None)
+        logger.info(f"Key tags found: Basic={basic_count}, Enhanced={enhanced_count}")
+        if enhanced_count > basic_count:
+            logger.info("✓ Enhanced EXIF extraction successful")
+        else:
+            logger.info("⚠ No improvement with enhanced extraction")
+    except Exception as e:
+        logger.error(f"Enhanced PNG EXIF test failed: {e}")
+        import traceback
+        logger.error(traceback.format_exc())
+
+
+def test_unified_exif_with_enhanced_png():
+    try:
+        setup_logging()
+        logger = logging.getLogger(__name__)
+        output_dir = "output/img-exif"
+        if not os.path.exists(output_dir):
+            os.makedirs(output_dir)
+        logger.info("======== Testing Unified EXIF with Enhanced PNG ========")
+        source_jpg = "examples/input/img-exif/0000.jpg"
+        if not os.path.exists(source_jpg):
+            logger.warning("Source file not found")
+            return
+        original_exif = get_exif(source_jpg)
+        test_image = np.ones((100, 100, 3), dtype=np.uint8) * 128
+        png_out = output_dir + "/test_unified.png"
+        write_image_with_exif_data(original_exif, test_image, png_out, verbose=False)
+        logger.info("*** Standard get_exif() (enhanced PNG parsing) ***")
+        unified_exif = get_exif(png_out)
+        print_exif(unified_exif)
+        logger.info("*** Legacy get_exif() (no enhanced parsing) ***")
+        legacy_exif = get_exif(png_out, enhanced_png_parsing=False)
+        print_exif(legacy_exif)
+        key_tags = [271, 272, 33434, 33437, 34855, 37386, 42036]
+        unified_count = sum(1 for tag in key_tags
+                            if tag in unified_exif and unified_exif[tag] is not None)
+        legacy_count = sum(1 for tag in key_tags
+                           if tag in legacy_exif and legacy_exif[tag] is not None)
+        logger.info(f"Key tags found: Unified={unified_count}, Legacy={legacy_count}")
+        if unified_count > legacy_count:
+            logger.info("✓ Unified EXIF with enhanced PNG parsing successful")
+            logger.info("*** Testing PNG→JPG round-trip with enhanced EXIF ***")
+            jpg_out = output_dir + "/test_png_to_jpg.jpg"
+            write_image_with_exif_data(unified_exif, test_image, jpg_out, verbose=False)
+            roundtrip_exif = get_exif(jpg_out)
+            roundtrip_count = sum(1 for tag in key_tags
+                                  if tag in roundtrip_exif and roundtrip_exif[tag] is not None)
+            logger.info(f"Key tags preserved in PNG→JPG: {roundtrip_count}/{unified_count}")
+        else:
+            logger.info("⚠ No improvement with unified EXIF")
+    except Exception as e:
+        logger.error(f"Unified EXIF test failed: {e}")
+        import traceback
+        logger.error(traceback.format_exc())
+
+
 if __name__ == '__main__':
     test_exif_tiff()
     test_exif_jpg()
@@ -1082,3 +1167,5 @@ if __name__ == '__main__':
     test_pil_exif_basic()
     test_jpg_to_jpg_vs_tiff_to_jpg()
     test_png_metadata_enhancement()
+    test_enhanced_png_exif()
+    test_unified_exif_with_enhanced_png()
