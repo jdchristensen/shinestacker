@@ -78,7 +78,8 @@ def get_exif(exif_filename, enhanced_png_parsing=True):
         except Exception:
             pass  # EXIF SubIFD is optional
         with open(exif_filename, 'rb') as f:
-            data = extract_enclosed_data_for_jpg(f.read(), b'<?xpacket', b'<?xpacket end="w"?>')
+            data = extract_enclosed_data_for_jpg(
+                f.read(), b'<?xpacket', b'<?xpacket end="w"?>')
             if data is not None:
                 exif_data[XMLPACKET] = data
         return exif_data
@@ -271,10 +272,7 @@ def safe_decode_bytes(data, encoding='utf-8'):
             return data.decode(enc, errors='strict')
         except UnicodeDecodeError:
             continue
-    try:
-        return data.decode('utf-8', errors='replace')
-    except Exception:
-        return "<<< decode error >>>"
+    return data.decode('utf-8', errors='replace')
 
 
 def get_tiff_dtype_count(value):
@@ -469,7 +467,7 @@ def write_image_with_exif_data_png(exif, image, out_filename, verbose=False, col
         write_img(out_filename, image)
         return
     pil_image = _convert_to_pil_image(image, color_order)
-    pnginfo, icc_profile = _prepare_png_metadata(exif, verbose, logger)
+    pnginfo, icc_profile = _prepare_png_metadata(exif)
     save_args = {'format': 'PNG', 'pnginfo': pnginfo}
     if icc_profile:
         save_args['icc_profile'] = icc_profile
@@ -477,23 +475,21 @@ def write_image_with_exif_data_png(exif, image, out_filename, verbose=False, col
 
 
 def _convert_to_pil_image(image, color_order):
-    if isinstance(image, np.ndarray):
-        if len(image.shape) == 3 and image.shape[2] == 3:
-            if color_order in ['auto', 'bgr']:
-                image_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-                return Image.fromarray(image_rgb)
-        return Image.fromarray(image)
-    return image
+    if isinstance(image, np.ndarray) and len(image.shape) == 3 and image.shape[2] == 3:
+        if color_order in ['auto', 'bgr']:
+            image_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+            return Image.fromarray(image_rgb)
+    return Image.fromarray(image) if isinstance(image, np.ndarray) else image
 
 
-def _prepare_png_metadata(exif, verbose, logger):
+def _prepare_png_metadata(exif):
     pnginfo = PngInfo()
     icc_profile = None
     xmp_data = _extract_xmp_data(exif)
     if xmp_data:
         pnginfo.add_text("XML:com.adobe.xmp", xmp_data)
     _add_exif_tags_to_pnginfo(exif, pnginfo)
-    icc_profile = _extract_icc_profile(exif, verbose, logger)
+    icc_profile = _extract_icc_profile(exif)
     return pnginfo, icc_profile
 
 
@@ -501,11 +497,8 @@ def _extract_xmp_data(exif):
     for key, value in exif.items():
         if isinstance(key, str) and ('xmp' in key.lower() or 'xml' in key.lower()):
             if isinstance(value, bytes):
-                try:
-                    return value.decode('utf-8', errors='ignore')
-                except Exception:
-                    continue
-            elif isinstance(value, str):
+                return value.decode('utf-8', errors='ignore')
+            if isinstance(value, str):
                 return value
     return create_xmp_from_exif(exif)
 
@@ -598,13 +591,11 @@ def _add_png_text_tag(pnginfo, key, value):
         pass
 
 
-def _extract_icc_profile(exif, verbose, logger):
+def _extract_icc_profile(exif):
     for key, value in exif.items():
         if (isinstance(key, str) and
             isinstance(value, bytes) and
                 ('icc' in key.lower() or 'profile' in key.lower())):
-            if verbose:
-                logger.info(f"Found ICC profile: {key}")
             return value
     return None
 
@@ -613,18 +604,15 @@ def clean_data_for_tiff(data):
     if isinstance(data, str):
         return data.encode('ascii', 'ignore').decode('ascii')
     if isinstance(data, bytes):
-        try:
-            decoded = data.decode('utf-8', errors='ignore')
-            return decoded.encode('ascii', 'ignore').decode('ascii')
-        except Exception:
-            return ""
+        decoded = data.decode('utf-8', 'ignore')
+        return decoded.encode('ascii', 'ignore').decode('ascii')
     if isinstance(data, IFDRational):
         return (data.numerator, data.denominator)
     return data
 
 
 def write_image_with_exif_data_jpg(exif, image, out_filename, verbose):
-    cv2.imwrite(out_filename, image, [int(cv2.IMWRITE_JPEG_QUALITY), 100])
+    cv2.imwrite(out_filename, image, [cv2.IMWRITE_JPEG_QUALITY, 100])
     add_exif_data_to_jpg_file(exif, out_filename, out_filename, verbose)
 
 
@@ -682,17 +670,13 @@ def _process_tiff_data(data):
 
 
 def write_image_with_exif_data_tif(exif, image, out_filename):
-    logger = logging.getLogger(__name__)
     image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
     try:
         metadata = {"description": f"image generated with {constants.APP_STRING} package"}
         extra_tags, exif_tags = exif_extra_tags_for_tif(exif)
         tifffile.imwrite(out_filename, image, metadata=metadata, compression='adobe_deflate',
                          extratags=extra_tags, **exif_tags)
-    except Exception as e:
-        logger.error(
-            msg=f"Failed to write EXIF data into TIFF file: {e}. "
-            "EXIF data not written with file.")
+    except Exception:
         tifffile.imwrite(out_filename, image, compression='adobe_deflate')
 
 
@@ -754,10 +738,10 @@ def exif_dict(exif_data):
             tag_name = TAGS.get(tag, str(tag))
         else:
             tag_name = str(tag)
-        if 'PNG_EXIF_' in tag_name:
-            standard_tag = tag_name.replace('PNG_EXIF_', '')
-        elif 'EXIF_' in tag_name:
-            standard_tag = tag_name.replace('EXIF_', '')
+        if tag_name.startswith('PNG_EXIF_'):
+            standard_tag = tag_name[9:]
+        elif tag_name.startswith('EXIF_'):
+            standard_tag = tag_name[5:]
         elif tag_name.startswith('PNG_'):
             continue
         else:
