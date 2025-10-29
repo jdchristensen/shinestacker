@@ -2,11 +2,12 @@
 
 This page reports the main releases only and the main changes therein.
 
-## [v-.-.-] - 2025-10-27
-** Unpublished changes **
+## [v1.9.2] - 2025-10-29
+** Fixes to EXIF data and alignment; GUI refinements **
 
 ### Added
 - new keyboard and mouse wheel shortcuts to control brush opacity and flow
+- more action shurtcuts to context menu in the project area
 
 ### Fixed
 - enlarged previously too tight validity tolerance thresholds for composite tansformations
