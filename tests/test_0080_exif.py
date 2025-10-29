@@ -1303,6 +1303,67 @@ def test_exif_round_trip_jpg_to_png_to_jpg():
         assert False, f"JPG->PNG->JPG round-trip test failed: {str(e)}"
 
 
+def test_png_string_tags():
+    try:
+        setup_logging()
+        logger = logging.getLogger(__name__)
+        output_dir = "output/img-exif"
+        if not os.path.exists(output_dir):
+            os.makedirs(output_dir)
+        logger.info("======== Testing PNG String Tags ========")        
+        test_img = np.ones((50, 50, 3), dtype=np.uint8) * 128        
+        exif_with_string_tags = {
+            "CustomTag1": "Custom Value 1",
+            "PNG_CustomTag2": "Custom Value 2",  # Should be cleaned to "CustomTag2"
+            "AnotherStringTag": "Another Value",
+            "Description": "Test description for PNG",
+            "Author": "Test Author",            
+            "xmp:SomeTag": "XMP Value",
+            "XML:AnotherTag": "XML Value",
+            "xmlpacket": "XML Packet Value",            
+            271: "Test Make",  # Make
+            272: "Test Model",  # Model
+            305: "Test Software",  # Software
+        }
+        out_filename = output_dir + "/test_png_string_tags.png"        
+        write_image_with_exif_data(exif_with_string_tags, test_img, out_filename, verbose=True)        
+        assert os.path.exists(out_filename), "PNG file with string tags was not created"        
+        written_exif = get_exif(out_filename)
+        logger.info("*** Written PNG EXIF with string tags ***")
+        print_exif(written_exif)        
+        with Image.open(out_filename) as img:
+            if hasattr(img, 'text') and img.text:
+                logger.info("*** PNG Text Chunks Found ***")
+                found_string_tags = []
+                for key, value in img.text.items():
+                    logger.info(f"  {key}: {str(value)[:100]}")
+                    if key in ["CustomTag1", "CustomTag2", "AnotherStringTag", "Description", "Author"]:
+                        found_string_tags.append(key)
+                logger.info(f"Found {len(found_string_tags)} string tags in PNG text chunks")                
+                assert "CustomTag1" in img.text, "CustomTag1 should be in PNG text"
+                assert "CustomTag2" in img.text, "CustomTag2 (cleaned from PNG_CustomTag2) should be in PNG text"
+                assert "AnotherStringTag" in img.text, "AnotherStringTag should be in PNG text"
+                assert "Description" in img.text, "Description should be in PNG text"
+                assert "Author" in img.text, "Author should be in PNG text"                
+                xmp_tags = [key for key in img.text.keys() if key.lower().startswith(('xmp', 'xml'))]
+                logger.info(f"XMP/XML tags found: {len(xmp_tags)}")                
+                assert img.text["CustomTag1"] == "Custom Value 1", "CustomTag1 value mismatch"
+                assert img.text["CustomTag2"] == "Custom Value 2", "CustomTag2 value mismatch"
+                assert img.text["AnotherStringTag"] == "Another Value", "AnotherStringTag value mismatch"
+                logger.info("✓ All string tag values match expected values")
+            else:
+                logger.error("No text chunks found in PNG - _add_png_text_tag may not have been called")
+                assert False, "No text chunks found in PNG"        
+        assert 271 in written_exif or "Make" in str(written_exif), "Make tag should be preserved"
+        assert 272 in written_exif or "Model" in str(written_exif), "Model tag should be preserved"
+        logger.info("✓ PNG string tags test passed - _add_png_text_tag was successfully called")
+    except Exception as e:
+        logger.error(f"PNG string tags test failed: {str(e)}")
+        import traceback
+        logger.error(traceback.format_exc())
+        assert False
+
+
 if __name__ == '__main__':
     test_exif_tiff()
     test_exif_jpg()
@@ -1332,3 +1393,4 @@ if __name__ == '__main__':
     test_enhanced_png_exif()
     test_unified_exif_with_enhanced_png()
     test_exif_round_trip_jpg_to_png_to_jpg()
+    test_png_string_tags()

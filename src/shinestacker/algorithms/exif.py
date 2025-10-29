@@ -224,45 +224,6 @@ def _get_tag_id_from_png_key(key):
     return tag_map.get(key)
 
 
-def reconstruct_exif_for_jpeg_with_exposure(exif_dict_data, verbose=False):
-    logger = logging.getLogger(__name__)
-    main_exif = Image.Exif()
-    main_ifd_tags = {
-        256, 257, 258, 259, 262, 274, 277, 282, 283, 284,
-        296, 270, 271, 272, 305, 306, 315, 33432
-    }
-    exif_subifd_tags = {
-        33434, 33437, 34855, 37377, 37378, 37386, 36864, 36867,
-        36868, 37380, 37381, 37383, 37385, 40961, 40962, 40963,
-        41985, 41986, 41987, 41990, 42033, 42034, 42036, 37521,
-        37522, 36880, 41486, 41487, 41488
-    }
-    for tag_id in main_ifd_tags:
-        if tag_id in exif_dict_data:
-            try:
-                main_exif[tag_id] = exif_dict_data[tag_id]
-            except Exception:
-                if verbose:
-                    logger.warning(msg=f"Failed to add {TAGS.get(tag_id, tag_id)} to main IFD")
-    subifd_exif = Image.Exif()
-    subifd_found = False
-    for tag_id in exif_subifd_tags:
-        if tag_id in exif_dict_data:
-            try:
-                subifd_exif[tag_id] = exif_dict_data[tag_id]
-                subifd_found = True
-            except Exception:
-                if verbose:
-                    logger.warning(msg=f"Failed to add {TAGS.get(tag_id, tag_id)} to SubIFD")
-    if subifd_found:
-        try:
-            main_exif[34665] = subifd_exif
-        except Exception as e:
-            if verbose:
-                logger.warning(msg=f"Failed to create EXIF SubIFD: {e}")
-    return main_exif
-
-
 def safe_decode_bytes(data, encoding='utf-8'):
     if not isinstance(data, bytes):
         return data
