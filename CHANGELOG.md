@@ -2,12 +2,22 @@
 
 This page reports the main releases only and the main changes therein.
 
+
+## [vx.x.x] - 2025-10-31
+** Unrelesed changes **
+
+
+### Fixed
+- fault tolerant EXIF data copy prevents to write corrupted files
+
+---
+
 ## [v1.9.2] - 2025-10-29
 ** Fixes to EXIF data and alignment; GUI refinements **
 
 ### Added
 - new keyboard and mouse wheel shortcuts to control brush opacity and flow
-- more action shurtcuts to context menu in the project area
+- more action shurtcuts in context menu under the project area
 
 ### Fixed
 - enlarged previously too tight validity tolerance thresholds for composite tansformations

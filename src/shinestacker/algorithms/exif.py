@@ -2,6 +2,7 @@
 import os
 import re
 import logging
+import traceback
 import cv2
 import numpy as np
 from PIL import Image
@@ -10,7 +11,7 @@ from PIL.PngImagePlugin import PngInfo
 from PIL.ExifTags import TAGS
 import tifffile
 from .. config.constants import constants
-from .utils import write_img, extension_jpg, extension_tif, extension_png
+from .utils import read_img, write_img, extension_jpg, extension_tif, extension_png
 
 IMAGEWIDTH = 256
 IMAGELENGTH = 257
@@ -270,32 +271,60 @@ def add_exif_data_to_jpg_file(exif, in_filename, out_filename, verbose=False):
         raise RuntimeError('No exif data provided.')
     logger = logging.getLogger(__name__)
     xmp_data = exif.get(XMLPACKET) if hasattr(exif, 'get') else None
-    with Image.open(in_filename) as image:
-        if hasattr(exif, 'tobytes') and 'TiffImagePlugin' in str(type(exif)):
-            jpeg_exif = Image.Exif()
-            for tag_id in exif:
-                if tag_id != XMLPACKET:
-                    try:
-                        jpeg_exif[tag_id] = exif[tag_id]
-                    except Exception as e:
-                        if verbose:
-                            logger.warning(msg=f"Failed to add tag {tag_id}: {e}")
-            exif_bytes = jpeg_exif.tobytes()
-        elif hasattr(exif, 'tobytes'):
-            exif_bytes = exif.tobytes()
+    if out_filename is None:
+        out_filename = in_filename
+    use_temp = (in_filename == out_filename)
+    if use_temp:
+        temp_filename = out_filename + ".tmp"
+        final_filename = temp_filename
+    else:
+        final_filename = out_filename
+    try:
+        with Image.open(in_filename) as image:
+            if hasattr(exif, 'tobytes') and 'TiffImagePlugin' in str(type(exif)):
+                jpeg_exif = Image.Exif()
+                for tag_id in exif:
+                    if tag_id != XMLPACKET:
+                        try:
+                            jpeg_exif[tag_id] = exif[tag_id]
+                        except Exception as e:
+                            if verbose:
+                                logger.warning(msg=f"Failed to add tag {tag_id}: {e}")
+                exif_bytes = jpeg_exif.tobytes()
+            elif hasattr(exif, 'tobytes'):
+                exif_bytes = exif.tobytes()
+            else:
+                jpeg_exif = Image.Exif()
+                for tag_id, value in exif.items():
+                    if tag_id != XMLPACKET:
+                        try:
+                            jpeg_exif[tag_id] = value
+                        except Exception as e:
+                            if verbose:
+                                logger.warning(msg=f"Failed to add tag {tag_id}: {e}")
+                exif_bytes = jpeg_exif.tobytes()
+            image.save(final_filename, "JPEG", exif=exif_bytes, quality=100)
+            if xmp_data and isinstance(xmp_data, bytes):
+                _insert_xmp_into_jpeg(final_filename, xmp_data, verbose)
+        if use_temp:
+            if os.path.exists(out_filename):
+                os.remove(out_filename)
+            os.rename(temp_filename, out_filename)
+    except Exception as e:
+        traceback.print_tb(e.__traceback__)
+        if use_temp and os.path.exists(temp_filename):
+            try:
+                os.remove(temp_filename)
+            except Exception as ee:
+                traceback.print_tb(ee.__traceback__)
+                pass
         else:
-            jpeg_exif = Image.Exif()
-            for tag_id, value in exif.items():
-                if tag_id != XMLPACKET:
-                    try:
-                        jpeg_exif[tag_id] = value
-                    except Exception as e:
-                        if verbose:
-                            logger.warning(msg=f"Failed to add tag {tag_id}: {e}")
-            exif_bytes = jpeg_exif.tobytes()
-        image.save(out_filename, "JPEG", exif=exif_bytes, quality=100)
-        if xmp_data and isinstance(xmp_data, bytes):
-            _insert_xmp_into_jpeg(out_filename, xmp_data, verbose)
+            try:
+                write_img(out_filename, read_img(in_filename))
+            except Exception as ee:
+                traceback.print_tb(ee.__traceback__)
+                pass
+        raise
 
 
 def _insert_xmp_into_jpeg(jpeg_path, xmp_data, verbose=False):
