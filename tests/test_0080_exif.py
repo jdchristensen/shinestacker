@@ -12,7 +12,8 @@ from shinestacker.algorithms.exif import (
     get_tiff_dtype_count, save_exif_data, exif_dict, exif_extra_tags_for_tif,
     get_exif_from_png, get_enhanced_exif_from_png, add_exif_data_to_jpg_file,
     write_image_with_exif_data_png, _insert_xmp_into_jpeg, parse_typed_png_text,
-    _parse_xmp_value, parse_xmp_to_exif,
+    _parse_xmp_value, parse_xmp_to_exif, write_image_with_exif_data_tif,
+    _process_tiff_data, clean_data_for_tiff,
     extract_enclosed_data_for_jpg, safe_decode_bytes, IFDRational)
 
 
@@ -1591,14 +1592,14 @@ def test_exif_subifd_exception_handling():
     try:
         setup_logging()
         logger = logging.getLogger(__name__)
-        logger.info("======== Testing EXIF SubIFD Exception Handling ========")        
+        logger.info("======== Testing EXIF SubIFD Exception Handling ========")
         output_dir = "output/img-exif"
         if not os.path.exists(output_dir):
-            os.makedirs(output_dir)            
+            os.makedirs(output_dir)
         test_img = np.ones((100, 100, 3), dtype=np.uint8) * 128
         test_jpg = output_dir + "/test_no_subifd.jpg"
-        cv2.imwrite(test_jpg, test_img)        
-        exif = get_exif(test_jpg)
+        cv2.imwrite(test_jpg, test_img)
+        get_exif(test_jpg)
         logger.info("✓ EXIF SubIFD exception handling test passed")
     except Exception as e:
         logger.error(f"EXIF SubIFD exception handling test failed: {str(e)}")
@@ -1609,13 +1610,13 @@ def test_get_exif_fallback():
     try:
         setup_logging()
         logger = logging.getLogger(__name__)
-        logger.info("======== Testing get_exif Fallback ========")        
+        logger.info("======== Testing get_exif Fallback ========")
         output_dir = "output/img-exif"
         if not os.path.exists(output_dir):
-            os.makedirs(output_dir)            
+            os.makedirs(output_dir)
         test_img = np.ones((100, 100, 3), dtype=np.uint8) * 128
         test_bmp = output_dir + "/test_fallback.bmp"
-        cv2.imwrite(test_bmp, test_img)        
+        cv2.imwrite(test_bmp, test_img)
         exif = get_exif(test_bmp)
         logger.info(f"Fallback EXIF type: {type(exif)}")
         logger.info("✓ get_exif fallback test passed")
@@ -1628,7 +1629,7 @@ def test_get_exif_from_png_no_data():
     try:
         setup_logging()
         logger = logging.getLogger(__name__)
-        logger.info("======== Testing get_exif_from_png with No Data ========")        
+        logger.info("======== Testing get_exif_from_png with No Data ========")
         output_dir = "output/img-exif"
         if not os.path.exists(output_dir):
             os.makedirs(output_dir)
@@ -1647,7 +1648,7 @@ def test_xmp_data_decoding():
     try:
         setup_logging()
         logger = logging.getLogger(__name__)
-        logger.info("======== Testing XMP Data Decoding ========")        
+        logger.info("======== Testing XMP Data Decoding ========")
         test_cases = [
             b'<?xpacket begin="test"?><test>normal utf8</test>',
             b'\xff\xfe<?xpacket begin="test"?><test>utf16</test>',  # UTF-16 BOM
@@ -1655,7 +1656,7 @@ def test_xmp_data_decoding():
         ]
         for i, xmp_bytes in enumerate(test_cases):
             result = parse_xmp_to_exif(xmp_bytes)
-            logger.info(f"XMP test case {i+1}: {len(result)} tags extracted")            
+            logger.info(f"XMP test case {i + 1}: {len(result)} tags extracted")
         xmp_str = '<?xpacket begin="test"?><test>string input</test>'
         result = parse_xmp_to_exif(xmp_str)
         logger.info("✓ XMP data decoding test passed")
@@ -1668,7 +1669,7 @@ def test_rational_parsing_edge_cases():
     try:
         setup_logging()
         logger = logging.getLogger(__name__)
-        logger.info("======== Testing Rational Parsing Edge Cases ========")        
+        logger.info("======== Testing Rational Parsing Edge Cases ========")
         test_cases = [
             (33434, "invalid/rational"),  # Missing denominator
             (33434, "1/0"),  # Zero division
@@ -1677,7 +1678,7 @@ def test_rational_parsing_edge_cases():
         ]
         for tag_id, value in test_cases:
             result = _parse_xmp_value(tag_id, value)
-            logger.info(f"Rational edge case {value} -> {result}")            
+            logger.info(f"Rational edge case {value} -> {result}")
         png_test_cases = [
             "RATIONAL:invalid/format",
             "RATIONAL:1/0",  # Zero division
@@ -1696,7 +1697,7 @@ def test_iso_parsing_error():
     try:
         setup_logging()
         logger = logging.getLogger(__name__)
-        logger.info("======== Testing ISO Parsing Errors ========")        
+        logger.info("======== Testing ISO Parsing Errors ========")
         invalid_iso_cases = [
             "<rdf:li>not_a_number</rdf:li>",
             "invalid",
@@ -1743,13 +1744,13 @@ def test_enhanced_exif_xmp_from_basic():
         logger.info("======== Testing Enhanced EXIF with XMP in Basic ========")
         output_dir = "output/img-exif"
         if not os.path.exists(output_dir):
-            os.makedirs(output_dir)            
+            os.makedirs(output_dir)
         img = Image.new('RGB', (100, 100), color='green')
-        test_png = output_dir + "/test_xmp_in_basic.png"        
+        test_png = output_dir + "/test_xmp_in_basic.png"
         basic_exif = Image.Exif()
         xmp_data = '<?xpacket begin="test"?><test>XMP in basic EXIF</test>'
-        basic_exif[700] = xmp_data.encode('utf-8')        
-        img.save(test_png, exif=basic_exif.tobytes())        
+        basic_exif[700] = xmp_data.encode('utf-8')
+        img.save(test_png, exif=basic_exif.tobytes())
         with Image.open(test_png) as png_img:
             enhanced_exif = get_enhanced_exif_from_png(png_img)
         logger.info(f"Enhanced EXIF with XMP in basic: {len(enhanced_exif)} tags")
@@ -1763,7 +1764,7 @@ def test_safe_decode_bytes_edge_cases():
     try:
         setup_logging()
         logger = logging.getLogger(__name__)
-        logger.info("======== Testing safe_decode_bytes Edge Cases ========")        
+        logger.info("======== Testing safe_decode_bytes Edge Cases ========")
         test_cases = [
             b'\xff\xfe\x00\x01\x02\x03',  # Invalid UTF-8 that fails all encodings
             b'\x80\x81\x82\x83',  # Non-ASCII bytes
@@ -1771,7 +1772,7 @@ def test_safe_decode_bytes_edge_cases():
         ]
         for i, test_bytes in enumerate(test_cases):
             result = safe_decode_bytes(test_bytes)
-            logger.info(f"safe_decode_bytes case {i+1}: {test_bytes} -> {result}")
+            logger.info(f"safe_decode_bytes case {i + 1}: {test_bytes} -> {result}")
         logger.info("✓ safe_decode_bytes edge cases test passed")
     except Exception as e:
         logger.error(f"safe_decode_bytes edge cases test failed: {str(e)}")
@@ -1810,7 +1811,7 @@ def test_add_exif_data_to_jpg_file_none_exif():
         if not os.path.exists(source_file):
             logger.warning("Source file not found, skipping test")
             assert False
-        out_file = output_dir + "/test_none_exif.jpg"        
+        out_file = output_dir + "/test_none_exif.jpg"
         try:
             add_exif_data_to_jpg_file(None, source_file, out_file)
             assert False, "Should have raised RuntimeError for None EXIF"
@@ -1829,20 +1830,20 @@ def test_add_exif_data_to_jpg_file_same_file():
         logger.info("======== Testing add_exif_data_to_jpg_file Same File ========")
         output_dir = "output/img-exif"
         if not os.path.exists(output_dir):
-            os.makedirs(output_dir)            
+            os.makedirs(output_dir)
         source_file = "examples/input/img-jpg/0001.jpg"
         if not os.path.exists(source_file):
             logger.warning("Source file not found, skipping test")
             assert False
         test_file = output_dir + "/test_same_file.jpg"
         import shutil
-        shutil.copy2(source_file, test_file)        
+        shutil.copy2(source_file, test_file)
         exif = get_exif(source_file)
-        add_exif_data_to_jpg_file(exif, test_file, test_file, verbose=True)        
+        add_exif_data_to_jpg_file(exif, test_file, test_file, verbose=True)
         assert os.path.exists(test_file), "File should exist after same-file operation"
         with Image.open(test_file) as img:
             img.verify()
-        logger.info("✓ add_exif_data_to_jpg_file same file test passed")        
+        logger.info("✓ add_exif_data_to_jpg_file same file test passed")
     except Exception as e:
         logger.error(f"add_exif_data_to_jpg_file same file test failed: {str(e)}")
         assert False
@@ -1860,7 +1861,7 @@ def test_add_exif_data_to_jpg_file_invalid_tags():
         if not os.path.exists(source_file):
             logger.warning("Source file not found, skipping test")
             assert False
-        out_file = output_dir + "/test_invalid_tags.jpg"        
+        out_file = output_dir + "/test_invalid_tags.jpg"
         problematic_exif = {
             # Very large binary data that might be problematic
             700: b'x' * 10000,
@@ -1869,7 +1870,7 @@ def test_add_exif_data_to_jpg_file_invalid_tags():
             # Normal tags that should work
             271: "Test Make",
             272: "Test Model",
-        }        
+        }
         add_exif_data_to_jpg_file(problematic_exif, source_file, out_file, verbose=True)
         assert os.path.exists(out_file), "Output file should be created"
         logger.info("✓ add_exif_data_to_jpg_file invalid tags test passed")
@@ -1885,11 +1886,12 @@ def test_insert_xmp_no_soi_marker():
         logger.info("======== Testing XMP Insertion with No SOI Marker ========")
         output_dir = "output/img-exif"
         if not os.path.exists(output_dir):
-            os.makedirs(output_dir)            
+            os.makedirs(output_dir)
         invalid_jpeg = output_dir + "/test_no_soi.jpg"
         with open(invalid_jpeg, 'wb') as f:
-            f.write(b'This is not a JPEG file')        
-        _insert_xmp_into_jpeg(invalid_jpeg, b'<?xpacket begin="test"?><test>XMP</test>', verbose=True)
+            f.write(b'This is not a JPEG file')
+        _insert_xmp_into_jpeg(
+            invalid_jpeg, b'<?xpacket begin="test"?><test>XMP</test>', verbose=True)
         logger.info("✓ XMP insertion no SOI marker test passed")
     except Exception as e:
         logger.error(f"XMP insertion no SOI marker test failed: {str(e)}")
@@ -1903,7 +1905,7 @@ def test_insert_xmp_da_marker():
         logger.info("======== Testing XMP Insertion with 0xDA Marker ========")
         output_dir = "output/img-exif"
         if not os.path.exists(output_dir):
-            os.makedirs(output_dir)            
+            os.makedirs(output_dir)
         source_file = "examples/input/img-jpg/0001.jpg"
         if not os.path.exists(source_file):
             logger.warning("Source file not found, skipping test")
@@ -1912,7 +1914,7 @@ def test_insert_xmp_da_marker():
         import shutil
         shutil.copy2(source_file, test_file)
         xmp_data = b'<?xpacket begin="test"?><test>XMP Data</test>'
-        _insert_xmp_into_jpeg(test_file, xmp_data, verbose=True)        
+        _insert_xmp_into_jpeg(test_file, xmp_data, verbose=True)
         with Image.open(test_file) as img:
             img.verify()
         logger.info("✓ XMP insertion with 0xDA marker test passed")
@@ -1928,10 +1930,10 @@ def test_png_16bit_warning():
         logger.info("======== Testing 16-bit PNG Warning ========")
         output_dir = "output/img-exif"
         if not os.path.exists(output_dir):
-            os.makedirs(output_dir)            
+            os.makedirs(output_dir)
         test_img = np.ones((100, 100, 3), dtype=np.uint16) * 32768
         out_file = output_dir + "/test_16bit.png"
-        exif_data = {271: "Test Make", 272: "Test Model"}        
+        exif_data = {271: "Test Make", 272: "Test Model"}
         write_image_with_exif_data_png(exif_data, test_img, out_file, verbose=True)
         assert os.path.exists(out_file), "16-bit PNG should be created"
         logger.info("✓ 16-bit PNG warning test passed")
@@ -1949,16 +1951,16 @@ def test_png_icc_profile():
         if not os.path.exists(output_dir):
             os.makedirs(output_dir)
         test_img = np.ones((100, 100, 3), dtype=np.uint8) * 128
-        out_file = output_dir + "/test_icc_profile.png"        
+        out_file = output_dir + "/test_icc_profile.png"
         icc_profile_data = b"fake_icc_profile_data_here"
         exif_with_icc = {
             271: "Test Make",
-            272: "Test Model", 
+            272: "Test Model",
             "ICC_Profile": icc_profile_data,
             "icc_profile": icc_profile_data,  # Alternative key
         }
         write_image_with_exif_data_png(exif_with_icc, test_img, out_file, verbose=True)
-        assert os.path.exists(out_file), "PNG with ICC profile should be created"        
+        assert os.path.exists(out_file), "PNG with ICC profile should be created"
         with Image.open(out_file) as img:
             img.verify()
         logger.info("✓ PNG ICC profile test passed")
@@ -1971,12 +1973,12 @@ def test_xmp_bytes_decoding():
     try:
         setup_logging()
         logger = logging.getLogger(__name__)
-        logger.info("======== Testing XMP Bytes Decoding ========")        
+        logger.info("======== Testing XMP Bytes Decoding ========")
         test_cases = [
             {b'xmp_data': b'<?xpacket begin="test"?><test>bytes xmp</test>'},
             {'XML:com.adobe.xmp': b'<?xpacket begin="test"?><test>bytes xml</test>'},
             {'xml:com.adobe.xmp': 'string xmp data'},  # String input
-        ]        
+        ]
         for exif_data in test_cases:
             test_img = np.ones((50, 50, 3), dtype=np.uint8) * 128
             output_dir = "output/img-exif"
@@ -1987,6 +1989,277 @@ def test_xmp_bytes_decoding():
         logger.info("✓ XMP bytes decoding test passed")
     except Exception as e:
         logger.error(f"XMP bytes decoding test failed: {str(e)}")
+        assert False
+
+
+def test_add_exif_tags_to_pnginfo_skip_icc():
+    try:
+        setup_logging()
+        logger = logging.getLogger(__name__)
+        logger.info("======== Testing PNG Info ICC Profile Skipping ========")
+        output_dir = "output/img-exif"
+        if not os.path.exists(output_dir):
+            os.makedirs(output_dir)
+        test_img = np.ones((50, 50, 3), dtype=np.uint8) * 128
+        exif_with_icc_keys = {
+            "ICC_Profile": b"fake_icc_data",
+            "icc_profile": b"more_fake_icc",
+            "ICCPROFILE": "should be skipped",
+            "Color Profile": "skip this too",
+            "normal_tag": "this should be included",
+            271: "Camera Make",  # Should be included
+        }
+        out_file = output_dir + "/test_icc_skip.png"
+        write_image_with_exif_data_png(exif_with_icc_keys, test_img, out_file, verbose=True)
+        assert os.path.exists(out_file), "Output file should exist"
+        with Image.open(out_file) as img:
+            if hasattr(img, 'text') and img.text:
+                icc_tags = [key for key in img.text.keys()
+                            if 'icc' in key.lower() or 'profile' in key.lower()]
+                assert len(icc_tags) == 0, f"ICC tags should be skipped but found: {icc_tags}"
+                assert "normal_tag" in img.text, "Normal tag should be included"
+        logger.info("✓ ICC profile skipping test passed")
+    except Exception as e:
+        logger.error(f"ICC profile skipping test failed: {str(e)}")
+        import traceback
+        logger.error(traceback.format_exc())
+        assert False
+
+
+def test_typed_tag_exception_handling():
+    try:
+        setup_logging()
+        logger = logging.getLogger(__name__)
+        logger.info("======== Testing Typed Tag Exception Handling ========")
+        output_dir = "output/img-exif"
+        if not os.path.exists(output_dir):
+            os.makedirs(output_dir)
+        test_img = np.ones((50, 50, 3), dtype=np.uint8) * 128
+        problematic_exif = {
+            # Bytes that will cause decode error
+            "TestBytes": b'\xff\xfe\x00\x01\x02\x03',
+            # Very large array that might cause issues
+            "TestArray": list(range(1000)),
+            # Normal values for array, int, float
+            "TestInt": 42,
+            "TestFloat": 3.14159,
+            "TestArraySmall": [1, 2, 3],
+        }
+        out_file = output_dir + "/test_typed_tag_exceptions.png"
+        write_image_with_exif_data_png(problematic_exif, test_img, out_file, verbose=True)
+        assert os.path.exists(out_file), "Output file should be created despite exceptions"
+        with Image.open(out_file) as img:
+            img.verify()
+        logger.info("✓ Typed tag exception handling test passed")
+    except Exception as e:
+        logger.error(f"Typed tag exception handling test failed: {str(e)}")
+        import traceback
+        logger.error(traceback.format_exc())
+        assert False
+
+
+def test_add_exif_tag_exceptions():
+    try:
+        setup_logging()
+        logger = logging.getLogger(__name__)
+        logger.info("======== Testing Add EXIF Tag Exceptions ========")
+        output_dir = "output/img-exif"
+        if not os.path.exists(output_dir):
+            os.makedirs(output_dir)
+        test_img = np.ones((50, 50, 3), dtype=np.uint8) * 128
+        problematic_exif = {
+            # Very large binary data that might be rejected
+            700: b'x' * 10000,  # XMLPACKET
+            # Complex object that can't be easily serialized
+            315: object(),  # Artist tag with invalid type
+            # Normal values that should work
+            271: "Test Make",
+            272: "Test Model",
+        }
+        out_file = output_dir + "/test_exif_tag_exceptions.png"
+        write_image_with_exif_data_png(problematic_exif, test_img, out_file, verbose=True)
+        assert os.path.exists(out_file), "Output file should be created"
+        logger.info("✓ Add EXIF tag exceptions test passed")
+    except Exception as e:
+        logger.error(f"Add EXIF tag exceptions test failed: {str(e)}")
+        import traceback
+        logger.error(traceback.format_exc())
+        assert False
+
+
+def test_png_text_tag_exceptions():
+    try:
+        setup_logging()
+        logger = logging.getLogger(__name__)
+        logger.info("======== Testing PNG Text Tag Exceptions ========")
+        output_dir = "output/img-exif"
+        if not os.path.exists(output_dir):
+            os.makedirs(output_dir)
+        test_img = np.ones((50, 50, 3), dtype=np.uint8) * 128
+        edge_case_exif = {
+            "PNG_TestTag": "Value with PNG_ prefix",  # Should be cleaned
+            "TestBinary": b'\xff\xfe\x00\x01',  # Binary data that's hard to decode
+            "TestLongValue": "A" * 1000,  # Very long string
+            "TestNormal": "Normal value",
+        }
+        out_file = output_dir + "/test_png_text_exceptions.png"
+        write_image_with_exif_data_png(edge_case_exif, test_img, out_file, verbose=True)
+        assert os.path.exists(out_file), "Output file should be created"
+        with Image.open(out_file) as img:
+            if hasattr(img, 'text') and img.text:
+                assert "TestTag" in img.text, "PNG_ prefix should be removed"
+                assert "PNG_TestTag" not in img.text, "Original PNG_ prefixed key should not exist"
+        logger.info("✓ PNG text tag exceptions test passed")
+    except Exception as e:
+        logger.error(f"PNG text tag exceptions test failed: {str(e)}")
+        import traceback
+        logger.error(traceback.format_exc())
+        assert False
+
+
+def test_extract_icc_profile_non_profile():
+    try:
+        setup_logging()
+        logger = logging.getLogger(__name__)
+        logger.info("======== Testing Extract ICC Profile Non-Profile ========")
+        test_exif = {
+            "not_icc": b"some random data",
+            "also_not_profile": "string data",
+            271: "Camera Make",
+        }
+        output_dir = "output/img-exif"
+        if not os.path.exists(output_dir):
+            os.makedirs(output_dir)
+        test_img = np.ones((50, 50, 3), dtype=np.uint8) * 128
+        out_file = output_dir + "/test_no_icc.png"
+        write_image_with_exif_data_png(test_exif, test_img, out_file, verbose=True)
+        assert os.path.exists(out_file), "Output file should be created"
+        logger.info("✓ Extract ICC profile non-profile test passed")
+    except Exception as e:
+        logger.error(f"Extract ICC profile non-profile test failed: {str(e)}")
+        import traceback
+        logger.error(traceback.format_exc())
+        assert False
+
+
+def test_clean_data_for_tiff_rational():
+    try:
+        setup_logging()
+        logger = logging.getLogger(__name__)
+        logger.info("======== Testing Clean Data for TIFF with Rational ========")
+        rational = IFDRational(3, 4)
+        result = clean_data_for_tiff(rational)
+        assert result == (3, 4), f"IFDRational should be converted to tuple: {result}"
+        assert clean_data_for_tiff("test") == "test"
+        assert clean_data_for_tiff(b"test") == "test"
+        assert clean_data_for_tiff(123) == 123
+        logger.info("✓ Clean data for TIFF rational test passed")
+    except Exception as e:
+        logger.error(f"Clean data for TIFF rational test failed: {str(e)}")
+        import traceback
+        logger.error(traceback.format_exc())
+        assert False
+
+
+def test_process_tiff_data_edge_cases():
+    try:
+        setup_logging()
+        logger = logging.getLogger(__name__)
+        logger.info("======== Testing Process TIFF Data Edge Cases ========")
+        zero_rational = IFDRational(1, 0)
+        result = _process_tiff_data(zero_rational)
+        assert result == (5, 1, (0, 1)), f"Zero denominator should be handled: {result}"
+        normal_rational = IFDRational(2, 3)
+        result = _process_tiff_data(normal_rational)
+        assert result == (5, 1, (2, 3)), f"Normal rational should work: {result}"
+        problematic_iterable = [1, "not_a_number", 3]
+        result = _process_tiff_data(problematic_iterable)
+        assert result is None, f"Problematic iterable should return None: {result}"
+
+        class UnserializableObject:
+            def __str__(self):
+                raise Exception("Can't serialize")
+
+        bad_object = UnserializableObject()
+        result = _process_tiff_data(bad_object)
+        assert result is None, f"Unserializable object should return None: {result}"
+        logger.info("✓ Process TIFF data edge cases test passed")
+    except Exception as e:
+        logger.error(f"Process TIFF data edge cases test failed: {str(e)}")
+        import traceback
+        logger.error(traceback.format_exc())
+        assert False
+
+
+def test_tiff_write_fallback():
+    try:
+        setup_logging()
+        logger = logging.getLogger(__name__)
+        logger.info("======== Testing TIFF Write Fallback ========")
+        output_dir = "output/img-exif"
+        if not os.path.exists(output_dir):
+            os.makedirs(output_dir)
+        test_img = np.ones((100, 100, 3), dtype=np.uint8) * 128
+        problematic_exif = {
+            # Very large binary data that might cause issues with tifffile
+            700: b'x' * 100000,  # Very large XML packet
+            271: "Test Make",
+            272: "Test Model",
+        }
+        out_file = output_dir + "/test_tiff_fallback.tif"
+        write_image_with_exif_data_tif(problematic_exif, test_img, out_file)
+        assert os.path.exists(out_file), "TIFF file should be created (possibly via fallback)"
+        with Image.open(out_file) as img:
+            img.verify()
+        logger.info("✓ TIFF write fallback test passed")
+    except Exception as e:
+        logger.error(f"TIFF write fallback test failed: {str(e)}")
+        import traceback
+        logger.error(traceback.format_exc())
+        assert False
+
+
+def test_exif_dict_exif_prefix():
+    try:
+        setup_logging()
+        logger = logging.getLogger(__name__)
+        logger.info("======== Testing EXIF Dict with EXIF_ Prefix ========")
+        test_exif = {
+            "EXIF_CameraMake": "Test Make",
+            "EXIF_CameraModel": "Test Model",
+            "EXIF_ExposureTime": "1/100",
+            "PNG_SomeTag": "Should be skipped",  # PNG_ prefixed should be skipped
+            "normal_tag": "Should be included",
+        }
+        result = exif_dict(test_exif)
+        assert "CameraMake" in result, "EXIF_ prefix should be removed"
+        assert "CameraModel" in result, "EXIF_ prefix should be removed"
+        assert "ExposureTime" in result, "EXIF_ prefix should be removed"
+        assert "SomeTag" not in result, "PNG_ prefixed tags should be skipped"
+        assert "normal_tag" in result, "Normal tags should be included"
+        logger.info("✓ EXIF dict EXIF_ prefix test passed")
+    except Exception as e:
+        logger.error(f"EXIF dict EXIF_ prefix test failed: {str(e)}")
+        import traceback
+        logger.error(traceback.format_exc())
+        assert False
+
+
+def test_print_exif_none():
+    try:
+        setup_logging()
+        logger = logging.getLogger(__name__)
+        logger.info("======== Testing Print EXIF with None ========")
+        try:
+            print_exif(None)
+            assert False, "Should have raised RuntimeError for None EXIF"
+        except RuntimeError as e:
+            assert "Image has no exif data" in str(e)
+            logger.info("✓ Correctly caught None EXIF in print_exif")
+    except Exception as e:
+        logger.error(f"Print EXIF with None test failed: {str(e)}")
+        import traceback
+        logger.error(traceback.format_exc())
         assert False
 
 
@@ -2041,3 +2314,13 @@ if __name__ == '__main__':
     test_png_16bit_warning()
     test_png_icc_profile()
     test_xmp_bytes_decoding()
+    test_add_exif_tags_to_pnginfo_skip_icc()
+    test_typed_tag_exception_handling()
+    test_add_exif_tag_exceptions()
+    test_png_text_tag_exceptions()
+    test_extract_icc_profile_non_profile()
+    test_clean_data_for_tiff_rational()
+    test_process_tiff_data_edge_cases()
+    test_tiff_write_fallback()
+    test_exif_dict_exif_prefix()
+    test_print_exif_none()
