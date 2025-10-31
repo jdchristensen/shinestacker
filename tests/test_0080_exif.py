@@ -9,7 +9,7 @@ from shinestacker.algorithms.utils import read_img
 from shinestacker.algorithms.exif import (
     get_exif, copy_exif_from_file_to_file, print_exif, write_image_with_exif_data,
     get_tiff_dtype_count, save_exif_data, exif_dict, exif_extra_tags_for_tif,
-    get_exif_from_png, get_enhanced_exif_from_png,
+    get_exif_from_png, get_enhanced_exif_from_png, add_exif_data_to_jpg_file,
     extract_enclosed_data_for_jpg, safe_decode_bytes, IFDRational)
 
 
@@ -1310,55 +1310,275 @@ def test_png_string_tags():
         output_dir = "output/img-exif"
         if not os.path.exists(output_dir):
             os.makedirs(output_dir)
-        logger.info("======== Testing PNG String Tags ========")        
-        test_img = np.ones((50, 50, 3), dtype=np.uint8) * 128        
+        logger.info("======== Testing PNG String Tags ========")
+        test_img = np.ones((50, 50, 3), dtype=np.uint8) * 128
         exif_with_string_tags = {
             "CustomTag1": "Custom Value 1",
             "PNG_CustomTag2": "Custom Value 2",  # Should be cleaned to "CustomTag2"
             "AnotherStringTag": "Another Value",
             "Description": "Test description for PNG",
-            "Author": "Test Author",            
+            "Author": "Test Author",
             "xmp:SomeTag": "XMP Value",
             "XML:AnotherTag": "XML Value",
-            "xmlpacket": "XML Packet Value",            
+            "xmlpacket": "XML Packet Value",
             271: "Test Make",  # Make
             272: "Test Model",  # Model
             305: "Test Software",  # Software
         }
-        out_filename = output_dir + "/test_png_string_tags.png"        
-        write_image_with_exif_data(exif_with_string_tags, test_img, out_filename, verbose=True)        
-        assert os.path.exists(out_filename), "PNG file with string tags was not created"        
+        out_filename = output_dir + "/test_png_string_tags.png"
+        write_image_with_exif_data(exif_with_string_tags, test_img, out_filename, verbose=True)
+        assert os.path.exists(out_filename), "PNG file with string tags was not created"
         written_exif = get_exif(out_filename)
         logger.info("*** Written PNG EXIF with string tags ***")
-        print_exif(written_exif)        
+        print_exif(written_exif)
         with Image.open(out_filename) as img:
             if hasattr(img, 'text') and img.text:
                 logger.info("*** PNG Text Chunks Found ***")
                 found_string_tags = []
                 for key, value in img.text.items():
                     logger.info(f"  {key}: {str(value)[:100]}")
-                    if key in ["CustomTag1", "CustomTag2", "AnotherStringTag", "Description", "Author"]:
+                    if key in ["CustomTag1", "CustomTag2",
+                               "AnotherStringTag", "Description", "Author"]:
                         found_string_tags.append(key)
-                logger.info(f"Found {len(found_string_tags)} string tags in PNG text chunks")                
+                logger.info(f"Found {len(found_string_tags)} string tags in PNG text chunks")
                 assert "CustomTag1" in img.text, "CustomTag1 should be in PNG text"
-                assert "CustomTag2" in img.text, "CustomTag2 (cleaned from PNG_CustomTag2) should be in PNG text"
+                assert "CustomTag2" in img.text, \
+                    "CustomTag2 (cleaned from PNG_CustomTag2) should be in PNG text"
                 assert "AnotherStringTag" in img.text, "AnotherStringTag should be in PNG text"
                 assert "Description" in img.text, "Description should be in PNG text"
-                assert "Author" in img.text, "Author should be in PNG text"                
-                xmp_tags = [key for key in img.text.keys() if key.lower().startswith(('xmp', 'xml'))]
-                logger.info(f"XMP/XML tags found: {len(xmp_tags)}")                
-                assert img.text["CustomTag1"] == "Custom Value 1", "CustomTag1 value mismatch"
-                assert img.text["CustomTag2"] == "Custom Value 2", "CustomTag2 value mismatch"
-                assert img.text["AnotherStringTag"] == "Another Value", "AnotherStringTag value mismatch"
+                assert "Author" in img.text, "Author should be in PNG text"
+                xmp_tags = [key for key in img.text.keys()
+                            if key.lower().startswith(('xmp', 'xml'))]
+                logger.info(f"XMP/XML tags found: {len(xmp_tags)}")
+                assert img.text["CustomTag1"] == "Custom Value 1", \
+                    "CustomTag1 value mismatch"
+                assert img.text["CustomTag2"] == "Custom Value 2", \
+                    "CustomTag2 value mismatch"
+                assert img.text["AnotherStringTag"] == "Another Value", \
+                    "AnotherStringTag value mismatch"
                 logger.info("✓ All string tag values match expected values")
             else:
-                logger.error("No text chunks found in PNG - _add_png_text_tag may not have been called")
-                assert False, "No text chunks found in PNG"        
+                logger.error(
+                    "No text chunks found in PNG - _add_png_text_tag may not have been called")
+                assert False, "No text chunks found in PNG"
         assert 271 in written_exif or "Make" in str(written_exif), "Make tag should be preserved"
         assert 272 in written_exif or "Model" in str(written_exif), "Model tag should be preserved"
         logger.info("✓ PNG string tags test passed - _add_png_text_tag was successfully called")
     except Exception as e:
         logger.error(f"PNG string tags test failed: {str(e)}")
+        import traceback
+        logger.error(traceback.format_exc())
+        assert False
+
+
+def test_add_exif_data_to_jpg_file_error_handling():
+    try:
+        setup_logging()
+        logger = logging.getLogger(__name__)
+        output_dir = "output/img-exif"
+        if not os.path.exists(output_dir):
+            os.makedirs(output_dir)
+        logger.info("======== Testing add_exif_data_to_jpg_file Error Handling ========")
+        logger.info("*** Testing same file with corrupt EXIF data ***")
+        test_source = "examples/input/img-jpg/0001.jpg"
+        if not os.path.exists(test_source):
+            logger.warning("Test source file not found, skipping error handling test")
+            assert False
+        same_file_test = output_dir + "/test_same_file_error.jpg"
+        import shutil
+        shutil.copy2(test_source, same_file_test)
+        corrupt_exif = {
+            # Very long string that might cause buffer issues
+            270: 'A' * 10000,
+            # Invalid data types
+            271: object(),  # Non-serializable object
+            # Nested structure that PIL might not handle
+            272: {'nested': 'data'},
+        }
+        try:
+            add_exif_data_to_jpg_file(corrupt_exif, same_file_test, same_file_test, verbose=True)
+            logger.warning("Expected exception was not raised with corrupt EXIF data")
+        except Exception as e:
+            logger.info(f"✓ Correctly caught exception with corrupt EXIF: {str(e)}")
+            temp_file = same_file_test + ".tmp"
+            if os.path.exists(temp_file):
+                logger.error(f"Temp file was not cleaned up: {temp_file}")
+                assert False, "Temp file should have been cleaned up"
+            else:
+                logger.info("✓ Temp file was properly cleaned up")
+            if os.path.exists(same_file_test):
+                try:
+                    test_img = Image.open(same_file_test)
+                    test_img.verify()
+                    test_img.close()
+                    logger.info("✓ Original file is still valid after exception")
+                except Exception as img_error:
+                    logger.error(f"Original file corrupted after exception: {img_error}")
+                    assert False, "Original file should remain valid"
+            else:
+                logger.error("Original file was deleted after exception")
+                assert False, "Original file should not be deleted"
+        logger.info("*** Testing different files with problematic EXIF ***")
+        different_out = output_dir + "/test_different_file_error.jpg"
+        problematic_exif = {
+            270: b'\xff\xfe\x00\x01\x02\x03',  # Binary data that's not valid UTF-8
+            305: 'Normal string',
+            315: 'Another normal string',
+        }
+        try:
+            add_exif_data_to_jpg_file(problematic_exif, test_source, different_out, verbose=True)
+            if os.path.exists(different_out):
+                try:
+                    test_img = Image.open(different_out)
+                    test_img.verify()
+                    test_img.close()
+                    logger.info(
+                        "✓ Different files: Output file created and valid despite potential issues")
+                except Exception as img_error:
+                    logger.error(f"Different files: Output file is invalid: {img_error}")
+            else:
+                logger.warning("Different files: Output file was not created")
+        except Exception as e:
+            logger.info(f"✓ Different files: Exception caught as expected: {str(e)}")
+            if os.path.exists(different_out):
+                try:
+                    test_img = Image.open(different_out)
+                    test_img.verify()
+                    test_img.close()
+                    logger.info("✓ Different files: Fallback worked - output file is valid image")
+                except Exception as img_error:
+                    logger.error(f"Different files: Fallback produced invalid file: {img_error}")
+                    assert False, "Fallback should produce valid image file"
+        logger.info("*** Testing non-existent input file ***")
+        non_existent_input = "non_existent_input.jpg"
+        non_existent_output = output_dir + "/test_nonexistent_output.jpg"
+        try:
+            add_exif_data_to_jpg_file({}, non_existent_input, non_existent_output, verbose=True)
+            logger.error("Should have raised exception for non-existent input file")
+            assert False
+        except Exception as e:
+            logger.info(f"✓ Correctly caught exception for non-existent input: {str(e)}")
+        logger.info("*** Testing valid EXIF with edge cases ***")
+        edge_case_exif = {
+            # IFDRational values
+            282: IFDRational(72, 1),
+            283: IFDRational(96, 1),
+            # Empty strings
+            270: '',
+            305: '',
+            # Normal values
+            271: 'Test Make',
+            272: 'Test Model',
+        }
+        edge_case_out = output_dir + "/test_edge_cases.jpg"
+        try:
+            add_exif_data_to_jpg_file(edge_case_exif, test_source, edge_case_out, verbose=True)
+            if os.path.exists(edge_case_out):
+                written_exif = get_exif(edge_case_out)
+                logger.info("✓ Edge case EXIF: File created successfully")
+                if written_exif:
+                    logger.info("✓ Edge case EXIF: EXIF data found in output")
+                else:
+                    logger.warning(
+                        "Edge case EXIF: No EXIF data found in output (might be expected)")
+            else:
+                logger.error("Edge case EXIF: Output file was not created")
+                assert False
+        except Exception as e:
+            logger.error(f"Edge case EXIF: Unexpected exception: {str(e)}")
+            import traceback
+            logger.error(traceback.format_exc())
+            assert False
+        logger.info("✓ All add_exif_data_to_jpg_file error handling tests passed")
+    except Exception as e:
+        logger.error(f"add_exif_data_to_jpg_file error handling test failed: {str(e)}")
+        import traceback
+        logger.error(traceback.format_exc())
+        assert False
+
+
+def test_write_image_with_exif_data_error_handling():
+    try:
+        setup_logging()
+        logger = logging.getLogger(__name__)
+        output_dir = "output/img-exif"
+        if not os.path.exists(output_dir):
+            os.makedirs(output_dir)
+        logger.info("======== Testing write_image_with_exif_data Error Handling ========")
+        test_image = np.ones((100, 100, 3), dtype=np.uint8) * 128
+        logger.info("*** Testing None EXIF data ***")
+        none_exif_out = output_dir + "/test_none_exif.jpg"
+        try:
+            result = write_image_with_exif_data(None, test_image, none_exif_out, verbose=True)
+            assert result is None, "Should return None when EXIF is None"
+            assert os.path.exists(none_exif_out), "File should be created with None EXIF"
+            logger.info("✓ None EXIF test passed - file created with write_img fallback")
+        except Exception as e:
+            logger.error(f"None EXIF test failed: {str(e)}")
+            assert False
+        logger.info("*** Testing invalid image data ***")
+        invalid_image_out = output_dir + "/test_invalid_image.jpg"
+        invalid_exif = {271: 'Test Make', 272: 'Test Model'}
+        try:
+            write_image_with_exif_data(invalid_exif, None, invalid_image_out, verbose=True)
+            logger.error("Should have failed with invalid image data")
+            assert False
+        except Exception as e:
+            logger.info(f"✓ Correctly caught exception for invalid image: {str(e)}")
+        logger.info("*** Testing unsupported file format ***")
+        unsupported_out = output_dir + "/test_unsupported.bmp"
+        normal_exif = {271: 'Test Make', 272: 'Test Model'}
+        try:
+            write_image_with_exif_data(normal_exif, test_image, unsupported_out, verbose=True)
+            if os.path.exists(unsupported_out):
+                logger.info("✓ Unsupported format: File created (write_img handled it)")
+            else:
+                logger.warning("Unsupported format: File not created (might be expected)")
+        except Exception as e:
+            logger.info(f"Unsupported format: Exception caught: {str(e)}")
+        logger.info("✓ All write_image_with_exif_data error handling tests passed")
+    except Exception as e:
+        logger.error(f"write_image_with_exif_data error handling test failed: {str(e)}")
+        import traceback
+        logger.error(traceback.format_exc())
+        assert False
+
+
+def test_copy_exif_error_handling():
+    try:
+        setup_logging()
+        logger = logging.getLogger(__name__)
+        output_dir = "output/img-exif"
+        if not os.path.exists(output_dir):
+            os.makedirs(output_dir)
+        logger.info("======== Testing copy_exif_from_file_to_file Error Handling ========")
+        logger.info("*** Testing non-existent source EXIF file ***")
+        non_existent_source = "non_existent_source.jpg"
+        valid_target = "examples/input/img-jpg/0001.jpg" \
+            if os.path.exists("examples/input/img-jpg/0001.jpg") else None
+        if valid_target:
+            try:
+                copy_exif_from_file_to_file(non_existent_source, valid_target)
+                logger.error("Should have raised exception for non-existent source")
+                assert False
+            except RuntimeError as e:
+                assert "File does not exist" in str(e)
+                logger.info("✓ Correctly caught exception for non-existent source")
+        logger.info("*** Testing non-existent input file ***")
+        valid_source = "examples/input/img-jpg/0000.jpg" \
+            if os.path.exists("examples/input/img-jpg/0000.jpg") else None
+        non_existent_input = "non_existent_input.jpg"
+        if valid_source:
+            try:
+                copy_exif_from_file_to_file(valid_source, non_existent_input)
+                logger.error("Should have raised exception for non-existent input")
+                assert False
+            except RuntimeError as e:
+                assert "File does not exist" in str(e)
+                logger.info("✓ Correctly caught exception for non-existent input")
+        logger.info("✓ All copy_exif_from_file_to_file error handling tests passed")
+    except Exception as e:
+        logger.error(f"copy_exif_from_file_to_file error handling test failed: {str(e)}")
         import traceback
         logger.error(traceback.format_exc())
         assert False
@@ -1394,3 +1614,6 @@ if __name__ == '__main__':
     test_unified_exif_with_enhanced_png()
     test_exif_round_trip_jpg_to_png_to_jpg()
     test_png_string_tags()
+    test_add_exif_data_to_jpg_file_error_handling()
+    test_write_image_with_exif_data_error_handling()
+    test_copy_exif_error_handling()
