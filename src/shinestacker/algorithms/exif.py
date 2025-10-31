@@ -290,6 +290,8 @@ def add_exif_data_to_jpg_file(exif, in_filename, out_filename, verbose=False):
         with Image.open(in_filename) as image:
             if hasattr(exif, 'tobytes') and 'TiffImagePlugin' not in str(type(exif)):
                 exif_bytes = exif.tobytes()
+                if len(exif_bytes) > 65533:
+                    exif_bytes = exif_bytes[:65533]
             else:
                 jpeg_exif = Image.Exif()
                 for tag_id, value in exif.items():
@@ -599,7 +601,8 @@ def clean_data_for_tiff(data):
 
 
 def write_image_with_exif_data_jpg(exif, image, out_filename, verbose):
-    cv2.imwrite(out_filename, image, [cv2.IMWRITE_JPEG_QUALITY, 100])
+    save_img = image // 256 if image.dtype == np.uint16 else image
+    cv2.imwrite(out_filename, save_img, [cv2.IMWRITE_JPEG_QUALITY, 100])
     add_exif_data_to_jpg_file(exif, out_filename, out_filename, verbose)
 
 
