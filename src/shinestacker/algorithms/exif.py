@@ -72,24 +72,28 @@ def get_exif(exif_filename, enhanced_png_parsing=True):
     if extension_tif(exif_filename):
         return image.tag_v2 if hasattr(image, 'tag_v2') else image.getexif()
     if extension_jpg(exif_filename):
-        exif_data = image.getexif()
-        try:
-            exif_subifd = image.getexif().get_ifd(34665)
-            exif_data.update(exif_subifd)
-        except Exception:
-            pass  # EXIF SubIFD is optional
-        with open(exif_filename, 'rb') as f:
-            data = extract_enclosed_data_for_jpg(
-                f.read(), b'<?xpacket', b'<?xpacket end="w"?>')
-            if data is not None:
-                exif_data[XMLPACKET] = data
-        return exif_data
+        return get_exif_from_jpg(image, exif_filename)
     if extension_png(exif_filename):
         if enhanced_png_parsing:
             return get_enhanced_exif_from_png(image)
         exif_data = get_exif_from_png(image)
         return exif_data if exif_data else image.getexif()
     return image.getexif()
+
+
+def get_exif_from_jpg(image, exif_filename):
+    exif_data = image.getexif()
+    try:
+        exif_subifd = image.getexif().get_ifd(34665)
+        exif_data.update(exif_subifd)
+    except Exception:
+        pass  # EXIF SubIFD is optional
+    with open(exif_filename, 'rb') as f:
+        data = extract_enclosed_data_for_jpg(
+            f.read(), b'<?xpacket', b'<?xpacket end="w"?>')
+        if data is not None:
+            exif_data[XMLPACKET] = data
+    return exif_data
 
 
 def get_exif_from_png(image):
