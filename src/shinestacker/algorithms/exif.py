@@ -143,7 +143,10 @@ def _parse_xmp_value(exif_tag, value):
             try:
                 return IFDRational(int(num), int(den))
             except (ValueError, ZeroDivisionError):
-                return float(value) if value else 0.0
+                try:
+                    return float(value) if value else 0.0
+                except ValueError:
+                    return 0.0  # Return 0.0 if float conversion also fails
         return float(value) if value else 0.0
     if exif_tag == 34855:  # ISO
         if '<rdf:li>' in value:
@@ -169,17 +172,17 @@ def parse_typed_png_text(value):
                 try:
                     return IFDRational(int(parts[0]), int(parts[1]))
                 except (ValueError, ZeroDivisionError):
-                    return value
+                    return value  # Return original value if parsing fails
         elif value.startswith('INT:'):
             try:
                 return int(value[4:])
             except ValueError:
-                return value[4:]
+                return value[4:]  # Return string part if int conversion fails
         elif value.startswith('FLOAT:'):
             try:
                 return float(value[6:])
             except ValueError:
-                return value[6:]
+                return value[6:]  # Return string part if float conversion fails
         elif value.startswith('STRING:'):
             return value[7:]
         elif value.startswith('BYTES:'):
