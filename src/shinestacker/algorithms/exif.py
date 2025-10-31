@@ -84,7 +84,7 @@ def get_exif(exif_filename, enhanced_png_parsing=True):
 def get_exif_from_jpg(image, exif_filename):
     exif_data = image.getexif()
     try:
-        exif_subifd = image.getexif().get_ifd(34665)
+        exif_subifd = exif_data.get_ifd(34665)
         exif_data.update(exif_subifd)
     except Exception:
         pass  # EXIF SubIFD is optional
