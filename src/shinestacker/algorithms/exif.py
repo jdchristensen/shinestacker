@@ -284,17 +284,7 @@ def add_exif_data_to_jpg_file(exif, in_filename, out_filename, verbose=False):
         final_filename = out_filename
     try:
         with Image.open(in_filename) as image:
-            if hasattr(exif, 'tobytes') and 'TiffImagePlugin' in str(type(exif)):
-                jpeg_exif = Image.Exif()
-                for tag_id in exif:
-                    if tag_id != XMLPACKET:
-                        try:
-                            jpeg_exif[tag_id] = exif[tag_id]
-                        except Exception as e:
-                            if verbose:
-                                logger.warning(msg=f"Failed to add tag {tag_id}: {e}")
-                exif_bytes = jpeg_exif.tobytes()
-            elif hasattr(exif, 'tobytes'):
+            if hasattr(exif, 'tobytes') and 'TiffImagePlugin' not in str(type(exif)):
                 exif_bytes = exif.tobytes()
             else:
                 jpeg_exif = Image.Exif()
