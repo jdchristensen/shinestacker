@@ -104,7 +104,6 @@ XMLPACKET = 700
 IMAGERESOURCES = 34377
 INTERCOLORPROFILE = 34675
 
-# Tags that shouldn't be copied when writing TIFF files
 NO_COPY_TIFF_TAGS_ID = [
     IMAGEWIDTH, IMAGELENGTH, XRESOLUTION, YRESOLUTION, BITSPERSAMPLE,
     PHOTOMETRICINTERPRETATION, SAMPLESPERPIXEL, PLANARCONFIGURATION, SOFTWARE,
@@ -142,7 +141,8 @@ XMP_TO_EXIF_MAP = {
     'exif:DateTimeOriginal': DATETIMEORIGINAL,
     'xmp:CreateDate': DATETIME,
     'xmp:CreatorTool': SOFTWARE,
-    'aux:Lens': LENSMODEL,
+    'aux:Lens': LENSMODEL,  # Adobe's auxiliary namespace
+    'exifEX:LensModel': LENSMODEL,  # EXIF 2.3 namespace
     'exif:Flash': FLASH,
     'exif:WhiteBalance': WHITEBALANCE,
     'dc:description': IMAGEDESCRIPTION,
@@ -251,6 +251,26 @@ EXPOSURE_TAGS_MAP = {
     DATETIMEORIGINAL: 'DateTimeOriginal'
 }
 
+EXPOSURE_DATA_TIFF = {
+    'ExposureTime': EXPOSURETIME,
+    'FNumber': FNUMBER,
+    'ISOSpeedRatings': ISOSPEEDRATINGS,
+    'FocalLength': FOCALLENGTH,
+    'LensModel': LENSMODEL,
+    'ShutterSpeedValue': SHUTTERSPEEDVALUE,
+    'ApertureValue': APERTUREVALUE,
+    'ExposureBiasValue': EXPOSUREBIASVALUE,
+    'MaxApertureValue': MAXAPERTUREVALUE,
+    'MeteringMode': METERINGMODE,
+    'Flash': FLASH,
+    'WhiteBalance': WHITEBALANCE,
+    'ExposureMode': EXPOSUREMODE,
+    'SceneCaptureType': SCENECAPTURETYPE,
+    'DateTimeOriginal': DATETIMEORIGINAL,
+    'Make': MAKE,
+    'Model': MODEL
+}
+
 
 def extract_enclosed_data_for_jpg(data, head, foot):
     xmp_start = data.find(head)
@@ -268,7 +288,7 @@ def get_exif(exif_filename, enhanced_png_parsing=True):
         raise RuntimeError(f"File does not exist: {exif_filename}")
     image = Image.open(exif_filename)
     if extension_tif(exif_filename):
-        return image.tag_v2 if hasattr(image, 'tag_v2') else image.getexif()
+        return get_exif_from_tiff(image, exif_filename)
     if extension_jpg(exif_filename):
         return get_exif_from_jpg(image, exif_filename)
     if extension_png(exif_filename):
@@ -277,6 +297,38 @@ def get_exif(exif_filename, enhanced_png_parsing=True):
         exif_data = get_exif_from_png(image)
         return exif_data if exif_data else image.getexif()
     return image.getexif()
+
+
+def get_exif_from_tiff(image, exif_filename):
+    exif_data = image.tag_v2 if hasattr(image, 'tag_v2') else image.getexif()
+    try:
+        with tifffile.TiffFile(exif_filename) as tif:
+            for page in tif.pages:
+                if EXIFIFD in page.tags:
+                    exif_dict = page.tags[EXIFIFD].value
+                    for exif_key, tag_id in EXPOSURE_DATA_TIFF.items():
+                        if exif_key in exif_dict:
+                            value = exif_dict[exif_key]
+                            if isinstance(value, tuple) and len(value) == 2:
+                                value = IFDRational(value[0], value[1])
+                            exif_data[tag_id] = value
+                    break
+    except Exception as e:
+        print(f"Error reading EXIF with tifffile: {e}")
+    try:
+        if XMLPACKET in exif_data:
+            xmp_data = exif_data[XMLPACKET]
+            if isinstance(xmp_data, bytes):
+                xmp_string = xmp_data.decode('utf-8', errors='ignore')
+            else:
+                xmp_string = str(xmp_data)
+            xmp_exif = parse_xmp_to_exif(xmp_string)
+            for tag_id in [EXPOSURETIME, FNUMBER, ISOSPEEDRATINGS, FOCALLENGTH, LENSMODEL]:
+                if tag_id in xmp_exif and tag_id not in exif_data:
+                    exif_data[tag_id] = xmp_exif[tag_id]
+    except Exception as e:
+        print(f"Error processing XMP: {e}")
+    return exif_data
 
 
 def get_exif_from_jpg(image, exif_filename):
@@ -320,6 +372,11 @@ def parse_xmp_to_exif(xmp_data):
     if isinstance(xmp_data, bytes):
         xmp_data = xmp_data.decode('utf-8', errors='ignore')
     for xmp_tag, exif_tag in XMP_TO_EXIF_MAP.items():
+        attr_pattern = f'{xmp_tag}="([^"]*)"'
+        attr_matches = re.findall(attr_pattern, xmp_data)
+        for value in attr_matches:
+            if value:
+                exif_data[exif_tag] = _parse_xmp_value(exif_tag, value)
         start_tag = f'<{xmp_tag}>'
         end_tag = f'</{xmp_tag}>'
         if start_tag in xmp_data:
@@ -455,18 +512,38 @@ def add_exif_data_to_jpg_file(exif, in_filename, out_filename, verbose=False):
         final_filename = out_filename
     try:
         with Image.open(in_filename) as image:
-            if hasattr(exif, 'tobytes') and 'TiffImagePlugin' not in str(type(exif)):
-                exif_bytes = exif.tobytes()
-            else:
-                jpeg_exif = Image.Exif()
-                for tag_id, value in exif.items():
-                    if tag_id != XMLPACKET:
-                        try:
+            jpeg_exif = Image.Exif()
+            compatible_tags = [
+                MAKE, MODEL, SOFTWARE, DATETIME, ARTIST, COPYRIGHT,
+                EXPOSURETIME, FNUMBER, ISOSPEEDRATINGS, EXPOSUREPROGRAM,
+                SHUTTERSPEEDVALUE, APERTUREVALUE, BRIGHTNESSVALUE, EXPOSUREBIASVALUE,
+                MAXAPERTUREVALUE, SUBJECTDISTANCE, METERINGMODE, LIGHTSOURCE, FLASH,
+                FOCALLENGTH, EXPOSUREMODE, WHITEBALANCE, EXPOSUREINDEX,
+                SCENECAPTURETYPE, DATETIMEORIGINAL, LENSMODEL, LENSMAKE,
+                FOCALLENGTHIN35MMFILM, GAINCONTROL, CONTRAST, SATURATION, SHARPNESS,
+                CUSTOMRENDERED, DIGITALZOOMRATIO, SUBJECTDISTANCERANGE,
+                EXIFVERSION, FLASHPIXVERSION,
+                COLORSPACE, PIXELXDIMENSION, PIXELYDIMENSION, IMAGEWIDTH, IMAGELENGTH,
+                BITSPERSAMPLE, ORIENTATION, XRESOLUTION, YRESOLUTION, RESOLUTIONUNIT
+            ]
+            for tag_id in compatible_tags:
+                if tag_id in exif:
+                    value = exif[tag_id]
+                    try:
+                        if tag_id in [EXIFVERSION, FLASHPIXVERSION]:
+                            if isinstance(value, str):
+                                jpeg_exif[tag_id] = value.encode('ascii')
+                            else:
+                                jpeg_exif[tag_id] = value
+                        elif isinstance(value, tuple) and len(value) == 2:
+                            value = IFDRational(value[0], value[1])
                             jpeg_exif[tag_id] = value
-                        except Exception as e:
-                            if verbose:
-                                logger.warning(msg=f"Failed to add tag {tag_id}: {e}")
-                exif_bytes = jpeg_exif.tobytes()
+                        elif isinstance(value, (int, str, float, IFDRational)):
+                            jpeg_exif[tag_id] = value
+                    except Exception as e:
+                        if verbose:
+                            logger.warning(f"Failed to add tag {tag_id}: {e}")
+            exif_bytes = jpeg_exif.tobytes()
             image.save(final_filename, "JPEG", exif=exif_bytes, quality=100)
             if xmp_data and isinstance(xmp_data, bytes):
                 _insert_xmp_into_jpeg(final_filename, xmp_data, verbose)
@@ -710,7 +787,7 @@ def clean_data_for_tiff(data):
 
 
 def write_image_with_exif_data_jpg(exif, image, out_filename, verbose):
-    save_img = image // 256 if image.dtype == np.uint16 else image
+    save_img = (image // 256).astype(np.uint8) if image.dtype == np.uint16 else image
     cv2.imwrite(out_filename, save_img, [cv2.IMWRITE_JPEG_QUALITY, 100])
     add_exif_data_to_jpg_file(exif, out_filename, out_filename, verbose)
 

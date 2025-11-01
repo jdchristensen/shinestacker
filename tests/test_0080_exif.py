@@ -32,6 +32,19 @@ def test_exif_jpg():
         if not os.path.exists(output_dir):
             os.makedirs(output_dir)
         out_filename = output_dir + "/0001.jpg"
+        SKIP_TAGS = [
+            256,  # IMAGEWIDTH
+            257,  # IMAGELENGTH
+            258,  # BITSPERSAMPLE
+            259,  # COMPRESSION
+            262,  # PHOTOMETRICINTERPRETATION
+            273,  # STRIPOFFSETS
+            277,  # SAMPLESPERPIXEL
+            278,  # ROWSPERSTRIP
+            279,  # STRIPBYTECOUNTS
+            284,  # PLANARCONFIGURATION
+            34665,  # EDIFID
+        ]
         logger.info("======== Testing JPG EXIF ======== ")
         logger.info("*** Source JPG EXIF ***")
         exif = copy_exif_from_file_to_file(
@@ -43,7 +56,7 @@ def test_exif_jpg():
         all_tags = set(exif.keys()) | set(exif_copy.keys())
         mismatches = []
         for tag in all_tags:
-            if tag in NO_TEST_TIFF_TAGS:
+            if tag in SKIP_TAGS:
                 continue
             data_orig = exif.get(tag)
             data_copy = exif_copy.get(tag)
@@ -168,9 +181,33 @@ def test_write_image_with_exif_data_jpg():
         output_dir = "output/img-exif"
         if not os.path.exists(output_dir):
             os.makedirs(output_dir)
-        XMLPACKET = 700
-        IMAGERESOURCES = 34377
-        INTERCOLORPROFILE = 34675
+        SKIP_TAGS = [
+            700,  # XMLPACKET
+            34377,  # IMAGERESOURCES
+            34675,  # INTERCOLORPROFILE
+            256,  # IMAGEWIDTH
+            257,  # IMAGELENGTH
+            258,  # BITSPERSAMPLE
+            259,  # COMPRESSION
+            262,  # PHOTOMETRICINTERPRETATION
+            273,  # STRIPOFFSETS
+            277,  # SAMPLESPERPIXEL
+            278,  # ROWSPERSTRIP
+            279,  # STRIPBYTECOUNTS
+            284,  # PLANARCONFIGURATION
+            322,  # TILEWIDTH
+            323,  # TILELENGTH
+            324,  # TILEOFFSETS
+            325,  # TILEBYTECOUNTS
+            317,  # PREDICTOR
+            318,  # WHITEPOINT
+            319,  # PRIMARYCHROMATICITIES
+            320,  # COLORMAP
+            41486,  # FOCALPLANEXRESOLUTION
+            41487,  # FOCALPLANEYRESOLUTION
+            41488,  # FOCALPLANERESOLUTIONUNIT
+            34665,  # EDIFID
+        ]
         logger.info("======== Testing write_image_with_exif_data (JPG) ========")
         jpg_out_filename = output_dir + "/0001_write_test.jpg"
         exif = get_exif("examples/input/img-jpg/0000.jpg")
@@ -180,11 +217,9 @@ def test_write_image_with_exif_data_jpg():
         logger.info("*** Written JPG EXIF ***")
         print_exif(written_exif)
         for tag_id in exif:
-            if tag_id not in NO_TEST_JPG_TAGS:
+            if tag_id not in SKIP_TAGS:
                 original_data = exif.get(tag_id)
                 written_data = written_exif.get(tag_id)
-                if tag_id in [XMLPACKET, IMAGERESOURCES, INTERCOLORPROFILE]:
-                    continue
                 if isinstance(original_data, bytes):
                     try:
                         original_data = original_data.decode('utf-8', errors='replace')
@@ -672,7 +707,7 @@ def test_exif_exposure_data_detection():
             37386: "FocalLength",
             41986: "ExposureMode",
             41987: "WhiteBalance",
-            42034: "ExposureIndex"
+            41493: "ExposureIndex"
         }
         found_exposure_data = {}
         for tag_id, tag_name in exposure_tags.items():
