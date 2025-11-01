@@ -305,10 +305,10 @@ def get_exif_from_tiff(image, exif_filename):
         with tifffile.TiffFile(exif_filename) as tif:
             for page in tif.pages:
                 if EXIFIFD in page.tags:
-                    exif_dict = page.tags[EXIFIFD].value
+                    exif_dict_data = page.tags[EXIFIFD].value
                     for exif_key, tag_id in EXPOSURE_DATA_TIFF.items():
-                        if exif_key in exif_dict:
-                            value = exif_dict[exif_key]
+                        if exif_key in exif_dict_data:
+                            value = exif_dict_data[exif_key]
                             if isinstance(value, tuple) and len(value) == 2:
                                 value = IFDRational(value[0], value[1])
                             exif_data[tag_id] = value
@@ -542,7 +542,7 @@ def add_exif_data_to_jpg_file(exif, in_filename, out_filename, verbose=False):
                             jpeg_exif[tag_id] = value
                     except Exception as e:
                         if verbose:
-                            logger.warning(f"Failed to add tag {tag_id}: {e}")
+                            logger.warning(msg=f"Failed to add tag {tag_id}: {e}")
             exif_bytes = jpeg_exif.tobytes()
             image.save(final_filename, "JPEG", exif=exif_bytes, quality=100)
             if xmp_data and isinstance(xmp_data, bytes):
