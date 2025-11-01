@@ -85,12 +85,21 @@ def get_exif_from_jpg(image, exif_filename):
     exif_data = image.getexif()
     try:
         exif_subifd = exif_data.get_ifd(34665)
-        exif_data.update(exif_subifd)
+        exposure_tags = {
+            33434, 33437, 34855, 34850, 37377, 37378, 37379, 37380,
+            37381, 37382, 37383, 37384, 37385, 37386, 41986, 41987, 42034
+        }
+        for tag_id, value in exif_subifd.items():
+            if tag_id in exposure_tags:
+                exif_data[tag_id] = value
+            elif tag_id not in exif_data:
+                exif_data[tag_id] = value
     except Exception:
-        pass  # EXIF SubIFD is optional
+        pass
+    if 37500 in exif_data:
+        del exif_data[37500]  # remove MakerNote tag
     with open(exif_filename, 'rb') as f:
-        data = extract_enclosed_data_for_jpg(
-            f.read(), b'<?xpacket', b'<?xpacket end="w"?>')
+        data = extract_enclosed_data_for_jpg(f.read(), b'<?xpacket', b'<?xpacket end="w"?>')
         if data is not None:
             exif_data[XMLPACKET] = data
     return exif_data
@@ -214,6 +223,8 @@ def get_enhanced_exif_from_png(image):
                 tag_id = _get_tag_id_from_png_key(key)
                 if tag_id:
                     enhanced_exif[tag_id] = parsed_value
+    if 37500 in enhanced_exif:
+        del enhanced_exif[37500]  # remove MakerNote tag
     return {k: v for k, v in enhanced_exif.items() if isinstance(k, int)}
 
 
@@ -280,7 +291,7 @@ def add_exif_data_to_jpg_file(exif, in_filename, out_filename, verbose=False):
     xmp_data = exif.get(XMLPACKET) if hasattr(exif, 'get') else None
     if out_filename is None:
         out_filename = in_filename
-    use_temp = (in_filename == out_filename)
+    use_temp = in_filename == out_filename
     if use_temp:
         temp_filename = out_filename + ".tmp"
         final_filename = temp_filename
@@ -316,13 +327,11 @@ def add_exif_data_to_jpg_file(exif, in_filename, out_filename, verbose=False):
                 os.remove(temp_filename)
             except Exception as ee:
                 traceback.print_tb(ee.__traceback__)
-                pass
         else:
             try:
                 write_img(out_filename, read_img(in_filename))
             except Exception as ee:
                 traceback.print_tb(ee.__traceback__)
-                pass
         raise
 
 

@@ -40,17 +40,32 @@ def test_exif_jpg():
         exif_copy = get_exif(out_filename)
         logger.info("*** Copy JPG EXIF ***")
         print_exif(exif_copy)
-        for tag, tag_copy in zip(exif, exif_copy):
-            data, data_copy = exif.get(tag), exif_copy.get(tag_copy)
-            if isinstance(data, bytes):
-                data = data.decode()
+        all_tags = set(exif.keys()) | set(exif_copy.keys())
+        mismatches = []
+        for tag in all_tags:
+            if tag in NO_TEST_TIFF_TAGS:
+                continue
+            data_orig = exif.get(tag)
+            data_copy = exif_copy.get(tag)
+            if isinstance(data_orig, bytes):
+                data_orig = data_orig.decode('utf-8', errors='ignore')
             if isinstance(data_copy, bytes):
-                data_copy = data_copy.decode()
-            if tag not in NO_TEST_TIFF_TAGS and not (tag == tag_copy and data == data_copy):
-                logger.error(
-                    "JPG EXIF data don't match: {tag} => {data}, {tag_copy} => {data_copy}")
-                assert False
-    except Exception:
+                data_copy = data_copy.decode('utf-8', errors='ignore')
+            if tag in exif and tag in exif_copy:
+                if data_orig != data_copy:
+                    mismatches.append(f"Tag {tag}: {data_orig} vs {data_copy}")
+            elif tag in exif and tag not in exif_copy:
+                mismatches.append(f"Tag {tag} missing in copy (was: {data_orig})")
+            elif tag not in exif and tag in exif_copy:
+                mismatches.append(f"Tag {tag} added in copy (value: {data_copy})")
+        if mismatches:
+            for mismatch in mismatches:
+                logger.error(mismatch)
+            assert False, f"Found {len(mismatches)} EXIF mismatches"
+    except Exception as e:
+        logger.error(f"JPG EXIF test failed: {str(e)}")
+        import traceback
+        logger.error(traceback.format_exc())
         assert False
 
 

@@ -3,13 +3,14 @@
 This page reports the main releases only and the main changes therein.
 
 
-## [vx.x.x] - 2025-10-31
+## [vx.x.x] - 2025-11-01
 ** Unrelesed changes **
 
 
 ### Fixed
 - fault tolerant EXIF data copy prevents to write corrupted files
 - missing 16 to 8 bit conversion when saving TIFF to JPEG in retouch mode
+- removed problematic EXIF tag MakerNote that may cause failure for some camera
 - truncate EXIF data for JPEG when size is larger than PIL library limti of 65533 bytes, which may occur in some Nikon files
 
 ---
