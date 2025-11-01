@@ -11,7 +11,6 @@ This page reports the main releases only and the main changes therein.
 - fault tolerant EXIF data copy prevents to write corrupted files
 - missing 16 to 8 bit conversion when saving TIFF to JPEG in retouch mode
 - removed problematic EXIF tag MakerNote that may cause failure for some camera
-- truncate EXIF data for JPEG when size is larger than PIL library limti of 65533 bytes, which may occur in some Nikon files
 
 ---
 

@@ -301,8 +301,6 @@ def add_exif_data_to_jpg_file(exif, in_filename, out_filename, verbose=False):
         with Image.open(in_filename) as image:
             if hasattr(exif, 'tobytes') and 'TiffImagePlugin' not in str(type(exif)):
                 exif_bytes = exif.tobytes()
-                if len(exif_bytes) > 65533:
-                    exif_bytes = exif_bytes[:65533]
             else:
                 jpeg_exif = Image.Exif()
                 for tag_id, value in exif.items():
