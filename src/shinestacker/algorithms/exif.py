@@ -13,27 +13,106 @@ import tifffile
 from .. config.constants import constants
 from .utils import read_img, write_img, extension_jpg, extension_tif, extension_png
 
+# TIFF/EXIF Tag Constants
 IMAGEWIDTH = 256
 IMAGELENGTH = 257
-RESOLUTIONX = 282
-RESOLUTIONY = 283
-RESOLUTIONUNIT = 296
 BITSPERSAMPLE = 258
+COMPRESSION = 259
 PHOTOMETRICINTERPRETATION = 262
+IMAGEDESCRIPTION = 270
+MAKE = 271
+MODEL = 272
+STRIPOFFSETS = 273
+ORIENTATION = 274
 SAMPLESPERPIXEL = 277
+ROWSPERSTRIP = 278
+STRIPBYTECOUNTS = 279
+XRESOLUTION = 282
+YRESOLUTION = 283
 PLANARCONFIGURATION = 284
+RESOLUTIONUNIT = 296
 SOFTWARE = 305
+DATETIME = 306
+ARTIST = 315
+PREDICTOR = 317
+WHITEPOINT = 318
+PRIMARYCHROMATICITIES = 319
+COLORMAP = 320
+TILEWIDTH = 322
+TILELENGTH = 323
+TILEOFFSETS = 324
+TILEBYTECOUNTS = 325
+EXIFIFD = 34665
+ICCPROFILE = 34675
+COPYRIGHT = 33432
+EXPOSURETIME = 33434
+FNUMBER = 33437
+EXPOSUREPROGRAM = 34850
+ISOSPEEDRATINGS = 34855
+EXIFVERSION = 36864
+DATETIMEORIGINAL = 36867
+DATETIMEDIGITIZED = 36868
+SHUTTERSPEEDVALUE = 37377
+APERTUREVALUE = 37378
+BRIGHTNESSVALUE = 37379
+EXPOSUREBIASVALUE = 37380
+MAXAPERTUREVALUE = 37381
+SUBJECTDISTANCE = 37382
+METERINGMODE = 37383
+LIGHTSOURCE = 37384
+FLASH = 37385
+FOCALLENGTH = 37386
+MAKERNOTE = 37500
+USERCOMMENT = 37510
+SUBSECTIME = 37520
+SUBSECTIMEORIGINAL = 37521
+SUBSECTIMEDIGITIZED = 37522
+FLASHPIXVERSION = 40960
+COLORSPACE = 40961
+PIXELXDIMENSION = 40962
+PIXELYDIMENSION = 40963
+RELATEDSOUNDFILE = 40964
+FLASHENERGY = 41483
+SPATIALFREQUENCYRESPONSE = 41484
+FOCALPLANEXRESOLUTION = 41486
+FOCALPLANEYRESOLUTION = 41487
+FOCALPLANERESOLUTIONUNIT = 41488
+SUBJECTLOCATION = 41492
+EXPOSUREINDEX = 41493
+SENSINGMETHOD = 41495
+FILESOURCE = 41728
+SCENETYPE = 41729
+CFAPATTERN = 41730
+CUSTOMRENDERED = 41985
+EXPOSUREMODE = 41986
+WHITEBALANCE = 41987
+DIGITALZOOMRATIO = 41988
+FOCALLENGTHIN35MMFILM = 41989
+SCENECAPTURETYPE = 41990
+GAINCONTROL = 41991
+CONTRAST = 41992
+SATURATION = 41993
+SHARPNESS = 41994
+DEVICESETTINGDESCRIPTION = 41995
+SUBJECTDISTANCERANGE = 41996
+IMAGEUNIQUEID = 42016
+LENSINFO = 42034
+LENSMAKE = 42035
+LENSMODEL = 42036
+GPSIFD = 34853
+XMLPACKET = 700
 IMAGERESOURCES = 34377
 INTERCOLORPROFILE = 34675
-EXIFTAG = 34665
-XMLPACKET = 700
-STRIPOFFSETS = 273
-STRIPBYTECOUNTS = 279
-NO_COPY_TIFF_TAGS_ID = [IMAGEWIDTH, IMAGELENGTH, RESOLUTIONX, RESOLUTIONY, BITSPERSAMPLE,
-                        PHOTOMETRICINTERPRETATION, SAMPLESPERPIXEL, PLANARCONFIGURATION, SOFTWARE,
-                        RESOLUTIONUNIT, EXIFTAG, INTERCOLORPROFILE, IMAGERESOURCES]
-NO_COPY_TIFF_TAGS = ["Compression", "StripOffsets", "RowsPerStrip", "StripByteCounts"]
 
+# Tags that shouldn't be copied when writing TIFF files
+NO_COPY_TIFF_TAGS_ID = [
+    IMAGEWIDTH, IMAGELENGTH, XRESOLUTION, YRESOLUTION, BITSPERSAMPLE,
+    PHOTOMETRICINTERPRETATION, SAMPLESPERPIXEL, PLANARCONFIGURATION, SOFTWARE,
+    RESOLUTIONUNIT, EXIFIFD, INTERCOLORPROFILE, IMAGERESOURCES,
+    STRIPOFFSETS, STRIPBYTECOUNTS, TILEOFFSETS, TILEBYTECOUNTS
+]
+
+NO_COPY_TIFF_TAGS = ["Compression", "StripOffsets", "RowsPerStrip", "StripByteCounts"]
 
 XMP_TEMPLATE = """<?xpacket begin='﻿' id='W5M0MpCehiHzreSzNTczkc9d'?>
 <x:xmpmeta xmlns:x='adobe:ns:meta/' x:xmptk='Adobe XMP Core 5.6-c140 79.160451, 2017/05/06-01:08:21'>
@@ -52,6 +131,125 @@ XMP_EMPTY_TEMPLATE = """<?xpacket begin='﻿' id='W5M0MpCehiHzreSzNTczkc9d'?>
  </rdf:RDF>
 </x:xmpmeta>
 <?xpacket end='w'?>"""  # noqa
+
+XMP_TO_EXIF_MAP = {
+    'tiff:Make': MAKE,
+    'tiff:Model': MODEL,
+    'exif:ExposureTime': EXPOSURETIME,
+    'exif:FNumber': FNUMBER,
+    'exif:ISOSpeedRatings': ISOSPEEDRATINGS,
+    'exif:FocalLength': FOCALLENGTH,
+    'exif:DateTimeOriginal': DATETIMEORIGINAL,
+    'xmp:CreateDate': DATETIME,
+    'xmp:CreatorTool': SOFTWARE,
+    'aux:Lens': LENSMODEL,
+    'exif:Flash': FLASH,
+    'exif:WhiteBalance': WHITEBALANCE,
+    'dc:description': IMAGEDESCRIPTION,
+    'dc:creator': ARTIST,
+    'dc:rights': COPYRIGHT,
+    'exif:ShutterSpeedValue': SHUTTERSPEEDVALUE,
+    'exif:ApertureValue': APERTUREVALUE,
+    'exif:ExposureBiasValue': EXPOSUREBIASVALUE,
+    'exif:MaxApertureValue': MAXAPERTUREVALUE,
+    'exif:MeteringMode': METERINGMODE,
+    'exif:ExposureMode': EXPOSUREMODE,
+    'exif:SceneCaptureType': SCENECAPTURETYPE
+}
+
+PNG_TAG_MAP = {
+    'EXIF_CameraMake': MAKE,
+    'EXIF_CameraModel': MODEL,
+    'EXIF_Software': SOFTWARE,
+    'EXIF_DateTime': DATETIME,
+    'EXIF_Artist': ARTIST,
+    'EXIF_Copyright': COPYRIGHT,
+    'EXIF_ExposureTime': EXPOSURETIME,
+    'EXIF_FNumber': FNUMBER,
+    'EXIF_ISOSpeed': ISOSPEEDRATINGS,
+    'EXIF_ShutterSpeedValue': SHUTTERSPEEDVALUE,
+    'EXIF_ApertureValue': APERTUREVALUE,
+    'EXIF_FocalLength': FOCALLENGTH,
+    'EXIF_LensModel': LENSMODEL,
+    'EXIF_ExposureBiasValue': EXPOSUREBIASVALUE,
+    'EXIF_MaxApertureValue': MAXAPERTUREVALUE,
+    'EXIF_MeteringMode': METERINGMODE,
+    'EXIF_Flash': FLASH,
+    'EXIF_WhiteBalance': WHITEBALANCE,
+    'EXIF_ExposureMode': EXPOSUREMODE,
+    'EXIF_SceneCaptureType': SCENECAPTURETYPE,
+    'EXIF_DateTimeOriginal': DATETIMEORIGINAL
+}
+
+
+def safe_decode_bytes(data, encoding='utf-8'):
+    if not isinstance(data, bytes):
+        return data
+    encodings = [encoding, 'latin-1', 'cp1252', 'utf-16', 'ascii']
+    for enc in encodings:
+        try:
+            return data.decode(enc, errors='strict')
+        except UnicodeDecodeError:
+            continue
+    return data.decode('utf-8', errors='replace')
+
+
+XMP_TAG_MAP = {
+    IMAGEDESCRIPTION: {'format': 'dc:description', 'type': 'rdf_alt',
+                       'processor': safe_decode_bytes},
+    ARTIST: {'format': 'dc:creator', 'type': 'rdf_seq', 'processor': safe_decode_bytes},
+    COPYRIGHT: {'format': 'dc:rights', 'type': 'rdf_alt', 'processor': safe_decode_bytes},
+    MAKE: {'format': 'tiff:Make', 'type': 'simple', 'processor': safe_decode_bytes},
+    MODEL: {'format': 'tiff:Model', 'type': 'simple', 'processor': safe_decode_bytes},
+    DATETIME: {'format': 'xmp:CreateDate', 'type': 'datetime', 'processor': safe_decode_bytes},
+    DATETIMEORIGINAL: {'format': 'exif:DateTimeOriginal', 'type': 'datetime',
+                       'processor': safe_decode_bytes},
+    SOFTWARE: {'format': 'xmp:CreatorTool', 'type': 'simple', 'processor': safe_decode_bytes},
+    EXPOSURETIME: {'format': 'exif:ExposureTime', 'type': 'rational', 'processor': None},
+    FNUMBER: {'format': 'exif:FNumber', 'type': 'rational', 'processor': None},
+    ISOSPEEDRATINGS: {'format': 'exif:ISOSpeedRatings', 'type': 'rdf_seq', 'processor': None},
+    FOCALLENGTH: {'format': 'exif:FocalLength', 'type': 'rational', 'processor': None},
+    LENSMODEL: {'format': 'aux:Lens', 'type': 'simple', 'processor': safe_decode_bytes},
+    SHUTTERSPEEDVALUE: {'format': 'exif:ShutterSpeedValue', 'type': 'rational', 'processor': None},
+    APERTUREVALUE: {'format': 'exif:ApertureValue', 'type': 'rational', 'processor': None},
+    EXPOSUREBIASVALUE: {'format': 'exif:ExposureBiasValue', 'type': 'rational', 'processor': None},
+    MAXAPERTUREVALUE: {'format': 'exif:MaxApertureValue', 'type': 'rational', 'processor': None},
+    METERINGMODE: {'format': 'exif:MeteringMode', 'type': 'simple', 'processor': None},
+    FLASH: {'format': 'exif:Flash', 'type': 'simple', 'processor': None},
+    WHITEBALANCE: {'format': 'exif:WhiteBalance', 'type': 'mapped', 'processor': None,
+                   'map': {0: 'Auto', 1: 'Manual'}},
+    EXPOSUREMODE: {'format': 'exif:ExposureMode', 'type': 'mapped', 'processor': None,
+                   'map': {0: 'Auto', 1: 'Manual', 2: 'Auto bracket'}},
+    SCENECAPTURETYPE: {'format': 'exif:SceneCaptureType', 'type': 'mapped', 'processor': None,
+                       'map': {0: 'Standard', 1: 'Landscape', 2: 'Portrait', 3: 'Night scene'}}
+}
+
+CAMERA_TAGS_MAP = {
+    MAKE: 'CameraMake',
+    MODEL: 'CameraModel',
+    SOFTWARE: 'Software',
+    DATETIME: 'DateTime',
+    ARTIST: 'Artist',
+    COPYRIGHT: 'Copyright'
+}
+
+EXPOSURE_TAGS_MAP = {
+    EXPOSURETIME: 'ExposureTime',
+    FNUMBER: 'FNumber',
+    ISOSPEEDRATINGS: 'ISOSpeed',
+    SHUTTERSPEEDVALUE: 'ShutterSpeedValue',
+    APERTUREVALUE: 'ApertureValue',
+    FOCALLENGTH: 'FocalLength',
+    LENSMODEL: 'LensModel',
+    EXPOSUREBIASVALUE: 'ExposureBiasValue',
+    MAXAPERTUREVALUE: 'MaxApertureValue',
+    METERINGMODE: 'MeteringMode',
+    FLASH: 'Flash',
+    WHITEBALANCE: 'WhiteBalance',
+    EXPOSUREMODE: 'ExposureMode',
+    SCENECAPTURETYPE: 'SceneCaptureType',
+    DATETIMEORIGINAL: 'DateTimeOriginal'
+}
 
 
 def extract_enclosed_data_for_jpg(data, head, foot):
@@ -84,20 +282,16 @@ def get_exif(exif_filename, enhanced_png_parsing=True):
 def get_exif_from_jpg(image, exif_filename):
     exif_data = image.getexif()
     try:
-        exif_subifd = exif_data.get_ifd(34665)
-        exposure_tags = {
-            33434, 33437, 34855, 34850, 37377, 37378, 37379, 37380,
-            37381, 37382, 37383, 37384, 37385, 37386, 41986, 41987, 42034
-        }
+        exif_subifd = exif_data.get_ifd(EXIFIFD)
         for tag_id, value in exif_subifd.items():
-            if tag_id in exposure_tags:
+            if tag_id in EXPOSURE_TAGS_MAP:
                 exif_data[tag_id] = value
             elif tag_id not in exif_data:
                 exif_data[tag_id] = value
     except Exception:
         pass
-    if 37500 in exif_data:
-        del exif_data[37500]  # remove MakerNote tag
+    if MAKERNOTE in exif_data:
+        del exif_data[MAKERNOTE]
     with open(exif_filename, 'rb') as f:
         data = extract_enclosed_data_for_jpg(f.read(), b'<?xpacket', b'<?xpacket end="w"?>')
         if data is not None:
@@ -125,18 +319,7 @@ def parse_xmp_to_exif(xmp_data):
         return exif_data
     if isinstance(xmp_data, bytes):
         xmp_data = xmp_data.decode('utf-8', errors='ignore')
-    xmp_to_exif_map = {
-        'tiff:Make': 271, 'tiff:Model': 272, 'exif:ExposureTime': 33434,
-        'exif:FNumber': 33437, 'exif:ISOSpeedRatings': 34855, 'exif:FocalLength': 37386,
-        'exif:DateTimeOriginal': 36867, 'xmp:CreateDate': 306, 'xmp:CreatorTool': 305,
-        'aux:Lens': 42036, 'exif:Flash': 37385, 'exif:WhiteBalance': 41987,
-        'dc:description': 270, 'dc:creator': 315, 'dc:rights': 33432,
-        'exif:ShutterSpeedValue': 37377, 'exif:ApertureValue': 37378,
-        'exif:ExposureBiasValue': 37380, 'exif:MaxApertureValue': 37381,
-        'exif:MeteringMode': 37383, 'exif:ExposureMode': 41986,
-        'exif:SceneCaptureType': 41990
-    }
-    for xmp_tag, exif_tag in xmp_to_exif_map.items():
+    for xmp_tag, exif_tag in XMP_TO_EXIF_MAP.items():
         start_tag = f'<{xmp_tag}>'
         end_tag = f'</{xmp_tag}>'
         if start_tag in xmp_data:
@@ -150,7 +333,7 @@ def parse_xmp_to_exif(xmp_data):
 
 
 def _parse_xmp_value(exif_tag, value):
-    if exif_tag in [33434, 33437, 37386]:  # Rational values
+    if exif_tag in [EXPOSURETIME, FNUMBER, FOCALLENGTH]:
         if '/' in value:
             num, den = value.split('/')
             try:
@@ -161,7 +344,7 @@ def _parse_xmp_value(exif_tag, value):
                 except ValueError:
                     return 0.0  # Return 0.0 if float conversion also fails
         return float(value) if value else 0.0
-    if exif_tag == 34855:  # ISO
+    if exif_tag == ISOSPEEDRATINGS:  # ISO
         if '<rdf:li>' in value:
             matches = re.findall(r'<rdf:li>([^<]+)</rdf:li>', value)
             if matches:
@@ -170,7 +353,7 @@ def _parse_xmp_value(exif_tag, value):
             return int(value)
         except ValueError:
             return value
-    if exif_tag in [306, 36867]:  # DateTime and DateTimeOriginal
+    if exif_tag in [DATETIME, DATETIMEORIGINAL]:  # DateTime and DateTimeOriginal
         if 'T' in value:
             value = value.replace('T', ' ').replace('-', ':')
         return value
@@ -212,47 +395,20 @@ def get_enhanced_exif_from_png(image):
     xmp_data = None
     if hasattr(image, 'text') and image.text:
         xmp_data = image.text.get('XML:com.adobe.xmp') or image.text.get('xml:com.adobe.xmp')
-    if not xmp_data and 700 in basic_exif:
-        xmp_data = basic_exif[700]
+    if not xmp_data and XMLPACKET in basic_exif:
+        xmp_data = basic_exif[XMLPACKET]
     if xmp_data:
         enhanced_exif.update(parse_xmp_to_exif(xmp_data))
     if hasattr(image, 'text') and image.text:
         for key, value in image.text.items():
             if key.startswith('EXIF_'):
                 parsed_value = parse_typed_png_text(value)
-                tag_id = _get_tag_id_from_png_key(key)
+                tag_id = PNG_TAG_MAP.get(key)
                 if tag_id:
                     enhanced_exif[tag_id] = parsed_value
-    if 37500 in enhanced_exif:
-        del enhanced_exif[37500]  # remove MakerNote tag
+    if MAKERNOTE in enhanced_exif:
+        del enhanced_exif[MAKERNOTE]
     return {k: v for k, v in enhanced_exif.items() if isinstance(k, int)}
-
-
-def _get_tag_id_from_png_key(key):
-    tag_map = {
-        'EXIF_CameraMake': 271, 'EXIF_CameraModel': 272, 'EXIF_Software': 305,
-        'EXIF_DateTime': 306, 'EXIF_Artist': 315, 'EXIF_Copyright': 33432,
-        'EXIF_ExposureTime': 33434, 'EXIF_FNumber': 33437, 'EXIF_ISOSpeed': 34855,
-        'EXIF_ShutterSpeedValue': 37377, 'EXIF_ApertureValue': 37378,
-        'EXIF_FocalLength': 37386, 'EXIF_LensModel': 42036,
-        'EXIF_ExposureBiasValue': 37380, 'EXIF_MaxApertureValue': 37381,
-        'EXIF_MeteringMode': 37383, 'EXIF_Flash': 37385, 'EXIF_WhiteBalance': 41987,
-        'EXIF_ExposureMode': 41986, 'EXIF_SceneCaptureType': 41990,
-        'EXIF_DateTimeOriginal': 36867
-    }
-    return tag_map.get(key)
-
-
-def safe_decode_bytes(data, encoding='utf-8'):
-    if not isinstance(data, bytes):
-        return data
-    encodings = [encoding, 'latin-1', 'cp1252', 'utf-16', 'ascii']
-    for enc in encodings:
-        try:
-            return data.decode(enc, errors='strict')
-        except UnicodeDecodeError:
-            continue
-    return data.decode('utf-8', errors='replace')
 
 
 def get_tiff_dtype_count(value):
@@ -281,7 +437,7 @@ def get_tiff_dtype_count(value):
         return 4, 1  # uint32
     if isinstance(value, float):
         return 11, 1  # float64
-    return 2, len(str(value)) + 1  # Default for othre cases (ASCII string)
+    return 2, len(str(value)) + 1  # Default for other cases (ASCII string)
 
 
 def add_exif_data_to_jpg_file(exif, in_filename, out_filename, verbose=False):
@@ -374,52 +530,9 @@ def _insert_xmp_into_jpeg(jpeg_path, xmp_data, verbose=False):
 def create_xmp_from_exif(exif_data):
     xmp_elements = []
     if exif_data:
-        xmp_tag_map = {
-            270: {'format': 'dc:description', 'type': 'rdf_alt', 'processor': safe_decode_bytes},
-            315: {'format': 'dc:creator', 'type': 'rdf_seq', 'processor': safe_decode_bytes},
-            33432: {'format': 'dc:rights', 'type': 'rdf_alt', 'processor': safe_decode_bytes},
-            271: {'format': 'tiff:Make', 'type': 'simple', 'processor': safe_decode_bytes},
-            272: {'format': 'tiff:Model', 'type': 'simple', 'processor': safe_decode_bytes},
-            306: {'format': 'xmp:CreateDate', 'type': 'datetime', 'processor': safe_decode_bytes},
-            36867: {
-                'format': 'exif:DateTimeOriginal',
-                'type': 'datetime',
-                'processor': safe_decode_bytes
-            },
-            305: {'format': 'xmp:CreatorTool', 'type': 'simple', 'processor': safe_decode_bytes},
-            33434: {'format': 'exif:ExposureTime', 'type': 'rational', 'processor': None},
-            33437: {'format': 'exif:FNumber', 'type': 'rational', 'processor': None},
-            34855: {'format': 'exif:ISOSpeedRatings', 'type': 'rdf_seq', 'processor': None},
-            37386: {'format': 'exif:FocalLength', 'type': 'rational', 'processor': None},
-            42036: {'format': 'aux:Lens', 'type': 'simple', 'processor': safe_decode_bytes},
-            37377: {'format': 'exif:ShutterSpeedValue', 'type': 'rational', 'processor': None},
-            37378: {'format': 'exif:ApertureValue', 'type': 'rational', 'processor': None},
-            37380: {'format': 'exif:ExposureBiasValue', 'type': 'rational', 'processor': None},
-            37381: {'format': 'exif:MaxApertureValue', 'type': 'rational', 'processor': None},
-            37383: {'format': 'exif:MeteringMode', 'type': 'simple', 'processor': None},
-            37385: {'format': 'exif:Flash', 'type': 'simple', 'processor': None},
-            41987: {
-                'format': 'exif:WhiteBalance',
-                'type': 'mapped',
-                'processor': None,
-                'map': {0: 'Auto', 1: 'Manual'}
-            },
-            41986: {
-                'format': 'exif:ExposureMode',
-                'type': 'mapped',
-                'processor': None,
-                'map': {0: 'Auto', 1: 'Manual', 2: 'Auto bracket'}
-            },
-            41990: {
-                'format': 'exif:SceneCaptureType',
-                'type': 'mapped',
-                'processor': None,
-                'map': {0: 'Standard', 1: 'Landscape', 2: 'Portrait', 3: 'Night scene'}
-            }
-        }
         for tag_id, value in exif_data.items():
-            if isinstance(tag_id, int) and value and tag_id in xmp_tag_map:
-                config = xmp_tag_map[tag_id]
+            if isinstance(tag_id, int) and value and tag_id in XMP_TAG_MAP:
+                config = XMP_TAG_MAP[tag_id]
                 processed_value = config['processor'](value) if config['processor'] else value
                 if config['type'] == 'simple':
                     xmp_elements.append(
@@ -500,25 +613,14 @@ def _extract_xmp_data(exif):
 
 
 def _add_exif_tags_to_pnginfo(exif, pnginfo):
-    camera_tags = {
-        271: 'CameraMake', 272: 'CameraModel', 305: 'Software',
-        306: 'DateTime', 315: 'Artist', 33432: 'Copyright'
-    }
-    exposure_tags = {
-        33434: 'ExposureTime', 33437: 'FNumber', 34855: 'ISOSpeed',
-        37377: 'ShutterSpeedValue', 37378: 'ApertureValue', 37386: 'FocalLength',
-        42036: 'LensModel', 37380: 'ExposureBiasValue', 37381: 'MaxApertureValue',
-        37383: 'MeteringMode', 37385: 'Flash', 41987: 'WhiteBalance',
-        41986: 'ExposureMode', 41990: 'SceneCaptureType', 36867: 'DateTimeOriginal'
-    }
     for tag_id, value in exif.items():
         if value is None:
             continue
         if isinstance(tag_id, int):
-            if tag_id in camera_tags:
-                _add_typed_tag(pnginfo, f"EXIF_{camera_tags[tag_id]}", value)
-            elif tag_id in exposure_tags:
-                _add_typed_tag(pnginfo, f"EXIF_{exposure_tags[tag_id]}", value)
+            if tag_id in CAMERA_TAGS_MAP:
+                _add_typed_tag(pnginfo, f"EXIF_{CAMERA_TAGS_MAP[tag_id]}", value)
+            elif tag_id in EXPOSURE_TAGS_MAP:
+                _add_typed_tag(pnginfo, f"EXIF_{EXPOSURE_TAGS_MAP[tag_id]}", value)
             else:
                 _add_exif_tag(pnginfo, tag_id, value)
         elif isinstance(tag_id, str) and not tag_id.lower().startswith(('xmp', 'xml')):
@@ -614,7 +716,7 @@ def write_image_with_exif_data_jpg(exif, image, out_filename, verbose):
 
 
 def exif_extra_tags_for_tif(exif):
-    res_x, res_y = exif.get(RESOLUTIONX), exif.get(RESOLUTIONY)
+    res_x, res_y = exif.get(XRESOLUTION), exif.get(YRESOLUTION)
     resolution = (
         (res_x.numerator, res_x.denominator),
         (res_y.numerator, res_y.denominator)

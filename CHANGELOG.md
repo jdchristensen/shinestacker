@@ -12,6 +12,9 @@ This page reports the main releases only and the main changes therein.
 - missing 16 to 8 bit conversion when saving TIFF to JPEG in retouch mode
 - removed problematic EXIF tag MakerNote that may cause failure for some camera
 
+### Changed
+- code cleanup
+
 ---
 
 ## [v1.9.2] - 2025-10-29
