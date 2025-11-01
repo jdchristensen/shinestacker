@@ -244,8 +244,8 @@ class ProjectController(QObject):
                 job.add_sub_action(multi_layer)
             self.add_job_to_project(job)
             self.project_editor.set_modified(True)
-            self.set_enabled_file_open_close_actions_requested.emit(True)
             self.refresh_ui(0, -1)
+        self.set_enabled_file_open_close_actions_requested.emit(True)
 
     def open_project(self, file_path=False):
         if not self.check_unsaved_changes():
