@@ -1,4 +1,5 @@
 # pylint: disable=C0114, C0115, C0116, E0611, W0718, R0912, R0911
+import re
 from fractions import Fraction
 from xml.dom import minidom
 from PIL.TiffImagePlugin import IFDRational
@@ -13,54 +14,25 @@ class ExifData(ConfigDialog):
     DISPLAY_NAMES = {
         'Make': 'Camera Make',
         'Model': 'Camera Model',
-        'Software': 'Software',
         'DateTime': 'Date/Time',
-        'Artist': 'Artist',
-        'Copyright': 'Copyright',
-        'ExposureTime': 'Exposure Time',
         'FNumber': 'F-Number',
         'ISOSpeedRatings': 'ISO Speed',
         'ShutterSpeedValue': 'Shutter Speed',
         'ApertureValue': 'Aperture',
-        'FocalLength': 'Focal Length',
-        'LensModel': 'Lens Model',
         'ExposureBiasValue': 'Exposure Bias',
         'MaxApertureValue': 'Max Aperture',
-        'MeteringMode': 'Metering Mode',
-        'Flash': 'Flash',
-        'WhiteBalance': 'White Balance',
-        'ExposureMode': 'Exposure Mode',
-        'SceneCaptureType': 'Scene Capture Type',
         'DateTimeOriginal': 'Original Date/Time',
         'DateTimeDigitized': 'Digitized Date/Time',
-        'ImageDescription': 'Image Description',
-        'Orientation': 'Orientation',
-        'XResolution': 'X Resolution',
-        'YResolution': 'Y Resolution',
-        'ResolutionUnit': 'Resolution Unit',
         'ExifVersion': 'EXIF Version',
-        'ComponentsConfiguration': 'Components Configuration',
         'CompressedBitsPerPixel': 'Compressed Bits/Pixel',
-        'ColorSpace': 'Color Space',
-        'PixelXDimension': 'Pixel X Dimension',
-        'PixelYDimension': 'Pixel Y Dimension',
         'ExifImageWidth': "EXIF Image Width",
         'ExifImageHeight': "EXIF Image Height",
-        'ImageWidth': "Image Width",
-        'ImageHeight': "Image Height",
         'BitsPerSample': "Bits per Sample",
-        'PhotometricInterpretation': "Photometric Interpretation",
         'SubsamplesPerPixel': "Subsamples per Pixel",
         'SamplesPerPixel': "Samples per Pixel",
         'RowsPerStrip': 'Rows per Strip',
-        'StripByteCounts': 'Strip Byte Counts',
-        'StripOffsets': 'Strip Offsets',
-        'PlanarConfiguration': "Planar Configuration",
-        'XMLPacket': "XML Packet",
         'ExifOffset': "EXIF Offset",
-        'NewSubfileType': "New Suffile Type",
         'InterColorProfile': "Inter-Color Profile",
-        'SampleFormat': "Sample Format"
     }
 
     def __init__(self, exif, title="EXIF Data", parent=None, show_buttons=True):
@@ -71,6 +43,12 @@ class ExifData(ConfigDialog):
         if not show_buttons:
             self.ok_button.setFixedWidth(100)
             self.button_box.setAlignment(Qt.AlignCenter)
+
+    def format_tag_name(self, tag_name):
+        if tag_name in self.DISPLAY_NAMES:
+            return self.DISPLAY_NAMES[tag_name]
+        formatted = re.sub(r'(?<=[a-zA-Z])(?=[A-Z][a-z])', ' ', tag_name)
+        return formatted
 
     def format_aperture(self, value):
         if isinstance(value, IFDRational):
@@ -175,7 +153,7 @@ class ExifData(ConfigDialog):
             data = exif_dict(self.exif)
         if len(data) > 0:
             for tag_name, (_, value) in data.items():
-                display_name = self.get_display_name(tag_name)
+                display_name = self.format_tag_name(tag_name)
                 display_value = self.format_value(tag_name, value)
                 value_str = display_value
                 if "<<<" not in value_str and tag_name != 'IPTCNAA':
