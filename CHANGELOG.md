@@ -13,17 +13,16 @@ This page reports the main releases only and the main changes therein.
 
 ---
 
-
 ## [v1.9.3] - 2025-11-02
 ** Fixes to EXIF data and GUI **
 
 ### Fixed
 - fault tolerant copy of EXIF data prevents to write corrupted files
-- missing 16 to 8 bit conversion when saving TIFF to JPEG in retouch mode
-- removed problematic EXIF tag MakerNote that may cause failure for some camera
+- added missing 16 to 8 bit conversion when saving TIFF to JPEG in retouch mode
+- removed problematic EXIF tag MakerNote that may cause failure for some cameras
 - added more missing EXIF data, and exposure data written in legacy compatibility mode
-- minor fix to balance module log output
 - menu actions correctly enabled with a new project is created
+- minor fix to balance module log output
 
 ### Changed
 - code cleanup
