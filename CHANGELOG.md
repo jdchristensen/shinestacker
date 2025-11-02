@@ -15,6 +15,7 @@ This page reports the main releases only and the main changes therein.
 
 ### Changed
 - code cleanup
+- better EXIF data display rather than original raw data
 
 ---
 

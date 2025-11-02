@@ -1,4 +1,5 @@
-# pylint: disable=C0114, C0115, C0116, E0611, W0718
+# pylint: disable=C0114, C0115, C0116, E0611, W0718, R0912
+from fractions import Fraction
 from xml.dom import minidom
 from PIL.TiffImagePlugin import IFDRational
 from PySide6.QtWidgets import QLabel, QTextEdit
@@ -17,6 +18,42 @@ class ExifData(ConfigDialog):
         if not show_buttons:
             self.ok_button.setFixedWidth(100)
             self.button_box.setAlignment(Qt.AlignCenter)
+
+    def format_aperture(self, value):
+        if isinstance(value, IFDRational):
+            if value.denominator == 0:
+                return "f/>1024"
+            aperture_value = value.numerator / value.denominator
+            return f"f/{aperture_value:.1f}"
+        if isinstance(value, (int, float)):
+            return f"f/{float(value):.1f}"
+        return str(value)
+
+    def format_exposure_time(self, value):
+        if isinstance(value, IFDRational):
+            exposure_time = value.numerator / value.denominator
+        elif isinstance(value, (int, float)):
+            exposure_time = float(value)
+        else:
+            return str(value)
+        if exposure_time >= 0.5:
+            return f"{exposure_time:.1f} s"
+        if isinstance(value, IFDRational):
+            return f"{value.numerator}/{value.denominator} s"
+        frac = Fraction(exposure_time).limit_denominator(1000)
+        return f"{frac.numerator}/{frac.denominator} s"
+
+    def format_date_time(self, value):
+        if not isinstance(value, str):
+            return str(value)
+        try:
+            if ':' in value and ' ' in value:
+                date_part, time_part = value.split(' ', 1)
+                year, month, day = date_part.split(':', 2)
+                return f"{day}/{month}/{year} {time_part}"
+            return value
+        except (ValueError, IndexError):
+            return value
 
     def is_likely_xml(self, text):
         if not isinstance(text, str):
@@ -47,9 +84,17 @@ class ExifData(ConfigDialog):
             data = exif_dict(self.exif)
         if len(data) > 0:
             for k, (_, d) in data.items():
-                if isinstance(d, IFDRational):
-                    d = f"{d.numerator}/{d.denominator}"
-                d_str = str(d)
+                if k in ['FNumber', 'ApertureValue']:
+                    display_value = self.format_aperture(d)
+                elif k in ['ExposureTime', 'ShutterSpeedValue']:
+                    display_value = self.format_exposure_time(d)
+                elif k in ['DateTime', 'DateTimeOriginal', 'DateTimeDigitized']:
+                    display_value = self.format_date_time(d)
+                elif isinstance(d, IFDRational):
+                    display_value = f"{d.numerator}/{d.denominator}"
+                else:
+                    display_value = str(d)
+                d_str = display_value
                 if "<<<" not in d_str and k != 'IPTCNAA':
                     if len(d_str) <= 40:
                         self.container_layout.addRow(f"<b>{k}:</b>", QLabel(d_str))
