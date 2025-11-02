@@ -1,4 +1,4 @@
-# pylint: disable=C0114, C0115, C0116, E0611, W0718, R0912
+# pylint: disable=C0114, C0115, C0116, E0611, W0718, R0912, R0911
 from fractions import Fraction
 from xml.dom import minidom
 from PIL.TiffImagePlugin import IFDRational
@@ -10,6 +10,59 @@ from .. gui.config_dialog import ConfigDialog
 
 
 class ExifData(ConfigDialog):
+    DISPLAY_NAMES = {
+        'Make': 'Camera Make',
+        'Model': 'Camera Model',
+        'Software': 'Software',
+        'DateTime': 'Date/Time',
+        'Artist': 'Artist',
+        'Copyright': 'Copyright',
+        'ExposureTime': 'Exposure Time',
+        'FNumber': 'F-Number',
+        'ISOSpeedRatings': 'ISO Speed',
+        'ShutterSpeedValue': 'Shutter Speed',
+        'ApertureValue': 'Aperture',
+        'FocalLength': 'Focal Length',
+        'LensModel': 'Lens Model',
+        'ExposureBiasValue': 'Exposure Bias',
+        'MaxApertureValue': 'Max Aperture',
+        'MeteringMode': 'Metering Mode',
+        'Flash': 'Flash',
+        'WhiteBalance': 'White Balance',
+        'ExposureMode': 'Exposure Mode',
+        'SceneCaptureType': 'Scene Capture Type',
+        'DateTimeOriginal': 'Original Date/Time',
+        'DateTimeDigitized': 'Digitized Date/Time',
+        'ImageDescription': 'Image Description',
+        'Orientation': 'Orientation',
+        'XResolution': 'X Resolution',
+        'YResolution': 'Y Resolution',
+        'ResolutionUnit': 'Resolution Unit',
+        'ExifVersion': 'EXIF Version',
+        'ComponentsConfiguration': 'Components Configuration',
+        'CompressedBitsPerPixel': 'Compressed Bits/Pixel',
+        'ColorSpace': 'Color Space',
+        'PixelXDimension': 'Pixel X Dimension',
+        'PixelYDimension': 'Pixel Y Dimension',
+        'ExifImageWidth': "EXIF Image Width",
+        'ExifImageHeight': "EXIF Image Height",
+        'ImageWidth': "Image Width",
+        'ImageHeight': "Image Height",
+        'BitsPerSample': "Bits per Sample",
+        'PhotometricInterpretation': "Photometric Interpretation",
+        'SubsamplesPerPixel': "Subsamples per Pixel",
+        'SamplesPerPixel': "Samples per Pixel",
+        'RowsPerStrip': 'Rows per Strip',
+        'StripByteCounts': 'Strip Byte Counts',
+        'StripOffsets': 'Strip Offsets',
+        'PlanarConfiguration': "Planar Configuration",
+        'XMLPacket': "XML Packet",
+        'ExifOffset': "EXIF Offset",
+        'NewSubfileType': "New Suffile Type",
+        'InterColorProfile': "Inter-Color Profile",
+        'SampleFormat': "Sample Format"
+    }
+
     def __init__(self, exif, title="EXIF Data", parent=None, show_buttons=True):
         self.exif = exif
         super().__init__(title, parent)
@@ -55,6 +108,26 @@ class ExifData(ConfigDialog):
         except (ValueError, IndexError):
             return value
 
+    def format_iso_speed(self, value):
+        """Format ISO speed value"""
+        if isinstance(value, (int, float)):
+            return f"ISO {int(value)}"
+        if isinstance(value, str):
+            # Handle string ISO values
+            try:
+                return f"ISO {int(value)}"
+            except ValueError:
+                return value
+        return str(value)
+
+    def format_focal_length(self, value):
+        if isinstance(value, IFDRational):
+            focal_length = value.numerator / value.denominator
+            return f"{focal_length:.1f} mm"
+        if isinstance(value, (int, float)):
+            return f"{float(value):.1f} mm"
+        return str(value)
+
     def is_likely_xml(self, text):
         if not isinstance(text, str):
             return False
@@ -77,32 +150,42 @@ class ExifData(ConfigDialog):
         except Exception:
             return xml_string
 
+    def get_display_name(self, tag_name):
+        return self.DISPLAY_NAMES.get(tag_name, tag_name)
+
+    def format_value(self, tag_name, value):
+        if tag_name in ['FNumber', 'ApertureValue', 'MaxApertureValue']:
+            return self.format_aperture(value)
+        if tag_name in ['ExposureTime', 'ShutterSpeedValue']:
+            return self.format_exposure_time(value)
+        if tag_name in ['DateTime', 'DateTimeOriginal', 'DateTimeDigitized']:
+            return self.format_date_time(value)
+        if tag_name == 'ISOSpeedRatings':
+            return self.format_iso_speed(value)
+        if tag_name == 'FocalLength':
+            return self.format_focal_length(value)
+        if isinstance(value, IFDRational):
+            return f"{value.numerator}/{value.denominator}"
+        return str(value)
+
     def create_form_content(self):
         if self.exif is None:
             data = {}
         else:
             data = exif_dict(self.exif)
         if len(data) > 0:
-            for k, (_, d) in data.items():
-                if k in ['FNumber', 'ApertureValue']:
-                    display_value = self.format_aperture(d)
-                elif k in ['ExposureTime', 'ShutterSpeedValue']:
-                    display_value = self.format_exposure_time(d)
-                elif k in ['DateTime', 'DateTimeOriginal', 'DateTimeDigitized']:
-                    display_value = self.format_date_time(d)
-                elif isinstance(d, IFDRational):
-                    display_value = f"{d.numerator}/{d.denominator}"
-                else:
-                    display_value = str(d)
-                d_str = display_value
-                if "<<<" not in d_str and k != 'IPTCNAA':
-                    if len(d_str) <= 40:
-                        self.container_layout.addRow(f"<b>{k}:</b>", QLabel(d_str))
+            for tag_name, (_, value) in data.items():
+                display_name = self.get_display_name(tag_name)
+                display_value = self.format_value(tag_name, value)
+                value_str = display_value
+                if "<<<" not in value_str and tag_name != 'IPTCNAA':
+                    if len(value_str) <= 40:
+                        self.container_layout.addRow(f"<b>{display_name}:</b>", QLabel(value_str))
                     else:
-                        if self.is_likely_xml(d_str):
-                            d_str = self.prettify_xml(d_str)
+                        if self.is_likely_xml(value_str):
+                            value_str = self.prettify_xml(value_str)
                         text_edit = QTextEdit()
-                        text_edit.setPlainText(d_str)
+                        text_edit.setPlainText(value_str)
                         text_edit.setReadOnly(True)
                         text_edit.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
                         text_edit.setLineWrapMode(QTextEdit.WidgetWidth)
@@ -111,10 +194,8 @@ class ExifData(ConfigDialog):
                         font = QFontDatabase.systemFont(QFontDatabase.FixedFont)
                         font.setPointSize(10)
                         text_edit.setFont(font)
-                        font.setPointSize(11)
-                        text_edit.setFont(font)
                         text_edit.setFixedHeight(200)
                         text_edit.setFixedHeight(100)
-                        self.container_layout.addRow(f"<b>{k}:</b>", text_edit)
+                        self.container_layout.addRow(f"<b>{display_name}:</b>", text_edit)
         else:
             self.container_layout.addRow("No EXIF Data", QLabel(''))

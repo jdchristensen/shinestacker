@@ -166,7 +166,7 @@ PNG_TAG_MAP = {
     'EXIF_Copyright': COPYRIGHT,
     'EXIF_ExposureTime': EXPOSURETIME,
     'EXIF_FNumber': FNUMBER,
-    'EXIF_ISOSpeed': ISOSPEEDRATINGS,
+    'EXIF_ISOSpeedRatings': ISOSPEEDRATINGS,
     'EXIF_ShutterSpeedValue': SHUTTERSPEEDVALUE,
     'EXIF_ApertureValue': APERTUREVALUE,
     'EXIF_FocalLength': FOCALLENGTH,
@@ -236,7 +236,7 @@ CAMERA_TAGS_MAP = {
 EXPOSURE_TAGS_MAP = {
     EXPOSURETIME: 'ExposureTime',
     FNUMBER: 'FNumber',
-    ISOSPEEDRATINGS: 'ISOSpeed',
+    ISOSPEEDRATINGS: 'ISOSpeedRatings',
     SHUTTERSPEEDVALUE: 'ShutterSpeedValue',
     APERTUREVALUE: 'ApertureValue',
     FOCALLENGTH: 'FocalLength',
@@ -251,22 +251,7 @@ EXPOSURE_TAGS_MAP = {
     DATETIMEORIGINAL: 'DateTimeOriginal'
 }
 
-EXPOSURE_DATA_TIFF = {
-    'ExposureTime': EXPOSURETIME,
-    'FNumber': FNUMBER,
-    'ISOSpeedRatings': ISOSPEEDRATINGS,
-    'FocalLength': FOCALLENGTH,
-    'LensModel': LENSMODEL,
-    'ShutterSpeedValue': SHUTTERSPEEDVALUE,
-    'ApertureValue': APERTUREVALUE,
-    'ExposureBiasValue': EXPOSUREBIASVALUE,
-    'MaxApertureValue': MAXAPERTUREVALUE,
-    'MeteringMode': METERINGMODE,
-    'Flash': FLASH,
-    'WhiteBalance': WHITEBALANCE,
-    'ExposureMode': EXPOSUREMODE,
-    'SceneCaptureType': SCENECAPTURETYPE,
-    'DateTimeOriginal': DATETIMEORIGINAL,
+EXPOSURE_DATA_TIFF = {v: k for k, v in EXPOSURE_TAGS_MAP.items()} | {
     'Make': MAKE,
     'Model': MODEL
 }

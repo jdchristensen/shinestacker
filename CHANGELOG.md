@@ -2,6 +2,18 @@
 
 This page reports the main releases only and the main changes therein.
 
+## [vx.x.x] - 2025-11-02
+** Unreleased changes **
+
+### Fixed
+- more consistent name mapping for some EXIF data
+
+### Changed
+- improved EXIF data display
+
+---
+
+
 ## [v1.9.3] - 2025-11-02
 ** Fixes to EXIF data and GUI **
 
