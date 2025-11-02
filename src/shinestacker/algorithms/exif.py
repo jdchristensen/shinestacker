@@ -271,6 +271,20 @@ EXPOSURE_DATA_TIFF = {
     'Model': MODEL
 }
 
+COMPATIBLE_TAGS = [
+    MAKE, MODEL, SOFTWARE, DATETIME, ARTIST, COPYRIGHT,
+    EXPOSURETIME, FNUMBER, ISOSPEEDRATINGS, EXPOSUREPROGRAM,
+    SHUTTERSPEEDVALUE, APERTUREVALUE, BRIGHTNESSVALUE, EXPOSUREBIASVALUE,
+    MAXAPERTUREVALUE, SUBJECTDISTANCE, METERINGMODE, LIGHTSOURCE, FLASH,
+    FOCALLENGTH, EXPOSUREMODE, WHITEBALANCE, EXPOSUREINDEX,
+    SCENECAPTURETYPE, DATETIMEORIGINAL, LENSMODEL, LENSMAKE,
+    FOCALLENGTHIN35MMFILM, GAINCONTROL, CONTRAST, SATURATION, SHARPNESS,
+    CUSTOMRENDERED, DIGITALZOOMRATIO, SUBJECTDISTANCERANGE,
+    EXIFVERSION, FLASHPIXVERSION,
+    COLORSPACE, PIXELXDIMENSION, PIXELYDIMENSION, IMAGEWIDTH, IMAGELENGTH,
+    BITSPERSAMPLE, ORIENTATION, XRESOLUTION, YRESOLUTION, RESOLUTIONUNIT
+]
+
 
 def extract_enclosed_data_for_jpg(data, head, foot):
     xmp_start = data.find(head)
@@ -399,7 +413,7 @@ def _parse_xmp_value(exif_tag, value):
                 try:
                     return float(value) if value else 0.0
                 except ValueError:
-                    return 0.0  # Return 0.0 if float conversion also fails
+                    return 0.0
         return float(value) if value else 0.0
     if exif_tag == ISOSPEEDRATINGS:  # ISO
         if '<rdf:li>' in value:
@@ -425,17 +439,17 @@ def parse_typed_png_text(value):
                 try:
                     return IFDRational(int(parts[0]), int(parts[1]))
                 except (ValueError, ZeroDivisionError):
-                    return value  # Return original value if parsing fails
+                    return value[9:]
         elif value.startswith('INT:'):
             try:
                 return int(value[4:])
             except ValueError:
-                return value[4:]  # Return string part if int conversion fails
+                return value[4:]
         elif value.startswith('FLOAT:'):
             try:
                 return float(value[6:])
             except ValueError:
-                return value[6:]  # Return string part if float conversion fails
+                return value[6:]
         elif value.startswith('STRING:'):
             return value[7:]
         elif value.startswith('BYTES:'):
@@ -513,20 +527,7 @@ def add_exif_data_to_jpg_file(exif, in_filename, out_filename, verbose=False):
     try:
         with Image.open(in_filename) as image:
             jpeg_exif = Image.Exif()
-            compatible_tags = [
-                MAKE, MODEL, SOFTWARE, DATETIME, ARTIST, COPYRIGHT,
-                EXPOSURETIME, FNUMBER, ISOSPEEDRATINGS, EXPOSUREPROGRAM,
-                SHUTTERSPEEDVALUE, APERTUREVALUE, BRIGHTNESSVALUE, EXPOSUREBIASVALUE,
-                MAXAPERTUREVALUE, SUBJECTDISTANCE, METERINGMODE, LIGHTSOURCE, FLASH,
-                FOCALLENGTH, EXPOSUREMODE, WHITEBALANCE, EXPOSUREINDEX,
-                SCENECAPTURETYPE, DATETIMEORIGINAL, LENSMODEL, LENSMAKE,
-                FOCALLENGTHIN35MMFILM, GAINCONTROL, CONTRAST, SATURATION, SHARPNESS,
-                CUSTOMRENDERED, DIGITALZOOMRATIO, SUBJECTDISTANCERANGE,
-                EXIFVERSION, FLASHPIXVERSION,
-                COLORSPACE, PIXELXDIMENSION, PIXELYDIMENSION, IMAGEWIDTH, IMAGELENGTH,
-                BITSPERSAMPLE, ORIENTATION, XRESOLUTION, YRESOLUTION, RESOLUTIONUNIT
-            ]
-            for tag_id in compatible_tags:
+            for tag_id in COMPATIBLE_TAGS:
                 if tag_id in exif:
                     value = exif[tag_id]
                     try:
