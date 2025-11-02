@@ -3,7 +3,7 @@
 This page reports the main releases only and the main changes therein.
 
 ## [v1.9.3] - 2025-11-02
-** Unrelesed changes **
+** Fixes to EXIF data and GUI **
 
 ### Fixed
 - fault tolerant copy of EXIF data prevents to write corrupted files
