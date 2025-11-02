@@ -543,6 +543,23 @@ def add_exif_data_to_jpg_file(exif, in_filename, out_filename, verbose=False):
                     except Exception as e:
                         if verbose:
                             logger.warning(msg=f"Failed to add tag {tag_id}: {e}")
+            try:
+                if hasattr(jpeg_exif, 'get_ifd'):
+                    exif_ifd = jpeg_exif.get_ifd(EXIFIFD)
+                    if exif_ifd is None:
+                        exif_ifd = {}
+                    tags_to_move = [
+                        LENSMODEL, EXPOSURETIME, FNUMBER, ISOSPEEDRATINGS, FOCALLENGTH,
+                        SHUTTERSPEEDVALUE, APERTUREVALUE, EXPOSUREBIASVALUE,
+                    ]
+                    for tag_id in tags_to_move:
+                        if tag_id in exif:
+                            exif_ifd[tag_id] = exif[tag_id]
+                            if tag_id in jpeg_exif:
+                                del jpeg_exif[tag_id]
+            except Exception as e:
+                if verbose:
+                    logger.warning(msg=f"Failed to move tags to EXIF sub-IFD: {e}")
             exif_bytes = jpeg_exif.tobytes()
             image.save(final_filename, "JPEG", exif=exif_bytes, quality=100)
             if xmp_data and isinstance(xmp_data, bytes):
