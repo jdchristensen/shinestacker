@@ -2,7 +2,7 @@
 
 This page reports the main releases only and the main changes therein.
 
-## [vx.x.x] - 2025-11-02
+## [v1.9.3] - 2025-11-02
 ** Unrelesed changes **
 
 ### Fixed
