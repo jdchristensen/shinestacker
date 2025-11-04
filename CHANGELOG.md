@@ -2,7 +2,7 @@
 
 This page reports the main releases only and the main changes therein.
 
-## [vx.x.x] - 2025-11-02
+## [vx.x.x] - 2025-11-04
 ** Unreleased changes **
 
 ### Fixed
@@ -10,6 +10,7 @@ This page reports the main releases only and the main changes therein.
 
 ### Changed
 - improved EXIF data display
+- simplified name of noise detection job and module
 
 ---
 
