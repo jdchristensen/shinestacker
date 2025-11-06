@@ -2,7 +2,7 @@
 
 This page reports the main releases only and the main changes therein.
 
-## [vx.x.x] - 2025-11-04
+## [vx.x.x] - 2025-11-06
 ** Unreleased changes **
 
 ### Fixed
@@ -11,6 +11,7 @@ This page reports the main releases only and the main changes therein.
 ### Changed
 - improved EXIF data display
 - simplified name of noise detection job and module
+- when saving a 16-bit image, a dialog shows the possible options and warns about EXIF data loss for 16-bit PNG format.
 
 ---
 

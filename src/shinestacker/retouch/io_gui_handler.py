@@ -1,13 +1,14 @@
-# pylint: disable=C0114, C0115, C0116, E0611, R0902, W0718, R0904, E1101
+# pylint: disable=C0114, C0115, C0116, E0611, R0902, W0718, R0904, E1101, R0914
 import os
 import traceback
 import numpy as np
 import cv2
 from PySide6.QtWidgets import (QFileDialog, QMessageBox, QVBoxLayout, QLabel, QDialog,
-                               QApplication, QProgressBar)
+                               QApplication, QProgressBar, QPushButton)
 from PySide6.QtGui import QGuiApplication, QCursor
 from PySide6.QtCore import Qt, QObject, QTimer, Signal
-from .. algorithms.utils import EXTENSIONS_GUI_STR, EXTENSIONS_GUI_SAVE_STR
+from .. algorithms.utils import (EXTENSIONS_GUI_STR, EXTENSIONS_GUI_SAVE_STR,
+                                 extension_png, extension_tif, write_img)
 from .. algorithms.exif import get_exif, write_image_with_exif_data
 from .file_loader import FileLoader
 from .io_threads import FileMultilayerSaver, FrameImporter
@@ -300,8 +301,76 @@ class IOGuiHandler(QObject, LayerCollectionHandler):
 
     def save_master_to_path(self, path):
         try:
+            _extension_png = extension_png(path)
             img = cv2.cvtColor(self.master_layer(), cv2.COLOR_RGB2BGR)
-            write_image_with_exif_data(self.exif_data, img, path)
+            if img.dtype == np.uint16 and (_extension_png or extension_tif(path)):
+                config = {
+                    'png': {
+                        'title': "EXIF Warning for 16-bit PNG",
+                        'message':
+                            "You are saving a 16-bit image, but "
+                            "16-bit PNG format conversion does not "
+                            "support EXIF metadata.<br><br>"
+                            "If your image will be saved in 16-bit format, "
+                            "<b>all EXIF metadata will be lost</b>.<br><br>"
+                            "What would you like to do?",
+                        'save_label': "Save as 16-bit without EXIF",
+                        'convert_label': "Convert to 8-bit with EXIF"
+                    },
+                    'tif': {
+                        'title': "16-bit TIFF Save Options",
+                        'message':
+                            "You are saving a 16-bit image.<br><br>"
+                            "What would you like to do?",
+                        'save_label': "Save as 16-bit TIFF",
+                        'convert_label': "Convert to 8-bit"
+                    }
+                }
+                fmt = 'png' if _extension_png else 'tif'
+                cfg = config[fmt]
+                dialog = QDialog(self.parent())
+                dialog.setWindowTitle(cfg['title'])
+                layout = QVBoxLayout(dialog)
+                label = QLabel(cfg['message'])
+                label.setWordWrap(True)
+                layout.addWidget(label)
+                button_layout = QVBoxLayout()
+                save_16bit_btn = QPushButton(cfg['save_label'])
+                convert_8bit_btn = QPushButton(cfg['convert_label'])
+                cancel_btn = QPushButton("Cancel")
+                button_layout.addWidget(save_16bit_btn)
+                button_layout.addWidget(convert_8bit_btn)
+                button_layout.addWidget(cancel_btn)
+                layout.addLayout(button_layout)
+                result = None
+
+                def on_save_16bit():
+                    nonlocal result
+                    result = "save_16bit"
+                    dialog.accept()
+
+                def on_convert_8bit():
+                    nonlocal result
+                    result = "convert_8bit"
+                    dialog.accept()
+
+                def on_cancel():
+                    nonlocal result
+                    result = "cancel"
+                    dialog.reject()
+
+                save_16bit_btn.clicked.connect(on_save_16bit)
+                convert_8bit_btn.clicked.connect(on_convert_8bit)
+                cancel_btn.clicked.connect(on_cancel)
+                dialog.exec_()
+                if result == "cancel" or result is None:
+                    return
+                if result == "convert_8bit":
+                    img = (img // 256).astype(np.uint8)
+            if _extension_png and img.dtype == np.uint16:
+                write_img(path, img)
+            else:
+                write_image_with_exif_data(self.exif_data, img, path)
             self.current_file_path_master = os.path.abspath(path)
             self.update_title_requested.emit()
             self.add_recent_file_requested.emit(self.current_file_path_master)
