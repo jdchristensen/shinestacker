@@ -2321,18 +2321,11 @@ def test_exif_round_trip_tiff_to_png():
         if not os.path.exists(output_dir):
             os.makedirs(output_dir)
         logger.info("======== Testing EXIF Round-Trip: TIFF -> PNG ========")
-        source_tiff = "examples/input/img-exif/test.tif"
+        source_tiff = "examples/input/img-exif/0000.tif"
         if not os.path.exists(source_tiff):
-            source_jpg = "examples/input/img-exif/0000.jpg"
-            if not os.path.exists(source_jpg):
-                logger.warning(f"Source files not found: {source_tiff} or {source_jpg}")
-                return False
-            logger.info("Creating TIFF from JPG for testing...")
-            jpg_exif = get_exif(source_jpg)
-            jpg_image = cv2.imread(source_jpg)
-            source_tiff = output_dir + "/source_converted.tif"
-            write_image_with_exif_data(jpg_exif, jpg_image, source_tiff, verbose=True)
-        original_exif = get_exif(source_tiff, enhanced_png_parsing=True)
+            logger.warning(f"Source file not found: {source_tiff}")
+            assert False
+        original_exif = get_exif(source_tiff)
         logger.info("*** Original TIFF EXIF ***")
         print_exif(original_exif)
         critical_tags = {
@@ -2352,13 +2345,11 @@ def test_exif_round_trip_tiff_to_png():
             if tag_id not in NO_COPY_TIFF_TAGS_ID
         }
         original_tag_count = sum(1 for tag_id in filtered_critical_tags if tag_id in original_exif)
-        logger.info(f"Found {original_tag_count} critical tags "
-                    "in original TIFF (excluding NO_COPY tags)")
-        test_image = np.ones((100, 100, 3), dtype=np.uint8) * 128
+        logger.info(f"Found {original_tag_count} critical tags in original TIFF")
         temp_png = output_dir + "/roundtrip_temp.png"
+        test_image = np.ones((100, 100, 3), dtype=np.uint8) * 128
         logger.info("*** Writing PNG with TIFF EXIF ***")
-        write_image_with_exif_data(original_exif, test_image, temp_png,
-                                   verbose=True, color_order='bgr')
+        write_image_with_exif_data(original_exif, test_image, temp_png, verbose=False, color_order='bgr')
         assert os.path.exists(temp_png), "PNG file was not created"
         png_exif = get_exif(temp_png, enhanced_png_parsing=True)
         logger.info("*** PNG EXIF (after writing) ***")
@@ -2367,11 +2358,7 @@ def test_exif_round_trip_tiff_to_png():
         logger.info(f"Preserved {png_tag_count}/{original_tag_count} critical tags in PNG")
         temp_tiff_roundtrip = output_dir + "/roundtrip_final.tif"
         logger.info("*** Writing TIFF with PNG EXIF ***")
-        filtered_png_exif = {
-            tag_id: value for tag_id, value in png_exif.items()
-            if tag_id not in NO_COPY_TIFF_TAGS_ID
-        }
-        write_image_with_exif_data(filtered_png_exif, test_image, temp_tiff_roundtrip, verbose=True)
+        write_image_with_exif_data(png_exif, test_image, temp_tiff_roundtrip, verbose=False)
         assert os.path.exists(temp_tiff_roundtrip), "Final TIFF file was not created"
         final_exif = get_exif(temp_tiff_roundtrip)
         logger.info("*** Final TIFF EXIF (after PNG->TIFF round-trip) ***")
@@ -2390,21 +2377,16 @@ def test_exif_round_trip_tiff_to_png():
                     if _values_equal(original_value, png_value):
                         preserved_tags.append((f"PNG:{tag_name}", original_value, png_value))
                     else:
-                        lost_tags.append(
-                            (f"PNG:{tag_name}", original_value, png_value, "value changed in PNG"))
+                        lost_tags.append((f"PNG:{tag_name}", original_value, png_value, "value changed in PNG"))
                 else:
-                    lost_tags.append(
-                        (f"PNG:{tag_name}", original_value, None, "tag missing in PNG"))
+                    lost_tags.append((f"PNG:{tag_name}", original_value, None, "tag missing in PNG"))
                 if final_value is not None:
                     if _values_equal(original_value, final_value):
                         preserved_tags.append((f"FINAL:{tag_name}", original_value, final_value))
                     else:
-                        lost_tags.append(
-                            (f"FINAL:{tag_name}", original_value, final_value,
-                             "value changed in final"))
+                        lost_tags.append((f"FINAL:{tag_name}", original_value, final_value, "value changed in final"))
                 else:
-                    lost_tags.append(
-                        (f"FINAL:{tag_name}", original_value, None, "tag missing in final"))
+                    lost_tags.append((f"FINAL:{tag_name}", original_value, None, "tag missing in final"))
         logger.info("✓ PRESERVED TAGS:")
         for tag_name, orig_val, final_val in preserved_tags:
             logger.info(f"  {tag_name}: {orig_val} -> {final_val}")
@@ -2417,11 +2399,9 @@ def test_exif_round_trip_tiff_to_png():
         for tag_id, tag_name in filtered_critical_tags.items():
             if tag_id in original_exif:
                 total_possible_preservations += 2
-                if tag_id in png_exif and _values_equal(
-                        original_exif[tag_id], png_exif[tag_id]):
+                if tag_id in png_exif and _values_equal(original_exif[tag_id], png_exif[tag_id]):
                     actual_preservations += 1
-                if tag_id in final_exif and _values_equal(
-                        original_exif[tag_id], final_exif[tag_id]):
+                if tag_id in final_exif and _values_equal(original_exif[tag_id], final_exif[tag_id]):
                     actual_preservations += 1
         if total_possible_preservations > 0:
             preservation_rate = (actual_preservations / total_possible_preservations) * 100
@@ -2429,21 +2409,20 @@ def test_exif_round_trip_tiff_to_png():
             logger.info(f"({actual_preservations}/{total_possible_preservations} checks passed)")
             if preservation_rate >= 90:
                 logger.info("✓ TIFF->PNG EXIF round-trip test PASSED")
-                return True
             else:
-                logger.warning(
-                    msg="⚠ TIFF->PNG EXIF round-trip test: "
-                    f"Low preservation rate ({preservation_rate:.1f}%)")
-                return False
+                logger.warning(f"⚠ TIFF->PNG EXIF round-trip test: Low preservation rate ({preservation_rate:.1f}%)")
+                assert False
         else:
             logger.warning("No critical tags found to compare")
-            return False
+        for temp_file in [temp_png, temp_tiff_roundtrip]:
+            if os.path.exists(temp_file):
+                os.remove(temp_file)
+                logger.info(f"Cleaned up: {temp_file}")
     except Exception as e:
         logger.error(f"TIFF->PNG round-trip test failed: {str(e)}")
         import traceback
         logger.error(traceback.format_exc())
-        return False
-
+        assert False
 
 def _values_equal(val1, val2):
     if hasattr(val1, 'numerator') and hasattr(val2, 'numerator'):
