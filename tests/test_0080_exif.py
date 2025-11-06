@@ -2349,7 +2349,8 @@ def test_exif_round_trip_tiff_to_png():
         temp_png = output_dir + "/roundtrip_temp.png"
         test_image = np.ones((100, 100, 3), dtype=np.uint8) * 128
         logger.info("*** Writing PNG with TIFF EXIF ***")
-        write_image_with_exif_data(original_exif, test_image, temp_png, verbose=False, color_order='bgr')
+        write_image_with_exif_data(
+            original_exif, test_image, temp_png, verbose=False, color_order='bgr')
         assert os.path.exists(temp_png), "PNG file was not created"
         png_exif = get_exif(temp_png, enhanced_png_parsing=True)
         logger.info("*** PNG EXIF (after writing) ***")
@@ -2377,16 +2378,22 @@ def test_exif_round_trip_tiff_to_png():
                     if _values_equal(original_value, png_value):
                         preserved_tags.append((f"PNG:{tag_name}", original_value, png_value))
                     else:
-                        lost_tags.append((f"PNG:{tag_name}", original_value, png_value, "value changed in PNG"))
+                        lost_tags.append(
+                            (f"PNG:{tag_name}", original_value, png_value, "value changed in PNG"))
                 else:
-                    lost_tags.append((f"PNG:{tag_name}", original_value, None, "tag missing in PNG"))
+                    lost_tags.append(
+                        (f"PNG:{tag_name}", original_value, None, "tag missing in PNG"))
                 if final_value is not None:
                     if _values_equal(original_value, final_value):
-                        preserved_tags.append((f"FINAL:{tag_name}", original_value, final_value))
+                        preserved_tags.append(
+                            (f"FINAL:{tag_name}", original_value, final_value))
                     else:
-                        lost_tags.append((f"FINAL:{tag_name}", original_value, final_value, "value changed in final"))
+                        lost_tags.append(
+                            (f"FINAL:{tag_name}", original_value, final_value,
+                             "value changed in final"))
                 else:
-                    lost_tags.append((f"FINAL:{tag_name}", original_value, None, "tag missing in final"))
+                    lost_tags.append(
+                        (f"FINAL:{tag_name}", original_value, None, "tag missing in final"))
         logger.info("✓ PRESERVED TAGS:")
         for tag_name, orig_val, final_val in preserved_tags:
             logger.info(f"  {tag_name}: {orig_val} -> {final_val}")
@@ -2399,9 +2406,11 @@ def test_exif_round_trip_tiff_to_png():
         for tag_id, tag_name in filtered_critical_tags.items():
             if tag_id in original_exif:
                 total_possible_preservations += 2
-                if tag_id in png_exif and _values_equal(original_exif[tag_id], png_exif[tag_id]):
+                if tag_id in png_exif and \
+                        _values_equal(original_exif[tag_id], png_exif[tag_id]):
                     actual_preservations += 1
-                if tag_id in final_exif and _values_equal(original_exif[tag_id], final_exif[tag_id]):
+                if tag_id in final_exif and \
+                        _values_equal(original_exif[tag_id], final_exif[tag_id]):
                     actual_preservations += 1
         if total_possible_preservations > 0:
             preservation_rate = (actual_preservations / total_possible_preservations) * 100
@@ -2410,7 +2419,9 @@ def test_exif_round_trip_tiff_to_png():
             if preservation_rate >= 90:
                 logger.info("✓ TIFF->PNG EXIF round-trip test PASSED")
             else:
-                logger.warning(f"⚠ TIFF->PNG EXIF round-trip test: Low preservation rate ({preservation_rate:.1f}%)")
+                logger.warning(
+                    msg="⚠ TIFF->PNG EXIF round-trip test: "
+                    "Low preservation rate ({preservation_rate:.1f}%)")
                 assert False
         else:
             logger.warning("No critical tags found to compare")
@@ -2423,6 +2434,7 @@ def test_exif_round_trip_tiff_to_png():
         import traceback
         logger.error(traceback.format_exc())
         assert False
+
 
 def _values_equal(val1, val2):
     if hasattr(val1, 'numerator') and hasattr(val2, 'numerator'):
