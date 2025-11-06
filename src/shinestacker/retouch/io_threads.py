@@ -68,8 +68,6 @@ class FrameImporter(QThread):
                     stack.append(img)
                     if master is None:
                         master = img.copy()
-                    # Add delay for testing
-                    # time.sleep(0.2)
                 except Exception as e:
                     raise RuntimeError(f"Error loading file: {path}.\n{str(e)}") from e
             self.progress.emit(100, "Complete")
