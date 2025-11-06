@@ -1,4 +1,5 @@
-# pylint: disable=C0114, C0116, W0718, R0911, R0912, E1101, R0915, R1702, R0914, R0917, R0913
+# pylint: disable=C0114, C0116, C0302, W0718, R0911, R0912, E1101
+# pylint: disable=R0915, R1702, R0914, R0917, R0913
 import os
 import re
 import logging
@@ -13,7 +14,6 @@ import tifffile
 from .. config.constants import constants
 from .utils import read_img, write_img, extension_jpg, extension_tif, extension_png
 
-# TIFF/EXIF Tag Constants
 IMAGEWIDTH = 256
 IMAGELENGTH = 257
 BITSPERSAMPLE = 258
@@ -648,19 +648,18 @@ def create_xmp_from_exif(exif_data):
     return XMP_EMPTY_TEMPLATE
 
 
-def write_image_with_exif_data_png(exif, image, out_filename, verbose=False, color_order='auto'):
+def write_image_with_exif_data_png(exif, image, out_filename, color_order='auto'):
     temp_filename = out_filename + ".tmp"
     try:
         if isinstance(image, np.ndarray) and image.dtype == np.uint16:
             write_img(out_filename, image)
             return
-        else:
-            pil_image = _convert_to_pil_image(image, color_order)
-            pnginfo, icc_profile = _prepare_png_metadata(exif)
-            save_args = {'format': 'PNG', 'pnginfo': pnginfo}
-            if icc_profile:
-                save_args['icc_profile'] = icc_profile
-            pil_image.save(temp_filename, **save_args)
+        pil_image = _convert_to_pil_image(image, color_order)
+        pnginfo, icc_profile = _prepare_png_metadata(exif)
+        save_args = {'format': 'PNG', 'pnginfo': pnginfo}
+        if icc_profile:
+            save_args['icc_profile'] = icc_profile
+        pil_image.save(temp_filename, **save_args)
         if os.path.exists(out_filename):
             os.remove(out_filename)
         os.rename(temp_filename, out_filename)
@@ -816,47 +815,88 @@ def exif_extra_tags_for_tif(exif):
     )
     exif_tags = {
         'resolution': resolution,
-        'resolutionunit': exif.get(RESOLUTIONUNIT, 'inch'),
+        'resolutionunit': exif.get(RESOLUTIONUNIT, 2),
         'software': clean_data_for_tiff(exif.get(SOFTWARE)) or constants.APP_TITLE,
-        'photometric': exif.get(PHOTOMETRICINTERPRETATION)
+        'photometric': exif.get(PHOTOMETRICINTERPRETATION, 2)
     }
     extra = []
+    safe_tags = [
+        MAKE, MODEL, SOFTWARE, DATETIME, ARTIST, COPYRIGHT,
+        ISOSPEEDRATINGS, ORIENTATION, IMAGEWIDTH, IMAGELENGTH
+    ]
+    special_handling_tags = [
+        EXPOSURETIME, FNUMBER, FOCALLENGTH, EXPOSUREBIASVALUE,
+        SHUTTERSPEEDVALUE, APERTUREVALUE, MAXAPERTUREVALUE
+    ]
+    for tag_id in safe_tags:
+        if tag_id in exif:
+            data = exif[tag_id]
+            processed_data = _process_tiff_data_safe(data)
+            if processed_data:
+                dtype, count, data_value = processed_data
+                extra.append((tag_id, dtype, count, data_value, False))
+    for tag_id in special_handling_tags:
+        if tag_id in exif:
+            data = exif[tag_id]
+            processed_data = _process_rational_tag(data)
+            if processed_data:
+                dtype, count, data_value = processed_data
+                extra.append((tag_id, dtype, count, data_value, False))
     for tag_id in exif:
-        tag, data = TAGS.get(tag_id, tag_id), exif.get(tag_id)
-        if tag in NO_COPY_TIFF_TAGS or tag_id in NO_COPY_TIFF_TAGS_ID or tag_id == SOFTWARE:
+        if tag_id in NO_COPY_TIFF_TAGS_ID:
             continue
-        if isinstance(data, IFDRational):
-            data = (data.numerator, data.denominator) if data.denominator != 0 else (0, 1)
-            extra.append((tag_id, 5, 1, data, False))
+        if tag_id in safe_tags or tag_id in special_handling_tags:
             continue
-        processed_data = _process_tiff_data(data)
-        if processed_data:
-            dtype, count, data_value = processed_data
-            extra.append((tag_id, dtype, count, data_value, False))
+        tag_name = TAGS.get(tag_id, tag_id)
+        if tag_name in NO_COPY_TIFF_TAGS:
+            continue
+        data = exif.get(tag_id)
+        if _is_safe_to_write(data):
+            processed_data = _process_tiff_data_safe(data)
+            if processed_data:
+                dtype, count, data_value = processed_data
+                extra.append((tag_id, dtype, count, data_value, False))
     return extra, exif_tags
 
 
-def _process_tiff_data(data):
+def _process_tiff_data_safe(data):
     if isinstance(data, IFDRational):
-        data = (data.numerator, data.denominator) if data.denominator != 0 else (0, 1)
-        return 5, 1, data
-    if hasattr(data, '__iter__') and not isinstance(data, (str, bytes)):
-        try:
-            clean_data = [float(x)
-                          if not hasattr(x, 'denominator') or x.denominator != 0
-                          else float('nan') for x in data]
-            return 12, len(clean_data), tuple(clean_data)
-        except Exception:
-            return None
+        return _process_rational_tag(data)
     if isinstance(data, (str, bytes)):
         clean_data = clean_data_for_tiff(data)
         if clean_data:
             return 2, len(clean_data) + 1, clean_data
-    try:
-        dtype, count = get_tiff_dtype_count(data)
-        return dtype, count, data
-    except Exception:
-        return None
+    if isinstance(data, (int, float)):
+        return 11, 1, float(data)  # Use FLOAT
+    if hasattr(data, '__iter__') and not isinstance(data, (str, bytes)):
+        try:
+            clean_data = [float(x) for x in data]
+            return 12, len(clean_data), tuple(clean_data)  # Use DOUBLE
+        except Exception:
+            return None
+    return None
+
+
+def _process_rational_tag(data):
+    if isinstance(data, IFDRational):
+        numerator = data.numerator
+        denominator = data.denominator if data.denominator != 0 else 1
+        if abs(numerator) > 1000000 or abs(denominator) > 1000000:
+            return 11, 1, float(data)  # Use FLOAT
+        if numerator < 0:
+            return 10, 1, (numerator, denominator)  # SRATIONAL
+        return 5, 1, (numerator, denominator)   # RATIONAL
+    return None
+
+
+def _is_safe_to_write(data):
+    if data is None:
+        return False
+    if isinstance(data, bytes) and len(data) > 10000:
+        return False
+    if hasattr(data, '__iter__') and not isinstance(data, (str, bytes, tuple, list)):
+        return False
+    return True
 
 
 def write_image_with_exif_data_tif(exif, image, out_filename):
@@ -891,7 +931,7 @@ def write_image_with_exif_data(exif, image, out_filename, verbose=False, color_o
     elif extension_tif(out_filename):
         write_image_with_exif_data_tif(exif, image, out_filename)
     elif extension_png(out_filename):
-        write_image_with_exif_data_png(exif, image, out_filename, verbose, color_order=color_order)
+        write_image_with_exif_data_png(exif, image, out_filename, color_order=color_order)
     return exif
 
 
@@ -900,7 +940,7 @@ def save_exif_data(exif, in_filename, out_filename=None, verbose=False):
         out_filename = in_filename
     if exif is None:
         raise RuntimeError('No exif data provided.')
-    use_temp = (in_filename == out_filename)
+    use_temp = in_filename == out_filename
     temp_filename = out_filename + ".tmp" if use_temp else out_filename
     try:
         if extension_png(in_filename) or extension_tif(in_filename):
@@ -915,7 +955,7 @@ def save_exif_data(exif, in_filename, out_filename=None, verbose=False):
                                  compression='adobe_deflate',
                                  extratags=extra_tags, **exif_tags)
             elif extension_png(in_filename):
-                write_image_with_exif_data_png(exif, image_new, temp_filename, verbose)
+                write_image_with_exif_data_png(exif, image_new, temp_filename)
         else:
             add_exif_data_to_jpg_file(exif, in_filename, temp_filename, verbose)
         if use_temp:
