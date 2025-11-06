@@ -7,6 +7,7 @@ This page reports the main releases only and the main changes therein.
 
 ### Fixed
 - more consistent name mapping for some EXIF data
+- exif copy is now falut-tolerant
 
 ### Changed
 - improved EXIF data display

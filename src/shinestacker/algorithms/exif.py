@@ -649,18 +649,29 @@ def create_xmp_from_exif(exif_data):
 
 
 def write_image_with_exif_data_png(exif, image, out_filename, verbose=False, color_order='auto'):
-    logger = logging.getLogger(__name__)
-    if isinstance(image, np.ndarray) and image.dtype == np.uint16:
-        if verbose:
-            logger.warning(msg="EXIF data not supported for 16-bit PNG format")
+    temp_filename = out_filename + ".tmp"
+    try:
+        if isinstance(image, np.ndarray) and image.dtype == np.uint16:
+            write_img(out_filename, image)
+            return
+        else:
+            pil_image = _convert_to_pil_image(image, color_order)
+            pnginfo, icc_profile = _prepare_png_metadata(exif)
+            save_args = {'format': 'PNG', 'pnginfo': pnginfo}
+            if icc_profile:
+                save_args['icc_profile'] = icc_profile
+            pil_image.save(temp_filename, **save_args)
+        if os.path.exists(out_filename):
+            os.remove(out_filename)
+        os.rename(temp_filename, out_filename)
+    except Exception:
+        if os.path.exists(temp_filename):
+            try:
+                os.remove(temp_filename)
+            except Exception:
+                pass
         write_img(out_filename, image)
-        return
-    pil_image = _convert_to_pil_image(image, color_order)
-    pnginfo, icc_profile = _prepare_png_metadata(exif)
-    save_args = {'format': 'PNG', 'pnginfo': pnginfo}
-    if icc_profile:
-        save_args['icc_profile'] = icc_profile
-    pil_image.save(out_filename, **save_args)
+        raise
 
 
 def _convert_to_pil_image(image, color_order):
@@ -850,13 +861,23 @@ def _process_tiff_data(data):
 
 def write_image_with_exif_data_tif(exif, image, out_filename):
     image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+    temp_filename = out_filename + ".tmp"
     try:
         metadata = {"description": f"image generated with {constants.APP_STRING} package"}
         extra_tags, exif_tags = exif_extra_tags_for_tif(exif)
-        tifffile.imwrite(out_filename, image, metadata=metadata, compression='adobe_deflate',
+        tifffile.imwrite(temp_filename, image, metadata=metadata, compression='adobe_deflate',
                          extratags=extra_tags, **exif_tags)
+        if os.path.exists(out_filename):
+            os.remove(out_filename)
+        os.rename(temp_filename, out_filename)
     except Exception:
+        if os.path.exists(temp_filename):
+            try:
+                os.remove(temp_filename)
+            except Exception:
+                pass
         tifffile.imwrite(out_filename, image, compression='adobe_deflate')
+        raise
 
 
 def write_image_with_exif_data(exif, image, out_filename, verbose=False, color_order='auto'):
@@ -879,24 +900,44 @@ def save_exif_data(exif, in_filename, out_filename=None, verbose=False):
         out_filename = in_filename
     if exif is None:
         raise RuntimeError('No exif data provided.')
-    if verbose:
-        print_exif(exif)
-    if extension_png(in_filename) or extension_tif(in_filename):
+    use_temp = (in_filename == out_filename)
+    temp_filename = out_filename + ".tmp" if use_temp else out_filename
+    try:
+        if extension_png(in_filename) or extension_tif(in_filename):
+            if extension_tif(in_filename):
+                image_new = tifffile.imread(in_filename)
+            elif extension_png(in_filename):
+                image_new = cv2.imread(in_filename, cv2.IMREAD_UNCHANGED)
+            if extension_tif(in_filename):
+                metadata = {"description": f"image generated with {constants.APP_STRING} package"}
+                extra_tags, exif_tags = exif_extra_tags_for_tif(exif)
+                tifffile.imwrite(temp_filename, image_new, metadata=metadata,
+                                 compression='adobe_deflate',
+                                 extratags=extra_tags, **exif_tags)
+            elif extension_png(in_filename):
+                write_image_with_exif_data_png(exif, image_new, temp_filename, verbose)
+        else:
+            add_exif_data_to_jpg_file(exif, in_filename, temp_filename, verbose)
+        if use_temp:
+            if os.path.exists(out_filename):
+                os.remove(out_filename)
+            os.rename(temp_filename, out_filename)
+        return exif
+    except Exception:
+        if use_temp and os.path.exists(temp_filename):
+            try:
+                os.remove(temp_filename)
+            except Exception:
+                pass
         if extension_tif(in_filename):
             image_new = tifffile.imread(in_filename)
+            tifffile.imwrite(out_filename, image_new, compression='adobe_deflate')
         elif extension_png(in_filename):
             image_new = cv2.imread(in_filename, cv2.IMREAD_UNCHANGED)
-        if extension_tif(in_filename):
-            metadata = {"description": f"image generated with {constants.APP_STRING} package"}
-            extra_tags, exif_tags = exif_extra_tags_for_tif(exif)
-            tifffile.imwrite(
-                out_filename, image_new, metadata=metadata, compression='adobe_deflate',
-                extratags=extra_tags, **exif_tags)
-        elif extension_png(in_filename):
-            write_image_with_exif_data_png(exif, image_new, out_filename, verbose)
-    else:
-        add_exif_data_to_jpg_file(exif, in_filename, out_filename, verbose)
-    return exif
+            write_img(out_filename, image_new)
+        else:
+            write_img(out_filename, read_img(in_filename))
+        raise
 
 
 def copy_exif_from_file_to_file(exif_filename, in_filename, out_filename=None, verbose=False):
