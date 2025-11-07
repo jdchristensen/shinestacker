@@ -264,11 +264,7 @@ class ImageEditorUI(QMainWindow, LayerCollectionHandler):
         self.save_as_action.setShortcut("Ctrl+Shift+S")
         self.save_as_action.triggered.connect(self.io_gui_handler.save_file_as)
         file_menu.addAction(self.save_as_action)
-        self.io_gui_handler.save_master_only = QAction("Save Master &Only", self)
-        self.io_gui_handler.save_master_only.setCheckable(True)
-        self.io_gui_handler.save_master_only.setChecked(True)
-        self.io_gui_handler.save_master_only.triggered.connect(self.save_master_only)
-        file_menu.addAction(self.io_gui_handler.save_master_only)
+
         self.save_actions_set_enabled(False)
 
         file_menu.addAction("&Close", self.close_file, "Ctrl+W")
@@ -626,9 +622,6 @@ class ImageEditorUI(QMainWindow, LayerCollectionHandler):
         super().keyPressEvent(event)
     # pylint: enable=C0103
 
-    def save_master_only(self, _checked):
-        self.update_title()
-
     def sort_layers_ui(self, order):
         self.sort_layers(order)
         self.display_manager.update_thumbnails()
@@ -759,7 +752,6 @@ class ImageEditorUI(QMainWindow, LayerCollectionHandler):
     def save_actions_set_enabled(self, enabled):
         self.save_action.setEnabled(enabled)
         self.save_as_action.setEnabled(enabled)
-        self.io_gui_handler.save_master_only.setEnabled(enabled)
 
     def close_file(self):
         if self.check_unsaved_changes():

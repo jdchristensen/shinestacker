@@ -4,7 +4,7 @@ import traceback
 import numpy as np
 import cv2
 from PySide6.QtWidgets import (QFileDialog, QMessageBox, QVBoxLayout, QLabel, QDialog,
-                               QApplication, QProgressBar, QPushButton)
+                               QRadioButton, QApplication, QProgressBar, QPushButton)
 from PySide6.QtGui import QGuiApplication, QCursor
 from PySide6.QtCore import Qt, QObject, QTimer, Signal
 from .. algorithms.utils import (EXTENSIONS_GUI_STR, EXTENSIONS_GUI_SAVE_STR,
@@ -45,13 +45,14 @@ class IOGuiHandler(QObject, LayerCollectionHandler):
         self.progress_bar = None
         self.exif_data = None
         self.exif_path = ''
+        self.save_master_only_option = True
 
     def set_exif_data(self, data, path):
         self.exif_data = data
         self.exif_path = path
 
     def current_file_path(self):
-        return self.current_file_path_master if self.save_master_only.isChecked() \
+        return self.current_file_path_master if self.save_master_only_option \
             else self.current_file_path_multi
 
     def setup_ui(self, display_manager, image_viewer):
@@ -220,17 +221,44 @@ class IOGuiHandler(QObject, LayerCollectionHandler):
         self.set_enabled_file_open_close_actions_requested.emit(True)
         self.add_recent_file_requested.emit(self.current_file_path_master)
 
+    def save_file_as(self):
+        dialog = QDialog(self.parent())
+        dialog.setWindowTitle("Save As - Select Format")
+        layout = QVBoxLayout(dialog)
+        layout.addWidget(QLabel("Choose what to save:"))
+        master_only_radio = QRadioButton("Master layer only")
+        multilayer_radio = QRadioButton("Multilayer TIFF (more space required)")
+        master_only_radio.setChecked(True)
+        layout.addWidget(master_only_radio)
+        layout.addWidget(multilayer_radio)
+        button_layout = QVBoxLayout()
+        save_btn = QPushButton("Continue to Save Dialog")
+        cancel_btn = QPushButton("Cancel")
+        button_layout.addWidget(save_btn)
+        button_layout.addWidget(cancel_btn)
+        layout.addLayout(button_layout)
+
+        def on_save():
+            self.save_master_only_option = master_only_radio.isChecked()
+            dialog.accept()
+            if self.save_master_only_option:
+                self.save_master_as()
+            else:
+                self.save_multilayer_as()
+
+        def on_cancel():
+            dialog.reject()
+
+        save_btn.clicked.connect(on_save)
+        cancel_btn.clicked.connect(on_cancel)
+        if dialog.exec_() == QDialog.Accepted:
+            pass
+
     def save_file(self):
-        if self.save_master_only.isChecked():
+        if hasattr(self, 'save_master_only_option') and self.save_master_only_option:
             self.save_master()
         else:
             self.save_multilayer()
-
-    def save_file_as(self):
-        if self.save_master_only.isChecked():
-            self.save_master_as()
-        else:
-            self.save_multilayer_as()
 
     def save_multilayer(self):
         if self.layer_stack() is None:
