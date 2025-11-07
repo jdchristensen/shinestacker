@@ -2,15 +2,16 @@
 
 This page reports the main releases only and the main changes therein.
 
-## [vx.x.x] - 2025-11-06
-** Unreleased changes **
+## [v1.9.4] - 2025-11-07
+** Improved GUI and more fixes to EXIF data **
 
 ### Fixed
-- more consistent name mapping for some EXIF data
-- exif copy is now falut-tolerant
-- safer EXIF conversion prevents failure in case of invalid values
+- more consistent naming in EXIF data display
+- EXIF copy is now falut-tolerant
+- safer EXIF conversion prevents failure when invalid values are found
 
 ### Changed
+- improved save image dialog with more clear options and explanatory imformation
 - improved EXIF data display
 - simplified name of noise detection job and module
 - when saving a 16-bit image, a dialog shows the possible options and warns about EXIF data loss for 16-bit PNG format.

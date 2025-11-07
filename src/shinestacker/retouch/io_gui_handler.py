@@ -1,14 +1,14 @@
-# pylint: disable=C0114, C0115, C0116, E0611, R0902, W0718, R0904, E1101, R0914
+# pylint: disable=C0114, C0115, C0116, E0611, R0902, W0718, R0904, E1101, R0914, R0915
 import os
 import traceback
 import numpy as np
 import cv2
 from PySide6.QtWidgets import (QFileDialog, QMessageBox, QVBoxLayout, QLabel, QDialog,
-                               QRadioButton, QApplication, QProgressBar, QPushButton)
+                               QRadioButton, QApplication, QProgressBar, QPushButton,
+                               QButtonGroup, QHBoxLayout)
 from PySide6.QtGui import QGuiApplication, QCursor
 from PySide6.QtCore import Qt, QObject, QTimer, Signal
-from .. algorithms.utils import (EXTENSIONS_GUI_STR, EXTENSIONS_GUI_SAVE_STR,
-                                 extension_png, extension_tif, write_img)
+from .. algorithms.utils import EXTENSIONS_GUI_STR, extension_tif, write_img
 from .. algorithms.exif import get_exif, write_image_with_exif_data
 from .file_loader import FileLoader
 from .io_threads import FileMultilayerSaver, FrameImporter
@@ -45,14 +45,21 @@ class IOGuiHandler(QObject, LayerCollectionHandler):
         self.progress_bar = None
         self.exif_data = None
         self.exif_path = ''
-        self.save_master_only_option = True
+        self.save_master_only = None
+        self.selected_format = None
+        self.selected_bit_depth = None
+
+    def reset_save_config(self):
+        self.save_master_only = None
+        self.selected_format = None
+        self.selected_bit_depth = None
 
     def set_exif_data(self, data, path):
         self.exif_data = data
         self.exif_path = path
 
     def current_file_path(self):
-        return self.current_file_path_master if self.save_master_only_option \
+        return self.current_file_path_master if self.save_master_only \
             else self.current_file_path_multi
 
     def setup_ui(self, display_manager, image_viewer):
@@ -223,26 +230,100 @@ class IOGuiHandler(QObject, LayerCollectionHandler):
 
     def save_file_as(self):
         dialog = QDialog(self.parent())
-        dialog.setWindowTitle("Save As - Select Format")
+        dialog.setWindowTitle("Save As - Options")
         layout = QVBoxLayout(dialog)
         layout.addWidget(QLabel("Choose what to save:"))
         master_only_radio = QRadioButton("Master layer only")
         multilayer_radio = QRadioButton("Multilayer TIFF (more space required)")
-        master_only_radio.setChecked(True)
+        save_type_group = QButtonGroup(dialog)
+        save_type_group.addButton(master_only_radio)
+        save_type_group.addButton(multilayer_radio)
+        master_only_radio.setChecked(
+            self.save_master_only if self.save_master_only is not None else True)
+        multilayer_radio.setChecked(
+            not self.save_master_only if self.save_master_only is not None else False)
         layout.addWidget(master_only_radio)
         layout.addWidget(multilayer_radio)
-        button_layout = QVBoxLayout()
-        save_btn = QPushButton("Continue to Save Dialog")
+        format_group = QVBoxLayout()
+        format_group.addWidget(QLabel("Format options:"))
+        tiff_radio = QRadioButton("TIFF")
+        jpeg_radio = QRadioButton("JPEG")
+        png_radio = QRadioButton("PNG")
+        format_button_group = QButtonGroup(dialog)
+        format_button_group.addButton(tiff_radio)
+        format_button_group.addButton(jpeg_radio)
+        format_button_group.addButton(png_radio)
+        tiff_radio.setChecked(self.selected_format == "tiff")
+        jpeg_radio.setChecked(self.selected_format == "jpeg")
+        png_radio.setChecked(self.selected_format == "png")
+        format_group.addWidget(tiff_radio)
+        format_group.addWidget(jpeg_radio)
+        format_group.addWidget(png_radio)
+        layout.addLayout(format_group)
+        bit_depth_group = QVBoxLayout()
+        bit_depth_group.addWidget(QLabel("Bit depth:"))
+        bit16_radio = QRadioButton("16-bit")
+        bit8_radio = QRadioButton("8-bit")
+        bit_depth_button_group = QButtonGroup(dialog)
+        bit_depth_button_group.addButton(bit16_radio)
+        bit_depth_button_group.addButton(bit8_radio)
+        bit16_radio.setChecked(self.selected_bit_depth != 8)
+        bit8_radio.setChecked(self.selected_bit_depth == 8)
+        bit_depth_group.addWidget(bit16_radio)
+        bit_depth_group.addWidget(bit8_radio)
+        layout.addLayout(bit_depth_group)
+        warning_label = QLabel("")
+        warning_label.setWordWrap(True)
+        warning_label.setStyleSheet("color: orange;")
+        layout.addWidget(warning_label)
+        button_layout = QHBoxLayout()
         cancel_btn = QPushButton("Cancel")
-        button_layout.addWidget(save_btn)
+        save_btn = QPushButton("Save")
+        save_btn.setDefault(True)
         button_layout.addWidget(cancel_btn)
+        button_layout.addWidget(save_btn)
         layout.addLayout(button_layout)
 
+        def update_ui_state():
+            multilayer_selected = multilayer_radio.isChecked()
+            jpeg_selected = jpeg_radio.isChecked()
+            png_selected = png_radio.isChecked()
+            bit16_selected = bit16_radio.isChecked()
+            tiff_radio.setEnabled(not multilayer_selected)
+            jpeg_radio.setEnabled(not multilayer_selected)
+            png_radio.setEnabled(not multilayer_selected)
+            bit8_radio.setEnabled(not (multilayer_selected or jpeg_selected))
+            bit16_radio.setEnabled(not (multilayer_selected or jpeg_selected))
+            if multilayer_selected:
+                tiff_radio.setChecked(True)
+                bit16_radio.setChecked(True)
+                warning_label.setText("")
+            elif jpeg_selected:
+                bit8_radio.setChecked(True)
+                warning_label.setText("")
+            elif png_selected and bit16_selected:
+                warning_label.setText(
+                    "Note: Saving 16-bit PNG will result in loss of EXIF metadata.")
+            else:
+                warning_label.setText("")
+
+        master_only_radio.toggled.connect(update_ui_state)
+        multilayer_radio.toggled.connect(update_ui_state)
+        tiff_radio.toggled.connect(update_ui_state)
+        jpeg_radio.toggled.connect(update_ui_state)
+        png_radio.toggled.connect(update_ui_state)
+        bit8_radio.toggled.connect(update_ui_state)
+        bit16_radio.toggled.connect(update_ui_state)
+        update_ui_state()
+
         def on_save():
-            self.save_master_only_option = master_only_radio.isChecked()
+            self.save_master_only = master_only_radio.isChecked()
+            self.selected_format = "tiff" \
+                if tiff_radio.isChecked() else "jpeg" if jpeg_radio.isChecked() else "png"
+            self.selected_bit_depth = 8 if bit8_radio.isChecked() else 16
             dialog.accept()
-            if self.save_master_only_option:
-                self.save_master_as()
+            if self.save_master_only:
+                self.save_master()
             else:
                 self.save_multilayer_as()
 
@@ -251,12 +332,47 @@ class IOGuiHandler(QObject, LayerCollectionHandler):
 
         save_btn.clicked.connect(on_save)
         cancel_btn.clicked.connect(on_cancel)
-        if dialog.exec_() == QDialog.Accepted:
-            pass
+        dialog.exec_()
+
+    def save_master(self):
+        if self.layer_stack() is None:
+            return
+        filters = {
+            "png": "PNG Files (*.png);;All Files (*)",
+            "tiff": "TIFF Files (*.tif *.tiff);;All Files (*)",
+            "jpeg": "JPEG Files (*.jpg *.jpeg);;All Files (*)"
+        }
+        path, _selected_filter = QFileDialog.getSaveFileName(
+            self.parent(), "Save Master Image", "", filters[self.selected_format])
+        if not path:
+            return
+        self.save_master_to_path(path)
+
+    def save_master_to_path(self, path):
+        try:
+            img = cv2.cvtColor(self.master_layer(), cv2.COLOR_RGB2BGR)
+            if self.selected_bit_depth == 8 and img.dtype == np.uint16:
+                img = (img // 256).astype(np.uint8)
+            if self.selected_format == "png" and img.dtype == np.uint16:
+                write_img(path, img)
+            else:
+                write_image_with_exif_data(self.exif_data, img, path)
+            self.current_file_path_master = os.path.abspath(path)
+            self.update_title_requested.emit()
+            self.add_recent_file_requested.emit(self.current_file_path_master)
+            self.status_message_requested.emit(f"Saved master layer to: {path}")
+        except Exception as e:
+            traceback.print_tb(e.__traceback__)
+            QMessageBox.critical(self.parent(), "Save Error", f"Could not save file: {str(e)}")
 
     def save_file(self):
-        if hasattr(self, 'save_master_only_option') and self.save_master_only_option:
-            self.save_master()
+        if self.save_master_only is None:
+            self.save_file_as()
+        elif self.save_master_only:
+            if self.current_file_path_master:
+                self.save_master_to_path(self.current_file_path_master)
+            else:
+                self.save_master()
         else:
             self.save_multilayer()
 
@@ -264,8 +380,7 @@ class IOGuiHandler(QObject, LayerCollectionHandler):
         if self.layer_stack() is None:
             return
         if self.current_file_path_multi != '':
-            extension = self.current_file_path_multi.split('.')[-1]
-            if extension in ['tif', 'tiff']:
+            if extension_tif(self.current_file_path_multi):
                 self.save_multilayer_to_path(self.current_file_path_multi)
                 return
         else:
@@ -277,7 +392,7 @@ class IOGuiHandler(QObject, LayerCollectionHandler):
         path, _ = QFileDialog.getSaveFileName(self.parent(), "Save Image", "",
                                               "TIFF Files (*.tif *.tiff);;All Files (*)")
         if path:
-            if not path.lower().endswith(('.tif', '.tiff')):
+            if not extension_tif(path):
                 path += '.tif'
             self.save_multilayer_to_path(path)
 
@@ -311,102 +426,6 @@ class IOGuiHandler(QObject, LayerCollectionHandler):
             traceback.print_tb(e.__traceback__)
             QMessageBox.critical(self.parent(), "Save Error", f"Could not save file: {str(e)}")
 
-    def save_master(self):
-        if self.master_layer() is None:
-            return
-        if self.current_file_path_master != '':
-            self.save_master_to_path(self.current_file_path_master)
-            return
-        self.save_master_as()
-
-    def save_master_as(self):
-        if self.layer_stack() is None:
-            return
-        path, _ = QFileDialog.getSaveFileName(
-            self.parent(), "Save Image", "", EXTENSIONS_GUI_SAVE_STR)
-        if path:
-            self.save_master_to_path(path)
-
-    def save_master_to_path(self, path):
-        try:
-            _extension_png = extension_png(path)
-            img = cv2.cvtColor(self.master_layer(), cv2.COLOR_RGB2BGR)
-            if img.dtype == np.uint16 and (_extension_png or extension_tif(path)):
-                config = {
-                    'png': {
-                        'title': "EXIF Warning for 16-bit PNG",
-                        'message':
-                            "You are saving a 16-bit image, but "
-                            "16-bit PNG format conversion does not "
-                            "support EXIF metadata.<br><br>"
-                            "If your image will be saved in 16-bit format, "
-                            "<b>all EXIF metadata will be lost</b>.<br><br>"
-                            "What would you like to do?",
-                        'save_label': "Save as 16-bit without EXIF",
-                        'convert_label': "Convert to 8-bit with EXIF"
-                    },
-                    'tif': {
-                        'title': "16-bit TIFF Save Options",
-                        'message':
-                            "You are saving a 16-bit image.<br><br>"
-                            "What would you like to do?",
-                        'save_label': "Save as 16-bit TIFF",
-                        'convert_label': "Convert to 8-bit"
-                    }
-                }
-                fmt = 'png' if _extension_png else 'tif'
-                cfg = config[fmt]
-                dialog = QDialog(self.parent())
-                dialog.setWindowTitle(cfg['title'])
-                layout = QVBoxLayout(dialog)
-                label = QLabel(cfg['message'])
-                label.setWordWrap(True)
-                layout.addWidget(label)
-                button_layout = QVBoxLayout()
-                save_16bit_btn = QPushButton(cfg['save_label'])
-                convert_8bit_btn = QPushButton(cfg['convert_label'])
-                cancel_btn = QPushButton("Cancel")
-                button_layout.addWidget(save_16bit_btn)
-                button_layout.addWidget(convert_8bit_btn)
-                button_layout.addWidget(cancel_btn)
-                layout.addLayout(button_layout)
-                result = None
-
-                def on_save_16bit():
-                    nonlocal result
-                    result = "save_16bit"
-                    dialog.accept()
-
-                def on_convert_8bit():
-                    nonlocal result
-                    result = "convert_8bit"
-                    dialog.accept()
-
-                def on_cancel():
-                    nonlocal result
-                    result = "cancel"
-                    dialog.reject()
-
-                save_16bit_btn.clicked.connect(on_save_16bit)
-                convert_8bit_btn.clicked.connect(on_convert_8bit)
-                cancel_btn.clicked.connect(on_cancel)
-                dialog.exec_()
-                if result == "cancel" or result is None:
-                    return
-                if result == "convert_8bit":
-                    img = (img // 256).astype(np.uint8)
-            if _extension_png and img.dtype == np.uint16:
-                write_img(path, img)
-            else:
-                write_image_with_exif_data(self.exif_data, img, path)
-            self.current_file_path_master = os.path.abspath(path)
-            self.update_title_requested.emit()
-            self.add_recent_file_requested.emit(self.current_file_path_master)
-            self.status_message_requested.emit(f"Saved master layer to: {path}")
-        except Exception as e:
-            traceback.print_tb(e.__traceback__)
-            QMessageBox.critical(self.parent(), "Save Error", f"Could not save file: {str(e)}")
-
     def close_file(self):
         self.mark_as_modified_requested.emit(False)
         self.layer_collection.reset()
@@ -419,6 +438,7 @@ class IOGuiHandler(QObject, LayerCollectionHandler):
         self.update_title_requested.emit()
         self.set_enabled_file_open_close_actions_requested.emit(False)
         self.status_message_requested.emit("File closed")
+        self.reset_save_config()
 
     def cleanup_old_threads(self):
         if self.loader_thread and self.loader_thread.isFinished():
