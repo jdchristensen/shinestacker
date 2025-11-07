@@ -47,8 +47,8 @@ class ImageSequenceManager:
     def __init__(self, name, input_path='', output_path='', working_path='',
                  plot_path=constants.DEFAULT_PLOTS_PATH,
                  scratch_output_dir=True, delete_output_at_end=False,
-                 resample=1,
-                 reverse_order=constants.DEFAULT_FILE_REVERSE_ORDER, **_kwargs):
+                 resample=1, reverse_order=constants.DEFAULT_FILE_REVERSE_ORDER,
+                 **_kwargs):
         self.name = name
         self.working_path = working_path
         self.plot_path = plot_path
@@ -168,7 +168,7 @@ class ImageSequenceManager:
             if job.num_action_paths() == 0:
                 raise RuntimeError(f"Job {job.name} does not have any configured path")
             self.input_path = job.action_path(-1)
-            if job.num_input_filepaths() > 0:
+            if job.num_action_paths() == 1 and job.num_input_filepaths() > 0:
                 self._input_filepaths = []
                 for filepath in job.input_filepaths():
                     if not os.path.isabs(filepath):

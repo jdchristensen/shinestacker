@@ -116,7 +116,8 @@ def get_first_image_file(filenames):
             first_img_file = filename
             break
     if first_img_file is None:
-        raise ValueError("No valid image files found")
+        paths = ", ".join(filenames)
+        raise ValueError(f"No valid image files found in paths: {paths}")
     return first_img_file
 
 

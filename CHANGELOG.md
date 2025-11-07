@@ -2,6 +2,14 @@
 
 This page reports the main releases only and the main changes therein.
 
+## [v1.9.5] - 2025-11-07
+** Fixed possible crash in focus bunches **
+
+### Fixed
+- fixed crash in focus bunches if only a subset of files in a folder is selected
+
+---
+
 ## [v1.9.4] - 2025-11-07
 ** Improved GUI and more fixes to EXIF data **
 
