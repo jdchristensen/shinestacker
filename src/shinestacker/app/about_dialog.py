@@ -23,6 +23,8 @@ class AboutDialog(QDialog):
         icon_layout.addStretch()
         layout.addLayout(icon_layout)
         about_label = QLabel(about_text)
+        about_label.setOpenExternalLinks(True)
+        about_label.setTextInteractionFlags(Qt.TextBrowserInteraction)
         about_label.setWordWrap(True)
         about_label.setAlignment(Qt.AlignLeft)
         layout.addWidget(about_label)

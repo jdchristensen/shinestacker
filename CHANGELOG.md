@@ -2,6 +2,15 @@
 
 This page reports the main releases only and the main changes therein.
 
+
+## [vx.x.x] - 2025-11-07
+** --- **
+
+### Fixed
+- links are now clickable in the "about" dialog window
+
+---
+
 ## [v1.9.5] - 2025-11-07
 ** Fixed possible crash in focus bunches **
 
