@@ -30,7 +30,6 @@ class TimerProgressBar(QProgressBar):
           font-size: 12px;
           background-color: #{self.light_background_color.hex()};
           color: #{self.text_color.hex()};
-          min-height: 1px;
         }}
         QProgressBar::chunk {{
           border-radius: 6px;

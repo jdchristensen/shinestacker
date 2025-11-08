@@ -1,9 +1,10 @@
+# pylint: disable=C0103, C0114, C0115, C0116, E0611, R0903, R0915, R0914, R0917, R0913, R0902
+import os
+import math
+from PySide6.QtCore import Qt
+from PySide6.QtGui import QColor, QPainter, QPen
 from PySide6.QtWidgets import (QWidget, QGridLayout, QScrollArea, QLabel,
                                QSizePolicy, QVBoxLayout)
-from PySide6.QtCore import Qt, QSize, QEvent
-from PySide6.QtGui import QColor, QPainter, QPen
-import math
-import os
 
 
 class MultiModuleStatusContainer(QWidget):
@@ -11,39 +12,43 @@ class MultiModuleStatusContainer(QWidget):
         super().__init__()
         self.layout = QVBoxLayout(self)
         self.layout.setContentsMargins(0, 0, 0, 0)
-        self.layout.setSpacing(10)
+        self.layout.setSpacing(0)
         self.status_widgets = []
+        self.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Minimum)
 
     def add_module(self, module_name):
-        group_box = QGroupBox(module_name)
-        group_layout = QVBoxLayout(group_box)
+        label = QLabel(module_name)
+        label.setStyleSheet("QLabel { font-weight: bold; margin: 0px; padding: 0px; }")
+        label.setContentsMargins(0, 0, 0, 0)
+        label.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Minimum)
+        self.layout.addWidget(label)
         status_widget = PreprocessingStatusWidget()
-        group_layout.addWidget(status_widget)
-        self.layout.addWidget(group_box)
+        self.layout.addWidget(status_widget)
         self.status_widgets.append(status_widget)
         return len(self.status_widgets) - 1
 
-    def add_frame(self, filename, idx=-1):
+    def add_frame(self, filename, total_actions, idx=-1):
         if self.status_widgets:
-            self.status_widgets[idx].add_frame(filename)
+            self.status_widgets[idx].add_frame(filename, total_actions)
 
-    def update_status(self, frame_id, status_id, idx=-1):
+    def update_frame_status(self, frame_id, status_id, idx=-1):
         if self.status_widgets:
             self.status_widgets[idx].update_frame_status(frame_id, status_id)
 
 
 class FrameStatusBox(QWidget):
-    def __init__(self, filename, frame_id):
+    def __init__(self, filename, frame_id, total_actions):
         super().__init__()
         self.filename = filename
+        self.total_actions = total_actions
         self.frame_id = frame_id
         self.status_id = 0
         self.border_color = QColor(100, 100, 100)
-        self.fill_color = QColor(200, 200, 200)        
+        self.fill_color = QColor(200, 200, 200)
         self.custom_tooltip = None
-        self.tooltip_text = f"File: {os.path.basename(filename)}\nStatus: Pending"        
+        self.tooltip_text = f"File: {os.path.basename(filename)}\nStatus: Pending"
         self.setMinimumSize(20, 15)
-        self.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)        
+        self.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
         self.setMouseTracking(True)
         self.setAttribute(Qt.WA_Hover, True)
 
@@ -76,7 +81,7 @@ class FrameStatusBox(QWidget):
             status_text = f"Processing step {self.status_id}"
         self.tooltip_text = f"File: {os.path.basename(self.filename)}\nStatus: {status_text}"
 
-    def paintEvent(self, event):
+    def paintEvent(self, _event):
         painter = QPainter(self)
         painter.setRenderHint(QPainter.Antialiasing)
         margin = 1
@@ -85,7 +90,7 @@ class FrameStatusBox(QWidget):
         painter.setPen(QPen(self.border_color, 1))
         painter.drawRect(rect)
 
-    def enterEvent(self, event):
+    def enterEvent(self, _event):
         if not self.custom_tooltip:
             self.custom_tooltip = QLabel(self.tooltip_text, self.window())
             self.custom_tooltip.setStyleSheet("""
@@ -95,13 +100,13 @@ class FrameStatusBox(QWidget):
                     padding: 2px;
                 }
             """)
-            self.custom_tooltip.adjustSize()            
+            self.custom_tooltip.adjustSize()
         global_pos = self.mapToGlobal(self.rect().topRight())
-        parent_pos = self.window().mapFromGlobal(global_pos)        
+        parent_pos = self.window().mapFromGlobal(global_pos)
         self.custom_tooltip.move(parent_pos.x() + 2, parent_pos.y())
         self.custom_tooltip.show()
 
-    def leaveEvent(self, event):
+    def leaveEvent(self, _event):
         if self.custom_tooltip:
             self.custom_tooltip.hide()
 
@@ -135,8 +140,7 @@ class PreprocessingStatusWidget(QWidget):
 
     def add_frame(self, filename, total_actions):
         frame_id = len(self.frame_widgets)
-        frame_widget = FrameStatusBox(filename, frame_id)
-        frame_widget.total_actions = total_actions
+        frame_widget = FrameStatusBox(filename, frame_id, total_actions)
         self.frame_widgets.append(frame_widget)
         self._update_layout()
 

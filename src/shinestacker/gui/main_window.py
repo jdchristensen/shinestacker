@@ -517,6 +517,7 @@ class MainWindow(QMainWindow, LogManager):
         worker.run_completed_signal.connect(window.handle_run_completed)
         worker.run_stopped_signal.connect(window.handle_run_stopped)
         worker.run_failed_signal.connect(window.handle_run_failed)
+        worker.add_status_box_signal.connect(window.handle_add_status_box)
         worker.add_frame_signal.connect(window.handle_add_frame)
         worker.update_frame_status_signal.connect(window.handle_update_frame_status)
 

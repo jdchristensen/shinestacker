@@ -83,6 +83,7 @@ class _Constants:
     CALLBACK_CHECK_RUNNING = 'check_running'
     CALLBACK_SAVE_PLOT = 'save_plot'
     CALLBACK_OPEN_APP = 'open_app'
+    CALLBACK_ADD_STATUS_BOX = 'add_status_box'
     CALLBACK_ADD_FRAME = 'add_frame'
     CALLBACK_UPDATE_FRAME_STATUS = 'update_frame_status'
 

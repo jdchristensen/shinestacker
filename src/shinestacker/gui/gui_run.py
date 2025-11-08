@@ -21,6 +21,7 @@ from .flow_layout import FlowLayout
 from .sys_mon import StatusBarSystemMonitor
 from .processing_widget import MultiModuleStatusContainer
 
+
 class ColorButton(QPushButton):
     def __init__(self, text, enabled, parent=None):
         super().__init__(text.replace(gui_constants.DISABLED_TAG, ''), parent)
@@ -75,8 +76,8 @@ class RunWindow(QTextEditLogger):
         output_layout.addLayout(left_layout, stretch=1)
         output_layout.addLayout(right_layout, stretch=0)
         self.frames_status_box = MultiModuleStatusContainer()
-        left_layout.addWidget(self.frames_status_box)
-        left_layout.addWidget(self.text_edit)
+        left_layout.addWidget(self.frames_status_box, 0)
+        left_layout.addWidget(self.text_edit, 1)
         self.right_area = QScrollArea()
         self.right_area.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.right_area.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
@@ -270,6 +271,10 @@ class RunWindow(QTextEditLogger):
         postfix = f" - failed after {self.progress_bar.elapsed_str}"
         self.handle_run_interrupt(run_id, ACTION_FAILED_COLOR.tuple(), postfix)
 
+    @Slot(str)
+    def handle_add_status_box(self, name):
+        self.frames_status_box.add_module(name)
+
     @Slot(str, int)
     def handle_add_frame(self, filename, total_actions):
         self.frames_status_box.add_frame(filename, total_actions)
@@ -277,6 +282,7 @@ class RunWindow(QTextEditLogger):
     @Slot(int, int)
     def handle_update_frame_status(self, frame_id, status_id):
         self.frames_status_box.update_frame_status(frame_id, status_id)
+
 
 class RunWorker(LogWorker):
     before_action_signal = Signal(int, str)
@@ -290,6 +296,7 @@ class RunWorker(LogWorker):
     run_completed_signal = Signal(int)
     run_stopped_signal = Signal(int)
     run_failed_signal = Signal(int)
+    add_status_box_signal = Signal(str)
     add_frame_signal = Signal(str, int)
     update_frame_status_signal = Signal(int, int)
 
@@ -307,6 +314,7 @@ class RunWorker(LogWorker):
             constants.CALLBACK_CHECK_RUNNING: self.check_running,
             constants.CALLBACK_SAVE_PLOT: self.save_plot,
             constants.CALLBACK_OPEN_APP: self.open_app,
+            constants.CALLBACK_ADD_STATUS_BOX: self.add_status_box,
             constants.CALLBACK_ADD_FRAME: self.add_frame,
             constants.CALLBACK_UPDATE_FRAME_STATUS: self.update_frame_status
         }
@@ -335,6 +343,9 @@ class RunWorker(LogWorker):
 
     def open_app(self, run_id, name, app, path):
         self.open_app_signal.emit(run_id, name, app, path)
+
+    def add_status_box(self, name):
+        self.add_status_box_signal.emit(name)
 
     def add_frame(self, filename, total_actions):
         self.add_frame_signal.emit(filename, total_actions)
