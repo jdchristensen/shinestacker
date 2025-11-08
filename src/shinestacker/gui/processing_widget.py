@@ -1,7 +1,6 @@
 # pylint: disable=C0103, C0114, C0115, C0116, E0611, R0903, R0915, R0914, R0917, R0913, R0902
 import os
 import math
-import numpy as np
 from PySide6.QtCore import Qt, Signal, QTimer
 from PySide6.QtGui import QColor, QPainter, QPen
 from PySide6.QtWidgets import (QWidget, QGridLayout, QScrollArea, QLabel,
@@ -76,18 +75,20 @@ class FrameStatusBox(QWidget):
         pending_color = (200, 200, 200)
         init_color = (255, 255, 255)
         completed_color = (76, 175, 80)
-        faild_color = (244, 67, 54)
+        failed_color = (244, 67, 54)
         self.status_id = status_id
         if status_id == 0:
             self.fill_color = QColor(*pending_color)
         elif status_id == 1000:
             self.fill_color = QColor(*completed_color)
         elif status_id == 1001:
-            self.fill_color = QColor(*faild_color)
+            self.fill_color = QColor(*failed_color)
         else:
             progress = status_id / 10.0
-            color = np.array(init_color) * (1 - progress) + np.array(completed_color) * progress
-            self.fill_color = QColor(*color)
+            r = int(init_color[0] * (1 - progress) + completed_color[0] * progress)
+            g = int(init_color[1] * (1 - progress) + completed_color[1] * progress)
+            b = int(init_color[2] * (1 - progress) + completed_color[2] * progress)
+            self.fill_color = QColor(r, g, b)
         self.update_tooltip()
         self.update()
 
@@ -164,8 +165,6 @@ class PreprocessingStatusWidget(QWidget):
         if not self.frame_widgets:
             return self.MAX_BOX_WIDTH
         available_width = self.width() - 10
-        if available_width <= self.MIN_BOX_WIDTH:
-            available_width = self.parent().width() - 20 if self.parent() else 400
         spacing = self.grid_layout.spacing()
         max_possible_cols = max(1, available_width // (self.MIN_BOX_WIDTH + spacing))
         needed_cols = min(len(self.frame_widgets), max_possible_cols)
