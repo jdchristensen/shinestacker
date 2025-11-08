@@ -5,6 +5,7 @@ from PySide6.QtGui import QColor, QPainter, QPen
 import math
 import os
 
+
 class FrameStatusBox(QWidget):
     def __init__(self, filename, frame_id):
         super().__init__()
@@ -13,8 +14,14 @@ class FrameStatusBox(QWidget):
         self.status_id = 0
         self.border_color = QColor(100, 100, 100)
         self.fill_color = QColor(200, 200, 200)
+        
+        # Set size and policy
         self.setMinimumSize(20, 15)
         self.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
+        
+        # Enable hover and tooltip
+        self.setAttribute(Qt.WA_Hover, True)
+        self.setMouseTracking(True)
         self.setToolTip(f"File: {os.path.basename(filename)}\nStatus: Pending")
         
     def update_status(self, status_id):
@@ -54,6 +61,13 @@ class FrameStatusBox(QWidget):
         painter.fillRect(rect, self.fill_color)
         painter.setPen(QPen(self.border_color, 1))
         painter.drawRect(rect)
+        
+    def event(self, event):
+        # Force tooltip to show on hover
+        if event.type() == event.ToolTip:
+            QToolTip.showText(event.globalPos(), self.toolTip(), self)
+            return True
+        return super().event(event)
 
 
 class PreprocessingStatusWidget(QWidget):
