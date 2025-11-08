@@ -1,6 +1,6 @@
-from PySide6.QtWidgets import (QWidget, QGridLayout, QScrollArea, 
+from PySide6.QtWidgets import (QWidget, QGridLayout, QScrollArea, QLabel,
                                QSizePolicy, QVBoxLayout)
-from PySide6.QtCore import Qt, QSize
+from PySide6.QtCore import Qt, QSize, QEvent
 from PySide6.QtGui import QColor, QPainter, QPen
 import math
 import os
@@ -13,16 +13,13 @@ class FrameStatusBox(QWidget):
         self.frame_id = frame_id
         self.status_id = 0
         self.border_color = QColor(100, 100, 100)
-        self.fill_color = QColor(200, 200, 200)
-        
-        # Set size and policy
+        self.fill_color = QColor(200, 200, 200)        
+        self.custom_tooltip = None
+        self.tooltip_text = f"File: {os.path.basename(filename)}\nStatus: Pending"        
         self.setMinimumSize(20, 15)
-        self.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
-        
-        # Enable hover and tooltip
-        self.setAttribute(Qt.WA_Hover, True)
+        self.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)        
         self.setMouseTracking(True)
-        self.setToolTip(f"File: {os.path.basename(filename)}\nStatus: Pending")
+        self.setAttribute(Qt.WA_Hover, True)
         
     def update_status(self, status_id):
         self.status_id = status_id
@@ -51,7 +48,7 @@ class FrameStatusBox(QWidget):
             status_text = "Failed"
         else:
             status_text = f"Processing step {self.status_id}"
-        self.setToolTip(f"File: {os.path.basename(self.filename)}\nStatus: {status_text}")
+        self.tooltip_text = f"File: {os.path.basename(self.filename)}\nStatus: {status_text}"
         
     def paintEvent(self, event):
         painter = QPainter(self)
@@ -62,13 +59,26 @@ class FrameStatusBox(QWidget):
         painter.setPen(QPen(self.border_color, 1))
         painter.drawRect(rect)
         
-    def event(self, event):
-        # Force tooltip to show on hover
-        if event.type() == event.ToolTip:
-            QToolTip.showText(event.globalPos(), self.toolTip(), self)
-            return True
-        return super().event(event)
-
+    def enterEvent(self, event):
+        if not self.custom_tooltip:
+            self.custom_tooltip = QLabel(self.tooltip_text, self.window())
+            self.custom_tooltip.setStyleSheet("""
+                QLabel {
+                    background-color: #FFFFCC;
+                    border: 1px solid black;
+                    padding: 2px;
+                }
+            """)
+            self.custom_tooltip.adjustSize()            
+        global_pos = self.mapToGlobal(self.rect().topRight())
+        parent_pos = self.window().mapFromGlobal(global_pos)        
+        self.custom_tooltip.move(parent_pos.x() + 2, parent_pos.y())
+        self.custom_tooltip.show()
+        
+    def leaveEvent(self, event):
+        # Hide custom tooltip
+        if self.custom_tooltip:
+            self.custom_tooltip.hide()
 
 class PreprocessingStatusWidget(QWidget):
     def __init__(self):
@@ -97,7 +107,7 @@ class PreprocessingStatusWidget(QWidget):
         self.current_box_height = int(self.current_box_width * self.ASPECT_RATIO)
         self.setFixedHeight(0)
         
-    def add_frame(self, filename, total_actions=2):
+    def add_frame(self, filename, total_actions):
         frame_id = len(self.frame_widgets)
         frame_widget = FrameStatusBox(filename, frame_id)
         frame_widget.total_actions = total_actions

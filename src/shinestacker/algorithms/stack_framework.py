@@ -290,7 +290,7 @@ class CombinedActions(ReferenceFrameTask):
         n_actions = len(self._actions)
         filenames = self.input_filepaths()
         for filename in filenames:
-            self.callback(constants.CALLBACK_ADD_FRAME, filenames, n_actions)
+            self.callback(constants.CALLBACK_ADD_FRAME, filename, n_actions)
 
     def img_ref(self, idx):
         input_path = self.input_filepath(idx)
