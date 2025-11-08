@@ -4,10 +4,10 @@ This page reports the main releases only and the main changes therein.
 
 
 ## [vx.x.x] - 2025-11-08
-** --- **
+** GUI improvements and fixes **
 
 ### Fixed
-- links are now clickable in the "about" dialog window
+- links in the "about" dialog window are now clickable
 
 ### Changed
 - added visual progress indicators for frame processing
