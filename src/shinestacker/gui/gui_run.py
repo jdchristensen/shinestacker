@@ -1,7 +1,7 @@
 # pylint: disable=C0114, C0115, C0116, E0611, R0903, R0915, R0914, R0917, R0913, R0902
 import os
 import traceback
-from PySide6.QtWidgets import (QWidget, QPushButton, QVBoxLayout, QHBoxLayout,
+from PySide6.QtWidgets import (QWidget, QPushButton, QVBoxLayout, QHBoxLayout, QSplitter,
                                QMessageBox, QScrollArea, QSizePolicy, QFrame, QLabel, QComboBox)
 from PySide6.QtGui import QColor
 from PySide6.QtCore import Qt, QTimer
@@ -76,8 +76,12 @@ class RunWindow(QTextEditLogger):
         output_layout.addLayout(left_layout, stretch=1)
         output_layout.addLayout(right_layout, stretch=0)
         self.frames_status_box = MultiModuleStatusContainer()
-        left_layout.addWidget(self.frames_status_box, 0)
-        left_layout.addWidget(self.text_edit, 1)
+        self.splitter = QSplitter(Qt.Vertical)
+        self.splitter.addWidget(self.frames_status_box)
+        self.splitter.addWidget(self.text_edit)
+        self.splitter.setSizes([0, 1])
+        self.frames_status_box.contentSizeChanged.connect(self.adjust_splitter)
+        left_layout.addWidget(self.splitter)
         self.right_area = QScrollArea()
         self.right_area.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.right_area.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
@@ -135,6 +139,18 @@ class RunWindow(QTextEditLogger):
 
         layout.addWidget(self.status_bar)
         self.setLayout(layout)
+
+    def adjust_splitter(self):
+        content_height = self.frames_status_box.get_content_height()
+        if content_height > 0:
+            current_sizes = self.splitter.sizes()
+            if current_sizes[0] < 100:
+                new_top_size = min(content_height, 400)
+                available_height = self.splitter.height()
+                if available_height > 0:
+                    new_bottom_size = available_height - new_top_size
+                    if new_bottom_size > 100:
+                        self.splitter.setSizes([new_top_size, new_bottom_size])
 
     def stop_worker(self):
         self.stop_worker_callback(self.id_str())

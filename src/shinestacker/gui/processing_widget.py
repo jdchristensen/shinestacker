@@ -1,16 +1,18 @@
 # pylint: disable=C0103, C0114, C0115, C0116, E0611, R0903, R0915, R0914, R0917, R0913, R0902
 import os
 import math
-from PySide6.QtCore import Qt
+import numpy as np
+from PySide6.QtCore import Qt, Signal, QTimer
 from PySide6.QtGui import QColor, QPainter, QPen
 from PySide6.QtWidgets import (QWidget, QGridLayout, QScrollArea, QLabel,
                                QSizePolicy, QVBoxLayout)
 
 
 class MultiModuleStatusContainer(QWidget):
+    contentSizeChanged = Signal()
+
     def __init__(self):
         super().__init__()
-        self.setMaximumHeight(400)
         main_layout = QVBoxLayout(self)
         main_layout.setContentsMargins(0, 0, 0, 0)
         main_layout.setSpacing(0)
@@ -26,7 +28,8 @@ class MultiModuleStatusContainer(QWidget):
         self.scroll_area.setWidget(self.container_widget)
         main_layout.addWidget(self.scroll_area)
         self.status_widgets = []
-        self.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Minimum)
+        self.setMinimumHeight(0)
+        self.setMaximumHeight(400)
 
     def add_module(self, module_name):
         label = QLabel(module_name)
@@ -37,15 +40,20 @@ class MultiModuleStatusContainer(QWidget):
         status_widget = PreprocessingStatusWidget()
         self.layout.addWidget(status_widget)
         self.status_widgets.append(status_widget)
+        QTimer.singleShot(10, self.contentSizeChanged.emit)
         return len(self.status_widgets) - 1
 
     def add_frame(self, filename, total_actions, idx=-1):
         if self.status_widgets:
             self.status_widgets[idx].add_frame(filename, total_actions)
+            QTimer.singleShot(10, self.contentSizeChanged.emit)
 
     def update_frame_status(self, frame_id, status_id, idx=-1):
         if self.status_widgets:
             self.status_widgets[idx].update_frame_status(frame_id, status_id)
+
+    def get_content_height(self):
+        return self.container_widget.sizeHint().height()
 
 
 class FrameStatusBox(QWidget):
@@ -65,20 +73,21 @@ class FrameStatusBox(QWidget):
         self.setAttribute(Qt.WA_Hover, True)
 
     def update_status(self, status_id):
+        pending_color = (200, 200, 200)
+        init_color = (255, 255, 255)
+        completed_color = (76, 175, 80)
+        faild_color = (244, 67, 54)
         self.status_id = status_id
         if status_id == 0:
-            self.fill_color = QColor(200, 200, 200)
+            self.fill_color = QColor(*pending_color)
         elif status_id == 1000:
-            self.fill_color = QColor(76, 175, 80)
+            self.fill_color = QColor(*completed_color)
         elif status_id == 1001:
-            self.fill_color = QColor(244, 67, 54)
+            self.fill_color = QColor(*faild_color)
         else:
             progress = status_id / 10.0
-            self.fill_color = QColor(
-                int(200 + (76 - 200) * progress),
-                int(200 + (175 - 200) * progress),
-                int(200 + (80 - 200) * progress)
-            )
+            color = np.array(init_color) * (1 - progress) + np.array(completed_color) * progress
+            self.fill_color = QColor(*color)
         self.update_tooltip()
         self.update()
 
