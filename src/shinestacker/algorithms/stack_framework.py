@@ -318,14 +318,14 @@ class CombinedActions(ReferenceFrameTask):
         if len(self._actions) == 0:
             self.sub_message(color_str(": no actions specified", constants.LOG_COLOR_ALERT),
                              level=logging.WARNING)
-        for a in self._actions:
+        for a_idx, a in enumerate(self._actions):
             if not a.enabled:
                 self.get_logger().warning(color_str(f"{self.base_message}: sub-action disabled",
                                                     constants.LOG_COLOR_ALERT))
             else:
                 if self.callback(constants.CALLBACK_CHECK_RUNNING, self.id, self.name) is False:
                     raise RunStopException(self.name)
-                self.callback(constants.CALLBACK_UPDATE_FRAME_STATUS, idx, 0)
+                self.callback(constants.CALLBACK_UPDATE_FRAME_STATUS, idx, a_idx + 1)
                 if img is not None:
                     img = a.run_frame(idx, ref_idx, img)
                 else:
