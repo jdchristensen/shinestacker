@@ -10,24 +10,21 @@ from PySide6.QtWidgets import (QWidget, QGridLayout, QScrollArea, QLabel,
 class MultiModuleStatusContainer(QWidget):
     def __init__(self):
         super().__init__()
+        self.setMaximumHeight(400)
         main_layout = QVBoxLayout(self)
         main_layout.setContentsMargins(0, 0, 0, 0)
         main_layout.setSpacing(0)
-        
         self.scroll_area = QScrollArea()
         self.scroll_area.setWidgetResizable(True)
         self.scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
         self.scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
         self.scroll_area.setFrameShape(QScrollArea.NoFrame)
-        
         self.container_widget = QWidget()
         self.layout = QVBoxLayout(self.container_widget)
         self.layout.setContentsMargins(0, 0, 0, 0)
         self.layout.setSpacing(0)
-        
         self.scroll_area.setWidget(self.container_widget)
         main_layout.addWidget(self.scroll_area)
-        
         self.status_widgets = []
         self.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Minimum)
 
@@ -40,22 +37,15 @@ class MultiModuleStatusContainer(QWidget):
         status_widget = PreprocessingStatusWidget()
         self.layout.addWidget(status_widget)
         self.status_widgets.append(status_widget)
-        self._update_scroll_area()
         return len(self.status_widgets) - 1
 
     def add_frame(self, filename, total_actions, idx=-1):
         if self.status_widgets:
             self.status_widgets[idx].add_frame(filename, total_actions)
-            self._update_scroll_area()
 
-    def _update_scroll_area(self):
-        total_height = self.container_widget.sizeHint().height()
-        if total_height > 400:
-            self.scroll_area.setMaximumHeight(400)
-            self.scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
-        else:
-            self.scroll_area.setMaximumHeight(16777215)
-            self.scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+    def update_frame_status(self, frame_id, status_id, idx=-1):
+        if self.status_widgets:
+            self.status_widgets[idx].update_frame_status(frame_id, status_id)
 
 
 class FrameStatusBox(QWidget):
