@@ -3,11 +3,14 @@
 This page reports the main releases only and the main changes therein.
 
 
-## [vx.x.x] - 2025-11-07
+## [vx.x.x] - 2025-11-08
 ** --- **
 
 ### Fixed
 - links are now clickable in the "about" dialog window
+
+### Changed
+- added visual progress indicators for frame processing
 
 ---
 
