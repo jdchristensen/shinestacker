@@ -10,9 +10,21 @@ from PySide6.QtWidgets import (QWidget, QGridLayout, QScrollArea, QLabel,
 class MultiModuleStatusContainer(QWidget):
     def __init__(self):
         super().__init__()
-        self.layout = QVBoxLayout(self)
+        self.setMaximumHeight(400)
+        main_layout = QVBoxLayout(self)
+        main_layout.setContentsMargins(0, 0, 0, 0)
+        main_layout.setSpacing(0)
+        self.scroll_area = QScrollArea()
+        self.scroll_area.setWidgetResizable(True)
+        self.scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+        self.scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+        self.scroll_area.setFrameShape(QScrollArea.NoFrame)
+        self.container_widget = QWidget()
+        self.layout = QVBoxLayout(self.container_widget)
         self.layout.setContentsMargins(0, 0, 0, 0)
         self.layout.setSpacing(0)
+        self.scroll_area.setWidget(self.container_widget)
+        main_layout.addWidget(self.scroll_area)
         self.status_widgets = []
         self.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Minimum)
 
@@ -46,7 +58,7 @@ class FrameStatusBox(QWidget):
         self.border_color = QColor(100, 100, 100)
         self.fill_color = QColor(200, 200, 200)
         self.custom_tooltip = None
-        self.tooltip_text = f"File: {os.path.basename(filename)}\nStatus: Pending"
+        self.update_tooltip()
         self.setMinimumSize(20, 15)
         self.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
         self.setMouseTracking(True)
@@ -114,57 +126,26 @@ class FrameStatusBox(QWidget):
 class PreprocessingStatusWidget(QWidget):
     def __init__(self):
         super().__init__()
-        self.main_layout = QVBoxLayout(self)
-        self.main_layout.setContentsMargins(2, 2, 2, 2)
-        self.main_layout.setSpacing(0)
-        self.scroll_area = QScrollArea()
-        self.scroll_area.setWidgetResizable(True)
-        self.scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
-        self.scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
-        self.scroll_area.setFrameShape(QScrollArea.NoFrame)
-        self.scroll_area.setMaximumHeight(400)
-        self.grid_container = QWidget()
-        self.grid_layout = QGridLayout(self.grid_container)
+        self.grid_layout = QGridLayout(self)
         self.grid_layout.setSpacing(4)
         self.grid_layout.setContentsMargins(2, 2, 2, 2)
         self.grid_layout.setAlignment(Qt.AlignTop | Qt.AlignLeft)
-        self.scroll_area.setWidget(self.grid_container)
-        self.main_layout.addWidget(self.scroll_area)
         self.frame_widgets = []
         self.MIN_BOX_WIDTH = 30
         self.MAX_BOX_WIDTH = 80
         self.ASPECT_RATIO = 3.0 / 4.0
         self.current_box_width = self.MAX_BOX_WIDTH
         self.current_box_height = int(self.current_box_width * self.ASPECT_RATIO)
-        self.setFixedHeight(0)
-        self._initial_layout_done = False
 
     def add_frame(self, filename, total_actions):
         frame_id = len(self.frame_widgets)
         frame_widget = FrameStatusBox(filename, frame_id, total_actions)
         self.frame_widgets.append(frame_widget)
-        if not self._initial_layout_done:
-            self._add_to_layout_default(frame_widget)
-        else:
-            self._update_layout()
-
-    def _add_to_layout_default(self, frame_widget):
-        frame_widget.setFixedSize(self.MAX_BOX_WIDTH, self.current_box_height)
-        row = len(self.frame_widgets) - 1
-        max_cols = 4  # Reasonable default
-        actual_row = row // max_cols
-        actual_col = row % max_cols
-        self.grid_layout.addWidget(frame_widget, actual_row, actual_col)
+        self._update_layout()
 
     def update_frame_status(self, frame_id, status_id):
         if 0 <= frame_id < len(self.frame_widgets):
             self.frame_widgets[frame_id].update_status(status_id)
-
-    def showEvent(self, event):
-        super().showEvent(event)
-        if not self._initial_layout_done and self.frame_widgets:
-            self._initial_layout_done = True
-            self._update_layout()
 
     def resizeEvent(self, event):
         super().resizeEvent(event)
@@ -173,7 +154,7 @@ class PreprocessingStatusWidget(QWidget):
     def _calculate_optimal_box_width(self):
         if not self.frame_widgets:
             return self.MAX_BOX_WIDTH
-        available_width = self.scroll_area.viewport().width() - 10
+        available_width = self.width() - 10
         if available_width <= self.MIN_BOX_WIDTH:
             available_width = self.parent().width() - 20 if self.parent() else 400
         spacing = self.grid_layout.spacing()
@@ -184,7 +165,6 @@ class PreprocessingStatusWidget(QWidget):
 
     def _update_layout(self):
         if not self.frame_widgets:
-            self.setFixedHeight(0)
             return
         for i in reversed(range(self.grid_layout.count())):
             widget = self.grid_layout.itemAt(i).widget()
@@ -192,7 +172,7 @@ class PreprocessingStatusWidget(QWidget):
                 self.grid_layout.removeWidget(widget)
         self.current_box_width = self._calculate_optimal_box_width()
         self.current_box_height = int(self.current_box_width * self.ASPECT_RATIO)
-        available_width = self.scroll_area.viewport().width() - 10
+        available_width = self.width() - 10
         spacing = self.grid_layout.spacing()
         max_cols = max(1, available_width // (self.current_box_width + spacing))
         num_cols = min(len(self.frame_widgets), max_cols)
@@ -203,8 +183,5 @@ class PreprocessingStatusWidget(QWidget):
             col = i % num_cols
             self.grid_layout.addWidget(widget, row, col)
         num_rows = math.ceil(len(self.frame_widgets) / num_cols) if num_cols > 0 else 0
-        total_width = num_cols * (self.current_box_width + spacing)
         total_height = num_rows * (self.current_box_height + spacing)
-        self.grid_container.setMinimumSize(total_width, total_height)
-        needed_height = total_height + 10
-        self.setFixedHeight(min(needed_height, 400))
+        self.setMinimumHeight(total_height + 10)
