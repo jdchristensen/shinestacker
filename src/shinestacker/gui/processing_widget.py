@@ -5,6 +5,7 @@ from PySide6.QtCore import Qt, Signal, QTimer
 from PySide6.QtGui import QColor, QPainter, QPen
 from PySide6.QtWidgets import (QWidget, QGridLayout, QScrollArea, QLabel,
                                QSizePolicy, QVBoxLayout)
+from .colors import ColorPalette
 
 
 class MultiModuleStatusContainer(QWidget):
@@ -122,12 +123,13 @@ class FrameStatusBox(QWidget):
     def enterEvent(self, _event):
         if not self.custom_tooltip:
             self.custom_tooltip = QLabel(self.tooltip_text, self.window())
-            self.custom_tooltip.setStyleSheet("""
-                QLabel {
+            self.custom_tooltip.setStyleSheet(f"""
+                QLabel {{
                     background-color: #FFFFCC;
+                    color: #{ColorPalette.DARK_BLUE.hex()};
                     border: 1px solid black;
                     padding: 2px;
-                }
+                }}
             """)
             self.custom_tooltip.adjustSize()
         global_pos = self.mapToGlobal(self.rect().topRight())
