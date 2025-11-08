@@ -29,6 +29,13 @@ class MultiModuleStatusContainer(QWidget):
         self.status_widgets = []
         self.setMinimumHeight(0)
         self.setMaximumHeight(400)
+        self._resize_timer = QTimer()
+        self._resize_timer.setSingleShot(True)
+        self._resize_timer.timeout.connect(self.contentSizeChanged.emit)
+
+    def resizeEvent(self, event):
+        super().resizeEvent(event)
+        self._resize_timer.start(100)
 
     def add_module(self, module_name):
         label = QLabel(module_name)
