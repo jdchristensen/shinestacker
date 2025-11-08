@@ -287,6 +287,10 @@ class CombinedActions(ReferenceFrameTask):
         for a in self._actions:
             if a.enabled:
                 a.begin(self)
+        n_actions = len(self._actions)
+        filenames = self.input_filepaths()
+        for filename in filenames:
+            self.callback(constants.CALLBACK_ADD_FRAME, filenames, n_actions)
 
     def img_ref(self, idx):
         input_path = self.input_filepath(idx)
@@ -320,6 +324,7 @@ class CombinedActions(ReferenceFrameTask):
             else:
                 if self.callback(constants.CALLBACK_CHECK_RUNNING, self.id, self.name) is False:
                     raise RunStopException(self.name)
+                self.callback(constants.CALLBACK_UPDATE_FRAME_STATUS, idx, 0)
                 if img is not None:
                     img = a.run_frame(idx, ref_idx, img)
                 else:
@@ -333,10 +338,12 @@ class CombinedActions(ReferenceFrameTask):
                 color_str(f'write output {self.frame_str(idx)}, '
                           f'{os.path.basename(output_path)}', constants.LOG_COLOR_LEVEL_3))
             write_img(output_path, img)
+            self.callback(constants.CALLBACK_UPDATE_FRAME_STATUS, idx, 1000)
             return img
         self.print_message(color_str(
             f"no output resulted from processing input file: {os.path.basename(input_path)}",
             constants.LOG_COLOR_ALERT), level=logging.WARNING)
+        self.callback(constants.CALLBACK_UPDATE_FRAME_STATUS, idx, 1001)
         return None
 
     def end(self):

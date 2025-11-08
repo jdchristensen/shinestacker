@@ -517,6 +517,8 @@ class MainWindow(QMainWindow, LogManager):
         worker.run_completed_signal.connect(window.handle_run_completed)
         worker.run_stopped_signal.connect(window.handle_run_stopped)
         worker.run_failed_signal.connect(window.handle_run_failed)
+        worker.add_frame_signal.connect(window.handle_add_frame)
+        worker.update_frame_status_signal.connect(window.handle_update_frame_status)
 
     def run_job(self):
         current_index = self.current_job_index()

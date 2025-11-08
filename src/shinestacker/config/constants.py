@@ -83,6 +83,8 @@ class _Constants:
     CALLBACK_CHECK_RUNNING = 'check_running'
     CALLBACK_SAVE_PLOT = 'save_plot'
     CALLBACK_OPEN_APP = 'open_app'
+    CALLBACK_ADD_FRAME = 'add_frame'
+    CALLBACK_UPDATE_FRAME_STATUS = 'update_frame_status'
 
     DEFAULT_FILE_REVERSE_ORDER = False
     DEFAULT_MULTILAYER_FILE_REVERSE_ORDER = True
