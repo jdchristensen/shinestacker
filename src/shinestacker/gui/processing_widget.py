@@ -6,6 +6,32 @@ import math
 import os
 
 
+class MultiModuleStatusContainer(QWidget):
+    def __init__(self):
+        super().__init__()
+        self.layout = QVBoxLayout(self)
+        self.layout.setContentsMargins(0, 0, 0, 0)
+        self.layout.setSpacing(10)
+        self.status_widgets = []
+
+    def add_module(self, module_name):
+        group_box = QGroupBox(module_name)
+        group_layout = QVBoxLayout(group_box)
+        status_widget = PreprocessingStatusWidget()
+        group_layout.addWidget(status_widget)
+        self.layout.addWidget(group_box)
+        self.status_widgets.append(status_widget)
+        return len(self.status_widgets) - 1
+
+    def add_frame(self, filename, idx=-1):
+        if self.status_widgets:
+            self.status_widgets[idx].add_frame(filename)
+
+    def update_status(self, frame_id, status_id, idx=-1):
+        if self.status_widgets:
+            self.status_widgets[idx].update_frame_status(frame_id, status_id)
+
+
 class FrameStatusBox(QWidget):
     def __init__(self, filename, frame_id):
         super().__init__()
@@ -20,7 +46,7 @@ class FrameStatusBox(QWidget):
         self.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)        
         self.setMouseTracking(True)
         self.setAttribute(Qt.WA_Hover, True)
-        
+
     def update_status(self, status_id):
         self.status_id = status_id
         if status_id == 0:
@@ -38,7 +64,7 @@ class FrameStatusBox(QWidget):
             )
         self.update_tooltip()
         self.update()
-        
+
     def update_tooltip(self):
         if self.status_id == 0:
             status_text = "Pending"
@@ -49,7 +75,7 @@ class FrameStatusBox(QWidget):
         else:
             status_text = f"Processing step {self.status_id}"
         self.tooltip_text = f"File: {os.path.basename(self.filename)}\nStatus: {status_text}"
-        
+
     def paintEvent(self, event):
         painter = QPainter(self)
         painter.setRenderHint(QPainter.Antialiasing)
@@ -58,7 +84,7 @@ class FrameStatusBox(QWidget):
         painter.fillRect(rect, self.fill_color)
         painter.setPen(QPen(self.border_color, 1))
         painter.drawRect(rect)
-        
+
     def enterEvent(self, event):
         if not self.custom_tooltip:
             self.custom_tooltip = QLabel(self.tooltip_text, self.window())
@@ -74,11 +100,11 @@ class FrameStatusBox(QWidget):
         parent_pos = self.window().mapFromGlobal(global_pos)        
         self.custom_tooltip.move(parent_pos.x() + 2, parent_pos.y())
         self.custom_tooltip.show()
-        
+
     def leaveEvent(self, event):
-        # Hide custom tooltip
         if self.custom_tooltip:
             self.custom_tooltip.hide()
+
 
 class PreprocessingStatusWidget(QWidget):
     def __init__(self):
@@ -106,7 +132,7 @@ class PreprocessingStatusWidget(QWidget):
         self.current_box_width = self.MAX_BOX_WIDTH
         self.current_box_height = int(self.current_box_width * self.ASPECT_RATIO)
         self.setFixedHeight(0)
-        
+
     def add_frame(self, filename, total_actions):
         frame_id = len(self.frame_widgets)
         frame_widget = FrameStatusBox(filename, frame_id)
@@ -117,11 +143,11 @@ class PreprocessingStatusWidget(QWidget):
     def update_frame_status(self, frame_id, status_id):
         if 0 <= frame_id < len(self.frame_widgets):
             self.frame_widgets[frame_id].update_status(status_id)
-            
+
     def resizeEvent(self, event):
         super().resizeEvent(event)
         self._update_layout()
-        
+
     def _calculate_optimal_box_width(self):
         if not self.frame_widgets:
             return self.MAX_BOX_WIDTH

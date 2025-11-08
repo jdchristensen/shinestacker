@@ -19,7 +19,7 @@ from .colors import (
 from .time_progress_bar import TimerProgressBar
 from .flow_layout import FlowLayout
 from .sys_mon import StatusBarSystemMonitor
-from .processing_widget import PreprocessingStatusWidget
+from .processing_widget import MultiModuleStatusContainer
 
 class ColorButton(QPushButton):
     def __init__(self, text, enabled, parent=None):
@@ -74,7 +74,7 @@ class RunWindow(QTextEditLogger):
         left_layout.setContentsMargins(5, 5, 5, 5)
         output_layout.addLayout(left_layout, stretch=1)
         output_layout.addLayout(right_layout, stretch=0)
-        self.frames_status_box = PreprocessingStatusWidget()
+        self.frames_status_box = MultiModuleStatusContainer()
         left_layout.addWidget(self.frames_status_box)
         left_layout.addWidget(self.text_edit)
         self.right_area = QScrollArea()
