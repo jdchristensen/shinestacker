@@ -137,16 +137,34 @@ class PreprocessingStatusWidget(QWidget):
         self.current_box_width = self.MAX_BOX_WIDTH
         self.current_box_height = int(self.current_box_width * self.ASPECT_RATIO)
         self.setFixedHeight(0)
+        self._initial_layout_done = False
 
     def add_frame(self, filename, total_actions):
         frame_id = len(self.frame_widgets)
         frame_widget = FrameStatusBox(filename, frame_id, total_actions)
         self.frame_widgets.append(frame_widget)
-        self._update_layout()
+        if not self._initial_layout_done:
+            self._add_to_layout_default(frame_widget)
+        else:
+            self._update_layout()
+
+    def _add_to_layout_default(self, frame_widget):
+        frame_widget.setFixedSize(self.MAX_BOX_WIDTH, self.current_box_height)
+        row = len(self.frame_widgets) - 1
+        max_cols = 4  # Reasonable default
+        actual_row = row // max_cols
+        actual_col = row % max_cols
+        self.grid_layout.addWidget(frame_widget, actual_row, actual_col)
 
     def update_frame_status(self, frame_id, status_id):
         if 0 <= frame_id < len(self.frame_widgets):
             self.frame_widgets[frame_id].update_status(status_id)
+
+    def showEvent(self, event):
+        super().showEvent(event)
+        if not self._initial_layout_done and self.frame_widgets:
+            self._initial_layout_done = True
+            self._update_layout()
 
     def resizeEvent(self, event):
         super().resizeEvent(event)
@@ -155,11 +173,12 @@ class PreprocessingStatusWidget(QWidget):
     def _calculate_optimal_box_width(self):
         if not self.frame_widgets:
             return self.MAX_BOX_WIDTH
-        num_frames = len(self.frame_widgets)
         available_width = self.scroll_area.viewport().width() - 10
+        if available_width <= self.MIN_BOX_WIDTH:
+            available_width = self.parent().width() - 20 if self.parent() else 400
         spacing = self.grid_layout.spacing()
         max_possible_cols = max(1, available_width // (self.MIN_BOX_WIDTH + spacing))
-        needed_cols = min(num_frames, max_possible_cols)
+        needed_cols = min(len(self.frame_widgets), max_possible_cols)
         calculated_width = (available_width - (needed_cols - 1) * spacing) // needed_cols
         return max(self.MIN_BOX_WIDTH, min(self.MAX_BOX_WIDTH, calculated_width))
 
@@ -170,7 +189,7 @@ class PreprocessingStatusWidget(QWidget):
         for i in reversed(range(self.grid_layout.count())):
             widget = self.grid_layout.itemAt(i).widget()
             if widget:
-                widget.setParent(None)
+                self.grid_layout.removeWidget(widget)
         self.current_box_width = self._calculate_optimal_box_width()
         self.current_box_height = int(self.current_box_width * self.ASPECT_RATIO)
         available_width = self.scroll_area.viewport().width() - 10
