@@ -136,11 +136,17 @@ class RunWindow(QTextEditLogger):
         self.close_button.setStyleSheet(RED_BUTTON_STYLE)
         self.close_button.clicked.connect(self.close_window)
         self.status_bar.addPermanentWidget(self.close_button)
-
         layout.addWidget(self.status_bar)
         self.setLayout(layout)
+        self.user_manually_adjusted_splitter = False
+        self.splitter.splitterMoved.connect(self._on_splitter_moved)
+
+    def _on_splitter_moved(self):
+        self.user_manually_adjusted_splitter = True
 
     def adjust_splitter(self):
+        if self.user_manually_adjusted_splitter:
+            return
         content_height = self.frames_status_box.get_content_height()
         if content_height > 0:
             current_sizes = self.splitter.sizes()
