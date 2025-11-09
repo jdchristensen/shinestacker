@@ -105,4 +105,5 @@ pip install ipywidgets
 |----------|----------------|
 | RAW format unsupported  | Convert to TIFF/JPEG first |
 | EXIF data not supported for 16-bit PNG files | convert to 16-bit TIFF first |
+| EXIF exposure data in TIFF files may not be visible in Adobe PhotoShop | Export as JPEG for full Photoshop EXIF compatibility |
 | GUI tests limited     | Report any bugs as GitHub issuse |
