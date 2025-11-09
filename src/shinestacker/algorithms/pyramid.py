@@ -1,4 +1,5 @@
 # pylint: disable=C0114, C0115, C0116, E1101, R0913, R0917, R0902
+import os
 import numpy as np
 import cv2
 from .. config.constants import constants
@@ -169,12 +170,17 @@ class PyramidStack(PyramidBase):
         for i, img_path in enumerate(self.filenames):
             self.print_message(
                 f": reading and validating {self.image_str(i)}")
+            filename = os.path.basename(img_path)
+            self.process.callback(constants.CALLBACK_UPDATE_FRAME_STATUS,
+                                  self.process.input_path, filename, 200)
             img = read_and_validate_img(img_path, self.shape, self.dtype)
             self.check_running()
             self.print_message(
                 f": processing {self.image_str(i)}")
             all_laplacians.append(self.process_single_image(img, self.n_levels))
             self.after_step(i + 1)
+            self.process.callback(constants.CALLBACK_UPDATE_FRAME_STATUS,
+                                  self.process.input_path, filename, 201)
             self.check_running()
         stacked_image = self.collapse(self.fuse_pyramids(all_laplacians))
         return stacked_image.astype(self.dtype)

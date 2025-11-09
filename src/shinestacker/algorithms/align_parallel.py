@@ -1,5 +1,6 @@
 # pylint: disable=C0114, C0115, C0116, W0718, R0912, R0915, E1101, R0914, R0911, E0606, R0801, R0902
 import gc
+import os
 import copy
 import math
 import traceback
@@ -73,8 +74,12 @@ class AlignFramesParallel(AlignFramesBase):
                     f"submit alignment matches, {self.image_str(idx)}")
                 future = executor.submit(self.find_transform, idx)
                 future_to_index[future] = idx
+                filename = os.path.basename(self.process.input_filepath(idx))
+                self.process.callback(constants.CALLBACK_UPDATE_FRAME_STATUS,
+                                      self.process.name, filename, 100)
             for future in as_completed(future_to_index):
                 idx = future_to_index[future]
+                filename = os.path.basename(self.process.input_filepath(idx))
                 try:
                     info_messages, warning_messages = future.result()
                     message = f"{self.image_str(idx)}: " \
@@ -90,11 +95,17 @@ class AlignFramesParallel(AlignFramesBase):
                     self.print_message(message, color=color, level=level)
                     self.step_counter += 1
                     self.process.after_step(self.step_counter)
+                    self.process.callback(constants.CALLBACK_UPDATE_FRAME_STATUS,
+                                          self.process.name, filename, 101)
                     self.process.check_running()
                 except RunStopException as e:
+                    self.process.callback(constants.CALLBACK_UPDATE_FRAME_STATUS,
+                                          self.process.name, filename, 1001)
                     raise e
                 except Exception as e:
                     traceback.print_tb(e.__traceback__)
+                    self.process.callback(constants.CALLBACK_UPDATE_FRAME_STATUS,
+                                          self.process.name, filename, 1001)
                     self.print_message(
                         f"failed processing {self.image_str(idx)}: {str(e)}")
             cached_images = 0

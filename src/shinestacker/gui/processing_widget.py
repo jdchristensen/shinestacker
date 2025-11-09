@@ -27,7 +27,7 @@ class MultiModuleStatusContainer(QWidget):
         self.layout.setSpacing(0)
         self.scroll_area.setWidget(self.container_widget)
         main_layout.addWidget(self.scroll_area)
-        self.status_widgets = []
+        self.status_widgets = {}
         self.setMinimumHeight(0)
         self.setMaximumHeight(400)
         self._resize_timer = QTimer()
@@ -38,6 +38,10 @@ class MultiModuleStatusContainer(QWidget):
         super().resizeEvent(event)
         self._resize_timer.start(100)
 
+    def _scroll_to_bottom(self):
+        scrollbar = self.scroll_area.verticalScrollBar()
+        scrollbar.setValue(scrollbar.maximum())
+
     def add_module(self, module_name):
         label = QLabel(module_name)
         label.setStyleSheet("QLabel { font-weight: bold; margin: 0px; padding: 0px; }")
@@ -46,30 +50,37 @@ class MultiModuleStatusContainer(QWidget):
         self.layout.addWidget(label)
         status_widget = PreprocessingStatusWidget()
         self.layout.addWidget(status_widget)
-        self.status_widgets.append(status_widget)
-        QTimer.singleShot(10, self.contentSizeChanged.emit)
+        if module_name in self.status_widgets:
+            raise RuntimeError(f"Module {module_name} already added")
+        self.status_widgets[module_name] = status_widget
+        QTimer.singleShot(10, lambda: [self.contentSizeChanged.emit(), self._scroll_to_bottom()])
         return len(self.status_widgets) - 1
 
-    def add_frame(self, filename, total_actions, idx=-1):
-        if self.status_widgets:
-            self.status_widgets[idx].add_frame(filename, total_actions)
-            QTimer.singleShot(10, self.contentSizeChanged.emit)
+    def get_widget(self, module_name):
+        status_widget = self.status_widgets.get(module_name)
+        if status_widget:
+            return status_widget
+        raise RuntimeError(f"Unknown module {module_name}")
 
-    def update_frame_status(self, frame_id, status_id, idx=-1):
-        if self.status_widgets:
-            self.status_widgets[idx].update_frame_status(frame_id, status_id)
+    def add_frame(self, module_name, filename, total_actions):
+        status_widget = self.get_widget(module_name)
+        status_widget.add_frame(filename, total_actions)
+        QTimer.singleShot(10, lambda: [self.contentSizeChanged.emit(), self._scroll_to_bottom()])
+
+    def update_frame_status(self, module_name, filename, status_id):
+        status_widget = self.get_widget(module_name)
+        status_widget.update_frame_status(filename, status_id)
 
     def get_content_height(self):
         return self.container_widget.sizeHint().height()
 
 
 class FrameStatusBox(QWidget):
-    def __init__(self, filename, frame_id, total_actions):
+    def __init__(self, filename, total_actions):
         super().__init__()
         self.filename = filename
         self.total_actions = total_actions
-        self.frame_id = frame_id
-        self.status_id = 0
+        self.status_id = -1
         self.border_color = QColor(100, 100, 100)
         self.fill_color = QColor(200, 200, 200)
         self.custom_tooltip = None
@@ -84,31 +95,55 @@ class FrameStatusBox(QWidget):
         init_color = (255, 255, 255)
         completed_color = (76, 175, 80)
         failed_color = (244, 67, 54)
+        preprocess_color = (253, 218, 13)
+        postprocess_color = (64, 224, 208)
+        unknown_color = (138, 43, 226)
         self.status_id = status_id
-        if status_id == 0:
+        if status_id == -1:
             self.fill_color = QColor(*pending_color)
         elif status_id == 1000:
             self.fill_color = QColor(*completed_color)
         elif status_id == 1001:
             self.fill_color = QColor(*failed_color)
-        else:
+        elif self.status_id < 100:
             progress = status_id / 10.0
-            r = int(init_color[0] * (1 - progress) + completed_color[0] * progress)
-            g = int(init_color[1] * (1 - progress) + completed_color[1] * progress)
-            b = int(init_color[2] * (1 - progress) + completed_color[2] * progress)
-            self.fill_color = QColor(r, g, b)
+            rgb = (int(init_color[i] * (1 - progress) + completed_color[i] * progress)
+                   for i in range(3))
+            self.fill_color = QColor(*rgb)
+        elif self.status_id == 100:
+            rgb = (int((init_color[i] + preprocess_color[i]) * 0.5) for i in range(3))
+            self.fill_color = QColor(*rgb)
+        elif self.status_id == 101:
+            self.fill_color = QColor(*preprocess_color)
+        elif self.status_id == 200:
+            rgb = (int((init_color[i] + postprocess_color[i]) * 0.5) for i in range(3))
+            self.fill_color = QColor(*rgb)
+        elif self.status_id == 201:
+            self.fill_color = QColor(*postprocess_color)
+        else:
+            self.fill_color = QColor(*unknown_color)
         self.update_tooltip()
         self.update()
 
     def update_tooltip(self):
-        if self.status_id == 0:
+        if self.status_id == -1:
             status_text = "Pending"
         elif self.status_id == 1000:
             status_text = "Completed"
         elif self.status_id == 1001:
             status_text = "Failed"
+        elif self.status_id < 100:
+            status_text = f"Completed action {self.status_id}/{self.total_actions}"
+        elif self.status_id == 100:
+            status_text = "Preprocess submitted"
+        elif self.status_id == 101:
+            status_text = "Preprocess completed"
+        elif self.status_id == 200:
+            status_text = "Postprocess submitted"
+        elif self.status_id == 201:
+            status_text = "Postprocess completed"
         else:
-            status_text = f"Processing step {self.status_id}"
+            status_text = "Unknown status"
         self.tooltip_text = f"File: {os.path.basename(self.filename)}\nStatus: {status_text}"
 
     def paintEvent(self, _event):
@@ -149,7 +184,7 @@ class PreprocessingStatusWidget(QWidget):
         self.grid_layout.setSpacing(4)
         self.grid_layout.setContentsMargins(2, 2, 2, 2)
         self.grid_layout.setAlignment(Qt.AlignTop | Qt.AlignLeft)
-        self.frame_widgets = []
+        self.frame_widgets = {}
         self.MIN_BOX_WIDTH = 30
         self.MAX_BOX_WIDTH = 80
         self.ASPECT_RATIO = 3.0 / 4.0
@@ -157,32 +192,33 @@ class PreprocessingStatusWidget(QWidget):
         self.current_box_height = int(self.current_box_width * self.ASPECT_RATIO)
 
     def add_frame(self, filename, total_actions):
-        frame_id = len(self.frame_widgets)
-        frame_widget = FrameStatusBox(filename, frame_id, total_actions)
-        self.frame_widgets.append(frame_widget)
+        if filename in self.frame_widgets:
+            raise RuntimeError(f"Filename {filename} already registered")
+        self.frame_widgets[filename] = FrameStatusBox(filename, total_actions)
         self._update_layout()
 
-    def update_frame_status(self, frame_id, status_id):
-        if 0 <= frame_id < len(self.frame_widgets):
-            self.frame_widgets[frame_id].update_status(status_id)
+    def update_frame_status(self, filename, status_id):
+        if filename in self.frame_widgets:
+            self.frame_widgets[filename].update_status(status_id)
+        else:
+            raise RuntimeError(f"Unknown filename {filename}")
 
     def resizeEvent(self, event):
         super().resizeEvent(event)
         self._update_layout()
 
     def _calculate_optimal_box_width(self):
-        if not self.frame_widgets:
-            return self.MAX_BOX_WIDTH
         available_width = self.width() - 10
         spacing = self.grid_layout.spacing()
         max_possible_cols = max(1, available_width // (self.MIN_BOX_WIDTH + spacing))
         needed_cols = min(len(self.frame_widgets), max_possible_cols)
-        calculated_width = (available_width - (needed_cols - 1) * spacing) // needed_cols
+        if needed_cols > 0:
+            calculated_width = (available_width - (needed_cols - 1) * spacing) // needed_cols
+        else:
+            calculated_width = 0
         return max(self.MIN_BOX_WIDTH, min(self.MAX_BOX_WIDTH, calculated_width))
 
     def _update_layout(self):
-        if not self.frame_widgets:
-            return
         for i in reversed(range(self.grid_layout.count())):
             widget = self.grid_layout.itemAt(i).widget()
             if widget:
@@ -193,9 +229,9 @@ class PreprocessingStatusWidget(QWidget):
         spacing = self.grid_layout.spacing()
         max_cols = max(1, available_width // (self.current_box_width + spacing))
         num_cols = min(len(self.frame_widgets), max_cols)
-        for widget in self.frame_widgets:
+        for _k, widget in self.frame_widgets.items():
             widget.setFixedSize(self.current_box_width, self.current_box_height)
-        for i, widget in enumerate(self.frame_widgets):
+        for i, (_k, widget) in enumerate(self.frame_widgets.items()):
             row = i // num_cols
             col = i % num_cols
             self.grid_layout.addWidget(widget, row, col)

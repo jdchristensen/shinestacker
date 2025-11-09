@@ -27,11 +27,13 @@ class FocusStackBase(TaskBase, ImageSequenceManager):
 
     def focus_stack(self, filenames):
         self.sub_message_r(color_str(': reading input files', constants.LOG_COLOR_LEVEL_3))
-        stacked_img = self.stack_algo.focus_stack()
         in_filename = os.path.basename(filenames[0]).split(".")
         out_filename = os.path.join(
             self.output_full_path(),
             f"{self.prefix}{in_filename[0]}." + '.'.join(in_filename[1:]))
+        filename = os.path.basename(out_filename)
+        self.callback(constants.CALLBACK_UPDATE_FRAME_STATUS, self.name, filename, 0)
+        stacked_img = self.stack_algo.focus_stack()
         if self.denoise_amount > 0:
             self.sub_message_r(': denoise image')
             stacked_img = denoise(stacked_img, self.denoise_amount, self.denoise_amount)
@@ -59,6 +61,7 @@ class FocusStackBase(TaskBase, ImageSequenceManager):
                     self.sub_message_r(color_str(f': failed to copy EXIF data: {str(e)}',
                                                  constants.LOG_COLOR_WARNING),
                                        level=logging.WARNING)
+        self.callback(constants.CALLBACK_UPDATE_FRAME_STATUS, self.name, filename, 1000)
         if self.plot_stack:
             idx_str = f"{self.frame_count + 1:04d}" if self.frame_count >= 0 else ''
             name = f"{self.name}: {self.stack_algo.name()}"
@@ -114,6 +117,10 @@ class FocusStackBunch(SequentialTask, FocusStackBase):
     def begin(self):
         SequentialTask.begin(self)
         self._chunks = get_bunches(sorted(self.input_filepaths()), self.frames, self.overlap)
+        self.callback(constants.CALLBACK_ADD_STATUS_BOX, self.name)
+        for chunk in self._chunks:
+            filename = self.prefix + os.path.basename(chunk[0])
+            self.callback(constants.CALLBACK_ADD_FRAME, self.name, filename, 1)
         self.set_counts(len(self._chunks))
 
     def end(self):
@@ -127,8 +134,11 @@ class FocusStackBunch(SequentialTask, FocusStackBase):
             color_str(f"fusing bunch: {action_count + 1}/{self.total_action_counts}",
                       constants.LOG_COLOR_LEVEL_2))
         img_files = self._chunks[action_count]
+        filename = self.prefix + os.path.basename(img_files[0])
+        self.callback(constants.CALLBACK_UPDATE_FRAME_STATUS, self.name, filename, 0)
         self.stack_algo.init(img_files)
         self.focus_stack(self._chunks[action_count])
+        self.callback(constants.CALLBACK_UPDATE_FRAME_STATUS, self.name, filename, 1000)
         return True
 
 
@@ -144,6 +154,9 @@ class FocusStack(FocusStackBase):
         self.stack_algo.init(img_files)
         self.callback('step_counts', self.id, self.name,
                       self.stack_algo.total_steps(self.num_input_filepaths()))
+        self.callback(constants.CALLBACK_ADD_STATUS_BOX, self.name)
+        filename = self.prefix + os.path.basename(img_files[0])
+        self.callback(constants.CALLBACK_ADD_FRAME, self.name, filename, 1)
         self.focus_stack(img_files)
 
     def init(self, job, _working_path=''):

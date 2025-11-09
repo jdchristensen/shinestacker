@@ -1,4 +1,5 @@
 # pylint: disable=C0114, C0115, C0116, E1101, R0902, R0913, R0917, R0914, R0912, R0915
+import os
 import numpy as np
 import cv2
 from .. config.constants import constants
@@ -89,6 +90,9 @@ class DepthMapStack(BaseStackAlgo):
         blended_pyramid = None
         for i, img_path in enumerate(self.filenames):
             self.print_message(f": reading {self.image_str(i)}")
+            filename = os.path.basename(img_path)
+            self.process.callback(constants.CALLBACK_UPDATE_FRAME_STATUS,
+                                  self.process.input_path, filename, 200)
             img = read_img(img_path).astype(self.float_type)
             weight = weights[i]
             gp_img = [img]
@@ -106,6 +110,8 @@ class DepthMapStack(BaseStackAlgo):
             blended_pyramid = current_blend if blended_pyramid is None \
                 else [np.add(bp, cb) for bp, cb in zip(blended_pyramid, current_blend)]
             self.after_step(i + n_images)
+            self.process.callback(constants.CALLBACK_UPDATE_FRAME_STATUS,
+                                  self.process.input_path, filename, 201)
             self.check_running()
         result = blended_pyramid[0]
         self.print_message(': blend levels')

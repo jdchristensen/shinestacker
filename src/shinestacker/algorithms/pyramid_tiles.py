@@ -51,7 +51,7 @@ class PyramidTilesStack(PyramidBase):
         img = read_and_validate_img(img_path, self.shape, self.dtype)
         self.check_running(self.cleanup_temp_files)
         level_count = self.process_single_image(img, self.n_levels, idx)
-        return idx, level_count
+        return idx, img_path, level_count
 
     def process_single_image(self, img, levels, img_index):
         laplacian = self.single_image_laplacian(img, levels)
@@ -210,17 +210,23 @@ class PyramidTilesStack(PyramidBase):
             executor = None
             try:
                 executor = ThreadPoolExecutor(max_workers=self.num_threads)
-                future_to_index = {
-                    executor.submit(self._process_single_image_wrapper, args): i
-                    for i, args in enumerate(args_list)
-                }
+                future_to_index = {}
+                for i, args in enumerate(args_list):
+                    f = executor.submit(self._process_single_image_wrapper, args)
+                    future_to_index[f] = i
+                    filename = os.path.basename(args[0])
+                    self.process.callback(constants.CALLBACK_UPDATE_FRAME_STATUS,
+                                          self.process.input_path, filename, 200)
                 completed_count = 0
                 for future in as_completed(future_to_index):
                     i = future_to_index[future]
                     try:
-                        img_index, level_count = future.result()
+                        img_index, file_path, level_count = future.result()
                         all_level_counts[img_index] = level_count
                         completed_count += 1
+                        filename = os.path.basename(file_path)
+                        self.process.callback(constants.CALLBACK_UPDATE_FRAME_STATUS,
+                                              self.process.input_path, filename, 201)
                         self.print_message(
                             f": preprocessing completed, {self.image_str(completed_count - 1)}")
                     except Exception as e:

@@ -288,16 +288,16 @@ class RunWindow(QTextEditLogger):
         self.handle_run_interrupt(run_id, ACTION_FAILED_COLOR.tuple(), postfix)
 
     @Slot(str)
-    def handle_add_status_box(self, name):
-        self.frames_status_box.add_module(name)
+    def handle_add_status_box(self, module_name):
+        self.frames_status_box.add_module(module_name)
 
-    @Slot(str, int)
-    def handle_add_frame(self, filename, total_actions):
-        self.frames_status_box.add_frame(filename, total_actions)
+    @Slot(str, str, int)
+    def handle_add_frame(self, module_name, filename, total_actions):
+        self.frames_status_box.add_frame(module_name, filename, total_actions)
 
-    @Slot(int, int)
-    def handle_update_frame_status(self, frame_id, status_id):
-        self.frames_status_box.update_frame_status(frame_id, status_id)
+    @Slot(str, str, int)
+    def handle_update_frame_status(self, module_name, filename, status_id):
+        self.frames_status_box.update_frame_status(module_name, filename, status_id)
 
 
 class RunWorker(LogWorker):
@@ -313,8 +313,8 @@ class RunWorker(LogWorker):
     run_stopped_signal = Signal(int)
     run_failed_signal = Signal(int)
     add_status_box_signal = Signal(str)
-    add_frame_signal = Signal(str, int)
-    update_frame_status_signal = Signal(int, int)
+    add_frame_signal = Signal(str, str, int)
+    update_frame_status_signal = Signal(str, str, int)
 
     def __init__(self, id_str):
         LogWorker.__init__(self)
@@ -360,14 +360,14 @@ class RunWorker(LogWorker):
     def open_app(self, run_id, name, app, path):
         self.open_app_signal.emit(run_id, name, app, path)
 
-    def add_status_box(self, name):
-        self.add_status_box_signal.emit(name)
+    def add_status_box(self, module_name):
+        self.add_status_box_signal.emit(module_name)
 
-    def add_frame(self, filename, total_actions):
-        self.add_frame_signal.emit(filename, total_actions)
+    def add_frame(self, module_name, filename, total_actions):
+        self.add_frame_signal.emit(module_name, filename, total_actions)
 
-    def update_frame_status(self, frame_id, status_id):
-        self.update_frame_status_signal.emit(frame_id, status_id)
+    def update_frame_status(self, module_name, filename, status_id):
+        self.update_frame_status_signal.emit(module_name, filename, status_id)
 
     def check_running(self, _run_id, _name):
         return self.status == constants.STATUS_RUNNING
