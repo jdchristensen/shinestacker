@@ -103,7 +103,7 @@ class FrameStatusBox(QWidget):
 
     def update_status(self, status_id):
         pending_color = (200, 200, 200)
-        init_color = (255, 255, 255)
+        init_color = (253, 251, 212)
         completed_color = (76, 175, 80)
         failed_color = (244, 67, 54)
         preprocess_color = (253, 218, 13)
