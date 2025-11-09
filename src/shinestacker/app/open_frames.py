@@ -2,6 +2,7 @@
 import os
 import sys
 from PySide6.QtCore import QTimer
+from .. algorithms.utils import extension_supported
 
 
 def open_files(editor, filenames):
@@ -34,7 +35,7 @@ def open_frames(editor, filename, path_list):
                 all_entries = os.listdir(path)
                 files = sorted([f for f in all_entries if os.path.isfile(os.path.join(path, f))],
                                reverse=reverse)
-                full_paths = [os.path.join(path, f) for f in files]
+                full_paths = [os.path.join(path, f) for f in files if extension_supported(f)]
                 filenames += full_paths
             else:
                 print(f"path {path} is invalid", file=sys.stderr)
