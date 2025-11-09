@@ -75,7 +75,8 @@ class MultiModuleStatusContainer(QWidget):
         status_widget.update_frame_status(filename, status_id)
 
     def get_content_height(self):
-        return self.container_widget.sizeHint().height()
+        self.container_widget.layout().activate()
+        return self.container_widget.layout().totalMinimumSize().height()
 
 
 class FrameStatusBox(QWidget):

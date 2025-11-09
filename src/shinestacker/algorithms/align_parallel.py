@@ -144,7 +144,11 @@ class AlignFramesParallel(AlignFramesBase):
         sub_indices = list(range(n_frames))
         sub_indices.remove(ref_idx)
         sub_img_filepaths = copy.deepcopy(input_filepaths)
-        sub_img_filepaths.remove(input_filepaths[ref_idx])
+        ref_filepath = input_filepaths[ref_idx]
+        sub_img_filepaths.remove(ref_filepath)
+        filename = os.path.basename(ref_filepath)
+        self.process.callback(constants.CALLBACK_UPDATE_FRAME_STATUS,
+                              self.process.name, filename, 101)
         self.step_counter = 0
         if self.chunk_submit:
             img_chunks = make_chunks(sub_img_filepaths, max_chunck_size)

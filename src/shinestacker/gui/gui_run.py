@@ -144,7 +144,7 @@ class RunWindow(QTextEditLogger):
         content_height = self.frames_status_box.get_content_height()
         if content_height > 0:
             current_sizes = self.splitter.sizes()
-            if current_sizes[0] < 100:
+            if current_sizes[0] < MultiModuleStatusContainer.MAX_HEIGHT:
                 new_top_size = min(content_height, MultiModuleStatusContainer.MAX_HEIGHT)
                 available_height = self.splitter.height()
                 if available_height > 0:
