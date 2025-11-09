@@ -9,7 +9,9 @@ from .colors import ColorPalette
 
 
 class MultiModuleStatusContainer(QWidget):
-    contentSizeChanged = Signal()
+    MAX_HEIGHT = 400
+
+    content_size_changed = Signal()
 
     def __init__(self):
         super().__init__()
@@ -29,14 +31,15 @@ class MultiModuleStatusContainer(QWidget):
         main_layout.addWidget(self.scroll_area)
         self.status_widgets = {}
         self.setMinimumHeight(0)
-        self.setMaximumHeight(400)
+        self.setMaximumHeight(self.MAX_HEIGHT)
         self._resize_timer = QTimer()
         self._resize_timer.setSingleShot(True)
-        self._resize_timer.timeout.connect(self.contentSizeChanged.emit)
+        self._resize_timer.timeout.connect(self.content_size_changed.emit)
 
     def resizeEvent(self, event):
         super().resizeEvent(event)
         self._resize_timer.start(100)
+        QTimer.singleShot(10, lambda: [self.content_size_changed.emit(), self._scroll_to_bottom()])
 
     def _scroll_to_bottom(self):
         scrollbar = self.scroll_area.verticalScrollBar()
@@ -53,7 +56,7 @@ class MultiModuleStatusContainer(QWidget):
         if module_name in self.status_widgets:
             raise RuntimeError(f"Module {module_name} already added")
         self.status_widgets[module_name] = status_widget
-        QTimer.singleShot(10, lambda: [self.contentSizeChanged.emit(), self._scroll_to_bottom()])
+        QTimer.singleShot(10, lambda: [self.content_size_changed.emit(), self._scroll_to_bottom()])
         return len(self.status_widgets) - 1
 
     def get_widget(self, module_name):
@@ -65,7 +68,7 @@ class MultiModuleStatusContainer(QWidget):
     def add_frame(self, module_name, filename, total_actions):
         status_widget = self.get_widget(module_name)
         status_widget.add_frame(filename, total_actions)
-        QTimer.singleShot(10, lambda: [self.contentSizeChanged.emit(), self._scroll_to_bottom()])
+        QTimer.singleShot(10, lambda: [self.content_size_changed.emit(), self._scroll_to_bottom()])
 
     def update_frame_status(self, module_name, filename, status_id):
         status_widget = self.get_widget(module_name)
@@ -186,7 +189,7 @@ class PreprocessingStatusWidget(QWidget):
         self.grid_layout.setAlignment(Qt.AlignTop | Qt.AlignLeft)
         self.frame_widgets = {}
         self.MIN_BOX_WIDTH = 30
-        self.MAX_BOX_WIDTH = 80
+        self.MAX_BOX_WIDTH = 60
         self.ASPECT_RATIO = 3.0 / 4.0
         self.current_box_width = self.MAX_BOX_WIDTH
         self.current_box_height = int(self.current_box_width * self.ASPECT_RATIO)

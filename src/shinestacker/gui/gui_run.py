@@ -80,7 +80,7 @@ class RunWindow(QTextEditLogger):
         self.splitter.addWidget(self.frames_status_box)
         self.splitter.addWidget(self.text_edit)
         self.splitter.setSizes([0, 1])
-        self.frames_status_box.contentSizeChanged.connect(self.adjust_splitter)
+        self.frames_status_box.content_size_changed.connect(self.adjust_splitter)
         left_layout.addWidget(self.splitter)
         self.right_area = QScrollArea()
         self.right_area.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
@@ -145,7 +145,7 @@ class RunWindow(QTextEditLogger):
         if content_height > 0:
             current_sizes = self.splitter.sizes()
             if current_sizes[0] < 100:
-                new_top_size = min(content_height, 400)
+                new_top_size = min(content_height, MultiModuleStatusContainer.MAX_HEIGHT)
                 available_height = self.splitter.height()
                 if available_height > 0:
                     new_bottom_size = available_height - new_top_size
