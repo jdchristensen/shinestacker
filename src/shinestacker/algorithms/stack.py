@@ -33,6 +33,7 @@ class FocusStackBase(TaskBase, ImageSequenceManager):
             f"{self.prefix}{in_filename[0]}." + '.'.join(in_filename[1:]))
         filename = os.path.basename(out_filename)
         self.callback(constants.CALLBACK_UPDATE_FRAME_STATUS, self.name, filename, 0)
+        self.stack_algo.set_output_filename(filename)
         stacked_img = self.stack_algo.focus_stack()
         if self.denoise_amount > 0:
             self.sub_message_r(': denoise image')

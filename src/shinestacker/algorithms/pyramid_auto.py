@@ -110,6 +110,9 @@ class PyramidAutoStack(BaseStackAlgo):
         n_tiled_layers = min(n_tiled_layers, self.n_levels)
         return {'tile_size': tile_size, 'n_tiled_layers': n_tiled_layers}
 
+    def set_output_filename(self, filename):
+        self._implementation.set_output_filename(filename)
+
     def set_process(self, process):
         super().set_process(process)
         if self._implementation is not None:

@@ -155,12 +155,19 @@ class PyramidStack(PyramidBase):
     def fuse_pyramids(self, all_laplacians):
         fused = [self.get_fused_base(np.stack([p[-1] for p in all_laplacians], axis=0))]
         count = 0
-        for layer in range(len(all_laplacians[0]) - 2, -1, -1):
+        n_layers = len(all_laplacians[0]) - 2
+        self.process.callback(constants.CALLBACKS_SET_TOTAL_ACTIONS,
+                              self.process.name, self.output_filename, n_layers)
+        action_count = 0
+        for layer in range(n_layers, -1, -1):
             self.print_message(f': fusing pyramids, layer: {layer + 1}')
             laplacians = np.stack([p[layer] for p in all_laplacians], axis=0)
             fused.append(self.fuse_laplacian(laplacians))
             count += 1
             self.after_step(self._steps_per_frame * self.n_frames + count)
+            action_count += 1
+            self.process.callback(constants.CALLBACK_UPDATE_FRAME_STATUS,
+                                  self.process.name, self.output_filename, action_count)
             self.check_running()
         self.print_message(': pyramids fusion completed')
         return fused[::-1]

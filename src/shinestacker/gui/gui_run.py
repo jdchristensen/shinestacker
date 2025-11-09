@@ -299,6 +299,10 @@ class RunWindow(QTextEditLogger):
     def handle_update_frame_status(self, module_name, filename, status_id):
         self.frames_status_box.update_frame_status(module_name, filename, status_id)
 
+    @Slot(str, str, int)
+    def handle_set_total_actions(self, module_name, filename, status_id):
+        self.frames_status_box.set_total_actions(module_name, filename, status_id)
+
 
 class RunWorker(LogWorker):
     before_action_signal = Signal(int, str)
@@ -314,6 +318,7 @@ class RunWorker(LogWorker):
     run_failed_signal = Signal(int)
     add_status_box_signal = Signal(str)
     add_frame_signal = Signal(str, str, int)
+    set_total_actions_signal = Signal(str, str, int)
     update_frame_status_signal = Signal(str, str, int)
 
     def __init__(self, id_str):
@@ -332,6 +337,7 @@ class RunWorker(LogWorker):
             constants.CALLBACK_OPEN_APP: self.open_app,
             constants.CALLBACK_ADD_STATUS_BOX: self.add_status_box,
             constants.CALLBACK_ADD_FRAME: self.add_frame,
+            constants.CALLBACKS_SET_TOTAL_ACTIONS: self.set_total_actions,
             constants.CALLBACK_UPDATE_FRAME_STATUS: self.update_frame_status
         }
         self.tag = ""
@@ -368,6 +374,9 @@ class RunWorker(LogWorker):
 
     def update_frame_status(self, module_name, filename, status_id):
         self.update_frame_status_signal.emit(module_name, filename, status_id)
+
+    def set_total_actions(self, module_name, filename, status_id):
+        self.set_total_actions_signal.emit(module_name, filename, status_id)
 
     def check_running(self, _run_id, _name):
         return self.status == constants.STATUS_RUNNING

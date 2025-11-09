@@ -85,6 +85,7 @@ class _Constants:
     CALLBACK_OPEN_APP = 'open_app'
     CALLBACK_ADD_STATUS_BOX = 'add_status_box'
     CALLBACK_ADD_FRAME = 'add_frame'
+    CALLBACKS_SET_TOTAL_ACTIONS = 'set_total_actions'
     CALLBACK_UPDATE_FRAME_STATUS = 'update_frame_status'
 
     DEFAULT_FILE_REVERSE_ORDER = False

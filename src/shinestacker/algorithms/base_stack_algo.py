@@ -18,6 +18,8 @@ class BaseStackAlgo:
         self.num_pixel_values = None
         self.max_pixel_value = None
         self.do_step_callback = False
+        self.output_filename = 'undefined'
+        self.instance_id = id(self)
         if float_type == constants.FLOAT_32:
             self.float_type = np.float32
         elif float_type == constants.FLOAT_64:
@@ -33,6 +35,9 @@ class BaseStackAlgo:
 
     def set_process(self, process):
         self.process = process
+
+    def set_output_filename(self, filename):
+        self.output_filename = filename
 
     def set_do_step_callback(self, enable):
         self.do_step_callback = enable

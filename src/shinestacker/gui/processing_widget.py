@@ -70,6 +70,10 @@ class MultiModuleStatusContainer(QWidget):
         status_widget.add_frame(filename, total_actions)
         QTimer.singleShot(10, lambda: [self.content_size_changed.emit(), self._scroll_to_bottom()])
 
+    def set_frame_total_actions(self, module_name, filename, total_actions):
+        status_widget = self.get_widget(module_name)
+        status_widget.set_total_actions(filename, total_actions)
+
     def update_frame_status(self, module_name, filename, status_id):
         status_widget = self.get_widget(module_name)
         status_widget.update_frame_status(filename, status_id)
@@ -93,6 +97,9 @@ class FrameStatusBox(QWidget):
         self.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
         self.setMouseTracking(True)
         self.setAttribute(Qt.WA_Hover, True)
+
+    def set_total_actions(self, total_actions):
+        self.total_actions = total_actions
 
     def update_status(self, status_id):
         pending_color = (200, 200, 200)
@@ -200,6 +207,12 @@ class PreprocessingStatusWidget(QWidget):
             raise RuntimeError(f"Filename {filename} already registered")
         self.frame_widgets[filename] = FrameStatusBox(filename, total_actions)
         self._update_layout()
+
+    def set_total_actions(self, filename, total_actions):
+        if filename in self.frame_widgets:
+            self.frame_widgets[filename].set_total_actions(total_actions)
+        else:
+            raise RuntimeError(f"Unknown filename {filename}")
 
     def update_frame_status(self, filename, status_id):
         if filename in self.frame_widgets:
