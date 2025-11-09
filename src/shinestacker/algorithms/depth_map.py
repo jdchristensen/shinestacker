@@ -89,7 +89,7 @@ class DepthMapStack(BaseStackAlgo):
         weights = self.get_focus_map(energies)
         blended_pyramid = None
         for i, img_path in enumerate(self.filenames):
-            self.print_message(f": reading {self.image_str(i)}")
+            self.print_message(f": preprocessing {self.image_str(i)}")
             filename = os.path.basename(img_path)
             self.process.callback(constants.CALLBACK_UPDATE_FRAME_STATUS,
                                   self.process.input_path, filename, 200)
