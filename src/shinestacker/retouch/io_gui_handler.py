@@ -249,6 +249,7 @@ class IOGuiHandler(QObject, LayerCollectionHandler):
         tiff_radio = QRadioButton("TIFF")
         jpeg_radio = QRadioButton("JPEG")
         png_radio = QRadioButton("PNG")
+        tiff_radio.setChecked(True)
         format_button_group = QButtonGroup(dialog)
         format_button_group.addButton(tiff_radio)
         format_button_group.addButton(jpeg_radio)
