@@ -1,3 +1,4 @@
+import os
 import logging
 from shinestacker.core.colors import color_str
 from shinestacker.core.logging import setup_logging
@@ -22,6 +23,13 @@ class SubActionMock(SubAction):
         return image
 
 
+def rm_dir(path):
+    for filename in os.listdir(path):
+        file_path = os.path.join(path, filename)
+        if os.path.isfile(file_path):
+            os.unlink(file_path)
+    os.rmdir(path)
+
 def test_combined_actions():
     setup_logging(
         console_level=logging.DEBUG,
@@ -36,6 +44,7 @@ def test_combined_actions():
                                        [SubActionMock()],
                                        output_path="output/img-test-fwk"))
         result = job.run()
+        rm_dir('examples/output/img-test-fwk')
         assert result
     except Exception:
         assert False
@@ -56,6 +65,7 @@ def test_combined_actions_filelist():
                                        [SubActionMock()],
                                        output_path="output/img-test-fwk"))
         result = job.run()
+        rm_dir('examples/output/img-test-fwk')
         assert result
     except Exception:
         assert False
@@ -76,6 +86,7 @@ def test_combined_actions_filelist_fail():
                                        [SubActionMock()],
                                        output_path="output/img-test-fwk"))
         result = job.run()
+        rm_dir('examples/output/img-test-fwk')
         assert result
     except Exception:
         assert False
@@ -96,6 +107,7 @@ def test_combined_actions_filelist_fail_all():
                                        [SubActionMock()],
                                        output_path="output/img-test-fwk"))
         result = job.run()
+        rm_dir('examples/output/img-test-fwk')
         assert not result
     except Exception:
         assert False
@@ -119,6 +131,7 @@ def test_combined_actions_folder_fail():
         assert not result
     except RuntimeError as e:
         logger.error("=== trapped exception: missing folder ===")
+        rm_dir('examples/output/img-test-fwk')
         assert str(e) == 'Path does not exist: examples/input/img-xxx'
 
 
