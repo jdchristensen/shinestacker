@@ -33,7 +33,8 @@ def test_combined_actions():
         job.add_action(CombinedActions("test",
                                        [SubActionMock()],
                                        output_path="output/img-test-fwk"))
-        job.run()
+        result = job.run()
+        assert result
     except Exception:
         assert False
 
@@ -50,7 +51,8 @@ def test_combined_actions_filelist():
         job.add_action(CombinedActions("test",
                                        [SubActionMock()],
                                        output_path="output/img-test-fwk"))
-        job.run()
+        result = job.run()
+        assert result
     except Exception:
         assert False
 
@@ -67,7 +69,8 @@ def test_combined_actions_filelist_fail():
         job.add_action(CombinedActions("test",
                                        [SubActionMock()],
                                        output_path="output/img-test-fwk"))
-        job.run()
+        result = job.run()
+        assert result
     except Exception:
         assert False
 
@@ -84,12 +87,14 @@ def test_combined_actions_filelist_fail_all():
         job.add_action(CombinedActions("test",
                                        [SubActionMock()],
                                        output_path="output/img-test-fwk"))
-        job.run()
+        result = job.run()
+        assert not result
     except Exception:
         assert False
 
 
 if __name__ == '__main__':
     test_combined_actions()
+    test_combined_actions_filelist()
     test_combined_actions_filelist_fail()
     test_combined_actions_filelist_fail_all()
