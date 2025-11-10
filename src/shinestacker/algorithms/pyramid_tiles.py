@@ -137,7 +137,7 @@ class PyramidTilesStack(PyramidBase):
                         fused_level[y:y_end, x:x_end] = fused_tile
                         self.print_message(f': fused tile [{x}, {x_end - 1}]×[{y}, {y_end - 1}]')
                 except Exception as e:
-                    self.print_message(f"Error processing tile ({y}, {x}): {str(e)}")
+                    self.print_message(f": error processing tile ({y}, {x}): {str(e)}")
                 self.after_step(count)
                 self.check_running(self.cleanup_temp_files)
                 count += 1
