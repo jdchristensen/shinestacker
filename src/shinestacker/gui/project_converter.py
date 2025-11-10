@@ -25,8 +25,11 @@ class ProjectConverter:
         else:
             logger.warning(f"=== job: {job.name} disabled ===")
         try:
-            job.run()
-            return constants.RUN_COMPLETED, ''
+            result = job.run()
+            if result:
+                return constants.RUN_COMPLETED, ''
+            logger.error(f"=== job: {job.name} failed ===")
+            return constants.RUN_FAILED, ''
         except RunStopException:
             logger.warning(f"=== job: {job.name} stopped ===")
             return constants.RUN_STOPPED, ''
