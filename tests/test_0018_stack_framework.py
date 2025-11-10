@@ -28,6 +28,8 @@ def test_combined_actions():
         file_level=logging.DEBUG,
         log_file=f"logs/{constants.APP_STRING.lower()}.log"
     )
+    logger = logging.getLogger(__name__)
+    logger.info("=== test combined actions ===")
     try:
         job = StackJob("job", "examples/", input_path="input/img-jpg", callbacks='tqdm')
         job.add_action(CombinedActions("test",
@@ -45,6 +47,8 @@ def test_combined_actions_filelist():
         file_level=logging.DEBUG,
         log_file=f"logs/{constants.APP_STRING.lower()}.log"
     )
+    logger = logging.getLogger(__name__)
+    logger.info("=== test combined actions - filelist ===")
     try:
         job = StackJob("job", "examples/", input_path="input/img-jpg",
                        input_filepaths=['0000.jpg', '0001.jpg'], callbacks='tqdm')
@@ -63,6 +67,8 @@ def test_combined_actions_filelist_fail():
         file_level=logging.DEBUG,
         log_file=f"logs/{constants.APP_STRING.lower()}.log"
     )
+    logger = logging.getLogger(__name__)
+    logger.info("=== test combined actions - filelist, missing one file ===")
     try:
         job = StackJob("job", "examples/", input_path="input/img-jpg",
                        input_filepaths=['0000.jpg', '00xx.jpg', '0002.jpg'], callbacks='tqdm')
@@ -81,6 +87,8 @@ def test_combined_actions_filelist_fail_all():
         file_level=logging.DEBUG,
         log_file=f"logs/{constants.APP_STRING.lower()}.log"
     )
+    logger = logging.getLogger(__name__)
+    logger.info("=== test combined actions - filelist, missing all files ===")
     try:
         job = StackJob("job", "examples/", input_path="input/img-jpg",
                        input_filepaths=['00xx.jpg', '00yy.jpg'], callbacks='tqdm')
@@ -93,8 +101,30 @@ def test_combined_actions_filelist_fail_all():
         assert False
 
 
+def test_combined_actions_folder_fail():
+    setup_logging(
+        console_level=logging.DEBUG,
+        file_level=logging.DEBUG,
+        log_file=f"logs/{constants.APP_STRING.lower()}.log"
+    )
+    logger = logging.getLogger(__name__)
+    logger.info("=== test combined actions - filelist, missing folder ===")
+    try:
+        job = StackJob("job", "examples/", input_path="input/img-xxx",
+                       callbacks='tqdm')
+        job.add_action(CombinedActions("test",
+                                       [SubActionMock()],
+                                       output_path="output/img-test-fwk"))
+        result = job.run()
+        assert not result
+    except RuntimeError as e:
+        logger.error("=== trapped exception: missing folder ===")
+        assert str(e) == 'Path does not exist: examples/input/img-xxx'
+
+
 if __name__ == '__main__':
     test_combined_actions()
     test_combined_actions_filelist()
     test_combined_actions_filelist_fail()
     test_combined_actions_filelist_fail_all()
+    test_combined_actions_folder_fail()
