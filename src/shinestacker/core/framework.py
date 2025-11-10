@@ -218,20 +218,8 @@ class SequentialTask(TaskBase):
     def end(self):
         self.callback(constants.CALLBACK_END_STEPS, self.id, self.name)
 
-    def __iter__(self):
-        self.current_action_count = 0
-        return self
-
     def run_step(self, action_count=-1):
         pass
-
-    def __next__(self):
-        if self.current_action_count < self.total_action_counts:
-            self.run_step(self.current_action_count)
-            x = self.current_action_count
-            self.current_action_count += 1
-            return x
-        raise StopIteration
 
     def check_running(self):
         if self.callback(constants.CALLBACK_CHECK_RUNNING,
@@ -244,7 +232,10 @@ class SequentialTask(TaskBase):
         self.callback(constants.CALLBACK_AFTER_STEP, self.id, self.name, step)
 
     def run_core_serial(self):
-        for _ in iter(self):
+        self.current_action_count = 0
+        while self.current_action_count < self.total_action_counts:
+            self.run_step(self.current_action_count)
+            self.current_action_count += 1
             self.after_step()
             self.check_running()
 

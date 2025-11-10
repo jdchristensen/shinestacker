@@ -5,7 +5,7 @@ from shinestacker.config.constants import constants
 from shinestacker.algorithms.stack_framework import StackJob, CombinedActions, SubAction
 
 
-class TestSubAction(SubAction):
+class SubActionMock(SubAction):
     def __init__(self, noise_mask=constants.DEFAULT_NOISE_MAP_FILENAME,
                  kernel_size=constants.DEFAULT_MN_KERNEL_SIZE,
                  method=constants.INTERPOLATE_MEAN, **kwargs):
@@ -31,7 +31,7 @@ def test_combined_actions():
     try:
         job = StackJob("job", "examples/", input_path="input/img-jpg", callbacks='tqdm')
         job.add_action(CombinedActions("test",
-                                       [TestSubAction()],
+                                       [SubActionMock()],
                                        output_path="output/img-test-fwk"))
         job.run()
     except Exception:
@@ -48,7 +48,7 @@ def test_combined_actions_filelist():
         job = StackJob("job", "examples/", input_path="input/img-jpg",
                        input_filepaths=['0000.jpg', '0001.jpg'], callbacks='tqdm')
         job.add_action(CombinedActions("test",
-                                       [TestSubAction()],
+                                       [SubActionMock()],
                                        output_path="output/img-test-fwk"))
         job.run()
     except Exception:
@@ -65,7 +65,7 @@ def test_combined_actions_filelist_fail():
         job = StackJob("job", "examples/", input_path="input/img-jpg",
                        input_filepaths=['0000.jpg', '00xx.jpg', '0002.jpg'], callbacks='tqdm')
         job.add_action(CombinedActions("test",
-                                       [TestSubAction()],
+                                       [SubActionMock()],
                                        output_path="output/img-test-fwk"))
         job.run()
     except Exception:
