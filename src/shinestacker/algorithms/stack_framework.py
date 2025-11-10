@@ -296,10 +296,20 @@ class CombinedActions(ReferenceFrameTask):
 
     def img_ref(self, idx):
         input_path = self.input_filepath(idx)
-        img = read_img(input_path)
-        if img is None:
-            raise RuntimeError(f"Invalid file: {os.path.basename(input_path)}")
-        self._metadata = get_img_metadata(img)
+        try:
+            img = read_img(input_path)
+            if img is None:
+                self.print_message(
+                    color_str(f"file {input_path} does not contain a valid image",
+                              constants.LOG_COLOR_ALERT),
+                    level=logging.ERROR)
+            else:
+                self._metadata = get_img_metadata(img)
+        except Exception as e:
+            img = None
+            self.print_message(
+                color_str(f"can't read file {input_path}: {str(e)}", constants.LOG_COLOR_ALERT),
+                level=logging.ERROR)
         return img
 
     def frame_str(self, idx=-1):
@@ -311,12 +321,21 @@ class CombinedActions(ReferenceFrameTask):
         input_path = self.input_filepath(idx)
         filename = os.path.basename(input_path)
         self.print_message(
-            color_str(f'read input {self.frame_str(idx)}, '
-                      f'{os.path.basename(input_path)}', constants.LOG_COLOR_LEVEL_3))
-        img = read_img(input_path)
-        validate_image(img, *(self._metadata))
-        if img is None:
-            raise RuntimeError(f"Invalid file:  {os.path.basename(input_path)}")
+            color_str(color_str(f'read input {self.frame_str(idx)}, '
+                      f'{os.path.basename(input_path)}'), constants.LOG_COLOR_LEVEL_3))
+        try:
+            img = read_img(input_path)
+            if img is None:
+                self.print_message(color_str(f"Invalid file: {os.path.basename(input_path)}",
+                                             constants.LOG_COLOR_ALERT),
+                                   level=logging.ERROR)
+            else:
+                validate_image(img, *(self._metadata))
+        except Exception as e:
+            img = None
+            self.print_message(color_str(f"can't read file {input_path}: {str(e)}",
+                                         constants.LOG_COLOR_ALERT),
+                               level=logging.ERROR)
         if len(self._actions) == 0:
             self.sub_message(color_str(": no actions specified", constants.LOG_COLOR_ALERT),
                              level=logging.WARNING)
