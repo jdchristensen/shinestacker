@@ -354,7 +354,7 @@ class CombinedActions(ReferenceFrameTask):
                     self.print_message(
                         color_str("null input received, action skipped",
                                   constants.LOG_COLOR_ALERT),
-                        level=logging.WARNING)
+                        level=logging.ERROR)
         if img is not None:
             output_path = os.path.join(self.output_full_path(), os.path.basename(input_path))
             self.print_message(
@@ -365,7 +365,7 @@ class CombinedActions(ReferenceFrameTask):
             return img
         self.print_message(color_str(
             f"no output resulted from processing input file: {os.path.basename(input_path)}",
-            constants.LOG_COLOR_ALERT), level=logging.WARNING)
+            constants.LOG_COLOR_ALERT), level=logging.ERROR)
         self.callback(constants.CALLBACK_UPDATE_FRAME_STATUS, self.name, filename, 1001)
         return None
 

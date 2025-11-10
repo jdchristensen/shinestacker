@@ -272,7 +272,7 @@ class SequentialTask(TaskBase):
                     else:
                         self.print_message_r(color_str(
                             f"failed processing step: {self.idx_tot_str(idx)}",
-                            constants.LOG_COLOR_WARNING))
+                            constants.LOG_COLOR_ALERT), level=logging.ERROR)
                     self.current_action_count += 1
                     self.after_step()
                     self.check_running()
