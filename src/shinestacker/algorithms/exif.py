@@ -515,6 +515,15 @@ def add_exif_data_to_jpg_file(exif, in_filename, out_filename, verbose=False):
             for tag_id in COMPATIBLE_TAGS:
                 if tag_id in exif:
                     value = exif[tag_id]
+                    if tag_id in [ORIENTATION, FLASH] and isinstance(value, float):
+                        value = int(value)
+                        if verbose:
+                            print(f"Converted Orientation from float to int: {value}")
+                    elif tag_id == BITSPERSAMPLE and isinstance(value, tuple):
+                        jpeg_exif[tag_id] = 8
+                        if verbose:
+                            print(f"Converted BitsPerSample from {value} to 8 for JPEG")
+                        continue
                     try:
                         if tag_id in [EXIFVERSION, FLASHPIXVERSION]:
                             if isinstance(value, str):
@@ -526,6 +535,9 @@ def add_exif_data_to_jpg_file(exif, in_filename, out_filename, verbose=False):
                             jpeg_exif[tag_id] = value
                         elif isinstance(value, (int, str, float, IFDRational)):
                             jpeg_exif[tag_id] = value
+                        else:
+                            if verbose:
+                                print(f"Skipping unsupported type for tag {tag_id}: {type(value)}")
                     except Exception as e:
                         if verbose:
                             logger.warning(msg=f"Failed to add tag {tag_id}: {e}")

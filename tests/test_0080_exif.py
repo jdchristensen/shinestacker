@@ -976,9 +976,7 @@ def test_exif_round_trip_tiff_to_jpg():
             f"Preserved {tiff_exposure_count}/{original_exposure_count} "
             "exposure tags in TIFF")
 
-        # FIX: Normalize EXIF data types before writing to JPEG
         def normalize_exif_types(exif_dict):
-            """Convert float values to int where appropriate for JPEG writing"""
             normalized = {}
             integer_tags = {
                 274,  # Orientation
@@ -1009,14 +1007,11 @@ def test_exif_round_trip_tiff_to_jpg():
             }
             for tag_id, value in exif_dict.items():
                 if tag_id in integer_tags and isinstance(value, float) and value.is_integer():
-                    # Convert float to int for known integer tags
                     normalized[tag_id] = int(value)
                 else:
                     normalized[tag_id] = value
             return normalized
-
         normalized_tiff_exif = normalize_exif_types(tiff_exif)
-
         temp_jpg = output_dir + "/roundtrip_final.jpg"
         logger.info("*** Writing JPG with normalized TIFF EXIF ***")
         write_image_with_exif_data(normalized_tiff_exif, test_image, temp_jpg, verbose=False)
@@ -1033,12 +1028,10 @@ def test_exif_round_trip_tiff_to_jpg():
         lost_tags = []
 
         def values_equal(v1, v2, rel_tol=1e-9, abs_tol=1e-12):
-            """Compare values with type flexibility for numeric types, with tolerance for floats."""
             if v1 == v2:
                 return True
             try:
                 f1, f2 = float(v1), float(v2)
-                # If both are floats, check with tolerance
                 return abs(f1 - f2) <= max(rel_tol * max(abs(f1), abs(f2)), abs_tol)
             except (TypeError, ValueError):
                 return False
@@ -1049,7 +1042,6 @@ def test_exif_round_trip_tiff_to_jpg():
                 final_value = final_exif.get(tag_id)
                 if final_value is not None:
                     if hasattr(original_value, 'numerator') and hasattr(final_value, 'numerator'):
-                        # Both are rationals - compare as floats with tolerance
                         if values_equal(original_value, final_value):
                             preserved_tags.append((tag_name, original_value, final_value))
                         else:
@@ -1068,7 +1060,6 @@ def test_exif_round_trip_tiff_to_jpg():
             logger.info("✗ LOST/CHANGED TAGS:")
             for tag_name, orig_val, final_val, reason in lost_tags:
                 logger.info(f"  {tag_name}: {orig_val} -> {final_val} ({reason})")
-            # Don't fail immediately - check preservation rate
         else:
             logger.info("✓ All exposure tags perfectly preserved!")
         total_tags = len(preserved_tags) + len(lost_tags)
