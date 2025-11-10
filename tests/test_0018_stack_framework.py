@@ -30,6 +30,7 @@ def rm_dir(path):
             os.unlink(file_path)
     os.rmdir(path)
 
+
 def test_combined_actions():
     setup_logging(
         console_level=logging.DEBUG,
