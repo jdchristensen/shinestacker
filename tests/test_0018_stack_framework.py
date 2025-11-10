@@ -72,6 +72,24 @@ def test_combined_actions_filelist_fail():
         assert False
 
 
+def test_combined_actions_filelist_fail_all():
+    setup_logging(
+        console_level=logging.DEBUG,
+        file_level=logging.DEBUG,
+        log_file=f"logs/{constants.APP_STRING.lower()}.log"
+    )
+    try:
+        job = StackJob("job", "examples/", input_path="input/img-jpg",
+                       input_filepaths=['00xx.jpg', '00yy.jpg'], callbacks='tqdm')
+        job.add_action(CombinedActions("test",
+                                       [SubActionMock()],
+                                       output_path="output/img-test-fwk"))
+        job.run()
+    except Exception:
+        assert False
+
+
 if __name__ == '__main__':
     test_combined_actions()
     test_combined_actions_filelist_fail()
+    test_combined_actions_filelist_fail_all()

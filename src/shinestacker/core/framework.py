@@ -94,14 +94,18 @@ class TaskBase:
             self.get_logger().warning(color_str(self.name + ": entire job disabled",
                                                 constants.LOG_COLOR_ALERT))
         self.callback(constants.CALLBACK_BEFORE_ACTION, self.id, self.name)
-        self.run_core()
+        result = self.run_core()
         self.callback(constants.CALLBACK_AFTER_ACTION, self.id, self.name)
         msg_name = color_str(self.name + ":", constants.LOG_COLOR_LEVEL_JOB, "bold")
         msg_time = color_str(f"elapsed time: {elapsed_time_str(self._t0)}",
                              constants.LOG_COLOR_LEVEL_JOB)
-        msg_completed = color_str("completed", constants.LOG_COLOR_LEVEL_JOB)
+        if result:
+            msg_completed = color_str("completed", constants.LOG_COLOR_LEVEL_JOB)
+        else:
+            msg_completed = color_str("failed", constants.LOG_COLOR_ALERT)
         self.get_logger().info(msg=f"{msg_name} {msg_time}{TRAILING_SPACES}")
         self.get_logger().info(msg=f"{msg_name} {msg_completed}{TRAILING_SPACES}")
+        return result
 
     def get_logger(self, tqdm=False):
         if config.DISABLE_TQDM:
@@ -176,6 +180,7 @@ class Job(TaskBase):
         self.__actions.append(a)
 
     def run_core(self):
+        fail = False
         for a in self.__actions:
             if not (a.enabled and self.enabled):
                 z = []
@@ -190,9 +195,12 @@ class Job(TaskBase):
                 if self.callback(constants.CALLBACK_CHECK_RUNNING,
                                  self.id, self.name) is False:
                     raise RunStopException(self.name)
-                a.run()
+                result = a.run()
+                if not result:
+                    fail = True
         for a in self.__actions:
             a.end_job()
+        return not fail
 
 
 class SequentialTask(TaskBase):
