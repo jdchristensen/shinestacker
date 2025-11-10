@@ -28,8 +28,8 @@ class Action2(TaskBase):
 
 
 class MySequence(SequentialTask):
-    def __init__(self, name, enabled=True):
-        SequentialTask.__init__(self, name, enabled=enabled)
+    def __init__(self, name, enabled=True, max_threads=2):
+        SequentialTask.__init__(self, name, enabled=enabled, max_threads=max_threads)
 
     def begin(self):
         super().begin()
@@ -44,7 +44,7 @@ class MySequence(SequentialTask):
         self.print_message(color_str("my sequence, end job", "magenta", "bold"))
 
 
-def test_run():
+def test_run_parallel():
     try:
         job = Job("job", callbacks='tqdm')
         job.add_action(Action1())
@@ -56,6 +56,19 @@ def test_run():
     except Exception:
         assert False
 
+def test_run_serial():
+    try:
+        job = Job("job", callbacks='tqdm')
+        job.add_action(Action1())
+        job.add_action(Action2())
+        job.add_action(MySequence("my actions", max_threads=1))
+        a = MySequence("my actions", enabled=False)
+        job.add_action(a)
+        job.run()
+    except Exception:
+        assert False
 
 if __name__ == '__main__':
-    test_run()
+    test_run_serial()
+    test_run_parallel()
+

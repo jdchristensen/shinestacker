@@ -231,10 +231,21 @@ class SequentialTask(TaskBase):
             step = self.current_action_count + self.begin_steps
         self.callback(constants.CALLBACK_AFTER_STEP, self.id, self.name, step)
 
+    def print_step_status(self, idx, result):
+        if result:
+            self.print_message_r(color_str(
+                f"completed processing step: {self.idx_tot_str(idx)}",
+                constants.LOG_COLOR_LEVEL_1))
+        else:
+            self.print_message_r(color_str(
+                f"failed processing step: {self.idx_tot_str(idx)}",
+                constants.LOG_COLOR_ALERT), level=logging.ERROR)
+
     def run_core_serial(self):
         self.current_action_count = 0
         while self.current_action_count < self.total_action_counts:
-            self.run_step(self.current_action_count)
+            result = self.run_step(self.current_action_count)
+            self.print_step_status(self.current_action_count, result)
             self.current_action_count += 1
             self.after_step()
             self.check_running()
@@ -256,14 +267,7 @@ class SequentialTask(TaskBase):
                 idx = future_to_index[future]
                 try:
                     result = future.result()
-                    if result:
-                        self.print_message_r(color_str(
-                            f"completed processing step: {self.idx_tot_str(idx)}",
-                            constants.LOG_COLOR_LEVEL_1))
-                    else:
-                        self.print_message_r(color_str(
-                            f"failed processing step: {self.idx_tot_str(idx)}",
-                            constants.LOG_COLOR_ALERT), level=logging.ERROR)
+                    self.print_step_status(idx, result)
                     self.current_action_count += 1
                     self.after_step()
                     self.check_running()
