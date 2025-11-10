@@ -2326,10 +2326,13 @@ def test_process_tiff_data_edge_cases():
         logger.info("======== Testing Process TIFF Data Edge Cases ========")
         zero_rational = IFDRational(1, 0)
         result = _process_tiff_data_safe(zero_rational)
-        assert result == (5, 1, (1, 1)), f"Zero denominator should be handled: {result}"
+        assert result == (3, 1, 1), f"Zero denominator should be converted to integer: {result}"
         normal_rational = IFDRational(2, 3)
         result = _process_tiff_data_safe(normal_rational)
         assert result == (5, 1, (2, 3)), f"Normal rational should work: {result}"
+        integer_rational = IFDRational(5, 1)
+        result = _process_tiff_data_safe(integer_rational)
+        assert result == (3, 1, 5), f"Integer rational should be converted to integer: {result}"
         problematic_iterable = [1, "not_a_number", 3]
         result = _process_tiff_data_safe(problematic_iterable)
         assert result is None, f"Problematic iterable should return None: {result}"

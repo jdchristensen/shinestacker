@@ -9,6 +9,7 @@ This page reports the main releases only and the main changes therein.
 - visual progress indicators for frame processing
 
 ### Fixed
+- fixed some EXIF tag conversions from TIFF to JPEG
 - links in the "about" dialog window are now clickable
 - protect against invalid or spurious content of source folder when importing frames from a project
 - fault tolerance in case of missing or invalid file
