@@ -5,13 +5,13 @@ This page reports the main releases only and the main changes therein.
 ## [vx.x.x] - 2025-11-10
 ** GUI improvements and fixes **
 
+### Added
+- visual progress indicators for frame processing
+
 ### Fixed
 - links in the "about" dialog window are now clickable
 - protect against spurious content of source folder when importing frames from a project
 - fault tolerance in case of missing or invalid file
-
-### Changed
-- added visual progress indicators for frame processing
 
 ---
 
