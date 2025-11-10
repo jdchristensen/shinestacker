@@ -189,7 +189,7 @@ class MultiLayer(TaskBase, ImageSequenceManager):
             self.print_message(color_str("no input paths specified",
                                          constants.LOG_COLOR_ALERT),
                                level=logging.WARNING)
-            return
+            return False
         input_files = self.input_filepaths()
         if len(input_files) == 0:
             self.print_message(
@@ -198,7 +198,7 @@ class MultiLayer(TaskBase, ImageSequenceManager):
                           ", ".join([f"'{p}'" for p in paths]),
                           constants.LOG_COLOR_ALERT),
                 level=logging.WARNING)
-            return
+            return False
         self.print_message(color_str("merging frames in " + self.folder_list_str(),
                            constants.LOG_COLOR_LEVEL_2))
         self.print_message(
@@ -220,3 +220,4 @@ class MultiLayer(TaskBase, ImageSequenceManager):
                               callbacks=callbacks)
         app = 'internal_retouch_app' if config.COMBINED_APP else f'{constants.RETOUCH_APP}'
         self.callback(constants.CALLBACK_OPEN_APP, self.id, self.name, app, output_file)
+        return True

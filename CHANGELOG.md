@@ -10,8 +10,11 @@ This page reports the main releases only and the main changes therein.
 
 ### Fixed
 - links in the "about" dialog window are now clickable
-- protect against spurious content of source folder when importing frames from a project
+- protect against invalid or spurious content of source folder when importing frames from a project
 - fault tolerance in case of missing or invalid file
+
+### Changed
+- some code cleanup
 
 ---
 

@@ -159,6 +159,7 @@ class FocusStack(FocusStackBase):
         filename = self.prefix + os.path.basename(img_files[0])
         self.callback(constants.CALLBACK_ADD_FRAME, self.name, filename, 1)
         self.focus_stack(img_files)
+        return True
 
     def init(self, job, _working_path=''):
         FocusStackBase.init(self, job, self.working_path)

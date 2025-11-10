@@ -56,6 +56,7 @@ def test_run_parallel():
     except Exception:
         assert False
 
+
 def test_run_serial():
     try:
         job = Job("job", callbacks='tqdm')
@@ -68,7 +69,7 @@ def test_run_serial():
     except Exception:
         assert False
 
+
 if __name__ == '__main__':
     test_run_serial()
     test_run_parallel()
-

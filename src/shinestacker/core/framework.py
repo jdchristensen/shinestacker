@@ -86,7 +86,7 @@ class TaskBase:
         return None
 
     def run_core(self):
-        pass
+        return True
 
     def run(self):
         self._t0 = time.time()
@@ -203,6 +203,7 @@ class SequentialTask(TaskBase):
         self.total_action_counts = None
         self.current_action_count = None
         self.begin_steps = 0
+        self.fail = True
 
     def set_counts(self, counts):
         self.total_action_counts = counts
@@ -218,8 +219,8 @@ class SequentialTask(TaskBase):
     def end(self):
         self.callback(constants.CALLBACK_END_STEPS, self.id, self.name)
 
-    def run_step(self, action_count=-1):
-        pass
+    def run_step(self, _action_count=-1):
+        return True
 
     def check_running(self):
         if self.callback(constants.CALLBACK_CHECK_RUNNING,
@@ -231,8 +232,9 @@ class SequentialTask(TaskBase):
             step = self.current_action_count + self.begin_steps
         self.callback(constants.CALLBACK_AFTER_STEP, self.id, self.name, step)
 
-    def print_step_status(self, idx, result):
+    def check_step_status(self, idx, result):
         if result:
+            self.fail = False
             self.print_message_r(color_str(
                 f"completed processing step: {self.idx_tot_str(idx)}",
                 constants.LOG_COLOR_LEVEL_1))
@@ -245,7 +247,7 @@ class SequentialTask(TaskBase):
         self.current_action_count = 0
         while self.current_action_count < self.total_action_counts:
             result = self.run_step(self.current_action_count)
-            self.print_step_status(self.current_action_count, result)
+            self.check_step_status(self.current_action_count, result)
             self.current_action_count += 1
             self.after_step()
             self.check_running()
@@ -267,7 +269,7 @@ class SequentialTask(TaskBase):
                 idx = future_to_index[future]
                 try:
                     result = future.result()
-                    self.print_step_status(idx, result)
+                    self.check_step_status(idx, result)
                     self.current_action_count += 1
                     self.after_step()
                     self.check_running()
@@ -293,6 +295,7 @@ class SequentialTask(TaskBase):
 
     def run_core(self):
         self.print_message(color_str('begin run', constants.LOG_COLOR_LEVEL_2), end='\n')
+        self.fail = True
         self.begin()
         if self.run_sequential():
             self.run_core_serial()
@@ -302,6 +305,7 @@ class SequentialTask(TaskBase):
             else:
                 self.run_core_parallel()
         self.end()
+        return not self.fail
 
     def sequential_processing(self):
         return False

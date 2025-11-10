@@ -142,6 +142,7 @@ class NoiseDetection(TaskBase, ImageSequenceManager):
             save_plot(plot_path)
             self.callback(constants.CALLBACK_SAVE_PLOT, self.id, f"{self.name}: noise", plot_path)
             plt.close('all')
+        return True
 
 
 class MaskNoise(SubAction):
