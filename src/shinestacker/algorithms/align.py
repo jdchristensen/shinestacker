@@ -282,7 +282,7 @@ def find_transform(src_pts, dst_pts, transform=constants.DEFAULT_TRANSFORM,
     return result
 
 
-def rescale_trasnsform(m, w0, h0, w_sub, h_sub, subsample, transform):
+def rescale_transform(m, w0, h0, w_sub, h_sub, subsample, transform):
     if transform == constants.ALIGN_HOMOGRAPHY:
         low_size = np.float32([[0, 0], [0, h_sub], [w_sub, h_sub], [w_sub, 0]])
         high_size = np.float32([[0, 0], [0, h0], [w0, h0], [w0, 0]])
@@ -468,7 +468,7 @@ def align_images(img_ref, img_0, feature_config=None, matching_config=None, alig
             return n_good_matches, None, None
     h_sub, w_sub = img_0_sub.shape[:2]
     if subsample > 1:
-        m = rescale_trasnsform(m, w0, h0, w_sub, h_sub, subsample, transform_type)
+        m = rescale_transform(m, w0, h0, w_sub, h_sub, subsample, transform_type)
         if m is None:
             if callbacks and 'warning' in callbacks:
                 callbacks['warning']("can't rescale transformation matrix, alignment failed")

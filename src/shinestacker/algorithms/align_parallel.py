@@ -15,7 +15,7 @@ from .. core.colors import color_str
 from .. core.core_utils import make_chunks
 from .utils import read_img, img_subsample, img_bw, img_bw_8bit
 from .align import (AlignFramesBase, find_transform, find_transform_phase_correlation,
-                    check_transform, _cv2_border_mode_map, rescale_trasnsform,
+                    check_transform, _cv2_border_mode_map, rescale_transform,
                     validate_align_config, detector_map, descriptor_map,
                     get_good_matches)
 
@@ -327,7 +327,7 @@ class AlignFramesParallel(AlignFramesBase):
                         'align_confidence', 'refine_iters']))
         h_sub, w_sub = img_0_sub.shape[:2]
         if subsample > 1:
-            m = rescale_trasnsform(m, w0, h0, w_sub, h_sub, subsample, transform)
+            m = rescale_transform(m, w0, h0, w_sub, h_sub, subsample, transform)
             if m is None:
                 self.print_message(
                     f"invalid option {transform} "
@@ -337,7 +337,6 @@ class AlignFramesParallel(AlignFramesBase):
         transform_type = self.alignment_config['transform']
         thresholds = self.get_transform_thresholds()
         is_valid, _reason, _result = check_transform(m, img_0.shape, transform_type, *thresholds)
-        # self.save_transform_result(idx, result)
         if not is_valid:
             msg = f"invalid transformation for {self.image_str(idx)}"
             do_abort = self.alignment_config['abort_abnormal']

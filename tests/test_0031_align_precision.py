@@ -64,6 +64,42 @@ def compare_transformations(M_true, M_aligned):
     assert abs(ty_diff) < 0.2
     assert abs(scale_diff) < 0.0001
 
+feature_config = {
+    'detector': constants.DETECTOR_SIFT,
+    'descriptor': constants.DESCRIPTOR_SIFT
+}
+
+matching_config = {
+    'match_method': constants.MATCHING_KNN
+}
+
+alignment_config = {
+    'transform': constants.ALIGN_RIGID,
+    'subsample': 1
+}
+
+callbacks = {
+    'message': lambda: print('estimate transform using feature matching'),
+    'matches_message': lambda n: print(f'good matches: {n}'),
+    'estimation_message': lambda: print(f'align images'),
+    'blur_message': lambda: print(f'blur borders'),
+    'warning': lambda msg: print(f'{msg}'),
+}
+
+AFFINE_THRESHOLDS = {
+    'max_rotation': 20.0,  # degrees
+    'min_scale': 0.5,
+    'max_scale': 1.5,
+    'max_shear': 10.0,  # degrees
+    'max_translation_ratio': 0.2,  # 20% of image dimension
+}
+
+HOMOGRAPHY_THRESHOLDS = {
+    'max_skew': 12.0,  # degrees
+    'max_scale_change': 2.0,  # max area change ratio
+    'max_aspect_ratio': 4.0,  # max aspect ratio change
+}
+
 
 def compare_alignment(feature_config, matching_config, alignment_config, color_test=False):
     original = create_test_image(color=color_test)
@@ -75,11 +111,14 @@ def compare_alignment(feature_config, matching_config, alignment_config, color_t
             transformed_bgr, original_bgr,
             feature_config=feature_config,
             matching_config=matching_config,
-            alignment_config=alignment_config
+            alignment_config=alignment_config,
+            callbacks=callbacks,
+            affine_thresholds=AFFINE_THRESHOLDS,
+            homography_thresholds=HOMOGRAPHY_THRESHOLDS
         )
     except Exception as e:
         print(f"Alignment failed: {e}")
-        return
+        assert False
     compare_transformations(M_true, M_recovered)
     display_img = aligned.copy()
     if not color_test:
@@ -96,21 +135,6 @@ def compare_alignment(feature_config, matching_config, alignment_config, color_t
                 plt.imshow(cv2.cvtColor(img, cv2.COLOR_BGR2RGB))
             plt.title(title)
         plt.show()
-
-
-feature_config = {
-    'detector': constants.DETECTOR_ORB,
-    'descriptor': constants.DESCRIPTOR_ORB
-}
-
-matching_config = {
-    'match_method': constants.MATCHING_KNN
-}
-
-alignment_config = {
-    'transform': constants.ALIGN_RIGID,
-    'subsample': 1
-}
 
 
 def test_alignment_bw():
