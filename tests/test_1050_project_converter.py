@@ -43,7 +43,7 @@ def test_run_enabled_job(converter, logger):
     mock_job.name = "test_job"
     mock_job.run.return_value = None
     status, msg = converter.run(mock_job, logger)
-    assert status == constants.RUN_COMPLETED
+    assert status == constants.RUN_FAILED
     assert msg == ""
     mock_job.run.assert_called_once()
 
@@ -54,9 +54,9 @@ def test_run_disabled_job(converter, logger):
     mock_job.name = "test_job"
     mock_job.run.return_value = None
     status, msg = converter.run(mock_job, logger)
-    assert status == constants.RUN_COMPLETED
-    assert msg == ""
-    mock_job.run.assert_called_once()
+    assert status == constants.RUN_FAILED
+    assert msg == "run disabled"
+    mock_job.run.assert_not_called()
 
 
 def test_run_stopped_job(converter, logger):

@@ -567,10 +567,13 @@ class AlignFramesBase(SubAction):
         self._rotation = np.zeros(process.total_action_counts)
         self._shear = np.zeros(process.total_action_counts)
 
+    def get_img_ref(self, _ref_idx):
+        return None
+
     def run_frame(self, idx, ref_idx, img_0):
         if idx == self.process.ref_idx:
             return img_0
-        img_ref = self.process.img_ref(ref_idx)
+        img_ref = self.get_img_ref(ref_idx)
         return self.align_images(idx, img_ref, img_0)
 
     def get_transform_thresholds(self):
@@ -801,6 +804,9 @@ class AlignFrames(AlignFramesBase):
         )
         self._n_good_matches[idx] = n_good_matches
         return img
+
+    def get_img_ref(self, ref_idx):
+        return self.process.saved_img_ref(ref_idx)
 
     def relative_transformation(self):
         return False

@@ -312,6 +312,25 @@ class CombinedActions(ReferenceFrameTask):
                 level=logging.ERROR)
         return img
 
+    def saved_img_ref(self, idx):
+        input_filename = os.path.basename(self.input_filepath(idx))
+        saved_filename = os.path.join(self.output_full_path(), input_filename)
+        try:
+            img = read_img(saved_filename)
+            if img is None:
+                self.print_message(
+                    color_str(f"file {input_filename} does not contain a valid image",
+                              constants.LOG_COLOR_ALERT),
+                    level=logging.ERROR)
+            else:
+                self._metadata = get_img_metadata(img)
+        except Exception as e:
+            img = None
+            self.print_message(
+                color_str(f"can't read file {input_filename}: {str(e)}", constants.LOG_COLOR_ALERT),
+                level=logging.ERROR)
+        return img
+
     def frame_str(self, idx=-1):
         if self.run_sequential():
             idx = self.current_action_count

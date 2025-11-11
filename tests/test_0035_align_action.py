@@ -524,7 +524,7 @@ def test_align_frames_run_frame_non_reference():
     class MockProcess:
         ref_idx = 0
 
-        def img_ref(self, idx):
+        def saved_img_ref(self, idx):
             return np.ones((10, 10, 3))
 
     align_frames.process = MockProcess()
@@ -540,7 +540,7 @@ def test_align_frames_run_frame_align_images_exception():
     class MockProcess:
         ref_idx = 0
 
-        def img_ref(self, idx):
+        def saved_img_ref(self, idx):
             return np.ones((10, 10, 3))
 
     align_frames.process = MockProcess()

@@ -24,6 +24,7 @@ class ProjectConverter:
             logger.info(f"=== run job: {job.name} ===")
         else:
             logger.warning(f"=== job: {job.name} disabled ===")
+            return constants.RUN_FAILED, 'run disabled'
         try:
             result = job.run()
             if result:

@@ -54,6 +54,9 @@ class AlignFramesParallel(AlignFramesBase):
     def relative_transformation(self):
         return True
 
+    def get_img_ref(self, ref_idx):
+        return self.process.img_ref(ref_idx)
+
     def cache_img(self, idx):
         with self._cache_locks[idx]:
             self._img_locks[idx] += 1

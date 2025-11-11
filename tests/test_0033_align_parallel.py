@@ -550,7 +550,7 @@ def test_find_transform_rescale_failure():
         with patch.object(aligner, 'detect_and_compute_matches') as mock_detect:
             with patch('shinestacker.algorithms.align_parallel.find_transform') as mock_find:
                 with patch('shinestacker.algorithms.'
-                           'align_parallel.rescale_trasnsform') as mock_rescale:
+                           'align_parallel.rescale_transform') as mock_rescale:
                     mock_kp_0 = [Mock(pt=(i * 10.0, i * 10.0)) for i in range(10)]
                     mock_kp_ref = [Mock(pt=(i * 10.0 + 5, i * 10.0 + 5)) for i in range(10)]
                     mock_matches = [Mock(queryIdx=i, trainIdx=i) for i in range(10)]

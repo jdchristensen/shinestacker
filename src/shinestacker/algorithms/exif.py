@@ -881,17 +881,15 @@ def _process_tiff_data_safe(data):
     if isinstance(data, int):
         if 0 <= data <= 65535:
             return 3, 1, data
-        else:
-            return 4, 1, data
+        return 4, 1, data
     if isinstance(data, float):
         return 11, 1, float(data)  # Use FLOAT only for actual floats
     if hasattr(data, '__iter__') and not isinstance(data, (str, bytes)):
         try:
             if all(isinstance(x, int) for x in data):
                 return 3, len(data), tuple(data)  # Use SHORT array for integers
-            else:
-                clean_data = [float(x) for x in data]
-                return 12, len(clean_data), tuple(clean_data)  # Use DOUBLE for floats
+            clean_data = [float(x) for x in data]
+            return 12, len(clean_data), tuple(clean_data)  # Use DOUBLE for floats
         except Exception:
             return None
     return None
@@ -904,8 +902,7 @@ def _process_rational_tag(data):
         if denominator == 1:
             if 0 <= numerator <= 65535:
                 return 3, 1, numerator  # SHORT
-            else:
-                return 4, 1, numerator  # LONG
+            return 4, 1, numerator  # LONG
         if abs(numerator) > 1000000 or abs(denominator) > 1000000:
             return 11, 1, float(data)  # Use FLOAT for very large values
         if numerator < 0:

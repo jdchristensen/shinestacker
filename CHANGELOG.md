@@ -3,19 +3,20 @@
 This page reports the main releases only and the main changes therein.
 
 ## [vx.x.x] - 2025-11-10
-** GUI improvements and fixes **
+** GUI improvements and bug fixes **
 
 ### Added
 - visual progress indicators for frame processing
 
 ### Fixed
-- fixed some EXIF tag conversions from TIFF to JPEG
-- links in the "about" dialog window are now clickable
-- protect against invalid or spurious content of source folder when importing frames from a project
-- fault tolerance in case of missing or invalid file
+- alignment miscalculation when running in single-core mode
+- incorrect EXIF tag conversion from TIFF to JPEG
+- clickable links in the "About" dialog
+- protection against invalid or spurious content in the source folder when importing frames
+- improved fault tolerance for missing or invalid files
 
 ### Changed
-- some code cleanup
+- minor code cleanup
 
 ---
 

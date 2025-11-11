@@ -64,6 +64,7 @@ def compare_transformations(M_true, M_aligned):
     assert abs(ty_diff) < 0.2
     assert abs(scale_diff) < 0.0001
 
+
 feature_config = {
     'detector': constants.DETECTOR_SIFT,
     'descriptor': constants.DESCRIPTOR_SIFT
@@ -81,8 +82,8 @@ alignment_config = {
 callbacks = {
     'message': lambda: print('estimate transform using feature matching'),
     'matches_message': lambda n: print(f'good matches: {n}'),
-    'estimation_message': lambda: print(f'align images'),
-    'blur_message': lambda: print(f'blur borders'),
+    'estimation_message': lambda: print('align images'),
+    'blur_message': lambda: print('blur borders'),
     'warning': lambda msg: print(f'{msg}'),
 }
 
