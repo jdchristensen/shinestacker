@@ -2,7 +2,7 @@ import numpy as np
 import cv2
 from shinestacker.config.constants import constants
 from shinestacker.algorithms.feature_match import (
-    FeatureMatcher, get_good_matches, DEFAULT_FEATURE_CONFIG, DEFAULT_MATCHING_CONFIG)
+    FeatureMatcher, DEFAULT_FEATURE_CONFIG, DEFAULT_MATCHING_CONFIG)
 
 
 def test_constructor_default():
@@ -231,26 +231,6 @@ def test_match_features_different_sizes():
     print(f"✓ Match features different sizes: {len(good_matches)} matches: PASS")
 
 
-def test_get_good_matches_knn():
-    print("Testing get_good_matches with KNN method...")
-    des1 = np.random.random((10, 128)).astype(np.float32)
-    des2 = np.random.random((10, 128)).astype(np.float32)
-    matching_config = {'match_method': constants.MATCHING_KNN, 'threshold': 0.7}
-    good_matches = get_good_matches(des1, des2, matching_config)
-    assert good_matches is not None
-    print(f"✓ Get good matches KNN: {len(good_matches)} matches: PASS")
-
-
-def test_get_good_matches_hamming():
-    print("Testing get_good_matches with Hamming method...")
-    des1 = np.random.randint(0, 255, (10, 32), dtype=np.uint8)
-    des2 = np.random.randint(0, 255, (10, 32), dtype=np.uint8)
-    matching_config = {'match_method': constants.MATCHING_NORM_HAMMING}
-    good_matches = get_good_matches(des1, des2, matching_config)
-    assert good_matches is not None
-    print(f"✓ Get good matches Hamming: {len(good_matches)} matches: PASS")
-
-
 if __name__ == "__main__":
     print("Running FeatureMatcher tests...")
     test_constructor_default()
@@ -268,5 +248,3 @@ if __name__ == "__main__":
     test_match_features_hamming()
     test_match_features_empty_descriptors()
     test_match_features_different_sizes()
-    test_get_good_matches_knn()
-    test_get_good_matches_hamming()

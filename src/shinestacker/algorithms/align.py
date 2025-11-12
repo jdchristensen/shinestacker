@@ -9,10 +9,10 @@ import matplotlib.pyplot as plt
 from .. config.constants import constants
 from .. core.exceptions import InvalidOptionError
 from .. core.colors import color_str
-from .utils import img_8bit, save_plot, img_subsample
+from .utils import img_8bit, save_plot
 from .stack_framework import SubAction
 from .feature_match import (
-    FeatureMatcher, DEFAULT_FEATURE_CONFIG, DEFAULT_MATCHING_CONFIG)
+    SubsamplingFeatureMatcher, DEFAULT_FEATURE_CONFIG, DEFAULT_MATCHING_CONFIG)
 
 DEFAULT_ALIGNMENT_CONFIG = {
     'transform': constants.DEFAULT_TRANSFORM,
@@ -342,26 +342,19 @@ def align_images(img_ref, img_0, feature_config=None, matching_config=None, alig
         subsample = int(1 + math.floor(img_res / target_res))
     fast_subsampling = alignment_config['fast_subsampling']
     min_good_matches = alignment_config['min_good_matches']
-    feature_matcher = FeatureMatcher(feature_config, matching_config, callbacks)
-    while True:
-        if subsample > 1:
-            img_0_sub = img_subsample(img_0, subsample, fast_subsampling)
-            img_ref_sub = img_subsample(img_ref, subsample, fast_subsampling)
-        else:
-            img_0_sub, img_ref_sub = img_0, img_ref
-        match_result = feature_matcher.match_images(img_ref_sub, img_0_sub)
-        n_good_matches = match_result.n_good_matches()
-        if match_result.has_sufficient_matches(min_good_matches) or subsample == 1:
-            break
-        subsample = 1
-        if callbacks and 'warning' in callbacks:
-            s_str = 'es' if match_result.n_good_matches() != 1 else ''
-            callbacks['warning'](
-                f"only {match_result.n_good_matches()} < {min_good_matches} match{s_str} found, "
-                "retrying without subsampling")
-        else:
-            n_good_matches = 0
-            break
+    feature_matcher = SubsamplingFeatureMatcher(feature_config, matching_config, callbacks)
+
+    match_result, _final_subsample = feature_matcher.match_images_with_fallback(
+        img_ref, img_0,
+        subsample=subsample,
+        fast_subsampling=fast_subsampling,
+        min_good_matches=min_good_matches,
+        warning_callback=lambda msg:
+            callbacks['warning'](msg) if callbacks and 'warning' in callbacks else None
+    )
+    n_good_matches = match_result.n_good_matches()
+
+    img_ref_sub, img_0_sub = feature_matcher.get_last_subsampled_images()
     phase_corr_fallback = alignment_config['phase_corr_fallback']
     phase_corr_called = False
     img_warp = None

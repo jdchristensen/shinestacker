@@ -331,7 +331,7 @@ def test_find_transform_successful():
     aligner._transforms = [None, None]
     with patch.object(aligner, 'cache_img') as mock_cache:
         mock_cache.side_effect = [img1, img2]
-        with patch.object(aligner.feature_matcher, 'match_images') as mock_match:
+        with patch.object(aligner.feature_matcher, 'match_images_with_fallback') as mock_match:
             mock_kp_0 = []
             mock_kp_ref = []
             mock_good_matches = []
@@ -359,7 +359,8 @@ def test_find_transform_successful():
             mock_match_result.img_0_sub = None
             mock_match_result.img_ref_sub = None
             mock_match_result.subsample = None
-            mock_match.return_value = mock_match_result
+            mock_match.return_value = (mock_match_result, 1)
+            aligner.feature_matcher._last_subsampled_images = (img1, img2)
             with patch('shinestacker.algorithms.align_parallel.find_transform') as mock_find:
                 mock_find.return_value = (np.eye(2, 3, dtype=np.float32), None)
                 with patch('shinestacker.algorithms.align_parallel.check_transform') as mock_check:
@@ -483,7 +484,7 @@ def test_find_transform_invalid_transform_abort():
     aligner._target_indices = [None, None]
     aligner._transforms = [None, None]
     with patch.object(aligner, 'cache_img') as mock_cache:
-        with patch.object(aligner.feature_matcher, 'match_images') as mock_match:
+        with patch.object(aligner.feature_matcher, 'match_images_with_fallback') as mock_match:
             with patch('shinestacker.algorithms.align_parallel.find_transform') as mock_find:
                 with patch('shinestacker.algorithms.align_parallel.check_transform') as mock_check:
                     mock_kp_0 = [Mock(pt=(i * 10.0, i * 10.0)) for i in range(10)]
@@ -497,8 +498,10 @@ def test_find_transform_invalid_transform_abort():
                     mock_match_result.img_0_sub = None
                     mock_match_result.img_ref_sub = None
                     mock_match_result.subsample = None
-                    mock_match.return_value = mock_match_result
-                    mock_cache.return_value = np.ones((100, 100, 3), dtype=np.uint8)
+                    mock_match.return_value = (mock_match_result, 1)
+                    test_img = np.ones((100, 100, 3), dtype=np.uint8)
+                    aligner.feature_matcher._last_subsampled_images = (test_img, test_img)
+                    mock_cache.return_value = test_img
                     mock_find.return_value = (np.eye(2, 3, dtype=np.float32), None)
                     mock_check.return_value = (False, "test invalid reason", None)
                     with pytest.raises(RuntimeError, match="invalid transformation"):
@@ -531,7 +534,7 @@ def test_find_transform_rescale_failure():
     aligner._target_indices = [None, None]
     aligner._transforms = [None, None]
     with patch.object(aligner, 'cache_img') as mock_cache:
-        with patch.object(aligner.feature_matcher, 'match_images') as mock_match:
+        with patch.object(aligner.feature_matcher, 'match_images_with_fallback') as mock_match:
             with patch('shinestacker.algorithms.align_parallel.find_transform') as mock_find:
                 with patch('shinestacker.algorithms.'
                            'align_parallel.rescale_transform') as mock_rescale:
@@ -551,8 +554,12 @@ def test_find_transform_rescale_failure():
                     mock_match_result.img_0_sub = None
                     mock_match_result.img_ref_sub = None
                     mock_match_result.subsample = None
-                    mock_match.return_value = mock_match_result
-                    mock_cache.return_value = np.ones((100, 100, 3), dtype=np.uint8)
+                    mock_match.return_value = (mock_match_result, 2)
+                    test_img = np.ones((100, 100, 3), dtype=np.uint8)
+                    subsampled_img = np.ones((50, 50, 3), dtype=np.uint8)  # 2x subsample
+                    aligner.feature_matcher._last_subsampled_images = (
+                        subsampled_img, subsampled_img)
+                    mock_cache.return_value = test_img
                     mock_find.return_value = (np.eye(2, 3, dtype=np.float32), None)
                     mock_rescale.return_value = None
                     info, warnings = aligner.find_transform(1, delta=1)

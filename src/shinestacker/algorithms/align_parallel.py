@@ -12,11 +12,11 @@ from ..config.constants import constants
 from .. core.exceptions import RunStopException
 from .. core.colors import color_str
 from .. core.core_utils import make_chunks
-from .utils import read_img, img_subsample, img_bw
+from .utils import read_img, img_bw
 from .align import (
     AlignFramesBase, find_transform, find_transform_phase_correlation,
     check_transform, rescale_transform, apply_alignment_transform)
-from .feature_match import FeatureMatcher
+from .feature_match import SubsamplingFeatureMatcher
 
 
 def compose_transforms(t1, t2, transform_type):
@@ -49,7 +49,7 @@ class AlignFramesParallel(AlignFramesBase):
         self.step_counter = 0
         self._kp = None
         self._des = None
-        self.feature_matcher = FeatureMatcher(feature_config, matching_config)
+        self.feature_matcher = SubsamplingFeatureMatcher(feature_config, matching_config)
 
     def relative_transformation(self):
         return True
@@ -255,23 +255,18 @@ class AlignFramesParallel(AlignFramesBase):
             subsample = int(1 + math.floor(img_res / target_res))
         fast_subsampling = self.alignment_config['fast_subsampling']
         min_good_matches = self.alignment_config['min_good_matches']
-        while True:
-            if subsample > 1:
-                img_0_sub = img_subsample(img_0, subsample, fast_subsampling)
-                img_ref_sub = img_subsample(img_ref, subsample, fast_subsampling)
-            else:
-                img_0_sub, img_ref_sub = img_0, img_ref
-            match_result = self.feature_matcher.match_images(img_ref_sub, img_0_sub)
-            n_good_matches = match_result.n_good_matches()
-            if n_good_matches >= min_good_matches or subsample == 1:
-                break
-            subsample = 1
-            s_str = 'es' if n_good_matches != 1 else ''
-            msg = f"{self.image_str(idx)}: only {n_good_matches} < {min_good_matches} " \
-                f"match{s_str} found with {self.image_str(target_idx)}, " \
-                "retrying without subsampling"
-            self.print_message(msg, color=constants.LOG_COLOR_WARNING, level=logging.WARNING)
-            warning_messages.append("no subsampling applied")
+
+        match_result, _final_subsample = self.feature_matcher.match_images_with_fallback(
+            img_ref, img_0,
+            subsample=subsample,
+            fast_subsampling=fast_subsampling,
+            min_good_matches=min_good_matches,
+            warning_callback=lambda msg: self.print_message(
+                msg, color=constants.LOG_COLOR_WARNING, level=logging.WARNING)
+        )
+        n_good_matches = match_result.n_good_matches()
+        img_ref_sub, img_0_sub = self.feature_matcher.get_last_subsampled_images()
+
         self._n_good_matches[idx] = n_good_matches
         m = None
         min_matches = 4 if self.alignment_config['transform'] == constants.ALIGN_HOMOGRAPHY else 3

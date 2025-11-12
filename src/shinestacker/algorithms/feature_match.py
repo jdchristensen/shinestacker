@@ -3,7 +3,7 @@ import numpy as np
 import cv2
 from .. config.constants import constants
 from .. core.exceptions import InvalidOptionError
-from .utils import img_bw_8bit
+from .utils import img_bw_8bit, img_subsample
 
 DEFAULT_FEATURE_CONFIG = {
     'detector': constants.DEFAULT_DETECTOR,
@@ -113,34 +113,76 @@ class FeatureMatcher:
         return MatchResult(kp_0, kp_ref, good_matches)
 
     def match_features(self, des_0, des_ref):
-        return get_good_matches(des_0, des_ref, self.matching_config, self.callbacks)
+        matching_config = {**DEFAULT_MATCHING_CONFIG, **(self.matching_config or {})}
+        match_method = matching_config['match_method']
+        good_matches = []
+        invalid_option = False
+        try:
+            if match_method == constants.MATCHING_KNN:
+                flann = cv2.FlannBasedMatcher(
+                    {'algorithm': matching_config['flann_idx_kdtree'],
+                     'trees': matching_config['flann_trees']},
+                    {'checks': matching_config['flann_checks']})
+                matches = flann.knnMatch(des_0, des_ref, k=2)
+                good_matches = [m for m, n in matches
+                                if m.distance < matching_config['threshold'] * n.distance]
+            elif match_method == constants.MATCHING_NORM_HAMMING:
+                bf = cv2.BFMatcher(cv2.NORM_HAMMING, crossCheck=True)
+                good_matches = sorted(bf.match(des_0, des_ref), key=lambda x: x.distance)
+            else:
+                invalid_option = True
+        except Exception:
+            if self.callbacks and 'warning' in self.callbacks:
+                self.callbacks['warning']("failed to compute matches")
+        if invalid_option:
+            raise InvalidOptionError(
+                'match_method', match_method,
+                f". Valid options are: {constants.MATCHING_KNN}, {constants.MATCHING_NORM_HAMMING}"
+            )
+        return good_matches
 
 
-def get_good_matches(des_0, des_ref, matching_config=None, callbacks=None):
-    matching_config = {**DEFAULT_MATCHING_CONFIG, **(matching_config or {})}
-    match_method = matching_config['match_method']
-    good_matches = []
-    invalid_option = False
-    try:
-        if match_method == constants.MATCHING_KNN:
-            flann = cv2.FlannBasedMatcher(
-                {'algorithm': matching_config['flann_idx_kdtree'],
-                 'trees': matching_config['flann_trees']},
-                {'checks': matching_config['flann_checks']})
-            matches = flann.knnMatch(des_0, des_ref, k=2)
-            good_matches = [m for m, n in matches
-                            if m.distance < matching_config['threshold'] * n.distance]
-        elif match_method == constants.MATCHING_NORM_HAMMING:
-            bf = cv2.BFMatcher(cv2.NORM_HAMMING, crossCheck=True)
-            good_matches = sorted(bf.match(des_0, des_ref), key=lambda x: x.distance)
-        else:
-            invalid_option = True
-    except Exception:
-        if callbacks and 'warning' in callbacks:
-            callbacks['warning']("failed to compute matches")
-    if invalid_option:
-        raise InvalidOptionError(
-            'match_method', match_method,
-            f". Valid options are: {constants.MATCHING_KNN}, {constants.MATCHING_NORM_HAMMING}"
-        )
-    return good_matches
+class SubsamplingFeatureMatcher:
+    def __init__(self, feature_config=None, matching_config=None, callbacks=None):
+        self.feature_matcher = FeatureMatcher(feature_config, matching_config, callbacks)
+        self.callbacks = callbacks or {}
+        self._last_subsampled_images = (None, None)
+        self._last_subsample_factor = 1
+
+    def match_images(self, img_ref, img_0, subsample=1, fast_subsampling=False):
+        if subsample == 1:
+            self._last_subsampled_images = (img_ref, img_0)
+            self._last_subsample_factor = 1
+            return self.feature_matcher.match_images(img_ref, img_0)
+        self._last_subsample_factor = subsample
+        img_ref_small = img_subsample(img_ref, subsample, fast_subsampling)
+        img_0_small = img_subsample(img_0, subsample, fast_subsampling)
+        self._last_subsampled_images = (img_ref_small, img_0_small)
+        match_result = self.feature_matcher.match_images(img_ref_small, img_0_small)
+        for kp in match_result.kp_0:
+            kp.pt = (kp.pt[0] * subsample, kp.pt[1] * subsample)
+        for kp in match_result.kp_ref:
+            kp.pt = (kp.pt[0] * subsample, kp.pt[1] * subsample)
+        return match_result
+
+    def match_images_with_fallback(self, img_ref, img_0, subsample=1, fast_subsampling=False,
+                                   min_good_matches=4, warning_callback=None):
+        final_subsample = subsample
+        while True:
+            match_result = self.match_images(
+                img_ref, img_0, subsample=final_subsample, fast_subsampling=fast_subsampling)
+            if match_result.has_sufficient_matches(min_good_matches) or final_subsample == 1:
+                break
+            final_subsample = 1
+            if warning_callback:
+                s_str = 'es' if match_result.n_good_matches() != 1 else ''
+                warning_callback(
+                    f"only {match_result.n_good_matches()} < {min_good_matches} "
+                    f"match{s_str} found, retrying without subsampling")
+        return match_result, final_subsample
+
+    def get_last_subsampled_images(self):
+        return self._last_subsampled_images
+
+    def get_last_subsample_factor(self):
+        return self._last_subsample_factor
