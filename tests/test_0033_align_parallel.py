@@ -299,56 +299,6 @@ def test_begin_transform_combination():
     assert aligner._cumulative_transforms[2] is not None
 
 
-def test_detect_and_compute_matches():
-    aligner = AlignFramesParallel()
-    aligner.feature_config = {
-        'detector': constants.DETECTOR_SIFT,
-        'descriptor': constants.DESCRIPTOR_SIFT
-    }
-    aligner.matching_config = {'match_method': constants.MATCHING_KNN}
-    img_ref = np.random.randint(0, 255, (100, 100, 3), dtype=np.uint8)
-    img_0 = np.random.randint(0, 255, (100, 100, 3), dtype=np.uint8)
-    aligner._kp = [None, None]
-    aligner._des = [None, None]
-    match_result = aligner.detect_and_compute_matches(img_ref, 0, img_0, 1)
-    assert match_result.kp_0 is not None
-    assert match_result.kp_ref is not None
-    assert match_result.good_matches is not None
-
-
-def test_detect_and_compute_matches_orb():
-    aligner = AlignFramesParallel()
-    aligner.feature_config = {
-        'detector': constants.DETECTOR_ORB,
-        'descriptor': constants.DESCRIPTOR_ORB
-    }
-    aligner.matching_config = {'match_method': constants.MATCHING_NORM_HAMMING}
-    img_ref = np.random.randint(0, 255, (100, 100, 3), dtype=np.uint8)
-    img_0 = np.random.randint(0, 255, (100, 100, 3), dtype=np.uint8)
-    match_result = aligner.detect_and_compute_matches(img_ref, 0, img_0, 1)
-    assert match_result.good_matches is not None
-
-
-def test_detect_and_compute_matches_with_cached_features():
-    aligner = AlignFramesParallel()
-    aligner.feature_config = {
-        'detector': constants.DETECTOR_SIFT,
-        'descriptor': constants.DESCRIPTOR_SIFT
-    }
-    aligner.matching_config = {'match_method': constants.MATCHING_KNN}
-    img_ref = np.random.randint(0, 255, (100, 100, 3), dtype=np.uint8)
-    img_0 = np.random.randint(0, 255, (100, 100, 3), dtype=np.uint8)
-    detector = cv2.SIFT_create()
-    kp_0_cached, des_0_cached = detector.detectAndCompute(img_0, None)
-    kp_ref_cached, des_ref_cached = detector.detectAndCompute(img_ref, None)
-    aligner._kp = [kp_ref_cached, kp_0_cached]
-    aligner._des = [des_ref_cached, des_0_cached]
-    match_result = aligner.detect_and_compute_matches(img_ref, 0, img_0, 1)
-    assert match_result.kp_0 is kp_0_cached
-    assert match_result.kp_ref is kp_ref_cached
-    assert match_result.good_matches is not None
-
-
 def test_find_transform_successful():
     aligner = AlignFramesParallel()
     process = Mock()
@@ -379,11 +329,9 @@ def test_find_transform_successful():
     aligner._n_good_matches = [0, 0]
     aligner._target_indices = [None, None]
     aligner._transforms = [None, None]
-    aligner._kp = [None, None]
-    aligner._des = [None, None]
     with patch.object(aligner, 'cache_img') as mock_cache:
         mock_cache.side_effect = [img1, img2]
-        with patch.object(aligner, 'detect_and_compute_matches') as mock_detect:
+        with patch.object(aligner.feature_matcher, 'match_images') as mock_match:
             mock_kp_0 = []
             mock_kp_ref = []
             mock_good_matches = []
@@ -406,7 +354,7 @@ def test_find_transform_successful():
             mock_match_result.img_0_sub = None
             mock_match_result.img_ref_sub = None
             mock_match_result.subsample = None
-            mock_detect.return_value = mock_match_result
+            mock_match.return_value = mock_match_result
             with patch('shinestacker.algorithms.align_parallel.find_transform') as mock_find:
                 mock_find.return_value = (np.eye(2, 3, dtype=np.float32), None)
                 with patch('shinestacker.algorithms.align_parallel.check_transform') as mock_check:
@@ -437,7 +385,7 @@ def test_find_transform_max_delta_reached():
     aligner._target_indices = [None, None, None]
     aligner._transforms = [None, None, None]
     with patch.object(aligner, 'cache_img') as mock_cache:
-        with patch.object(aligner, 'detect_and_compute_matches') as mock_detect:
+        with patch.object(aligner.feature_matcher, 'match_images') as mock_match:
             mock_kp_0 = [Mock(pt=(10.0, 10.0))]
             mock_kp_ref = [Mock(pt=(15.0, 15.0))]
             mock_matches = [Mock(queryIdx=0, trainIdx=0)]
@@ -449,7 +397,7 @@ def test_find_transform_max_delta_reached():
             mock_match_result.img_0_sub = None
             mock_match_result.img_ref_sub = None
             mock_match_result.subsample = None
-            mock_detect.return_value = mock_match_result
+            mock_match.return_value = mock_match_result
             mock_cache.return_value = np.ones((100, 100, 3), dtype=np.uint8)
             info, warnings = aligner.find_transform(1, delta=1)
             assert len(warnings) > 0
@@ -476,7 +424,7 @@ def test_find_transform_phase_correlation_fallback():
     aligner._target_indices = [None, None]
     aligner._transforms = [None, None]
     with patch.object(aligner, 'cache_img') as mock_cache:
-        with patch.object(aligner, 'detect_and_compute_matches') as mock_detect:
+        with patch.object(aligner.feature_matcher, 'match_images') as mock_match:
             with patch('shinestacker.algorithms.align_parallel.'
                        'find_transform_phase_correlation') as mock_phase:
                 mock_kp_0 = [Mock(pt=(10.0, 10.0))]
@@ -490,7 +438,7 @@ def test_find_transform_phase_correlation_fallback():
                 mock_match_result.img_0_sub = None
                 mock_match_result.img_ref_sub = None
                 mock_match_result.subsample = None
-                mock_detect.return_value = mock_match_result
+                mock_match.return_value = mock_match_result
                 mock_cache.return_value = np.ones((100, 100, 3), dtype=np.uint8)
                 mock_phase.return_value = np.eye(2, 3, dtype=np.float32)
                 info, warnings = aligner.find_transform(1, delta=1)
@@ -525,7 +473,7 @@ def test_find_transform_invalid_transform_abort():
     aligner._target_indices = [None, None]
     aligner._transforms = [None, None]
     with patch.object(aligner, 'cache_img') as mock_cache:
-        with patch.object(aligner, 'detect_and_compute_matches') as mock_detect:
+        with patch.object(aligner.feature_matcher, 'match_images') as mock_match:
             with patch('shinestacker.algorithms.align_parallel.find_transform') as mock_find:
                 with patch('shinestacker.algorithms.align_parallel.check_transform') as mock_check:
                     mock_kp_0 = [Mock(pt=(i * 10.0, i * 10.0)) for i in range(10)]
@@ -539,7 +487,7 @@ def test_find_transform_invalid_transform_abort():
                     mock_match_result.img_0_sub = None
                     mock_match_result.img_ref_sub = None
                     mock_match_result.subsample = None
-                    mock_detect.return_value = mock_match_result
+                    mock_match.return_value = mock_match_result
                     mock_cache.return_value = np.ones((100, 100, 3), dtype=np.uint8)
                     mock_find.return_value = (np.eye(2, 3, dtype=np.float32), None)
                     mock_check.return_value = (False, "test invalid reason", None)
@@ -573,7 +521,7 @@ def test_find_transform_rescale_failure():
     aligner._target_indices = [None, None]
     aligner._transforms = [None, None]
     with patch.object(aligner, 'cache_img') as mock_cache:
-        with patch.object(aligner, 'detect_and_compute_matches') as mock_detect:
+        with patch.object(aligner.feature_matcher, 'match_images') as mock_match:
             with patch('shinestacker.algorithms.align_parallel.find_transform') as mock_find:
                 with patch('shinestacker.algorithms.'
                            'align_parallel.rescale_transform') as mock_rescale:
@@ -588,7 +536,7 @@ def test_find_transform_rescale_failure():
                     mock_match_result.img_0_sub = None
                     mock_match_result.img_ref_sub = None
                     mock_match_result.subsample = None
-                    mock_detect.return_value = mock_match_result
+                    mock_match.return_value = mock_match_result
                     mock_cache.return_value = np.ones((100, 100, 3), dtype=np.uint8)
                     mock_find.return_value = (np.eye(2, 3, dtype=np.float32), None)
                     mock_rescale.return_value = None
@@ -608,9 +556,6 @@ if __name__ == '__main__':
     test_submit_threads_with_exceptions()
     test_begin_initialization()
     test_begin_transform_combination()
-    test_detect_and_compute_matches()
-    test_detect_and_compute_matches_orb()
-    test_detect_and_compute_matches_with_cached_features()
     test_find_transform_successful()
     test_find_transform_max_delta_reached()
     test_find_transform_phase_correlation_fallback()

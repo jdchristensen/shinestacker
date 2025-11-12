@@ -88,6 +88,7 @@ class FeatureMatcher:
     def match_features(self, des_0, des_ref):
         return get_good_matches(des_0, des_ref, self.matching_config, self.callbacks)
 
+
 detector_map = {
     constants.DETECTOR_SIFT: cv2.SIFT_create,
     constants.DETECTOR_ORB: cv2.ORB_create,
