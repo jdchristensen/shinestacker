@@ -20,15 +20,11 @@ _DEFAULT_MATCHING_CONFIG = {
 
 
 class MatchResult:
-    def __init__(self, kp_0, kp_ref, good_matches, n_good_matches,
-                 img_0_sub, img_ref_sub, subsample):
+    def __init__(self, kp_0, kp_ref, good_matches, n_good_matches):
         self.kp_0 = kp_0
         self.kp_ref = kp_ref
         self.good_matches = good_matches
         self.n_good_matches = n_good_matches
-        self.img_0_sub = img_0_sub
-        self.img_ref_sub = img_ref_sub
-        self.subsample = subsample
 
     def has_sufficient_matches(self, min_matches):
         return self.n_good_matches >= min_matches
@@ -53,13 +49,24 @@ class FeatureMatcher:
         descriptor = self.feature_config['descriptor']
         match_method = self.matching_config['match_method']
         validate_align_config(detector, descriptor, match_method)
-        self.detector = detector_map[detector]()
+        self.detector = {
+            constants.DETECTOR_SIFT: cv2.SIFT_create,
+            constants.DETECTOR_ORB: cv2.ORB_create,
+            constants.DETECTOR_SURF: cv2.FastFeatureDetector_create,
+            constants.DETECTOR_AKAZE: cv2.AKAZE_create,
+            constants.DETECTOR_BRISK: cv2.BRISK_create
+        }[detector]()
         if detector == descriptor and detector in (
             constants.DETECTOR_SIFT, constants.DETECTOR_AKAZE, constants.DETECTOR_BRISK
         ):
             self.descriptor = self.detector
         else:
-            self.descriptor = descriptor_map[descriptor]()
+            self.descriptor = {
+                constants.DESCRIPTOR_SIFT: cv2.SIFT_create,
+                constants.DESCRIPTOR_ORB: cv2.ORB_create,
+                constants.DESCRIPTOR_AKAZE: cv2.AKAZE_create,
+                constants.DETECTOR_BRISK: cv2.BRISK_create
+            }[descriptor]()
 
     def detect_and_compute(self, image):
         img_bw = img_bw_8bit(image)
@@ -80,29 +87,13 @@ class FeatureMatcher:
         kp_0, des_0 = self.detect_and_compute(img_0)
         kp_ref, des_ref = self.detect_and_compute(img_ref)
         if des_0 is None or des_ref is None:
-            return MatchResult(kp_0, kp_ref, [], 0, None, None, None)
+            return MatchResult(kp_0, kp_ref, [], 0)
         good_matches = self.match_features(des_0, des_ref)
         n_good_matches = len(good_matches)
-        return MatchResult(kp_0, kp_ref, good_matches, n_good_matches, None, None, None)
+        return MatchResult(kp_0, kp_ref, good_matches, n_good_matches)
 
     def match_features(self, des_0, des_ref):
         return get_good_matches(des_0, des_ref, self.matching_config, self.callbacks)
-
-
-detector_map = {
-    constants.DETECTOR_SIFT: cv2.SIFT_create,
-    constants.DETECTOR_ORB: cv2.ORB_create,
-    constants.DETECTOR_SURF: cv2.FastFeatureDetector_create,
-    constants.DETECTOR_AKAZE: cv2.AKAZE_create,
-    constants.DETECTOR_BRISK: cv2.BRISK_create
-}
-
-descriptor_map = {
-    constants.DESCRIPTOR_SIFT: cv2.SIFT_create,
-    constants.DESCRIPTOR_ORB: cv2.ORB_create,
-    constants.DESCRIPTOR_AKAZE: cv2.AKAZE_create,
-    constants.DETECTOR_BRISK: cv2.BRISK_create
-}
 
 
 def validate_align_config(detector, descriptor, match_method):
