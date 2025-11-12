@@ -2,7 +2,7 @@
 
 This page reports the main releases only and the main changes therein.
 
-## [vx.x.x] - 2025-11-10
+## [vx.x.x] - 2025-11-12
 ** GUI improvements and bug fixes **
 
 ### Added
@@ -16,7 +16,7 @@ This page reports the main releases only and the main changes therein.
 - improved fault tolerance for missing or invalid files
 
 ### Changed
-- minor code cleanup
+- minor code cleanup and refactoring
 
 ---
 

@@ -8,16 +8,15 @@ import threading
 import logging
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import numpy as np
-import cv2
 from ..config.constants import constants
-from .. core.exceptions import InvalidOptionError, RunStopException
+from .. core.exceptions import RunStopException
 from .. core.colors import color_str
 from .. core.core_utils import make_chunks
 from .utils import read_img, img_subsample, img_bw, img_bw_8bit
 from .align import (AlignFramesBase, find_transform, find_transform_phase_correlation,
-                    check_transform, _cv2_border_mode_map, rescale_transform,
+                    check_transform, rescale_transform,
                     validate_align_config, detector_map, descriptor_map,
-                    get_good_matches)
+                    get_good_matches, apply_alignment_transform)
 
 
 def compose_transforms(t1, t2, transform_type):
@@ -361,38 +360,12 @@ class AlignFramesParallel(AlignFramesBase):
                 f"no transformation for {self.image_str(idx)}, image skipped",
                 color=constants.LOG_COLOR_WARNING, level=logging.WARNING)
             return None
-        transform_type = self.alignment_config['transform']
-        if transform_type == constants.ALIGN_RIGID and m.shape != (2, 3):
-            self.print_message(f"invalid matrix shape for rigid transform: {m.shape}")
-            return img_0
-        if transform_type == constants.ALIGN_HOMOGRAPHY and m.shape != (3, 3):
-            self.print_message(f"invalid matrix shape for homography: {m.shape}")
-            return img_0
-        self.print_message(f'{self.image_str(idx)}: apply image alignment')
-        try:
-            cv2_border_mode = _cv2_border_mode_map[self.alignment_config['border_mode']]
-        except KeyError as e:
-            raise InvalidOptionError("border_mode", self.alignment_config['border_mode']) from e
-        img_mask = np.ones_like(img_0, dtype=np.uint8)
-        h_ref, w_ref = img_ref.shape[:2]
-        if self.alignment_config['transform'] == constants.ALIGN_HOMOGRAPHY:
-            img_warp = cv2.warpPerspective(
-                img_0, m, (w_ref, h_ref),
-                borderMode=cv2_border_mode, borderValue=self.alignment_config['border_value'])
-            if self.alignment_config['border_mode'] == constants.BORDER_REPLICATE_BLUR:
-                mask = cv2.warpPerspective(img_mask, m, (w_ref, h_ref),
-                                           borderMode=cv2.BORDER_CONSTANT, borderValue=0)
-        elif self.alignment_config['transform'] == constants.ALIGN_RIGID:
-            img_warp = cv2.warpAffine(
-                img_0, m, (w_ref, h_ref),
-                borderMode=cv2_border_mode, borderValue=self.alignment_config['border_value'])
-            if self.alignment_config['border_mode'] == constants.BORDER_REPLICATE_BLUR:
-                mask = cv2.warpAffine(img_mask, m, (w_ref, h_ref),
-                                      borderMode=cv2.BORDER_CONSTANT, borderValue=0)
-        if self.alignment_config['border_mode'] == constants.BORDER_REPLICATE_BLUR:
-            self.print_message(f'{self.image_str(idx)}: blur borders')
-            mask = cv2.cvtColor(mask, cv2.COLOR_BGR2GRAY)
-            blurred_warp = cv2.GaussianBlur(
-                img_warp, (21, 21), sigmaX=self.alignment_config['border_blur'])
-            img_warp[mask == 0] = blurred_warp[mask == 0]
-        return img_warp
+        callbacks = {
+            'estimation_message':
+                lambda: self.print_message(f'{self.image_str(idx)}: apply image alignment'),
+            'blur_message':
+                lambda: self.print_message(f'{self.image_str(idx)}: blur borders'),
+            'warning':
+                lambda msg: self.print_message(msg, constants.LOG_COLOR_WARNING)
+        }
+        return apply_alignment_transform(img_0, img_ref, m, self.alignment_config, callbacks)
