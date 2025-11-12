@@ -6,8 +6,8 @@ import numpy as np
 from shinestacker.config import constants
 from shinestacker.algorithms.align import (
     decompose_affine_matrix, check_affine_matrix, check_homography_distortion, check_transform,
-    _AFFINE_THRESHOLDS, _HOMOGRAPHY_THRESHOLDS, _DEFAULT_FEATURE_CONFIG, _DEFAULT_MATCHING_CONFIG,
-    _DEFAULT_ALIGNMENT_CONFIG, AlignFramesBase, AlignFrames
+    _AFFINE_THRESHOLDS, _HOMOGRAPHY_THRESHOLDS, DEFAULT_FEATURE_CONFIG, DEFAULT_MATCHING_CONFIG,
+    DEFAULT_ALIGNMENT_CONFIG, AlignFramesBase, AlignFrames
 )
 
 
@@ -413,9 +413,9 @@ def test_check_homography_distortion_rotation_scale():
 def test_align_frames_base_initialization():
     align_base = AlignFramesBase()
     assert align_base.enabled
-    assert align_base.feature_config == _DEFAULT_FEATURE_CONFIG
-    assert align_base.matching_config == _DEFAULT_MATCHING_CONFIG
-    assert align_base.alignment_config == _DEFAULT_ALIGNMENT_CONFIG
+    assert align_base.feature_config == DEFAULT_FEATURE_CONFIG
+    assert align_base.matching_config == DEFAULT_MATCHING_CONFIG
+    assert align_base.alignment_config == DEFAULT_ALIGNMENT_CONFIG
     assert align_base.min_matches == 3
 
 

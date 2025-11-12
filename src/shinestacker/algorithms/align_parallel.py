@@ -262,7 +262,7 @@ class AlignFramesParallel(AlignFramesBase):
             else:
                 img_0_sub, img_ref_sub = img_0, img_ref
             match_result = self.feature_matcher.match_images(img_ref_sub, img_0_sub)
-            n_good_matches = match_result.n_good_matches
+            n_good_matches = match_result.n_good_matches()
             if n_good_matches >= min_good_matches or subsample == 1:
                 break
             subsample = 1

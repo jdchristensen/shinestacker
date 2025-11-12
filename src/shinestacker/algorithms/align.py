@@ -12,9 +12,9 @@ from .. core.colors import color_str
 from .utils import img_8bit, save_plot, img_subsample
 from .stack_framework import SubAction
 from .feature_match import (
-    FeatureMatcher, _DEFAULT_FEATURE_CONFIG, _DEFAULT_MATCHING_CONFIG)
+    FeatureMatcher, DEFAULT_FEATURE_CONFIG, DEFAULT_MATCHING_CONFIG)
 
-_DEFAULT_ALIGNMENT_CONFIG = {
+DEFAULT_ALIGNMENT_CONFIG = {
     'transform': constants.DEFAULT_TRANSFORM,
     'align_method': constants.DEFAULT_ESTIMATION_METHOD,
     'rans_threshold': constants.DEFAULT_RANS_THRESHOLD,
@@ -328,9 +328,9 @@ def align_images(img_ref, img_0, feature_config=None, matching_config=None, alig
                  plot_path=None, callbacks=None,
                  affine_thresholds=_AFFINE_THRESHOLDS,
                  homography_thresholds=_HOMOGRAPHY_THRESHOLDS):
-    feature_config = {**_DEFAULT_FEATURE_CONFIG, **(feature_config or {})}
-    matching_config = {**_DEFAULT_MATCHING_CONFIG, **(matching_config or {})}
-    alignment_config = {**_DEFAULT_ALIGNMENT_CONFIG, **(alignment_config or {})}
+    feature_config = {**DEFAULT_FEATURE_CONFIG, **(feature_config or {})}
+    matching_config = {**DEFAULT_MATCHING_CONFIG, **(matching_config or {})}
+    alignment_config = {**DEFAULT_ALIGNMENT_CONFIG, **(alignment_config or {})}
     min_matches = 4 if alignment_config['transform'] == constants.ALIGN_HOMOGRAPHY else 3
     if callbacks and 'message' in callbacks:
         callbacks['message']()
@@ -342,22 +342,22 @@ def align_images(img_ref, img_0, feature_config=None, matching_config=None, alig
         subsample = int(1 + math.floor(img_res / target_res))
     fast_subsampling = alignment_config['fast_subsampling']
     min_good_matches = alignment_config['min_good_matches']
+    feature_matcher = FeatureMatcher(feature_config, matching_config, callbacks)
     while True:
         if subsample > 1:
             img_0_sub = img_subsample(img_0, subsample, fast_subsampling)
             img_ref_sub = img_subsample(img_ref, subsample, fast_subsampling)
         else:
             img_0_sub, img_ref_sub = img_0, img_ref
-        feature_matcher = FeatureMatcher(feature_config, matching_config, callbacks)
         match_result = feature_matcher.match_images(img_ref_sub, img_0_sub)
-        n_good_matches = match_result.n_good_matches
+        n_good_matches = match_result.n_good_matches()
         if match_result.has_sufficient_matches(min_good_matches) or subsample == 1:
             break
         subsample = 1
         if callbacks and 'warning' in callbacks:
-            s_str = 'es' if match_result.n_good_matches != 1 else ''
+            s_str = 'es' if match_result.n_good_matches() != 1 else ''
             callbacks['warning'](
-                f"only {match_result.n_good_matches} < {min_good_matches} match{s_str} found, "
+                f"only {match_result.n_good_matches()} < {min_good_matches} match{s_str} found, "
                 "retrying without subsampling")
         else:
             n_good_matches = 0
@@ -418,11 +418,11 @@ def align_images(img_ref, img_0, feature_config=None, matching_config=None, alig
             callbacks['warning'](f"invalid transformation: {reason}, alignment failed")
         if alignment_config['abort_abnormal']:
             raise RuntimeError("invalid transformation: {reason}, alignment failed")
-        return match_result.n_good_matches, None, None
+        return match_result.n_good_matches(), None, None
     if not phase_corr_called and callbacks and 'matches_message' in callbacks:
-        callbacks['matches_message'](match_result.n_good_matches)
+        callbacks['matches_message'](match_result.n_good_matches())
     img_warp = apply_alignment_transform(img_0, img_ref, m, alignment_config, callbacks)
-    return match_result.n_good_matches, m, img_warp
+    return match_result.n_good_matches(), m, img_warp
 
 
 class AlignFramesBase(SubAction):
@@ -431,9 +431,9 @@ class AlignFramesBase(SubAction):
         super().__init__(enabled)
         self.process = None
         self._n_good_matches = None
-        self.feature_config = {**_DEFAULT_FEATURE_CONFIG, **(feature_config or {})}
-        self.matching_config = {**_DEFAULT_MATCHING_CONFIG, **(matching_config or {})}
-        self.alignment_config = {**_DEFAULT_ALIGNMENT_CONFIG, **(alignment_config or {})}
+        self.feature_config = {**DEFAULT_FEATURE_CONFIG, **(feature_config or {})}
+        self.matching_config = {**DEFAULT_MATCHING_CONFIG, **(matching_config or {})}
+        self.alignment_config = {**DEFAULT_ALIGNMENT_CONFIG, **(alignment_config or {})}
         self.min_matches = 4 \
             if self.alignment_config['transform'] == constants.ALIGN_HOMOGRAPHY else 3
         self.plot_summary = kwargs.get('plot_summary', False)

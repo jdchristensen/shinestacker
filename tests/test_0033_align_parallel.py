@@ -350,7 +350,12 @@ def test_find_transform_successful():
             mock_match_result.kp_0 = mock_kp_0
             mock_match_result.kp_ref = mock_kp_ref
             mock_match_result.good_matches = mock_good_matches
-            mock_match_result.n_good_matches = len(mock_good_matches)
+            mock_match_result.n_good_matches.return_value = len(mock_good_matches)
+            mock_match_result.has_sufficient_matches.return_value = len(mock_good_matches) >= 4
+            mock_match_result.get_src_points.return_value = np.float32(
+                [kp.pt for kp in mock_kp_0]).reshape(-1, 1, 2)
+            mock_match_result.get_dst_points.return_value = np.float32(
+                [kp.pt for kp in mock_kp_ref]).reshape(-1, 1, 2)
             mock_match_result.img_0_sub = None
             mock_match_result.img_ref_sub = None
             mock_match_result.subsample = None
@@ -393,7 +398,12 @@ def test_find_transform_max_delta_reached():
             mock_match_result.kp_0 = mock_kp_0
             mock_match_result.kp_ref = mock_kp_ref
             mock_match_result.good_matches = mock_matches
-            mock_match_result.n_good_matches = len(mock_matches)
+            mock_match_result.n_good_matches.return_value = len(mock_matches)
+            mock_match_result.has_sufficient_matches.return_value = len(mock_matches) >= 4
+            mock_match_result.get_src_points.return_value = np.float32(
+                [kp.pt for kp in mock_kp_0]).reshape(-1, 1, 2)
+            mock_match_result.get_dst_points.return_value = np.float32(
+                [kp.pt for kp in mock_kp_ref]).reshape(-1, 1, 2)
             mock_match_result.img_0_sub = None
             mock_match_result.img_ref_sub = None
             mock_match_result.subsample = None
@@ -434,7 +444,7 @@ def test_find_transform_phase_correlation_fallback():
                 mock_match_result.kp_0 = mock_kp_0
                 mock_match_result.kp_ref = mock_kp_ref
                 mock_match_result.good_matches = mock_matches
-                mock_match_result.n_good_matches = len(mock_matches)
+                mock_match_result.n_good_matches.return_value = len(mock_matches)
                 mock_match_result.img_0_sub = None
                 mock_match_result.img_ref_sub = None
                 mock_match_result.subsample = None
@@ -483,7 +493,7 @@ def test_find_transform_invalid_transform_abort():
                     mock_match_result.kp_0 = mock_kp_0
                     mock_match_result.kp_ref = mock_kp_ref
                     mock_match_result.good_matches = mock_matches
-                    mock_match_result.n_good_matches = len(mock_matches)
+                    mock_match_result.n_good_matches.return_value = len(mock_matches)
                     mock_match_result.img_0_sub = None
                     mock_match_result.img_ref_sub = None
                     mock_match_result.subsample = None
@@ -532,7 +542,12 @@ def test_find_transform_rescale_failure():
                     mock_match_result.kp_0 = mock_kp_0
                     mock_match_result.kp_ref = mock_kp_ref
                     mock_match_result.good_matches = mock_matches
-                    mock_match_result.n_good_matches = len(mock_matches)
+                    mock_match_result.n_good_matches.return_value = len(mock_matches)
+                    mock_match_result.has_sufficient_matches.return_value = len(mock_matches) >= 4
+                    mock_match_result.get_src_points.return_value = np.float32(
+                        [kp.pt for kp in mock_kp_0]).reshape(-1, 1, 2)
+                    mock_match_result.get_dst_points.return_value = np.float32(
+                        [kp.pt for kp in mock_kp_ref]).reshape(-1, 1, 2)
                     mock_match_result.img_0_sub = None
                     mock_match_result.img_ref_sub = None
                     mock_match_result.subsample = None

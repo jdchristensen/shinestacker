@@ -5,12 +5,12 @@ from .. config.constants import constants
 from .. core.exceptions import InvalidOptionError
 from .utils import img_bw_8bit
 
-_DEFAULT_FEATURE_CONFIG = {
+DEFAULT_FEATURE_CONFIG = {
     'detector': constants.DEFAULT_DETECTOR,
     'descriptor': constants.DEFAULT_DESCRIPTOR
 }
 
-_DEFAULT_MATCHING_CONFIG = {
+DEFAULT_MATCHING_CONFIG = {
     'match_method': constants.DEFAULT_MATCHING_METHOD,
     'flann_idx_kdtree': constants.DEFAULT_FLANN_IDX_KDTREE,
     'flann_trees': constants.DEFAULT_FLANN_TREES,
@@ -20,14 +20,16 @@ _DEFAULT_MATCHING_CONFIG = {
 
 
 class MatchResult:
-    def __init__(self, kp_0, kp_ref, good_matches, n_good_matches):
+    def __init__(self, kp_0, kp_ref, good_matches):
         self.kp_0 = kp_0
         self.kp_ref = kp_ref
         self.good_matches = good_matches
-        self.n_good_matches = n_good_matches
+
+    def n_good_matches(self):
+        return len(self.good_matches)
 
     def has_sufficient_matches(self, min_matches):
-        return self.n_good_matches >= min_matches
+        return self.n_good_matches() >= min_matches
 
     def get_src_points(self):
         return np.float32(
@@ -40,10 +42,29 @@ class MatchResult:
         ).reshape(-1, 1, 2)
 
 
+def validate_align_config(detector, descriptor, match_method):
+    if descriptor == constants.DESCRIPTOR_SIFT and match_method == constants.MATCHING_NORM_HAMMING:
+        raise ValueError("Descriptor SIFT requires matching method KNN")
+    if detector == constants.DETECTOR_ORB and descriptor == constants.DESCRIPTOR_AKAZE and \
+            match_method == constants.MATCHING_NORM_HAMMING:
+        raise ValueError("Detector ORB and descriptor AKAZE require matching method KNN")
+    if detector == constants.DETECTOR_BRISK and descriptor == constants.DESCRIPTOR_AKAZE:
+        raise ValueError("Detector BRISK is incompatible with descriptor AKAZE")
+    if detector == constants.DETECTOR_SURF and descriptor == constants.DESCRIPTOR_AKAZE:
+        raise ValueError("Detector SURF is incompatible with descriptor AKAZE")
+    if detector == constants.DETECTOR_SIFT and descriptor != constants.DESCRIPTOR_SIFT:
+        raise ValueError("Detector SIFT requires descriptor SIFT")
+    if detector in constants.NOKNN_METHODS['detectors'] and \
+       descriptor in constants.NOKNN_METHODS['descriptors'] and \
+       match_method != constants.MATCHING_NORM_HAMMING:
+        raise ValueError(f"Detector {detector} and descriptor {descriptor}"
+                         " require matching method Hamming distance")
+
+
 class FeatureMatcher:
     def __init__(self, feature_config=None, matching_config=None, callbacks=None):
-        self.feature_config = {**_DEFAULT_FEATURE_CONFIG, **(feature_config or {})}
-        self.matching_config = {**_DEFAULT_MATCHING_CONFIG, **(matching_config or {})}
+        self.feature_config = {**DEFAULT_FEATURE_CONFIG, **(feature_config or {})}
+        self.matching_config = {**DEFAULT_MATCHING_CONFIG, **(matching_config or {})}
         self.callbacks = callbacks or {}
         detector = self.feature_config['detector']
         descriptor = self.feature_config['descriptor']
@@ -87,36 +108,16 @@ class FeatureMatcher:
         kp_0, des_0 = self.detect_and_compute(img_0)
         kp_ref, des_ref = self.detect_and_compute(img_ref)
         if des_0 is None or des_ref is None or len(des_0) == 0 or len(des_ref) == 0:
-            return MatchResult(kp_0, kp_ref, [], 0)
+            return MatchResult(kp_0, kp_ref, [])
         good_matches = self.match_features(des_0, des_ref)
-        n_good_matches = len(good_matches)
-        return MatchResult(kp_0, kp_ref, good_matches, n_good_matches)
+        return MatchResult(kp_0, kp_ref, good_matches)
 
     def match_features(self, des_0, des_ref):
         return get_good_matches(des_0, des_ref, self.matching_config, self.callbacks)
 
 
-def validate_align_config(detector, descriptor, match_method):
-    if descriptor == constants.DESCRIPTOR_SIFT and match_method == constants.MATCHING_NORM_HAMMING:
-        raise ValueError("Descriptor SIFT requires matching method KNN")
-    if detector == constants.DETECTOR_ORB and descriptor == constants.DESCRIPTOR_AKAZE and \
-            match_method == constants.MATCHING_NORM_HAMMING:
-        raise ValueError("Detector ORB and descriptor AKAZE require matching method KNN")
-    if detector == constants.DETECTOR_BRISK and descriptor == constants.DESCRIPTOR_AKAZE:
-        raise ValueError("Detector BRISK is incompatible with descriptor AKAZE")
-    if detector == constants.DETECTOR_SURF and descriptor == constants.DESCRIPTOR_AKAZE:
-        raise ValueError("Detector SURF is incompatible with descriptor AKAZE")
-    if detector == constants.DETECTOR_SIFT and descriptor != constants.DESCRIPTOR_SIFT:
-        raise ValueError("Detector SIFT requires descriptor SIFT")
-    if detector in constants.NOKNN_METHODS['detectors'] and \
-       descriptor in constants.NOKNN_METHODS['descriptors'] and \
-       match_method != constants.MATCHING_NORM_HAMMING:
-        raise ValueError(f"Detector {detector} and descriptor {descriptor}"
-                         " require matching method Hamming distance")
-
-
 def get_good_matches(des_0, des_ref, matching_config=None, callbacks=None):
-    matching_config = {**_DEFAULT_MATCHING_CONFIG, **(matching_config or {})}
+    matching_config = {**DEFAULT_MATCHING_CONFIG, **(matching_config or {})}
     match_method = matching_config['match_method']
     good_matches = []
     invalid_option = False

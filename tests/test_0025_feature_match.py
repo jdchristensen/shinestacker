@@ -2,14 +2,14 @@ import numpy as np
 import cv2
 from shinestacker.config.constants import constants
 from shinestacker.algorithms.feature_match import (
-    FeatureMatcher, get_good_matches, _DEFAULT_FEATURE_CONFIG, _DEFAULT_MATCHING_CONFIG)
+    FeatureMatcher, get_good_matches, DEFAULT_FEATURE_CONFIG, DEFAULT_MATCHING_CONFIG)
 
 
 def test_constructor_default():
     print("Testing FeatureMatcher constructor with default parameters...")
     matcher = FeatureMatcher()
-    assert matcher.feature_config == _DEFAULT_FEATURE_CONFIG
-    assert matcher.matching_config == _DEFAULT_MATCHING_CONFIG
+    assert matcher.feature_config == DEFAULT_FEATURE_CONFIG
+    assert matcher.matching_config == DEFAULT_MATCHING_CONFIG
     assert matcher.callbacks == {}
     assert matcher.detector is not None
     assert matcher.descriptor is not None
@@ -64,11 +64,11 @@ def test_constructor_invalid_config():
 def test_constructor_edge_cases():
     print("Testing FeatureMatcher constructor edge cases...")
     matcher = FeatureMatcher(feature_config={}, matching_config={})
-    assert matcher.feature_config == _DEFAULT_FEATURE_CONFIG
-    assert matcher.matching_config == _DEFAULT_MATCHING_CONFIG
+    assert matcher.feature_config == DEFAULT_FEATURE_CONFIG
+    assert matcher.matching_config == DEFAULT_MATCHING_CONFIG
     matcher = FeatureMatcher(feature_config=None, matching_config=None)
-    assert matcher.feature_config == _DEFAULT_FEATURE_CONFIG
-    assert matcher.matching_config == _DEFAULT_MATCHING_CONFIG
+    assert matcher.feature_config == DEFAULT_FEATURE_CONFIG
+    assert matcher.matching_config == DEFAULT_MATCHING_CONFIG
     print("✓ Constructor edge cases: PASS")
 
 
@@ -165,7 +165,7 @@ def test_match_images_basic():
     assert hasattr(match_result, 'kp_ref')
     assert hasattr(match_result, 'good_matches')
     assert hasattr(match_result, 'n_good_matches')
-    print(f"✓ Match images basic: {match_result.n_good_matches} matches found: PASS")
+    print(f"✓ Match images basic: {match_result.n_good_matches()} matches found: PASS")
 
 
 def test_match_images_no_features():
@@ -175,7 +175,7 @@ def test_match_images_no_features():
     matcher = FeatureMatcher()
     match_result = matcher.match_images(img1, img2)
     assert match_result is not None
-    assert match_result.n_good_matches == 0
+    assert match_result.n_good_matches() == 0
     assert len(match_result.good_matches) == 0
     print("✓ Match images no features: PASS")
 
