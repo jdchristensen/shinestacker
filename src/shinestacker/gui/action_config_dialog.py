@@ -7,7 +7,7 @@ from PySide6.QtWidgets import QWidget, QLabel, QMessageBox, QStackedWidget
 from .. config.constants import constants
 from .. config.app_config import AppConfig
 from .. algorithms.utils import EXTENSIONS_SUPPORTED
-from .. algorithms.align import validate_align_config
+from .. algorithms.feature_match import validate_align_config
 from . action_config import (
     DefaultActionConfigurator, add_tab, create_tab_layout, create_tab_widget,
     FIELD_TEXT, FIELD_ABS_PATH, FIELD_REL_PATH, FIELD_FLOAT,

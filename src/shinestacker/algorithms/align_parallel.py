@@ -13,10 +13,11 @@ from .. core.exceptions import RunStopException
 from .. core.colors import color_str
 from .. core.core_utils import make_chunks
 from .utils import read_img, img_subsample, img_bw, img_bw_8bit
-from .align import (AlignFramesBase, MatchResult, find_transform, find_transform_phase_correlation,
-                    check_transform, rescale_transform,
-                    validate_align_config, detector_map, descriptor_map,
-                    get_good_matches, apply_alignment_transform)
+from .align import (
+    AlignFramesBase, find_transform, find_transform_phase_correlation,
+    check_transform, rescale_transform, apply_alignment_transform)
+from .feature_match import (
+    detector_map, descriptor_map, MatchResult, validate_align_config, get_good_matches)
 
 
 def compose_transforms(t1, t2, transform_type):
