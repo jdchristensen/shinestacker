@@ -45,8 +45,21 @@ class MatchResult:
 
 
 class FeatureMatcher:
-    def __init__(self):
-        pass
+    def __init__(self, feature_config=None, matching_config=None, callbacks=None):
+        self.feature_config = {**_DEFAULT_FEATURE_CONFIG, **(feature_config or {})}
+        self.matching_config = {**_DEFAULT_MATCHING_CONFIG, **(matching_config or {})}
+        self.callbacks = callbacks or {}        
+        detector = self.feature_config['detector']
+        descriptor = self.feature_config['descriptor'] 
+        match_method = self.matching_config['match_method']
+        validate_align_config(detector, descriptor, match_method)        
+        self.detector = detector_map[detector]()
+        if detector == descriptor and detector in (
+            constants.DETECTOR_SIFT, constants.DETECTOR_AKAZE, constants.DETECTOR_BRISK
+        ):
+            self.descriptor = self.detector
+        else:
+            self.descriptor = descriptor_map[descriptor]()
 
 
 detector_map = {
