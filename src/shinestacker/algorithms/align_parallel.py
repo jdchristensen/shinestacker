@@ -49,7 +49,8 @@ class AlignFramesParallel(AlignFramesBase):
         self.step_counter = 0
         self._kp = None
         self._des = None
-        self.feature_matcher = SubsamplingFeatureMatcher(feature_config, matching_config)
+        self.feature_matcher = SubsamplingFeatureMatcher(
+            feature_config, matching_config, alignment_config)
 
     def relative_transformation(self):
         return True
@@ -255,18 +256,13 @@ class AlignFramesParallel(AlignFramesBase):
             subsample = int(1 + math.floor(img_res / target_res))
         fast_subsampling = self.alignment_config['fast_subsampling']
         min_good_matches = self.alignment_config['min_good_matches']
-
         match_result, _final_subsample = self.feature_matcher.match_images_with_fallback(
-            img_ref, img_0,
-            subsample=subsample,
-            fast_subsampling=fast_subsampling,
-            min_good_matches=min_good_matches,
+            img_ref, img_0, subsample=subsample,
             warning_callback=lambda msg: self.print_message(
                 msg, color=constants.LOG_COLOR_WARNING, level=logging.WARNING)
         )
         n_good_matches = match_result.n_good_matches()
         img_ref_sub, img_0_sub = self.feature_matcher.get_last_subsampled_images()
-
         self._n_good_matches[idx] = n_good_matches
         m = None
         min_matches = 4 if self.alignment_config['transform'] == constants.ALIGN_HOMOGRAPHY else 3

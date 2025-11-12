@@ -44,8 +44,8 @@ def test_fast_subsampling():
     print("\nTesting fast subsampling...")
     img1, img2 = create_test_images()
     matcher = SubsamplingFeatureMatcher()
-    result_normal = matcher.match_images(img1, img2, subsample=4, fast_subsampling=False)
-    result_fast = matcher.match_images(img1, img2, subsample=4, fast_subsampling=True)
+    result_normal = matcher.match_images(img1, img2, subsample=4)
+    result_fast = matcher.match_images(img1, img2, subsample=4)
     print(f"Normal subsampling: {result_normal.n_good_matches()} matches")
     print(f"Fast subsampling: {result_fast.n_good_matches()} matches")
 

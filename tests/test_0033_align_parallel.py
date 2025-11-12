@@ -63,18 +63,17 @@ def create_test_images():
 
 
 def test_align_images_method():
-    aligner = AlignFramesParallel()
+    aligner = AlignFramesParallel(alignment_config={
+        'transform': constants.ALIGN_RIGID,
+        'border_mode': constants.BORDER_CONSTANT,
+        'border_value': 0,
+        'border_blur': 5
+    })
     process = Mock()
     process.idx_tot_str = Mock(return_value="1/2")
     process.input_filepath = Mock(return_value="test.jpg")
     aligner.process = process
     aligner.print_message = Mock()
-    aligner.alignment_config = {
-        'transform': constants.ALIGN_RIGID,
-        'border_mode': constants.BORDER_CONSTANT,
-        'border_value': 0,
-        'border_blur': 5
-    }
     img_ref = np.ones((100, 100, 3), dtype=np.uint8)
     img_0 = np.ones((100, 100, 3), dtype=np.uint8)
     aligner._cumulative_transforms = [None]
@@ -113,14 +112,7 @@ def test_align_images_border_modes():
 
 
 def test_extract_features_fallback():
-    aligner = AlignFramesParallel()
-    process = Mock()
-    process.ref_idx = 0
-    process.idx_tot_str = Mock(return_value="1/2")
-    process.input_filepath = Mock(return_value="test.jpg")
-    aligner.process = process
-    aligner.print_message = Mock()
-    aligner.alignment_config = {
+    aligner = AlignFramesParallel(alignment_config={
         'transform': constants.ALIGN_RIGID,
         'subsample': 1,
         'fast_subsampling': False,
@@ -131,8 +123,14 @@ def test_extract_features_fallback():
         'align_confidence': 0.99,
         'refine_iters': 10,
         'phase_corr_fallback': False,
-        'abort_abnormal': False
-    }
+        'abort_abnormal': False,
+    })
+    process = Mock()
+    process.ref_idx = 0
+    process.idx_tot_str = Mock(return_value="1/2")
+    process.input_filepath = Mock(return_value="test.jpg")
+    aligner.process = process
+    aligner.print_message = Mock()
     aligner._n_good_matches = [0] * 2
     aligner._target_indices = [None] * 2
     aligner._transforms = [None] * 2
@@ -300,14 +298,7 @@ def test_begin_transform_combination():
 
 
 def test_find_transform_successful():
-    aligner = AlignFramesParallel()
-    process = Mock()
-    process.ref_idx = 0
-    process.idx_tot_str = Mock(return_value="1/2")
-    process.input_filepath = Mock(side_effect=lambda idx: f"img{idx}.jpg")
-    aligner.process = process
-    aligner.print_message = Mock()
-    aligner.alignment_config = {
+    aligner = AlignFramesParallel(alignment_config={
         'transform': constants.ALIGN_RIGID,
         'subsample': 1,
         'fast_subsampling': False,
@@ -319,7 +310,13 @@ def test_find_transform_successful():
         'refine_iters': 10,
         'phase_corr_fallback': False,
         'abort_abnormal': False
-    }
+    })
+    process = Mock()
+    process.ref_idx = 0
+    process.idx_tot_str = Mock(return_value="1/2")
+    process.input_filepath = Mock(side_effect=lambda idx: f"img{idx}.jpg")
+    aligner.process = process
+    aligner.print_message = Mock()
     aligner.get_transform_thresholds = Mock(return_value=(100, 0.5))
     img1, img2 = create_test_images()
     aligner._img_cache = [img1, img2]
@@ -371,7 +368,14 @@ def test_find_transform_successful():
 
 
 def test_find_transform_max_delta_reached():
-    aligner = AlignFramesParallel()
+    aligner = AlignFramesParallel(alignment_config={
+        'transform': constants.ALIGN_RIGID,
+        'subsample': 1,
+        'fast_subsampling': False,
+        'min_good_matches': 4,
+        'phase_corr_fallback': False,
+        'abort_abnormal': False
+    })
     aligner.delta_max = 1
     process = Mock()
     process.ref_idx = 2
@@ -379,14 +383,6 @@ def test_find_transform_max_delta_reached():
     process.input_filepath = Mock(side_effect=lambda idx: f"img{idx}.jpg")
     aligner.process = process
     aligner.print_message = Mock()
-    aligner.alignment_config = {
-        'transform': constants.ALIGN_RIGID,
-        'subsample': 1,
-        'fast_subsampling': False,
-        'min_good_matches': 4,
-        'phase_corr_fallback': False,
-        'abort_abnormal': False
-    }
     aligner._n_good_matches = [0, 0, 0]
     aligner._target_indices = [None, None, None]
     aligner._transforms = [None, None, None]
@@ -416,21 +412,20 @@ def test_find_transform_max_delta_reached():
 
 
 def test_find_transform_phase_correlation_fallback():
-    aligner = AlignFramesParallel()
-    process = Mock()
-    process.ref_idx = 0
-    process.idx_tot_str = Mock(return_value="1/2")
-    process.input_filepath = Mock(side_effect=lambda idx: f"img{idx}.jpg")
-    aligner.process = process
-    aligner.print_message = Mock()
-    aligner.alignment_config = {
+    aligner = AlignFramesParallel(alignment_config={
         'transform': constants.ALIGN_RIGID,
         'subsample': 1,
         'fast_subsampling': False,
         'min_good_matches': 4,
         'phase_corr_fallback': True,
         'abort_abnormal': False
-    }
+    })
+    process = Mock()
+    process.ref_idx = 0
+    process.idx_tot_str = Mock(return_value="1/2")
+    process.input_filepath = Mock(side_effect=lambda idx: f"img{idx}.jpg")
+    aligner.process = process
+    aligner.print_message = Mock()
     aligner._n_good_matches = [0, 0]
     aligner._target_indices = [None, None]
     aligner._transforms = [None, None]
@@ -459,14 +454,7 @@ def test_find_transform_phase_correlation_fallback():
 
 
 def test_find_transform_invalid_transform_abort():
-    aligner = AlignFramesParallel()
-    process = Mock()
-    process.ref_idx = 0
-    process.idx_tot_str = Mock(return_value="1/2")
-    process.input_filepath = Mock(side_effect=lambda idx: f"img{idx}.jpg")
-    aligner.process = process
-    aligner.print_message = Mock()
-    aligner.alignment_config = {
+    aligner = AlignFramesParallel(alignment_config={
         'transform': constants.ALIGN_RIGID,
         'subsample': 1,
         'fast_subsampling': False,
@@ -478,7 +466,13 @@ def test_find_transform_invalid_transform_abort():
         'refine_iters': 10,
         'phase_corr_fallback': False,
         'abort_abnormal': True
-    }
+    })
+    process = Mock()
+    process.ref_idx = 0
+    process.idx_tot_str = Mock(return_value="1/2")
+    process.input_filepath = Mock(side_effect=lambda idx: f"img{idx}.jpg")
+    aligner.process = process
+    aligner.print_message = Mock()
     aligner.get_transform_thresholds = Mock(return_value=(100, 0.5))
     aligner._n_good_matches = [0, 0]
     aligner._target_indices = [None, None]
@@ -509,14 +503,7 @@ def test_find_transform_invalid_transform_abort():
 
 
 def test_find_transform_rescale_failure():
-    aligner = AlignFramesParallel()
-    process = Mock()
-    process.ref_idx = 0
-    process.idx_tot_str = Mock(return_value="1/2")
-    process.input_filepath = Mock(side_effect=lambda idx: f"img{idx}.jpg")
-    aligner.process = process
-    aligner.print_message = Mock()
-    aligner.alignment_config = {
+    aligner = AlignFramesParallel(alignment_config={
         'transform': constants.ALIGN_RIGID,
         'subsample': 2,
         'fast_subsampling': False,
@@ -528,7 +515,13 @@ def test_find_transform_rescale_failure():
         'refine_iters': 10,
         'phase_corr_fallback': False,
         'abort_abnormal': False
-    }
+    })
+    process = Mock()
+    process.ref_idx = 0
+    process.idx_tot_str = Mock(return_value="1/2")
+    process.input_filepath = Mock(side_effect=lambda idx: f"img{idx}.jpg")
+    aligner.process = process
+    aligner.print_message = Mock()
     aligner.get_transform_thresholds = Mock(return_value=(100, 0.5))
     aligner._n_good_matches = [0, 0]
     aligner._target_indices = [None, None]

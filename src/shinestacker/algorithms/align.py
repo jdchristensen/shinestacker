@@ -12,24 +12,8 @@ from .. core.colors import color_str
 from .utils import img_8bit, save_plot
 from .stack_framework import SubAction
 from .feature_match import (
-    SubsamplingFeatureMatcher, DEFAULT_FEATURE_CONFIG, DEFAULT_MATCHING_CONFIG)
-
-DEFAULT_ALIGNMENT_CONFIG = {
-    'transform': constants.DEFAULT_TRANSFORM,
-    'align_method': constants.DEFAULT_ESTIMATION_METHOD,
-    'rans_threshold': constants.DEFAULT_RANS_THRESHOLD,
-    'refine_iters': constants.DEFAULT_REFINE_ITERS,
-    'align_confidence': constants.DEFAULT_ALIGN_CONFIDENCE,
-    'max_iters': constants.DEFAULT_ALIGN_MAX_ITERS,
-    'border_mode': constants.DEFAULT_BORDER_MODE,
-    'border_value': constants.DEFAULT_BORDER_VALUE,
-    'border_blur': constants.DEFAULT_BORDER_BLUR,
-    'subsample': constants.DEFAULT_ALIGN_SUBSAMPLE,
-    'fast_subsampling': constants.DEFAULT_ALIGN_FAST_SUBSAMPLING,
-    'min_good_matches': constants.DEFAULT_ALIGN_MIN_GOOD_MATCHES,
-    'phase_corr_fallback': constants.DEFAULT_PHASE_CORR_FALLBACK,
-    'abort_abnormal': constants.DEFAULT_ALIGN_ABORT_ABNORMAL
-}
+    SubsamplingFeatureMatcher,
+    DEFAULT_FEATURE_CONFIG, DEFAULT_MATCHING_CONFIG, DEFAULT_ALIGNMENT_CONFIG)
 
 _cv2_border_mode_map = {
     constants.BORDER_CONSTANT: cv2.BORDER_CONSTANT,
@@ -342,18 +326,14 @@ def align_images(img_ref, img_0, feature_config=None, matching_config=None, alig
         subsample = int(1 + math.floor(img_res / target_res))
     fast_subsampling = alignment_config['fast_subsampling']
     min_good_matches = alignment_config['min_good_matches']
-    feature_matcher = SubsamplingFeatureMatcher(feature_config, matching_config, callbacks)
-
+    feature_matcher = SubsamplingFeatureMatcher(
+        feature_config, matching_config, alignment_config, callbacks)
     match_result, _final_subsample = feature_matcher.match_images_with_fallback(
-        img_ref, img_0,
-        subsample=subsample,
-        fast_subsampling=fast_subsampling,
-        min_good_matches=min_good_matches,
+        img_ref, img_0, subsample=subsample,
         warning_callback=lambda msg:
             callbacks['warning'](msg) if callbacks and 'warning' in callbacks else None
     )
     n_good_matches = match_result.n_good_matches()
-
     img_ref_sub, img_0_sub = feature_matcher.get_last_subsampled_images()
     phase_corr_fallback = alignment_config['phase_corr_fallback']
     phase_corr_called = False

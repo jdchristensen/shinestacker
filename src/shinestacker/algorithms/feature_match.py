@@ -18,6 +18,22 @@ DEFAULT_MATCHING_CONFIG = {
     'threshold': constants.DEFAULT_ALIGN_THRESHOLD,
 }
 
+DEFAULT_ALIGNMENT_CONFIG = {
+    'transform': constants.DEFAULT_TRANSFORM,
+    'align_method': constants.DEFAULT_ESTIMATION_METHOD,
+    'rans_threshold': constants.DEFAULT_RANS_THRESHOLD,
+    'refine_iters': constants.DEFAULT_REFINE_ITERS,
+    'align_confidence': constants.DEFAULT_ALIGN_CONFIDENCE,
+    'max_iters': constants.DEFAULT_ALIGN_MAX_ITERS,
+    'border_mode': constants.DEFAULT_BORDER_MODE,
+    'border_value': constants.DEFAULT_BORDER_VALUE,
+    'border_blur': constants.DEFAULT_BORDER_BLUR,
+    'subsample': constants.DEFAULT_ALIGN_SUBSAMPLE,
+    'fast_subsampling': constants.DEFAULT_ALIGN_FAST_SUBSAMPLING,
+    'min_good_matches': constants.DEFAULT_ALIGN_MIN_GOOD_MATCHES,
+    'phase_corr_fallback': constants.DEFAULT_PHASE_CORR_FALLBACK,
+    'abort_abnormal': constants.DEFAULT_ALIGN_ABORT_ABNORMAL
+}
 
 class MatchResult:
     def __init__(self, kp_0, kp_ref, good_matches):
@@ -62,7 +78,8 @@ def validate_align_config(detector, descriptor, match_method):
 
 
 class FeatureMatcher:
-    def __init__(self, feature_config=None, matching_config=None, callbacks=None):
+    def __init__(self, feature_config=DEFAULT_FEATURE_CONFIG,
+                 matching_config=DEFAULT_MATCHING_CONFIG, callbacks=None):
         self.feature_config = {**DEFAULT_FEATURE_CONFIG, **(feature_config or {})}
         self.matching_config = {**DEFAULT_MATCHING_CONFIG, **(matching_config or {})}
         self.callbacks = callbacks or {}
@@ -143,18 +160,23 @@ class FeatureMatcher:
 
 
 class SubsamplingFeatureMatcher:
-    def __init__(self, feature_config=None, matching_config=None, callbacks=None):
+    def __init__(self, feature_config=DEFAULT_FEATURE_CONFIG,
+                 matching_config=DEFAULT_MATCHING_CONFIG,
+                 alignment_config=DEFAULT_ALIGNMENT_CONFIG,
+                 callbacks=None):
         self.feature_matcher = FeatureMatcher(feature_config, matching_config, callbacks)
+        self.alignment_config = alignment_config
         self.callbacks = callbacks or {}
         self._last_subsampled_images = (None, None)
         self._last_subsample_factor = 1
 
-    def match_images(self, img_ref, img_0, subsample=1, fast_subsampling=False):
+    def match_images(self, img_ref, img_0, subsample=1):
         if subsample == 1:
             self._last_subsampled_images = (img_ref, img_0)
             self._last_subsample_factor = 1
             return self.feature_matcher.match_images(img_ref, img_0)
         self._last_subsample_factor = subsample
+        fast_subsampling = self.alignment_config['fast_subsampling']
         img_ref_small = img_subsample(img_ref, subsample, fast_subsampling)
         img_0_small = img_subsample(img_0, subsample, fast_subsampling)
         self._last_subsampled_images = (img_ref_small, img_0_small)
@@ -165,12 +187,12 @@ class SubsamplingFeatureMatcher:
             kp.pt = (kp.pt[0] * subsample, kp.pt[1] * subsample)
         return match_result
 
-    def match_images_with_fallback(self, img_ref, img_0, subsample=1, fast_subsampling=False,
-                                   min_good_matches=4, warning_callback=None):
+    def match_images_with_fallback(self, img_ref, img_0, subsample=1, warning_callback=None):
         final_subsample = subsample
+        min_good_matches = self.alignment_config['min_good_matches']
         while True:
             match_result = self.match_images(
-                img_ref, img_0, subsample=final_subsample, fast_subsampling=fast_subsampling)
+                img_ref, img_0, subsample=final_subsample)
             if match_result.has_sufficient_matches(min_good_matches) or final_subsample == 1:
                 break
             final_subsample = 1
