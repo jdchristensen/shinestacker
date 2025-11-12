@@ -76,6 +76,17 @@ class FeatureMatcher:
                 des = None
         return kp, des
 
+    def match_images(self, img_ref, img_0):
+        kp_0, des_0 = self.detect_and_compute(img_0)
+        kp_ref, des_ref = self.detect_and_compute(img_ref)
+        if des_0 is None or des_ref is None:
+            return MatchResult(kp_0, kp_ref, [], 0, None, None, None)
+        good_matches = self.match_features(des_0, des_ref)
+        n_good_matches = len(good_matches)
+        return MatchResult(kp_0, kp_ref, good_matches, n_good_matches, None, None, None)
+
+    def match_features(self, des_0, des_ref):
+        return get_good_matches(des_0, des_ref, self.matching_config, self.callbacks)
 
 detector_map = {
     constants.DETECTOR_SIFT: cv2.SIFT_create,
@@ -144,24 +155,5 @@ def get_good_matches(des_0, des_ref, matching_config=None, callbacks=None):
 
 def detect_and_compute_matches(img_ref, img_0, feature_config=None, matching_config=None,
                                callbacks=None):
-    feature_config = {**_DEFAULT_FEATURE_CONFIG, **(feature_config or {})}
-    matching_config = {**_DEFAULT_MATCHING_CONFIG, **(matching_config or {})}
-    feature_config_detector = feature_config['detector']
-    feature_config_descriptor = feature_config['descriptor']
-    match_method = matching_config['match_method']
-    validate_align_config(feature_config_detector, feature_config_descriptor, match_method)
-    img_bw_0, img_bw_ref = img_bw_8bit(img_0), img_bw_8bit(img_ref)
-    detector = detector_map[feature_config_detector]()
-    if feature_config_detector == feature_config_descriptor and \
-       feature_config_detector in (constants.DETECTOR_SIFT,
-                                   constants.DETECTOR_AKAZE,
-                                   constants.DETECTOR_BRISK):
-        kp_0, des_0 = detector.detectAndCompute(img_bw_0, None)
-        kp_ref, des_ref = detector.detectAndCompute(img_bw_ref, None)
-    else:
-        descriptor = descriptor_map[feature_config_descriptor]()
-        kp_0, des_0 = descriptor.compute(img_bw_0, detector.detect(img_bw_0, None))
-        kp_ref, des_ref = descriptor.compute(img_bw_ref, detector.detect(img_bw_ref, None))
-    good_matches = get_good_matches(des_0, des_ref, matching_config, callbacks)
-    n_good_matches = len(good_matches)
-    return MatchResult(kp_0, kp_ref, good_matches, n_good_matches, None, None, None)
+    feature_matcher = FeatureMatcher(feature_config, matching_config, callbacks)
+    return feature_matcher.match_images(img_ref, img_0)
