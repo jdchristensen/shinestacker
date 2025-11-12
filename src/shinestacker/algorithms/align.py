@@ -12,7 +12,7 @@ from .. core.colors import color_str
 from .utils import img_8bit, save_plot, img_subsample
 from .stack_framework import SubAction
 from .feature_match import (
-    _DEFAULT_FEATURE_CONFIG, _DEFAULT_MATCHING_CONFIG, detect_and_compute_matches)
+    FeatureMatcher, _DEFAULT_FEATURE_CONFIG, _DEFAULT_MATCHING_CONFIG)
 
 _DEFAULT_ALIGNMENT_CONFIG = {
     'transform': constants.DEFAULT_TRANSFORM,
@@ -348,8 +348,8 @@ def align_images(img_ref, img_0, feature_config=None, matching_config=None, alig
             img_ref_sub = img_subsample(img_ref, subsample, fast_subsampling)
         else:
             img_0_sub, img_ref_sub = img_0, img_ref
-        match_result = detect_and_compute_matches(
-            img_ref_sub, img_0_sub, feature_config, matching_config, callbacks)
+        feature_matcher = FeatureMatcher(feature_config, matching_config, callbacks)
+        match_result = feature_matcher.match_images(img_ref_sub, img_0_sub)
         if match_result.has_sufficient_matches(min_good_matches) or subsample == 1:
             break
         subsample = 1

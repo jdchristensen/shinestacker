@@ -143,9 +143,3 @@ def get_good_matches(des_0, des_ref, matching_config=None, callbacks=None):
             f". Valid options are: {constants.MATCHING_KNN}, {constants.MATCHING_NORM_HAMMING}"
         )
     return good_matches
-
-
-def detect_and_compute_matches(img_ref, img_0, feature_config=None, matching_config=None,
-                               callbacks=None):
-    feature_matcher = FeatureMatcher(feature_config, matching_config, callbacks)
-    return feature_matcher.match_images(img_ref, img_0)
