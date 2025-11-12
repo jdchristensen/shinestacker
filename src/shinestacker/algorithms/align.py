@@ -350,6 +350,7 @@ def align_images(img_ref, img_0, feature_config=None, matching_config=None, alig
             img_0_sub, img_ref_sub = img_0, img_ref
         feature_matcher = FeatureMatcher(feature_config, matching_config, callbacks)
         match_result = feature_matcher.match_images(img_ref_sub, img_0_sub)
+        n_good_matches = match_result.n_good_matches
         if match_result.has_sufficient_matches(min_good_matches) or subsample == 1:
             break
         subsample = 1
@@ -417,7 +418,7 @@ def align_images(img_ref, img_0, feature_config=None, matching_config=None, alig
             callbacks['warning'](f"invalid transformation: {reason}, alignment failed")
         if alignment_config['abort_abnormal']:
             raise RuntimeError("invalid transformation: {reason}, alignment failed")
-        return n_good_matches, None, None
+        return match_result.n_good_matches, None, None
     if not phase_corr_called and callbacks and 'matches_message' in callbacks:
         callbacks['matches_message'](match_result.n_good_matches)
     img_warp = apply_alignment_transform(img_0, img_ref, m, alignment_config, callbacks)

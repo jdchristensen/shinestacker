@@ -70,10 +70,10 @@ class FeatureMatcher:
 
     def detect_and_compute(self, image):
         img_bw = img_bw_8bit(image)
-        if self.feature_config['detector'] == self.feature_config['descriptor'] and \
-           self.feature_config['detector'] in (constants.DETECTOR_SIFT,
-                                               constants.DETECTOR_AKAZE,
-                                               constants.DETECTOR_BRISK):
+        detector_name = self.feature_config['detector']
+        descriptor_name = self.feature_config['descriptor']
+        if (detector_name == descriptor_name and detector_name in
+                (constants.DETECTOR_SIFT, constants.DETECTOR_AKAZE, constants.DETECTOR_BRISK)):
             kp, des = self.detector.detectAndCompute(img_bw, None)
         else:
             kp = self.detector.detect(img_bw, None)
@@ -86,7 +86,7 @@ class FeatureMatcher:
     def match_images(self, img_ref, img_0):
         kp_0, des_0 = self.detect_and_compute(img_0)
         kp_ref, des_ref = self.detect_and_compute(img_ref)
-        if des_0 is None or des_ref is None:
+        if des_0 is None or des_ref is None or len(des_0) == 0 or len(des_ref) == 0:
             return MatchResult(kp_0, kp_ref, [], 0)
         good_matches = self.match_features(des_0, des_ref)
         n_good_matches = len(good_matches)
