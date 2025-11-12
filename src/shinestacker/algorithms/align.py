@@ -80,6 +80,31 @@ _HOMOGRAPHY_THRESHOLDS_LARGE = {
 }
 
 
+class MatchResult:
+    def __init__(self, kp_0, kp_ref, good_matches, n_good_matches,
+                 img_0_sub, img_ref_sub, subsample):
+        self.kp_0 = kp_0
+        self.kp_ref = kp_ref
+        self.good_matches = good_matches
+        self.n_good_matches = n_good_matches
+        self.img_0_sub = img_0_sub
+        self.img_ref_sub = img_ref_sub
+        self.subsample = subsample
+
+    def has_sufficient_matches(self, min_matches):
+        return self.n_good_matches >= min_matches
+
+    def get_src_points(self):
+        return np.float32(
+            [self.kp_0[match.queryIdx].pt for match in self.good_matches]
+        ).reshape(-1, 1, 2)
+
+    def get_dst_points(self):
+        return np.float32(
+            [self.kp_ref[match.trainIdx].pt for match in self.good_matches]
+        ).reshape(-1, 1, 2)
+
+
 def decompose_affine_matrix(m):
     a, b, tx = m[0, 0], m[0, 1], m[0, 2]
     c, d, ty = m[1, 0], m[1, 1], m[1, 2]
@@ -247,7 +272,9 @@ def detect_and_compute_matches(img_ref, img_0, feature_config=None, matching_con
         descriptor = descriptor_map[feature_config_descriptor]()
         kp_0, des_0 = descriptor.compute(img_bw_0, detector.detect(img_bw_0, None))
         kp_ref, des_ref = descriptor.compute(img_bw_ref, detector.detect(img_bw_ref, None))
-    return kp_0, kp_ref, get_good_matches(des_0, des_ref, matching_config, callbacks)
+    good_matches = get_good_matches(des_0, des_ref, matching_config, callbacks)
+    n_good_matches = len(good_matches)
+    return MatchResult(kp_0, kp_ref, good_matches, n_good_matches, None, None, None)
 
 
 def find_transform(src_pts, dst_pts, transform=constants.DEFAULT_TRANSFORM,
@@ -450,16 +477,15 @@ def align_images(img_ref, img_0, feature_config=None, matching_config=None, alig
             img_ref_sub = img_subsample(img_ref, subsample, fast_subsampling)
         else:
             img_0_sub, img_ref_sub = img_0, img_ref
-        kp_0, kp_ref, good_matches = detect_and_compute_matches(
+        match_result = detect_and_compute_matches(
             img_ref_sub, img_0_sub, feature_config, matching_config, callbacks)
-        n_good_matches = len(good_matches)
-        if n_good_matches >= min_good_matches or subsample == 1:
+        if match_result.has_sufficient_matches(min_good_matches) or subsample == 1:
             break
         subsample = 1
         if callbacks and 'warning' in callbacks:
-            s_str = 'es' if n_good_matches != 1 else ''
+            s_str = 'es' if match_result.n_good_matches != 1 else ''
             callbacks['warning'](
-                f"only {n_good_matches} < {min_good_matches} match{s_str} found, "
+                f"only {match_result.n_good_matches} < {min_good_matches} match{s_str} found, "
                 "retrying without subsampling")
         else:
             n_good_matches = 0
@@ -469,21 +495,20 @@ def align_images(img_ref, img_0, feature_config=None, matching_config=None, alig
     img_warp = None
     m = None
     transform_type = alignment_config['transform']
-    if n_good_matches >= min_matches:
-        src_pts = np.float32(
-            [kp_0[match.queryIdx].pt for match in good_matches]).reshape(-1, 1, 2)
-        dst_pts = np.float32(
-            [kp_ref[match.trainIdx].pt for match in good_matches]).reshape(-1, 1, 2)
+    if match_result.has_sufficient_matches(min_good_matches):
+        src_pts = match_result.get_src_points()
+        dst_pts = match_result.get_dst_points()
         m, msk = find_transform(
             src_pts, dst_pts, transform_type, alignment_config['align_method'],
             *(alignment_config[k]
               for k in ['rans_threshold', 'max_iters',
                         'align_confidence', 'refine_iters']))
         if m is not None and plot_path is not None:
-            plot_matches(msk, img_ref_sub, img_0_sub, kp_ref, kp_0, good_matches, plot_path)
+            plot_matches(msk, img_ref_sub, img_0_sub, match_result.kp_ref, match_result.kp_0,
+                         match_result.good_matches, plot_path)
             if callbacks and 'save_plot' in callbacks:
                 callbacks['save_plot'](plot_path)
-    if m is None or n_good_matches < min_matches:
+    if m is None or not match_result.has_sufficient_matches(min_matches):
         if phase_corr_fallback:
             if callbacks and 'warning' in callbacks:
                 callbacks['warning'](
@@ -523,9 +548,9 @@ def align_images(img_ref, img_0, feature_config=None, matching_config=None, alig
             raise RuntimeError("invalid transformation: {reason}, alignment failed")
         return n_good_matches, None, None
     if not phase_corr_called and callbacks and 'matches_message' in callbacks:
-        callbacks['matches_message'](n_good_matches)
+        callbacks['matches_message'](match_result.n_good_matches)
     img_warp = apply_alignment_transform(img_0, img_ref, m, alignment_config, callbacks)
-    return n_good_matches, m, img_warp
+    return match_result.n_good_matches, m, img_warp
 
 
 class AlignFramesBase(SubAction):

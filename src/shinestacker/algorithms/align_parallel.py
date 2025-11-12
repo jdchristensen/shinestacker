@@ -13,7 +13,7 @@ from .. core.exceptions import RunStopException
 from .. core.colors import color_str
 from .. core.core_utils import make_chunks
 from .utils import read_img, img_subsample, img_bw, img_bw_8bit
-from .align import (AlignFramesBase, find_transform, find_transform_phase_correlation,
+from .align import (AlignFramesBase, MatchResult, find_transform, find_transform_phase_correlation,
                     check_transform, rescale_transform,
                     validate_align_config, detector_map, descriptor_map,
                     get_good_matches, apply_alignment_transform)
@@ -241,7 +241,9 @@ class AlignFramesParallel(AlignFramesBase):
             descriptor = descriptor_map[feature_config_descriptor]()
             kp_0, des_0 = descriptor.compute(img_bw_0, detector.detect(img_bw_0, None))
             kp_ref, des_ref = descriptor.compute(img_bw_ref, detector.detect(img_bw_ref, None))
-        return kp_0, kp_ref, get_good_matches(des_0, des_ref, matching_config)
+        good_matches = get_good_matches(des_0, des_ref, matching_config)
+        n_good_matches = len(good_matches)
+        return MatchResult(kp_0, kp_ref, good_matches, n_good_matches, None, None, None)
 
     def find_transform(self, idx, delta=1):
         ref_idx = self.process.ref_idx
@@ -286,10 +288,9 @@ class AlignFramesParallel(AlignFramesBase):
                 img_ref_sub = img_subsample(img_ref, subsample, fast_subsampling)
             else:
                 img_0_sub, img_ref_sub = img_0, img_ref
-            kp_0, kp_ref, good_matches = self.detect_and_compute_matches(
-                img_ref_sub, ref_idx, img_0_sub, idx)
-            n_good_matches = len(good_matches)
-            if n_good_matches > min_good_matches or subsample == 1:
+            match_result = self.detect_and_compute_matches(img_ref_sub, ref_idx, img_0_sub, idx)
+            n_good_matches = match_result.n_good_matches
+            if n_good_matches >= min_good_matches or subsample == 1:
                 break
             subsample = 1
             s_str = 'es' if n_good_matches != 1 else ''
@@ -320,8 +321,8 @@ class AlignFramesParallel(AlignFramesBase):
             warning_messages.append(msg)
             return self.find_transform(idx, delta + 1)
         transform = self.alignment_config['transform']
-        src_pts = np.float32([kp_0[m.queryIdx].pt for m in good_matches]).reshape(-1, 1, 2)
-        dst_pts = np.float32([kp_ref[m.trainIdx].pt for m in good_matches]).reshape(-1, 1, 2)
+        src_pts = match_result.get_src_points()
+        dst_pts = match_result.get_dst_points()
         m, _msk = find_transform(
             src_pts, dst_pts, transform, self.alignment_config['align_method'],
             *(self.alignment_config[k]
