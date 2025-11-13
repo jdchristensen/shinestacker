@@ -16,8 +16,8 @@ from .feature_match import (
     DEFAULT_FEATURE_CONFIG, DEFAULT_MATCHING_CONFIG, DEFAULT_ALIGNMENT_CONFIG)
 from .transform_estimate import (
     TransformationExtractor, find_transform_phase_correlation,
-    _AFFINE_THRESHOLDS, _HOMOGRAPHY_THRESHOLDS, _AFFINE_THRESHOLDS_LARGE,
-    _HOMOGRAPHY_THRESHOLDS_LARGE)
+    AFFINE_THRESHOLDS, HOMOGRAPHY_THRESHOLDS, AFFINE_THRESHOLDS_LARGE,
+    HOMOGRAPHY_THRESHOLDS_LARGE)
 
 
 def align_images_phase_correlation(img_ref, img_0):
@@ -28,8 +28,8 @@ def align_images_phase_correlation(img_ref, img_0):
 
 def align_images(img_ref, img_0, feature_config=None, matching_config=None, alignment_config=None,
                  plot_path=None, callbacks=None,
-                 affine_thresholds=_AFFINE_THRESHOLDS,
-                 homography_thresholds=_HOMOGRAPHY_THRESHOLDS):
+                 affine_thresholds=AFFINE_THRESHOLDS,
+                 homography_thresholds=HOMOGRAPHY_THRESHOLDS):
     feature_config = {**DEFAULT_FEATURE_CONFIG, **(feature_config or {})}
     matching_config = {**DEFAULT_MATCHING_CONFIG, **(matching_config or {})}
     alignment_config = {**DEFAULT_ALIGNMENT_CONFIG, **(alignment_config or {})}
@@ -124,10 +124,10 @@ class AlignFramesBase(SubAction):
         return self.align_images(idx, img_ref, img_0)
 
     def get_transform_thresholds(self):
-        return _AFFINE_THRESHOLDS, _HOMOGRAPHY_THRESHOLDS
+        return AFFINE_THRESHOLDS, HOMOGRAPHY_THRESHOLDS
 
     def get_transform_thresholds_large(self):
-        return _AFFINE_THRESHOLDS_LARGE, _HOMOGRAPHY_THRESHOLDS_LARGE
+        return AFFINE_THRESHOLDS_LARGE, HOMOGRAPHY_THRESHOLDS_LARGE
 
     def image_str(self, idx):
         return f"{self.process.frame_str(idx)}, " \

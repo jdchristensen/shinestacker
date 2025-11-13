@@ -8,7 +8,7 @@ from .. core.exceptions import InvalidOptionError
 from .utils import img_8bit, save_plot
 
 
-_AFFINE_THRESHOLDS = {
+AFFINE_THRESHOLDS = {
     'max_rotation': 10.0,  # degrees
     'min_scale': 0.9,
     'max_scale': 1.1,
@@ -16,13 +16,13 @@ _AFFINE_THRESHOLDS = {
     'max_translation_ratio': 0.1,  # 10% of image dimension
 }
 
-_HOMOGRAPHY_THRESHOLDS = {
+HOMOGRAPHY_THRESHOLDS = {
     'max_skew': 10.0,  # degrees
     'max_scale_change': 1.5,  # max area change ratio
     'max_aspect_ratio': 2.0,  # max aspect ratio change
 }
 
-_AFFINE_THRESHOLDS_LARGE = {
+AFFINE_THRESHOLDS_LARGE = {
     'max_rotation': 20.0,  # degrees
     'min_scale': 0.5,
     'max_scale': 1.5,
@@ -30,7 +30,7 @@ _AFFINE_THRESHOLDS_LARGE = {
     'max_translation_ratio': 0.2,  # 20% of image dimension
 }
 
-_HOMOGRAPHY_THRESHOLDS_LARGE = {
+HOMOGRAPHY_THRESHOLDS_LARGE = {
     'max_skew': 12.0,  # degrees
     'max_scale_change': 2.0,  # max area change ratio
     'max_aspect_ratio': 4.0,  # max aspect ratio change

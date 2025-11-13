@@ -11,8 +11,8 @@ from shinestacker.algorithms.align_parallel import AlignFramesParallel, compose_
 from shinestacker.algorithms.align import AlignFramesBase
 from shinestacker.algorithms.transform_estimate import (
     TransformationExtractor,
-    _AFFINE_THRESHOLDS, _HOMOGRAPHY_THRESHOLDS, _AFFINE_THRESHOLDS_LARGE,
-    _HOMOGRAPHY_THRESHOLDS_LARGE)
+    AFFINE_THRESHOLDS, HOMOGRAPHY_THRESHOLDS, AFFINE_THRESHOLDS_LARGE,
+    HOMOGRAPHY_THRESHOLDS_LARGE)
 
 
 def test_compose_transforms():
@@ -78,9 +78,9 @@ def test_align_images_method():
     process.input_filepath = Mock(return_value="test.jpg")
     aligner.process = process
     aligner.get_transform_thresholds = Mock(
-        return_value=(_AFFINE_THRESHOLDS, _HOMOGRAPHY_THRESHOLDS))
+        return_value=(AFFINE_THRESHOLDS, HOMOGRAPHY_THRESHOLDS))
     aligner.get_transform_thresholds_large = Mock(
-        return_value=(_AFFINE_THRESHOLDS_LARGE, _HOMOGRAPHY_THRESHOLDS_LARGE))
+        return_value=(AFFINE_THRESHOLDS_LARGE, HOMOGRAPHY_THRESHOLDS_LARGE))
     aligner.print_message = Mock()
     img_ref = np.ones((100, 100, 3), dtype=np.uint8)
     img_0 = np.ones((100, 100, 3), dtype=np.uint8)
@@ -107,9 +107,9 @@ def test_align_images_border_modes():
     aligner.process = process
     aligner.print_message = Mock()
     aligner.get_transform_thresholds = Mock(
-        return_value=(_AFFINE_THRESHOLDS, _HOMOGRAPHY_THRESHOLDS))
+        return_value=(AFFINE_THRESHOLDS, HOMOGRAPHY_THRESHOLDS))
     aligner.get_transform_thresholds_large = Mock(
-        return_value=(_AFFINE_THRESHOLDS_LARGE, _HOMOGRAPHY_THRESHOLDS_LARGE))
+        return_value=(AFFINE_THRESHOLDS_LARGE, HOMOGRAPHY_THRESHOLDS_LARGE))
     affine_thresholds, homography_thresholds = aligner.get_transform_thresholds()
     aligner.transformation_extractor = TransformationExtractor(
         aligner.alignment_config, affine_thresholds, homography_thresholds)

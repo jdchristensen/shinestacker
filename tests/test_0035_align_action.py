@@ -5,12 +5,12 @@ from unittest import mock
 import numpy as np
 from shinestacker.config import constants
 from shinestacker.algorithms.align import (
-    _HOMOGRAPHY_THRESHOLDS, DEFAULT_FEATURE_CONFIG, DEFAULT_MATCHING_CONFIG,
+    DEFAULT_FEATURE_CONFIG, DEFAULT_MATCHING_CONFIG,
     DEFAULT_ALIGNMENT_CONFIG, AlignFramesBase, AlignFrames
 )
 from shinestacker.algorithms.transform_estimate import (
     decompose_affine_matrix, check_affine_matrix, check_homography_distortion, check_transform,
-    _AFFINE_THRESHOLDS
+    AFFINE_THRESHOLDS, HOMOGRAPHY_THRESHOLDS
 )
 
 
@@ -67,7 +67,7 @@ def test_rotation_only():
 def test_check_affine_matrix_valid():
     m = np.array([[1.0, 0.0, 10.0], [0.0, 1.0, 5.0]], dtype=np.float64)
     img_shape = (100, 100)
-    is_valid, reason, result = check_affine_matrix(m, img_shape, _AFFINE_THRESHOLDS)
+    is_valid, reason, result = check_affine_matrix(m, img_shape, AFFINE_THRESHOLDS)
     assert is_valid
     assert "within acceptable limits" in reason
 
@@ -78,7 +78,7 @@ def test_check_affine_matrix_invalid_rotation():
     sin_a = math.sin(angle_rad)
     m = np.array([[cos_a, sin_a, 0], [-sin_a, cos_a, 0]], dtype=np.float64)
     img_shape = (100, 100)
-    is_valid, reason, result = check_affine_matrix(m, img_shape, _AFFINE_THRESHOLDS)
+    is_valid, reason, result = check_affine_matrix(m, img_shape, AFFINE_THRESHOLDS)
     assert not is_valid
     assert "rotation too large" in reason
 
@@ -86,7 +86,7 @@ def test_check_affine_matrix_invalid_rotation():
 def test_check_affine_matrix_invalid_scale():
     m = np.array([[0.8, 0.0, 0.0], [0.0, 1.2, 0.0]], dtype=np.float64)
     img_shape = (100, 100)
-    is_valid, reason, result = check_affine_matrix(m, img_shape, _AFFINE_THRESHOLDS)
+    is_valid, reason, result = check_affine_matrix(m, img_shape, AFFINE_THRESHOLDS)
     assert not is_valid
     assert "x-scale out of range" in reason
 
@@ -94,7 +94,7 @@ def test_check_affine_matrix_invalid_scale():
 def test_check_affine_matrix_invalid_translation():
     m = np.array([[1.0, 0.0, 20.0], [0.0, 1.0, 15.0]], dtype=np.float64)
     img_shape = (100, 100)
-    is_valid, reason, result = check_affine_matrix(m, img_shape, _AFFINE_THRESHOLDS)
+    is_valid, reason, result = check_affine_matrix(m, img_shape, AFFINE_THRESHOLDS)
     assert not is_valid
     assert "translation too large" in reason
 
@@ -103,7 +103,7 @@ def test_check_homography_distortion_valid():
     m = np.eye(3, dtype=np.float64)
     img_shape = (100, 100)
     is_valid, reason, result = check_homography_distortion(
-        m, img_shape, homography_thresholds=_HOMOGRAPHY_THRESHOLDS)
+        m, img_shape, homography_thresholds=HOMOGRAPHY_THRESHOLDS)
     assert is_valid
     assert "within acceptable limits" in reason
 
@@ -112,7 +112,7 @@ def test_check_homography_distortion_invalid_area():
     m = np.array([[2.0, 0.0, 0.0], [0.0, 2.0, 0.0], [0.0, 0.0, 1.0]], dtype=np.float64)
     img_shape = (100, 100)
     is_valid, reason, result = check_homography_distortion(
-        m, img_shape, homography_thresholds=_HOMOGRAPHY_THRESHOLDS)
+        m, img_shape, homography_thresholds=HOMOGRAPHY_THRESHOLDS)
     assert not is_valid
     assert "area change too large" in reason
 
@@ -121,7 +121,7 @@ def test_check_homography_distortion_invalid_aspect():
     m = np.array([[2.0, 0.0, 0.0], [0.0, 0.5, 0.0], [0.0, 0.0, 1.0]], dtype=np.float64)
     img_shape = (100, 100)
     is_valid, reason, result = check_homography_distortion(
-        m, img_shape, homography_thresholds=_HOMOGRAPHY_THRESHOLDS)
+        m, img_shape, homography_thresholds=HOMOGRAPHY_THRESHOLDS)
     assert not is_valid
     assert "aspect ratio change too large" in reason
 
@@ -130,7 +130,7 @@ def test_check_homography_distortion_skew():
     m = np.array([[1.0, 0.5, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]], dtype=np.float64)
     img_shape = (100, 100)
     is_valid, reason, result = check_homography_distortion(
-        m, img_shape, homography_thresholds=_HOMOGRAPHY_THRESHOLDS)
+        m, img_shape, homography_thresholds=HOMOGRAPHY_THRESHOLDS)
     assert not is_valid
     assert "angle distortion too large" in reason
 
@@ -141,7 +141,7 @@ def test_check_affine_matrix_valid_rotation():
     sin_a = math.sin(angle_rad)
     m = np.array([[cos_a, sin_a, 0], [-sin_a, cos_a, 0]], dtype=np.float64)
     img_shape = (100, 100)
-    is_valid, reason, result = check_affine_matrix(m, img_shape, _AFFINE_THRESHOLDS)
+    is_valid, reason, result = check_affine_matrix(m, img_shape, AFFINE_THRESHOLDS)
     assert is_valid
     assert "within acceptable limits" in reason
 
@@ -149,7 +149,7 @@ def test_check_affine_matrix_valid_rotation():
 def test_check_affine_matrix_valid_scale():
     m = np.array([[0.95, 0.0, 0.0], [0.0, 1.05, 0.0]], dtype=np.float64)
     img_shape = (100, 100)
-    is_valid, reason, result = check_affine_matrix(m, img_shape, _AFFINE_THRESHOLDS)
+    is_valid, reason, result = check_affine_matrix(m, img_shape, AFFINE_THRESHOLDS)
     assert is_valid
     assert "within acceptable limits" in reason
 
@@ -157,7 +157,7 @@ def test_check_affine_matrix_valid_scale():
 def test_check_affine_matrix_valid_translation():
     m = np.array([[1.0, 0.0, 5.0], [0.0, 1.0, 5.0]], dtype=np.float64)
     img_shape = (100, 100)
-    is_valid, reason, result = check_affine_matrix(m, img_shape, _AFFINE_THRESHOLDS)
+    is_valid, reason, result = check_affine_matrix(m, img_shape, AFFINE_THRESHOLDS)
     assert is_valid
     assert "within acceptable limits" in reason
 
@@ -165,7 +165,7 @@ def test_check_affine_matrix_valid_translation():
 def test_check_affine_matrix_valid_shear():
     m = np.array([[1.0, 0.0, 0.0], [0.0857, 1.0, 0.0]], dtype=np.float64)
     img_shape = (100, 100)
-    is_valid, reason, result = check_affine_matrix(m, img_shape, _AFFINE_THRESHOLDS)
+    is_valid, reason, result = check_affine_matrix(m, img_shape, AFFINE_THRESHOLDS)
     assert is_valid
     assert "within acceptable limits" in reason
 
@@ -177,7 +177,7 @@ def test_check_affine_matrix_combined_valid():
     m = np.array([[0.95 * cos_a, 0.95 * sin_a, 4.0],
                   [-0.95 * sin_a, 1.05 * cos_a, -3.0]], dtype=np.float64)
     img_shape = (100, 100)
-    is_valid, reason, result = check_affine_matrix(m, img_shape, _AFFINE_THRESHOLDS)
+    is_valid, reason, result = check_affine_matrix(m, img_shape, AFFINE_THRESHOLDS)
     assert is_valid
     assert "within acceptable limits" in reason
 
@@ -186,7 +186,7 @@ def test_check_homography_distortion_valid_scale():
     m = np.array([[1.2, 0.0, 0.0], [0.0, 1.2, 0.0], [0.0, 0.0, 1.0]], dtype=np.float64)
     img_shape = (100, 100)
     is_valid, reason, result = check_homography_distortion(
-        m, img_shape, homography_thresholds=_HOMOGRAPHY_THRESHOLDS)
+        m, img_shape, homography_thresholds=HOMOGRAPHY_THRESHOLDS)
     assert is_valid
     assert "within acceptable limits" in reason
 
@@ -195,7 +195,7 @@ def test_check_homography_distortion_valid_aspect():
     m = np.array([[1.5, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]], dtype=np.float64)
     img_shape = (100, 100)
     is_valid, reason, result = check_homography_distortion(
-        m, img_shape, homography_thresholds=_HOMOGRAPHY_THRESHOLDS)
+        m, img_shape, homography_thresholds=HOMOGRAPHY_THRESHOLDS)
     assert is_valid
     assert "within acceptable limits" in reason
 
@@ -204,7 +204,7 @@ def test_check_homography_distortion_valid_skew():
     m = np.array([[1.0, 0.1, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]], dtype=np.float64)
     img_shape = (100, 100)
     is_valid, reason, result = check_homography_distortion(
-        m, img_shape, homography_thresholds=_HOMOGRAPHY_THRESHOLDS)
+        m, img_shape, homography_thresholds=HOMOGRAPHY_THRESHOLDS)
     assert is_valid
     assert "within acceptable limits" in reason
 
@@ -216,7 +216,7 @@ def test_check_affine_matrix_combined_invalid():
     m = np.array([[0.8 * cos_a, 0.8 * sin_a, 20.0],
                   [-0.8 * sin_a, 1.2 * cos_a, 15.0]], dtype=np.float64)
     img_shape = (100, 100)
-    is_valid, reason, result = check_affine_matrix(m, img_shape, _AFFINE_THRESHOLDS)
+    is_valid, reason, result = check_affine_matrix(m, img_shape, AFFINE_THRESHOLDS)
     assert not is_valid
     assert "rotation too large" in reason
     assert "x-scale out of range" in reason
@@ -228,7 +228,7 @@ def test_check_transform_rigid_valid():
     m = np.array([[1.0, 0.0, 5.0], [0.0, 1.0, 5.0]], dtype=np.float64)
     img_shape = (100, 100)
     is_valid, reason, result = check_transform(
-        m, img_shape, constants.ALIGN_RIGID, _AFFINE_THRESHOLDS, _HOMOGRAPHY_THRESHOLDS)
+        m, img_shape, constants.ALIGN_RIGID, AFFINE_THRESHOLDS, HOMOGRAPHY_THRESHOLDS)
     assert is_valid
     assert "within acceptable limits" in reason
 
@@ -237,7 +237,7 @@ def test_check_transform_homography_valid():
     m = np.eye(3, dtype=np.float64)
     img_shape = (100, 100)
     is_valid, reason, result = check_transform(
-        m, img_shape, constants.ALIGN_HOMOGRAPHY, _AFFINE_THRESHOLDS, _HOMOGRAPHY_THRESHOLDS)
+        m, img_shape, constants.ALIGN_HOMOGRAPHY, AFFINE_THRESHOLDS, HOMOGRAPHY_THRESHOLDS)
     assert is_valid
     assert "within acceptable limits" in reason
 
@@ -246,7 +246,7 @@ def test_check_transform_homography_invalid_area():
     m = np.array([[2.0, 0.0, 0.0], [0.0, 2.0, 0.0], [0.0, 0.0, 1.0]], dtype=np.float64)
     img_shape = (100, 100)
     is_valid, reason, result = check_transform(
-        m, img_shape, constants.ALIGN_HOMOGRAPHY, _AFFINE_THRESHOLDS, _HOMOGRAPHY_THRESHOLDS)
+        m, img_shape, constants.ALIGN_HOMOGRAPHY, AFFINE_THRESHOLDS, HOMOGRAPHY_THRESHOLDS)
     assert not is_valid
     assert "area change too large" in reason
 
@@ -255,7 +255,7 @@ def test_check_transform_homography_invalid_aspect():
     m = np.array([[2.0, 0.0, 0.0], [0.0, 0.5, 0.0], [0.0, 0.0, 1.0]], dtype=np.float64)
     img_shape = (100, 100)
     is_valid, reason, result = check_transform(
-        m, img_shape, constants.ALIGN_HOMOGRAPHY, _AFFINE_THRESHOLDS, _HOMOGRAPHY_THRESHOLDS)
+        m, img_shape, constants.ALIGN_HOMOGRAPHY, AFFINE_THRESHOLDS, HOMOGRAPHY_THRESHOLDS)
     assert not is_valid
     assert "aspect ratio change too large" in reason
 
@@ -264,7 +264,7 @@ def test_check_transform_invalid_type():
     m = np.eye(3, dtype=np.float64)
     img_shape = (100, 100)
     is_valid, reason, result = check_transform(
-        m, img_shape, 'invalid_type', _AFFINE_THRESHOLDS, _HOMOGRAPHY_THRESHOLDS)
+        m, img_shape, 'invalid_type', AFFINE_THRESHOLDS, HOMOGRAPHY_THRESHOLDS)
     assert not is_valid
     assert "invalid transfrom option" in reason
 
@@ -276,7 +276,7 @@ def test_check_transform_rigid_invalid_rotation():
     m = np.array([[cos_a, sin_a, 0], [-sin_a, cos_a, 0]], dtype=np.float64)
     img_shape = (100, 100)
     is_valid, reason, result = check_transform(
-        m, img_shape, constants.ALIGN_RIGID, _AFFINE_THRESHOLDS, _HOMOGRAPHY_THRESHOLDS)
+        m, img_shape, constants.ALIGN_RIGID, AFFINE_THRESHOLDS, HOMOGRAPHY_THRESHOLDS)
     assert not is_valid
     assert "rotation too large" in reason
 
@@ -285,7 +285,7 @@ def test_check_transform_rigid_invalid_translation():
     m = np.array([[1.0, 0.0, 20.0], [0.0, 1.0, 15.0]], dtype=np.float64)
     img_shape = (100, 100)
     is_valid, reason, result = check_transform(
-        m, img_shape, constants.ALIGN_RIGID, _AFFINE_THRESHOLDS, _HOMOGRAPHY_THRESHOLDS)
+        m, img_shape, constants.ALIGN_RIGID, AFFINE_THRESHOLDS, HOMOGRAPHY_THRESHOLDS)
     assert not is_valid
     assert "translation too large" in reason
 
@@ -294,7 +294,7 @@ def test_check_transform_rigid_invalid_scale():
     m = np.array([[0.8, 0.0, 0.0], [0.0, 1.2, 0.0]], dtype=np.float64)
     img_shape = (100, 100)
     is_valid, reason, result = check_transform(
-        m, img_shape, constants.ALIGN_RIGID, _AFFINE_THRESHOLDS, _HOMOGRAPHY_THRESHOLDS)
+        m, img_shape, constants.ALIGN_RIGID, AFFINE_THRESHOLDS, HOMOGRAPHY_THRESHOLDS)
     assert not is_valid
     assert "x-scale out of range" in reason
 
@@ -303,7 +303,7 @@ def test_check_transform_homography_invalid_skew():
     m = np.array([[1.0, 0.5, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]], dtype=np.float64)
     img_shape = (100, 100)
     is_valid, reason, result = check_transform(
-        m, img_shape, constants.ALIGN_HOMOGRAPHY, _AFFINE_THRESHOLDS, _HOMOGRAPHY_THRESHOLDS)
+        m, img_shape, constants.ALIGN_HOMOGRAPHY, AFFINE_THRESHOLDS, HOMOGRAPHY_THRESHOLDS)
     assert not is_valid
     assert "angle distortion too large" in reason
 
@@ -316,7 +316,7 @@ def test_check_transform_rigid_combined_invalid():
                   [-0.8 * sin_a, 1.2 * cos_a, 15.0]], dtype=np.float64)
     img_shape = (100, 100)
     is_valid, reason, result = check_transform(
-        m, img_shape, constants.ALIGN_RIGID, _AFFINE_THRESHOLDS, _HOMOGRAPHY_THRESHOLDS)
+        m, img_shape, constants.ALIGN_RIGID, AFFINE_THRESHOLDS, HOMOGRAPHY_THRESHOLDS)
     assert not is_valid
     assert "rotation too large" in reason
     assert "x-scale out of range" in reason
@@ -369,7 +369,7 @@ def test_decompose_affine_matrix_combined():
 def test_check_affine_matrix_zero_matrix():
     m = np.array([[0.0, 0.0, 0.0], [0.0, 0.0, 0.0]], dtype=np.float64)
     img_shape = (100, 100)
-    is_valid, reason, result = check_affine_matrix(m, img_shape, _AFFINE_THRESHOLDS)
+    is_valid, reason, result = check_affine_matrix(m, img_shape, AFFINE_THRESHOLDS)
     assert not is_valid
     assert "x-scale out of range" in reason
     assert "y-scale out of range" in reason
@@ -379,7 +379,7 @@ def test_check_homography_distortion_identity():
     m = np.eye(3, dtype=np.float64)
     img_shape = (100, 100)
     is_valid, reason, result = check_homography_distortion(
-        m, img_shape, homography_thresholds=_HOMOGRAPHY_THRESHOLDS)
+        m, img_shape, homography_thresholds=HOMOGRAPHY_THRESHOLDS)
     assert is_valid
     assert "within acceptable limits" in reason
     area_ratio, aspect_ratio, max_angle_dev = result
@@ -392,7 +392,7 @@ def test_check_homography_distortion_translation():
     m = np.array([[1.0, 0.0, 10.0], [0.0, 1.0, 5.0], [0.0, 0.0, 1.0]], dtype=np.float64)
     img_shape = (100, 100)
     is_valid, reason, result = check_homography_distortion(
-        m, img_shape, homography_thresholds=_HOMOGRAPHY_THRESHOLDS)
+        m, img_shape, homography_thresholds=HOMOGRAPHY_THRESHOLDS)
     assert is_valid
     assert "within acceptable limits" in reason
     area_ratio, aspect_ratio, max_angle_dev = result
@@ -414,7 +414,7 @@ def test_check_homography_distortion_rotation_scale():
     ], dtype=np.float64)
     img_shape = (100, 100)
     is_valid, reason, result = check_homography_distortion(
-        m, img_shape, homography_thresholds=_HOMOGRAPHY_THRESHOLDS)
+        m, img_shape, homography_thresholds=HOMOGRAPHY_THRESHOLDS)
     assert is_valid
     assert "within acceptable limits" in reason
     area_ratio, aspect_ratio, max_angle_dev = result
@@ -467,8 +467,8 @@ def test_align_frames_base_relative_transformation():
 def test_align_frames_base_get_transform_thresholds():
     align_base = AlignFramesBase()
     affine_thresholds, homography_thresholds = align_base.get_transform_thresholds()
-    assert affine_thresholds == _AFFINE_THRESHOLDS
-    assert homography_thresholds == _HOMOGRAPHY_THRESHOLDS
+    assert affine_thresholds == AFFINE_THRESHOLDS
+    assert homography_thresholds == HOMOGRAPHY_THRESHOLDS
 
 
 def test_align_frames_base_save_transform_result_rigid():
