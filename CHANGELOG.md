@@ -7,6 +7,7 @@ This page reports the main releases only and the main changes therein.
 
 ### Fixed
 - space bar + drag works now also when the master layer is not selected
+- live update of tooltips in processing colored box display
 
 ---
 

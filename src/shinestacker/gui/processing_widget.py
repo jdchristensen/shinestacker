@@ -100,6 +100,7 @@ class FrameStatusBox(QWidget):
 
     def set_total_actions(self, total_actions):
         self.total_actions = total_actions
+        self._update_tooltip_content()
 
     def update_status(self, status_id):
         pending_color = (200, 200, 200)
@@ -133,7 +134,7 @@ class FrameStatusBox(QWidget):
             self.fill_color = QColor(*postprocess_color)
         else:
             self.fill_color = QColor(*unknown_color)
-        self.update_tooltip()
+        self._update_tooltip_content()
         self.update()
 
     def update_tooltip(self):
@@ -157,6 +158,12 @@ class FrameStatusBox(QWidget):
             status_text = "Unknown status"
         self.tooltip_text = f"File: {os.path.basename(self.filename)}\nStatus: {status_text}"
 
+    def _update_tooltip_content(self):
+        self.update_tooltip()
+        if self.custom_tooltip:
+            self.custom_tooltip.setText(self.tooltip_text)
+            self.custom_tooltip.adjustSize()
+
     def paintEvent(self, _event):
         painter = QPainter(self)
         painter.setRenderHint(QPainter.Antialiasing)
@@ -177,6 +184,9 @@ class FrameStatusBox(QWidget):
                     padding: 2px;
                 }}
             """)
+            self.custom_tooltip.adjustSize()
+        else:
+            self.custom_tooltip.setText(self.tooltip_text)
             self.custom_tooltip.adjustSize()
         global_pos = self.mapToGlobal(self.rect().topRight())
         parent_pos = self.window().mapFromGlobal(global_pos)
