@@ -13,11 +13,9 @@ from .. core.exceptions import RunStopException
 from .. core.colors import color_str
 from .. core.core_utils import make_chunks
 from .utils import read_img, img_bw
-from .align import (
-    AlignFramesBase, find_transform,
-    check_transform, rescale_transform)
+from .align import AlignFramesBase
 from .feature_match import SubsamplingFeatureMatcher
-from .transform_estimate import apply_alignment_transform, find_transform_phase_correlation
+from .transform_estimate import TransformationExtractor, apply_alignment_transform, check_transform
 
 
 def compose_transforms(t1, t2, transform_type):
@@ -52,6 +50,9 @@ class AlignFramesParallel(AlignFramesBase):
         self._des = None
         self.feature_matcher = SubsamplingFeatureMatcher(
             feature_config, matching_config, alignment_config)
+        affine_thresholds, homography_thresholds = self.get_transform_thresholds()
+        self.transformation_extractor = TransformationExtractor(
+            alignment_config, affine_thresholds, homography_thresholds)
 
     def relative_transformation(self):
         return True
@@ -260,58 +261,13 @@ class AlignFramesParallel(AlignFramesBase):
             warning_callback=lambda msg: self.print_message(
                 msg, color=constants.LOG_COLOR_WARNING, level=logging.WARNING)
         )
-        n_good_matches = match_result.n_good_matches()
         img_ref_sub, img_0_sub = self.feature_matcher.get_last_subsampled_images()
-        self._n_good_matches[idx] = n_good_matches
-        m = None
-        min_matches = 4 if self.alignment_config['transform'] == constants.ALIGN_HOMOGRAPHY else 3
-        if n_good_matches < min_matches:
-            if self.alignment_config['phase_corr_fallback']:
-                s_str = 'es' if n_good_matches != 1 else ''
-                msg = f"{self.image_str(idx)}: only {n_good_matches} good matches found " \
-                    f" with {self.image_str(target_idx)}, using phase correlation as fallback"
-                self.print_message(msg, color=constants.LOG_COLOR_WARNING, level=logging.WARNING)
-                warning_messages.append("used phase correlation as fallback")
-                n_good_matches = 0
-                m = find_transform_phase_correlation(img_ref_sub, img_0_sub)
-                self._transforms[idx] = m
-                self._target_indices[idx] = target_idx
+        m, phase_corr_called, _ = \
+            self.transformation_extractor.extract_transformation(
+                match_result, img_ref_sub, img_0_sub, subsample, img_0.shape)
+        if m is None:
+            if phase_corr_called:
                 return info_messages, warning_messages
-            s_str = 'es' if n_good_matches != 1 else ''
-            msg = f"{self.image_str(idx)}: only {n_good_matches} good match{s_str} found, " \
-                  f" with {self.image_str(target_idx)}, trying next frame"
-            self.print_message(msg, color=constants.LOG_COLOR_WARNING, level=logging.WARNING)
-            warning_messages.append(msg)
-            return self.find_transform(idx, delta + 1)
-        transform = self.alignment_config['transform']
-        src_pts = match_result.get_src_points()
-        dst_pts = match_result.get_dst_points()
-        m, _msk = find_transform(
-            src_pts, dst_pts, transform, self.alignment_config['align_method'],
-            *(self.alignment_config[k]
-              for k in ['rans_threshold', 'max_iters',
-                        'align_confidence', 'refine_iters']))
-        h_sub, w_sub = img_0_sub.shape[:2]
-        if subsample > 1:
-            m = rescale_transform(m, w0, h0, w_sub, h_sub, subsample, transform)
-            if m is None:
-                self.print_message(
-                    f"invalid option {transform} "
-                    f"for {self.image_str(idx)}, trying next frame",
-                    color=constants.LOG_COLOR_WARNING, level=logging.WARNING)
-                return self.find_transform(idx, delta + 1)
-        transform_type = self.alignment_config['transform']
-        thresholds = self.get_transform_thresholds()
-        is_valid, _reason, _result = check_transform(m, img_0.shape, transform_type, *thresholds)
-        if not is_valid:
-            msg = f"invalid transformation for {self.image_str(idx)}"
-            do_abort = self.alignment_config['abort_abnormal']
-            if not do_abort:
-                msg += ", trying next frame"
-            self.print_message(
-                msg, color=constants.LOG_COLOR_WARNING, level=logging.WARNING)
-            if do_abort:
-                raise RuntimeError("invalid transformation: {reason}")
             return self.find_transform(idx, delta + 1)
         self._transforms[idx] = m
         self._target_indices[idx] = target_idx

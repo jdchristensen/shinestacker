@@ -285,9 +285,9 @@ class TransformationExtractor:
                 m = find_transform_phase_correlation(img_ref_sub, img_0_sub)
                 phase_corr_called = True
                 if m is None:
-                    return n_good_matches, None, phase_corr_called, msk
+                    return None, phase_corr_called, msk
             else:
-                return n_good_matches, None, phase_corr_called, msk
+                return None, phase_corr_called, msk
         h0, w0 = original_shape[:2]
         h_sub, w_sub = img_0_sub.shape[:2]
         if subsample > 1:
@@ -295,7 +295,7 @@ class TransformationExtractor:
             if m is None:
                 if callbacks and 'warning' in callbacks:
                     callbacks['warning']("can't rescale transformation matrix, alignment failed")
-                return n_good_matches, None, phase_corr_called, msk
+                return None, phase_corr_called, msk
         is_valid, reason, result = check_transform(
             m, original_shape, transform_type,
             self.affine_thresholds, self.homography_thresholds)
@@ -306,10 +306,10 @@ class TransformationExtractor:
                 callbacks['warning'](f"invalid transformation: {reason}, alignment failed")
             if self.alignment_config['abort_abnormal']:
                 raise RuntimeError(f"invalid transformation: {reason}, alignment failed")
-            return n_good_matches, None, phase_corr_called, msk
+            return None, phase_corr_called, msk
         if not phase_corr_called and callbacks and 'matches_message' in callbacks:
             callbacks['matches_message'](n_good_matches)
-        return n_good_matches, m, phase_corr_called, msk
+        return m, phase_corr_called, msk
 
 
 def apply_alignment_transform(img_0, img_ref, m, alignment_config, callbacks=None):

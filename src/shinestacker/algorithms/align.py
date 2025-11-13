@@ -15,8 +15,8 @@ from .feature_match import (
     SubsamplingFeatureMatcher,
     DEFAULT_FEATURE_CONFIG, DEFAULT_MATCHING_CONFIG, DEFAULT_ALIGNMENT_CONFIG)
 from .transform_estimate import (
+    TransformationExtractor,
     apply_alignment_transform, find_transform_phase_correlation,
-    find_transform, plot_matches, rescale_transform, check_transform,
     _AFFINE_THRESHOLDS, _HOMOGRAPHY_THRESHOLDS, _AFFINE_THRESHOLDS_LARGE,
     _HOMOGRAPHY_THRESHOLDS_LARGE)
 
@@ -34,7 +34,7 @@ def align_images(img_ref, img_0, feature_config=None, matching_config=None, alig
     feature_config = {**DEFAULT_FEATURE_CONFIG, **(feature_config or {})}
     matching_config = {**DEFAULT_MATCHING_CONFIG, **(matching_config or {})}
     alignment_config = {**DEFAULT_ALIGNMENT_CONFIG, **(alignment_config or {})}
-    min_matches = 4 if alignment_config['transform'] == constants.ALIGN_HOMOGRAPHY else 3
+    # min_matches = 4 if alignment_config['transform'] == constants.ALIGN_HOMOGRAPHY else 3
     if callbacks and 'message' in callbacks:
         callbacks['message']()
     h0, w0 = img_0.shape[:2]
@@ -43,7 +43,7 @@ def align_images(img_ref, img_0, feature_config=None, matching_config=None, alig
         img_res = (float(h0) / constants.ONE_KILO) * (float(w0) / constants.ONE_KILO)
         target_res = constants.DEFAULT_ALIGN_RES_TARGET_MPX
         subsample = int(1 + math.floor(img_res / target_res))
-    min_good_matches = alignment_config['min_good_matches']
+    # min_good_matches = alignment_config['min_good_matches']
     feature_matcher = SubsamplingFeatureMatcher(
         feature_config, matching_config, alignment_config, callbacks)
     match_result, _final_subsample = feature_matcher.match_images_with_fallback(
@@ -53,65 +53,12 @@ def align_images(img_ref, img_0, feature_config=None, matching_config=None, alig
     )
     n_good_matches = match_result.n_good_matches()
     img_ref_sub, img_0_sub = feature_matcher.get_last_subsampled_images()
-    phase_corr_fallback = alignment_config['phase_corr_fallback']
-    phase_corr_called = False
-    img_warp = None
-    m = None
-    transform_type = alignment_config['transform']
-    if match_result.has_sufficient_matches(min_good_matches):
-        src_pts = match_result.get_src_points()
-        dst_pts = match_result.get_dst_points()
-        m, msk = find_transform(
-            src_pts, dst_pts, transform_type, alignment_config['align_method'],
-            *(alignment_config[k]
-              for k in ['rans_threshold', 'max_iters',
-                        'align_confidence', 'refine_iters']))
-        if m is not None and plot_path is not None:
-            plot_matches(msk, img_ref_sub, img_0_sub, match_result.kp_ref, match_result.kp_0,
-                         match_result.good_matches, plot_path)
-            if callbacks and 'save_plot' in callbacks:
-                callbacks['save_plot'](plot_path)
-    if m is None or not match_result.has_sufficient_matches(min_matches):
-        if phase_corr_fallback:
-            if callbacks and 'warning' in callbacks:
-                callbacks['warning'](
-                    f"only {n_good_matches} < {min_good_matches} matches found"
-                    ", using phase correlation as fallback")
-            n_good_matches = 0
-            m = find_transform_phase_correlation(img_ref_sub, img_0_sub)
-            phase_corr_called = True
-            if m is None:
-                return n_good_matches, None, None
-        else:
-            if callbacks and 'warning' in callbacks:
-                msg = ""
-                if n_good_matches < min_matches:
-                    msg = f"only {n_good_matches} < {min_good_matches} matches found, " \
-                        "alignment failed"
-                elif m is None:
-                    msg = "no transformation found, alignment falied"
-                callbacks['warning'](msg)
-            return n_good_matches, None, None
-    h_sub, w_sub = img_0_sub.shape[:2]
-    if subsample > 1:
-        m = rescale_transform(m, w0, h0, w_sub, h_sub, subsample, transform_type)
-        if m is None:
-            if callbacks and 'warning' in callbacks:
-                callbacks['warning']("can't rescale transformation matrix, alignment failed")
-            return n_good_matches, None, None
-    is_valid, reason, result = check_transform(
-        m, img_0.shape, transform_type,
-        affine_thresholds, homography_thresholds)
-    if callbacks and 'save_transform_result' in callbacks:
-        callbacks['save_transform_result'](result)
-    if not is_valid:
-        if callbacks and 'warning' in callbacks:
-            callbacks['warning'](f"invalid transformation: {reason}, alignment failed")
-        if alignment_config['abort_abnormal']:
-            raise RuntimeError("invalid transformation: {reason}, alignment failed")
-        return match_result.n_good_matches(), None, None
-    if not phase_corr_called and callbacks and 'matches_message' in callbacks:
-        callbacks['matches_message'](match_result.n_good_matches())
+    extractor = TransformationExtractor(
+        alignment_config, affine_thresholds, homography_thresholds)
+    m, _phase_corr_called, _msk = extractor.extract_transformation(
+        match_result, img_ref_sub, img_0_sub, subsample, img_0.shape, callbacks, plot_path)
+    if m is None:
+        return n_good_matches, None, None
     img_warp = apply_alignment_transform(img_0, img_ref, m, alignment_config, callbacks)
     return match_result.n_good_matches(), m, img_warp
 
