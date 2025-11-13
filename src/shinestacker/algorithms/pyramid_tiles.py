@@ -167,7 +167,7 @@ class PyramidTilesStack(PyramidBase):
         count = super().total_steps(num_images)
         n_layers = max_levels - 1
         self.process.callback(constants.CALLBACKS_SET_TOTAL_ACTIONS,
-                              self.process.name, self.output_filename, n_layers)
+                              self.process.name, self.output_filename, n_layers + 1)
         action_count = 0
         for level in range(n_layers, -1, -1):
             self.print_message(f': fusing pyramids, layer: {level + 1}')
@@ -201,9 +201,9 @@ class PyramidTilesStack(PyramidBase):
             fused.append(fused_level)
             count += 1
             self.after_step(count)
-            action_count += 1
             self.process.callback(constants.CALLBACK_UPDATE_FRAME_STATUS,
                                   self.process.name, self.output_filename, action_count)
+            action_count += 1
             self.check_running(lambda: None)
         self.print_message(': pyramids fusion completed')
         return fused[::-1]

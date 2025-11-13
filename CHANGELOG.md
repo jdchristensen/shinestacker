@@ -2,6 +2,14 @@
 
 This page reports the main releases only and the main changes therein.
 
+## [v1.9.x] - 2025-11-13
+** Minor fix
+
+### Fixed
+- fixed tooltip counter in processing colored box display
+
+---
+
 ## [v1.9.7] - 2025-11-13
 ** Fixed serious alignment bug from previous release
 
