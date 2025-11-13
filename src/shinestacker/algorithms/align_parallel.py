@@ -14,10 +14,10 @@ from .. core.colors import color_str
 from .. core.core_utils import make_chunks
 from .utils import read_img, img_bw
 from .align import (
-    AlignFramesBase, find_transform, find_transform_phase_correlation,
+    AlignFramesBase, find_transform,
     check_transform, rescale_transform)
 from .feature_match import SubsamplingFeatureMatcher
-from .transform_estimate import apply_alignment_transform
+from .transform_estimate import apply_alignment_transform, find_transform_phase_correlation
 
 
 def compose_transforms(t1, t2, transform_type):
