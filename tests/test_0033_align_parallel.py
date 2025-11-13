@@ -9,6 +9,10 @@ from shinestacker.config.constants import constants
 from shinestacker.core.exceptions import RunStopException
 from shinestacker.algorithms.align_parallel import AlignFramesParallel, compose_transforms
 from shinestacker.algorithms.align import AlignFramesBase
+from shinestacker.algorithms.transform_estimate import (
+    TransformationExtractor,
+    _AFFINE_THRESHOLDS, _HOMOGRAPHY_THRESHOLDS, _AFFINE_THRESHOLDS_LARGE,
+    _HOMOGRAPHY_THRESHOLDS_LARGE)
 
 
 def test_compose_transforms():
@@ -73,9 +77,16 @@ def test_align_images_method():
     process.idx_tot_str = Mock(return_value="1/2")
     process.input_filepath = Mock(return_value="test.jpg")
     aligner.process = process
+    aligner.get_transform_thresholds = Mock(
+        return_value=(_AFFINE_THRESHOLDS, _HOMOGRAPHY_THRESHOLDS))
+    aligner.get_transform_thresholds_large = Mock(
+        return_value=(_AFFINE_THRESHOLDS_LARGE, _HOMOGRAPHY_THRESHOLDS_LARGE))
     aligner.print_message = Mock()
     img_ref = np.ones((100, 100, 3), dtype=np.uint8)
     img_0 = np.ones((100, 100, 3), dtype=np.uint8)
+    affine_thresholds, homography_thresholds = aligner.get_transform_thresholds()
+    aligner.transformation_extractor = TransformationExtractor(
+        aligner.alignment_config, affine_thresholds, homography_thresholds)
     aligner._cumulative_transforms = [None]
     result = aligner.align_images(0, img_ref, img_0)
     assert result is None
@@ -95,17 +106,23 @@ def test_align_images_border_modes():
     process.input_filepath = Mock(return_value="test.jpg")
     aligner.process = process
     aligner.print_message = Mock()
+    aligner.get_transform_thresholds = Mock(
+        return_value=(_AFFINE_THRESHOLDS, _HOMOGRAPHY_THRESHOLDS))
+    aligner.get_transform_thresholds_large = Mock(
+        return_value=(_AFFINE_THRESHOLDS_LARGE, _HOMOGRAPHY_THRESHOLDS_LARGE))
+    affine_thresholds, homography_thresholds = aligner.get_transform_thresholds()
+    aligner.transformation_extractor = TransformationExtractor(
+        aligner.alignment_config, affine_thresholds, homography_thresholds)
     img_ref = np.ones((100, 100, 3), dtype=np.uint8)
     img_0 = np.ones((100, 100, 3), dtype=np.uint8)
     for border_mode in [constants.BORDER_CONSTANT,
                         constants.BORDER_REPLICATE,
                         constants.BORDER_REPLICATE_BLUR]:
-        aligner.alignment_config = {
-            'transform': constants.ALIGN_RIGID,
-            'border_mode': border_mode,
-            'border_value': 0,
-            'border_blur': 5
-        }
+        aligner.alignment_config['border_mode'] = border_mode
+        aligner.alignment_config['border_value'] = 0
+        aligner.alignment_config['border_blur'] = 5
+        aligner.alignment_config['transform'] = constants.ALIGN_RIGID
+        aligner.transformation_extractor.alignment_config = aligner.alignment_config
         aligner._cumulative_transforms = [np.eye(2, 3, dtype=np.float32)]
         result = aligner.align_images(0, img_ref, img_0)
         assert result.shape == img_ref.shape

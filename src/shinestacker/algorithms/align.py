@@ -15,8 +15,7 @@ from .feature_match import (
     SubsamplingFeatureMatcher,
     DEFAULT_FEATURE_CONFIG, DEFAULT_MATCHING_CONFIG, DEFAULT_ALIGNMENT_CONFIG)
 from .transform_estimate import (
-    TransformationExtractor,
-    apply_alignment_transform, find_transform_phase_correlation,
+    TransformationExtractor, find_transform_phase_correlation,
     _AFFINE_THRESHOLDS, _HOMOGRAPHY_THRESHOLDS, _AFFINE_THRESHOLDS_LARGE,
     _HOMOGRAPHY_THRESHOLDS_LARGE)
 
@@ -34,7 +33,6 @@ def align_images(img_ref, img_0, feature_config=None, matching_config=None, alig
     feature_config = {**DEFAULT_FEATURE_CONFIG, **(feature_config or {})}
     matching_config = {**DEFAULT_MATCHING_CONFIG, **(matching_config or {})}
     alignment_config = {**DEFAULT_ALIGNMENT_CONFIG, **(alignment_config or {})}
-    # min_matches = 4 if alignment_config['transform'] == constants.ALIGN_HOMOGRAPHY else 3
     if callbacks and 'message' in callbacks:
         callbacks['message']()
     h0, w0 = img_0.shape[:2]
@@ -43,7 +41,6 @@ def align_images(img_ref, img_0, feature_config=None, matching_config=None, alig
         img_res = (float(h0) / constants.ONE_KILO) * (float(w0) / constants.ONE_KILO)
         target_res = constants.DEFAULT_ALIGN_RES_TARGET_MPX
         subsample = int(1 + math.floor(img_res / target_res))
-    # min_good_matches = alignment_config['min_good_matches']
     feature_matcher = SubsamplingFeatureMatcher(
         feature_config, matching_config, alignment_config, callbacks)
     match_result, _final_subsample = feature_matcher.match_images_with_fallback(
@@ -59,7 +56,7 @@ def align_images(img_ref, img_0, feature_config=None, matching_config=None, alig
         match_result, img_ref_sub, img_0_sub, subsample, img_0.shape, callbacks, plot_path)
     if m is None:
         return n_good_matches, None, None
-    img_warp = apply_alignment_transform(img_0, img_ref, m, alignment_config, callbacks)
+    img_warp = extractor.apply_alignment_transform(img_0, img_ref, m, callbacks)
     return match_result.n_good_matches(), m, img_warp
 
 

@@ -15,7 +15,7 @@ from .. core.core_utils import make_chunks
 from .utils import read_img, img_bw
 from .align import AlignFramesBase
 from .feature_match import SubsamplingFeatureMatcher
-from .transform_estimate import TransformationExtractor, apply_alignment_transform, check_transform
+from .transform_estimate import TransformationExtractor, check_transform
 
 
 def compose_transforms(t1, t2, transform_type):
@@ -288,4 +288,4 @@ class AlignFramesParallel(AlignFramesBase):
             'warning':
                 lambda msg: self.print_message(msg, constants.LOG_COLOR_WARNING)
         }
-        return apply_alignment_transform(img_0, img_ref, m, self.alignment_config, callbacks)
+        return self.transformation_extractor.apply_alignment_transform(img_0, img_ref, m, callbacks)
