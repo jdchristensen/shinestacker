@@ -754,12 +754,12 @@ class ViewStrategy(LayerCollectionHandler):
     def mouse_press_event(self, event):
         if self.empty():
             return
-        if self.enable_paint and event.button() & Qt.LeftButton and self.has_master_layer():
+        if event.button() & Qt.LeftButton and self.has_master_layer():
             if self.space_pressed:
                 self.scrolling = True
                 self.last_mouse_pos = event.position()
                 self.setCursor(Qt.ClosedHandCursor)
-            else:
+            elif self.enable_paint:
                 self.last_brush_pos = event.position()
                 self.begin_copy_brush_area(event.position().toPoint())
                 self.dragging = True

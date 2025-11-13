@@ -2,6 +2,14 @@
 
 This page reports the main releases only and the main changes therein.
 
+## [vx.x.x] - 2025-11-13
+** Changes for next release
+
+### Fixed
+- space bar + drag works now also when the master layer is not selected
+
+---
+
 ## [v1.9.6] - 2025-11-13
 ** GUI improvements and bug fixes **
 
