@@ -3,7 +3,7 @@
 This page reports the main releases only and the main changes therein.
 
 ## [v1.9.7] - 2025-11-13
-** Changes for next release
+** Fixed serious alignment bug from previous release
 
 ### Fixed
 - fixed serious bug in alignment module introduced with code refactoring in releae 1.9.6
