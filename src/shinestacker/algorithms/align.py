@@ -62,7 +62,7 @@ def align_images(img_ref, img_0, feature_config=None, matching_config=None, alig
 
 class AlignFramesBase(SubAction):
     def __init__(self, enabled=True, feature_config=None, matching_config=None,
-                 alignment_config=None, **kwargs):
+                 alignment_config=None, use_large_thresholds=False, **kwargs):
         super().__init__(enabled)
         self.process = None
         self._n_good_matches = None
@@ -91,6 +91,14 @@ class AlignFramesBase(SubAction):
         self._translation_y = None
         self._rotation = None
         self._shear = None
+        if use_large_thresholds:
+            affine_thresholds, homography_thresholds = self.get_transform_thresholds_large()
+        else:
+            affine_thresholds, homography_thresholds = self.get_transform_thresholds()
+        self.feature_matcher = SubsamplingFeatureMatcher(
+            self.feature_config, self.matching_config, self.alignment_config)
+        self.transformation_extractor = TransformationExtractor(
+            self.alignment_config, affine_thresholds, homography_thresholds)
 
     def relative_transformation(self):
         return None
@@ -315,6 +323,11 @@ class AlignFramesBase(SubAction):
 
 
 class AlignFrames(AlignFramesBase):
+    def __init__(self, enabled=True, feature_config=None, matching_config=None,
+                 alignment_config=None, **kwargs):
+        super().__init__(enabled, feature_config, matching_config,
+                         alignment_config, use_large_thresholds=True, **kwargs)
+
     def align_images(self, idx, img_ref, img_0):
         idx_str = f"{idx:04d}"
         idx_tot_str = self.process.frame_str(idx)
@@ -338,19 +351,30 @@ class AlignFrames(AlignFramesBase):
                 f"{self.process.name}-matches-{idx_str}.pdf")
         else:
             plot_path = None
-        affine_thresholds, homography_thresholds = self.get_transform_thresholds_large()
-        n_good_matches, _m, img = align_images(
-            img_ref, img_0,
-            feature_config=self.feature_config,
-            matching_config=self.matching_config,
-            alignment_config=self.alignment_config,
-            plot_path=plot_path,
-            callbacks=callbacks,
-            affine_thresholds=affine_thresholds,
-            homography_thresholds=homography_thresholds
+        if callbacks and 'message' in callbacks:
+            callbacks['message']()
+        h0, w0 = img_0.shape[:2]
+        subsample = self.alignment_config['subsample']
+        if subsample == 0:
+            img_res = (float(h0) / constants.ONE_KILO) * (float(w0) / constants.ONE_KILO)
+            target_res = constants.DEFAULT_ALIGN_RES_TARGET_MPX
+            subsample = int(1 + math.floor(img_res / target_res))
+        match_result, _final_subsample = self.feature_matcher.match_images_with_fallback(
+            img_ref, img_0, subsample=subsample,
+            warning_callback=lambda msg:
+                callbacks['warning'](msg) if callbacks and 'warning' in callbacks else None
         )
-        self._n_good_matches[idx] = n_good_matches
-        return img
+        n_good_matches = match_result.n_good_matches()
+        img_ref_sub, img_0_sub = self.feature_matcher.get_last_subsampled_images()
+        m, _phase_corr_called, _msk = self.transformation_extractor.extract_transformation(
+            match_result, img_ref_sub, img_0_sub, subsample, img_0.shape, callbacks, plot_path)
+        if m is None:
+            self._n_good_matches[idx] = n_good_matches
+            return None
+        img_warp = self.transformation_extractor.apply_alignment_transform(
+            img_0, img_ref, m, callbacks)
+        self._n_good_matches[idx] = match_result.n_good_matches()
+        return img_warp
 
     def get_img_ref(self, ref_idx):
         return self.process.saved_img_ref(ref_idx)

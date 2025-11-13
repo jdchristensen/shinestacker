@@ -14,8 +14,7 @@ from .. core.colors import color_str
 from .. core.core_utils import make_chunks
 from .utils import read_img, img_bw
 from .align import AlignFramesBase
-from .feature_match import SubsamplingFeatureMatcher
-from .transform_estimate import TransformationExtractor, check_transform
+from .transform_estimate import check_transform
 
 
 def compose_transforms(t1, t2, transform_type):
@@ -33,7 +32,7 @@ class AlignFramesParallel(AlignFramesBase):
     def __init__(self, enabled=True, feature_config=None, matching_config=None,
                  alignment_config=None, **kwargs):
         super().__init__(enabled, feature_config, matching_config,
-                         alignment_config, **kwargs)
+                         alignment_config, use_large_thresholds=False, **kwargs)
         self.max_threads = kwargs.get('max_threads', constants.DEFAULT_ALIGN_MAX_THREADS)
         self.chunk_submit = kwargs.get('chunk_submit', constants.DEFAULT_ALIGN_CHUNK_SUBMIT)
         self.bw_matching = kwargs.get('bw_matching', constants.DEFAULT_ALIGN_BW_MATCHING)
@@ -48,11 +47,6 @@ class AlignFramesParallel(AlignFramesBase):
         self.step_counter = 0
         self._kp = None
         self._des = None
-        self.feature_matcher = SubsamplingFeatureMatcher(
-            feature_config, matching_config, alignment_config)
-        affine_thresholds, homography_thresholds = self.get_transform_thresholds()
-        self.transformation_extractor = TransformationExtractor(
-            alignment_config, affine_thresholds, homography_thresholds)
 
     def relative_transformation(self):
         return True
