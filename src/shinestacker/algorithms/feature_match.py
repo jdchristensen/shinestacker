@@ -35,6 +35,7 @@ DEFAULT_ALIGNMENT_CONFIG = {
     'abort_abnormal': constants.DEFAULT_ALIGN_ABORT_ABNORMAL
 }
 
+
 class MatchResult:
     def __init__(self, kp_0, kp_ref, good_matches):
         self.kp_0 = kp_0
@@ -78,8 +79,7 @@ def validate_align_config(detector, descriptor, match_method):
 
 
 class FeatureMatcher:
-    def __init__(self, feature_config=DEFAULT_FEATURE_CONFIG,
-                 matching_config=DEFAULT_MATCHING_CONFIG, callbacks=None):
+    def __init__(self, feature_config, matching_config, callbacks=None):
         self.feature_config = {**DEFAULT_FEATURE_CONFIG, **(feature_config or {})}
         self.matching_config = {**DEFAULT_MATCHING_CONFIG, **(matching_config or {})}
         self.callbacks = callbacks or {}
@@ -160,10 +160,7 @@ class FeatureMatcher:
 
 
 class SubsamplingFeatureMatcher:
-    def __init__(self, feature_config=DEFAULT_FEATURE_CONFIG,
-                 matching_config=DEFAULT_MATCHING_CONFIG,
-                 alignment_config=DEFAULT_ALIGNMENT_CONFIG,
-                 callbacks=None):
+    def __init__(self, feature_config, matching_config, alignment_config, callbacks=None):
         self.feature_matcher = FeatureMatcher(feature_config, matching_config, callbacks)
         self.alignment_config = alignment_config
         self.callbacks = callbacks or {}

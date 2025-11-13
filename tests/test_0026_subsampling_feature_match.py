@@ -1,7 +1,8 @@
 import cv2
 import numpy as np
 from shinestacker.algorithms.feature_match import (
-    SubsamplingFeatureMatcher, DEFAULT_FEATURE_CONFIG)
+    SubsamplingFeatureMatcher, DEFAULT_FEATURE_CONFIG, DEFAULT_MATCHING_CONFIG,
+    DEFAULT_ALIGNMENT_CONFIG)
 
 
 def create_test_images():
@@ -17,7 +18,8 @@ def create_test_images():
 def test_basic_matching():
     print("Testing basic feature matching...")
     img1, img2 = create_test_images()
-    matcher = SubsamplingFeatureMatcher()
+    matcher = SubsamplingFeatureMatcher(
+        DEFAULT_FEATURE_CONFIG, DEFAULT_MATCHING_CONFIG, DEFAULT_ALIGNMENT_CONFIG)
     result = matcher.match_images(img1, img2)
     print(f"Number of good matches: {result.n_good_matches()}")
     print(f"Has sufficient matches (min=4): {result.has_sufficient_matches(4)}")
@@ -34,7 +36,8 @@ def test_basic_matching():
 def test_subsampling():
     print("\nTesting subsampling...")
     img1, img2 = create_test_images()
-    matcher = SubsamplingFeatureMatcher()
+    matcher = SubsamplingFeatureMatcher(
+        DEFAULT_FEATURE_CONFIG, DEFAULT_MATCHING_CONFIG, DEFAULT_ALIGNMENT_CONFIG)
     for subsample in [1, 2, 4]:
         result = matcher.match_images(img1, img2, subsample=subsample)
         print(f"Subsample {subsample}: {result.n_good_matches()} matches")
@@ -43,7 +46,8 @@ def test_subsampling():
 def test_fast_subsampling():
     print("\nTesting fast subsampling...")
     img1, img2 = create_test_images()
-    matcher = SubsamplingFeatureMatcher()
+    matcher = SubsamplingFeatureMatcher(
+        DEFAULT_FEATURE_CONFIG, DEFAULT_MATCHING_CONFIG, DEFAULT_ALIGNMENT_CONFIG)
     result_normal = matcher.match_images(img1, img2, subsample=4)
     result_fast = matcher.match_images(img1, img2, subsample=4)
     print(f"Normal subsampling: {result_normal.n_good_matches()} matches")
@@ -70,7 +74,8 @@ def test_no_features():
     print("\nTesting with featureless images...")
     img1 = np.zeros((200, 200, 3), dtype=np.uint8)
     img2 = np.zeros((200, 200, 3), dtype=np.uint8)
-    matcher = SubsamplingFeatureMatcher()
+    matcher = SubsamplingFeatureMatcher(
+        DEFAULT_FEATURE_CONFIG, DEFAULT_MATCHING_CONFIG, DEFAULT_ALIGNMENT_CONFIG)
     result = matcher.match_images(img1, img2)
     print(f"Featureless images: {result.n_good_matches()} matches")
     print(f"Has sufficient matches (min=1): {result.has_sufficient_matches(1)}")

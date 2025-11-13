@@ -14,12 +14,7 @@ from .stack_framework import SubAction
 from .feature_match import (
     SubsamplingFeatureMatcher,
     DEFAULT_FEATURE_CONFIG, DEFAULT_MATCHING_CONFIG, DEFAULT_ALIGNMENT_CONFIG)
-
-_cv2_border_mode_map = {
-    constants.BORDER_CONSTANT: cv2.BORDER_CONSTANT,
-    constants.BORDER_REPLICATE: cv2.BORDER_REPLICATE,
-    constants.BORDER_REPLICATE_BLUR: cv2.BORDER_REPLICATE
-}
+from .transform_estimate import apply_alignment_transform
 
 _AFFINE_THRESHOLDS = {
     'max_rotation': 10.0,  # degrees
@@ -265,49 +260,6 @@ def align_images_phase_correlation(img_ref, img_0):
     return m, img_warp
 
 
-def apply_alignment_transform(img_0, img_ref, m, alignment_config, callbacks=None):
-    try:
-        cv2_border_mode = _cv2_border_mode_map[alignment_config['border_mode']]
-    except KeyError as e:
-        raise InvalidOptionError("border_mode", alignment_config['border_mode']) from e
-    if callbacks and 'estimation_message' in callbacks:
-        callbacks['estimation_message']()
-    transform_type = alignment_config['transform']
-    if transform_type == constants.ALIGN_RIGID and m.shape != (2, 3):
-        if callbacks and 'warning' in callbacks:
-            callbacks['warning'](f"invalid matrix shape for rigid transform: {m.shape}")
-        return None
-    if transform_type == constants.ALIGN_HOMOGRAPHY and m.shape != (3, 3):
-        if callbacks and 'warning' in callbacks:
-            callbacks['warning'](f"invalid matrix shape for homography: {m.shape}")
-        return None
-    img_mask = np.ones_like(img_0, dtype=np.uint8)
-    h_ref, w_ref = img_ref.shape[:2]
-    img_warp = None
-    if transform_type == constants.ALIGN_HOMOGRAPHY:
-        img_warp = cv2.warpPerspective(
-            img_0, m, (w_ref, h_ref),
-            borderMode=cv2_border_mode, borderValue=alignment_config['border_value'])
-        if alignment_config['border_mode'] == constants.BORDER_REPLICATE_BLUR:
-            mask = cv2.warpPerspective(img_mask, m, (w_ref, h_ref),
-                                       borderMode=cv2.BORDER_CONSTANT, borderValue=0)
-    elif transform_type == constants.ALIGN_RIGID:
-        img_warp = cv2.warpAffine(
-            img_0, m, (w_ref, h_ref),
-            borderMode=cv2_border_mode, borderValue=alignment_config['border_value'])
-        if alignment_config['border_mode'] == constants.BORDER_REPLICATE_BLUR:
-            mask = cv2.warpAffine(img_mask, m, (w_ref, h_ref),
-                                  borderMode=cv2.BORDER_CONSTANT, borderValue=0)
-    if alignment_config['border_mode'] == constants.BORDER_REPLICATE_BLUR:
-        if callbacks and 'blur_message' in callbacks:
-            callbacks['blur_message']()
-        mask = cv2.cvtColor(mask, cv2.COLOR_BGR2GRAY)
-        blurred_warp = cv2.GaussianBlur(
-            img_warp, (21, 21), sigmaX=alignment_config['border_blur'])
-        img_warp[mask == 0] = blurred_warp[mask == 0]
-    return img_warp
-
-
 def align_images(img_ref, img_0, feature_config=None, matching_config=None, alignment_config=None,
                  plot_path=None, callbacks=None,
                  affine_thresholds=_AFFINE_THRESHOLDS,
@@ -324,7 +276,6 @@ def align_images(img_ref, img_0, feature_config=None, matching_config=None, alig
         img_res = (float(h0) / constants.ONE_KILO) * (float(w0) / constants.ONE_KILO)
         target_res = constants.DEFAULT_ALIGN_RES_TARGET_MPX
         subsample = int(1 + math.floor(img_res / target_res))
-    fast_subsampling = alignment_config['fast_subsampling']
     min_good_matches = alignment_config['min_good_matches']
     feature_matcher = SubsamplingFeatureMatcher(
         feature_config, matching_config, alignment_config, callbacks)

@@ -7,7 +7,8 @@ from shinestacker.algorithms.feature_match import (
 
 def test_constructor_default():
     print("Testing FeatureMatcher constructor with default parameters...")
-    matcher = FeatureMatcher()
+    matcher = FeatureMatcher(
+        feature_config=DEFAULT_FEATURE_CONFIG, matching_config=DEFAULT_MATCHING_CONFIG)
     assert matcher.feature_config == DEFAULT_FEATURE_CONFIG
     assert matcher.matching_config == DEFAULT_MATCHING_CONFIG
     assert matcher.callbacks == {}
@@ -53,7 +54,8 @@ def test_constructor_invalid_config():
         'descriptor': constants.DESCRIPTOR_ORB  # Invalid combo
     }
     try:
-        matcher = FeatureMatcher(feature_config=invalid_feature_config)
+        matcher = FeatureMatcher(
+            feature_config=invalid_feature_config, matching_config=DEFAULT_MATCHING_CONFIG)
         assert False, "Should have raised an exception for invalid config"
         assert matcher is not None
     except ValueError as e:
@@ -78,7 +80,8 @@ def test_detect_and_compute_basic():
     # Create an "L" shape which should produce corners
     test_image[20:80, 20:40] = 255  # Vertical bar
     test_image[20:40, 20:80] = 255  # Horizontal bar
-    matcher = FeatureMatcher()
+    matcher = FeatureMatcher(
+        feature_config=DEFAULT_FEATURE_CONFIG, matching_config=DEFAULT_MATCHING_CONFIG)
     kp, des = matcher.detect_and_compute(test_image)
     assert kp is not None, "Keypoints should not be None"
     if len(kp) > 0:
@@ -98,7 +101,8 @@ def test_detect_and_compute_different_detectors():
     ]
     for combo in combinations:
         try:
-            matcher = FeatureMatcher(feature_config=combo)
+            matcher = FeatureMatcher(
+                feature_config=combo, matching_config=DEFAULT_MATCHING_CONFIG)
             kp, des = matcher.detect_and_compute(test_image)
             assert kp is not None, f"Keypoints should not be None for {combo}"
             assert des is None or des.shape[0] == len(kp), \
@@ -113,7 +117,8 @@ def test_detect_and_compute_grayscale():
     test_image = np.zeros((100, 100), dtype=np.uint8)
     test_image[20:80, 20:40] = 255  # Vertical bar
     test_image[20:40, 20:80] = 255  # Horizontal bar
-    matcher = FeatureMatcher()
+    matcher = FeatureMatcher(
+        feature_config=DEFAULT_FEATURE_CONFIG, matching_config=DEFAULT_MATCHING_CONFIG)
     kp, des = matcher.detect_and_compute(test_image)
     assert kp is not None, "Should work with grayscale images"
     if len(kp) > 0:
@@ -128,7 +133,8 @@ def test_detect_and_compute_grayscale():
 def test_detect_and_compute_empty_image():
     print("Testing detect_and_compute with empty image...")
     test_image = np.zeros((50, 50, 3), dtype=np.uint8)  # All black
-    matcher = FeatureMatcher()
+    matcher = FeatureMatcher(
+        feature_config=DEFAULT_FEATURE_CONFIG, matching_config=DEFAULT_MATCHING_CONFIG)
     kp, des = matcher.detect_and_compute(test_image)
     assert kp is not None, "Should handle empty image without crashing"
     assert len(kp) == 0, "Empty image should have 0 keypoints"
@@ -143,7 +149,8 @@ def test_detect_and_compute_with_real_image():
         for j in range(0, 100, 20):
             if (i // 20 + j // 20) % 2 == 0:
                 test_image[i:i + 10, j:j + 10] = 255
-    matcher = FeatureMatcher()
+    matcher = FeatureMatcher(
+        feature_config=DEFAULT_FEATURE_CONFIG, matching_config=DEFAULT_MATCHING_CONFIG)
     kp, des = matcher.detect_and_compute(test_image)
     assert kp is not None, "Keypoints should not be None"
     assert len(kp) > 0, "Chessboard pattern should produce keypoints"
@@ -158,7 +165,8 @@ def test_match_images_basic():
     img2 = np.zeros((100, 100, 3), dtype=np.uint8)
     cv2.rectangle(img1, (20, 20), (40, 40), (255, 255, 255), -1)
     cv2.rectangle(img2, (25, 25), (45, 45), (255, 255, 255), -1)
-    matcher = FeatureMatcher()
+    matcher = FeatureMatcher(
+        feature_config=DEFAULT_FEATURE_CONFIG, matching_config=DEFAULT_MATCHING_CONFIG)
     match_result = matcher.match_images(img1, img2)
     assert match_result is not None
     assert hasattr(match_result, 'kp_0')
@@ -172,7 +180,8 @@ def test_match_images_no_features():
     print("Testing match_images with images having no features...")
     img1 = np.zeros((100, 100, 3), dtype=np.uint8)
     img2 = np.zeros((100, 100, 3), dtype=np.uint8)
-    matcher = FeatureMatcher()
+    matcher = FeatureMatcher(
+        feature_config=DEFAULT_FEATURE_CONFIG, matching_config=DEFAULT_MATCHING_CONFIG)
     match_result = matcher.match_images(img1, img2)
     assert match_result is not None
     assert match_result.n_good_matches() == 0
@@ -199,7 +208,9 @@ def test_match_features_knn():
 
 def test_match_features_hamming():
     print("Testing match_features with Hamming method...")
-    matcher = FeatureMatcher(matching_config={'match_method': constants.MATCHING_NORM_HAMMING})
+    matcher = FeatureMatcher(
+        feature_config=DEFAULT_FEATURE_CONFIG,
+        matching_config={'match_method': constants.MATCHING_NORM_HAMMING})
     des1 = np.random.randint(0, 255, (10, 32), dtype=np.uint8)
     des2 = np.random.randint(0, 255, (10, 32), dtype=np.uint8)
     good_matches = matcher.match_features(des1, des2)
@@ -209,7 +220,8 @@ def test_match_features_hamming():
 
 def test_match_features_empty_descriptors():
     print("Testing match_features with empty descriptors...")
-    matcher = FeatureMatcher()
+    matcher = FeatureMatcher(
+        feature_config=DEFAULT_FEATURE_CONFIG, matching_config=DEFAULT_MATCHING_CONFIG)
     des1 = np.array([]).reshape(0, 128).astype(np.float32)
     des2 = np.random.random((10, 128)).astype(np.float32)
     good_matches = matcher.match_features(des1, des2)
@@ -223,7 +235,8 @@ def test_match_features_empty_descriptors():
 
 def test_match_features_different_sizes():
     print("Testing match_features with different descriptor sizes...")
-    matcher = FeatureMatcher()
+    matcher = FeatureMatcher(
+        feature_config=DEFAULT_FEATURE_CONFIG, matching_config=DEFAULT_MATCHING_CONFIG)
     des1 = np.random.random((5, 128)).astype(np.float32)
     des2 = np.random.random((8, 128)).astype(np.float32)
     good_matches = matcher.match_features(des1, des2)

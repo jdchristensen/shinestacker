@@ -15,8 +15,9 @@ from .. core.core_utils import make_chunks
 from .utils import read_img, img_bw
 from .align import (
     AlignFramesBase, find_transform, find_transform_phase_correlation,
-    check_transform, rescale_transform, apply_alignment_transform)
+    check_transform, rescale_transform)
 from .feature_match import SubsamplingFeatureMatcher
+from .transform_estimate import apply_alignment_transform
 
 
 def compose_transforms(t1, t2, transform_type):
@@ -254,8 +255,6 @@ class AlignFramesParallel(AlignFramesBase):
             img_res = (float(h0) / constants.ONE_KILO) * (float(w0) / constants.ONE_KILO)
             target_res = constants.DEFAULT_ALIGN_RES_TARGET_MPX
             subsample = int(1 + math.floor(img_res / target_res))
-        fast_subsampling = self.alignment_config['fast_subsampling']
-        min_good_matches = self.alignment_config['min_good_matches']
         match_result, _final_subsample = self.feature_matcher.match_images_with_fallback(
             img_ref, img_0, subsample=subsample,
             warning_callback=lambda msg: self.print_message(
