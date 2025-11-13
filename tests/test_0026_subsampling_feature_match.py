@@ -20,8 +20,9 @@ def test_basic_matching():
     img1, img2 = create_test_images()
     matcher = SubsamplingFeatureMatcher(
         DEFAULT_FEATURE_CONFIG, DEFAULT_MATCHING_CONFIG, DEFAULT_ALIGNMENT_CONFIG)
-    result = matcher.match_images(img1, img2)
+    result, final_subsample = matcher.match_images_with_fallback(img1, img2)
     print(f"Number of good matches: {result.n_good_matches()}")
+    print(f"Final subsample used: {final_subsample}")
     print(f"Has sufficient matches (min=4): {result.has_sufficient_matches(4)}")
     if result.n_good_matches() > 0:
         src_pts = result.get_src_points()
@@ -39,19 +40,26 @@ def test_subsampling():
     matcher = SubsamplingFeatureMatcher(
         DEFAULT_FEATURE_CONFIG, DEFAULT_MATCHING_CONFIG, DEFAULT_ALIGNMENT_CONFIG)
     for subsample in [1, 2, 4]:
-        result = matcher.match_images(img1, img2, subsample=subsample)
-        print(f"Subsample {subsample}: {result.n_good_matches()} matches")
+        result, final_subsample = matcher.match_images_with_fallback(
+            img1, img2, subsample=subsample)
+        print(f"Requested subsample {subsample}: "
+              f"{result.n_good_matches()} matches, final subsample: {final_subsample}")
+        img_ref_sub, img_0_sub = matcher.get_last_subsampled_images()
+        print(f"  Subsampled image shapes: {img_ref_sub.shape}, {img_0_sub.shape}")
 
 
-def test_fast_subsampling():
-    print("\nTesting fast subsampling...")
+def test_fallback_behavior():
+    print("\nTesting fallback behavior...")
     img1, img2 = create_test_images()
+    alignment_config = DEFAULT_ALIGNMENT_CONFIG.copy()
+    alignment_config['min_good_matches'] = 1000  # Impossible to reach
     matcher = SubsamplingFeatureMatcher(
-        DEFAULT_FEATURE_CONFIG, DEFAULT_MATCHING_CONFIG, DEFAULT_ALIGNMENT_CONFIG)
-    result_normal = matcher.match_images(img1, img2, subsample=4)
-    result_fast = matcher.match_images(img1, img2, subsample=4)
-    print(f"Normal subsampling: {result_normal.n_good_matches()} matches")
-    print(f"Fast subsampling: {result_fast.n_good_matches()} matches")
+        DEFAULT_FEATURE_CONFIG, DEFAULT_MATCHING_CONFIG, alignment_config)
+    result, final_subsample = matcher.match_images_with_fallback(
+        img1, img2, subsample=4,
+        warning_callback=lambda msg: print(f"  Fallback warning: {msg}"))
+    print(f"After fallback: {result.n_good_matches()} matches, final subsample: {final_subsample}")
+    print(f"Expected fallback to 1: {final_subsample == 1}")
 
 
 def test_different_detectors():
@@ -63,9 +71,10 @@ def test_different_detectors():
             config = DEFAULT_FEATURE_CONFIG.copy()
             config['detector'] = detector
             config['descriptor'] = detector
-            matcher = SubsamplingFeatureMatcher(feature_config=config)
-            result = matcher.match_images(img1, img2)
-            print(f"{detector}: {result.n_good_matches()} matches")
+            matcher = SubsamplingFeatureMatcher(
+                config, DEFAULT_MATCHING_CONFIG, DEFAULT_ALIGNMENT_CONFIG)
+            result, final_subsample = matcher.match_images_with_fallback(img1, img2)
+            print(f"{detector}: {result.n_good_matches()} matches, subsample: {final_subsample}")
         except Exception as e:
             print(f"{detector}: Failed - {e}")
 
@@ -76,14 +85,32 @@ def test_no_features():
     img2 = np.zeros((200, 200, 3), dtype=np.uint8)
     matcher = SubsamplingFeatureMatcher(
         DEFAULT_FEATURE_CONFIG, DEFAULT_MATCHING_CONFIG, DEFAULT_ALIGNMENT_CONFIG)
-    result = matcher.match_images(img1, img2)
+    result, final_subsample = matcher.match_images_with_fallback(img1, img2)
     print(f"Featureless images: {result.n_good_matches()} matches")
     print(f"Has sufficient matches (min=1): {result.has_sufficient_matches(1)}")
+    print(f"Final subsample: {final_subsample}")
+
+
+def test_coordinate_consistency():
+    print("\nTesting coordinate consistency...")
+    img1, img2 = create_test_images()
+    matcher = SubsamplingFeatureMatcher(
+        DEFAULT_FEATURE_CONFIG, DEFAULT_MATCHING_CONFIG, DEFAULT_ALIGNMENT_CONFIG)
+    for subsample in [1, 2, 4]:
+        result, final_subsample = matcher.match_images_with_fallback(
+            img1, img2, subsample=subsample)
+        if result.n_good_matches() > 0:
+            src_pts = result.get_src_points()
+            max_coord = max(src_pts.flatten()) if len(src_pts) > 0 else 0
+            print(f"Subsample {subsample}: max coordinate = {max_coord:.1f}")
+            if subsample > 1:
+                print(f"  Coordinates scaled to original image space: {max_coord <= 400}")
 
 
 if __name__ == "__main__":
     test_basic_matching()
     test_subsampling()
-    test_fast_subsampling()
+    test_fallback_behavior()
     test_different_detectors()
     test_no_features()
+    test_coordinate_consistency()

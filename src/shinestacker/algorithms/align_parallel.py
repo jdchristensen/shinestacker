@@ -255,6 +255,7 @@ class AlignFramesParallel(AlignFramesBase):
             warning_callback=lambda msg: self.print_message(
                 msg, color=constants.LOG_COLOR_WARNING, level=logging.WARNING)
         )
+        self._n_good_matches[idx] = match_result.n_good_matches()
         img_ref_sub, img_0_sub = self.feature_matcher.get_last_subsampled_images()
         m, phase_corr_called, _ = \
             self.transformation_extractor.extract_transformation(

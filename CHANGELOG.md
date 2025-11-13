@@ -2,12 +2,13 @@
 
 This page reports the main releases only and the main changes therein.
 
-## [vx.x.x] - 2025-11-13
+## [v1.9.7] - 2025-11-13
 ** Changes for next release
 
 ### Fixed
+- fixed serious bug in alignment module introduced with code refactoring in releae 1.9.6
 - space bar + drag works now also when the master layer is not selected
-- live update of tooltips in processing colored box display
+- live update of tooltips in processing colored box display, and fixed content
 
 ---
 

@@ -167,36 +167,27 @@ class SubsamplingFeatureMatcher:
         self._last_subsampled_images = (None, None)
         self._last_subsample_factor = 1
 
-    def match_images(self, img_ref, img_0, subsample=1):
-        if subsample == 1:
-            self._last_subsampled_images = (img_ref, img_0)
-            self._last_subsample_factor = 1
-            return self.feature_matcher.match_images(img_ref, img_0)
-        self._last_subsample_factor = subsample
-        fast_subsampling = self.alignment_config['fast_subsampling']
-        img_ref_small = img_subsample(img_ref, subsample, fast_subsampling)
-        img_0_small = img_subsample(img_0, subsample, fast_subsampling)
-        self._last_subsampled_images = (img_ref_small, img_0_small)
-        match_result = self.feature_matcher.match_images(img_ref_small, img_0_small)
-        for kp in match_result.kp_0:
-            kp.pt = (kp.pt[0] * subsample, kp.pt[1] * subsample)
-        for kp in match_result.kp_ref:
-            kp.pt = (kp.pt[0] * subsample, kp.pt[1] * subsample)
-        return match_result
-
     def match_images_with_fallback(self, img_ref, img_0, subsample=1, warning_callback=None):
         final_subsample = subsample
         min_good_matches = self.alignment_config['min_good_matches']
+        fast_subsampling = self.alignment_config['fast_subsampling']
         while True:
-            match_result = self.match_images(
-                img_ref, img_0, subsample=final_subsample)
-            if match_result.has_sufficient_matches(min_good_matches) or final_subsample == 1:
+            if final_subsample > 1:
+                img_0_sub = img_subsample(img_0, final_subsample, fast_subsampling)
+                img_ref_sub = img_subsample(img_ref, final_subsample, fast_subsampling)
+            else:
+                img_0_sub, img_ref_sub = img_0, img_ref
+            self._last_subsampled_images = (img_ref_sub, img_0_sub)
+            self._last_subsample_factor = final_subsample
+            match_result = self.feature_matcher.match_images(img_ref_sub, img_0_sub)
+            n_good_matches = match_result.n_good_matches()
+            if n_good_matches >= min_good_matches or final_subsample == 1:
                 break
             final_subsample = 1
             if warning_callback:
-                s_str = 'es' if match_result.n_good_matches() != 1 else ''
+                s_str = 'es' if n_good_matches != 1 else ''
                 warning_callback(
-                    f"only {match_result.n_good_matches()} < {min_good_matches} "
+                    f"only {n_good_matches} < {min_good_matches} "
                     f"match{s_str} found, retrying without subsampling")
         return match_result, final_subsample
 

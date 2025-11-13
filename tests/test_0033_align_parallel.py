@@ -406,7 +406,7 @@ def test_find_transform_max_delta_reached():
     aligner._target_indices = [None, None, None]
     aligner._transforms = [None, None, None]
     with patch.object(aligner, 'cache_img') as mock_cache:
-        with patch.object(aligner.feature_matcher, 'match_images') as mock_match:
+        with patch.object(aligner.feature_matcher, 'match_images_with_fallback') as mock_match:
             mock_kp_0 = [Mock(pt=(10.0, 10.0))]
             mock_kp_ref = [Mock(pt=(15.0, 15.0))]
             mock_matches = [Mock(queryIdx=0, trainIdx=0)]
@@ -420,10 +420,7 @@ def test_find_transform_max_delta_reached():
                 [kp.pt for kp in mock_kp_0]).reshape(-1, 1, 2)
             mock_match_result.get_dst_points.return_value = np.float32(
                 [kp.pt for kp in mock_kp_ref]).reshape(-1, 1, 2)
-            mock_match_result.img_0_sub = None
-            mock_match_result.img_ref_sub = None
-            mock_match_result.subsample = None
-            mock_match.return_value = mock_match_result
+            mock_match.return_value = (mock_match_result, 1)
             mock_cache.return_value = np.ones((100, 100, 3), dtype=np.uint8)
             info, warnings = aligner.find_transform(1, delta=1)
             assert len(warnings) > 0
@@ -469,7 +466,7 @@ def test_find_transform_phase_correlation_fallback():
                 info, warnings = aligner.find_transform(1, delta=1)
                 assert aligner._transforms[1] is not None
                 assert aligner._target_indices[1] == 0
-                assert aligner._n_good_matches[1] == 0
+                assert aligner._n_good_matches[1] == 1
 
 
 def test_find_transform_invalid_transform_abort():

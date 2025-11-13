@@ -307,7 +307,7 @@ class RunWindow(QTextEditLogger):
 
     @Slot(str, str, int)
     def handle_set_total_actions(self, module_name, filename, status_id):
-        self.frames_status_box.set_total_actions(module_name, filename, status_id)
+        self.frames_status_box.set_frame_total_actions(module_name, filename, status_id)
 
 
 class RunWorker(LogWorker):
