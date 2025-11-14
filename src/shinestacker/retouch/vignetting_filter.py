@@ -19,7 +19,7 @@ class VignettingFilter(OneSliderBaseFilter):
         self.threshold_label = None
         self.threshold_max_range = 500
         self.threshold_max_value = 128.0
-        self.threshold_initial_value = DEFAULTS['vignetting']['black_threshold']
+        self.threshold_initial_value = DEFAULTS['vignetting_params']['black_threshold']
         self.threshold_format = "{:.1f}"
 
     def get_subsample_factor(self):
@@ -53,12 +53,12 @@ class VignettingFilter(OneSliderBaseFilter):
         self.subsample_box.setFixedWidth(150)
         self.subsample_box.currentTextChanged.connect(self.threshold_changed)
         self.fast_subsampling_check = QCheckBox("Fast subsampling")
-        self.fast_subsampling_check.setChecked(constants.DEFAULT_VIGN_FAST_SUBSAMPLING)
+        self.fast_subsampling_check.setChecked(DEFAULTS['vignetting_params']['fast_subsampling'])
         r_steps_label = QLabel("Radial steps:")
         self.r_steps_box = QSpinBox()
         self.r_steps_box.setFixedWidth(50)
         self.r_steps_box.setRange(1, 200)
-        self.r_steps_box.setValue(DEFAULTS['vignetting']['r_steps'])
+        self.r_steps_box.setValue(DEFAULTS['vignetting_params']['r_steps'])
         self.r_steps_box.valueChanged.connect(self.param_changed)
         subsample_layout.addWidget(subsample_label)
         subsample_layout.addWidget(self.subsample_box)

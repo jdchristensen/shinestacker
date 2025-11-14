@@ -193,7 +193,7 @@ class ProjectController(QObject):
                         {'name': 'mask-noise',
                          'noise_mask':
                             os.path.join(noise_detection_name,
-                                         DEFAULTS['noise_detection']['noise_map_filename'])})
+                                         DEFAULTS['noise_detection_params']['noise_map_filename'])})
                     combo_action.add_sub_action(mask_noise)
                 if dialog.get_vignetting_correction():
                     vignetting = ActionConfig(

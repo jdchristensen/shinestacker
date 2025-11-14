@@ -3,20 +3,21 @@ import os
 import numpy as np
 import cv2
 from .. config.constants import constants
+from .. config.defaults import DEFAULTS
 from .. core.exceptions import InvalidOptionError
 from .utils import read_img, read_and_validate_img, img_bw
 from .base_stack_algo import BaseStackAlgo
 
 
 class DepthMapStack(BaseStackAlgo):
-    def __init__(self, map_type=constants.DEFAULT_DM_MAP,
-                 energy=constants.DEFAULT_DM_ENERGY,
-                 kernel_size=constants.DEFAULT_DM_KERNEL_SIZE,
-                 blur_size=constants.DEFAULT_DM_BLUR_SIZE,
-                 smooth_size=constants.DEFAULT_DM_SMOOTH_SIZE,
-                 temperature=constants.DEFAULT_DM_TEMPERATURE,
-                 levels=constants.DEFAULT_DM_LEVELS,
-                 float_type=constants.DEFAULT_DM_FLOAT):
+    def __init__(self, map_type=DEFAULTS['depth_map_params']['map_type'],
+                 energy=DEFAULTS['depth_map_params']['energy'],
+                 kernel_size=DEFAULTS['depth_map_params']['kernel_size'],
+                 blur_size=DEFAULTS['depth_map_params']['blur_size'],
+                 smooth_size=DEFAULTS['depth_map_params']['smooth_size'],
+                 temperature=DEFAULTS['depth_map_params']['temperature'],
+                 levels=DEFAULTS['depth_map_params']['levels'],
+                 float_type=DEFAULTS['depth_map_params']['float_type']):
         super().__init__("depth map", 2, float_type)
         self.map_type = map_type
         self.energy = energy

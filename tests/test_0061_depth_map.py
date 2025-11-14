@@ -3,7 +3,7 @@ import numpy as np
 import cv2
 import os
 from unittest.mock import MagicMock
-from shinestacker.config.constants import constants
+from shinestacker.config.defaults import DEFAULTS
 from shinestacker.algorithms.depth_map import DepthMapStack
 
 n_images = 6
@@ -21,8 +21,8 @@ def example_images():
 
 def test_initialization():
     dms = DepthMapStack()
-    assert dms.map_type == constants.DEFAULT_DM_MAP
-    assert dms.energy == constants.DEFAULT_DM_ENERGY
+    assert dms.map_type == DEFAULTS['depth_map_params']['map_type']
+    assert dms.energy == DEFAULTS['depth_map_params']['energy']
 
 
 def test_sobel_map_with_examples(example_images):

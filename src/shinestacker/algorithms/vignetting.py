@@ -62,8 +62,8 @@ def subsample_factor(subsample, image):
     return subsample
 
 
-def img_subsampled(image, subsample=constants.DEFAULT_VIGN_SUBSAMPLE,
-                   fast_subsampling=constants.DEFAULT_VIGN_FAST_SUBSAMPLING):
+def img_subsampled(image, subsample=DEFAULTS['vignetting_params']['subsample'],
+                   fast_subsampling=DEFAULTS['vignetting_params']['fast_subsampling']):
     image_bw = cv2.cvtColor(img_8bit(image), cv2.COLOR_BGR2GRAY)
     if subsample == 0:
         subsample = subsample_factor(subsample, image)
@@ -73,8 +73,8 @@ def img_subsampled(image, subsample=constants.DEFAULT_VIGN_SUBSAMPLE,
 
 def compute_fit_parameters(
         image, r_steps, radii=None, intensities=None,
-        subsample=constants.DEFAULT_VIGN_SUBSAMPLE,
-        fast_subsampling=constants.DEFAULT_VIGN_FAST_SUBSAMPLING):
+        subsample=DEFAULTS['vignetting_params']['subsample'],
+        fast_subsampling=DEFAULTS['vignetting_params']['fast_subsampling']):
     if subsample == 0:
         subsample = subsample_factor(subsample, image)
     image_sub = img_subsampled(image, subsample, fast_subsampling)
@@ -87,12 +87,12 @@ def compute_fit_parameters(
 
 
 def correct_vignetting(
-        image, max_correction=DEFAULTS['vignetting']['max_correction'],
-        black_threshold=DEFAULTS['vignetting']['black_threshold'],
-        r_steps=DEFAULTS['vignetting']['r_steps'],
+        image, max_correction=DEFAULTS['vignetting_params']['max_correction'],
+        black_threshold=DEFAULTS['vignetting_params']['black_threshold'],
+        r_steps=DEFAULTS['vignetting_params']['r_steps'],
         params=None, v0=None,
-        subsample=constants.DEFAULT_VIGN_SUBSAMPLE,
-        fast_subsampling=constants.DEFAULT_VIGN_FAST_SUBSAMPLING):
+        subsample=DEFAULTS['vignetting_params']['subsample'],
+        fast_subsampling=DEFAULTS['vignetting_params']['fast_subsampling']):
     if params is None:
         if r_steps is None:
             raise RuntimeError("Either r_steps or pars must not be None")
@@ -122,20 +122,20 @@ class Vignetting(SubAction):
     def __init__(self, enabled=True, percentiles=(0.05, 0.1, 0.25, 0.5, 0.75, 0.9, 0.95), **kwargs):
         super().__init__(enabled)
         self.r_steps = kwargs.get(
-            'r_steps', DEFAULTS['vignetting']['r_steps'])
+            'r_steps', DEFAULTS['vignetting_params']['r_steps'])
         self.black_threshold = kwargs.get(
-            'black_threshold', DEFAULTS['vignetting']['black_threshold'])
+            'black_threshold', DEFAULTS['vignetting_params']['black_threshold'])
         self.plot_correction = kwargs.get(
             'plot_correction', False)
         self.plot_summary = kwargs.get(
             'plot_summary', False)
         self.max_correction = kwargs.get(
-            'max_correction', DEFAULTS['vignetting']['max_correction'])
+            'max_correction', DEFAULTS['vignetting_params']['max_correction'])
         self.percentiles = np.sort(percentiles)
         self.subsample = kwargs.get(
-            'subsample', constants.DEFAULT_VIGN_SUBSAMPLE)
+            'subsample', DEFAULTS['vignetting_params']['subsample'])
         self.fast_subsampling = kwargs.get(
-            'fast_subsampling', constants.DEFAULT_VIGN_FAST_SUBSAMPLING)
+            'fast_subsampling', DEFAULTS['vignetting_params']['fast_subsampling'])
         self.w_2 = None
         self.h_2 = None
         self.v0 = None

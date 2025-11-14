@@ -4,6 +4,7 @@ import traceback
 import logging
 import numpy as np
 from .. config.constants import constants
+from .. config.defaults import DEFAULTS
 from .. core.framework import TaskBase
 from .. core.colors import color_str
 from .. core.exceptions import InvalidOptionError
@@ -19,9 +20,9 @@ class FocusStackBase(TaskBase, ImageSequenceManager):
         TaskBase.__init__(self, name, enabled)
         self.stack_algo = stack_algo
         self.exif_path = kwargs.pop('exif_path', '')
-        self.prefix = kwargs.pop('prefix', constants.DEFAULT_STACK_PREFIX)
+        self.prefix = kwargs.pop('prefix', DEFAULTS['focus_stack_params']['prefix'])
         self.denoise_amount = kwargs.pop('denoise_amount', 0)
-        self.plot_stack = kwargs.pop('plot_stack', constants.DEFAULT_PLOT_STACK)
+        self.plot_stack = kwargs.pop('plot_stack', DEFAULTS['focus_stack_params']['plot_stack'])
         self.stack_algo.set_process(self)
         self.frame_count = -1
 
@@ -101,8 +102,8 @@ class FocusStackBunch(SequentialTask, FocusStackBase):
         FocusStackBase.__init__(self, name, stack_algo, enabled, **kwargs)
         self._chunks = None
         self.frame_count = 0
-        self.frames = kwargs.get('frames', constants.DEFAULT_FRAMES)
-        self.overlap = kwargs.get('overlap', constants.DEFAULT_OVERLAP)
+        self.frames = kwargs.get('frames', DEFAULTS['focus_stack_bunch_params']['frames'])
+        self.overlap = kwargs.get('overlap', DEFAULTS['focus_stack_bunch_params']['overlap'])
         self.denoise_amount = kwargs.get('denoise_amount', 0)
         self.stack_algo.set_do_step_callback(False)
         if self.overlap >= self.frames:
@@ -118,10 +119,10 @@ class FocusStackBunch(SequentialTask, FocusStackBase):
     def begin(self):
         SequentialTask.begin(self)
         self._chunks = get_bunches(sorted(self.input_filepaths()), self.frames, self.overlap)
-        self.callback(constants.CALLBACK_ADD_STATUS_BOX, self.name)
+        self.callback(constants.CALLBACK_ADD_STATUS_BOX, self.output_path)
         for chunk in self._chunks:
             filename = self.prefix + os.path.basename(chunk[0])
-            self.callback(constants.CALLBACK_ADD_FRAME, self.name, filename, 1)
+            self.callback(constants.CALLBACK_ADD_FRAME, self.output_path, filename, 1)
         self.set_counts(len(self._chunks))
 
     def end(self):
@@ -136,10 +137,10 @@ class FocusStackBunch(SequentialTask, FocusStackBase):
                       constants.LOG_COLOR_LEVEL_2))
         img_files = self._chunks[action_count]
         filename = self.prefix + os.path.basename(img_files[0])
-        self.callback(constants.CALLBACK_UPDATE_FRAME_STATUS, self.name, filename, 0)
+        self.callback(constants.CALLBACK_UPDATE_FRAME_STATUS, self.output_path, filename, 0)
         self.stack_algo.init(img_files)
         self.focus_stack(self._chunks[action_count])
-        self.callback(constants.CALLBACK_UPDATE_FRAME_STATUS, self.name, filename, 1000)
+        self.callback(constants.CALLBACK_UPDATE_FRAME_STATUS, self.output_path, filename, 1000)
         return True
 
 

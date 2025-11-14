@@ -284,12 +284,12 @@ class CombinedActions(ReferenceFrameTask):
         self._metadata = (None, None)
 
     def begin(self):
-        self.callback(constants.CALLBACK_ADD_STATUS_BOX, self.name)
+        self.callback(constants.CALLBACK_ADD_STATUS_BOX, self.output_path)
         n_actions = len(self._actions)
         filenames = self.input_filepaths()
         for filename in filenames:
             f = os.path.basename(filename)
-            self.callback(constants.CALLBACK_ADD_FRAME, self.name, f, n_actions)
+            self.callback(constants.CALLBACK_ADD_FRAME, self.output_path, f, n_actions)
         ReferenceFrameTask.begin(self)
         for a in self._actions:
             if a.enabled:
@@ -366,7 +366,7 @@ class CombinedActions(ReferenceFrameTask):
             else:
                 if self.callback(constants.CALLBACK_CHECK_RUNNING, self.id, self.name) is False:
                     raise RunStopException(self.name)
-                self.callback(constants.CALLBACK_UPDATE_FRAME_STATUS, self.name,
+                self.callback(constants.CALLBACK_UPDATE_FRAME_STATUS, self.output_path,
                               filename, a_idx + 1)
                 if img is not None:
                     img = a.run_frame(idx, ref_idx, img)
@@ -381,12 +381,12 @@ class CombinedActions(ReferenceFrameTask):
                 color_str(f'write output {self.frame_str(idx)}, '
                           f'{os.path.basename(output_path)}', constants.LOG_COLOR_LEVEL_3))
             write_img(output_path, img)
-            self.callback(constants.CALLBACK_UPDATE_FRAME_STATUS, self.name, filename, 1000)
+            self.callback(constants.CALLBACK_UPDATE_FRAME_STATUS, self.output_path, filename, 1000)
             return img
         self.print_message(color_str(
             f"no output resulted from processing input file: {os.path.basename(input_path)}",
             constants.LOG_COLOR_ALERT), level=logging.ERROR)
-        self.callback(constants.CALLBACK_UPDATE_FRAME_STATUS, self.name, filename, 1001)
+        self.callback(constants.CALLBACK_UPDATE_FRAME_STATUS, self.output_path, filename, 1001)
         return None
 
     def end(self):

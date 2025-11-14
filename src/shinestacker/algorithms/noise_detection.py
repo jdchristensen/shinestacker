@@ -52,15 +52,18 @@ class NoiseDetection(TaskBase, ImageSequenceManager):
     def __init__(self, name="noise-map", enabled=True, **kwargs):
         ImageSequenceManager.__init__(self, name, **kwargs)
         TaskBase.__init__(self, name, enabled)
-        self.max_frames = kwargs.get('max_frames', DEFAULTS['noise_detection']['max_frames'])
-        self.blur_size = kwargs.get('blur_size', DEFAULTS['noise_detection']['blur_size'])
-        self.file_name = kwargs.get('file_name', DEFAULTS['noise_detection']['noise_map_filename'])
+        self.max_frames = kwargs.get(
+            'max_frames', DEFAULTS['noise_detection_params']['max_frames'])
+        self.blur_size = kwargs.get(
+            'blur_size', DEFAULTS['noise_detection_params']['blur_size'])
+        self.file_name = kwargs.get(
+            'file_name', DEFAULTS['noise_detection_params']['noise_map_filename'])
         if self.file_name == '':
-            self.file_name = DEFAULTS['noise_detection']['noise_map_filename']
+            self.file_name = DEFAULTS['noise_detection_params']['noise_map_filename']
         self.channel_thresholds = kwargs.get(
-            'channel_thresholds', DEFAULTS['noise_detection']['channel_thresholds']
+            'channel_thresholds', DEFAULTS['noise_detection_params']['channel_thresholds']
         )
-        self.plot_range = kwargs.get('plot_range', DEFAULTS['noise_detection']['plot_range'])
+        self.plot_range = kwargs.get('plot_range', DEFAULTS['noise_detection_params']['plot_range'])
         self.plot_histograms = kwargs.get('plot_histograms', False)
         self.tbar = None
 
@@ -147,12 +150,12 @@ class NoiseDetection(TaskBase, ImageSequenceManager):
 
 
 class MaskNoise(SubAction):
-    def __init__(self, noise_mask=DEFAULTS['noise_detection']['noise_map_filename'],
-                 kernel_size=DEFAULTS['mask_noise']['kernel_size'],
+    def __init__(self, noise_mask=DEFAULTS['noise_detection_params']['noise_map_filename'],
+                 kernel_size=DEFAULTS['mask_noise_params']['kernel_size'],
                  method=constants.INTERPOLATE_MEAN, **kwargs):
         super().__init__(**kwargs)
         self.noise_mask = noise_mask if noise_mask != '' else \
-            DEFAULTS['noise_detection']['noise_map_filename']
+            DEFAULTS['noise_detection_params']['noise_map_filename']
         self.kernel_size = kernel_size
         self.ks2 = self.kernel_size // 2
         self.ks2_1 = self.ks2 + 1

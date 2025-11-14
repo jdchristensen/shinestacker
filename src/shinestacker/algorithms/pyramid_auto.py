@@ -9,17 +9,17 @@ from .pyramid_tiles import PyramidTilesStack
 
 
 class PyramidAutoStack(BaseStackAlgo):
-    def __init__(self, min_size=constants.DEFAULT_PY_MIN_SIZE,
-                 kernel_size=constants.DEFAULT_PY_KERNEL_SIZE,
-                 gen_kernel=constants.DEFAULT_PY_GEN_KERNEL,
-                 float_type=constants.DEFAULT_PY_FLOAT,
-                 tile_size=constants.DEFAULT_PY_TILE_SIZE,
-                 n_tiled_layers=constants.DEFAULT_PY_N_TILED_LAYERS,
+    def __init__(self, min_size=DEFAULTS['pyramid_params']['min_size'],
+                 kernel_size=DEFAULTS['pyramid_params']['kernel_size'],
+                 gen_kernel=DEFAULTS['pyramid_params']['gen_kernel'],
+                 float_type=DEFAULTS['pyramid_params']['float_type'],
+                 tile_size=DEFAULTS['pyramid_params']['tile_size'],
+                 n_tiled_layers=DEFAULTS['pyramid_params']['n_tiled_layers'],
                  memory_limit=DEFAULTS['focus_stack_params']['memory_limit'],
                  max_threads=DEFAULTS['focus_stack_params']['max_threads'],
-                 max_tile_size=constants.DEFAULT_PY_MAX_TILE_SIZE,
-                 min_tile_size=constants.DEFAULT_PY_MIN_TILE_SIZE,
-                 min_n_tiled_layers=constants.DEFAULT_PY_MIN_N_TILED_LAYERS,
+                 max_tile_size=DEFAULTS['pyramid_params']['max_tile_size'],
+                 min_tile_size=DEFAULTS['pyramid_params']['min_tile_size'],
+                 min_n_tiled_layers=DEFAULTS['pyramid_params']['min_n_tiled_layers'],
                  mode='auto'):
         super().__init__("auto_pyramid", 1, float_type)
         self.min_size = min_size

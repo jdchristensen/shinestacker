@@ -3,15 +3,16 @@ import os
 import numpy as np
 import cv2
 from .. config.constants import constants
+from .. config.defaults import DEFAULTS
 from .utils import read_and_validate_img
 from .base_stack_algo import BaseStackAlgo
 
 
 class PyramidBase(BaseStackAlgo):
-    def __init__(self, name, min_size=constants.DEFAULT_PY_MIN_SIZE,
-                 kernel_size=constants.DEFAULT_PY_KERNEL_SIZE,
-                 gen_kernel=constants.DEFAULT_PY_GEN_KERNEL,
-                 float_type=constants.DEFAULT_PY_FLOAT):
+    def __init__(self, name, min_size=DEFAULTS['pyramid_params']['min_size'],
+                 kernel_size=DEFAULTS['pyramid_params']['kernel_size'],
+                 gen_kernel=DEFAULTS['pyramid_params']['gen_kernel'],
+                 float_type=DEFAULTS['pyramid_params']['float_type']):
         super().__init__(name, 1, float_type)
         self.min_size = min_size
         self.kernel_size = kernel_size
@@ -141,10 +142,10 @@ class PyramidBase(BaseStackAlgo):
 
 
 class PyramidStack(PyramidBase):
-    def __init__(self, min_size=constants.DEFAULT_PY_MIN_SIZE,
-                 kernel_size=constants.DEFAULT_PY_KERNEL_SIZE,
-                 gen_kernel=constants.DEFAULT_PY_GEN_KERNEL,
-                 float_type=constants.DEFAULT_PY_FLOAT):
+    def __init__(self, min_size=DEFAULTS['pyramid_params']['min_size'],
+                 kernel_size=DEFAULTS['pyramid_params']['kernel_size'],
+                 gen_kernel=DEFAULTS['pyramid_params']['gen_kernel'],
+                 float_type=DEFAULTS['pyramid_params']['float_type']):
         super().__init__("pyramid", min_size, kernel_size, gen_kernel, float_type)
         self.offset = np.arange(-self.pad_amount, self.pad_amount + 1)
 

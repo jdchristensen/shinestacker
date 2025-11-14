@@ -11,9 +11,11 @@ This page reports the main releases only and the main changes therein.
 
 ### Fixed
 - fixed tooltip counter in processing colored box display
+- fixed visual progress indicators names in case output path does not coincide with module name
 
 ### Changed
 - improved settings peristency by saving only parameters different from defaults
+- refactored default parameters configuration
 
 ---
 

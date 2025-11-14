@@ -168,7 +168,7 @@ class MultiLayer(TaskBase, ImageSequenceManager):
         TaskBase.__init__(self, name, enabled)
         self.exif_path = kwargs.get('exif_path', '')
         self.reverse_order = kwargs.get(
-            'reverse_order', DEFAULTS['multilayer']['file_reverse_order'])
+            'reverse_order', DEFAULTS['multilayer_params']['file_reverse_order'])
 
     def init(self, job):
         ImageSequenceManager.init(self, job)

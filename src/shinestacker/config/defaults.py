@@ -63,28 +63,58 @@ DEFAULTS = {
     },
     'focus_stack_params': {
         'memory_limit': 8,  # GB
-        'max_threads': min(os.cpu_count() or 4, 8)
+        'max_threads': min(os.cpu_count() or 4, 8),
+        'prefix': "stack_",
+        'plot_stack': True
     },
     'focus_stack_bunch_params': {
         'memory_limit': 8,  # GB
-        'max_threads': min(os.cpu_count() or 4, 8)
+        'max_threads': min(os.cpu_count() or 4, 8),
+        'frames': 10,
+        'overlap': 2,
+        'prefix': "bunch_",
+        'plot_stack': True
     },
-    'noise_detection': {
+    'depth_map_params': {
+        'float_type': 'float-32',
+        'map_type': 'average',
+        'energy': 'laplacian',
+        'kernel_size': 5,
+        'blur_size': 5,
+        'smooth_size': 15,
+        'temperature': 0.1,
+        'levels': 3
+    },
+    'pyramid_params': {
+        'float_type': 'float-32',
+        'min_size': 32,
+        'kernel_size': 5,
+        'gen_kernel': 0.4,
+        'tile_size': 512,
+        'n_tiled_layers': 2,
+        'mode': 'auto',
+        'max_tile_size': 4096,
+        'min_tile_size': 128,
+        'min_n_tiled_layers': 1
+    },
+    'noise_detection_params': {
         'noise_map_filename': 'hot_pixels.png',
         'max_frames': 10,
         'channel_thresholds': [13, 13, 13],
         'blur_size': 5,
         'plot_range': [5, 30]
     },
-    'mask_noise': {
+    'mask_noise_params': {
         'kernel_size': 3
     },
-    'vignetting': {
+    'vignetting_params': {
         'r_steps': 100,
         'black_threshold': 1.0,
-        'max_correction': 1.0
+        'max_correction': 1.0,
+        'subsample': 0,
+        'fast_subsampling': False
     },
-    'multilayer': {
+    'multilayer_params': {
         'file_reverse_order': True
     }
 }

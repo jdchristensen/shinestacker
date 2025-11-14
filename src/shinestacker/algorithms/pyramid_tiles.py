@@ -16,12 +16,12 @@ from .pyramid import PyramidBase
 
 
 class PyramidTilesStack(PyramidBase):
-    def __init__(self, min_size=constants.DEFAULT_PY_MIN_SIZE,
-                 kernel_size=constants.DEFAULT_PY_KERNEL_SIZE,
-                 gen_kernel=constants.DEFAULT_PY_GEN_KERNEL,
-                 float_type=constants.DEFAULT_PY_FLOAT,
-                 tile_size=constants.DEFAULT_PY_TILE_SIZE,
-                 n_tiled_layers=constants.DEFAULT_PY_N_TILED_LAYERS,
+    def __init__(self, min_size=DEFAULTS['pyramid_params']['min_size'],
+                 kernel_size=DEFAULTS['pyramid_params']['kernel_size'],
+                 gen_kernel=DEFAULTS['pyramid_params']['gen_kernel'],
+                 float_type=DEFAULTS['pyramid_params']['float_type'],
+                 tile_size=DEFAULTS['pyramid_params']['tile_size'],
+                 n_tiled_layers=DEFAULTS['pyramid_params']['n_tiled_layers'],
                  max_threads=DEFAULTS['focus_stack_params']['max_threads']):
         super().__init__("fast_pyramid", min_size, kernel_size, gen_kernel, float_type)
         self.offset = np.arange(-self.pad_amount, self.pad_amount + 1)

@@ -8,8 +8,8 @@ from shinestacker.algorithms.stack_framework import StackJob, CombinedActions, S
 
 
 class SubActionMock(SubAction):
-    def __init__(self, noise_mask=DEFAULTS['noise_detection']['noise_map_filename'],
-                 kernel_size=DEFAULTS['mask_noise']['kernel_size'],
+    def __init__(self, noise_mask=DEFAULTS['noise_detection_params']['noise_map_filename'],
+                 kernel_size=DEFAULTS['mask_noise_params']['kernel_size'],
                  method=constants.INTERPOLATE_MEAN, **kwargs):
         super().__init__(**kwargs)
 

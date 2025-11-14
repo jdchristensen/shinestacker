@@ -7,6 +7,7 @@ from PySide6.QtGui import QIcon
 from PySide6.QtCore import Qt
 from .. config.gui_constants import gui_constants
 from .. config.constants import constants
+from .. config.defaults import DEFAULTS
 from .. config.app_config import AppConfig
 from .. algorithms.utils import read_img, extension_supported
 from .. algorithms.stack import get_bunches
@@ -59,11 +60,11 @@ class NewProjectDialog(BaseFormDialog):
         self.bunch_frames = QSpinBox()
         bunch_frames_range = gui_constants.NEW_PROJECT_BUNCH_FRAMES
         self.bunch_frames.setRange(bunch_frames_range['min'], bunch_frames_range['max'])
-        self.bunch_frames.setValue(constants.DEFAULT_FRAMES)
+        self.bunch_frames.setValue(DEFAULTS['focus_stack_bunch_params']['frames'])
         self.bunch_overlap = QSpinBox()
         bunch_overlap_range = gui_constants.NEW_PROJECT_BUNCH_OVERLAP
         self.bunch_overlap.setRange(bunch_overlap_range['min'], bunch_overlap_range['max'])
-        self.bunch_overlap.setValue(constants.DEFAULT_OVERLAP)
+        self.bunch_overlap.setValue(DEFAULTS['focus_stack_bunch_params']['overlap'])
         self.bunches_label = QLabel(DEFAULT_NO_COUNT_LABEL)
         self.frames_label = QLabel(DEFAULT_NO_COUNT_LABEL)
         self.update_bunch_options(gui_constants.NEW_PROJECT_BUNCH_STACK)
