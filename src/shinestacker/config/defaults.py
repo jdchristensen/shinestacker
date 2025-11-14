@@ -29,7 +29,8 @@ DEFAULTS = {
         'detector': 'ORB',
         'descriptor': 'ORB',
         'match_method': 'NORM_HAMMING',
-        'subsample': 0
+        'subsample': 0,
+        'flann_idx_kdtree': 2
     },
     'focus_stack_params': {
         'memory_limit': 8,  # GB

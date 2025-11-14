@@ -13,7 +13,7 @@ DEFAULT_FEATURE_CONFIG = {
 
 DEFAULT_MATCHING_CONFIG = {
     'match_method': DEFAULTS['align_frames_params']['match_method'],
-    'flann_idx_kdtree': constants.DEFAULT_FLANN_IDX_KDTREE,
+    'flann_idx_kdtree': DEFAULTS['align_frames_params']['flann_idx_kdtree'],
     'flann_trees': constants.DEFAULT_FLANN_TREES,
     'flann_checks': constants.DEFAULT_FLANN_CHECKS,
     'threshold': constants.DEFAULT_ALIGN_THRESHOLD,

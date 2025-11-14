@@ -619,7 +619,7 @@ class AlignFramesConfigurator(SubsampleActionConfigurator, AlignFramesConfigBase
         self.add_field_to_layout(
             layout, 'flann_idx_kdtree', FIELD_INT, 'Flann idx kdtree', required=False,
             expert=True,
-            default=constants.DEFAULT_FLANN_IDX_KDTREE,
+            default=DEFAULTS['align_frames_params']['flann_idx_kdtree'],
             min_val=0, max_val=10)
         self.add_field_to_layout(
             layout, 'flann_trees', FIELD_INT, 'Flann trees', required=False,
