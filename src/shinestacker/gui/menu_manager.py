@@ -257,7 +257,7 @@ class MenuManager(QObject):
         toolbar.addWidget(self.action_selector)
         self.add_action_entry_action = QAction("Add Action", self.parent)
         self.add_action_entry_action.setIcon(
-            QIcon(os.path.join(self.script_dir, "img/plus-round-line-icon.png")))
+            self.get_icon("plus-round-line-icon"))
         self.add_action_entry_action.setToolTip("Add action")
         self.add_action_entry_action.triggered.connect(self.add_action)
         self.add_action_entry_action.setEnabled(False)
@@ -268,7 +268,7 @@ class MenuManager(QObject):
         toolbar.addWidget(self.sub_action_selector)
         self.add_sub_action_entry_action = QAction("Add Sub Action", self.parent)
         self.add_sub_action_entry_action.setIcon(
-            QIcon(os.path.join(self.script_dir, "img/plus-round-line-icon.png")))
+            self.get_icon("plus-round-line-icon"))
         self.add_sub_action_entry_action.setToolTip("Add sub action")
         self.add_sub_action_entry_action.triggered.connect(self.add_sub_action)
         self.add_sub_action_entry_action.setEnabled(False)

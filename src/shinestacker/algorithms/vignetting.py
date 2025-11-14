@@ -9,6 +9,7 @@ import cv2
 from .. core.colors import color_str
 from .. core.core_utils import setup_matplotlib_mode
 from .. config.constants import constants
+from .. config.defaults import DEFAULTS
 from .utils import img_8bit, save_plot, img_subsample
 from .stack_framework import SubAction
 setup_matplotlib_mode()
@@ -56,7 +57,7 @@ def subsample_factor(subsample, image):
     if subsample == 0:
         h, w = image.shape[:2]
         img_res = (float(h) / 1000) * (float(w) / 1000)
-        target_res = constants.DEFAULT_BALANCE_RES_TARGET_MPX
+        target_res = DEFAULTS['balance_frames_params']['resolution_target']
         subsample = int(1 + math.floor(img_res / target_res))
     return subsample
 

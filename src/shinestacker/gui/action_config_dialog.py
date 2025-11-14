@@ -809,17 +809,23 @@ class BalanceFramesConfigurator(SubsampleActionConfigurator):
             'intensity_interval', FIELD_INT_TUPLE, 'Intensity range',
             required=False, size=2,
             expert=True,
-            default=[v for k, v in constants.DEFAULT_INTENSITY_INTERVAL.items()],
+            default=[v for k, v in DEFAULTS['balance_frames_params']['intensity_interval'].items()],
             labels=['min', 'max'], min_val=[-1] * 2, max_val=[65536] * 2)
-        self.add_subsample_fields()
+        self.add_subsample_fields(
+            default_subsample=DEFAULTS['balance_frames_params']['subsample'],
+            default_fast_subsampling=DEFAULTS['balance_frames_params']['fast_subsampling'])
         self.add_field(
             'corr_map', FIELD_COMBO, 'Correction map', required=False,
             options=self.CORRECTION_MAP_OPTIONS, values=constants.VALID_BALANCE,
-            default='Linear')
+            default=dict(zip(constants.VALID_BALANCE,
+                         self.CORRECTION_MAP_OPTIONS))[
+                DEFAULTS['balance_frames_params']['corr_map']])
         self.add_field(
             'channel', FIELD_COMBO, 'Channel', required=False,
             options=self.CHANNEL_OPTIONS, values=constants.VALID_BALANCE_CHANNELS,
-            default='Luminosity')
+            default=dict(zip(constants.VALID_BALANCE_CHANNELS,
+                         self.CHANNEL_OPTIONS))[
+                DEFAULTS['balance_frames_params']['channel']])
         self.add_bold_label("Miscellanea:")
         self.add_field(
             'plot_summary', FIELD_BOOL, 'Plot summary',

@@ -53,6 +53,14 @@ DEFAULTS = {
         'bw_matching': False,
         'delta_max': 2
     },
+    'balance_frames_params': {
+        'subsample': 0,
+        'fast_subsampling': False,
+        'resolution_target': 2,  # Mpx
+        'corr_map': 'LINEAR',
+        'channel': 'LUMI',
+        'intensity_interval': {'min': 0, 'max': -1}
+    },
     'focus_stack_params': {
         'memory_limit': 8,  # GB
         'max_threads': min(os.cpu_count() or 4, 8)

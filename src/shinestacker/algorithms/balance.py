@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 from scipy.optimize import bisect
 from scipy.interpolate import interp1d
 from .. config.constants import constants
+from .. config.defaults import DEFAULTS
 from .. core.exceptions import InvalidOptionError
 from .. core.colors import color_str
 from .. core.core_utils import setup_matplotlib_mode
@@ -201,7 +202,10 @@ class Ch2Histogrammer(BaseHistogrammer):
 
 class CorrectionMapBase:
     def __init__(self, dtype, ref_hist, intensity_interval=None):
-        intensity_interval = {**constants.DEFAULT_INTENSITY_INTERVAL, **(intensity_interval or {})}
+        intensity_interval = {
+            **DEFAULTS['balance_frames_params']['intensity_interval'],
+            **(intensity_interval or {})
+        }
         self.dtype = dtype
         self.num_pixel_values = constants.NUM_UINT8 if dtype == np.uint8 else constants.NUM_UINT16
         self.max_pixel_value = self.num_pixel_values - 1
@@ -302,9 +306,9 @@ class LinearMap(CorrectionMap):
 
 class Correction:
     def __init__(self, channels, mask_size=0, intensity_interval=None,
-                 subsample=constants.DEFAULT_BALANCE_SUBSAMPLE,
-                 fast_subsampling=constants.DEFAULT_BALANCE_FAST_SUBSAMPLING,
-                 corr_map=constants.DEFAULT_CORR_MAP,
+                 subsample=DEFAULTS['balance_frames_params']['subsample'],
+                 fast_subsampling=DEFAULTS['balance_frames_params']['fast_subsampling'],
+                 corr_map=DEFAULTS['balance_frames_params']['corr_map'],
                  plot_histograms=False, plot_summary=False):
         self.mask_size = mask_size
         self.intensity_interval = intensity_interval
@@ -348,7 +352,7 @@ class Correction:
         else:
             h, w = image.shape[:2]
             img_res = float(h) * float(w) / constants.ONE_MEGA
-            target_res = constants.DEFAULT_BALANCE_RES_TARGET_MPX
+            target_res = DEFAULTS['balance_frames_params']['resolution_target']
             subsample = int(1 + math.floor(img_res / target_res))
         img_sub = image if self.subsample == 1 \
             else img_subsample(image, subsample, self.fast_subsampling)
@@ -566,19 +570,19 @@ class BalanceFrames(SubAction):
         self.process = None
         self.shape = None
         self.corr_map = kwargs.get(
-            'corr_map', constants.DEFAULT_CORR_MAP)
+            'corr_map', DEFAULTS['balance_frames_params']['corr_map'])
         self.subsample = kwargs.get(
-            'subsample', constants.DEFAULT_BALANCE_SUBSAMPLE)
+            'subsample', DEFAULTS['balance_frames_params']['subsample'])
         self.fast_subsampling = kwargs.get(
-            'fast_subsampling', constants.DEFAULT_BALANCE_FAST_SUBSAMPLING)
+            'fast_subsampling', DEFAULTS['balance_frames_params']['fast_subsampling'])
         self.channel = kwargs.get(
-            'channel', constants.DEFAULT_CHANNEL)
+            'channel', DEFAULTS['balance_frames_params']['channel'])
         self.mask_size = kwargs.get('mask_size', 0)
         self.plot_summary = kwargs.get('plot_summary', False)
         self.plot_histograms = kwargs.get('plot_histograms', False)
         if self.subsample == -1:
             self.subsample = (1 if self.corr_map == constants.BALANCE_MATCH_HIST
-                              else constants.DEFAULT_BALANCE_SUBSAMPLE)
+                              else DEFAULTS['balance_frames_params']['subsample'])
         correction_class = {
             constants.BALANCE_LUMI: LumiCorrection,
             constants.BALANCE_RGB: RGBCorrection,

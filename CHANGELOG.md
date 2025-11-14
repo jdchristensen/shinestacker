@@ -7,6 +7,7 @@ This page reports the main releases only and the main changes therein.
 
 ### Added
 - align subsample option added to persistent settings
+- fixed "add" icons in the main window
 
 ### Fixed
 - fixed tooltip counter in processing colored box display
