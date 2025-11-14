@@ -65,8 +65,8 @@ DEFAULTS = {
         'channel': 'LUMI',
         'intensity_interval': {'min': 0, 'max': -1}
     },
+    'stacker': 'Pyramid',
     'focus_stack_params': {
-        'stack_algo': 'Pyramid',
         'memory_limit': 8,  # GB
         'max_threads': min(os.cpu_count() or 4, 8),
         'prefix': "stack_",

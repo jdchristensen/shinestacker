@@ -228,7 +228,7 @@ class FocusStackBaseConfigurator(DefaultActionConfigurator):
         combo = self.add_field_to_layout(
             layout, 'stacker', FIELD_COMBO, 'Stacking algorithm', required=True,
             options=constants.STACK_ALGO_OPTIONS,
-            default=AppConfig.get('focus_stack_params')['stack_algo'])
+            default=AppConfig.get('stacker'))
         q_pyramid, q_depthmap = QWidget(), QWidget()
         for q in [q_pyramid, q_depthmap]:
             q.setLayout(create_tab_layout())
