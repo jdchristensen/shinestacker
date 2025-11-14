@@ -841,16 +841,16 @@ class VignettingConfigurator(SubsampleActionConfigurator):
         self.add_field(
             'r_steps', FIELD_INT, 'Radial steps', required=False,
             expert=True,
-            default=constants.DEFAULT_R_STEPS, min_val=1, max_val=1000)
+            default=DEFAULTS['vignetting']['r_steps'], min_val=1, max_val=1000)
         self.add_field(
             'black_threshold', FIELD_INT, 'Black intensity threshold',
             expert=True,
-            required=False, default=constants.DEFAULT_BLACK_THRESHOLD,
+            required=False, default=DEFAULTS['vignetting']['black_threshold'],
             min_val=0, max_val=1000)
         self.add_subsample_fields()
         self.add_field(
             'max_correction', FIELD_FLOAT, 'Max. correction', required=False,
-            default=constants.DEFAULT_MAX_CORRECTION,
+            default=DEFAULTS['vignetting']['max_correction'],
             min_val=0, max_val=1, step=0.05)
         self.add_bold_label("Miscellanea:")
         self.add_field(

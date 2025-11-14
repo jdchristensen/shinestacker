@@ -87,9 +87,10 @@ def compute_fit_parameters(
 
 
 def correct_vignetting(
-        image, max_correction=constants.DEFAULT_MAX_CORRECTION,
-        black_threshold=constants.DEFAULT_BLACK_THRESHOLD,
-        r_steps=constants.DEFAULT_R_STEPS, params=None, v0=None,
+        image, max_correction=DEFAULTS['vignetting']['max_correction'],
+        black_threshold=DEFAULTS['vignetting']['black_threshold'],
+        r_steps=DEFAULTS['vignetting']['r_steps'],
+        params=None, v0=None,
         subsample=constants.DEFAULT_VIGN_SUBSAMPLE,
         fast_subsampling=constants.DEFAULT_VIGN_FAST_SUBSAMPLING):
     if params is None:
@@ -120,13 +121,19 @@ def correct_vignetting(
 class Vignetting(SubAction):
     def __init__(self, enabled=True, percentiles=(0.05, 0.1, 0.25, 0.5, 0.75, 0.9, 0.95), **kwargs):
         super().__init__(enabled)
-        self.r_steps = kwargs.get('r_steps', constants.DEFAULT_R_STEPS)
-        self.black_threshold = kwargs.get('black_threshold', constants.DEFAULT_BLACK_THRESHOLD)
-        self.plot_correction = kwargs.get('plot_correction', False)
-        self.plot_summary = kwargs.get('plot_summary', False)
-        self.max_correction = kwargs.get('max_correction', constants.DEFAULT_MAX_CORRECTION)
+        self.r_steps = kwargs.get(
+            'r_steps', DEFAULTS['vignetting']['r_steps'])
+        self.black_threshold = kwargs.get(
+            'black_threshold', DEFAULTS['vignetting']['black_threshold'])
+        self.plot_correction = kwargs.get(
+            'plot_correction', False)
+        self.plot_summary = kwargs.get(
+            'plot_summary', False)
+        self.max_correction = kwargs.get(
+            'max_correction', DEFAULTS['vignetting']['max_correction'])
         self.percentiles = np.sort(percentiles)
-        self.subsample = kwargs.get('subsample', constants.DEFAULT_VIGN_SUBSAMPLE)
+        self.subsample = kwargs.get(
+            'subsample', constants.DEFAULT_VIGN_SUBSAMPLE)
         self.fast_subsampling = kwargs.get(
             'fast_subsampling', constants.DEFAULT_VIGN_FAST_SUBSAMPLING)
         self.w_2 = None

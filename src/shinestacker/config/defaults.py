@@ -79,6 +79,11 @@ DEFAULTS = {
     'mask_noise': {
         'kernel_size': 3
     },
+    'vignetting': {
+        'r_steps': 100,
+        'black_threshold': 1.0,
+        'max_correction': 1.0
+    },
     'multilayer': {
         'file_reverse_order': True
     }

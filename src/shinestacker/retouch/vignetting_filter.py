@@ -2,6 +2,7 @@
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QSpinBox, QCheckBox, QLabel, QHBoxLayout, QSlider, QComboBox
 from .. config.constants import constants
+from .. config.defaults import DEFAULTS
 from .. algorithms.vignetting import correct_vignetting
 from .base_filter import OneSliderBaseFilter
 
@@ -18,7 +19,7 @@ class VignettingFilter(OneSliderBaseFilter):
         self.threshold_label = None
         self.threshold_max_range = 500
         self.threshold_max_value = 128.0
-        self.threshold_initial_value = constants.DEFAULT_BLACK_THRESHOLD
+        self.threshold_initial_value = DEFAULTS['vignetting']['black_threshold']
         self.threshold_format = "{:.1f}"
 
     def get_subsample_factor(self):
@@ -57,7 +58,7 @@ class VignettingFilter(OneSliderBaseFilter):
         self.r_steps_box = QSpinBox()
         self.r_steps_box.setFixedWidth(50)
         self.r_steps_box.setRange(1, 200)
-        self.r_steps_box.setValue(constants.DEFAULT_R_STEPS)
+        self.r_steps_box.setValue(DEFAULTS['vignetting']['r_steps'])
         self.r_steps_box.valueChanged.connect(self.param_changed)
         subsample_layout.addWidget(subsample_label)
         subsample_layout.addWidget(self.subsample_box)
