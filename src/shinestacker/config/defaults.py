@@ -8,7 +8,11 @@ DEFAULTS = {
     'display_refresh_time': 50,  # ms
     'cursor_update_time': 16,  # ms
     'min_mouse_step_brush_fraction': 0.25,
-    'stack_algo': 'Pyramid',
+    'cursor_style': 'preview',
+    'brush_size': 100,
+    'brush_hardness': 50,
+    'brush_opacity': 100,
+    'brush_flow': 100,
     'sequential_task': {
         'max_threads': 8,
         'chunk_submit': True
@@ -62,6 +66,7 @@ DEFAULTS = {
         'intensity_interval': {'min': 0, 'max': -1}
     },
     'focus_stack_params': {
+        'stack_algo': 'Pyramid',
         'memory_limit': 8,  # GB
         'max_threads': min(os.cpu_count() or 4, 8),
         'prefix': "stack_",

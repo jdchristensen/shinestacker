@@ -229,7 +229,7 @@ class FocusStackBaseConfigurator(DefaultActionConfigurator):
         combo = self.add_field_to_layout(
             layout, 'stacker', FIELD_COMBO, 'Stacking algorithm', required=True,
             options=constants.STACK_ALGO_OPTIONS,
-            default=DEFAULTS['stack_algo'])
+            default=DEFAULTS['focus_stack_params']['stack_algo'])
         q_pyramid, q_depthmap = QWidget(), QWidget()
         for q in [q_pyramid, q_depthmap]:
             q.setLayout(create_tab_layout())
@@ -492,9 +492,7 @@ class SubsampleActionConfigurator(DefaultActionConfigurator):
         self.fast_subsampling_field = None
 
     def add_subsample_fields(
-            self, add_to_layout=None,
-            default_subsample=constants.FIELD_SUBSAMPLE_DEFAULT,
-            default_fast_subsampling=DEFAULTS['align_frames_params']['fast_subsampling']):
+            self, default_subsample, default_fast_subsampling, add_to_layout=None):
         if add_to_layout is None:
             add_to_layout = self.builder.main_layout
         self.subsample_field = self.add_field(
@@ -650,8 +648,9 @@ class AlignFramesConfigurator(SubsampleActionConfigurator, AlignFramesConfigBase
             default=DEFAULTS['align_frames_params']['threshold'],
             min_val=0, max_val=1, step=0.05)
         self.add_subsample_fields(
-            add_to_layout=layout,
-            default_subsample=AppConfig.get('align_frames_params')['subsample'])
+            default_subsample=AppConfig.get('align_frames_params')['subsample'],
+            default_fast_subsampling=DEFAULTS['align_frames_params']['fast_subsampling'],
+            add_to_layout=layout)
 
     def create_transform_tab(self, layout):
         self.add_bold_label_to_layout(layout, "Transform:")

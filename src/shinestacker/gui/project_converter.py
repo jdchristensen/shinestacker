@@ -107,7 +107,8 @@ class ProjectConverter:
             return BalanceFrames(**params)
         if action_config.type_name in (constants.ACTION_FOCUSSTACK,
                                        constants.ACTION_FOCUSSTACKBUNCH):
-            stacker = action_config.params.get('stacker', DEFAULTS['stack_algo'])
+            stacker = action_config.params.get(
+                'stacker', DEFAULTS['focus_stack_params']['stack_algo'])
             if stacker == constants.STACK_ALGO_PYRAMID:
                 algo_dict, module_dict = self.filter_dict_keys(
                     action_config.params, 'pyramid_')

@@ -48,16 +48,11 @@ class _GuiConstants:
         'label_height': 20
     }
 
-    DEFAULT_BRUSH_HARDNESS = 50
-    DEFAULT_BRUSH_OPACITY = 100
-    DEFAULT_BRUSH_FLOW = 100
     BRUSH_SIZES = {
-        'default': 100,
         'min': 5,
         'mid': 50,
         'max': 1000
     }
-    DEFAULT_CURSOR_STYLE = 'preview'
     BRUSH_LINE_WIDTH = 2
     BRUSH_PREVIEW_LINE_WIDTH = 1.5
     ZOOM_IN_FACTOR = 1.10

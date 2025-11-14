@@ -9,6 +9,7 @@ from PySide6.QtWidgets import (
     QGraphicsEllipseItem, QGraphicsView, QGraphicsScene, QGraphicsPixmapItem, QApplication,
     QGraphicsItemGroup, QGraphicsPathItem)
 from .. config.gui_constants import gui_constants
+from .. config.defaults import DEFAULTS
 from .. config.app_config import AppConfig
 from .layer_collection import LayerCollectionHandler
 from .brush_gradient import create_default_brush_gradient
@@ -114,7 +115,7 @@ class ViewStrategy(LayerCollectionHandler):
         self.brush = None
         self.brush_cursor = None
         self.brush_preview = BrushPreviewItem(layer_collection)
-        self.cursor_style = gui_constants.DEFAULT_CURSOR_STYLE
+        self.cursor_style = DEFAULTS['cursor_style']
         self.control_pressed = False
         self.space_pressed = False
         self.gesture_active = False
