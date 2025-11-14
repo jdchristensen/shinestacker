@@ -7,6 +7,7 @@ import numpy as np
 import cv2
 import matplotlib.pyplot as plt
 from .. config.constants import constants
+from .. config.defaults import DEFAULTS
 from .. core.exceptions import InvalidOptionError
 from .. core.colors import color_str
 from .utils import save_plot
@@ -39,7 +40,7 @@ def align_images(img_ref, img_0, feature_config=None, matching_config=None, alig
     subsample = alignment_config['subsample']
     if subsample == 0:
         img_res = (float(h0) / constants.ONE_KILO) * (float(w0) / constants.ONE_KILO)
-        target_res = constants.DEFAULT_ALIGN_RES_TARGET_MPX
+        target_res = DEFAULTS['align_frames_params']['resolution_target']
         subsample = int(1 + math.floor(img_res / target_res))
     feature_matcher = SubsamplingFeatureMatcher(
         feature_config, matching_config, alignment_config, callbacks)
@@ -357,7 +358,7 @@ class AlignFrames(AlignFramesBase):
         subsample = self.alignment_config['subsample']
         if subsample == 0:
             img_res = (float(h0) / constants.ONE_KILO) * (float(w0) / constants.ONE_KILO)
-            target_res = constants.DEFAULT_ALIGN_RES_TARGET_MPX
+            target_res = DEFAULTS['align_frames_params']['resolution_target']
             subsample = int(1 + math.floor(img_res / target_res))
         match_result, _final_subsample = self.feature_matcher.match_images_with_fallback(
             img_ref, img_0, subsample=subsample,

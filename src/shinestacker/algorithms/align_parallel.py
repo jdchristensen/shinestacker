@@ -34,10 +34,14 @@ class AlignFramesParallel(AlignFramesBase):
                  alignment_config=None, **kwargs):
         super().__init__(enabled, feature_config, matching_config,
                          alignment_config, use_large_thresholds=False, **kwargs)
-        self.max_threads = kwargs.get('max_threads', DEFAULTS['align_frames_params']['max_threads'])
-        self.chunk_submit = kwargs.get('chunk_submit', constants.DEFAULT_ALIGN_CHUNK_SUBMIT)
-        self.bw_matching = kwargs.get('bw_matching', constants.DEFAULT_ALIGN_BW_MATCHING)
-        self.delta_max = kwargs.get('delta_max', constants.DEFAULT_ALIGN_DELTA_MAX)
+        self.max_threads = kwargs.get(
+            'max_threads', DEFAULTS['align_frames_params']['max_threads'])
+        self.chunk_submit = kwargs.get(
+            'chunk_submit', DEFAULTS['align_frames_params']['chunk_submit'])
+        self.bw_matching = kwargs.get(
+            'bw_matching', DEFAULTS['align_frames_params']['bw_matching'])
+        self.delta_max = kwargs.get(
+            'delta_max', DEFAULTS['align_frames_params']['delta_max'])
         self._img_cache = None
         self._img_shapes = None
         self._img_locks = None
@@ -249,7 +253,7 @@ class AlignFramesParallel(AlignFramesBase):
         subsample = self.alignment_config['subsample']
         if subsample == 0:
             img_res = (float(h0) / constants.ONE_KILO) * (float(w0) / constants.ONE_KILO)
-            target_res = constants.DEFAULT_ALIGN_RES_TARGET_MPX
+            target_res = DEFAULTS['align_frames_params']['resolution_target']
             subsample = int(1 + math.floor(img_res / target_res))
         match_result, _final_subsample = self.feature_matcher.match_images_with_fallback(
             img_ref, img_0, subsample=subsample,

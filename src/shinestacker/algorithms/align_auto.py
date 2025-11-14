@@ -12,15 +12,15 @@ class AlignFramesAuto(AlignFramesBase):
     def __init__(self, enabled=True, feature_config=None, matching_config=None,
                  alignment_config=None, **kwargs):
         self.mode = kwargs.pop(
-            'mode', constants.DEFAULT_ALIGN_MODE)
+            'mode', DEFAULTS['align_frames_params']['align_mode'])
         self.memory_limit = kwargs.pop(
             'memory_limit', DEFAULTS['align_frames_params']['memory_limit'])
         self.max_threads = kwargs.pop(
             'max_threads', DEFAULTS['align_frames_params']['max_threads'])
         self.chunk_submit = kwargs.pop(
-            'chunk_submit', constants.DEFAULT_ALIGN_CHUNK_SUBMIT)
+            'chunk_submit', DEFAULTS['align_frames_params']['chunk_submit'])
         self.bw_matching = kwargs.pop(
-            'bw_matching', constants.DEFAULT_ALIGN_BW_MATCHING)
+            'bw_matching', DEFAULTS['align_frames_params']['bw_matching'])
         self.kwargs = kwargs
         super().__init__(enabled=True, feature_config=None, matching_config=None,
                          alignment_config=None, **kwargs)

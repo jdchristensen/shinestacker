@@ -46,7 +46,12 @@ DEFAULTS = {
         'fast_subsampling': False,
         'min_good_matches': 20,
         'phase_corr_fallback': False,
-        'abort_abnormal': False
+        'abort_abnormal': False,
+        'resolution_target': 2,  # Mpx
+        'align_mode': 'auto',
+        'chunk_submit': True,
+        'bw_matching': False,
+        'delta_max': 2
     },
     'focus_stack_params': {
         'memory_limit': 8,  # GB

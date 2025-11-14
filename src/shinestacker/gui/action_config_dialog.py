@@ -736,7 +736,7 @@ class AlignFramesConfigurator(SubsampleActionConfigurator, AlignFramesConfigBase
             layout, 'mode', FIELD_COMBO, 'Mode',
             required=False, options=self.MODE_OPTIONS, values=constants.ALIGN_VALID_MODES,
             default=dict(zip(constants.ALIGN_VALID_MODES,
-                             self.MODE_OPTIONS))[constants.DEFAULT_ALIGN_MODE])
+                             self.MODE_OPTIONS))[DEFAULTS['align_frames_params']['align_mode']])
         memory_limit = self.add_field_to_layout(
             layout, 'memory_limit', FIELD_FLOAT, 'Memory limit (approx., GBytes)',
             required=False, default=AppConfig.get('align_frames_params')['memory_limit'],
@@ -748,14 +748,14 @@ class AlignFramesConfigurator(SubsampleActionConfigurator, AlignFramesConfigBase
         chunk_submit = self.add_field_to_layout(
             layout, 'chunk_submit', FIELD_BOOL, 'Submit in chunks',
             expert=True,
-            required=False, default=constants.DEFAULT_ALIGN_CHUNK_SUBMIT)
+            required=False, default=DEFAULTS['align_frames_params']['chunk_submit'])
         bw_matching = self.add_field_to_layout(
             layout, 'bw_matching', FIELD_BOOL, 'Match using black & white',
             expert=True,
-            required=False, default=constants.DEFAULT_ALIGN_BW_MATCHING)
+            required=False, default=DEFAULTS['align_frames_params']['bw_matching'])
         delta_max = self.add_field_to_layout(
             layout, 'delta_max', FIELD_INT, 'Max frames skip',
-            required=False, default=constants.DEFAULT_ALIGN_DELTA_MAX,
+            required=False, default=DEFAULTS['align_frames_params']['delta_max'],
             min_val=1, max_val=128)
 
         def change_mode():
