@@ -11,6 +11,7 @@ from psdtags import (PsdBlendMode, PsdChannel, PsdChannelId, PsdClippingType, Ps
                      TiffImageSourceData, overlay)
 from .. config.constants import constants
 from .. config.config import config
+from .. config.defaults import DEFAULTS
 from .. core.colors import color_str
 from .. core.framework import TaskBase
 from .utils import EXTENSIONS_TIF, EXTENSIONS_JPG, EXTENSIONS_PNG, EXTENSIONS_SUPPORTED
@@ -167,9 +168,7 @@ class MultiLayer(TaskBase, ImageSequenceManager):
         TaskBase.__init__(self, name, enabled)
         self.exif_path = kwargs.get('exif_path', '')
         self.reverse_order = kwargs.get(
-            'reverse_order',
-            constants.DEFAULT_MULTILAYER_FILE_REVERSE_ORDER
-        )
+            'reverse_order', DEFAULTS['multilayer']['file_reverse_order'])
 
     def init(self, job):
         ImageSequenceManager.init(self, job)

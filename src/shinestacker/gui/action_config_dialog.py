@@ -5,6 +5,7 @@ import traceback
 from PySide6.QtCore import QTimer
 from PySide6.QtWidgets import QWidget, QLabel, QMessageBox, QStackedWidget
 from .. config.constants import constants
+from .. config.defaults import DEFAULTS
 from .. config.app_config import AppConfig
 from .. algorithms.utils import EXTENSIONS_SUPPORTED
 from .. algorithms.feature_match import validate_align_config
@@ -179,7 +180,7 @@ class NoiseDetectionConfigurator(DefaultActionConfigurator):
             default=False)
         self.add_field(
             'plot_path', FIELD_REL_PATH, 'Plots path', required=False,
-            default=constants.DEFAULT_PLOTS_PATH,
+            default=DEFAULTS['image_sequence_manager']['plots_path'],
             placeholder='relative to working path')
         self.add_field(
             'plot_range', FIELD_INT_TUPLE, 'Plot range', required=False,
@@ -228,7 +229,7 @@ class FocusStackBaseConfigurator(DefaultActionConfigurator):
         combo = self.add_field_to_layout(
             layout, 'stacker', FIELD_COMBO, 'Stacking algorithm', required=True,
             options=constants.STACK_ALGO_OPTIONS,
-            default=constants.STACK_ALGO_DEFAULT)
+            default=DEFAULTS['stack_algo'])
         q_pyramid, q_depthmap = QWidget(), QWidget()
         for q in [q_pyramid, q_depthmap]:
             q.setLayout(create_tab_layout())
@@ -405,7 +406,7 @@ class MultiLayerConfigurator(DefaultActionConfigurator):
             required=False, default=True)
         self.add_field(
             'reverse_order', FIELD_BOOL, 'Reverse file order', required=False,
-            default=constants.DEFAULT_MULTILAYER_FILE_REVERSE_ORDER)
+            default=DEFAULTS['multilayer']['file_reverse_order'])
 
 
 class CombinedActionsConfigurator(DefaultActionConfigurator):
@@ -442,7 +443,7 @@ class CombinedActionsConfigurator(DefaultActionConfigurator):
             default=0)
         self.add_field(
             'step_process', FIELD_BOOL, 'Step process', required=False,
-            expert=True, default=constants.DEFAULT_COMBINED_ACTIONS_STEP_PROCESS)
+            expert=True, default=DEFAULTS['reference_frame_task']['step_process'])
         self.add_field(
             'max_threads', FIELD_INT, 'Max num. of cores',
             required=False, default=AppConfig.get('combined_actions_params')['max_threads'],
@@ -451,7 +452,7 @@ class CombinedActionsConfigurator(DefaultActionConfigurator):
         self.add_field(
             'chunk_submit', FIELD_BOOL, 'Submit in chunks',
             expert=True,
-            required=False, default=constants.DEFAULT_FWK_CHUNK_SUBMIT)
+            required=False, default=DEFAULTS['sequential_task']['chunk_submit'])
 
 
 class MaskNoiseConfigurator(DefaultActionConfigurator):

@@ -2,6 +2,7 @@
 import logging
 import traceback
 from .. config.constants import constants
+from .. config.defaults import DEFAULTS
 from .. core.exceptions import InvalidOptionError, RunStopException
 from .. algorithms.stack_framework import StackJob, CombinedActions
 from .. algorithms.noise_detection import NoiseDetection, MaskNoise
@@ -106,7 +107,7 @@ class ProjectConverter:
             return BalanceFrames(**params)
         if action_config.type_name in (constants.ACTION_FOCUSSTACK,
                                        constants.ACTION_FOCUSSTACKBUNCH):
-            stacker = action_config.params.get('stacker', constants.STACK_ALGO_DEFAULT)
+            stacker = action_config.params.get('stacker', DEFAULTS['stack_algo'])
             if stacker == constants.STACK_ALGO_PYRAMID:
                 algo_dict, module_dict = self.filter_dict_keys(
                     action_config.params, 'pyramid_')

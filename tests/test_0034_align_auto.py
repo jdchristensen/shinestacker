@@ -16,7 +16,8 @@ class TestAlignFramesAuto(unittest.TestCase):
         self.assertEqual(align_auto.max_threads, DEFAULTS['align_frames_params']['max_threads'])
         self.assertEqual(align_auto.chunk_submit, constants.DEFAULT_ALIGN_CHUNK_SUBMIT)
         self.assertEqual(align_auto.bw_matching, constants.DEFAULT_ALIGN_BW_MATCHING)
-        self.assertEqual(align_auto.num_threads, min(DEFAULTS['align_frames_params']['max_threads'], 8))
+        self.assertEqual(align_auto.num_threads,
+                         min(DEFAULTS['align_frames_params']['max_threads'], 8))
         self.assertIsNone(align_auto._implementation)
 
     @patch('shinestacker.algorithms.align_auto.os.cpu_count')

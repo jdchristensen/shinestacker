@@ -3,6 +3,7 @@
 import logging
 import os
 from .. config.constants import constants
+from .. config.defaults import DEFAULTS
 from .. core.colors import color_str
 from .. core.framework import Job, SequentialTask
 from .. core.core_utils import check_path_exists
@@ -45,9 +46,9 @@ class StackJob(Job):
 
 class ImageSequenceManager:
     def __init__(self, name, input_path='', output_path='', working_path='',
-                 plot_path=constants.DEFAULT_PLOTS_PATH,
+                 plot_path=DEFAULTS['image_sequence_manager']['plots_path'],
                  scratch_output_dir=True, delete_output_at_end=False,
-                 resample=1, reverse_order=constants.DEFAULT_FILE_REVERSE_ORDER,
+                 resample=1, reverse_order=DEFAULTS['image_sequence_manager']['reverse_order'],
                  **_kwargs):
         self.name = name
         self.working_path = working_path
@@ -192,7 +193,7 @@ class ImageSequenceManager:
 
 class ReferenceFrameTask(SequentialTask, ImageSequenceManager):
     def __init__(self, name, enabled=True, reference_index=0,
-                 step_process=constants.DEFAULT_COMBINED_ACTIONS_STEP_PROCESS, **kwargs):
+                 step_process=DEFAULTS['reference_frame_task']['step_process'], **kwargs):
         ImageSequenceManager.__init__(self, name, **kwargs)
         SequentialTask.__init__(self, name, enabled)
         self.ref_idx = reference_index
@@ -277,7 +278,7 @@ class SubAction:
 
 class CombinedActions(ReferenceFrameTask):
     def __init__(self, name, actions=[], enabled=True, **kwargs):
-        step_process = kwargs.pop('step_process', constants.DEFAULT_COMBINED_ACTIONS_STEP_PROCESS)
+        step_process = kwargs.pop('step_process', DEFAULTS['reference_frame_task']['step_process'])
         ReferenceFrameTask.__init__(self, name, enabled, step_process=step_process, **kwargs)
         self._actions = actions
         self._metadata = (None, None)
