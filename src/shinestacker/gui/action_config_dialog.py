@@ -164,12 +164,12 @@ class NoiseDetectionConfigurator(DefaultActionConfigurator):
         self.add_field(
             'channel_thresholds', FIELD_INT_TUPLE, 'Noise threshold',
             required=False, size=3,
-            default=constants.DEFAULT_CHANNEL_THRESHOLDS,
+            default=DEFAULTS['noise_detection']['channel_thresholds'],
             labels=constants.RGB_LABELS, min_val=[1] * 3, max_val=[1000] * 3)
         self.add_field(
             'blur_size', FIELD_INT, 'Blur size (px)', required=False,
             expert=True,
-            default=constants.DEFAULT_BLUR_SIZE, min_val=1, max_val=50)
+            default=DEFAULTS['noise_detection']['blur_size'], min_val=1, max_val=50)
         self.add_field(
             'file_name', FIELD_TEXT, 'File name', required=False,
             default=DEFAULTS['noise_detection']['noise_map_filename'],
@@ -184,7 +184,7 @@ class NoiseDetectionConfigurator(DefaultActionConfigurator):
             placeholder='relative to working path')
         self.add_field(
             'plot_range', FIELD_INT_TUPLE, 'Plot range', required=False,
-            size=2, default=constants.DEFAULT_NOISE_PLOT_RANGE,
+            size=2, default=DEFAULTS['noise_detection']['plot_range'],
             labels=['min', 'max'], min_val=[0] * 2, max_val=[1000] * 2)
 
 
@@ -466,7 +466,7 @@ class MaskNoiseConfigurator(DefaultActionConfigurator):
         self.add_field(
             'kernel_size', FIELD_INT, 'Kernel size', required=False,
             expert=True,
-            default=constants.DEFAULT_MN_KERNEL_SIZE, min_val=1, max_val=10)
+            default=DEFAULTS['mask_noise']['kernel_size'], min_val=1, max_val=10)
         self.add_field(
             'method', FIELD_COMBO, 'Interpolation method', required=False,
             expert=True,

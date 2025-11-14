@@ -41,7 +41,13 @@ DEFAULTS = {
     },
     'noise_detection': {
         'noise_map_filename': 'hot_pixels.png',
-        'max_frames': 10
+        'max_frames': 10,
+        'channel_thresholds': [13, 13, 13],
+        'blur_size': 5,
+        'plot_range': [5, 30]
+    },
+    'mask_noise': {
+        'kernel_size': 3
     },
     'multilayer': {
         'file_reverse_order': True
