@@ -5,7 +5,6 @@ import traceback
 from PySide6.QtCore import QTimer
 from PySide6.QtWidgets import QWidget, QLabel, QMessageBox, QStackedWidget
 from .. config.constants import constants
-from .. config.defaults import DEFAULTS
 from .. config.app_config import AppConfig
 from .. algorithms.utils import EXTENSIONS_SUPPORTED
 from .. algorithms.feature_match import validate_align_config
@@ -160,31 +159,31 @@ class NoiseDetectionConfigurator(DefaultActionConfigurator):
         self.add_field(
             'max_frames', FIELD_INT, 'Max. num. of frames (0 = All)',
             required=False,
-            default=DEFAULTS['noise_detection_params']['max_frames'], min_val=0, max_val=1000)
+            default=AppConfig.get('noise_detection_params')['max_frames'], min_val=0, max_val=1000)
         self.add_field(
             'channel_thresholds', FIELD_INT_TUPLE, 'Noise threshold',
             required=False, size=3,
-            default=DEFAULTS['noise_detection_params']['channel_thresholds'],
+            default=AppConfig.get('noise_detection_params')['channel_thresholds'],
             labels=constants.RGB_LABELS, min_val=[1] * 3, max_val=[1000] * 3)
         self.add_field(
             'blur_size', FIELD_INT, 'Blur size (px)', required=False,
             expert=True,
-            default=DEFAULTS['noise_detection_params']['blur_size'], min_val=1, max_val=50)
+            default=AppConfig.get('noise_detection_params')['blur_size'], min_val=1, max_val=50)
         self.add_field(
             'file_name', FIELD_TEXT, 'File name', required=False,
-            default=DEFAULTS['noise_detection_params']['noise_map_filename'],
-            placeholder=DEFAULTS['noise_detection_params']['noise_map_filename'])
+            default=AppConfig.get('noise_detection_params')['noise_map_filename'],
+            placeholder=AppConfig.get('noise_detection_params')['noise_map_filename'])
         self.add_bold_label("Miscellanea:")
         self.add_field(
             'plot_histograms', FIELD_BOOL, 'Plot histograms', required=False,
             default=False)
         self.add_field(
             'plot_path', FIELD_REL_PATH, 'Plots path', required=False,
-            default=DEFAULTS['image_sequence_manager']['plots_path'],
+            default=AppConfig.get('image_sequence_manager')['plots_path'],
             placeholder='relative to working path')
         self.add_field(
             'plot_range', FIELD_INT_TUPLE, 'Plot range', required=False,
-            size=2, default=DEFAULTS['noise_detection_params']['plot_range'],
+            size=2, default=AppConfig.get('noise_detection_params')['plot_range'],
             labels=['min', 'max'], min_val=[0] * 2, max_val=[1000] * 2)
 
 
@@ -229,7 +228,7 @@ class FocusStackBaseConfigurator(DefaultActionConfigurator):
         combo = self.add_field_to_layout(
             layout, 'stacker', FIELD_COMBO, 'Stacking algorithm', required=True,
             options=constants.STACK_ALGO_OPTIONS,
-            default=DEFAULTS['focus_stack_params']['stack_algo'])
+            default=AppConfig.get('focus_stack_params')['stack_algo'])
         q_pyramid, q_depthmap = QWidget(), QWidget()
         for q in [q_pyramid, q_depthmap]:
             q.setLayout(create_tab_layout())
@@ -248,30 +247,30 @@ class FocusStackBaseConfigurator(DefaultActionConfigurator):
         self.add_field_to_layout(
             q_pyramid.layout(), 'pyramid_min_size', FIELD_INT, 'Minimum size (px)',
             expert=True,
-            required=False, default=DEFAULTS['pyramid_params']['min_size'],
+            required=False, default=AppConfig.get('pyramid_params')['min_size'],
             min_val=2, max_val=256)
         self.add_field_to_layout(
             q_pyramid.layout(), 'pyramid_kernel_size', FIELD_INT, 'Kernel size (px)',
             expert=True,
-            required=False, default=DEFAULTS['pyramid_params']['kernel_size'],
+            required=False, default=AppConfig.get('pyramid_params')['kernel_size'],
             min_val=3, max_val=21)
         self.add_field_to_layout(
             q_pyramid.layout(), 'pyramid_gen_kernel', FIELD_FLOAT, 'Gen. kernel',
             expert=True,
-            required=False, default=DEFAULTS['pyramid_params']['gen_kernel'],
+            required=False, default=AppConfig.get('pyramid_params')['gen_kernel'],
             min_val=0.0, max_val=2.0)
         self.add_field_to_layout(
             q_pyramid.layout(), 'pyramid_float_type', FIELD_COMBO, 'Precision', required=False,
             expert=True,
             options=self.FLOAT_OPTIONS, values=constants.VALID_FLOATS,
             default=dict(zip(constants.VALID_FLOATS,
-                             self.FLOAT_OPTIONS))[DEFAULTS['pyramid_params']['float_type']])
+                             self.FLOAT_OPTIONS))[AppConfig.get('pyramid_params')['float_type']])
         mode = self.add_field_to_layout(
             q_pyramid.layout(), 'pyramid_mode', FIELD_COMBO, 'Mode',
             expert=True,
             required=False, options=self.MODE_OPTIONS, values=constants.PY_VALID_MODES,
             default=dict(zip(constants.PY_VALID_MODES,
-                             self.MODE_OPTIONS))[DEFAULTS['pyramid_params']['mode']])
+                             self.MODE_OPTIONS))[AppConfig.get('pyramid_params')['mode']])
         memory_limit = self.add_field_to_layout(
             q_pyramid.layout(), 'pyramid_memory_limit', FIELD_FLOAT,
             'Memory limit (approx., GBytes)',
@@ -286,12 +285,12 @@ class FocusStackBaseConfigurator(DefaultActionConfigurator):
         tile_size = self.add_field_to_layout(
             q_pyramid.layout(), 'pyramid_tile_size', FIELD_INT, 'Tile size (px)',
             expert=True,
-            required=False, default=DEFAULTS['pyramid_params']['tile_size'],
+            required=False, default=AppConfig.get('pyramid_params')['tile_size'],
             min_val=128, max_val=2048)
         n_tiled_layers = self.add_field_to_layout(
             q_pyramid.layout(), 'pyramid_n_tiled_layers', FIELD_INT, 'Num. tiled layers',
             expert=True,
-            required=False, default=DEFAULTS['pyramid_params']['n_tiled_layers'],
+            required=False, default=AppConfig.get('pyramid_params')['n_tiled_layers'],
             min_val=0, max_val=6)
 
         def change_mode():
@@ -309,43 +308,43 @@ class FocusStackBaseConfigurator(DefaultActionConfigurator):
             q_depthmap.layout(), 'depthmap_energy', FIELD_COMBO, 'Energy', required=False,
             options=self.ENERGY_OPTIONS, values=constants.VALID_DM_ENERGY,
             default=dict(zip(constants.VALID_DM_ENERGY,
-                             self.ENERGY_OPTIONS))[DEFAULTS['depth_map_params']['energy']])
+                             self.ENERGY_OPTIONS))[AppConfig.get('depth_map_params')['energy']])
         self.add_field_to_layout(
             q_depthmap.layout(), 'map_type', FIELD_COMBO, 'Map type', required=False,
             options=self.MAP_TYPE_OPTIONS, values=constants.VALID_DM_MAP,
             default=dict(zip(constants.VALID_DM_MAP,
-                             self.MAP_TYPE_OPTIONS))[DEFAULTS['depth_map_params']['map_type']])
+                             self.MAP_TYPE_OPTIONS))[AppConfig.get('depth_map_params')['map_type']])
         self.add_field_to_layout(
             q_depthmap.layout(), 'depthmap_kernel_size', FIELD_INT, 'Kernel size (px)',
             expert=True,
-            required=False, default=DEFAULTS['depth_map_params']['kernel_size'],
+            required=False, default=AppConfig.get('depth_map_params')['kernel_size'],
             min_val=3, max_val=21)
         self.add_field_to_layout(
             q_depthmap.layout(), 'depthmap_blur_size', FIELD_INT, 'Blurl size (px)',
             expert=True,
-            required=False, default=DEFAULTS['depth_map_params']['blur_size'],
+            required=False, default=AppConfig.get('depth_map_params')['blur_size'],
             min_val=1, max_val=21)
         self.add_field_to_layout(
             q_depthmap.layout(), 'depthmap_smooth_size', FIELD_INT, 'Smooth size (px)',
             expert=True,
-            required=False, default=DEFAULTS['depth_map_params']['smooth_size'],
+            required=False, default=AppConfig.get('depth_map_params')['smooth_size'],
             min_val=0, max_val=256)
         self.add_field_to_layout(
             q_depthmap.layout(), 'depthmap_temperature', FIELD_FLOAT, 'Temperature',
             expert=True,
-            required=False, default=DEFAULTS['depth_map_params']['temperature'],
+            required=False, default=AppConfig.get('depth_map_params')['temperature'],
             min_val=0, max_val=1, step=0.05)
         self.add_field_to_layout(
             q_depthmap.layout(), 'depthmap_levels', FIELD_INT, 'Levels', required=False,
             expert=True,
-            default=DEFAULTS['depth_map_params']['levels'], min_val=2, max_val=6)
+            default=AppConfig.get('depth_map_params')['levels'], min_val=2, max_val=6)
         self.add_field_to_layout(
             q_depthmap.layout(), 'depthmap_float_type', FIELD_COMBO,
             'Precision', required=False,
             expert=True,
             options=self.FLOAT_OPTIONS, values=constants.VALID_FLOATS,
             default=dict(zip(constants.VALID_FLOATS,
-                             self.FLOAT_OPTIONS))[DEFAULTS['depth_map_params']['float_type']])
+                             self.FLOAT_OPTIONS))[AppConfig.get('depth_map_params')['float_type']])
         layout.addRow(stacked)
         combo.currentIndexChanged.connect(change)
 
@@ -362,11 +361,11 @@ class FocusStackConfigurator(FocusStackBaseConfigurator):
             self.general_tab_layout, 'prefix', FIELD_TEXT,
             'Output filename prefix', required=False,
             expert=True,
-            default=DEFAULTS['focus_stack_params']['prefix'],
-            placeholder=DEFAULTS['focus_stack_params']['prefix'])
+            default=AppConfig.get('focus_stack_params')['prefix'],
+            placeholder=AppConfig.get('focus_stack_params')['prefix'])
         self.add_field_to_layout(
             self.general_tab_layout, 'plot_stack', FIELD_BOOL, 'Plot stack', required=False,
-            default=DEFAULTS['focus_stack_params']['plot_stack'])
+            default=AppConfig.get('focus_stack_params')['plot_stack'])
 
 
 class FocusStackBunchConfigurator(FocusStackBaseConfigurator):
@@ -374,24 +373,24 @@ class FocusStackBunchConfigurator(FocusStackBaseConfigurator):
         super().create_form(layout, action)
         self.add_field_to_layout(
             self.general_tab_layout, 'frames', FIELD_INT, 'Frames', required=False,
-            default=DEFAULTS['focus_stack_bunch_params']['frames'],
+            default=AppConfig.get('focus_stack_bunch_params')['frames'],
             min_val=1, max_val=100)
         self.add_field_to_layout(
             self.general_tab_layout, 'overlap', FIELD_INT, 'Overlapping frames', required=False,
-            default=DEFAULTS['focus_stack_bunch_params']['overlap'], min_val=0, max_val=100)
+            default=AppConfig.get('focus_stack_bunch_params')['overlap'], min_val=0, max_val=100)
         self.add_field_to_layout(
             self.general_tab_layout, 'prefix', FIELD_TEXT,
             'Output filenames prefix', required=False,
             expert=True,
-            default=DEFAULTS['focus_stack_bunch_params']['prefix'],
-            placeholder=DEFAULTS['focus_stack_bunch_params']['prefix'])
+            default=AppConfig.get('focus_stack_bunch_params')['prefix'],
+            placeholder=AppConfig.get('focus_stack_bunch_params')['prefix'])
         self.add_field_to_layout(
             self.general_tab_layout, 'delete_output_at_end', FIELD_BOOL,
             'Delete output at end of job',
             required=False, default=False)
         self.add_field_to_layout(
             self.general_tab_layout, 'plot_stack', FIELD_BOOL, 'Plot stack', required=False,
-            default=DEFAULTS['focus_stack_bunch_params']['plot_stack'])
+            default=AppConfig.get('focus_stack_bunch_params')['plot_stack'])
 
 
 class MultiLayerConfigurator(DefaultActionConfigurator):
@@ -418,7 +417,7 @@ class MultiLayerConfigurator(DefaultActionConfigurator):
             required=False, default=True)
         self.add_field(
             'reverse_order', FIELD_BOOL, 'Reverse file order', required=False,
-            default=DEFAULTS['multilayer_params']['file_reverse_order'])
+            default=AppConfig.get('multilayer_params')['file_reverse_order'])
 
 
 class CombinedActionsConfigurator(DefaultActionConfigurator):
@@ -455,7 +454,7 @@ class CombinedActionsConfigurator(DefaultActionConfigurator):
             default=0)
         self.add_field(
             'step_process', FIELD_BOOL, 'Step process', required=False,
-            expert=True, default=DEFAULTS['reference_frame_task']['step_process'])
+            expert=True, default=AppConfig.get('reference_frame_task')['step_process'])
         self.add_field(
             'max_threads', FIELD_INT, 'Max num. of cores',
             required=False, default=AppConfig.get('combined_actions_params')['max_threads'],
@@ -464,7 +463,7 @@ class CombinedActionsConfigurator(DefaultActionConfigurator):
         self.add_field(
             'chunk_submit', FIELD_BOOL, 'Submit in chunks',
             expert=True,
-            required=False, default=DEFAULTS['sequential_task']['chunk_submit'])
+            required=False, default=AppConfig.get('sequential_task')['chunk_submit'])
 
 
 class MaskNoiseConfigurator(DefaultActionConfigurator):
@@ -473,12 +472,12 @@ class MaskNoiseConfigurator(DefaultActionConfigurator):
         self.add_field(
             'noise_mask', FIELD_REL_PATH, 'Noise mask file', required=False,
             path_type='file', must_exist=True,
-            default=DEFAULTS['noise_detection_params']['noise_map_filename'],
-            placeholder=DEFAULTS['noise_detection_params']['noise_map_filename'])
+            default=AppConfig.get('noise_detection_params')['noise_map_filename'],
+            placeholder=AppConfig.get('noise_detection_params')['noise_map_filename'])
         self.add_field(
             'kernel_size', FIELD_INT, 'Kernel size', required=False,
             expert=True,
-            default=DEFAULTS['mask_noise_params']['kernel_size'], min_val=1, max_val=10)
+            default=AppConfig.get('mask_noise_params')['kernel_size'], min_val=1, max_val=10)
         self.add_field(
             'method', FIELD_COMBO, 'Interpolation method', required=False,
             expert=True,
@@ -630,26 +629,26 @@ class AlignFramesConfigurator(SubsampleActionConfigurator, AlignFramesConfigBase
         self.add_field_to_layout(
             layout, 'flann_idx_kdtree', FIELD_INT, 'Flann idx kdtree', required=False,
             expert=True,
-            default=DEFAULTS['align_frames_params']['flann_idx_kdtree'],
+            default=AppConfig.get('align_frames_params')['flann_idx_kdtree'],
             min_val=0, max_val=10)
         self.add_field_to_layout(
             layout, 'flann_trees', FIELD_INT, 'Flann trees', required=False,
             expert=True,
-            default=DEFAULTS['align_frames_params']['flann_trees'],
+            default=AppConfig.get('align_frames_params')['flann_trees'],
             min_val=0, max_val=10)
         self.add_field_to_layout(
             layout, 'flann_checks', FIELD_INT, 'Flann checks', required=False,
             expert=True,
-            default=DEFAULTS['align_frames_params']['flann_checks'],
+            default=AppConfig.get('align_frames_params')['flann_checks'],
             min_val=0, max_val=1000)
         self.add_field_to_layout(
             layout, 'threshold', FIELD_FLOAT, 'Threshold', required=False,
             expert=True,
-            default=DEFAULTS['align_frames_params']['threshold'],
+            default=AppConfig.get('align_frames_params')['threshold'],
             min_val=0, max_val=1, step=0.05)
         self.add_subsample_fields(
             default_subsample=AppConfig.get('align_frames_params')['subsample'],
-            default_fast_subsampling=DEFAULTS['align_frames_params']['fast_subsampling'],
+            default_fast_subsampling=AppConfig.get('align_frames_params')['fast_subsampling'],
             add_to_layout=layout)
 
     def create_transform_tab(self, layout):
@@ -657,20 +656,21 @@ class AlignFramesConfigurator(SubsampleActionConfigurator, AlignFramesConfigBase
         transform = self.add_field_to_layout(
             layout, 'transform', FIELD_COMBO, 'Transform', required=False,
             options=self.TRANSFORM_OPTIONS, values=constants.VALID_TRANSFORMS,
-            default=DEFAULTS['align_frames_params']['transform'])
+            default=AppConfig.get('align_frames_params')['transform'])
         method = self.add_field_to_layout(
             layout, 'align_method', FIELD_COMBO, 'Estimation method', required=False,
             options=self.METHOD_OPTIONS, values=constants.VALID_ESTIMATION_METHODS,
-            default=DEFAULTS['align_frames_params']['align_method'])
+            default=AppConfig.get('align_frames_params')['align_method'])
         rans_threshold = self.add_field_to_layout(
             layout, 'rans_threshold', FIELD_FLOAT, 'RANSAC threshold (px)', required=False,
             expert=True,
-            default=DEFAULTS['align_frames_params']['rans_threshold'],
+            default=AppConfig.get('align_frames_params')['rans_threshold'],
             min_val=0, max_val=20, step=0.1)
         self.add_field_to_layout(
             layout, 'min_good_matches', FIELD_INT, "Min. good matches", required=False,
             expert=True,
-            default=DEFAULTS['align_frames_params']['min_good_matches'], min_val=0, max_val=500)
+            default=AppConfig.get('align_frames_params')['min_good_matches'],
+            min_val=0, max_val=500)
 
         def change_method():
             text = method.currentText()
@@ -685,16 +685,16 @@ class AlignFramesConfigurator(SubsampleActionConfigurator, AlignFramesConfigBase
             layout, 'align_confidence', FIELD_FLOAT, 'Confidence (%)',
             required=False, decimals=1,
             expert=True,
-            default=DEFAULTS['align_frames_params']['align_confidence'],
+            default=AppConfig.get('align_frames_params')['align_confidence'],
             min_val=70.0, max_val=100.0, step=0.1)
         refine_iters = self.add_field_to_layout(
             layout, 'refine_iters', FIELD_INT, 'Refinement iterations (Rigid)', required=False,
             expert=True,
-            default=DEFAULTS['align_frames_params']['refine_iters'], min_val=0, max_val=1000)
+            default=AppConfig.get('align_frames_params')['refine_iters'], min_val=0, max_val=1000)
         max_iters = self.add_field_to_layout(
             layout, 'max_iters', FIELD_INT, 'Max. iterations (Homography)', required=False,
             expert=True,
-            default=DEFAULTS['align_frames_params']['max_iters'], min_val=0, max_val=5000)
+            default=AppConfig.get('align_frames_params')['max_iters'], min_val=0, max_val=5000)
 
         def change_transform():
             text = transform.currentText()
@@ -710,7 +710,7 @@ class AlignFramesConfigurator(SubsampleActionConfigurator, AlignFramesConfigBase
         phase_corr_fallback = self.add_field_to_layout(
             layout, 'phase_corr_fallback', FIELD_BOOL, "Phase correlation as fallback",
             required=False, expert=True,
-            default=DEFAULTS['align_frames_params']['phase_corr_fallback'])
+            default=AppConfig.get('align_frames_params')['phase_corr_fallback'])
         phase_corr_fallback.setToolTip(
             "Align using phase correlation algorithm if the number of matches\n"
             "is too low to determine the transformation.\n"
@@ -719,7 +719,7 @@ class AlignFramesConfigurator(SubsampleActionConfigurator, AlignFramesConfigBase
         self.add_field_to_layout(
             layout, 'abort_abnormal', FIELD_BOOL, 'Abort on abnormal transf.',
             expert=True,
-            required=False, default=DEFAULTS['align_frames_params']['abort_abnormal'])
+            required=False, default=AppConfig.get('align_frames_params')['abort_abnormal'])
 
     def create_border_tab(self, layout):
         self.add_bold_label_to_layout(layout, "Border:")
@@ -727,18 +727,18 @@ class AlignFramesConfigurator(SubsampleActionConfigurator, AlignFramesConfigBase
             layout, 'border_mode', FIELD_COMBO, 'Border mode', required=False,
             options=self.BORDER_MODE_OPTIONS,
             values=constants.VALID_BORDER_MODES,
-            default=DEFAULTS['align_frames_params']['border_mode'])
+            default=AppConfig.get('align_frames_params')['border_mode'])
         self.add_field_to_layout(
             layout, 'border_value', FIELD_INT_TUPLE,
             'Border value (if constant)', required=False, size=4,
             expert=True,
-            default=DEFAULTS['align_frames_params']['border_mode'],
+            default=AppConfig.get('align_frames_params')['border_mode'],
             labels=constants.RGBA_LABELS,
             min_val=[0] * 4, max_val=[255] * 4)
         self.add_field_to_layout(
             layout, 'border_blur', FIELD_FLOAT, 'Border blur', required=False,
             expert=True,
-            default=DEFAULTS['align_frames_params']['border_blur'],
+            default=AppConfig.get('align_frames_params')['border_blur'],
             min_val=0, max_val=1000, step=1)
 
     def create_miscellanea_tab(self, layout):
@@ -747,7 +747,8 @@ class AlignFramesConfigurator(SubsampleActionConfigurator, AlignFramesConfigBase
             layout, 'mode', FIELD_COMBO, 'Mode',
             required=False, options=self.MODE_OPTIONS, values=constants.ALIGN_VALID_MODES,
             default=dict(zip(constants.ALIGN_VALID_MODES,
-                             self.MODE_OPTIONS))[DEFAULTS['align_frames_params']['align_mode']])
+                             self.MODE_OPTIONS))[AppConfig.get(
+                                                 'align_frames_params')['align_mode']])
         memory_limit = self.add_field_to_layout(
             layout, 'memory_limit', FIELD_FLOAT, 'Memory limit (approx., GBytes)',
             required=False, default=AppConfig.get('align_frames_params')['memory_limit'],
@@ -759,14 +760,14 @@ class AlignFramesConfigurator(SubsampleActionConfigurator, AlignFramesConfigBase
         chunk_submit = self.add_field_to_layout(
             layout, 'chunk_submit', FIELD_BOOL, 'Submit in chunks',
             expert=True,
-            required=False, default=DEFAULTS['align_frames_params']['chunk_submit'])
+            required=False, default=AppConfig.get('align_frames_params')['chunk_submit'])
         bw_matching = self.add_field_to_layout(
             layout, 'bw_matching', FIELD_BOOL, 'Match using black & white',
             expert=True,
-            required=False, default=DEFAULTS['align_frames_params']['bw_matching'])
+            required=False, default=AppConfig.get('align_frames_params')['bw_matching'])
         delta_max = self.add_field_to_layout(
             layout, 'delta_max', FIELD_INT, 'Max frames skip',
-            required=False, default=DEFAULTS['align_frames_params']['delta_max'],
+            required=False, default=AppConfig.get('align_frames_params')['delta_max'],
             min_val=1, max_val=128)
 
         def change_mode():
@@ -820,23 +821,24 @@ class BalanceFramesConfigurator(SubsampleActionConfigurator):
             'intensity_interval', FIELD_INT_TUPLE, 'Intensity range',
             required=False, size=2,
             expert=True,
-            default=[v for k, v in DEFAULTS['balance_frames_params']['intensity_interval'].items()],
+            default=[v for k, v in
+                     AppConfig.get('balance_frames_params')['intensity_interval'].items()],
             labels=['min', 'max'], min_val=[-1] * 2, max_val=[65536] * 2)
         self.add_subsample_fields(
-            default_subsample=DEFAULTS['balance_frames_params']['subsample'],
-            default_fast_subsampling=DEFAULTS['balance_frames_params']['fast_subsampling'])
+            default_subsample=AppConfig.get('balance_frames_params')['subsample'],
+            default_fast_subsampling=AppConfig.get('balance_frames_params')['fast_subsampling'])
         self.add_field(
             'corr_map', FIELD_COMBO, 'Correction map', required=False,
             options=self.CORRECTION_MAP_OPTIONS, values=constants.VALID_BALANCE,
             default=dict(zip(constants.VALID_BALANCE,
                          self.CORRECTION_MAP_OPTIONS))[
-                DEFAULTS['balance_frames_params']['corr_map']])
+                AppConfig.get('balance_frames_params')['corr_map']])
         self.add_field(
             'channel', FIELD_COMBO, 'Channel', required=False,
             options=self.CHANNEL_OPTIONS, values=constants.VALID_BALANCE_CHANNELS,
             default=dict(zip(constants.VALID_BALANCE_CHANNELS,
                          self.CHANNEL_OPTIONS))[
-                DEFAULTS['balance_frames_params']['channel']])
+                AppConfig.get('balance_frames_params')['channel']])
         self.add_bold_label("Miscellanea:")
         self.add_field(
             'plot_summary', FIELD_BOOL, 'Plot summary',
@@ -852,18 +854,18 @@ class VignettingConfigurator(SubsampleActionConfigurator):
         self.add_field(
             'r_steps', FIELD_INT, 'Radial steps', required=False,
             expert=True,
-            default=DEFAULTS['vignetting_params']['r_steps'], min_val=1, max_val=1000)
+            default=AppConfig.get('vignetting_params')['r_steps'], min_val=1, max_val=1000)
         self.add_field(
             'black_threshold', FIELD_INT, 'Black intensity threshold',
             expert=True,
-            required=False, default=DEFAULTS['vignetting_params']['black_threshold'],
+            required=False, default=AppConfig.get('vignetting_params')['black_threshold'],
             min_val=0, max_val=1000)
         self.add_subsample_fields(
-            default_subsample=DEFAULTS['vignetting_params']['subsample'],
-            default_fast_subsampling=DEFAULTS['vignetting_params']['fast_subsampling'])
+            default_subsample=AppConfig.get('vignetting_params')['subsample'],
+            default_fast_subsampling=AppConfig.get('vignetting_params')['fast_subsampling'])
         self.add_field(
             'max_correction', FIELD_FLOAT, 'Max. correction', required=False,
-            default=DEFAULTS['vignetting_params']['max_correction'],
+            default=AppConfig.get('vignetting_params')['max_correction'],
             min_val=0, max_val=1, step=0.05)
         self.add_bold_label("Miscellanea:")
         self.add_field(

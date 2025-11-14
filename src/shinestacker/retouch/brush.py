@@ -1,10 +1,10 @@
 # pylint: disable=C0114, C0115, R0903
-from .. config.defaults import DEFAULTS
+from .. config.app_config import AppConfig
 
 
 class Brush:
     def __init__(self):
-        self.size = DEFAULTS['brush_size']
-        self.hardness = DEFAULTS['brush_hardness']
-        self.opacity = DEFAULTS['brush_opacity']
-        self.flow = DEFAULTS['brush_flow']
+        self.size = AppConfig.get('brush_size')
+        self.hardness = AppConfig.get('brush_hardness')
+        self.opacity = AppConfig.get('brush_opacity')
+        self.flow = AppConfig.get('brush_flow')

@@ -4,6 +4,7 @@ from PySide6.QtCore import Signal
 from PySide6.QtWidgets import QLabel, QCheckBox, QComboBox, QDoubleSpinBox, QSpinBox
 from .. config.settings import Settings
 from .. config.constants import constants
+from .. config.gui_constants import gui_constants
 from .. config.defaults import DEFAULTS
 from .. gui.config_dialog import ConfigDialog
 from .. gui.action_config import add_tab, create_tab_widget
@@ -260,6 +261,10 @@ class SettingsDialog(ConfigDialog, AlignFramesConfigBase):
                 SpinBoxParameter(
                     'cursor_update_time', 'Cursor refresh time:',
                     DEFAULTS['cursor_update_time'], 0, 50),
+                SpinBoxParameter(
+                    'brush_size', 'Brush initial size:',
+                    DEFAULTS['brush_size'],
+                    gui_constants.BRUSH_SIZES['min'], gui_constants.BRUSH_SIZES['max']),
             ]
 
     def create_form_content(self):
