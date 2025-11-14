@@ -249,6 +249,10 @@ class SettingsDialog(ConfigDialog, AlignFramesConfigBase):
                         ("Side by side", "sidebyside"),
                         ("Top-Bottom", "topbottom")
                     ]),
+                SpinBoxParameter(
+                    'brush_size', 'Brush initial size:',
+                    DEFAULTS['brush_size'],
+                    gui_constants.BRUSH_SIZES['min'], gui_constants.BRUSH_SIZES['max']),
                 DoubleSpinBoxParameter(
                     'min_mouse_step_brush_fraction', 'Min. mouse step in brush units:',
                     DEFAULTS['min_mouse_step_brush_fraction'], 0, 1, 0.02),
@@ -261,10 +265,6 @@ class SettingsDialog(ConfigDialog, AlignFramesConfigBase):
                 SpinBoxParameter(
                     'cursor_update_time', 'Cursor refresh time:',
                     DEFAULTS['cursor_update_time'], 0, 50),
-                SpinBoxParameter(
-                    'brush_size', 'Brush initial size:',
-                    DEFAULTS['brush_size'],
-                    gui_constants.BRUSH_SIZES['min'], gui_constants.BRUSH_SIZES['max']),
             ]
 
     def create_form_content(self):
