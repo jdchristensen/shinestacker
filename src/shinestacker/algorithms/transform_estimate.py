@@ -123,9 +123,9 @@ def check_transform(m, img_shape, transform_type,
 def find_transform(src_pts, dst_pts, transform=DEFAULTS['align_frames_params']['transform'],
                    method=DEFAULTS['align_frames_params']['align_method'],
                    rans_threshold=DEFAULTS['align_frames_params']['rans_threshold'],
-                   max_iters=constants.DEFAULT_ALIGN_MAX_ITERS,
-                   align_confidence=constants.DEFAULT_ALIGN_CONFIDENCE,
-                   refine_iters=constants.DEFAULT_REFINE_ITERS):
+                   max_iters=DEFAULTS['align_frames_params']['max_iters'],
+                   align_confidence=DEFAULTS['align_frames_params']['align_confidence'],
+                   refine_iters=DEFAULTS['align_frames_params']['refine_iters']):
     if method == 'RANSAC':
         cv2_method = cv2.RANSAC
     elif method == 'LMEDS':

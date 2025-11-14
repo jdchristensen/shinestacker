@@ -36,6 +36,9 @@ DEFAULTS = {
         'transform': 'ALIGN_RIGID',
         'align_method': 'RANSAC',
         'rans_threshold': 3.0,  # px
+        'refine_iters': 100,
+        'align_confidence': 99.9,
+        'max_iters': 2000,
         'border_mode': 'BORDER_REPLICATE_BLUR',
 
         'subsample': 0,

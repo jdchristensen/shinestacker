@@ -673,16 +673,16 @@ class AlignFramesConfigurator(SubsampleActionConfigurator, AlignFramesConfigBase
             layout, 'align_confidence', FIELD_FLOAT, 'Confidence (%)',
             required=False, decimals=1,
             expert=True,
-            default=constants.DEFAULT_ALIGN_CONFIDENCE,
+            default=DEFAULTS['align_frames_params']['align_confidence'],
             min_val=70.0, max_val=100.0, step=0.1)
         refine_iters = self.add_field_to_layout(
             layout, 'refine_iters', FIELD_INT, 'Refinement iterations (Rigid)', required=False,
             expert=True,
-            default=constants.DEFAULT_REFINE_ITERS, min_val=0, max_val=1000)
+            default=DEFAULTS['align_frames_params']['refine_iters'], min_val=0, max_val=1000)
         max_iters = self.add_field_to_layout(
             layout, 'max_iters', FIELD_INT, 'Max. iterations (Homography)', required=False,
             expert=True,
-            default=constants.DEFAULT_ALIGN_MAX_ITERS, min_val=0, max_val=5000)
+            default=DEFAULTS['align_frames_params']['max_iters'], min_val=0, max_val=5000)
 
         def change_transform():
             text = transform.currentText()
