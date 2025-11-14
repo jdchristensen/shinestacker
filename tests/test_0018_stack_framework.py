@@ -3,11 +3,12 @@ import logging
 from shinestacker.core.colors import color_str
 from shinestacker.core.logging import setup_logging
 from shinestacker.config.constants import constants
+from shinestacker.config.defaults import DEFAULTS
 from shinestacker.algorithms.stack_framework import StackJob, CombinedActions, SubAction
 
 
 class SubActionMock(SubAction):
-    def __init__(self, noise_mask=constants.DEFAULT_NOISE_MAP_FILENAME,
+    def __init__(self, noise_mask=DEFAULTS['noise_detection']['noise_map_filename'],
                  kernel_size=constants.DEFAULT_MN_KERNEL_SIZE,
                  method=constants.INTERPOLATE_MEAN, **kwargs):
         super().__init__(**kwargs)

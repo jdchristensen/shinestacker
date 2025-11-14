@@ -7,6 +7,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from .. config.config import config
 from .. config.constants import constants
+from .. config.defaults import DEFAULTS
 from .. core.colors import color_str
 from .. core.exceptions import ImageLoadError
 from .. core.framework import TaskBase
@@ -51,11 +52,11 @@ class NoiseDetection(TaskBase, ImageSequenceManager):
     def __init__(self, name="noise-map", enabled=True, **kwargs):
         ImageSequenceManager.__init__(self, name, **kwargs)
         TaskBase.__init__(self, name, enabled)
-        self.max_frames = kwargs.get('max_frames', constants.DEFAULT_NOISE_MAX_FRAMES)
+        self.max_frames = kwargs.get('max_frames', DEFAULTS['noise_detection']['max_frames'])
         self.blur_size = kwargs.get('blur_size', constants.DEFAULT_BLUR_SIZE)
-        self.file_name = kwargs.get('file_name', constants.DEFAULT_NOISE_MAP_FILENAME)
+        self.file_name = kwargs.get('file_name', DEFAULTS['noise_detection']['noise_map_filename'])
         if self.file_name == '':
-            self.file_name = constants.DEFAULT_NOISE_MAP_FILENAME
+            self.file_name = DEFAULTS['noise_detection']['noise_map_filename']
         self.channel_thresholds = kwargs.get(
             'channel_thresholds', constants.DEFAULT_CHANNEL_THRESHOLDS
         )
@@ -146,11 +147,12 @@ class NoiseDetection(TaskBase, ImageSequenceManager):
 
 
 class MaskNoise(SubAction):
-    def __init__(self, noise_mask=constants.DEFAULT_NOISE_MAP_FILENAME,
+    def __init__(self, noise_mask=DEFAULTS['noise_detection']['noise_map_filename'],
                  kernel_size=constants.DEFAULT_MN_KERNEL_SIZE,
                  method=constants.INTERPOLATE_MEAN, **kwargs):
         super().__init__(**kwargs)
-        self.noise_mask = noise_mask if noise_mask != '' else constants.DEFAULT_NOISE_MAP_FILENAME
+        self.noise_mask = noise_mask if noise_mask != '' else \
+            DEFAULTS['noise_detection']['noise_map_filename']
         self.kernel_size = kernel_size
         self.ks2 = self.kernel_size // 2
         self.ks2_1 = self.ks2 + 1

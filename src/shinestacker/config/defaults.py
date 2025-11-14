@@ -39,6 +39,10 @@ DEFAULTS = {
         'memory_limit': 8,  # GB
         'max_threads': min(os.cpu_count() or 4, 8)
     },
+    'noise_detection': {
+        'noise_map_filename': 'hot_pixels.png',
+        'max_frames': 10
+    },
     'multilayer': {
         'file_reverse_order': True
     }

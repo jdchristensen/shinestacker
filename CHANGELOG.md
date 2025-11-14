@@ -11,6 +11,9 @@ This page reports the main releases only and the main changes therein.
 ### Fixed
 - fixed tooltip counter in processing colored box display
 
+### Changed
+- improved settings peristency by saving only parameters different from defaults
+
 ---
 
 ## [v1.9.7] - 2025-11-13

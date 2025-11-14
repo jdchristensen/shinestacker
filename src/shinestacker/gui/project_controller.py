@@ -7,6 +7,7 @@ import jsonpickle
 from PySide6.QtCore import Signal, QObject
 from PySide6.QtWidgets import QMessageBox, QFileDialog, QDialog
 from .. config.constants import constants
+from .. config.defaults import DEFAULTS
 from .. core.core_utils import get_app_base_path
 from .project_model import ActionConfig
 from .new_project import NewProjectDialog
@@ -190,8 +191,9 @@ class ProjectController(QObject):
                     mask_noise = ActionConfig(
                         constants.ACTION_MASKNOISE,
                         {'name': 'mask-noise',
-                         'noise_mask': os.path.join(noise_detection_name,
-                                                    constants.DEFAULT_NOISE_MAP_FILENAME)})
+                         'noise_mask':
+                            os.path.join(noise_detection_name,
+                                         DEFAULTS['noise_detection']['noise_map_filename'])})
                     combo_action.add_sub_action(mask_noise)
                 if dialog.get_vignetting_correction():
                     vignetting = ActionConfig(

@@ -160,7 +160,7 @@ class NoiseDetectionConfigurator(DefaultActionConfigurator):
         self.add_field(
             'max_frames', FIELD_INT, 'Max. num. of frames (0 = All)',
             required=False,
-            default=constants.DEFAULT_NOISE_MAX_FRAMES, min_val=0, max_val=1000)
+            default=DEFAULTS['noise_detection']['max_frames'], min_val=0, max_val=1000)
         self.add_field(
             'channel_thresholds', FIELD_INT_TUPLE, 'Noise threshold',
             required=False, size=3,
@@ -172,8 +172,8 @@ class NoiseDetectionConfigurator(DefaultActionConfigurator):
             default=constants.DEFAULT_BLUR_SIZE, min_val=1, max_val=50)
         self.add_field(
             'file_name', FIELD_TEXT, 'File name', required=False,
-            default=constants.DEFAULT_NOISE_MAP_FILENAME,
-            placeholder=constants.DEFAULT_NOISE_MAP_FILENAME)
+            default=DEFAULTS['noise_detection']['noise_map_filename'],
+            placeholder=DEFAULTS['noise_detection']['noise_map_filename'])
         self.add_bold_label("Miscellanea:")
         self.add_field(
             'plot_histograms', FIELD_BOOL, 'Plot histograms', required=False,
@@ -461,8 +461,8 @@ class MaskNoiseConfigurator(DefaultActionConfigurator):
         self.add_field(
             'noise_mask', FIELD_REL_PATH, 'Noise mask file', required=False,
             path_type='file', must_exist=True,
-            default=constants.DEFAULT_NOISE_MAP_FILENAME,
-            placeholder=constants.DEFAULT_NOISE_MAP_FILENAME)
+            default=DEFAULTS['noise_detection']['noise_map_filename'],
+            placeholder=DEFAULTS['noise_detection']['noise_map_filename'])
         self.add_field(
             'kernel_size', FIELD_INT, 'Kernel size', required=False,
             expert=True,

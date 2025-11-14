@@ -40,7 +40,8 @@ class Settings(StdPathFile):
         if Settings._instance is not None:
             raise RuntimeError("Settings is a singleton.")
         super().__init__(filename)
-        self.settings = self._deep_copy_defaults()
+        self.defaults = self._deep_copy_defaults()
+        self.settings = self._deep_copy_defaults()  # Start with defaults
         file_path = self.get_file_path()
         if os.path.isfile(file_path):
             try:
@@ -65,6 +66,31 @@ class Settings(StdPathFile):
                 else:
                     self.settings[key] = value
 
+    def _get_diff_from_defaults(self):
+        def diff_dict(current, default):
+            diff = {}
+            for key, value in current.items():
+                if key in default:
+                    if isinstance(value, dict) and isinstance(default[key], dict):
+                        nested_diff = diff_dict(value, default[key])
+                        if nested_diff:
+                            diff[key] = nested_diff
+                    elif value != default[key]:
+                        diff[key] = value
+            return diff
+        return diff_dict(self.settings, self.defaults)
+
+    def _apply_diff_to_defaults(self, diff_settings):
+        def apply_diff(current, diff):
+            for key, value in diff.items():
+                if key in current:
+                    if isinstance(value, dict) and isinstance(current[key], dict):
+                        apply_diff(current[key], value)
+                    else:
+                        current[key] = value
+        self.settings = self._deep_copy_defaults()
+        apply_diff(self.settings, diff_settings)
+
     @classmethod
     def instance(cls, filename="shinestacker-settings.txt"):
         if cls._instance is None:
@@ -85,9 +111,10 @@ class Settings(StdPathFile):
         try:
             config_dir = self.get_config_dir()
             os.makedirs(config_dir, exist_ok=True)
+            diff_settings = self._get_diff_from_defaults()
             json_data = {
                 'version': CURRENT_SETTINGS_FILE_VERSION,
-                'settings': self.settings
+                'settings': diff_settings
             }
             json_obj = jsonpickle.encode(json_data)
             with open(self.get_file_path(), 'w', encoding="utf-8") as f:
