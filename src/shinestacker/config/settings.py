@@ -46,7 +46,8 @@ DEFAULT_SETTINGS = {
         'max_threads': constants.DEFAULT_ALIGN_MAX_THREADS,
         'detector': constants.DEFAULT_DETECTOR,
         'descriptor': constants.DEFAULT_DESCRIPTOR,
-        'match_method': constants.DEFAULT_MATCHING_METHOD
+        'match_method': constants.DEFAULT_MATCHING_METHOD,
+        'subsample': constants.DEFAULT_ALIGN_SUBSAMPLE
     },
     'focus_stack_params': {
         'memory_limit': constants.DEFAULT_PY_MEMORY_LIMIT_GB,

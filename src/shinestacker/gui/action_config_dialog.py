@@ -478,7 +478,9 @@ class SubsampleActionConfigurator(DefaultActionConfigurator):
         self.subsample_field = None
         self.fast_subsampling_field = None
 
-    def add_subsample_fields(self, add_to_layout=None):
+    def add_subsample_fields(self, add_to_layout=None,
+                             default_subsample=constants.FIELD_SUBSAMPLE_DEFAULT,
+                             default_fast_subsampling=constants.DEFAULT_ALIGN_FAST_SUBSAMPLING):
         if add_to_layout is None:
             add_to_layout = self.builder.main_layout
         self.subsample_field = self.add_field(
@@ -486,12 +488,12 @@ class SubsampleActionConfigurator(DefaultActionConfigurator):
             expert=True,
             options=constants.FIELD_SUBSAMPLE_OPTIONS,
             values=constants.FIELD_SUBSAMPLE_VALUES,
-            default=constants.FIELD_SUBSAMPLE_DEFAULT,
+            default=default_subsample,
             add_to_layout=add_to_layout)
         self.fast_subsampling_field = self.add_field(
             'fast_subsampling', FIELD_BOOL, 'Fast subsampling', required=False,
             expert=True,
-            default=constants.DEFAULT_ALIGN_FAST_SUBSAMPLING,
+            default=default_fast_subsampling,
             add_to_layout=add_to_layout)
 
         self.subsample_field.currentTextChanged.connect(self.change_subsample)
@@ -633,7 +635,9 @@ class AlignFramesConfigurator(SubsampleActionConfigurator, AlignFramesConfigBase
             expert=True,
             default=constants.DEFAULT_ALIGN_THRESHOLD,
             min_val=0, max_val=1, step=0.05)
-        self.add_subsample_fields(add_to_layout=layout)
+        self.add_subsample_fields(
+            add_to_layout=layout,
+            default_subsample=AppConfig.get('align_frames_params')['subsample'])
 
     def create_transform_tab(self, layout):
         self.add_bold_label_to_layout(layout, "Transform:")

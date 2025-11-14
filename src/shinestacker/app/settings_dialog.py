@@ -169,6 +169,14 @@ class NestedCallbackComboBoxParameter(CallbackComboBoxParameter, NestedParameter
         NestedParameter.__init__(self, parent_key, key, label, tooltip)
 
 
+class NestedCheckBoxParameter(CheckBoxParameter, NestedParameter):
+    def __init__(self, parent_key, key, label, default_value,
+                 tooltip="", on_change=None):
+        CheckBoxParameter.__init__(
+            self, key, label, default_value, tooltip)
+        NestedParameter.__init__(self, parent_key, key, label, tooltip)
+
+
 class SettingsDialog(ConfigDialog, AlignFramesConfigBase):
     update_project_config_requested = Signal()
     update_retouch_config_requested = Signal()
@@ -215,8 +223,11 @@ class SettingsDialog(ConfigDialog, AlignFramesConfigBase):
                     'align_frames_params', 'match_method', 'Match method:',
                     constants.DEFAULT_MATCHING_METHOD,
                     list(zip(self.MATCHING_METHOD_OPTIONS, constants.VALID_MATCHING_METHODS)),
-                    tooltip=self.DETECTOR_DESCRIPTOR_TOOLTIPS['match_method'],
-                    on_change=self.change_match_config_settings),
+                    tooltip=self.DETECTOR_DESCRIPTOR_TOOLTIPS['match_method']),
+                NestedCallbackComboBoxParameter(
+                    'align_frames_params', 'subsample', 'Subsample:',
+                    constants.DEFAULT_ALIGN_SUBSAMPLE,
+                    list(zip(constants.FIELD_SUBSAMPLE_OPTIONS, constants.FIELD_SUBSAMPLE_VALUES))),
                 NestedDoubleSpinBoxParameter(
                     'focus_stack_params', 'memory_limit',
                     'Focus stacking, mem. limit (approx., GBytes):',

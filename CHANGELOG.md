@@ -2,8 +2,11 @@
 
 This page reports the main releases only and the main changes therein.
 
-## [v1.9.x] - 2025-11-13
-** Minor fix
+## [v1.9.x] - 2025-11-14
+** Minor fixes
+
+### Added
+- align subsample option added to persistent settings
 
 ### Fixed
 - fixed tooltip counter in processing colored box display
