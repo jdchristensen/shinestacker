@@ -40,8 +40,13 @@ DEFAULTS = {
         'align_confidence': 99.9,
         'max_iters': 2000,
         'border_mode': 'BORDER_REPLICATE_BLUR',
-
+        'border_value': [0] * 4,
+        'border_blur': 50,  # px
         'subsample': 0,
+        'fast_subsampling': False,
+        'min_good_matches': 20,
+        'phase_corr_fallback': False,
+        'abort_abnormal': False
     },
     'focus_stack_params': {
         'memory_limit': 8,  # GB

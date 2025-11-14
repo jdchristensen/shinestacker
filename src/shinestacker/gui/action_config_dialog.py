@@ -479,9 +479,10 @@ class SubsampleActionConfigurator(DefaultActionConfigurator):
         self.subsample_field = None
         self.fast_subsampling_field = None
 
-    def add_subsample_fields(self, add_to_layout=None,
-                             default_subsample=constants.FIELD_SUBSAMPLE_DEFAULT,
-                             default_fast_subsampling=constants.DEFAULT_ALIGN_FAST_SUBSAMPLING):
+    def add_subsample_fields(
+            self, add_to_layout=None,
+            default_subsample=constants.FIELD_SUBSAMPLE_DEFAULT,
+            default_fast_subsampling=DEFAULTS['align_frames_params']['fast_subsampling']):
         if add_to_layout is None:
             add_to_layout = self.builder.main_layout
         self.subsample_field = self.add_field(
@@ -658,7 +659,7 @@ class AlignFramesConfigurator(SubsampleActionConfigurator, AlignFramesConfigBase
         self.add_field_to_layout(
             layout, 'min_good_matches', FIELD_INT, "Min. good matches", required=False,
             expert=True,
-            default=constants.DEFAULT_ALIGN_MIN_GOOD_MATCHES, min_val=0, max_val=500)
+            default=DEFAULTS['align_frames_params']['min_good_matches'], min_val=0, max_val=500)
 
         def change_method():
             text = method.currentText()
@@ -697,7 +698,8 @@ class AlignFramesConfigurator(SubsampleActionConfigurator, AlignFramesConfigBase
         change_transform()
         phase_corr_fallback = self.add_field_to_layout(
             layout, 'phase_corr_fallback', FIELD_BOOL, "Phase correlation as fallback",
-            required=False, expert=True, default=constants.DEFAULT_PHASE_CORR_FALLBACK)
+            required=False, expert=True,
+            default=DEFAULTS['align_frames_params']['phase_corr_fallback'])
         phase_corr_fallback.setToolTip(
             "Align using phase correlation algorithm if the number of matches\n"
             "is too low to determine the transformation.\n"
@@ -706,7 +708,7 @@ class AlignFramesConfigurator(SubsampleActionConfigurator, AlignFramesConfigBase
         self.add_field_to_layout(
             layout, 'abort_abnormal', FIELD_BOOL, 'Abort on abnormal transf.',
             expert=True,
-            required=False, default=constants.DEFAULT_ALIGN_ABORT_ABNORMAL)
+            required=False, default=DEFAULTS['align_frames_params']['abort_abnormal'])
 
     def create_border_tab(self, layout):
         self.add_bold_label_to_layout(layout, "Border:")
@@ -719,13 +721,13 @@ class AlignFramesConfigurator(SubsampleActionConfigurator, AlignFramesConfigBase
             layout, 'border_value', FIELD_INT_TUPLE,
             'Border value (if constant)', required=False, size=4,
             expert=True,
-            default=constants.DEFAULT_BORDER_VALUE,
+            default=DEFAULTS['align_frames_params']['border_mode'],
             labels=constants.RGBA_LABELS,
-            min_val=constants.DEFAULT_BORDER_VALUE, max_val=[255] * 4)
+            min_val=[0] * 4, max_val=[255] * 4)
         self.add_field_to_layout(
             layout, 'border_blur', FIELD_FLOAT, 'Border blur', required=False,
             expert=True,
-            default=constants.DEFAULT_BORDER_BLUR,
+            default=DEFAULTS['align_frames_params']['border_blur'],
             min_val=0, max_val=1000, step=1)
 
     def create_miscellanea_tab(self, layout):

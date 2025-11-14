@@ -27,13 +27,13 @@ DEFAULT_ALIGNMENT_CONFIG = {
     'align_confidence': DEFAULTS['align_frames_params']['align_confidence'],
     'max_iters': DEFAULTS['align_frames_params']['max_iters'],
     'border_mode': DEFAULTS['align_frames_params']['border_mode'],
-    'border_value': constants.DEFAULT_BORDER_VALUE,
-    'border_blur': constants.DEFAULT_BORDER_BLUR,
+    'border_value': DEFAULTS['align_frames_params']['border_value'],
+    'border_blur': DEFAULTS['align_frames_params']['border_blur'],
     'subsample': DEFAULTS['align_frames_params']['subsample'],
-    'fast_subsampling': constants.DEFAULT_ALIGN_FAST_SUBSAMPLING,
-    'min_good_matches': constants.DEFAULT_ALIGN_MIN_GOOD_MATCHES,
-    'phase_corr_fallback': constants.DEFAULT_PHASE_CORR_FALLBACK,
-    'abort_abnormal': constants.DEFAULT_ALIGN_ABORT_ABNORMAL
+    'fast_subsampling': DEFAULTS['align_frames_params']['fast_subsampling'],
+    'min_good_matches': DEFAULTS['align_frames_params']['min_good_matches'],
+    'phase_corr_fallback': DEFAULTS['align_frames_params']['phase_corr_fallback'],
+    'abort_abnormal': DEFAULTS['align_frames_params']['abort_abnormal']
 }
 
 
