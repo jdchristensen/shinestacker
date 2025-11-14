@@ -4,8 +4,9 @@ import json
 import traceback
 import jsonpickle
 from PySide6.QtCore import QStandardPaths
-from .. config.constants import constants
-from .. config.gui_constants import gui_constants
+from .. config.defaults import DEFAULTS
+
+CURRENT_SETTINGS_FILE_VERSION = 1
 
 
 class StdPathFile:
@@ -31,37 +32,6 @@ class StdPathFile:
         return os.path.join(self.get_config_dir(), self.filename)
 
 
-DEFAULT_SETTINGS = {
-    'expert_options': constants.DEFAULT_EXPERT_OPTIONS,
-    'view_strategy': constants.DEFAULT_VIEW_STRATEGY,
-    'paint_refresh_time': gui_constants.DEFAULT_PAINT_REFRESH_TIME,
-    'display_refresh_time': gui_constants.DEFAULT_DISPLAY_REFRESH_TIME,
-    'cursor_update_time': gui_constants.DEFAULT_CURSOR_UPDATE_TIME,
-    'min_mouse_step_brush_fraction': gui_constants.DEFAULT_MIN_MOUSE_STEP_BRUSH_FRACTION,
-    'combined_actions_params': {
-        'max_threads': constants.DEFAULT_FWK_MAX_THREADS
-    },
-    'align_frames_params': {
-        'memory_limit': constants.DEFAULT_ALIGN_MEMORY_LIMIT_GB,
-        'max_threads': constants.DEFAULT_ALIGN_MAX_THREADS,
-        'detector': constants.DEFAULT_DETECTOR,
-        'descriptor': constants.DEFAULT_DESCRIPTOR,
-        'match_method': constants.DEFAULT_MATCHING_METHOD,
-        'subsample': constants.DEFAULT_ALIGN_SUBSAMPLE
-    },
-    'focus_stack_params': {
-        'memory_limit': constants.DEFAULT_PY_MEMORY_LIMIT_GB,
-        'max_threads': constants.DEFAULT_PY_MAX_THREADS
-    },
-    'focus_stack_bunch_params': {
-        'memory_limit': constants.DEFAULT_ALIGN_MEMORY_LIMIT_GB,
-        'max_threads': constants.DEFAULT_PY_MAX_THREADS
-    }
-}
-
-CURRENT_SETTINGS_FILE_VERSION = 1
-
-
 class Settings(StdPathFile):
     _instance = None
     _observers = []
@@ -83,7 +53,7 @@ class Settings(StdPathFile):
                 print(f"Can't read file from path {file_path}. Default settings ignored.")
 
     def _deep_copy_defaults(self):
-        return json.loads(json.dumps(DEFAULT_SETTINGS))
+        return json.loads(json.dumps(DEFAULTS))
 
     def _deep_merge_settings(self, file_settings):
         for key, value in file_settings.items():

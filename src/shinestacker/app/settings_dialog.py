@@ -4,7 +4,7 @@ from PySide6.QtCore import Signal
 from PySide6.QtWidgets import QLabel, QCheckBox, QComboBox, QDoubleSpinBox, QSpinBox
 from .. config.settings import Settings
 from .. config.constants import constants
-from .. config.gui_constants import gui_constants
+from .. config.defaults import DEFAULTS
 from .. gui.config_dialog import ConfigDialog
 from .. gui.action_config import add_tab, create_tab_widget
 from .. gui.action_config_dialog import AlignFramesConfigBase
@@ -171,7 +171,7 @@ class NestedCallbackComboBoxParameter(CallbackComboBoxParameter, NestedParameter
 
 class NestedCheckBoxParameter(CheckBoxParameter, NestedParameter):
     def __init__(self, parent_key, key, label, default_value,
-                 tooltip="", on_change=None):
+                 tooltip=""):
         CheckBoxParameter.__init__(
             self, key, label, default_value, tooltip)
         NestedParameter.__init__(self, parent_key, key, label, tooltip)
@@ -196,51 +196,53 @@ class SettingsDialog(ConfigDialog, AlignFramesConfigBase):
             self.project_parameters = [
                 CheckBoxParameter(
                     'expert_options', 'Expert options:',
-                    constants.DEFAULT_EXPERT_OPTIONS),
+                    DEFAULTS['expert_options']),
                 NestedSpinBoxParameter(
                     'combined_actions_params', 'max_threads',
                     'Combined actions, max num. of cores:',
-                    constants.DEFAULT_FWK_MAX_THREADS, 0, 64),
+                    DEFAULTS['combined_actions_params']['max_threads'], 0, 64),
                 NestedDoubleSpinBoxParameter(
                     'align_frames_params', 'memory_limit',
                     'Align frames, mem. limit (approx., GBytes):',
-                    constants.DEFAULT_ALIGN_MEMORY_LIMIT_GB, 1.0, 64.0, 1.0),
+                    DEFAULTS['align_frames_params']['memory_limit'], 1.0, 64.0, 1.0),
                 NestedSpinBoxParameter(
                     'align_frames_params', 'max_threads',
                     'Align frames, max num. of cores:',
-                    constants.DEFAULT_ALIGN_MAX_THREADS, 0, 64),
+                    DEFAULTS['align_frames_params']['max_threads'], 0, 64),
                 NestedCallbackComboBoxParameter(
                     'align_frames_params', 'detector', 'Detector:',
-                    constants.DEFAULT_DETECTOR, [(d, d) for d in constants.VALID_DETECTORS],
+                    DEFAULTS['align_frames_params']['detector'],
+                    [(d, d) for d in constants.VALID_DETECTORS],
                     tooltip=self.DETECTOR_DESCRIPTOR_TOOLTIPS['detector'],
                     on_change=self.change_match_config_settings),
                 NestedCallbackComboBoxParameter(
                     'align_frames_params', 'descriptor', 'Descriptor:',
-                    constants.DEFAULT_DESCRIPTOR, [(d, d) for d in constants.VALID_DESCRIPTORS],
+                    DEFAULTS['align_frames_params']['descriptor'],
+                    [(d, d) for d in constants.VALID_DESCRIPTORS],
                     tooltip=self.DETECTOR_DESCRIPTOR_TOOLTIPS['descriptor'],
                     on_change=self.change_match_config_settings),
                 NestedCallbackComboBoxParameter(
                     'align_frames_params', 'match_method', 'Match method:',
-                    constants.DEFAULT_MATCHING_METHOD,
+                    DEFAULTS['align_frames_params']['match_method'],
                     list(zip(self.MATCHING_METHOD_OPTIONS, constants.VALID_MATCHING_METHODS)),
                     tooltip=self.DETECTOR_DESCRIPTOR_TOOLTIPS['match_method']),
                 NestedCallbackComboBoxParameter(
                     'align_frames_params', 'subsample', 'Subsample:',
-                    constants.DEFAULT_ALIGN_SUBSAMPLE,
+                    DEFAULTS['align_frames_params']['subsample'],
                     list(zip(constants.FIELD_SUBSAMPLE_OPTIONS, constants.FIELD_SUBSAMPLE_VALUES))),
                 NestedDoubleSpinBoxParameter(
                     'focus_stack_params', 'memory_limit',
                     'Focus stacking, mem. limit (approx., GBytes):',
-                    constants.DEFAULT_PY_MEMORY_LIMIT_GB, 1.0, 64.0, 1.0),
+                    DEFAULTS['focus_stack_params']['memory_limit'], 1.0, 64.0, 1.0),
                 NestedSpinBoxParameter(
                     'focus_stack_params', 'max_threads', 'Focus stacking, max. num. of cores:',
-                    constants.DEFAULT_PY_MAX_THREADS, 0, 64),
+                    DEFAULTS['focus_stack_params']['max_threads'], 0, 64),
             ]
         if self.retouch_settings:
             self.retouch_parameters = [
                 ComboBoxParameter(
                     'view_strategy', 'View strategy:',
-                    constants.DEFAULT_VIEW_STRATEGY,
+                    DEFAULTS['view_strategy'],
                     [
                         ("Overlaid", "overlaid"),
                         ("Side by side", "sidebyside"),
@@ -248,16 +250,16 @@ class SettingsDialog(ConfigDialog, AlignFramesConfigBase):
                     ]),
                 DoubleSpinBoxParameter(
                     'min_mouse_step_brush_fraction', 'Min. mouse step in brush units:',
-                    gui_constants.DEFAULT_MIN_MOUSE_STEP_BRUSH_FRACTION, 0, 1, 0.02),
+                    DEFAULTS['min_mouse_step_brush_fraction'], 0, 1, 0.02),
                 SpinBoxParameter(
                     'paint_refresh_time', 'Paint refresh time:',
-                    gui_constants.DEFAULT_PAINT_REFRESH_TIME, 0, 1000),
+                    DEFAULTS['paint_refresh_time'], 0, 1000),
                 SpinBoxParameter(
                     'display_refresh_time', 'Display refresh time:',
-                    gui_constants.DEFAULT_DISPLAY_REFRESH_TIME, 0, 200),
+                    DEFAULTS['display_refresh_time'], 0, 200),
                 SpinBoxParameter(
                     'cursor_update_time', 'Cursor refresh time:',
-                    gui_constants.DEFAULT_CURSOR_UPDATE_TIME, 0, 50),
+                    DEFAULTS['cursor_update_time'], 0, 50),
             ]
 
     def create_form_content(self):

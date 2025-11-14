@@ -2,16 +2,17 @@
 import numpy as np
 import cv2
 from .. config.constants import constants
+from .. config.defaults import DEFAULTS
 from .. core.exceptions import InvalidOptionError
 from .utils import img_bw_8bit, img_subsample
 
 DEFAULT_FEATURE_CONFIG = {
-    'detector': constants.DEFAULT_DETECTOR,
-    'descriptor': constants.DEFAULT_DESCRIPTOR
+    'detector': DEFAULTS['align_frames_params']['detector'],
+    'descriptor': DEFAULTS['align_frames_params']['descriptor']
 }
 
 DEFAULT_MATCHING_CONFIG = {
-    'match_method': constants.DEFAULT_MATCHING_METHOD,
+    'match_method': DEFAULTS['align_frames_params']['match_method'],
     'flann_idx_kdtree': constants.DEFAULT_FLANN_IDX_KDTREE,
     'flann_trees': constants.DEFAULT_FLANN_TREES,
     'flann_checks': constants.DEFAULT_FLANN_CHECKS,
@@ -28,7 +29,7 @@ DEFAULT_ALIGNMENT_CONFIG = {
     'border_mode': constants.DEFAULT_BORDER_MODE,
     'border_value': constants.DEFAULT_BORDER_VALUE,
     'border_blur': constants.DEFAULT_BORDER_BLUR,
-    'subsample': constants.DEFAULT_ALIGN_SUBSAMPLE,
+    'subsample': DEFAULTS['align_frames_params']['subsample'],
     'fast_subsampling': constants.DEFAULT_ALIGN_FAST_SUBSAMPLING,
     'min_good_matches': constants.DEFAULT_ALIGN_MIN_GOOD_MATCHES,
     'phase_corr_fallback': constants.DEFAULT_PHASE_CORR_FALLBACK,

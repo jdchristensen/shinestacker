@@ -9,6 +9,7 @@ import logging
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import numpy as np
 from ..config.constants import constants
+from ..config.defaults import DEFAULTS
 from .. core.exceptions import RunStopException
 from .. core.colors import color_str
 from .. core.core_utils import make_chunks
@@ -33,7 +34,7 @@ class AlignFramesParallel(AlignFramesBase):
                  alignment_config=None, **kwargs):
         super().__init__(enabled, feature_config, matching_config,
                          alignment_config, use_large_thresholds=False, **kwargs)
-        self.max_threads = kwargs.get('max_threads', constants.DEFAULT_ALIGN_MAX_THREADS)
+        self.max_threads = kwargs.get('max_threads', DEFAULTS['align_frames_params']['max_threads'])
         self.chunk_submit = kwargs.get('chunk_submit', constants.DEFAULT_ALIGN_CHUNK_SUBMIT)
         self.bw_matching = kwargs.get('bw_matching', constants.DEFAULT_ALIGN_BW_MATCHING)
         self.delta_max = kwargs.get('delta_max', constants.DEFAULT_ALIGN_DELTA_MAX)

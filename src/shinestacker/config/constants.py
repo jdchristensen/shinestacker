@@ -1,7 +1,6 @@
 # pylint: disable=C0114, C0115, C0116, C0103, R0903
 import sys
 import re
-import os
 
 
 class _Constants:
@@ -96,7 +95,6 @@ class _Constants:
 
     DEFAULT_PLOTS_PATH = 'plots'
     DEFAULT_FWK_MEMORY_LIMIT_GB = 8
-    DEFAULT_FWK_MAX_THREADS = 8
     DEFAULT_FWK_CHUNK_SUBMIT = True
 
     FIELD_SUBSAMPLE_VALUES_1 = [2, 3, 4, 6, 8, 12, 16, 24, 32]
@@ -145,9 +143,6 @@ class _Constants:
     NOKNN_METHODS = {'detectors': [DETECTOR_ORB, DETECTOR_SURF, DETECTOR_AKAZE, DETECTOR_BRISK],
                      'descriptors': [DESCRIPTOR_ORB, DESCRIPTOR_AKAZE, DESCRIPTOR_BRISK]}
 
-    DEFAULT_DETECTOR = DETECTOR_ORB
-    DEFAULT_DESCRIPTOR = DESCRIPTOR_ORB
-    DEFAULT_MATCHING_METHOD = MATCHING_NORM_HAMMING
     DEFAULT_FLANN_IDX_KDTREE = 2
     DEFAULT_FLANN_TREES = 5
     DEFAULT_FLANN_CHECKS = 50
@@ -162,15 +157,12 @@ class _Constants:
     DEFAULT_ALIGN_ABORT_ABNORMAL = False
     DEFAULT_BORDER_VALUE = [0] * 4
     DEFAULT_BORDER_BLUR = 50
-    DEFAULT_ALIGN_SUBSAMPLE = 0
     DEFAULT_ALIGN_RES_TARGET_MPX = 2
     DEFAULT_ALIGN_FAST_SUBSAMPLING = False
     DEFAULT_ALIGN_MIN_GOOD_MATCHES = 20
     DEFAULT_PHASE_CORR_FALLBACK = False
     ALIGN_VALID_MODES = ['auto', 'sequential', 'parallel']
     DEFAULT_ALIGN_MODE = 'auto'
-    DEFAULT_ALIGN_MEMORY_LIMIT_GB = 8
-    DEFAULT_ALIGN_MAX_THREADS = min(os.cpu_count() or 4, 8)
     DEFAULT_ALIGN_CHUNK_SUBMIT = True
     DEFAULT_ALIGN_BW_MATCHING = False
     DEFAULT_ALIGN_DELTA_MAX = 2
@@ -232,8 +224,6 @@ class _Constants:
     DEFAULT_PY_GEN_KERNEL = 0.4
     DEFAULT_PY_TILE_SIZE = 512
     DEFAULT_PY_N_TILED_LAYERS = 2
-    DEFAULT_PY_MEMORY_LIMIT_GB = 8
-    DEFAULT_PY_MAX_THREADS = min(os.cpu_count() or 4, 8)
     PY_VALID_MODES = ['auto', 'memory', 'tiled']
     DEFAULT_PY_MODE = 'auto'
     DEFAULT_PY_MAX_TILE_SIZE = 4096
@@ -243,9 +233,6 @@ class _Constants:
 
     DEFAULT_PLOT_STACK_BUNCH = True
     DEFAULT_PLOT_STACK = True
-
-    DEFAULT_EXPERT_OPTIONS = False
-    DEFAULT_VIEW_STRATEGY = 'overlaid'
 
     def __setattr__aux(self, name, value):
         raise AttributeError(f"Can't reassign constant '{name}'")

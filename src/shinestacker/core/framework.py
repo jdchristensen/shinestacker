@@ -5,6 +5,7 @@ import traceback
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from .. config.constants import constants
 from .. config.config import config
+from .. config.defaults import DEFAULTS
 from .colors import color_str
 from .logging import setup_logging
 from .core_utils import make_tqdm_bar, make_chunks
@@ -205,7 +206,7 @@ class Job(TaskBase):
 
 class SequentialTask(TaskBase):
     def __init__(self, name, enabled=True, **kwargs):
-        self.max_threads = kwargs.pop('max_threads', constants.DEFAULT_FWK_MAX_THREADS)
+        self.max_threads = kwargs.pop('max_threads', DEFAULTS['sequential_task']['max_threads'])
         self.chunk_submit = kwargs.pop('chunk_submit', constants.DEFAULT_FWK_CHUNK_SUBMIT)
         TaskBase.__init__(self, name, enabled, **kwargs)
         self.total_action_counts = None

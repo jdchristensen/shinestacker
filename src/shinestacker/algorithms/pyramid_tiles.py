@@ -9,6 +9,7 @@ import tempfile
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import numpy as np
 from .. config.constants import constants
+from .. config.defaults import DEFAULTS
 from .. core.exceptions import RunStopException
 from .utils import read_img, read_and_validate_img
 from .pyramid import PyramidBase
@@ -21,7 +22,7 @@ class PyramidTilesStack(PyramidBase):
                  float_type=constants.DEFAULT_PY_FLOAT,
                  tile_size=constants.DEFAULT_PY_TILE_SIZE,
                  n_tiled_layers=constants.DEFAULT_PY_N_TILED_LAYERS,
-                 max_threads=constants.DEFAULT_PY_MAX_THREADS):
+                 max_threads=DEFAULTS['focus_stack_params']['max_threads']):
         super().__init__("fast_pyramid", min_size, kernel_size, gen_kernel, float_type)
         self.offset = np.arange(-self.pad_amount, self.pad_amount + 1)
         self.dtype = None

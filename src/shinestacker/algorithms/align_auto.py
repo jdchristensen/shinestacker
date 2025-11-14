@@ -2,6 +2,7 @@
 import os
 import numpy as np
 from ..config.constants import constants
+from ..config.defaults import DEFAULTS
 from .align import AlignFramesBase, AlignFrames
 from .align_parallel import AlignFramesParallel
 from .utils import get_first_image_file, get_img_metadata, read_img
@@ -10,11 +11,16 @@ from .utils import get_first_image_file, get_img_metadata, read_img
 class AlignFramesAuto(AlignFramesBase):
     def __init__(self, enabled=True, feature_config=None, matching_config=None,
                  alignment_config=None, **kwargs):
-        self.mode = kwargs.pop('mode', constants.DEFAULT_ALIGN_MODE)
-        self.memory_limit = kwargs.pop('memory_limit', constants.DEFAULT_ALIGN_MEMORY_LIMIT_GB)
-        self.max_threads = kwargs.pop('max_threads', constants.DEFAULT_ALIGN_MAX_THREADS)
-        self.chunk_submit = kwargs.pop('chunk_submit', constants.DEFAULT_ALIGN_CHUNK_SUBMIT)
-        self.bw_matching = kwargs.pop('bw_matching', constants.DEFAULT_ALIGN_BW_MATCHING)
+        self.mode = kwargs.pop(
+            'mode', constants.DEFAULT_ALIGN_MODE)
+        self.memory_limit = kwargs.pop(
+            'memory_limit', DEFAULTS['align_frames_params']['memory_limit'])
+        self.max_threads = kwargs.pop(
+            'max_threads', DEFAULTS['align_frames_params']['max_threads'])
+        self.chunk_submit = kwargs.pop(
+            'chunk_submit', constants.DEFAULT_ALIGN_CHUNK_SUBMIT)
+        self.bw_matching = kwargs.pop(
+            'bw_matching', constants.DEFAULT_ALIGN_BW_MATCHING)
         self.kwargs = kwargs
         super().__init__(enabled=True, feature_config=None, matching_config=None,
                          alignment_config=None, **kwargs)
@@ -32,14 +38,14 @@ class AlignFramesAuto(AlignFramesBase):
                 num_threads = self.num_threads
                 chunk_submit = self.chunk_submit
             else:
+                default_detector = DEFAULTS['align_frames_params']['detector']
+                default_descriptor = DEFAULTS['align_frames_params']['descriptor']
                 if self.feature_config is not None:
-                    detector = self.feature_config.get(
-                        'detector', constants.DEFAULT_DETECTOR)
-                    descriptor = self.feature_config.get(
-                        'descriptor', constants.DEFAULT_DESCRIPTOR)
+                    detector = self.feature_config.get('detector', default_detector)
+                    descriptor = self.feature_config.get('descriptor', default_descriptor)
                 else:
-                    detector = constants.DEFAULT_DETECTOR
-                    descriptor = constants.DEFAULT_DESCRIPTOR
+                    detector = default_detector
+                    descriptor = default_descriptor
                 if detector in (constants.DETECTOR_SIFT, constants.DETECTOR_AKAZE) or \
                         descriptor in (constants.DESCRIPTOR_SIFT, constants.DESCRIPTOR_AKAZE):
                     shape, dtype = get_img_metadata(read_img(

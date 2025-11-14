@@ -2,6 +2,7 @@
 import os
 import numpy as np
 from .. config.constants import constants
+from .. config.defaults import DEFAULTS
 from .base_stack_algo import BaseStackAlgo
 from .pyramid import PyramidStack
 from .pyramid_tiles import PyramidTilesStack
@@ -14,8 +15,8 @@ class PyramidAutoStack(BaseStackAlgo):
                  float_type=constants.DEFAULT_PY_FLOAT,
                  tile_size=constants.DEFAULT_PY_TILE_SIZE,
                  n_tiled_layers=constants.DEFAULT_PY_N_TILED_LAYERS,
-                 memory_limit=constants.DEFAULT_PY_MEMORY_LIMIT_GB,
-                 max_threads=constants.DEFAULT_PY_MAX_THREADS,
+                 memory_limit=DEFAULTS['focus_stack_params']['memory_limit'],
+                 max_threads=DEFAULTS['focus_stack_params']['max_threads'],
                  max_tile_size=constants.DEFAULT_PY_MAX_TILE_SIZE,
                  min_tile_size=constants.DEFAULT_PY_MIN_TILE_SIZE,
                  min_n_tiled_layers=constants.DEFAULT_PY_MIN_N_TILED_LAYERS,

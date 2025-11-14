@@ -2,7 +2,8 @@ import unittest
 from unittest.mock import Mock, patch
 import numpy as np
 from shinestacker.algorithms.align_auto import AlignFramesAuto
-from shinestacker.config import constants
+from shinestacker.config.constants import constants
+from shinestacker.config.defaults import DEFAULTS
 
 
 class TestAlignFramesAuto(unittest.TestCase):
@@ -11,11 +12,11 @@ class TestAlignFramesAuto(unittest.TestCase):
         mock_cpu_count.return_value = 8
         align_auto = AlignFramesAuto()
         self.assertEqual(align_auto.mode, constants.DEFAULT_ALIGN_MODE)
-        self.assertEqual(align_auto.memory_limit, constants.DEFAULT_ALIGN_MEMORY_LIMIT_GB)
-        self.assertEqual(align_auto.max_threads, constants.DEFAULT_ALIGN_MAX_THREADS)
+        self.assertEqual(align_auto.memory_limit, DEFAULTS['align_frames_params']['memory_limit'])
+        self.assertEqual(align_auto.max_threads, DEFAULTS['align_frames_params']['max_threads'])
         self.assertEqual(align_auto.chunk_submit, constants.DEFAULT_ALIGN_CHUNK_SUBMIT)
         self.assertEqual(align_auto.bw_matching, constants.DEFAULT_ALIGN_BW_MATCHING)
-        self.assertEqual(align_auto.num_threads, min(constants.DEFAULT_ALIGN_MAX_THREADS, 8))
+        self.assertEqual(align_auto.num_threads, min(DEFAULTS['align_frames_params']['max_threads'], 8))
         self.assertIsNone(align_auto._implementation)
 
     @patch('shinestacker.algorithms.align_auto.os.cpu_count')
@@ -109,8 +110,8 @@ class TestAlignFramesAuto(unittest.TestCase):
         align_auto = AlignFramesAuto(
             mode='auto',
             feature_config={
-                'detector': constants.DEFAULT_DETECTOR,
-                'descriptor': constants.DEFAULT_DESCRIPTOR
+                'detector': DEFAULTS['align_frames_params']['detector'],
+                'descriptor': DEFAULTS['align_frames_params']['descriptor']
             }
         )
         align_auto.begin(mock_process)

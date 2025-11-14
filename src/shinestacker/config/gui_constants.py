@@ -32,11 +32,6 @@ class _GuiConstants:
         'preview_inner': (255, 255, 255, 150)
     }
 
-    DEFAULT_MIN_MOUSE_STEP_BRUSH_FRACTION = 0.25
-    DEFAULT_PAINT_REFRESH_TIME = 50  # ms
-    DEFAULT_DISPLAY_REFRESH_TIME = 50  # ms
-    DEFAULT_CURSOR_UPDATE_TIME = 16  # ms
-
     THUMB_WIDTH = 120  # px
     THUMB_HEIGHT = 80  # px
     THUMB_HI_COLOR = '#0000FF'
