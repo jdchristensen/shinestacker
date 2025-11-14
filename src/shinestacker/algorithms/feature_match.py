@@ -14,19 +14,19 @@ DEFAULT_FEATURE_CONFIG = {
 DEFAULT_MATCHING_CONFIG = {
     'match_method': DEFAULTS['align_frames_params']['match_method'],
     'flann_idx_kdtree': DEFAULTS['align_frames_params']['flann_idx_kdtree'],
-    'flann_trees': constants.DEFAULT_FLANN_TREES,
-    'flann_checks': constants.DEFAULT_FLANN_CHECKS,
-    'threshold': constants.DEFAULT_ALIGN_THRESHOLD,
+    'flann_trees': DEFAULTS['align_frames_params']['flann_trees'],
+    'flann_checks': DEFAULTS['align_frames_params']['flann_checks'],
+    'threshold': DEFAULTS['align_frames_params']['threshold'],
 }
 
 DEFAULT_ALIGNMENT_CONFIG = {
-    'transform': constants.DEFAULT_TRANSFORM,
-    'align_method': constants.DEFAULT_ESTIMATION_METHOD,
-    'rans_threshold': constants.DEFAULT_RANS_THRESHOLD,
+    'transform': DEFAULTS['align_frames_params']['transform'],
+    'align_method': DEFAULTS['align_frames_params']['align_method'],
+    'rans_threshold': DEFAULTS['align_frames_params']['rans_threshold'],
     'refine_iters': constants.DEFAULT_REFINE_ITERS,
     'align_confidence': constants.DEFAULT_ALIGN_CONFIDENCE,
     'max_iters': constants.DEFAULT_ALIGN_MAX_ITERS,
-    'border_mode': constants.DEFAULT_BORDER_MODE,
+    'border_mode': DEFAULTS['align_frames_params']['border_mode'],
     'border_value': constants.DEFAULT_BORDER_VALUE,
     'border_blur': constants.DEFAULT_BORDER_BLUR,
     'subsample': DEFAULTS['align_frames_params']['subsample'],

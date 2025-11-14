@@ -4,6 +4,7 @@ import numpy as np
 import cv2
 import matplotlib.pyplot as plt
 from .. config.constants import constants
+from .. config.defaults import DEFAULTS
 from .. core.exceptions import InvalidOptionError
 from .utils import img_8bit, save_plot
 
@@ -119,9 +120,9 @@ def check_transform(m, img_shape, transform_type,
     return False, f'invalid transfrom option {transform_type}', None
 
 
-def find_transform(src_pts, dst_pts, transform=constants.DEFAULT_TRANSFORM,
-                   method=constants.DEFAULT_ESTIMATION_METHOD,
-                   rans_threshold=constants.DEFAULT_RANS_THRESHOLD,
+def find_transform(src_pts, dst_pts, transform=DEFAULTS['align_frames_params']['transform'],
+                   method=DEFAULTS['align_frames_params']['align_method'],
+                   rans_threshold=DEFAULTS['align_frames_params']['rans_threshold'],
                    max_iters=constants.DEFAULT_ALIGN_MAX_ITERS,
                    align_confidence=constants.DEFAULT_ALIGN_CONFIDENCE,
                    refine_iters=constants.DEFAULT_REFINE_ITERS):

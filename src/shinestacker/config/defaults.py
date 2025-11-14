@@ -29,8 +29,16 @@ DEFAULTS = {
         'detector': 'ORB',
         'descriptor': 'ORB',
         'match_method': 'NORM_HAMMING',
+        'flann_idx_kdtree': 2,
+        'flann_trees': 5,
+        'flann_checks': 50,
+        'threshold': 0.75,
+        'transform': 'ALIGN_RIGID',
+        'align_method': 'RANSAC',
+        'rans_threshold': 3.0,  # px
+        'border_mode': 'BORDER_REPLICATE_BLUR',
+
         'subsample': 0,
-        'flann_idx_kdtree': 2
     },
     'focus_stack_params': {
         'memory_limit': 8,  # GB

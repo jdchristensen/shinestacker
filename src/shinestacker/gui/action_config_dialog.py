@@ -624,17 +624,17 @@ class AlignFramesConfigurator(SubsampleActionConfigurator, AlignFramesConfigBase
         self.add_field_to_layout(
             layout, 'flann_trees', FIELD_INT, 'Flann trees', required=False,
             expert=True,
-            default=constants.DEFAULT_FLANN_TREES,
+            default=DEFAULTS['align_frames_params']['flann_trees'],
             min_val=0, max_val=10)
         self.add_field_to_layout(
             layout, 'flann_checks', FIELD_INT, 'Flann checks', required=False,
             expert=True,
-            default=constants.DEFAULT_FLANN_CHECKS,
+            default=DEFAULTS['align_frames_params']['flann_checks'],
             min_val=0, max_val=1000)
         self.add_field_to_layout(
             layout, 'threshold', FIELD_FLOAT, 'Threshold', required=False,
             expert=True,
-            default=constants.DEFAULT_ALIGN_THRESHOLD,
+            default=DEFAULTS['align_frames_params']['threshold'],
             min_val=0, max_val=1, step=0.05)
         self.add_subsample_fields(
             add_to_layout=layout,
@@ -645,15 +645,16 @@ class AlignFramesConfigurator(SubsampleActionConfigurator, AlignFramesConfigBase
         transform = self.add_field_to_layout(
             layout, 'transform', FIELD_COMBO, 'Transform', required=False,
             options=self.TRANSFORM_OPTIONS, values=constants.VALID_TRANSFORMS,
-            default=constants.DEFAULT_TRANSFORM)
+            default=DEFAULTS['align_frames_params']['transform'])
         method = self.add_field_to_layout(
             layout, 'align_method', FIELD_COMBO, 'Estimation method', required=False,
             options=self.METHOD_OPTIONS, values=constants.VALID_ESTIMATION_METHODS,
-            default=constants.DEFAULT_ESTIMATION_METHOD)
+            default=DEFAULTS['align_frames_params']['align_method'])
         rans_threshold = self.add_field_to_layout(
             layout, 'rans_threshold', FIELD_FLOAT, 'RANSAC threshold (px)', required=False,
             expert=True,
-            default=constants.DEFAULT_RANS_THRESHOLD, min_val=0, max_val=20, step=0.1)
+            default=DEFAULTS['align_frames_params']['rans_threshold'],
+            min_val=0, max_val=20, step=0.1)
         self.add_field_to_layout(
             layout, 'min_good_matches', FIELD_INT, "Min. good matches", required=False,
             expert=True,
@@ -713,7 +714,7 @@ class AlignFramesConfigurator(SubsampleActionConfigurator, AlignFramesConfigBase
             layout, 'border_mode', FIELD_COMBO, 'Border mode', required=False,
             options=self.BORDER_MODE_OPTIONS,
             values=constants.VALID_BORDER_MODES,
-            default=constants.DEFAULT_BORDER_MODE)
+            default=DEFAULTS['align_frames_params']['border_mode'])
         self.add_field_to_layout(
             layout, 'border_value', FIELD_INT_TUPLE,
             'Border value (if constant)', required=False, size=4,
