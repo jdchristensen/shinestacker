@@ -105,9 +105,10 @@ DEFAULTS = {
     'noise_detection_params': {
         'noise_map_filename': 'hot_pixels.png',
         'max_frames': 10,
+        'noisy_masked_px': [100, 100, 100],
         'channel_thresholds': [13, 13, 13],
         'blur_size': 5,
-        'plot_range': [5, 30]
+        'plot_histograms': True,
     },
     'mask_noise_params': {
         'kernel_size': 3

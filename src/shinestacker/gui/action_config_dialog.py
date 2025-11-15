@@ -3,7 +3,7 @@
 import os
 import traceback
 from PySide6.QtCore import QTimer
-from PySide6.QtWidgets import QWidget, QLabel, QMessageBox, QStackedWidget
+from PySide6.QtWidgets import QWidget, QLabel, QMessageBox, QStackedWidget, QSpinBox
 from .. config.constants import constants
 from .. config.app_config import AppConfig
 from .. algorithms.utils import EXTENSIONS_SUPPORTED
@@ -146,6 +146,11 @@ class JobConfigurator(DefaultActionConfigurator):
 
 
 class NoiseDetectionConfigurator(DefaultActionConfigurator):
+    def __init__(self, expert, current_wd):
+        super().__init__(expert, current_wd)
+        self.noisy_masked_px = None
+        self.channel_thresholds = None
+
     def create_form(self, layout, action):
         super().create_form(layout, action)
         self.add_field(
@@ -160,11 +165,25 @@ class NoiseDetectionConfigurator(DefaultActionConfigurator):
             'max_frames', FIELD_INT, 'Max. num. of frames (0 = All)',
             required=False,
             default=AppConfig.get('noise_detection_params')['max_frames'], min_val=0, max_val=1000)
-        self.add_field(
+
+        self.noisy_masked_px = self.add_field(
+            'noisy_masked_px', FIELD_INT_TUPLE, 'Noisy pixels to mask',
+            required=False, size=3,
+            default=AppConfig.get('noise_detection_params')['noisy_masked_px'],
+            labels=constants.RGB_LABELS, min_val=[0] * 3, max_val=[2000] * 3)
+        self.channel_thresholds = self.add_field(
             'channel_thresholds', FIELD_INT_TUPLE, 'Noise threshold',
             required=False, size=3,
             default=AppConfig.get('noise_detection_params')['channel_thresholds'],
             labels=constants.RGB_LABELS, min_val=[1] * 3, max_val=[1000] * 3)
+
+        noisy_masked_px_spins = self.noisy_masked_px.findChildren(QSpinBox)
+        channel_thresholds_spins = self.channel_thresholds.findChildren(QSpinBox)
+        for si, so in zip(noisy_masked_px_spins, channel_thresholds_spins):
+            si.valueChanged.connect(lambda value, i=si, o=so: o.setEnabled(i.value() == 0))
+        for si, so in zip(noisy_masked_px_spins, channel_thresholds_spins):
+            so.setEnabled(si.value() == 0)
+
         self.add_field(
             'blur_size', FIELD_INT, 'Blur size (px)', required=False,
             expert=True,
@@ -176,15 +195,11 @@ class NoiseDetectionConfigurator(DefaultActionConfigurator):
         self.add_bold_label("Miscellanea:")
         self.add_field(
             'plot_histograms', FIELD_BOOL, 'Plot histograms', required=False,
-            default=False)
+            default=AppConfig.get('noise_detection_params')['plot_histograms'])
         self.add_field(
             'plot_path', FIELD_REL_PATH, 'Plots path', required=False,
             default=AppConfig.get('image_sequence_manager')['plots_path'],
             placeholder='relative to working path')
-        self.add_field(
-            'plot_range', FIELD_INT_TUPLE, 'Plot range', required=False,
-            size=2, default=AppConfig.get('noise_detection_params')['plot_range'],
-            labels=['min', 'max'], min_val=[0] * 2, max_val=[1000] * 2)
 
 
 class FocusStackBaseConfigurator(DefaultActionConfigurator):

@@ -60,11 +60,14 @@ class NoiseDetection(TaskBase, ImageSequenceManager):
             'file_name', DEFAULTS['noise_detection_params']['noise_map_filename'])
         if self.file_name == '':
             self.file_name = DEFAULTS['noise_detection_params']['noise_map_filename']
+        self.noisy_masked_px = kwargs.get(
+            'noisy_masked_px', DEFAULTS['noise_detection_params']['noisy_masked_px']
+        )
         self.channel_thresholds = kwargs.get(
             'channel_thresholds', DEFAULTS['noise_detection_params']['channel_thresholds']
         )
-        self.plot_range = kwargs.get('plot_range', DEFAULTS['noise_detection_params']['plot_range'])
-        self.plot_histograms = kwargs.get('plot_histograms', False)
+        self.plot_histograms = kwargs.get(
+            'plot_histograms', DEFAULTS['noise_detection_params']['plot_histograms'])
         self.tbar = None
 
     def hot_map(self, ch, th):
@@ -105,6 +108,17 @@ class NoiseDetection(TaskBase, ImageSequenceManager):
         blurred = cv2.GaussianBlur(mean_img, (self.blur_size, self.blur_size), 0)
         diff = cv2.absdiff(mean_img, blurred)
         channels = cv2.split(diff)
+        for c in range(3):
+            if self.noisy_masked_px[c] > 0:
+                ch = channels[c]
+                min_lumi, max_lumi = ch.min(), ch.max()
+                lumi = np.arange(min_lumi, max_lumi + 1, 1)
+                pxls_count = np.array([np.count_nonzero(self.hot_map(ch, th) > 0) for th in lumi])
+                self.channel_thresholds[c] = lumi[pxls_count > self.noisy_masked_px[c]].max()
+        plot_range = [
+            int(min(self.channel_thresholds) * 0.95),
+            int(max(self.channel_thresholds) * 1.05)
+        ]
         hot_px = [self.hot_map(ch, self.channel_thresholds[i]) for i, ch in enumerate(channels)]
         hot_rgb = cv2.bitwise_or(hot_px[0], cv2.bitwise_or(hot_px[1], hot_px[2]))
         msg = []
@@ -121,13 +135,12 @@ class NoiseDetection(TaskBase, ImageSequenceManager):
         self.print_message(color_str(f"writing hot pixels map file: {file_path}",
                                      constants.LOG_COLOR_LEVEL_2))
         cv2.imwrite(os.path.join(output_full_path, self.file_name), hot_rgb)
-        plot_range = self.plot_range
         min_th, max_th = min(self.channel_thresholds), max(self.channel_thresholds)
         if min_th < plot_range[0]:
             plot_range[0] = min_th - 1
         if max_th > plot_range[1]:
             plot_range[1] = max_th + 1
-        th_range = np.arange(self.plot_range[0], self.plot_range[1] + 1)
+        th_range = np.arange(plot_range[0], plot_range[1] + 1)
         if self.plot_histograms:
             plt.figure(figsize=constants.PLT_FIG_SIZE)
             x = np.array(list(th_range))
@@ -135,13 +148,15 @@ class NoiseDetection(TaskBase, ImageSequenceManager):
                   for th in th_range] for ch in channels]
             for i, ch, y in zip(range(3), constants.RGB_LABELS, ys):
                 plt.plot(x, y, c=ch, label=ch)
-                plt.plot([self.channel_thresholds[i], self.channel_thresholds[i]],
-                         [0, y[self.channel_thresholds[i] - int(x[0])]], c=ch, linestyle="--")
+                xt = self.channel_thresholds[i]
+                yt = y[xt - x[0]]
+                plt.plot([xt, xt], [0, yt], c=ch, linestyle="--")
+                plt.plot([x[0], xt], [yt, yt], c=ch, linestyle="--")
             plt.xlabel('threshold')
             plt.ylabel('# of hot pixels')
             plt.legend()
             plt.xlim(x[0], x[-1])
-            plt.ylim(0)
+            plt.yscale("log", nonpositive='clip')
             plot_path = f"{self.working_path}/{self.plot_path}/{self.name}-hot-pixels.pdf"
             save_plot(plot_path)
             self.callback(constants.CALLBACK_SAVE_PLOT, self.id, f"{self.name}: noise", plot_path)

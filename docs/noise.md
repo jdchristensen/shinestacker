@@ -18,10 +18,11 @@ Arguments for the constructor of ```NoiseDetection``` are:
 * ```max_frames``` (optional): if provided, at most ```max_frames``` images are analyzed to extract noisy pixel mask.
 * ```plot_path``` (optional, default: ```plots```): the directory within ```working_path``` that contains plots produced by the different actions
 * ```plot_histograms```  (optional, default: ```False```): if ```True```, plot a summary of the number of hot pixel by channel as a function of the applied threshold. It may be useful to set the optimal threshold values.
-* ```channel_thresholds``` (optional, default: ```(13, 13, 13)```): threshold values for noisy pixel detections in the color channels R, G, B, respectively.
+* ```noisy_masked_px``` (optional, default: ```(100, 100, 100)```): tentative number of noisy pixels to be mased.
+* ```channel_thresholds``` (optional, default: ```(13, 13, 13)```): threshold values for noisy pixel detections in the color channels R, G, B, respectively. Each of these thresholds is only used of the 
+corresponding value in ```noisy_masked_px``` is set to zero.
 * ```blur_size``` (optional, default: 5): image blur amount for pixel detection.
 * ```file_name``` (optional, default: ```hot_pixels.png```): noise map filename.
-* ```plot_range``` (optiona, default: (5, 30)): range of the horizontal axis of the plot showing the number of hot pixel as a function of the intensity threshold.
 * ```enabled``` (optional, default: ```True```): allows to switch on and off this module. 
 
 After the noisy pixel mask has been determined, noisy pixels are then masked adding the action ```MaskNoise``` to the ```Actions``` module:
