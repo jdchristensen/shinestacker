@@ -286,8 +286,19 @@ class TransformationExtractor:
                 m = find_transform_phase_correlation(img_ref_sub, img_0_sub)
                 phase_corr_called = True
                 if m is None:
+                    if callbacks and 'warning' in callbacks:
+                        callbacks['warning']("alignment by phase correlation failed")
                     return None, phase_corr_called, msk
+            elif not match_result.has_sufficient_matches(min_matches):
+                if callbacks and 'warning' in callbacks:
+                    s_str = 'es' if n_good_matches > 1 else ''
+                    callbacks['warning'](
+                        f"only {n_good_matches} < {min_good_matches} "
+                        f"match{s_str} found, alignment falied")
+                return None, phase_corr_called, msk
             else:
+                if callbacks and 'warning' in callbacks:
+                    callbacks['warning']("could not compute transformation, alignment failed")
                 return None, phase_corr_called, msk
         h0, w0 = original_shape[:2]
         h_sub, w_sub = img_0_sub.shape[:2]

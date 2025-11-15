@@ -14,6 +14,7 @@ This page reports the main releases only and the main changes therein.
 - fixed tooltip counter in the processing colored box display
 - fixed names of visual progress indicators according to output path
 - fixed icons in the main window
+- restored alignment warning messages
 
 ### Changed
 - optimized settings persistence by saving only parameters different from defaults

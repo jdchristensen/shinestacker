@@ -56,6 +56,8 @@ def align_images(img_ref, img_0, feature_config=None, matching_config=None, alig
     m, _phase_corr_called, _msk = extractor.extract_transformation(
         match_result, img_ref_sub, img_0_sub, subsample, img_0.shape, callbacks, plot_path)
     if m is None:
+        if callbacks and 'warning' in callbacks:
+            callbacks['warning']('could not extract transformation, alignment failed')
         return n_good_matches, None, None
     img_warp = extractor.apply_alignment_transform(img_0, img_ref, m, callbacks)
     return match_result.n_good_matches(), m, img_warp
@@ -338,8 +340,8 @@ class AlignFrames(AlignFramesBase):
             'matches_message': lambda n: self.print_message(f'{idx_tot_str}: good matches: {n}'),
             'estimation_message': lambda: self.print_message(f'{idx_tot_str}: align images'),
             'blur_message': lambda: self.print_message(f'{idx_tot_str}: blur borders'),
-            'warning': lambda msg: self.print_message(
-                f'{msg}', constants.LOG_COLOR_WARNING),
+            'warning': lambda msg: self.print_message(color_str(
+                f'{msg}', constants.LOG_COLOR_WARNING), level=logging.WARNING),
             'save_plot': lambda plot_path: self.process.callback(
                 constants.CALLBACK_SAVE_PLOT, self.process.id,
                 f"{self.process.name}: matches\nframe {idx_str}", plot_path),

@@ -258,7 +258,8 @@ class AlignFramesParallel(AlignFramesBase):
         match_result, _final_subsample = self.feature_matcher.match_images_with_fallback(
             img_ref, img_0, subsample=subsample,
             warning_callback=lambda msg: self.print_message(
-                msg, color=constants.LOG_COLOR_WARNING, level=logging.WARNING)
+                f'{self.image_str(idx)}: {msg}',
+                color=constants.LOG_COLOR_WARNING, level=logging.WARNING)
         )
         self._n_good_matches[idx] = match_result.n_good_matches()
         img_ref_sub, img_0_sub = self.feature_matcher.get_last_subsampled_images()
@@ -286,6 +287,8 @@ class AlignFramesParallel(AlignFramesBase):
             'blur_message':
                 lambda: self.print_message(f'{self.image_str(idx)}: blur borders'),
             'warning':
-                lambda msg: self.print_message(msg, constants.LOG_COLOR_WARNING)
+                lambda msg: self.print_message(color_str(
+                    f'{self.image_str(idx)}: {msg}', constants.LOG_COLOR_WARNING),
+                    level=logging.WARNING)
         }
         return self.transformation_extractor.apply_alignment_transform(img_0, img_ref, m, callbacks)
