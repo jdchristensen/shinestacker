@@ -31,15 +31,19 @@ def radial_mean_intensity(image, r_steps):
     w_2, h_2 = w / 2, h / 2
     r_max = np.sqrt((w / 2)**2 + (h / 2)**2)
     radii = np.linspace(0, r_max, r_steps + 1)
-    mean_intensities = np.zeros(r_steps)
     y, x = np.ogrid[:h, :w]
     dist_from_center = np.sqrt((x - w_2)**2 + (y - h_2)**2)
-    for i in range(r_steps):
-        mask = (dist_from_center >= radii[i]) & (dist_from_center < radii[i + 1])
-        if np.any(mask):
-            mean_intensities[i] = np.mean(image[mask])
-        else:
-            mean_intensities[i] = np.nan
+    bin_indices = np.digitize(dist_from_center, radii) - 1
+    valid_mask = (bin_indices >= 0) & (bin_indices < r_steps)
+    bin_indices_valid = bin_indices[valid_mask]
+    image_valid = image[valid_mask]
+    bin_sums = np.bincount(
+        bin_indices_valid.ravel(), weights=image_valid.ravel(), minlength=r_steps)
+    bin_counts = np.bincount(
+        bin_indices_valid.ravel(), minlength=r_steps)
+    mean_intensities = np.full(r_steps, np.nan)
+    valid_bins = bin_counts > 0
+    mean_intensities[valid_bins] = bin_sums[valid_bins] / bin_counts[valid_bins]
     return (radii[1:] + radii[:-1]) / 2, mean_intensities
 
 
