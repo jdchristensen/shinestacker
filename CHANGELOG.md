@@ -2,25 +2,26 @@
 
 This page reports the main releases only and the main changes therein.
 
-## [v1.9.x] - 2025-11-14
-** Minor fixes
+## [v1.10.0] - 2025-11-15
+** Improved noise configuration **
 
 ### Added
-- align subsample option added to persistent settings
-- fixed "add" icons in the main window
+- automatic threshold evaluation in the noise detection module
+- *align subsample* option added to persistent settings
 
 ### Fixed
-- fixed tooltip counter in processing colored box display
-- fixed visual progress indicators names in case output path does not coincide with module name
+- fixed tooltip counter in the processing colored box display
+- fixed names of visual progress indicators according to output path
+- fixed icons in the main window
 
 ### Changed
-- improved settings peristency by saving only parameters different from defaults
-- refactored default parameters configuration
+- optimized settings persistence by saving only parameters different from defaults
+- refactored code for default-parameters configuration
 
 ---
 
 ## [v1.9.7] - 2025-11-13
-** Fixed serious alignment bug from previous release
+** Fixed serious alignment bug from previous release **
 
 ### Fixed
 - fixed serious bug in alignment module introduced with code refactoring in releae 1.9.6
