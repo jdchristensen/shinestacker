@@ -6,6 +6,7 @@ from PySide6.QtGui import QColor, QPainter, QPen
 from PySide6.QtWidgets import (QWidget, QGridLayout, QScrollArea, QLabel,
                                QSizePolicy, QVBoxLayout)
 from .colors import ColorPalette
+from .gui_images import open_file
 
 
 class MultiModuleStatusContainer(QWidget):
@@ -92,6 +93,7 @@ class FrameStatusBox(QWidget):
         self.border_color = QColor(100, 100, 100)
         self.fill_color = QColor(200, 200, 200)
         self.custom_tooltip = None
+        self.enable_doubleclick = False
         self.update_tooltip()
         self.setMinimumSize(20, 15)
         self.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
@@ -111,6 +113,8 @@ class FrameStatusBox(QWidget):
         postprocess_color = (64, 224, 208)
         unknown_color = (138, 43, 226)
         self.status_id = status_id
+        if status_id == 1000:
+            self.enable_doubleclick = True
         if status_id == -1:
             self.fill_color = QColor(*pending_color)
         elif status_id == 1000:
@@ -197,6 +201,11 @@ class FrameStatusBox(QWidget):
         if self.custom_tooltip:
             self.custom_tooltip.hide()
 
+    def mouseDoubleClickEvent(self, event):
+        if self.enable_doubleclick and self.filename:
+            open_file(self.filename)
+        super().mouseDoubleClickEvent(event)
+
 
 class PreprocessingStatusWidget(QWidget):
     def __init__(self):
@@ -215,20 +224,23 @@ class PreprocessingStatusWidget(QWidget):
     def add_frame(self, filename, total_actions):
         if filename in self.frame_widgets:
             raise RuntimeError(f"Filename {filename} already registered")
-        self.frame_widgets[filename] = FrameStatusBox(filename, total_actions)
+        key = os.path.basename(filename)
+        self.frame_widgets[key] = FrameStatusBox(filename, total_actions)
         self._update_layout()
 
     def set_total_actions(self, filename, total_actions):
-        if filename in self.frame_widgets:
-            self.frame_widgets[filename].set_total_actions(total_actions)
+        key = os.path.basename(filename)
+        if key in self.frame_widgets:
+            self.frame_widgets[key].set_total_actions(total_actions)
         else:
-            raise RuntimeError(f"Unknown filename {filename}")
+            raise RuntimeError(f"Unknown filename {key}")
 
     def update_frame_status(self, filename, status_id):
-        if filename in self.frame_widgets:
-            self.frame_widgets[filename].update_status(status_id)
+        key = os.path.basename(filename)
+        if key in self.frame_widgets:
+            self.frame_widgets[key].update_status(status_id)
         else:
-            raise RuntimeError(f"Unknown filename {filename}")
+            raise RuntimeError(f"Unknown filename {key}")
 
     def resizeEvent(self, event):
         super().resizeEvent(event)

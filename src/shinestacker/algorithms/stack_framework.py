@@ -288,8 +288,7 @@ class CombinedActions(ReferenceFrameTask):
         n_actions = len(self._actions)
         filenames = self.input_filepaths()
         for filename in filenames:
-            f = os.path.basename(filename)
-            self.callback(constants.CALLBACK_ADD_FRAME, self.output_path, f, n_actions)
+            self.callback(constants.CALLBACK_ADD_FRAME, self.output_path, filename, n_actions)
         ReferenceFrameTask.begin(self)
         for a in self._actions:
             if a.enabled:

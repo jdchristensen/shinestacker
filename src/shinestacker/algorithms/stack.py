@@ -121,7 +121,9 @@ class FocusStackBunch(SequentialTask, FocusStackBase):
         self._chunks = get_bunches(sorted(self.input_filepaths()), self.frames, self.overlap)
         self.callback(constants.CALLBACK_ADD_STATUS_BOX, self.output_path)
         for chunk in self._chunks:
-            filename = self.prefix + os.path.basename(chunk[0])
+            filename = chunk[0]
+            file_path = self.output_full_path()
+            filename = os.path.join(file_path, self.prefix + os.path.basename(filename))
             self.callback(constants.CALLBACK_ADD_FRAME, self.output_path, filename, 1)
         self.set_counts(len(self._chunks))
 
@@ -157,7 +159,9 @@ class FocusStack(FocusStackBase):
         self.callback('step_counts', self.id, self.name,
                       self.stack_algo.total_steps(self.num_input_filepaths()))
         self.callback(constants.CALLBACK_ADD_STATUS_BOX, self.name)
-        filename = self.prefix + os.path.basename(img_files[0])
+        filename = img_files[0]
+        file_path = self.output_full_path()
+        filename = os.path.join(file_path, self.prefix + os.path.basename(filename))
         self.callback(constants.CALLBACK_ADD_FRAME, self.name, filename, 1)
         self.focus_stack(img_files)
         return True

@@ -18,7 +18,7 @@ from .utils import read_img, save_plot, get_img_metadata, validate_image
 setup_matplotlib_mode()
 
 
-MAX_NOISY_PIXELS = 1000
+MAX_NOISY_PIXELS = 2000
 
 
 def mean_image(file_paths, max_frames=-1, message_callback=None, progress_callback=None):
