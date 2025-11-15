@@ -112,8 +112,11 @@ class NoiseDetection(TaskBase, ImageSequenceManager):
             if self.noisy_masked_px[c] > 0:
                 ch = channels[c]
                 min_lumi, max_lumi = ch.min(), ch.max()
-                lumi = np.arange(min_lumi, max_lumi + 1, 1)
-                pxls_count = np.array([np.count_nonzero(self.hot_map(ch, th) > 0) for th in lumi])
+                num_bins = int(max_lumi - min_lumi + 1)
+                hist = cv2.calcHist([ch], [0], None, [num_bins], [min_lumi, max_lumi + 1])
+                hist = hist.flatten()
+                pxls_count = np.cumsum(hist[::-1])[::-1]
+                lumi = np.arange(min_lumi, max_lumi + 1)
                 self.channel_thresholds[c] = lumi[pxls_count > self.noisy_masked_px[c]].max()
         plot_range = [
             int(min(self.channel_thresholds) * 0.95),
