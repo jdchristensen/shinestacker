@@ -504,6 +504,7 @@ class MaskNoiseConfigurator(DefaultActionConfigurator):
             default=AppConfig.get('mask_noise_params')['max_noisy_pxls'],
             min_val=1, max_val=10000)
 
+
 class SubsampleActionConfigurator(DefaultActionConfigurator):
     def __init__(self, expert, current_wd):
         super().__init__(expert, current_wd)

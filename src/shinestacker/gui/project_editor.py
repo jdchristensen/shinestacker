@@ -1,9 +1,9 @@
 # pylint: disable=C0114, C0115, C0116, R0903, R0904, R1702, R0917, R0913, R0902, E0611, E1131, E1121
 import os
 from dataclasses import dataclass
+from PySide6.QtCore import Qt, QObject, Signal, QEvent, QSize
 from PySide6.QtWidgets import (QListWidget, QMessageBox, QDialog, QListWidgetItem, QLabel,
                                QSizePolicy)
-from PySide6.QtCore import Qt, QObject, Signal, QEvent, QSize
 from .. config.constants import constants
 from .colors import ColorPalette
 from .action_config_dialog import ActionConfigDialog
@@ -502,9 +502,9 @@ class ProjectEditor(QObject):
                         "<b>Right-click:</b> show menu")
         item.setData(Qt.ItemDataRole.UserRole, True)
         widget_list.addItem(item)
-        html_text = f"✅ <span style='color:#{ColorPalette.DARK_BLUE.hex()};'>{text}</span>" \
+        html_text = f"✅ {text}" \
                     if action.enabled() \
-                    else f"🚫 <span style='color:#{ColorPalette.DARK_RED.hex()};'>{text}</span>"
+                    else f"🚫 <span style='color:#{ColorPalette.MEDIUM_RED.hex()};'>{text}</span>"
         label = QLabel(html_text)
         label.setTextFormat(Qt.RichText)
         label.setWordWrap(False)
