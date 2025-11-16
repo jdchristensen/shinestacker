@@ -504,8 +504,9 @@ class ProjectEditor(QObject):
         widget_list.addItem(item)
         html_text = f"✅ {text}" \
                     if action.enabled() \
-                    else f"🚫 <span style='color:#{ColorPalette.MEDIUM_RED.hex()};'>{text}</span>"
+                    else f"🚫 {text}"
         label = QLabel(html_text)
+        label.setProperty("color-type", "enabled" if action.enabled() else "disabled")
         label.setTextFormat(Qt.RichText)
         label.setWordWrap(False)
         label.setSizePolicy(QSizePolicy.MinimumExpanding, QSizePolicy.Fixed)

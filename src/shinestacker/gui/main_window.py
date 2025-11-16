@@ -159,11 +159,19 @@ class MainWindow(QMainWindow, LogManager):
             self.menu_manager.add_recent_file)
         self.project_controller.set_enabled_file_open_close_actions_requested.connect(
             self.set_enabled_file_open_close_actions)
-
         self.menu_manager.open_file_requested.connect(
             self.project_controller.open_project)
-
         self.set_enabled_file_open_close_actions(False)
+        self.style_light = f"""
+            QLabel[color-type="enabled"] {{ color: #{ColorPalette.DARK_BLUE.hex()}; }}
+            QLabel[color-type="disabled"] {{ color: #{ColorPalette.DARK_RED.hex()}; }}
+        """
+        self.style_dark = f"""
+            QLabel[color-type="enabled"] {{ color: #{ColorPalette.LIGHT_BLUE.hex()}; }}
+            QLabel[color-type="disabled"] {{ color: #{ColorPalette.LIGHT_RED.hex()}; }}
+        """
+        QApplication.instance().setStyleSheet(
+            self.style_dark if dark_theme else self.style_light)
 
     def modified(self):
         return self.project_editor.modified()
@@ -604,3 +612,5 @@ class MainWindow(QMainWindow, LogManager):
         dark_theme = self.is_dark_theme()
         self.menu_manager.change_theme(dark_theme)
         self.tab_widget.change_theme(dark_theme)
+        QApplication.instance().setStyleSheet(
+            self.style_dark if dark_theme else self.style_light)
