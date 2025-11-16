@@ -121,7 +121,8 @@ class ImageSequenceManager:
 
     def set_filelist(self):
         file_folder = os.path.relpath(self.input_full_path(), self.working_path)
-        self.print_message(color_str(f"{self.num_input_filepaths()} files in folder: {file_folder}",
+        num_str = "no" if self.num_input_filepaths() == 0 else f"{self.num_input_filepaths()}"
+        self.print_message(color_str(f"{num_str} image files in folder: {file_folder}",
                                      constants.LOG_COLOR_LEVEL_2))
         self.base_message = color_str(self.name, constants.LOG_COLOR_LEVEL_1, "bold")
 

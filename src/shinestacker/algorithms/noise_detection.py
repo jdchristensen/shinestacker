@@ -1,4 +1,4 @@
-# pylint: disable=C0114, C0115, C0116, E1101, W0718, R0914, R0915, R0902
+# pylint: disable=C0114, C0115, C0116, E1101, W0718, R0914, R0915, R0902, R0912
 import os
 import errno
 import logging

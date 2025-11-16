@@ -111,7 +111,7 @@ def img_bw(img):
 
 def get_first_image_file(filenames):
     if len(filenames) == 0:
-        raise ValueError(f"No valid image files found in the selected path")
+        raise ValueError("No image files found in the selected path")
     first_img_file = None
     for filename in filenames:
         if os.path.isfile(filename) and extension_supported(filename):
@@ -119,7 +119,7 @@ def get_first_image_file(filenames):
             break
     if first_img_file is None:
         paths = ", ".join(filenames)
-        raise ValueError(f"No valid image files found in paths: {paths}")
+        raise ValueError(f"No image files found in paths: {paths}")
     return first_img_file
 
 
