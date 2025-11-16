@@ -496,8 +496,13 @@ class MaskNoiseConfigurator(DefaultActionConfigurator):
         self.add_field(
             'method', FIELD_COMBO, 'Interpolation method', required=False,
             expert=True,
-            options=['Mean', 'Median'], default='Mean')
-
+            options=['Mean', 'Median'],
+            default=AppConfig.get('mask_noise_params')['method'])
+        self.add_field(
+            'max_noisy_pxls', FIELD_INT, 'Max. n. of noisy pixels', required=False,
+            expert=True,
+            default=AppConfig.get('mask_noise_params')['max_noisy_pxls'],
+            min_val=1, max_val=10000)
 
 class SubsampleActionConfigurator(DefaultActionConfigurator):
     def __init__(self, expert, current_wd):

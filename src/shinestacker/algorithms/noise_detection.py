@@ -18,9 +18,6 @@ from .utils import read_img, save_plot, get_img_metadata, validate_image
 setup_matplotlib_mode()
 
 
-MAX_NOISY_PIXELS = 2000
-
-
 def mean_image(file_paths, max_frames=-1, message_callback=None, progress_callback=None):
     mean_img = None
     counter = 0
@@ -172,16 +169,18 @@ class NoiseDetection(TaskBase, ImageSequenceManager):
 
 
 class MaskNoise(SubAction):
-    def __init__(self, noise_mask=DEFAULTS['noise_detection_params']['noise_map_filename'],
-                 kernel_size=DEFAULTS['mask_noise_params']['kernel_size'],
-                 method=constants.INTERPOLATE_MEAN, **kwargs):
-        super().__init__(**kwargs)
-        self.noise_mask = noise_mask if noise_mask != '' else \
-            DEFAULTS['noise_detection_params']['noise_map_filename']
-        self.kernel_size = kernel_size
+    def __init__(self, **kwargs):
+        self.noise_mask = kwargs.pop(
+            'noise_mask', DEFAULTS['noise_detection_params']['noise_map_filename'])
+        self.max_noisy_pxls = kwargs.pop(
+            'max_noisy_pxls', DEFAULTS['mask_noise_params']['max_noisy_pxls'])
+        self.kernel_size = kwargs.pop(
+            'kernel_size', DEFAULTS['mask_noise_params']['kernel_size'])
         self.ks2 = self.kernel_size // 2
         self.ks2_1 = self.ks2 + 1
-        self.method = method
+        self.method = kwargs.pop(
+            'method', DEFAULTS['mask_noise_params']['method'])
+        super().__init__(**kwargs)
         self.process = None
         self.noise_mask_img = None
         self.expected_shape = None
@@ -218,7 +217,7 @@ class MaskNoise(SubAction):
         corrected = channel.copy()
         noise_coords = np.argwhere(self.noise_mask_img > 0)
         n_noisy_pixels = noise_coords.shape[0]
-        if n_noisy_pixels > MAX_NOISY_PIXELS:
+        if n_noisy_pixels > self.max_noisy_pxls:
             raise RuntimeError(f"Noise map contains too many hot pixels: {n_noisy_pixels}")
         for y, x in noise_coords:
             neighborhood = channel[

@@ -111,7 +111,9 @@ DEFAULTS = {
         'plot_histograms': True,
     },
     'mask_noise_params': {
-        'kernel_size': 3
+        'kernel_size': 3,
+        'method': 'MEAN',
+        'max_noisy_pxls': 2000
     },
     'vignetting_params': {
         'r_steps': 100,

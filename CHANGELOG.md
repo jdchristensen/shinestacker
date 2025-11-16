@@ -2,7 +2,7 @@
 
 This page reports the main releases only and the main changes therein.
 
-## [v1.10.0] - 2025-11-15
+## [v1.10.0] - 2025-11-16
 ** Improved noise configuration **
 
 ### Added
@@ -14,6 +14,7 @@ This page reports the main releases only and the main changes therein.
 - fixed tooltip counter in the processing colored box display
 - fixed names of visual progress indicators according to output path
 - fixed icons in the main window
+- fixed configuration parameters for mask noise module
 - restored alignment warning messages
 
 ### Changed
