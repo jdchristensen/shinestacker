@@ -190,7 +190,7 @@ class IOGuiHandler(QObject, LayerCollectionHandler):
             result = QMessageBox.warning(
                 None, "Warning",
                 f"<b>Warning:</b> You selected {len(file_paths)} frames. "
-                "This requires significant system memory and could freeze youd computer.<br><br>"
+                "This operation requires significant system memory and could freeze youd computer.<br><br>"
                 "Are you sure you want to proceed?",
                 QMessageBox.StandardButton.Ok | QMessageBox.StandardButton.Cancel)
             if result != QMessageBox.StandardButton.Ok:
