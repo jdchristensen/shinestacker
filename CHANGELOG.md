@@ -9,6 +9,7 @@ This page reports the main releases only and the main changes therein.
 - automatic threshold evaluation in the noise detection module
 - *align subsample* option added to persistent settings
 - double-click on processing colored box display opens processed frame
+- warning message appears when trying to load > 20 image frames
 
 ### Fixed
 - fixed tooltip counter in the processing colored box display

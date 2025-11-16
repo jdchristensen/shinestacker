@@ -186,6 +186,15 @@ class IOGuiHandler(QObject, LayerCollectionHandler):
             self.import_frames_from_files(file_paths)
 
     def import_frames_from_files(self, file_paths):
+        if len(file_paths) > 20:
+            result = QMessageBox.warning(
+                None, "Warning",
+                f"<b>Warning:</b> You selected {len(file_paths)} frames. "
+                "This requires significant system memory and could freeze youd computer.<br><br>"
+                "Are you sure you want to proceed?",
+                QMessageBox.StandardButton.Ok | QMessageBox.StandardButton.Cancel)
+            if result != QMessageBox.StandardButton.Ok:
+                return
         self.cleanup_old_threads()
         QGuiApplication.setOverrideCursor(QCursor(Qt.BusyCursor))
         self.frame_loading_dialog = QDialog(self.parent())
