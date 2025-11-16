@@ -108,7 +108,7 @@ DEFAULTS = {
         'noisy_masked_px': [100, 100, 100],
         'channel_thresholds': [13, 13, 13],
         'blur_size': 5,
-        'plot_histograms': True,
+        'plot_histograms': False,
     },
     'mask_noise_params': {
         'kernel_size': 3,
