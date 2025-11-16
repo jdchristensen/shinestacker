@@ -288,6 +288,8 @@ class CombinedActions(ReferenceFrameTask):
         self.callback(constants.CALLBACK_ADD_STATUS_BOX, self.output_path)
         n_actions = len(self._actions)
         filenames = self.input_filepaths()
+        if len(filenames) == 0:
+            raise ValueError("No image files found in the selected path")
         for filename in filenames:
             self.callback(constants.CALLBACK_ADD_FRAME, self.output_path, filename, n_actions)
         ReferenceFrameTask.begin(self)

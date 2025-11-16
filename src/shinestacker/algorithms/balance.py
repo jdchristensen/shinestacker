@@ -420,7 +420,7 @@ class LumiCorrection(Correction):
         return [hist]
 
     def end(self, ref_idx):
-        if self.histogrammer.plot_summary:
+        if self.histogrammer and self.histogrammer.plot_summary:
             self.histogrammer.generate_summary_plot(ref_idx)
 
 
@@ -604,6 +604,8 @@ class BalanceFrames(SubAction):
     def begin(self, process):
         self.process = process
         self.correction.process = process
+        if self.process.num_input_filepaths() == 0:
+            return
         img = read_img(self.process.input_filepath(process.ref_idx))
         self.shape = img.shape
         self.correction.begin(img, self.process.total_action_counts, process.ref_idx)
