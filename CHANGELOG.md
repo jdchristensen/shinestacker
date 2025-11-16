@@ -21,7 +21,7 @@ This page reports the main releases only and the main changes therein.
 - optimized settings persistence by saving only parameters different from defaults
 - optimized vignetting algorithm
 - refactored code for default-parameters configuration
-- project window colors change when desktop themes
+- project window colors update when desktop themes changes
 
 ---
 

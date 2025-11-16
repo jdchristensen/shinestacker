@@ -14,9 +14,9 @@ class SimpleHtmlFormatter(logging.Formatter):
         'ERROR': '#ff3333',    # red
         'CRITICAL': '#cc0066'  # dark red
     }
-    FF = '80'
-    OO = '00'
-    MM = '40'
+    FF = 'A0'
+    OO = '60'
+    MM = '80'
     GG = 'FF'
     ANSI_COLORS = {
         # Reset

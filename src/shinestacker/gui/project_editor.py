@@ -5,7 +5,6 @@ from PySide6.QtCore import Qt, QObject, Signal, QEvent, QSize
 from PySide6.QtWidgets import (QListWidget, QMessageBox, QDialog, QListWidgetItem, QLabel,
                                QSizePolicy)
 from .. config.constants import constants
-from .colors import ColorPalette
 from .action_config_dialog import ActionConfigDialog
 from .project_model import ActionConfig, get_action_input_path, get_action_output_path
 
@@ -502,9 +501,7 @@ class ProjectEditor(QObject):
                         "<b>Right-click:</b> show menu")
         item.setData(Qt.ItemDataRole.UserRole, True)
         widget_list.addItem(item)
-        html_text = f"✅ {text}" \
-                    if action.enabled() \
-                    else f"🚫 {text}"
+        html_text = ("✅ " if action.enabled() else "🚫 ") + text
         label = QLabel(html_text)
         label.setProperty("color-type", "enabled" if action.enabled() else "disabled")
         label.setTextFormat(Qt.RichText)

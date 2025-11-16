@@ -21,6 +21,9 @@ from .flow_layout import FlowLayout
 from .sys_mon import StatusBarSystemMonitor
 from .processing_widget import MultiModuleStatusContainer
 
+COLOR_RED = "FF5050"
+COLOR_BLUE = "5050FF"
+
 
 class ColorButton(QPushButton):
     def __init__(self, text, enabled, parent=None):
@@ -392,7 +395,7 @@ class RunWorker(LogWorker):
         self.status_signal.emit(f"{self.tag} running...", constants.RUN_ONGOING, "", 0)
         self.html_signal.emit(f'''
         <div style="margin: 2px 0; font-family: {constants.LOG_FONTS_STR};">
-        <span style="color: #{ColorPalette.DARK_BLUE.hex()}; font-style: italic; font-weight: bold;">{self.tag} begins</span>
+        <span style="color: #{COLOR_BLUE}; font-style: italic; font-weight: bold;">{self.tag} begins</span>
         </div>
         ''') # noqa
         status, error_message = self.do_run()
@@ -400,21 +403,21 @@ class RunWorker(LogWorker):
         if status == constants.RUN_COMPLETED:
             message = f"{self.tag} ended successfully"
             self.run_completed_signal.emit(run_id)
-            color = "#" + ColorPalette.DARK_BLUE.hex()
+            color = COLOR_BLUE
         elif status == constants.RUN_STOPPED:
             message = f"{self.tag} stopped"
-            color = "#" + ColorPalette.DARK_RED.hex()
+            color = COLOR_RED
             self.run_stopped_signal.emit(run_id)
         elif status == constants.RUN_FAILED:
             message = f"{self.tag} failed"
-            color = "#" + ColorPalette.DARK_RED.hex()
+            color = COLOR_RED
             self.run_failed_signal.emit(run_id)
         else:
             message = ''
             color = "#000000"
         self.html_signal.emit(f'''
         <div style="margin: 2px 0; font-family: {constants.LOG_FONTS_STR};">
-        <span style="color: {color}; font-style: italic; font-weight: bold;">{message}</span>
+        <span style="color: #{color}; font-style: italic; font-weight: bold;">{message}</span>
         </div>
         ''')
         # pylint: enable=line-too-long

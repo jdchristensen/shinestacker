@@ -42,16 +42,6 @@ class ProjectLogWorker(RunWorker):
         return converter.run_project(self.project, self.id_str, self.callbacks)
 
 
-LIST_STYLE_SHEET = f"""
-    QListWidget::item:selected {{
-        background-color: #{ColorPalette.LIGHT_BLUE.hex()};
-    }}
-    QListWidget::item:hover {{
-        background-color: #F0F0F0;
-    }}
-"""
-
-
 class MainWindow(QMainWindow, LogManager):
     def __init__(self):
         QMainWindow.__init__(self)
@@ -89,8 +79,26 @@ class MainWindow(QMainWindow, LogManager):
         self._windows = []
         self._workers = []
         self.retouch_callback = None
-        self.job_list().setStyleSheet(LIST_STYLE_SHEET)
-        self.action_list().setStyleSheet(LIST_STYLE_SHEET)
+        self.list_style_sheet_light = f"""
+            QListWidget::item:selected {{
+                background-color: #{ColorPalette.LIGHT_BLUE.hex()};
+            }}
+            QListWidget::item:hover {{
+                background-color: #F0F0F0;
+            }}
+        """
+        self.list_style_sheet_dark = f"""
+            QListWidget::item:selected {{
+                background-color: #{ColorPalette.DARK_BLUE.hex()};
+            }}
+            QListWidget::item:hover {{
+                background-color: #303030;
+            }}
+        """
+        list_style_sheet = self.list_style_sheet_dark \
+            if dark_theme else self.list_style_sheet_light
+        self.job_list().setStyleSheet(list_style_sheet)
+        self.action_list().setStyleSheet(list_style_sheet)
         self.menu_manager.add_menus()
         toolbar = QToolBar(self)
         self.addToolBar(Qt.TopToolBarArea, toolbar)
@@ -614,3 +622,7 @@ class MainWindow(QMainWindow, LogManager):
         self.tab_widget.change_theme(dark_theme)
         QApplication.instance().setStyleSheet(
             self.style_dark if dark_theme else self.style_light)
+        list_style_sheet = self.list_style_sheet_dark \
+            if dark_theme else self.list_style_sheet_light
+        self.job_list().setStyleSheet(list_style_sheet)
+        self.action_list().setStyleSheet(list_style_sheet)
