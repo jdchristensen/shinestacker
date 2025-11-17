@@ -77,8 +77,8 @@ class ImageEditorUI(QMainWindow, LayerCollectionHandler):
         brush_label = QLabel("Brush Size")
         brush_label.setAlignment(Qt.AlignCenter)
         brush_layout.addWidget(brush_label)
-        self.brush_size_slider = QSlider(Qt.Horizontal)
-        self.brush_size_slider.setRange(0, gui_constants.BRUSH_SIZE_SLIDER_MAX)
+        self.size_slider = QSlider(Qt.Horizontal)
+        self.size_slider.setRange(0, gui_constants.BRUSH_SIZE_SLIDER_MAX)
 
         def brush_size_to_slider(size):
             if size <= gui_constants.BRUSH_SIZES['min']:
@@ -89,8 +89,8 @@ class ImageEditorUI(QMainWindow, LayerCollectionHandler):
                           gui_constants.BRUSH_SIZES['max']) ** (1 / gui_constants.BRUSH_GAMMA)
             return int(normalized * gui_constants.BRUSH_SIZE_SLIDER_MAX)
 
-        self.brush_size_slider.setValue(brush_size_to_slider(self.brush.size))
-        brush_layout.addWidget(self.brush_size_slider)
+        self.size_slider.setValue(brush_size_to_slider(self.brush.size))
+        brush_layout.addWidget(self.size_slider)
         hardness_label = QLabel("Brush Hardness")
         hardness_label.setAlignment(Qt.AlignCenter)
         brush_layout.addWidget(hardness_label)
@@ -243,7 +243,7 @@ class ImageEditorUI(QMainWindow, LayerCollectionHandler):
         self.io_gui_handler.set_enabled_file_open_close_actions_requested.connect(
             self.set_enabled_file_open_close_actions)
         self.brush_tool.setup_ui(self.brush, self.brush_preview_widget, self.image_viewer,
-                                 self.brush_size_slider, self.hardness_slider, self.opacity_slider,
+                                 self.size_slider, self.hardness_slider, self.opacity_slider,
                                  self.flow_slider)
         self.image_viewer.set_brush(self.brush_tool.brush)
         self.image_viewer.set_preview_brush(self.brush_tool.brush)
