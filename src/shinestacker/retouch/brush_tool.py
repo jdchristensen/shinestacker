@@ -1,7 +1,6 @@
 # pylint: disable=C0114, C0115, C0116, E0611, R0902, R0913, R0917, R0914
 import numpy as np
-from PySide6.QtWidgets import QApplication, QLabel
-from PySide6.QtGui import QPixmap, QPainter, QColor, QPen, QBrush, QFont
+from PySide6.QtGui import QPixmap, QPainter, QColor, QPen, QBrush
 from PySide6.QtCore import Qt, QPoint
 from .brush_gradient import create_default_brush_gradient
 from .. config.gui_constants import gui_constants
@@ -20,109 +19,17 @@ class BrushTool:
         self.flow_slider = None
         self.luminosity_slider = None
         self._brush_mask_cache = {}
-        self.brush_text = None
 
     def setup_ui(self, brush, brush_preview_widget, image_viewer, size_slider, hardness_slider,
                  opacity_slider, flow_slider, luminosity_slider):
         self.brush = brush
         self.brush_preview_widget = brush_preview_widget
-        self.brush_text = QLabel(brush_preview_widget.parent())
-        self.brush_text.setStyleSheet("color: navy; background: transparent;")
-        self.brush_text.setAlignment(Qt.AlignLeft | Qt.AlignTop)
-        self.brush_text.raise_()
         self.image_viewer = image_viewer
         self.size_slider = size_slider
         self.hardness_slider = hardness_slider
         self.opacity_slider = opacity_slider
         self.flow_slider = flow_slider
         self.luminosity_slider = luminosity_slider
-        self.size_slider.valueChanged.connect(self.update_brush_size)
-        self.hardness_slider.valueChanged.connect(self.update_brush_hardness)
-        self.opacity_slider.valueChanged.connect(self.update_brush_opacity)
-        self.flow_slider.valueChanged.connect(self.update_brush_flow)
-        self.luminosity_slider.valueChanged.connect(self.update_brush_luminosity)
-        self.update_brush_size(self.size_slider.value())
-        self.update_brush_hardness(self.hardness_slider.value())
-        self.update_brush_opacity(self.opacity_slider.value())
-        self.update_brush_flow(self.flow_slider.value())
-
-    def update_brush_size(self, slider_val):
-
-        def slider_to_brush_size(slider_val):
-            normalized = slider_val / gui_constants.BRUSH_SIZE_SLIDER_MAX
-            size = gui_constants.BRUSH_SIZES['min'] + \
-                gui_constants.BRUSH_SIZES['max'] * (normalized ** gui_constants.BRUSH_GAMMA)
-            return max(gui_constants.BRUSH_SIZES['min'],
-                       min(gui_constants.BRUSH_SIZES['max'], size))
-
-        self.brush.size = slider_to_brush_size(slider_val)
-        self.update_brush_thumb()
-
-    def increase_brush_size(self, amount=5):
-        val = min(self.size_slider.value() + amount, self.size_slider.maximum())
-        self.size_slider.setValue(val)
-        self.update_brush_size(val)
-
-    def decrease_brush_size(self, amount=5):
-        val = max(self.size_slider.value() - amount, self.size_slider.minimum())
-        self.size_slider.setValue(val)
-        self.update_brush_size(val)
-
-    def increase_brush_hardness(self, amount=2):
-        val = min(self.hardness_slider.value() + amount, self.hardness_slider.maximum())
-        self.hardness_slider.setValue(val)
-        self.update_brush_hardness(val)
-
-    def decrease_brush_hardness(self, amount=2):
-        val = max(self.hardness_slider.value() - amount, self.hardness_slider.minimum())
-        self.hardness_slider.setValue(val)
-        self.update_brush_hardness(val)
-
-    def increase_brush_opacity(self, amount=2):
-        val = min(self.opacity_slider.value() + amount, self.opacity_slider.maximum())
-        self.opacity_slider.setValue(val)
-        self.update_brush_opacity(val)
-
-    def decrease_brush_opacity(self, amount=2):
-        val = max(self.opacity_slider.value() - amount, self.opacity_slider.minimum())
-        self.opacity_slider.setValue(val)
-        self.update_brush_opacity(val)
-
-    def increase_brush_flow(self, amount=2):
-        val = min(self.flow_slider.value() + amount, self.flow_slider.maximum())
-        self.flow_slider.setValue(val)
-        self.update_brush_flow(val)
-
-    def decrease_brush_flow(self, amount=2):
-        val = max(self.flow_slider.value() - amount, self.flow_slider.minimum())
-        self.flow_slider.setValue(val)
-        self.update_brush_flow(val)
-
-    def increase_brush_luminosity(self, amount=1):
-        val = min(self.luminosity_slider.value() + amount, self.luminosity_slider.maximum())
-        self.luminosity_slider.setValue(val)
-        self.update_brush_luminosity(val)
-
-    def decrease_brush_luminosity(self, amount=1):
-        val = min(self.luminosity_slider.value() - amount, self.luminosity_slider.maximum())
-        self.luminosity_slider.setValue(val)
-        self.update_brush_luminosity(val)
-
-    def update_brush_hardness(self, hardness):
-        self.brush.hardness = hardness
-        self.update_brush_thumb()
-
-    def update_brush_opacity(self, opacity):
-        self.brush.opacity = opacity
-        self.update_brush_thumb()
-
-    def update_brush_flow(self, flow):
-        self.brush.flow = flow
-        self.update_brush_thumb()
-
-    def update_brush_luminosity(self, luminosity):
-        self.brush.luminosity = luminosity
-        self.update_brush_thumb()
 
     def update_brush_thumb(self):
         width, height = gui_constants.UI_SIZES['brush_preview']
@@ -152,22 +59,6 @@ class BrushTool:
         painter.drawEllipse(QPoint(center_x, center_y), radius, radius)
         if self.image_viewer.strategy.cursor_style == 'preview':
             painter.setPen(QPen(QColor(0, 0, 160)))
-            font = QApplication.font()
-            painter.setFont(font)
-            font.setHintingPreference(QFont.PreferFullHinting)
-            painter.setFont(font)
-            self.brush_text.setText(
-                f"Size: {int(self.brush.size)}px\n"
-                f"Hardness: {self.brush.hardness}%\n"
-                f"Opacity: {self.brush.opacity}%\n"
-                f"Flow: {self.brush.flow}%\n"
-                f"Luminosity: {self.brush.luminosity}%"
-            )
-            self.brush_text.adjustSize()
-            self.brush_text.move(10, self.brush_preview_widget.height() // 2 + 155)
-            self.brush_text.show()
-        else:
-            self.brush_text.hide()
         painter.end()
         self.brush_preview_widget.setPixmap(pixmap)
         self.image_viewer.strategy.update_brush_cursor()

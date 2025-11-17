@@ -90,9 +90,10 @@ class ImageEditorUI(QMainWindow, LayerCollectionHandler):
         brush_layout = QVBoxLayout(brush_panel)
         brush_layout.setContentsMargins(0, 0, 0, 0)
         brush_layout.setSpacing(2)
-        brush_label = QLabel("Brush Size")
-        brush_label.setAlignment(Qt.AlignCenter)
-        brush_layout.addWidget(brush_label)
+
+        self.size_label = QLabel("Size")
+        self.size_label.setAlignment(Qt.AlignLeft)
+        brush_layout.addWidget(self.size_label)
         self.size_slider = QSlider(Qt.Horizontal)
         self.size_slider.setRange(0, gui_constants.BRUSH_SIZE_SLIDER_MAX)
 
@@ -107,32 +108,34 @@ class ImageEditorUI(QMainWindow, LayerCollectionHandler):
 
         self.size_slider.setValue(brush_size_to_slider(self.brush.size))
         brush_layout.addWidget(self.size_slider)
-        hardness_label = QLabel("Brush Hardness")
-        hardness_label.setAlignment(Qt.AlignCenter)
-        brush_layout.addWidget(hardness_label)
+
+        self.hardness_label = QLabel("Hardness")
+        self.hardness_label.setAlignment(Qt.AlignLeft)
+        brush_layout.addWidget(self.hardness_label)
         self.hardness_slider = QSlider(Qt.Horizontal)
         self.hardness_slider.setRange(0, 100)
         self.hardness_slider.setValue(self.brush.hardness)
         brush_layout.addWidget(self.hardness_slider)
-        opacity_label = QLabel("Brush Opacity")
-        opacity_label.setAlignment(Qt.AlignCenter)
-        brush_layout.addWidget(opacity_label)
+
+        self.opacity_label = QLabel("Opacity")
+        self.opacity_label.setAlignment(Qt.AlignLeft)
+        brush_layout.addWidget(self.opacity_label)
         self.opacity_slider = QSlider(Qt.Horizontal)
         self.opacity_slider.setRange(0, 100)
         self.opacity_slider.setValue(self.brush.opacity)
         brush_layout.addWidget(self.opacity_slider)
 
-        flow_label = QLabel("Brush Flow")
-        flow_label.setAlignment(Qt.AlignCenter)
-        brush_layout.addWidget(flow_label)
+        self.flow_label = QLabel("Flow")
+        self.flow_label.setAlignment(Qt.AlignLeft)
+        brush_layout.addWidget(self.flow_label)
         self.flow_slider = QSlider(Qt.Horizontal)
         self.flow_slider.setRange(1, 100)
         self.flow_slider.setValue(self.brush.flow)
         brush_layout.addWidget(self.flow_slider)
 
-        luminosity_label = QLabel("Brush Luminosity")
-        luminosity_label.setAlignment(Qt.AlignCenter)
-        brush_layout.addWidget(luminosity_label)
+        self.luminosity_label = QLabel("Luminosity")
+        self.luminosity_label.setAlignment(Qt.AlignLeft)
+        brush_layout.addWidget(self.luminosity_label)
         self.luminosity_slider = ResetSlider(0, Qt.Horizontal)
         self.luminosity_slider.setRange(-30, +30)
         self.luminosity_slider.setValue(0)
@@ -271,6 +274,18 @@ class ImageEditorUI(QMainWindow, LayerCollectionHandler):
         self.brush_tool.setup_ui(self.brush, self.brush_preview_widget, self.image_viewer,
                                  self.size_slider, self.hardness_slider, self.opacity_slider,
                                  self.flow_slider, self.luminosity_slider)
+
+        self.size_slider.valueChanged.connect(self.update_brush_size)
+        self.hardness_slider.valueChanged.connect(self.update_brush_hardness)
+        self.opacity_slider.valueChanged.connect(self.update_brush_opacity)
+        self.flow_slider.valueChanged.connect(self.update_brush_flow)
+        self.luminosity_slider.valueChanged.connect(self.update_brush_luminosity)
+        self.update_brush_size(self.size_slider.value())
+        self.update_brush_hardness(self.hardness_slider.value())
+        self.update_brush_opacity(self.opacity_slider.value())
+        self.update_brush_flow(self.flow_slider.value())
+        self.update_brush_luminosity(self.luminosity_slider.value())
+
         self.image_viewer.set_brush(self.brush_tool.brush)
         self.image_viewer.set_preview_brush(self.brush_tool.brush)
         self.image_viewer.status.set_zoom_factor_requested.connect(self.handle_set_zoom_factor)
@@ -623,37 +638,120 @@ class ImageEditorUI(QMainWindow, LayerCollectionHandler):
             return
         text = event.text()
         if text == '[':
-            self.brush_tool.decrease_brush_size()
+            self.decrease_brush_size()
             return
         if text == ']':
-            self.brush_tool.increase_brush_size()
+            self.increase_brush_size()
             return
         if text == '{':
-            self.brush_tool.decrease_brush_hardness()
+            self.decrease_brush_hardness()
             return
         if text == '}':
-            self.brush_tool.increase_brush_hardness()
+            self.increase_brush_hardness()
             return
         if text == ',':
-            self.brush_tool.decrease_brush_opacity()
+            self.decrease_brush_opacity()
             return
         if text == '.':
-            self.brush_tool.increase_brush_opacity()
+            self.increase_brush_opacity()
             return
         if text == ';':
-            self.brush_tool.decrease_brush_flow()
+            self.decrease_brush_flow()
             return
         if text == ':':
-            self.brush_tool.increase_brush_flow()
+            self.increase_brush_flow()
             return
         if text == '<':
-            self.brush_tool.decrease_brush_luminosity()
+            self.decrease_brush_luminosity()
             return
         if text == '>':
-            self.brush_tool.increase_brush_luminosity()
+            self.increase_brush_luminosity()
             return
         super().keyPressEvent(event)
     # pylint: enable=C0103
+
+    def increase_brush_size(self, amount=5):
+        val = min(self.size_slider.value() + amount, self.size_slider.maximum())
+        self.size_slider.setValue(val)
+        self.update_brush_size(val)
+
+    def decrease_brush_size(self, amount=5):
+        val = max(self.size_slider.value() - amount, self.size_slider.minimum())
+        self.size_slider.setValue(val)
+        self.update_brush_size(val)
+
+    def increase_brush_hardness(self, amount=2):
+        val = min(self.hardness_slider.value() + amount, self.hardness_slider.maximum())
+        self.hardness_slider.setValue(val)
+        self.update_brush_hardness(val)
+
+    def decrease_brush_hardness(self, amount=2):
+        val = max(self.hardness_slider.value() - amount, self.hardness_slider.minimum())
+        self.hardness_slider.setValue(val)
+        self.update_brush_hardness(val)
+
+    def increase_brush_opacity(self, amount=2):
+        val = min(self.opacity_slider.value() + amount, self.opacity_slider.maximum())
+        self.opacity_slider.setValue(val)
+        self.update_brush_opacity(val)
+
+    def decrease_brush_opacity(self, amount=2):
+        val = max(self.opacity_slider.value() - amount, self.opacity_slider.minimum())
+        self.opacity_slider.setValue(val)
+        self.update_brush_opacity(val)
+
+    def increase_brush_flow(self, amount=2):
+        val = min(self.flow_slider.value() + amount, self.flow_slider.maximum())
+        self.flow_slider.setValue(val)
+        self.update_brush_flow(val)
+
+    def decrease_brush_flow(self, amount=2):
+        val = max(self.flow_slider.value() - amount, self.flow_slider.minimum())
+        self.flow_slider.setValue(val)
+        self.update_brush_flow(val)
+
+    def increase_brush_luminosity(self, amount=1):
+        val = min(self.luminosity_slider.value() + amount, self.luminosity_slider.maximum())
+        self.luminosity_slider.setValue(val)
+        self.update_brush_luminosity(val)
+
+    def decrease_brush_luminosity(self, amount=1):
+        val = min(self.luminosity_slider.value() - amount, self.luminosity_slider.maximum())
+        self.luminosity_slider.setValue(val)
+        self.update_brush_luminosity(val)
+
+    def update_brush_size(self, slider_val):
+
+        def slider_to_brush_size(slider_val):
+            normalized = slider_val / gui_constants.BRUSH_SIZE_SLIDER_MAX
+            size = gui_constants.BRUSH_SIZES['min'] + \
+                gui_constants.BRUSH_SIZES['max'] * (normalized ** gui_constants.BRUSH_GAMMA)
+            return max(gui_constants.BRUSH_SIZES['min'],
+                       min(gui_constants.BRUSH_SIZES['max'], size))
+
+        self.brush.size = slider_to_brush_size(slider_val)
+        self.size_label.setText(f"Size: {int(self.brush.size)}px")
+        self.brush_tool.update_brush_thumb()
+
+    def update_brush_hardness(self, hardness):
+        self.brush.hardness = hardness
+        self.hardness_label.setText(f"Hardness: {self.brush.hardness}%")
+        self.brush_tool.update_brush_thumb()
+
+    def update_brush_opacity(self, opacity):
+        self.brush.opacity = opacity
+        self.opacity_label.setText(f"Opacity: {self.brush.opacity}%")
+        self.brush_tool.update_brush_thumb()
+
+    def update_brush_flow(self, flow):
+        self.brush.flow = flow
+        self.flow_label.setText(f"Flow: {self.brush.flow}%")
+        self.brush_tool.update_brush_thumb()
+
+    def update_brush_luminosity(self, luminosity):
+        self.brush.luminosity = luminosity
+        self.luminosity_label.setText(f"Luminosity: {self.brush.luminosity}%")
+        self.brush_tool.update_brush_thumb()
 
     def sort_layers_ui(self, order):
         self.sort_layers(order)
@@ -842,27 +940,27 @@ class ImageEditorUI(QMainWindow, LayerCollectionHandler):
 
     def handle_brush_size_change(self, delta):
         if delta > 0:
-            self.brush_tool.increase_brush_size()
+            self.increase_brush_size()
         else:
-            self.brush_tool.decrease_brush_size()
+            self.decrease_brush_size()
 
     def handle_brush_hardness_change(self, delta):
         if delta > 0:
-            self.brush_tool.increase_brush_hardness()
+            self.increase_brush_hardness()
         else:
-            self.brush_tool.decrease_brush_hardness()
+            self.decrease_brush_hardness()
 
     def handle_brush_opacity_change(self, delta):
         if delta > 0:
-            self.brush_tool.increase_brush_opacity()
+            self.increase_brush_opacity()
         else:
-            self.brush_tool.decrease_brush_opacity()
+            self.decrease_brush_opacity()
 
     def handle_brush_flow_change(self, delta):
         if delta > 0:
-            self.brush_tool.increase_brush_flow()
+            self.increase_brush_flow()
         else:
-            self.brush_tool.decrease_brush_flow()
+            self.decrease_brush_flow()
 
     def handle_set_zoom_factor(self, zoom_factor):
         self.zoom_factor_label.setText(f"zoom: {zoom_factor:.1%}")
