@@ -123,11 +123,11 @@ def test_empty_input():
 
 
 if __name__ == '__main__':
-    # test_detect_fail_1()
-    # test_detect_fail_2()
-    # test_detect_fail_3()
-    # test_detect()
-    # test_correct()
-    # test_invalid_input()
-    # test_invalid_input_2()
+    test_detect_fail_1()
+    test_detect_fail_2()
+    test_detect_fail_3()
+    test_detect()
+    test_correct()
+    test_invalid_input()
+    test_invalid_input_2()
     test_empty_input()
