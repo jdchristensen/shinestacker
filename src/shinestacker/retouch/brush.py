@@ -8,3 +8,4 @@ class Brush:
         self.hardness = AppConfig.get('brush_hardness')
         self.opacity = AppConfig.get('brush_opacity')
         self.flow = AppConfig.get('brush_flow')
+        self.luminosity = 0

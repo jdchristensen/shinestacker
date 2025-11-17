@@ -1,4 +1,4 @@
-# pylint: disable=C0114, C0115, C0116, E0611, R0902, R0914, R0915, R0904, W0108, R0911
+# pylint: disable=C0114, C0115, C0116, E0611, R0902, R0914, R0915, R0904, W0108, R0911, R0903
 from functools import partial
 from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QFrame, QLabel, QMenu,
                                QFileDialog, QListWidget, QSlider, QMainWindow, QMessageBox,
@@ -29,6 +29,22 @@ from .vignetting_filter import VignettingFilter
 from .adjustments import LumiContrastFilter, SaturationVibranceFilter
 from .transformation_manager import TransfromationManager
 from .exif_data import ExifData
+
+
+class ResetSlider(QSlider):
+    def __init__(self, default_value, orientation=Qt.Horizontal):
+        super().__init__(orientation)
+        self.default_value = default_value
+        self.setToolTip("Double-click to reset")
+
+    # pylint: disable=C0103
+    def mouseDoubleClickEvent(self, event):
+        if event.button() == Qt.LeftButton:
+            self.setValue(self.default_value)
+            event.accept()
+        else:
+            super().mouseDoubleClickEvent(event)
+    # pylint: enable=C0103
 
 
 class ImageEditorUI(QMainWindow, LayerCollectionHandler):
@@ -105,6 +121,7 @@ class ImageEditorUI(QMainWindow, LayerCollectionHandler):
         self.opacity_slider.setRange(0, 100)
         self.opacity_slider.setValue(self.brush.opacity)
         brush_layout.addWidget(self.opacity_slider)
+
         flow_label = QLabel("Brush Flow")
         flow_label.setAlignment(Qt.AlignCenter)
         brush_layout.addWidget(flow_label)
@@ -112,6 +129,15 @@ class ImageEditorUI(QMainWindow, LayerCollectionHandler):
         self.flow_slider.setRange(1, 100)
         self.flow_slider.setValue(self.brush.flow)
         brush_layout.addWidget(self.flow_slider)
+
+        luminosity_label = QLabel("Brush Luminosity")
+        luminosity_label.setAlignment(Qt.AlignCenter)
+        brush_layout.addWidget(luminosity_label)
+        self.luminosity_slider = ResetSlider(0, Qt.Horizontal)
+        self.luminosity_slider.setRange(-20, +20)
+        self.luminosity_slider.setValue(0)
+        brush_layout.addWidget(self.luminosity_slider)
+
         side_layout.addWidget(brush_panel)
         self.brush_preview_widget = QLabel()
         self.brush_preview_widget.setContentsMargins(0, 0, 0, 0)
@@ -244,7 +270,7 @@ class ImageEditorUI(QMainWindow, LayerCollectionHandler):
             self.set_enabled_file_open_close_actions)
         self.brush_tool.setup_ui(self.brush, self.brush_preview_widget, self.image_viewer,
                                  self.size_slider, self.hardness_slider, self.opacity_slider,
-                                 self.flow_slider)
+                                 self.flow_slider, self.luminosity_slider)
         self.image_viewer.set_brush(self.brush_tool.brush)
         self.image_viewer.set_preview_brush(self.brush_tool.brush)
         self.image_viewer.status.set_zoom_factor_requested.connect(self.handle_set_zoom_factor)

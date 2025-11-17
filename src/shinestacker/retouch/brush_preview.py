@@ -102,7 +102,8 @@ class BrushPreviewItem(QGraphicsPixmapItem, LayerCollectionHandler):
             mask_x_end = mask_x_start + visible_w
             mask_y_end = mask_y_start + visible_h
             mask_area = full_mask[mask_y_start:mask_y_end, mask_x_start:mask_x_end]
-            area = (layer_area * mask_area + master_area * (1 - mask_area)) * 255.0
+            lumi_scale = 1.0 + float(self.brush.luminosity) / 100.0
+            area = (layer_area * mask_area * lumi_scale + master_area * (1 - mask_area)) * 255.0
             area = area.astype(np.uint8)
             qimage = QImage(area.data, area.shape[1], area.shape[0],
                             area.strides[0], QImage.Format_RGB888)

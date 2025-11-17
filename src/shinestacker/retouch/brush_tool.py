@@ -18,11 +18,12 @@ class BrushTool:
         self.hardness_slider = None
         self.opacity_slider = None
         self.flow_slider = None
+        self.luminosity_slider = None
         self._brush_mask_cache = {}
         self.brush_text = None
 
     def setup_ui(self, brush, brush_preview_widget, image_viewer, size_slider, hardness_slider,
-                 opacity_slider, flow_slider):
+                 opacity_slider, flow_slider, luminosity_slider):
         self.brush = brush
         self.brush_preview_widget = brush_preview_widget
         self.brush_text = QLabel(brush_preview_widget.parent())
@@ -34,10 +35,12 @@ class BrushTool:
         self.hardness_slider = hardness_slider
         self.opacity_slider = opacity_slider
         self.flow_slider = flow_slider
+        self.luminosity_slider = luminosity_slider
         self.size_slider.valueChanged.connect(self.update_brush_size)
         self.hardness_slider.valueChanged.connect(self.update_brush_hardness)
         self.opacity_slider.valueChanged.connect(self.update_brush_opacity)
         self.flow_slider.valueChanged.connect(self.update_brush_flow)
+        self.luminosity_slider.valueChanged.connect(self.update_brush_luminosity)
         self.update_brush_size(self.size_slider.value())
         self.update_brush_hardness(self.hardness_slider.value())
         self.update_brush_opacity(self.opacity_slider.value())
@@ -107,6 +110,10 @@ class BrushTool:
         self.brush.flow = flow
         self.update_brush_thumb()
 
+    def update_brush_luminosity(self, luminosity):
+        self.brush.luminosity = luminosity
+        self.update_brush_thumb()
+
     def update_brush_thumb(self):
         width, height = gui_constants.UI_SIZES['brush_preview']
         pixmap = QPixmap(width, height)
@@ -143,10 +150,11 @@ class BrushTool:
                 f"Size: {int(self.brush.size)}px\n"
                 f"Hardness: {self.brush.hardness}%\n"
                 f"Opacity: {self.brush.opacity}%\n"
-                f"Flow: {self.brush.flow}%"
+                f"Flow: {self.brush.flow}%\n"
+                f"Luminosity: {self.brush.luminosity}%"
             )
             self.brush_text.adjustSize()
-            self.brush_text.move(10, self.brush_preview_widget.height() // 2 + 125)
+            self.brush_text.move(10, self.brush_preview_widget.height() // 2 + 155)
             self.brush_text.show()
         else:
             self.brush_text.hide()
@@ -197,11 +205,13 @@ class BrushTool:
         effective_mask = np.clip(mask_area * opacity_factor, 0, 1)
         dtype = master_area.dtype
         max_px_value = constants.MAX_UINT16 if dtype == np.uint16 else constants.MAX_UINT8
+        lumi_scale = 1.0 + float(self.brush.luminosity) / 100.0
         if master_area.ndim == 3:
             dest_area[:] = np.clip(
                 master_area * (1 - effective_mask[..., np.newaxis]) +
-                source_area * effective_mask[..., np.newaxis], 0, max_px_value).astype(dtype)
+                source_area * effective_mask[..., np.newaxis] * lumi_scale,
+                0, max_px_value).astype(dtype)
         else:
             dest_area[:] = np.clip(
-                master_area * (1 - effective_mask) + source_area * effective_mask, 0,
+                master_area * (1 - effective_mask) + source_area * effective_mask * lumi_scale, 0,
                 max_px_value).astype(dtype)
