@@ -134,7 +134,7 @@ class ImageEditorUI(QMainWindow, LayerCollectionHandler):
         luminosity_label.setAlignment(Qt.AlignCenter)
         brush_layout.addWidget(luminosity_label)
         self.luminosity_slider = ResetSlider(0, Qt.Horizontal)
-        self.luminosity_slider.setRange(-20, +20)
+        self.luminosity_slider.setRange(-30, +30)
         self.luminosity_slider.setValue(0)
         brush_layout.addWidget(self.luminosity_slider)
 
@@ -621,29 +621,36 @@ class ImageEditorUI(QMainWindow, LayerCollectionHandler):
     def keyPressEvent(self, event):
         if self.image_viewer.empty():
             return
-        if event.text() == '[':
+        text = event.text()
+        if text == '[':
             self.brush_tool.decrease_brush_size()
             return
-        if event.text() == ']':
+        if text == ']':
             self.brush_tool.increase_brush_size()
             return
-        if event.text() == '{':
+        if text == '{':
             self.brush_tool.decrease_brush_hardness()
             return
-        if event.text() == '}':
+        if text == '}':
             self.brush_tool.increase_brush_hardness()
             return
-        if event.text() == ',':
+        if text == ',':
             self.brush_tool.decrease_brush_opacity()
             return
-        if event.text() == '.':
+        if text == '.':
             self.brush_tool.increase_brush_opacity()
             return
-        if event.text() == ';':
+        if text == ';':
             self.brush_tool.decrease_brush_flow()
             return
-        if event.text() == ':':
+        if text == ':':
             self.brush_tool.increase_brush_flow()
+            return
+        if text == '<':
+            self.brush_tool.decrease_brush_luminosity()
+            return
+        if text == '>':
+            self.brush_tool.increase_brush_luminosity()
             return
         super().keyPressEvent(event)
     # pylint: enable=C0103

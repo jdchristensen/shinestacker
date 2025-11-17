@@ -98,6 +98,16 @@ class BrushTool:
         self.flow_slider.setValue(val)
         self.update_brush_flow(val)
 
+    def increase_brush_luminosity(self, amount=1):
+        val = min(self.luminosity_slider.value() + amount, self.luminosity_slider.maximum())
+        self.luminosity_slider.setValue(val)
+        self.update_brush_luminosity(val)
+
+    def decrease_brush_luminosity(self, amount=1):
+        val = min(self.luminosity_slider.value() - amount, self.luminosity_slider.maximum())
+        self.luminosity_slider.setValue(val)
+        self.update_brush_luminosity(val)
+
     def update_brush_hardness(self, hardness):
         self.brush.hardness = hardness
         self.update_brush_thumb()

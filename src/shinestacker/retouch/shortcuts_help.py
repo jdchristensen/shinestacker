@@ -79,7 +79,9 @@ class ShortcutsHelp(QDialog):
             ",": "Decrease brush opacity",
             ".": "Increase brush opacity",
             ";": "Decrease brush flow",
-            ":": "Increase brush flow"
+            ":": "Increase brush flow",
+            "&gt;": "Increase brush luminosity",
+            "&lt;": "Decrease brush luminosity",
         }
 
         self.add_bold_label(right_layout, "Keyboard Shortcuts")
