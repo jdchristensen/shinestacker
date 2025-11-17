@@ -83,6 +83,8 @@ class NoiseDetection(TaskBase, ImageSequenceManager):
             constants.LOG_COLOR_LEVEL_2
         ))
         in_paths = self.input_filepaths()
+        if len(in_paths) == 0:
+            raise ValueError("No image files found in the selected path")
         n_frames = min(len(in_paths), self.max_frames) if self.max_frames > 0 else len(in_paths)
         self.callback(constants.CALLBACK_STEP_COUNTS, self.id, self.name, n_frames)
         if not config.DISABLE_TQDM:

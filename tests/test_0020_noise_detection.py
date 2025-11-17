@@ -86,9 +86,48 @@ def test_correct():
         assert False
 
 
+def test_invalid_input():
+    try:
+        job = StackJob("job", "examples/", input_path="input/xxx", callbacks='tqdm')
+        job.add_action(CombinedActions("noise",
+                                       [MaskNoise(noise_mask='noise-map/hot_pixels.png')],
+                                       output_path="output/img-noise-corr"))
+        job.run()
+        assert False
+    except Exception as e:
+        assert str(e) == 'Path does not exist: examples/input/xxx'
+
+
+def test_invalid_input_2():
+    try:
+        job = StackJob("job", "examples/", input_path="input/xxx", callbacks='tqdm')
+        job.add_action(NoiseDetection(plot_histograms=True))
+        job.run()
+        assert False
+    except Exception as e:
+        print(f"exception: {str(e)}")
+        assert str(e) == 'Path does not exist: examples/input/xxx'
+
+
+def test_empty_input():
+    try:
+        os.makedirs('output/empty', exist_ok=True)
+        job = StackJob("job", "output/", input_path="empty", callbacks='tqdm')
+        job.add_action(NoiseDetection(plot_histograms=True))
+        job.run()
+        assert False
+    except Exception as e:
+        print(f"exception: {str(e)}")
+        assert str(e) == 'No image files found in the selected path'
+    rm_dir('output/empty')
+
+
 if __name__ == '__main__':
-    test_detect_fail_1()
-    test_detect_fail_2()
-    test_detect_fail_3()
-    test_detect()
-    test_correct()
+    # test_detect_fail_1()
+    # test_detect_fail_2()
+    # test_detect_fail_3()
+    # test_detect()
+    # test_correct()
+    # test_invalid_input()
+    # test_invalid_input_2()
+    test_empty_input()
