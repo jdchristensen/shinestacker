@@ -1,11 +1,10 @@
 # pylint: disable=C0114, C0115, C0116, E0611, R0902, R0914, R0915, R0904, W0108, R0911, R0903
 from functools import partial
+from PySide6.QtCore import Qt
+from PySide6.QtGui import QShortcut, QKeySequence, QAction, QActionGroup, QGuiApplication
 from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QFrame, QLabel, QMenu,
                                QFileDialog, QListWidget, QSlider, QMainWindow, QMessageBox,
                                QDialog)
-from PySide6.QtGui import QShortcut, QKeySequence, QAction, QActionGroup
-from PySide6.QtCore import Qt
-from PySide6.QtGui import QGuiApplication
 from .. config.constants import constants
 from .. config.app_config import AppConfig
 from .. config.gui_constants import gui_constants
@@ -29,22 +28,7 @@ from .vignetting_filter import VignettingFilter
 from .adjustments import LumiContrastFilter, SaturationVibranceFilter
 from .transformation_manager import TransfromationManager
 from .exif_data import ExifData
-
-
-class ResetSlider(QSlider):
-    def __init__(self, default_value, orientation=Qt.Horizontal):
-        super().__init__(orientation)
-        self.default_value = default_value
-        self.setToolTip("Double-click to reset")
-
-    # pylint: disable=C0103
-    def mouseDoubleClickEvent(self, event):
-        if event.button() == Qt.LeftButton:
-            self.setValue(self.default_value)
-            event.accept()
-        else:
-            super().mouseDoubleClickEvent(event)
-    # pylint: enable=C0103
+from .reset_slider import ResetSlider
 
 
 class ImageEditorUI(QMainWindow, LayerCollectionHandler):

@@ -1,11 +1,12 @@
 # pylint: disable=C0114, C0115, C0116, E0611, W0221, R0913, R0914, R0917, R0902
 import numpy as np
 from PySide6.QtWidgets import (QHBoxLayout, QPushButton, QFrame, QVBoxLayout, QLabel, QDialog,
-                               QApplication, QSlider, QDialogButtonBox, QLineEdit)
+                               QApplication, QDialogButtonBox, QLineEdit)
 from PySide6.QtCore import Qt, QTimer
 from PySide6.QtGui import QCursor
 from .. algorithms.white_balance import white_balance_from_rgb
 from .base_filter import BaseFilter
+from .reset_slider import ResetSlider
 
 
 class WhiteBalanceFilter(BaseFilter):
@@ -38,11 +39,12 @@ class WhiteBalanceFilter(BaseFilter):
             row = QHBoxLayout()
             label = QLabel(f"{name}:")
             row.addWidget(label)
-            slider = QSlider(Qt.Horizontal)
+            init_val = self.initial_val[["R", "G", "B"].index(name)]
+            slider = ResetSlider(init_val, Qt.Horizontal)
             slider.setRange(0, self.max_range)
             slider.setValue(self.initial_val[["R", "G", "B"].index(name)])
             row.addWidget(slider)
-            val_label = QLabel(str(self.initial_val[["R", "G", "B"].index(name)]))
+            val_label = QLabel(str(init_val))
             row.addWidget(val_label)
             sliders_layout.addLayout(row)
             self.sliders[name] = slider
