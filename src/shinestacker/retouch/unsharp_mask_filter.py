@@ -50,7 +50,7 @@ class UnsharpMaskFilter(BaseFilter):
         self.amount_slider.valueChanged.connect(
             lambda v: update_value("Amount", v, self.max_amount, params["Amount"][3]))
         self.threshold_slider.valueChanged.connect(
-            lambda v: update_value("Threshold", v, self.max_threshold, params["Threshold"][2]))
+            lambda v: update_value("Threshold", v, self.max_threshold, params["Threshold"][3]))
         self.set_timer(do_preview, restore_original, dlg)
 
     def get_params(self):
