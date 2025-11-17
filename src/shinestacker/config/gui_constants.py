@@ -42,7 +42,7 @@ class _GuiConstants:
     BRUSH_SIZE_SLIDER_MAX = 1000
 
     UI_SIZES = {
-        'brush_preview': (100, 100),
+        'brush_preview': (100, 80),
         'thumbnail_width': 100,
         'master_thumb': (THUMB_WIDTH, THUMB_HEIGHT),
         'label_height': 20
