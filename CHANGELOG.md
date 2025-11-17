@@ -7,23 +7,21 @@ This page reports the main releases only and the main changes therein.
 
 ### Added
 - automatic threshold evaluation in the noise detection module
-- *align subsample* option added to persistent settings
-- double-click on processing colored box display opens processed frame
-- warning message appears when trying to load > 20 image frames
 - brush luminosity correction with slider in the main window and < and > shortcuts
+- double-click on processing colored display boxes opens processed frame
+- extended persistent configuration settings
 
 ### Fixed
-- fixed tooltip counter in the processing colored box display
-- fixed names of visual progress indicators according to output path
-- fixed icons in the main window
-- fixed configuration parameters for mask noise module
+- fixed several user interface issues
+- fixed configuration parameters for noise masking module
+- warning message appears when trying to load > 20 image frames
 - restored alignment warning messages
 
 ### Changed
 - optimized settings persistence by saving only parameters different from defaults
-- optimized vignetting algorithm
+- optimized vignetting algorithm implementation
 - refactored code for default-parameters configuration
-- project window colors update when desktop themes changes
+- project window colors are updated when desktop themes changes
 
 ---
 
