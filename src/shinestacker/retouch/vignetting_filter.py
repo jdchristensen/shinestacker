@@ -28,7 +28,8 @@ class VignettingFilter(OneSliderBaseFilter):
 
     def apply(self, image, strength):
         return correct_vignetting(image, max_correction=strength,
-                                  black_threshold=self.threshold_slider.value(),
+                                  black_threshold=self.threshold_value(
+                                      self.threshold_slider.value()),
                                   r_steps=self.r_steps_box.value(),
                                   subsample=self.get_subsample_factor(),
                                   fast_subsampling=True)
@@ -68,8 +69,10 @@ class VignettingFilter(OneSliderBaseFilter):
         layout.addLayout(subsample_layout)
         layout.addWidget(self.fast_subsampling_check)
 
+    def threshold_value(self, val):
+        return float(val) / self.threshold_max_range * self.threshold_max_value
+
     def threshold_changed(self, val):
-        subsample = self.get_subsample_factor()
-        float_val = self.threshold_max_value * float(subsample) / self.threshold_max_range
+        float_val = self.threshold_value(val)
         self.threshold_label.setText(self.threshold_format.format(float_val))
         self.param_changed(val)
