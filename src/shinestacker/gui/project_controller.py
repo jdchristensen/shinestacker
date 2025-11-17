@@ -215,19 +215,24 @@ class ProjectController(QObject):
                     {'name': bunch_stack_name, 'frames': dialog.get_bunch_frames(),
                      'overlap': dialog.get_bunch_overlap()})
                 job.add_sub_action(bunch_stack)
+            stack_input_path = bunch_stack_name if dialog.get_bunch_stack() else preprocess_name
             if dialog.get_focus_stack_pyramid():
                 focus_pyramid_name = f'{input_path}-focus-stack-pyramid'
-                focus_pyramid = ActionConfig(constants.ACTION_FOCUSSTACK,
-                                             {'name': focus_pyramid_name,
-                                              'stacker': constants.STACK_ALGO_PYRAMID,
-                                              'exif_path': input_path})
+                focus_pyramid_params = {'name': focus_pyramid_name,
+                                        'stacker': constants.STACK_ALGO_PYRAMID,
+                                        'exif_path': input_path}
+                if dialog.get_focus_stack_depth_map():
+                    focus_pyramid_params['input_path'] = stack_input_path
+                focus_pyramid = ActionConfig(constants.ACTION_FOCUSSTACK, focus_pyramid_params)
                 job.add_sub_action(focus_pyramid)
             if dialog.get_focus_stack_depth_map():
                 focus_depth_map_name = f'{input_path}-focus-stack-depth-map'
-                focus_depth_map = ActionConfig(constants.ACTION_FOCUSSTACK,
-                                               {'name': focus_depth_map_name,
-                                                'stacker': constants.STACK_ALGO_DEPTH_MAP,
-                                                'exif_path': input_path})
+                focus_depth_map_params = {'name': focus_depth_map_name,
+                                          'stacker': constants.STACK_ALGO_DEPTH_MAP,
+                                          'exif_path': input_path}
+                if dialog.get_focus_stack_pyramid():
+                    focus_depth_map_params['input_path'] = stack_input_path
+                focus_depth_map = ActionConfig(constants.ACTION_FOCUSSTACK, focus_depth_map_params)
                 job.add_sub_action(focus_depth_map)
             if dialog.get_multi_layer():
                 multi_input_path = []
