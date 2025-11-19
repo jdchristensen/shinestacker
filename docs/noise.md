@@ -16,11 +16,17 @@ Arguments for the constructor of ```NoiseDetection``` are:
 * ```output_path``` (optional): the subdirectory within ```working_path``` where noise map is written. If not specified,  it is equal to  ```name```.
 * ```working_path``` (optional): the directory that contains input and output image subdirectories. If not specified, it is the same as ```job.working_path```.
 * ```max_frames``` (optional): if provided, at most ```max_frames``` images are analyzed to extract noisy pixel mask.
-* ```plot_path``` (optional, default: ```plots```): the directory within ```working_path``` that contains plots produced by the different actions
+* ```method``` (optional, default: ```norm_lab```): if ```rgb```, noisy channel are determined.
+separately on the R, G and B channel. If equal to ```norm_rgb```, the norm in the RGB color space is
+used to determine noisy pixels. If equal to ```norm_lab```, the norm in the LAB color space is
+used to determine noisy pixels.
+* ```plot_path``` (optional, default: ```plots```): the directory within ```working_path``` that contains plots produced by the different actions.
 * ```plot_histograms```  (optional, default: ```False```): if ```True```, plot a summary of the number of hot pixel by channel as a function of the applied threshold. It may be useful to set the optimal threshold values.
-* ```noisy_masked_px``` (optional, default: ```(100, 100, 100)```): tentative number of noisy pixels to be mased.
+* ```noisy_masked_px``` (optional, default: ```(100, 100, 100)```): tentative number of noisy pixels to be masked. If set greater than zero, the threshold is computed automatically to match the desired
+number of pixels to mask. If ```method```=```norm```, only the first of the three thresholds is used.
 * ```channel_thresholds``` (optional, default: ```(13, 13, 13)```): threshold values for noisy pixel detections in the color channels R, G, B, respectively. Each of these thresholds is only used of the 
-corresponding value in ```noisy_masked_px``` is set to zero.
+corresponding value in ```noisy_masked_px``` is set to zero. If ```method```=```norm```, only the
+first of the three values is  used.
 * ```blur_size``` (optional, default: 5): image blur amount for pixel detection.
 * ```file_name``` (optional, default: ```hot_pixels.png```): noise map filename.
 * ```enabled``` (optional, default: ```True```): allows to switch on and off this module. 

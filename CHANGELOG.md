@@ -2,26 +2,30 @@
 
 This page reports the main releases only and the main changes therein.
 
-## [v1.10.0] - 2025-11-16
-** Improved noise configuration **
+## [v1.10.0] - 2025-11-18  
+**Enhanced noise detection and interface improvements**
 
 ### Added
-- automatic threshold evaluation in the noise detection module
-- brush luminosity correction with slider in the main window and < and > shortcuts
-- double-click on processing colored display boxes opens processed frame
-- extended persistent configuration settings
+- brush luminosity correction in retouch mode  
+- new noise-detection methods `norm_lab` and `norm_rgb` as alternatives to the default `rgb`  
+- automatic threshold estimation in the noise detection module  
+- double-click on processing-status boxes opens the corresponding processed frame  
+- extended set of parameters stored in persistent configuration
 
 ### Fixed
-- fixed several user interface issues
-- fixed configuration parameters for noise masking module
-- warning message appears when trying to load > 20 image frames
-- restored alignment warning messages
+- incorrect configuration parameters in the noise-masking module  
+- noisy-pixel detection now works correctly for 16-bit images  
+- warning is now shown when attempting to load more than 20 image frames  
+- pyramid stacking algorithm now protected against temporary-disk exhaustion  
+- various user-interface issues  
+- alignment warning messages restored
 
 ### Changed
-- optimized settings persistence by saving only parameters different from defaults
-- optimized vignetting algorithm implementation
-- refactored code for default-parameters configuration
-- project window colors are updated when desktop themes changes
+- optimized vignetting algorithm  
+- improved settings persistence by saving only parameters that differ from defaults  
+- project-window colors now update correctly when the desktop theme changes  
+- image previews now open on double-click instead of single-click  
+- refactored default-parameter configuration code
 
 ---
 

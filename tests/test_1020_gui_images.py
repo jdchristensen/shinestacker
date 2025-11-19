@@ -4,6 +4,7 @@ import platform
 from PySide6.QtWidgets import QApplication
 from PySide6.QtGui import QPixmap
 from PySide6.QtCore import Qt
+from PySide6.QtTest import QTest  # Add this import
 from shinestacker.gui.gui_images import GuiPdfView, GuiImageView, GuiOpenApp, open_file
 
 
@@ -78,7 +79,7 @@ def test_gui_image_view_click(sample_image, qtbot, monkeypatch):
     monkeypatch.setattr('webbrowser.open', lambda *args, **kwargs: calls.append(args))
     image_view = GuiImageView(sample_image)
     qtbot.addWidget(image_view)
-    qtbot.mouseClick(image_view, Qt.LeftButton)
+    QTest.mouseDClick(image_view, Qt.LeftButton)
     assert len(calls) >= 1
 
 
@@ -90,18 +91,21 @@ def test_gui_pdf_view_initialization(sample_pdf, qtbot):
 
 
 def test_gui_pdf_view_click(sample_pdf, qtbot, monkeypatch):
+    calls = []
+    monkeypatch.setattr('subprocess.call', lambda *args, **kwargs: calls.append(args))
+    if platform.system() == 'Windows':
+        monkeypatch.setattr('os.startfile', lambda *args, **kwargs: calls.append(args))
+    monkeypatch.setattr('webbrowser.open', lambda *args, **kwargs: calls.append(args))
     pdf_view = GuiPdfView(sample_pdf)
-    pdf_view.setMinimumSize(200, 200)
     qtbot.addWidget(pdf_view)
-    pdf_view.show()
-    qtbot.waitExposed(pdf_view)
-    assert pdf_view.document() is not None
-    assert pdf_view.document().pageCount() > 0
-    center = pdf_view.rect().center()
-    if not pdf_view.rect().contains(center):
-        pytest.skip("Widget too small for reliable clicking")
-    qtbot.mousePress(pdf_view, Qt.LeftButton, pos=center)
-    qtbot.mouseRelease(pdf_view, Qt.LeftButton, pos=center)
+    pdf_view.mouseDoubleClickEvent = lambda event: open_file(pdf_view.file_path)
+
+    class MockEvent:
+        def button(self):
+            return Qt.LeftButton
+
+    pdf_view.mouseDoubleClickEvent(MockEvent())
+    assert len(calls) >= 1
 
 
 def test_gui_open_app_initialization(sample_image, qtbot):

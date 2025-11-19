@@ -61,10 +61,7 @@ class MultiModuleStatusContainer(QWidget):
         return len(self.status_widgets) - 1
 
     def get_widget(self, module_name):
-        status_widget = self.status_widgets.get(module_name)
-        if status_widget:
-            return status_widget
-        raise RuntimeError(f"Unknown module {module_name}")
+        return self.status_widgets.get(module_name)
 
     def add_frame(self, module_name, filename, total_actions):
         status_widget = self.get_widget(module_name)

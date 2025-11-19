@@ -6,10 +6,12 @@ import gc
 import time
 import shutil
 import tempfile
+import logging
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import numpy as np
 from .. config.constants import constants
 from .. config.defaults import DEFAULTS
+from .. core.colors import color_str
 from .. core.exceptions import RunStopException
 from .utils import read_img, read_and_validate_img
 from .pyramid import PyramidBase
@@ -35,6 +37,7 @@ class PyramidTilesStack(PyramidBase):
         self.level_shapes = {}
         available_cores = os.cpu_count() or 1
         self.num_threads = max(1, min(max_threads, available_cores))
+        self.min_free_space_gb = 5
 
     def init(self, filenames):
         super().init(filenames)
@@ -54,6 +57,18 @@ class PyramidTilesStack(PyramidBase):
         level_count = self.process_single_image(img, self.n_levels, idx)
         return idx, img_path, level_count
 
+    def _check_disk_space(self):
+        _total, _used, free = shutil.disk_usage(self.temp_dir.name)
+        free_gb = free / constants.ONE_GIGA  # Convert bytes to GB
+        if free_gb < self.min_free_space_gb:
+            self.print_message(
+                color_str(
+                    f": insufficient temporary disk space, "
+                    f"only {free_gb:.2f} GB free, required at least {self.min_free_space_gb} GB",
+                    constants.LOG_COLOR_ALERT),
+                level=logging.ERROR)
+            raise RunStopException("insufficient temporary disk space.")
+
     def process_single_image(self, img, levels, img_index):
         laplacian = self.single_image_laplacian(img, levels)
         self.level_shapes[img_index] = [level.shape for level in laplacian[::-1]]
@@ -64,6 +79,7 @@ class PyramidTilesStack(PyramidBase):
                     for x in range(0, w, self.tile_size):
                         y_end, x_end = min(y + self.tile_size, h), min(x + self.tile_size, w)
                         tile = level_data[y:y_end, x:x_end]
+                        self._check_disk_space()
                         np.save(
                             os.path.join(
                                 self.temp_dir.name,
@@ -71,6 +87,7 @@ class PyramidTilesStack(PyramidBase):
                             tile
                         )
             else:
+                self._check_disk_space()
                 np.save(
                     os.path.join(self.temp_dir.name,
                                  f'img_{img_index}_level_{level_idx}.npy'), level_data)
@@ -137,6 +154,12 @@ class PyramidTilesStack(PyramidBase):
                         y_end, x_end = min(y + self.tile_size, h), min(x + self.tile_size, w)
                         fused_level[y:y_end, x:x_end] = fused_tile
                         self.print_message(f': fused tile [{x}, {x_end - 1}]×[{y}, {y_end - 1}]')
+                except RunStopException as e:
+                    self.print_message(
+                        color_str(f": error processing tile ({y}, {x}): {str(e)}",
+                                  constants.LOG_COLOR_ALERT),
+                        level=logging.ERROR)
+                    raise
                 except Exception as e:
                     self.print_message(f": error processing tile ({y}, {x}): {str(e)}")
                 self.after_step(count)
@@ -237,13 +260,21 @@ class PyramidTilesStack(PyramidBase):
                                               self.process.input_path, filename, 201)
                         self.print_message(
                             f": preprocessing completed, {self.image_str(completed_count - 1)}")
+                    except RunStopException as e:
+                        self.print_message(
+                            color_str(f": error processing {self.image_str(i)}: {str(e)}",
+                                      constants.LOG_COLOR_ALERT),
+                            level=logging.ERROR)
+                        raise
                     except Exception as e:
                         self.print_message(
-                            f"Error processing {self.image_str(i)}: {str(e)}")
+                            f": error processing {self.image_str(i)}: {str(e)}")
                     self.after_step(completed_count)
                     self.check_running(lambda: None)
             except RunStopException:
-                self.print_message(": stopping image processing...")
+                self.print_message(color_str(": stopping image processing...",
+                                             constants.LOG_COLOR_ALERT),
+                                   level=logging.ERROR)
                 if executor:
                     executor.shutdown(wait=False, cancel_futures=True)
                     time.sleep(0.5)

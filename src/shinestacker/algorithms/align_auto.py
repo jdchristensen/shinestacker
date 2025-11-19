@@ -22,7 +22,7 @@ class AlignFramesAuto(AlignFramesBase):
         self.bw_matching = kwargs.pop(
             'bw_matching', DEFAULTS['align_frames_params']['bw_matching'])
         self.kwargs = kwargs
-        super().__init__(enabled=True, feature_config=None, matching_config=None,
+        super().__init__(enabled=enabled, feature_config=None, matching_config=None,
                          alignment_config=None, **kwargs)
         available_cores = os.cpu_count() or 1
         self.num_threads = min(self.max_threads, available_cores)
@@ -31,6 +31,8 @@ class AlignFramesAuto(AlignFramesBase):
         self.mem_per_gpx_sift = 0.1
 
     def begin(self, process):
+        if not self.enabled:
+            return
         if self.mode == 'sequential' or self.num_threads == 1:
             num_threads = 1
         else:
@@ -78,7 +80,9 @@ class AlignFramesAuto(AlignFramesBase):
         return self._implementation.run_frame(idx, ref_idx, img_0)
 
     def sequential_processing(self):
-        return self._implementation.sequential_processing()
+        if self.enabled:
+            return self._implementation.sequential_processing()
+        return False
 
     def end(self):
         self._implementation.end()

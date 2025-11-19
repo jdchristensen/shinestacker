@@ -1,5 +1,6 @@
 # pylint: disable=C0114, C0115, C0116, E0602, R0903, R0902
 import os
+import logging
 import numpy as np
 from .. core.exceptions import InvalidOptionError, RunStopException
 from .. config.constants import constants
@@ -64,8 +65,8 @@ class BaseStackAlgo:
     def total_steps(self, n_frames):
         return self._steps_per_frame * n_frames
 
-    def print_message(self, msg):
-        self.process.sub_message_r(color_str(msg, constants.LOG_COLOR_LEVEL_3))
+    def print_message(self, msg, level=logging.INFO):
+        self.process.sub_message_r(color_str(msg, constants.LOG_COLOR_LEVEL_3), level=level)
 
     def check_running(self, cleanup_callback=None):
         if self.process.callback(constants.CALLBACK_CHECK_RUNNING,

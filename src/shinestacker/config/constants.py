@@ -155,6 +155,11 @@ class _Constants:
     PY_VALID_MODES = ['auto', 'memory', 'tiled']
     PY_MEMORY_OVERHEAD = 2.5
 
+    NOISE_METHOD_RGB = 'rgb'
+    NOISE_METHOD_NORM_LAB = 'norm_lab'
+    NOISE_METHOD_NORM_RGB = 'norm_rgb'
+    VALID_NOISE_METHODS = [NOISE_METHOD_NORM_LAB, NOISE_METHOD_NORM_RGB, NOISE_METHOD_RGB]
+
     def __setattr__aux(self, name, value):
         raise AttributeError(f"Can't reassign constant '{name}'")
 

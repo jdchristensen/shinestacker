@@ -146,8 +146,11 @@ class JobConfigurator(DefaultActionConfigurator):
 
 
 class NoiseDetectionConfigurator(DefaultActionConfigurator):
+    METHOD_OPTIONS = ['Norm, LAB', 'Norm, RGB', 'Individual channels, RGB']
+
     def __init__(self, expert, current_wd):
         super().__init__(expert, current_wd)
+        self.method = None
         self.noisy_masked_px = None
         self.channel_thresholds = None
 
@@ -165,24 +168,64 @@ class NoiseDetectionConfigurator(DefaultActionConfigurator):
             'max_frames', FIELD_INT, 'Max. num. of frames (0 = All)',
             required=False,
             default=AppConfig.get('noise_detection_params')['max_frames'], min_val=0, max_val=1000)
-
+        self.method = self.add_field(
+            'method', FIELD_COMBO, 'Method', required=False, expert=True,
+            options=self.METHOD_OPTIONS, values=constants.VALID_NOISE_METHODS,
+            default=dict(zip(constants.VALID_NOISE_METHODS,
+                             self.METHOD_OPTIONS))[
+                AppConfig.get('noise_detection_params')['method']])
         self.noisy_masked_px = self.add_field(
             'noisy_masked_px', FIELD_INT_TUPLE, 'Noisy pixels to mask',
-            required=False, size=3,
+            required=False, size=3, expert=True,
             default=AppConfig.get('noise_detection_params')['noisy_masked_px'],
             labels=constants.RGB_LABELS, min_val=[0] * 3, max_val=[2000] * 3)
         self.channel_thresholds = self.add_field(
             'channel_thresholds', FIELD_INT_TUPLE, 'Noise threshold',
-            required=False, size=3,
+            required=False, size=3, expert=True,
             default=AppConfig.get('noise_detection_params')['channel_thresholds'],
             labels=constants.RGB_LABELS, min_val=[1] * 3, max_val=[1000] * 3)
 
-        noisy_masked_px_spins = self.noisy_masked_px.findChildren(QSpinBox)
-        channel_thresholds_spins = self.channel_thresholds.findChildren(QSpinBox)
-        for si, so in zip(noisy_masked_px_spins, channel_thresholds_spins):
-            si.valueChanged.connect(lambda value, i=si, o=so: o.setEnabled(i.value() == 0))
-        for si, so in zip(noisy_masked_px_spins, channel_thresholds_spins):
-            so.setEnabled(si.value() == 0)
+        masked_px_spins = self.noisy_masked_px.findChildren(QSpinBox)
+        masked_px_labels = self.noisy_masked_px.findChildren(QLabel)
+        thresholds_spins = self.channel_thresholds.findChildren(QSpinBox)
+        thresholds_labels = self.channel_thresholds.findChildren(QLabel)
+
+        def change_method():
+            method = self.method.currentText()
+            print("method: ", method)
+            if method == self.METHOD_OPTIONS[2]:
+                for i, (si, li, so, lo) in enumerate(zip(masked_px_spins, masked_px_labels,
+                                                         thresholds_spins, thresholds_labels)):
+                    print(i)
+                    si.setEnabled(True)
+                    si.show()
+                    li.setText(constants.RGB_LABELS[i].upper())
+                    li.show()
+                    lo.setText(constants.RGB_LABELS[i].upper())
+                    lo.show()
+                    if si.value() == 0:
+                        so.setEnabled(True)
+                    so.show()
+            else:
+                for i, (si, li, so, lo) in enumerate(zip(masked_px_spins, masked_px_labels,
+                                                         thresholds_spins, thresholds_labels)):
+                    print(i)
+                    li.setText('')
+                    li.hide()
+                    lo.setText('')
+                    lo.hide()
+                    if i == 0:
+                        si.setEnabled(True)
+                        if si.value() == 0:
+                            so.setEnabled(True)
+                    else:
+                        si.setEnabled(False)
+                        si.hide()
+                        so.setEnabled(False)
+                        so.hide()
+
+        self.method.currentIndexChanged.connect(change_method)
+        change_method()
 
         self.add_field(
             'blur_size', FIELD_INT, 'Blur size (px)', required=False,

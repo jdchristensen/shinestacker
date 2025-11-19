@@ -75,6 +75,24 @@ def test_detect():
         assert False
 
 
+def test_detect_norm_lab():
+    try:
+        job = StackJob("job", "examples", input_path="input/img-noise", callbacks='tqdm')
+        job.add_action(NoiseDetection(method='norm_lab', plot_histograms=True))
+        job.run()
+    except Exception:
+        assert False
+
+
+def test_detect_norm_rgb():
+    try:
+        job = StackJob("job", "examples", input_path="input/img-noise", callbacks='tqdm')
+        job.add_action(NoiseDetection(method='norm_rgb', plot_histograms=True))
+        job.run()
+    except Exception:
+        assert False
+
+
 def test_correct():
     try:
         job = StackJob("job", "examples/", input_path="input/img-jpg", callbacks='tqdm')
@@ -127,6 +145,8 @@ if __name__ == '__main__':
     test_detect_fail_2()
     test_detect_fail_3()
     test_detect()
+    test_detect_norm_lab()
+    test_detect_norm_rgb()
     test_correct()
     test_invalid_input()
     test_invalid_input_2()

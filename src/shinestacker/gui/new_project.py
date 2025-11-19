@@ -305,7 +305,7 @@ class NewProjectDialog(BaseFormDialog):
                 msg.setText(f"You selected {self.n_image_files} images "
                             f"with resolution {width}×{height} pixels, {n_bits} bits depth. "
                             "Processing may require a significant amount "
-                            "of memory or I/O buffering.\n\n"
+                            "of memory and temporary disk space.\n\n"
                             "Continue anyway?")
                 msg.setInformativeText('You may consider creating "bunches" to reduce '
                                        "the number of frames for retouching.\n\n"

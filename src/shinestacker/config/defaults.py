@@ -91,6 +91,7 @@ DEFAULTS = {
         'levels': 3
     },
     'pyramid_params': {
+        'method': 'rgb',
         'float_type': 'float-32',
         'min_size': 32,
         'kernel_size': 5,
@@ -103,12 +104,14 @@ DEFAULTS = {
         'min_n_tiled_layers': 1
     },
     'noise_detection_params': {
+        'method': 'norm_lab',
         'noise_map_filename': 'hot_pixels.png',
         'max_frames': 10,
         'noisy_masked_px': [100, 100, 100],
         'channel_thresholds': [13, 13, 13],
         'blur_size': 5,
         'plot_histograms': False,
+        'use_lab_space': True,
     },
     'mask_noise_params': {
         'kernel_size': 3,

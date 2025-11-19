@@ -59,10 +59,10 @@ class GuiPdfView(QPdfView):
     def sizeHint(self):
         return self.size()
 
-    def mouseReleaseEvent(self, event):
+    def mouseDoubleClickEvent(self, event):
         if event.button() == Qt.LeftButton:
             open_file(self.file_path)
-        super().mouseReleaseEvent(event)
+        super().mouseDoubleClickEvent(event)
 
 
 class GuiImageView(QWidget):
@@ -117,10 +117,10 @@ class GuiImageView(QWidget):
     def sizeHint(self):
         return self.size()
 
-    def mouseReleaseEvent(self, event):
+    def mouseDoubleClickEvent(self, event):
         if event.button() == Qt.LeftButton:
             open_file(self.file_path)
-        super().mouseReleaseEvent(event)
+        super().mouseDoubleClickEvent(event)
 
 
 class GuiOpenApp(QWidget):
@@ -155,7 +155,7 @@ class GuiOpenApp(QWidget):
     def sizeHint(self):
         return self.size()
 
-    def mouseReleaseEvent(self, event):
+    def mouseDoubleClickEvent(self, event):
         if event.button() == Qt.LeftButton:
             if self.app != 'internal_retouch_app':
                 try:
@@ -177,4 +177,4 @@ class GuiOpenApp(QWidget):
                     app.retouch_callback(self.file_path)
                 else:
                     raise RuntimeError("MainWindow object not found")
-        super().mouseReleaseEvent(event)
+        super().mouseDoubleClickEvent(event)
