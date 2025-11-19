@@ -66,10 +66,10 @@ def test_detect_fail_3():
     rm_dir('output/img-tif-wrong-type')
 
 
-def test_detect():
+def test_detect_rgb():
     try:
         job = StackJob("job", "examples", input_path="input/img-noise", callbacks='tqdm')
-        job.add_action(NoiseDetection(plot_histograms=True))
+        job.add_action(NoiseDetection(method='rgb', plot_histograms=True))
         job.run()
     except Exception:
         assert False
