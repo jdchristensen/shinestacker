@@ -2,7 +2,7 @@
 
 This page reports the main releases only and the main changes therein.
 
-## [v1.10.0] - 2025-11-19
+## [v1.10.1] - 2025-11-19
 **Enhanced noise detection and interface improvements**
 
 ### Added
@@ -26,6 +26,11 @@ This page reports the main releases only and the main changes therein.
 - project-window colors now update correctly when the desktop theme changes  
 - image previews now open on double-click instead of single-click  
 - refactored default-parameter configuration code
+
+---
+
+## [v1.10.0] - 2025-11-19
+** One source file missing; replaced by 1.10.1
 
 ---
 
