@@ -1,5 +1,6 @@
 # pylint: disable=C0114, C0115, C0116, E0611, W0718, R0903, E0611
 import os
+import copy
 import json
 import traceback
 import jsonpickle
@@ -54,7 +55,7 @@ class Settings(StdPathFile):
                 print(f"Can't read file from path {file_path}. Default settings ignored.")
 
     def _deep_copy_defaults(self):
-        return json.loads(json.dumps(DEFAULTS))
+        return copy.deepcopy(DEFAULTS)
 
     def _deep_merge_settings(self, file_settings):
         for key, value in file_settings.items():
