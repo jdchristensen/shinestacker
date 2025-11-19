@@ -2,6 +2,13 @@
 
 This page reports the main releases only and the main changes therein.
 
+## [vx.x.x] - 2025-11-19
+
+### Fixed
+- added protection into persistent settings against potentially dangerous data types
+
+--------------------------
+
 ## [v1.10.1] - 2025-11-19
 **Enhanced noise detection and interface improvements**
 

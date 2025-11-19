@@ -144,7 +144,6 @@ if __name__ == '__main__':
     test_detect_fail_1()
     test_detect_fail_2()
     test_detect_fail_3()
-    test_detect()
     test_detect_norm_lab()
     test_detect_norm_rgb()
     test_correct()

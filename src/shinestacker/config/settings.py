@@ -1,8 +1,8 @@
 # pylint: disable=C0114, C0115, C0116, E0611, W0718, R0903, E0611
 import os
-import copy
 import json
 import traceback
+import copy
 import jsonpickle
 from PySide6.QtCore import QStandardPaths
 from .. config.defaults import DEFAULTS
@@ -19,9 +19,9 @@ class StdPathFile:
         if self._config_dir is None:
             config_dir = QStandardPaths.writableLocation(QStandardPaths.AppConfigLocation)
             if not config_dir:
-                if os.name == 'nt':  # Windows
+                if os.name == 'nt':
                     config_dir = os.path.join(os.environ.get('APPDATA', ''), 'ShineStacker')
-                elif os.name == 'posix':  # macOS and Linux
+                elif os.name == 'posix':
                     config_dir = os.path.expanduser('~/.config/shinestacker')
                 else:
                     config_dir = os.path.join(os.path.expanduser('~'), '.shinestacker')
@@ -42,7 +42,7 @@ class Settings(StdPathFile):
             raise RuntimeError("Settings is a singleton.")
         super().__init__(filename)
         self.defaults = self._deep_copy_defaults()
-        self.settings = self._deep_copy_defaults()  # Start with defaults
+        self.settings = self._deep_copy_defaults()
         file_path = self.get_file_path()
         if os.path.isfile(file_path):
             try:
@@ -55,7 +55,30 @@ class Settings(StdPathFile):
                 print(f"Can't read file from path {file_path}. Default settings ignored.")
 
     def _deep_copy_defaults(self):
-        return copy.deepcopy(DEFAULTS)
+        defaults_copy = copy.deepcopy(DEFAULTS)
+        return self._convert_to_python_types(defaults_copy)
+
+    def _convert_to_python_types(self, obj):
+        try:
+            import numpy as np
+            numpy_available = True
+        except ImportError:
+            numpy_available = False
+        if numpy_available:
+            if hasattr(obj, 'item') and hasattr(obj, 'dtype'):
+                return obj.item()
+            elif isinstance(obj, np.bool_):
+                return bool(obj)
+            elif isinstance(obj, np.ndarray):
+                return obj.tolist()
+        if isinstance(obj, dict):
+            return {k: self._convert_to_python_types(v) for k, v in obj.items()}
+        elif isinstance(obj, list):
+            return [self._convert_to_python_types(item) for item in obj]
+        elif isinstance(obj, tuple):
+            return tuple(self._convert_to_python_types(item) for item in obj)
+        else:
+            return obj
 
     def _deep_merge_settings(self, file_settings):
         for key, value in file_settings.items():
@@ -113,9 +136,10 @@ class Settings(StdPathFile):
             config_dir = self.get_config_dir()
             os.makedirs(config_dir, exist_ok=True)
             diff_settings = self._get_diff_from_defaults()
+            serializable_diff = self._convert_to_python_types(diff_settings)
             json_data = {
                 'version': CURRENT_SETTINGS_FILE_VERSION,
-                'settings': diff_settings
+                'settings': serializable_diff
             }
             json_obj = jsonpickle.encode(json_data)
             with open(self.get_file_path(), 'w', encoding="utf-8") as f:
