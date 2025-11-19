@@ -145,7 +145,7 @@ class AlignFramesParallel(AlignFramesBase):
         self._cumulative_transforms = [None] * n_frames
         self._kp = [None] * n_frames
         self._des = [None] * n_frames
-        max_chunck_size = self.max_threads
+        max_chunk_size = self.max_threads
         ref_idx = self.process.ref_idx
         self.print_message(f"reference: {self.image_str(ref_idx)}")
         sub_indices = list(range(n_frames))
@@ -158,8 +158,8 @@ class AlignFramesParallel(AlignFramesBase):
                               self.process.name, filename, 101)
         self.step_counter = 0
         if self.chunk_submit:
-            img_chunks = make_chunks(sub_img_filepaths, max_chunck_size)
-            idx_chunks = make_chunks(sub_indices, max_chunck_size)
+            img_chunks = make_chunks(sub_img_filepaths, max_chunk_size)
+            idx_chunks = make_chunks(sub_indices, max_chunk_size)
             for idxs, imgs in zip(idx_chunks, img_chunks):
                 self.submit_threads(idxs, imgs)
         else:

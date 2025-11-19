@@ -297,8 +297,8 @@ class SequentialTask(TaskBase):
     def run_core_parallel_chunks(self):
         self.current_action_count = 0
         action_idx_list = list(range(self.total_action_counts))
-        max_chunck_size = self.max_threads
-        action_idx_chunks = make_chunks(action_idx_list, max_chunck_size)
+        max_chunk_size = self.max_threads
+        action_idx_chunks = make_chunks(action_idx_list, max_chunk_size)
         for idx_chunk in action_idx_chunks:
             self.run_core_parallel_single_chunk(idx_chunk)
 
