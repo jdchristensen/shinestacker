@@ -7,6 +7,9 @@ This page reports the main releases only and the main changes therein.
 ### Fixed
 - added protection into persistent settings against potentially dangerous data types
 
+### Changed
+- some code cleanup
+
 --------------------------
 
 ## [v1.10.1] - 2025-11-19
