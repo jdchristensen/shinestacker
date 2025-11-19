@@ -29,8 +29,8 @@ This page reports the main releases only and the main changes therein.
 
 ---
 
-## [v1.10.0] - 2025-11-19
-** One source file missing; replaced by 1.10.1
+## [v1.10.0] - 2025-11-19 (⚠️ DEPRECATED — use 1.10.1)
+** One source file missing; replaced by 1.10.1.
 
 ---
 
