@@ -12,6 +12,7 @@ This page reports the main releases only and the main changes therein.
 
 ### Changed
 - some code cleanup
+- minor GUI refinements
 
 --------------------------
 

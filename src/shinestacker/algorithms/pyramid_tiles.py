@@ -4,6 +4,7 @@
 import os
 import gc
 import time
+import glob
 import shutil
 import tempfile
 import logging
@@ -116,7 +117,6 @@ class PyramidTilesStack(PyramidBase):
             if self.temp_dir_manager:
                 self.temp_dir_manager.cleanup()
             else:
-                import glob
                 pattern = os.path.join(self.temp_dir_path, 'img_*_level_*.npy')
                 for file_path in glob.glob(pattern):
                     try:
@@ -128,7 +128,6 @@ class PyramidTilesStack(PyramidBase):
                 if self.temp_dir_manager:
                     shutil.rmtree(self.temp_dir_manager.name, ignore_errors=True)
                 else:
-                    import glob
                     pattern = os.path.join(self.temp_dir_path, 'img_*_level_*.npy')
                     for file_path in glob.glob(pattern):
                         try:
