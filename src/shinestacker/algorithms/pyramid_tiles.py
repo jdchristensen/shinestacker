@@ -11,6 +11,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 import numpy as np
 from .. config.constants import constants
 from .. config.defaults import DEFAULTS
+from .. config.app_config import AppConfig
 from .. core.colors import color_str
 from .. core.exceptions import RunStopException
 from .utils import read_img, read_and_validate_img
@@ -32,7 +33,16 @@ class PyramidTilesStack(PyramidBase):
         self.max_pixel_value = None
         self.tile_size = tile_size
         self.n_tiled_layers = n_tiled_layers
-        self.temp_dir = tempfile.TemporaryDirectory()
+        self.temp_folder = AppConfig.get('temp_folder_path')
+        base_temp_dir = AppConfig.get('temp_folder_path')
+        if base_temp_dir and base_temp_dir != '':
+            self.temp_dir_path = base_temp_dir
+            self.temp_dir_manager = None
+            os.makedirs(self.temp_dir_path, exist_ok=True)
+        else:
+            self.temp_dir_manager = tempfile.TemporaryDirectory()
+            self.temp_dir_path = self.temp_dir_manager.name
+        print("using temp dir: ", self.temp_dir_path)
         self.n_tiles = 0
         self.level_shapes = {}
         available_cores = os.cpu_count() or 1
@@ -58,7 +68,7 @@ class PyramidTilesStack(PyramidBase):
         return idx, img_path, level_count
 
     def _check_disk_space(self):
-        _total, _used, free = shutil.disk_usage(self.temp_dir.name)
+        _total, _used, free = shutil.disk_usage(self.temp_dir_path)
         free_gb = free / constants.ONE_GIGA  # Convert bytes to GB
         if free_gb < self.min_free_space_gb:
             self.print_message(
@@ -82,31 +92,49 @@ class PyramidTilesStack(PyramidBase):
                         self._check_disk_space()
                         np.save(
                             os.path.join(
-                                self.temp_dir.name,
+                                self.temp_dir_path,
                                 f'img_{img_index}_level_{level_idx}_tile_{y}_{x}.npy'),
                             tile
                         )
             else:
                 self._check_disk_space()
                 np.save(
-                    os.path.join(self.temp_dir.name,
+                    os.path.join(self.temp_dir_path,
                                  f'img_{img_index}_level_{level_idx}.npy'), level_data)
         return len(laplacian)
 
     def load_level_tile(self, img_index, level, y, x):
         return np.load(
-            os.path.join(self.temp_dir.name,
+            os.path.join(self.temp_dir_path,
                          f'img_{img_index}_level_{level}_tile_{y}_{x}.npy'))
 
     def load_level(self, img_index, level):
-        return np.load(os.path.join(self.temp_dir.name, f'img_{img_index}_level_{level}.npy'))
+        return np.load(os.path.join(self.temp_dir_path, f'img_{img_index}_level_{level}.npy'))
 
     def cleanup_temp_files(self):
         try:
-            self.temp_dir.cleanup()
+            if self.temp_dir_manager:
+                self.temp_dir_manager.cleanup()
+            else:
+                import glob
+                pattern = os.path.join(self.temp_dir_path, 'img_*_level_*.npy')
+                for file_path in glob.glob(pattern):
+                    try:
+                        os.remove(file_path)
+                    except Exception:
+                        pass
         except Exception:
             try:
-                shutil.rmtree(self.temp_dir.name, ignore_errors=True)
+                if self.temp_dir_manager:
+                    shutil.rmtree(self.temp_dir_manager.name, ignore_errors=True)
+                else:
+                    import glob
+                    pattern = os.path.join(self.temp_dir_path, 'img_*_level_*.npy')
+                    for file_path in glob.glob(pattern):
+                        try:
+                            os.remove(file_path)
+                        except Exception:
+                            pass
             except Exception:
                 pass
 

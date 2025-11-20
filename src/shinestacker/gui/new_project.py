@@ -302,17 +302,19 @@ class NewProjectDialog(BaseFormDialog):
                 """)
                 msg.setIcon(QMessageBox.Warning)
                 msg.setWindowTitle("Too many frames")
-                msg.setText(f"You selected {self.n_image_files} images "
-                            f"with resolution {width}×{height} pixels, {n_bits} bits depth. "
-                            "Processing may require a significant amount "
-                            "of memory and temporary disk space.\n\n"
-                            "Continue anyway?")
-                msg.setInformativeText('You may consider creating "bunches" to reduce '
-                                       "the number of frames for retouching.\n\n"
-                                       '✅ Check "Create bunches" to combine frames '
-                                       "into manageable composites.\n\n"
-                                       "➡️ Check expert options for the stacking algorithm.\n\n"
-                                       'Go to "View" > "Expert Options".')
+                msg.setText(
+                    f"You selected {self.n_image_files} images "
+                    f"with resolution {width}×{height} pixels, {n_bits} bits depth. "
+                    "Processing may require a significant amount "
+                    "of memory and temporary disk space.\n\n"
+                    "Continue anyway?")
+                msg.setInformativeText(
+                    '<b>For better performance, set a scratch disk folder '
+                    'on a fast drive:</b><br>'
+                    '➡️ Go to "ShineStacker" → "Settings" → "Scratch disk folder".<br>'
+                    '💡 Using an SSD with ample free space will speed up processing.<br><br>'
+                    '<b>Reduce processing load:</b><br>'
+                    '✅ Check "Create bunches" in the project wizard to combine frames.')
                 msg.setStandardButtons(QMessageBox.Ok | QMessageBox.Cancel)
                 msg.setDefaultButton(QMessageBox.Cancel)
                 if msg.exec_() != QMessageBox.Ok:

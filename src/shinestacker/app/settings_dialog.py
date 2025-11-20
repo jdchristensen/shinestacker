@@ -1,7 +1,9 @@
 # pylint: disable=C0114, C0115, C0116, E0611, R0913, R0917, E1121
 from abc import ABC, abstractmethod
 from PySide6.QtCore import Signal
-from PySide6.QtWidgets import QLabel, QCheckBox, QComboBox, QDoubleSpinBox, QSpinBox
+from PySide6.QtWidgets import (
+    QLabel, QCheckBox, QComboBox, QDoubleSpinBox, QSpinBox, QLineEdit, QPushButton,
+    QHBoxLayout, QWidget, QFileDialog)
 from .. config.settings import Settings
 from .. config.constants import constants
 from .. config.gui_constants import gui_constants
@@ -178,6 +180,50 @@ class NestedCheckBoxParameter(CheckBoxParameter, NestedParameter):
         NestedParameter.__init__(self, parent_key, key, label, tooltip)
 
 
+class FolderParameter(BaseParameter):
+    def __init__(self, key, label, default_value="", tooltip=""):
+        super().__init__(key, label, tooltip)
+        self.default_value = default_value
+
+    def create_widget(self, parent):
+        container = QWidget(parent)
+        layout = QHBoxLayout(container)
+        layout.setContentsMargins(0, 0, 0, 0)
+        self.line_edit = QLineEdit(container)
+        if self.tooltip:
+            self.line_edit.setToolTip(self.tooltip)
+        self.browse_button = QPushButton("Browse...", container)
+        self.browse_button.clicked.connect(self._browse_folder)
+        layout.addWidget(self.line_edit)
+        layout.addWidget(self.browse_button)
+        self.widget = container
+        return self.widget
+
+    def _browse_folder(self):
+        folder = QFileDialog.getExistingDirectory(
+            self.widget,
+            f"Select {self.label}",
+            self.line_edit.text() or ""
+        )
+        if folder:
+            self.line_edit.setText(folder)
+
+    def get_value(self):
+        return self.line_edit.text()
+
+    def set_value(self, value):
+        self.line_edit.setText(value)
+
+    def set_default(self):
+        self.line_edit.setText(self.default_value)
+
+
+class NestedFolderParameter(FolderParameter, NestedParameter):
+    def __init__(self, parent_key, key, label, default_value="", tooltip=""):
+        FolderParameter.__init__(self, key, label, default_value, tooltip)
+        NestedParameter.__init__(self, parent_key, key, label, tooltip)
+
+
 class SettingsDialog(ConfigDialog, AlignFramesConfigBase):
     update_project_config_requested = Signal()
     update_retouch_config_requested = Signal()
@@ -210,6 +256,9 @@ class SettingsDialog(ConfigDialog, AlignFramesConfigBase):
                     'align_frames_params', 'max_threads',
                     'Align frames, max num. of cores:',
                     DEFAULTS['align_frames_params']['max_threads'], 0, 64),
+                FolderParameter(
+                    'temp_folder_path', 'Scratch disk folder',
+                    DEFAULTS['temp_folder_path']),
                 NestedCallbackComboBoxParameter(
                     'align_frames_params', 'detector', 'Detector:',
                     DEFAULTS['align_frames_params']['detector'],
