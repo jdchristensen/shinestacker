@@ -13,6 +13,7 @@ class DepthMapStack(BaseStackAlgo):
     def __init__(self, map_type=DEFAULTS['depth_map_params']['map_type'],
                  energy=DEFAULTS['depth_map_params']['energy'],
                  blend_mode=DEFAULTS['depth_map_params']['blend_mode'],
+                 weight_power=DEFAULTS['depth_map_params']['weight_power'],
                  kernel_size=DEFAULTS['depth_map_params']['kernel_size'],
                  blur_size=DEFAULTS['depth_map_params']['blur_size'],
                  smooth_size=DEFAULTS['depth_map_params']['smooth_size'],
@@ -25,6 +26,7 @@ class DepthMapStack(BaseStackAlgo):
         self.map_type = map_type
         self.energy = energy
         self.blend_mode = blend_mode
+        self.weight_power = weight_power
         self.kernel_size = kernel_size
         self.blur_size = blur_size
         self.smooth_size = smooth_size
@@ -90,13 +92,19 @@ class DepthMapStack(BaseStackAlgo):
     def get_focus_map(self, energies):
         if self.map_type == constants.DM_MAP_AVERAGE:
             sum_energies = np.sum(energies, axis=0)
-            return np.divide(energies, sum_energies, where=sum_energies != 0)
-        if self.map_type == constants.DM_MAP_MAX:
+            weights = np.divide(energies, sum_energies, where=sum_energies != 0)
+        elif self.map_type == constants.DM_MAP_MAX:
             max_energy = np.max(energies, axis=0)
-            relative = np.exp((energies - max_energy) / self.temperature)
-            return relative / np.sum(relative, axis=0)
-        raise InvalidOptionError("map_type", self.map_type, details=f" valid values are "
-                                 f"{constants.DM_MAP_AVERAGE} and {constants.DM_MAP_MAX}.")
+            relative = np.exp((energies - max_energy) / max(self.temperature, 0.1))
+            weights = relative / np.sum(relative, axis=0)
+        else:
+            raise InvalidOptionError("map_type", self.map_type, details=f" valid values are "
+                                     f"{constants.DM_MAP_AVERAGE} and {constants.DM_MAP_MAX}.")
+        if self.weight_power != 1.0:
+            weights = np.power(weights, self.weight_power)
+            sum_weights = np.sum(weights, axis=0)
+            weights = np.divide(weights, sum_weights, where=sum_weights != 0)
+        return weights
 
     def focus_stack(self):
         n_images = len(self.filenames)
@@ -128,10 +136,9 @@ class DepthMapStack(BaseStackAlgo):
         #     energy_debug = (energies[i] / np.max(energies[i]) * 255).astype(np.uint8)
         #     cv2.imwrite(f"/tmp/energy_map_{i}.png", energy_debug)
 
-        for i in range(energies.shape[0]):
-            img_max = np.max(energies[i])
-            if img_max > 0:
-                energies[i] = energies[i] / img_max
+        global_max = np.max(energies)
+        if global_max > 0:
+            energies = energies / global_max
         if self.smooth_size > 0:
             energies = self.smooth_energy(energies)
 
@@ -143,40 +150,6 @@ class DepthMapStack(BaseStackAlgo):
         raise InvalidOptionError(
             "blend_mode", self.blend_mode,
             details=f"Valid values are {constants.DM_MODE_WEIGHTED} and {constants.DM_MODE_BEST}")
-
-    def _weighted_pyramid_blend(self, weights, n_images):
-        blended_pyramid = None
-        for i, img_path in enumerate(self.filenames):
-            self.print_message(f": preprocessing {self.image_str(i)}")
-            filename = os.path.basename(img_path)
-            self.process.callback(constants.CALLBACK_UPDATE_FRAME_STATUS,
-                                  self.process.input_path, filename, 200)
-            img = read_img(img_path).astype(self.float_type)
-            weight = weights[i]
-            gp_img = [img]
-            gp_weight = [weight]
-            for _ in range(self.levels - 1):
-                gp_img.append(cv2.pyrDown(gp_img[-1]))
-                gp_weight.append(cv2.pyrDown(gp_weight[-1]))
-            lp_img = [gp_img[-1]]
-            for j in range(self.levels - 1, 0, -1):
-                size = (gp_img[j - 1].shape[1], gp_img[j - 1].shape[0])
-                expanded = cv2.pyrUp(gp_img[j], dstsize=size)
-                lp_img.append(gp_img[j - 1] - expanded)
-            current_blend = [lp_img[j] * gp_weight[self.levels - 1 - j][..., np.newaxis]
-                             for j in range(self.levels)]
-            blended_pyramid = current_blend if blended_pyramid is None \
-                else [np.add(bp, cb) for bp, cb in zip(blended_pyramid, current_blend)]
-            self.after_step(i + n_images)
-            self.process.callback(constants.CALLBACK_UPDATE_FRAME_STATUS,
-                                  self.process.input_path, filename, 201)
-            self.check_running()
-        result = blended_pyramid[0]
-        self.print_message(': blend levels')
-        for j in range(1, self.levels):
-            size = (blended_pyramid[j].shape[1], blended_pyramid[j].shape[0])
-            result = cv2.pyrUp(result, dstsize=size) + blended_pyramid[j]
-        return np.clip(np.absolute(result), 0, self.num_pixel_values).astype(self.dtype)
 
     def _best_pixel_selection(self, energies, n_images):
         best_indices = np.argmax(energies, axis=0)
@@ -193,9 +166,29 @@ class DepthMapStack(BaseStackAlgo):
             filename = os.path.basename(img_path)
             self.process.callback(constants.CALLBACK_UPDATE_FRAME_STATUS,
                                   self.process.input_path, filename, 200)
-            mask = (best_indices == i)
+            mask = best_indices == i
             result[mask] = color_images[i][mask]
             self.process.callback(constants.CALLBACK_UPDATE_FRAME_STATUS,
                                   self.process.input_path, filename, 201)
             self.check_running()
         return np.clip(np.absolute(result), 0, self.num_pixel_values).astype(self.dtype)
+
+    def _weighted_pyramid_blend(self, weights, n_images):
+        result = np.zeros((self.shape[0], self.shape[1], 3), dtype=self.float_type)
+        total_weight = np.zeros((self.shape[0], self.shape[1]), dtype=self.float_type)
+        for i, img_path in enumerate(self.filenames):
+            self.print_message(f": preprocessing {self.image_str(i)}")
+            filename = os.path.basename(img_path)
+            self.process.callback(constants.CALLBACK_UPDATE_FRAME_STATUS,
+                                  self.process.input_path, filename, 200)
+            img = read_img(img_path).astype(self.float_type)
+            weight = weights[i]
+            result += img * weight[:, :, np.newaxis]
+            total_weight += weight
+            self.after_step(i + n_images)
+            self.process.callback(constants.CALLBACK_UPDATE_FRAME_STATUS,
+                                  self.process.input_path, filename, 201)
+            self.check_running()
+        total_weight_3d = np.maximum(total_weight[:, :, np.newaxis], 1e-8)
+        result = result / total_weight_3d
+        return np.clip(result, 0, self.num_pixel_values).astype(self.dtype)

@@ -6,7 +6,8 @@ This page reports the main releases only and the main changes therein.
 
 ### Added
 - customizable temporary scratch disk area in settings
-- more depth map customizable options
+- optimized depth map algorith with more energy calculations and more blending modes
+- new customizable parameters for depth map algorithm
 
 ### Fixed
 - added protection into persistent settings against potentially dangerous data types

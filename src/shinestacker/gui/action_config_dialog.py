@@ -369,16 +369,21 @@ class FocusStackBaseConfigurator(DefaultActionConfigurator):
             default=dict(zip(constants.VALID_DM_ENERGY,
                              self.ENERGY_OPTIONS))[AppConfig.get('depth_map_params')['energy']])
         self.add_field_to_layout(
-            q_depthmap.layout(), 'map_type', FIELD_COMBO, 'Map type', required=False,
+            q_depthmap.layout(), 'depthmap_map_type', FIELD_COMBO, 'Map type', required=False,
             options=self.MAP_TYPE_OPTIONS, values=constants.VALID_DM_MAP,
             default=dict(zip(constants.VALID_DM_MAP,
                              self.MAP_TYPE_OPTIONS))[AppConfig.get('depth_map_params')['map_type']])
         self.add_field_to_layout(
-            q_depthmap.layout(), 'blend_mode', FIELD_COMBO, 'Blend mode', required=False,
+            q_depthmap.layout(), 'depthmap_blend_mode', FIELD_COMBO, 'Blend mode', required=False,
             options=self.BLEND_MODE_OPTIONS, values=constants.VALID_DM_BLEND_MODES,
             default=dict(
                 zip(constants.VALID_DM_BLEND_MODES,
                     self.BLEND_MODE_OPTIONS))[AppConfig.get('depth_map_params')['blend_mode']])
+        self.add_field_to_layout(
+            q_depthmap.layout(), 'depthmap_weight_power', FIELD_FLOAT, 'Weight power correction',
+            expert=True,
+            required=False, default=AppConfig.get('depth_map_params')['weight_power'],
+            min_val=0.1, max_val=10, step=0.05)
         self.add_field_to_layout(
             q_depthmap.layout(), 'depthmap_kernel_size', FIELD_INT, 'Kernel size (px)',
             expert=True,
@@ -395,13 +400,13 @@ class FocusStackBaseConfigurator(DefaultActionConfigurator):
             required=False, default=AppConfig.get('depth_map_params')['smooth_size'],
             min_val=0, max_val=256)
         self.add_field_to_layout(
-            q_depthmap.layout(), 'bilateral_sigma_color', FIELD_INT,
+            q_depthmap.layout(), 'depthmap_bilateral_sigma_color', FIELD_INT,
             'Bilateral filter σ, color (px)',
             expert=True,
             required=False, default=AppConfig.get('depth_map_params')['bilateral_sigma_color'],
             min_val=0, max_val=256)
         self.add_field_to_layout(
-            q_depthmap.layout(), 'bilateral_sigma_space', FIELD_INT,
+            q_depthmap.layout(), 'bdepthmap_ilateral_sigma_space', FIELD_INT,
             'Bilateral filter σ, space (px)',
             expert=True,
             required=False, default=AppConfig.get('depth_map_params')['bilateral_sigma_space'],

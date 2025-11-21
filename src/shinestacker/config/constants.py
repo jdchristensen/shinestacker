@@ -152,8 +152,8 @@ class _Constants:
     DM_ENERGY_SOBEL = "sobel"
     DM_MAP_AVERAGE = "average"
     DM_MAP_MAX = "max"
-    DM_MODE_WEIGHTED = "weight"
     DM_MODE_BEST = "best"
+    DM_MODE_WEIGHTED = "weight"
     VALID_DM_MAP = [DM_MAP_AVERAGE, DM_MAP_MAX]
     VALID_DM_ENERGY = [DM_ENERGY_TENENGRAD, DM_ENERGY_VARIANCE, DM_ENERGY_LAPLACIAN,
                        DM_ENERGY_MOD_LAPLACIAN, DM_ENERGY_SOBEL]
