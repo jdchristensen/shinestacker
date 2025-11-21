@@ -35,73 +35,63 @@ class DepthMapStack(BaseStackAlgo):
         self.bilateral_sigma_space = bilateral_sigma_space
         self.temperature = temperature
 
+    def _with_energy_progress(self, energy_func, message_template):
+        def wrapper(gray_images, *args, **kwargs):
+            n = gray_images.shape[0]
+            result = np.zeros(gray_images.shape, dtype=self.float_type)
+            n_images = len(self.filenames)
+            for i in range(n):
+                self.print_message(f": {message_template} {i + 1}/{n}")
+                if args or kwargs:
+                    result[i] = energy_func(gray_images[i], *args, **kwargs)
+                else:
+                    result[i] = energy_func(gray_images[i])
+                self.after_step(i + n_images)
+                self.check_running()
+            return result
+        return wrapper
+
     def get_sobel_map(self, gray_images):
-        n_images = len(self.filenames)
-        energies = np.zeros(gray_images.shape, dtype=self.float_type)
-        n = gray_images.shape[0]
-        for i in range(n):
-            self.print_message(f": create sobel map,  {i + 1}/{n}")
-            img = gray_images[i]
-            energies[i] = np.abs(cv2.Sobel(img, cv2.CV_64F, 1, 0, ksize=3)) + \
+        def sobel_energy(img):
+            return np.abs(cv2.Sobel(img, cv2.CV_64F, 1, 0, ksize=3)) + \
                 np.abs(cv2.Sobel(img, cv2.CV_64F, 0, 1, ksize=3))
-            self.after_step(i + n_images)
-            self.check_running()
-        return energies
+        return self._with_energy_progress(
+            sobel_energy, "create sobel map")(gray_images)
 
     def get_laplacian_map(self, gray_images):
-        laplacian = np.zeros(gray_images.shape, dtype=self.float_type)
-        n = gray_images.shape[0]
-        for i in range(n):
-            blurred = cv2.GaussianBlur(gray_images[i], (self.blur_size, self.blur_size), 0)            
+        def laplacian_energy(img):
+            blurred = cv2.GaussianBlur(img, (self.blur_size, self.blur_size), 0)
             lap_result = cv2.Laplacian(
-                blurred, cv2.CV_32F if self.float_type == np.float32 else cv2.CV_64F, 
+                blurred, cv2.CV_32F if self.float_type == np.float32 else cv2.CV_64F,
                 ksize=self.kernel_size)
-            laplacian[i] = np.abs(lap_result)
-            self.after_step(i + n_images)
-            self.check_running()
-        return laplacian
+            return np.abs(lap_result)
+        return self._with_energy_progress(
+            laplacian_energy, "create laplacian map")(gray_images)
 
     def get_modified_laplacian(self, gray_images):
-        n_images = len(self.filenames)
-        mod_laplacian = np.zeros(gray_images.shape, dtype=self.float_type)
-        n = gray_images.shape[0]
-        for i in range(n):
-            self.print_message(f": create modified laplacian map,  {i + 1}/{n}")
-            img = gray_images[i]
+        def mod_laplacian_energy(img):
             dx = cv2.Sobel(img, cv2.CV_64F, 1, 0, ksize=3)
             dy = cv2.Sobel(img, cv2.CV_64F, 0, 1, ksize=3)
-            mod_laplacian[i] = np.abs(dx) + np.abs(dy)
-            self.after_step(i + n_images)
-            self.check_running()
-        return mod_laplacian
+            return np.abs(dx) + np.abs(dy)
+        return self._with_energy_progress(
+            mod_laplacian_energy, "create modified laplacian map")(gray_images)
 
     def get_variance_map(self, gray_images, window_size=5):
-        n_images = len(self.filenames)
-        variance = np.zeros(gray_images.shape, dtype=self.float_type)
-        n = gray_images.shape[0]
-        for i in range(n):
-            self.print_message(f": create variance map,  {i + 1}/{n}")
-            mean = cv2.boxFilter(gray_images[i], -1, (window_size, window_size))
-            mean_sq = cv2.boxFilter(gray_images[i]**2, -1, (window_size, window_size))
-            variance[i] = mean_sq - mean**2
-            self.after_step(i + n_images)
-            self.check_running()
-        return variance
+        def variance_energy(img, window_size=window_size):
+            mean = cv2.boxFilter(img, -1, (window_size, window_size))
+            mean_sq = cv2.boxFilter(img**2, -1, (window_size, window_size))
+            return mean_sq - mean**2
+        return self._with_energy_progress(
+            variance_energy, "create variance map")(gray_images)
 
     def get_tenengrad(self, gray_images, threshold=5):
-        n_images = len(self.filenames)
-        tenengrad = np.zeros(gray_images.shape, dtype=self.float_type)
-        n = gray_images.shape[0]
-        for i in range(n):
-            self.print_message(f": create tenengrad map,  {i + 1}/{n}")
-            img = gray_images[i]
+        def tenengrad_energy(img, threshold=threshold):
             gx = cv2.Sobel(img, cv2.CV_64F, 1, 0, ksize=3)
             gy = cv2.Sobel(img, cv2.CV_64F, 0, 1, ksize=3)
-            tenengrad[i] = gx * gx + gy * gy
-            tenengrad[i] = np.where(tenengrad[i] > threshold, tenengrad[i], 0)
-            self.after_step(i + n_images)
-            self.check_running()
-        return tenengrad
+            tenengrad = gx * gx + gy * gy
+            return np.where(tenengrad > threshold, tenengrad, 0)
+        return self._with_energy_progress(
+            tenengrad_energy, "create tenengrad map")(gray_images)
 
     def smooth_energy(self, energy_map):
         n_images = len(self.filenames)
