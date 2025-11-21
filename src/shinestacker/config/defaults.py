@@ -87,6 +87,8 @@ DEFAULTS = {
         'kernel_size': 5,
         'blur_size': 5,
         'smooth_size': 15,
+        'bilateral_sigma_color': 25,
+        'bilateral_sigma_space': 25,
         'temperature': 0.1,
         'levels': 3
     },

@@ -15,6 +15,8 @@ class DepthMapStack(BaseStackAlgo):
                  kernel_size=DEFAULTS['depth_map_params']['kernel_size'],
                  blur_size=DEFAULTS['depth_map_params']['blur_size'],
                  smooth_size=DEFAULTS['depth_map_params']['smooth_size'],
+                 bilateral_sigma_color=DEFAULTS['depth_map_params']['bilateral_sigma_color'],
+                 bilateral_sigma_space=DEFAULTS['depth_map_params']['bilateral_sigma_space'],
                  temperature=DEFAULTS['depth_map_params']['temperature'],
                  levels=DEFAULTS['depth_map_params']['levels'],
                  float_type=DEFAULTS['depth_map_params']['float_type']):
@@ -24,6 +26,8 @@ class DepthMapStack(BaseStackAlgo):
         self.kernel_size = kernel_size
         self.blur_size = blur_size
         self.smooth_size = smooth_size
+        self.bilateral_sigma_color = bilateral_sigma_color
+        self.bilateral_sigma_space = bilateral_sigma_space
         self.temperature = temperature
         self.levels = levels
 
@@ -48,7 +52,9 @@ class DepthMapStack(BaseStackAlgo):
         smoothed = np.zeros(energy_map.shape, dtype=np.float32)
         for i in range(energy_map.shape[0]):
             energy_32f = energy_map[i].astype(np.float32)
-            smoothed_32f = cv2.bilateralFilter(energy_32f, self.smooth_size, 25, 25)
+            smoothed_32f = cv2.bilateralFilter(
+                energy_32f, self.smooth_size,
+                self.bilateral_sigma_color, self.bilateral_sigma_space)
             smoothed[i] = smoothed_32f.astype(energy_map.dtype)
         return smoothed
 

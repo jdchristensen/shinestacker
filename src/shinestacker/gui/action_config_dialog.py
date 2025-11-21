@@ -388,6 +388,18 @@ class FocusStackBaseConfigurator(DefaultActionConfigurator):
             required=False, default=AppConfig.get('depth_map_params')['smooth_size'],
             min_val=0, max_val=256)
         self.add_field_to_layout(
+            q_depthmap.layout(), 'bilateral_sigma_color', FIELD_INT,
+            'Bilateral filter σ, color (px)',
+            expert=True,
+            required=False, default=AppConfig.get('depth_map_params')['bilateral_sigma_color'],
+            min_val=0, max_val=256)
+        self.add_field_to_layout(
+            q_depthmap.layout(), 'bilateral_sigma_space', FIELD_INT,
+            'Bilateral filter σ, space (px)',
+            expert=True,
+            required=False, default=AppConfig.get('depth_map_params')['bilateral_sigma_space'],
+            min_val=0, max_val=256)
+        self.add_field_to_layout(
             q_depthmap.layout(), 'depthmap_temperature', FIELD_FLOAT, 'Temperature',
             expert=True,
             required=False, default=AppConfig.get('depth_map_params')['temperature'],
