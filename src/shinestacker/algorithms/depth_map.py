@@ -88,9 +88,10 @@ class DepthMapStack(BaseStackAlgo):
                 'energy', self.energy, details=f" valid values are "
                 f"{constants.DM_ENERGY_SOBEL} and {constants.DM_ENERGY_LAPLACIAN}."
             )
-        max_energy = np.max(energies)
-        if max_energy > 0:
-            energies = energies / max_energy
+        for i in range(energies.shape[0]):
+            img_max = np.max(energies[i])
+            if img_max > 0:
+                energies[i] = energies[i] / img_max
         if self.smooth_size > 0:
             energies = self.smooth_energy(energies)
         weights = self.get_focus_map(energies)
