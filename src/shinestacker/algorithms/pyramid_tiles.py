@@ -43,7 +43,6 @@ class PyramidTilesStack(PyramidBase):
         else:
             self.temp_dir_manager = tempfile.TemporaryDirectory()
             self.temp_dir_path = self.temp_dir_manager.name
-        print("using temp dir: ", self.temp_dir_path)
         self.n_tiles = 0
         self.level_shapes = {}
         available_cores = os.cpu_count() or 1

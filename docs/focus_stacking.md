@@ -69,7 +69,7 @@ Arguments for the constructor are the same ad for ```PyramidStack``` plus:
 
 Arguments for the constructor are:
    * ```map_type``` (optional)_ possible values are  ```DM_MAP_MAX``` (default) and ```DM_MAP_AVERAGE```. ```DM_MAP_MAX``` select for wach pixel the layer which has the best focus. ```DM_MAP_AVERAGE``` performs for each pixel an average of all layers weighted by the quality of focus.
-   * ```energy``` (optional, default: ```DM_ENERGY_TENENGRAD```): possible values are ```DM_ENERGY_LAPLACIAN```, ```DM_ENERGY_MOD_LAPLACIAN```, ```DM_ENERGY_SOBEL```, ```DM_ENERGY_VARIANCE``` and ```DM_ENERGY_TENENGRAD```.
+   * ```energy``` (optional, default: ```DM_ENERGY_TENENGRAD```): possible values are ```DM_ENERGY_LAPLACIAN```, ```DM_ENERGY_MOD_LAPLACIAN```, ```DM_ENERGY_SOBEL```, ```DM_ENERGY_VARIANCE``` and ```DM_ENERGY_TENENGRAD```. For more information, see [Sobel Derivatives](https://docs.opencv.org/4.x/d2/d2c/tutorial_sobel_derivatives.html), 
    * ```blend_mode``` (optional, default: ```DM_MODE_BEST```): possible values are ```DM_MODE_BEST```, picks the best frame, and```DM_MODE_WEIGHT```, weight frames by energy.
    * ```weight_power``` (optiona, default: 1): apply a power law correction to energy weights.
    * ```kernel_size``` (optional, default: 5): size in pixels of Laplacian kernel.

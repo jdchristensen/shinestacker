@@ -13,7 +13,7 @@ This page reports the main releases only and the main changes therein.
 - added protection into persistent settings against potentially dangerous data types
 
 ### Changed
-- some code cleanup
+- some minor fixes and code cleanup
 - minor GUI refinements
 
 --------------------------
