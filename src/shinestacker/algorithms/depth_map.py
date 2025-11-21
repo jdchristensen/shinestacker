@@ -16,13 +16,19 @@ class DepthMapStack(BaseStackAlgo):
                  weight_power=DEFAULTS['depth_map_params']['weight_power'],
                  kernel_size=DEFAULTS['depth_map_params']['kernel_size'],
                  blur_size=DEFAULTS['depth_map_params']['blur_size'],
-                 smooth_size=DEFAULTS['depth_map_params']['smooth_size'],
-                 bilateral_sigma_color=DEFAULTS['depth_map_params']['bilateral_sigma_color'],
-                 bilateral_sigma_space=DEFAULTS['depth_map_params']['bilateral_sigma_space'],
+                 energy_smooth_size=DEFAULTS['depth_map_params']['energy_smooth_size'],
+                 energy_sigma_color=DEFAULTS['depth_map_params']['energy_sigma_color'],
+                 energy_sigma_space=DEFAULTS['depth_map_params']['energy_sigma_space'],
+                 weights_smooth_size=DEFAULTS['depth_map_params']['weights_smooth_size'],
+                 weights_sigma_color=DEFAULTS['depth_map_params']['weights_sigma_color'],
+                 weights_sigma_space=DEFAULTS['depth_map_params']['weights_sigma_space'],
                  temperature=DEFAULTS['depth_map_params']['temperature'],
                  float_type=DEFAULTS['depth_map_params']['float_type']):
-        steps_per_frame = (3 if smooth_size <= 0 else 4) + \
-            (1 if blend_mode == constants.DM_MODE_BEST else 0)
+        steps_per_frame = 3
+        if energy_smooth_size > 0:
+            steps_per_frame += 1
+        if weights_smooth_size > 0:
+            steps_per_frame += 1
         super().__init__("depth map", steps_per_frame, float_type)
         self.map_type = map_type
         self.energy = energy
@@ -30,9 +36,12 @@ class DepthMapStack(BaseStackAlgo):
         self.weight_power = weight_power
         self.kernel_size = kernel_size
         self.blur_size = blur_size
-        self.smooth_size = smooth_size
-        self.bilateral_sigma_color = bilateral_sigma_color
-        self.bilateral_sigma_space = bilateral_sigma_space
+        self.energy_smooth_size = energy_smooth_size
+        self.energy_sigma_color = energy_sigma_color
+        self.energy_sigma_space = energy_sigma_space
+        self.weights_smooth_size = weights_smooth_size
+        self.weights_sigma_color = weights_sigma_color
+        self.weights_sigma_space = weights_sigma_space
         self.temperature = temperature
 
     def _with_energy_progress(self, energy_func, message_template):
@@ -56,7 +65,7 @@ class DepthMapStack(BaseStackAlgo):
             return np.abs(cv2.Sobel(img, cv2.CV_64F, 1, 0, ksize=3)) + \
                 np.abs(cv2.Sobel(img, cv2.CV_64F, 0, 1, ksize=3))
         return self._with_energy_progress(
-            sobel_energy, "create sobel map")(gray_images)
+            sobel_energy, "create sobel energy map")(gray_images)
 
     def get_laplacian_map(self, gray_images):
         def laplacian_energy(img):
@@ -66,7 +75,7 @@ class DepthMapStack(BaseStackAlgo):
                 ksize=self.kernel_size)
             return np.abs(lap_result)
         return self._with_energy_progress(
-            laplacian_energy, "create laplacian map")(gray_images)
+            laplacian_energy, "create laplacian energy map")(gray_images)
 
     def get_modified_laplacian(self, gray_images):
         def mod_laplacian_energy(img):
@@ -74,7 +83,7 @@ class DepthMapStack(BaseStackAlgo):
             dy = cv2.Sobel(img, cv2.CV_64F, 0, 1, ksize=3)
             return np.abs(dx) + np.abs(dy)
         return self._with_energy_progress(
-            mod_laplacian_energy, "create modified laplacian map")(gray_images)
+            mod_laplacian_energy, "create modified laplacian energy map")(gray_images)
 
     def get_variance_map(self, gray_images, window_size=5):
         def variance_energy(img, window_size=window_size):
@@ -82,7 +91,7 @@ class DepthMapStack(BaseStackAlgo):
             mean_sq = cv2.boxFilter(img**2, -1, (window_size, window_size))
             return mean_sq - mean**2
         return self._with_energy_progress(
-            variance_energy, "create variance map")(gray_images)
+            variance_energy, "create variance energy map")(gray_images)
 
     def get_tenengrad(self, gray_images, threshold=5):
         def tenengrad_energy(img, threshold=threshold):
@@ -91,11 +100,11 @@ class DepthMapStack(BaseStackAlgo):
             tenengrad = gx * gx + gy * gy
             return np.where(tenengrad > threshold, tenengrad, 0)
         return self._with_energy_progress(
-            tenengrad_energy, "create tenengrad map")(gray_images)
+            tenengrad_energy, "create tenengrad energy map")(gray_images)
 
     def smooth_energy(self, energy_map):
         n_images = len(self.filenames)
-        if self.smooth_size <= 0:
+        if self.energy_smooth_size <= 0:
             return energy_map
         smoothed = np.zeros(energy_map.shape, dtype=np.float32)
         n = energy_map.shape[0]
@@ -103,8 +112,8 @@ class DepthMapStack(BaseStackAlgo):
             self.print_message(f": smooth energy map,  {i + 1}/{n}")
             energy_32f = energy_map[i].astype(np.float32)
             smoothed_32f = cv2.bilateralFilter(
-                energy_32f, self.smooth_size,
-                self.bilateral_sigma_color, self.bilateral_sigma_space)
+                energy_32f, self.energy_smooth_size,
+                self.energy_sigma_color, self.energy_sigma_space)
             smoothed[i] = smoothed_32f.astype(energy_map.dtype)
             self.after_step(i + n_images * 2)
             self.check_running()
@@ -164,7 +173,7 @@ class DepthMapStack(BaseStackAlgo):
         global_max = np.max(energies)
         if global_max > 0:
             energies = energies / global_max
-        if self.smooth_size > 0:
+        if self.energy_smooth_size > 0:
             energies = self.smooth_energy(energies)
         mode_str = {
             constants.DM_MODE_BEST: 'best frame',
@@ -183,13 +192,15 @@ class DepthMapStack(BaseStackAlgo):
     def _best_pixel_selection(self, energies, n_images):
         best_indices = np.argmax(energies, axis=0)
         color_images = []
+        n_steps = 2 if self.energy_smooth_size <= 0 else 3
         for i, img_path in enumerate(self.filenames):
             self.print_message(f": reading image {self.image_str(i)}")
             img = read_img(img_path).astype(self.float_type)
             color_images.append(img)
-            self.after_step(i + n_images * (2 if self.smooth_size <= 0 else 3))
+            self.after_step(i + n_images * n_steps)
             self.check_running()
         result = np.zeros_like(color_images[0])
+        n_steps += 1
         for i, img_path in enumerate(self.filenames):
             self.print_message(f": blending {self.image_str(i)}")
             filename = os.path.basename(img_path)
@@ -197,7 +208,7 @@ class DepthMapStack(BaseStackAlgo):
                                   self.process.input_path, filename, 200)
             mask = best_indices == i
             result[mask] = color_images[i][mask]
-            self.after_step(i + n_images * (3 if self.smooth_size <= 0 else 4))
+            self.after_step(i + n_images * n_steps)
             self.check_running()
             self.process.callback(constants.CALLBACK_UPDATE_FRAME_STATUS,
                                   self.process.input_path, filename, 201)
@@ -205,6 +216,20 @@ class DepthMapStack(BaseStackAlgo):
         return np.clip(np.absolute(result), 0, self.num_pixel_values).astype(self.dtype)
 
     def _weighted_pyramid_blend(self, weights, n_images):
+        n_steps = 2 if self.energy_smooth_size <= 0 else 3
+        if self.weights_smooth_size > 0:
+            for i in range(weights.shape[0]):
+                self.print_message(f": filter weights, {self.image_str(i)}")
+                weights[i] = cv2.bilateralFilter(
+                    weights[i].astype(np.float32),
+                    d=self.weights_smooth_size,
+                    sigmaColor=self.weights_sigma_color,
+                    sigmaSpace=self.weights_sigma_space).astype(weights.dtype)
+                self.after_step(i + n_images * n_steps)
+                self.check_running()
+            n_steps += 1
+        sum_weights = np.sum(weights, axis=0)
+        weights = np.divide(weights, sum_weights, where=sum_weights != 0)
         result = np.zeros((self.shape[0], self.shape[1], 3), dtype=self.float_type)
         total_weight = np.zeros((self.shape[0], self.shape[1]), dtype=self.float_type)
         for i, img_path in enumerate(self.filenames):
@@ -216,7 +241,7 @@ class DepthMapStack(BaseStackAlgo):
             weight = weights[i]
             result += img * weight[:, :, np.newaxis]
             total_weight += weight
-            self.after_step(i + n_images * (2 if self.smooth_size <= 0 else 3))
+            self.after_step(i + n_images * n_steps)
             self.check_running()
             self.process.callback(constants.CALLBACK_UPDATE_FRAME_STATUS,
                                   self.process.input_path, filename, 201)

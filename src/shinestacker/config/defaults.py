@@ -89,9 +89,12 @@ DEFAULTS = {
         'blend_mode': 'weight',
         'kernel_size': 5,
         'blur_size': 3,
-        'smooth_size': 10,
-        'bilateral_sigma_color': 10,
-        'bilateral_sigma_space': 10,
+        'energy_smooth_size': 5,
+        'energy_sigma_color': 0.2,
+        'energy_sigma_space': 6,
+        'weights_smooth_size': 12,
+        'weights_sigma_color': 0.2,
+        'weights_sigma_space': 6,
         'temperature': 0.1
     },
     'pyramid_params': {

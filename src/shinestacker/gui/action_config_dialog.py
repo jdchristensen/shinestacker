@@ -395,22 +395,42 @@ class FocusStackBaseConfigurator(DefaultActionConfigurator):
             required=False, default=AppConfig.get('depth_map_params')['blur_size'],
             min_val=1, max_val=256)
         self.add_field_to_layout(
-            q_depthmap.layout(), 'depthmap_smooth_size', FIELD_INT, 'Smooth size (px)',
+            q_depthmap.layout(), 'depthmap_energy_smooth_size', FIELD_INT,
+            'Energy smooth size (px)',
             expert=True,
-            required=False, default=AppConfig.get('depth_map_params')['smooth_size'],
+            required=False, default=AppConfig.get('depth_map_params')['energy_smooth_size'],
             min_val=0, max_val=256)
         self.add_field_to_layout(
-            q_depthmap.layout(), 'depthmap_bilateral_sigma_color', FIELD_INT,
-            'Bilateral filter σ, color (px)',
+            q_depthmap.layout(), 'depthmap_energy_sigma_color', FIELD_FLOAT,
+            'Energy filter σ, color (px)',
             expert=True,
-            required=False, default=AppConfig.get('depth_map_params')['bilateral_sigma_color'],
+            required=False, default=AppConfig.get('depth_map_params')['energy_sigma_color'],
+            min_val=0, max_val=10, step=0.1)
+        self.add_field_to_layout(
+            q_depthmap.layout(), 'depthmap_energy_sigma_space', FIELD_INT,
+            'Energy filter σ, space (px)',
+            expert=True,
+            required=False, default=AppConfig.get('depth_map_params')['energy_sigma_space'],
             min_val=0, max_val=256)
         self.add_field_to_layout(
-            q_depthmap.layout(), 'bdepthmap_ilateral_sigma_space', FIELD_INT,
-            'Bilateral filter σ, space (px)',
+            q_depthmap.layout(), 'depthmap_weights_smooth_size', FIELD_INT,
+            'Weigths smooth size (px)',
             expert=True,
-            required=False, default=AppConfig.get('depth_map_params')['bilateral_sigma_space'],
+            required=False, default=AppConfig.get('depth_map_params')['weights_smooth_size'],
             min_val=0, max_val=256)
+        self.add_field_to_layout(
+            q_depthmap.layout(), 'depthmap_weights_sigma_color', FIELD_FLOAT,
+            'Weights filter σ, color (px)',
+            expert=True,
+            required=False, default=AppConfig.get('depth_map_params')['weights_sigma_color'],
+            min_val=0, max_val=10, step=0.1)
+        self.add_field_to_layout(
+            q_depthmap.layout(), 'bdepthmap_weights_sigma_space', FIELD_INT,
+            'Weights filter σ, space (px)',
+            expert=True,
+            required=False, default=AppConfig.get('depth_map_params')['weights_sigma_space'],
+            min_val=0, max_val=256)
+
         self.add_field_to_layout(
             q_depthmap.layout(), 'depthmap_temperature', FIELD_FLOAT, 'Temperature',
             expert=True,
