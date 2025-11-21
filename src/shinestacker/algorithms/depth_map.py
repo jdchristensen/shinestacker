@@ -12,6 +12,7 @@ from .base_stack_algo import BaseStackAlgo
 class DepthMapStack(BaseStackAlgo):
     def __init__(self, map_type=DEFAULTS['depth_map_params']['map_type'],
                  energy=DEFAULTS['depth_map_params']['energy'],
+                 blend_mode=DEFAULTS['depth_map_params']['blend_mode'],
                  kernel_size=DEFAULTS['depth_map_params']['kernel_size'],
                  blur_size=DEFAULTS['depth_map_params']['blur_size'],
                  smooth_size=DEFAULTS['depth_map_params']['smooth_size'],
@@ -23,6 +24,7 @@ class DepthMapStack(BaseStackAlgo):
         super().__init__("depth map", 2, float_type)
         self.map_type = map_type
         self.energy = energy
+        self.blend_mode = blend_mode
         self.kernel_size = kernel_size
         self.blur_size = blur_size
         self.smooth_size = smooth_size
@@ -132,7 +134,17 @@ class DepthMapStack(BaseStackAlgo):
                 energies[i] = energies[i] / img_max
         if self.smooth_size > 0:
             energies = self.smooth_energy(energies)
-        weights = self.get_focus_map(energies)
+
+        if self.blend_mode == constants.DM_MODE_WEIGHTED:
+            weights = self.get_focus_map(energies)
+            return self._weighted_pyramid_blend(weights, n_images)
+        if self.blend_mode == constants.DM_MODE_BEST:
+            return self._best_pixel_selection(energies, n_images)
+        raise InvalidOptionError(
+            "blend_mode", self.blend_mode,
+            details=f"Valid values are {constants.DM_MODE_WEIGHTED} and {constants.DM_MODE_BEST}")
+
+    def _weighted_pyramid_blend(self, weights, n_images):
         blended_pyramid = None
         for i, img_path in enumerate(self.filenames):
             self.print_message(f": preprocessing {self.image_str(i)}")
@@ -164,4 +176,26 @@ class DepthMapStack(BaseStackAlgo):
         for j in range(1, self.levels):
             size = (blended_pyramid[j].shape[1], blended_pyramid[j].shape[0])
             result = cv2.pyrUp(result, dstsize=size) + blended_pyramid[j]
+        return np.clip(np.absolute(result), 0, self.num_pixel_values).astype(self.dtype)
+
+    def _best_pixel_selection(self, energies, n_images):
+        best_indices = np.argmax(energies, axis=0)
+        color_images = []
+        for i, img_path in enumerate(self.filenames):
+            self.print_message(f": reading color image {self.image_str(i)}")
+            img = read_img(img_path).astype(self.float_type)
+            color_images.append(img)
+            self.after_step(i + n_images)
+            self.check_running()
+        result = np.zeros_like(color_images[0])
+        for i, img_path in enumerate(self.filenames):
+            self.print_message(f": processing selection mask {self.image_str(i)}")
+            filename = os.path.basename(img_path)
+            self.process.callback(constants.CALLBACK_UPDATE_FRAME_STATUS,
+                                  self.process.input_path, filename, 200)
+            mask = (best_indices == i)
+            result[mask] = color_images[i][mask]
+            self.process.callback(constants.CALLBACK_UPDATE_FRAME_STATUS,
+                                  self.process.input_path, filename, 201)
+            self.check_running()
         return np.clip(np.absolute(result), 0, self.num_pixel_values).astype(self.dtype)

@@ -85,6 +85,7 @@ DEFAULTS = {
         'float_type': 'float-32',
         'map_type': 'average',
         'energy': 'tenengrad',
+        'blend_mode': 'best',
         'kernel_size': 5,
         'blur_size': 5,
         'smooth_size': 15,

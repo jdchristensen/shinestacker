@@ -250,6 +250,7 @@ class FocusStackBaseConfigurator(DefaultActionConfigurator):
     MAP_TYPE_OPTIONS = ['Average', 'Maximum']
     FLOAT_OPTIONS = ['float 32 bits', 'float 64 bits']
     MODE_OPTIONS = ['Auto', 'All in memory', 'Tiled I/O buffered']
+    BLEND_MODE_OPTIONS = ['Best frame', 'Weighted']
 
     def __init__(self, expert, current_wd):
         super().__init__(expert, current_wd)
@@ -372,6 +373,12 @@ class FocusStackBaseConfigurator(DefaultActionConfigurator):
             options=self.MAP_TYPE_OPTIONS, values=constants.VALID_DM_MAP,
             default=dict(zip(constants.VALID_DM_MAP,
                              self.MAP_TYPE_OPTIONS))[AppConfig.get('depth_map_params')['map_type']])
+        self.add_field_to_layout(
+            q_depthmap.layout(), 'blend_mode', FIELD_COMBO, 'Blend mode', required=False,
+            options=self.BLEND_MODE_OPTIONS, values=constants.VALID_DM_BLEND_MODES,
+            default=dict(
+                zip(constants.VALID_DM_BLEND_MODES,
+                    self.BLEND_MODE_OPTIONS))[AppConfig.get('depth_map_params')['blend_mode']])
         self.add_field_to_layout(
             q_depthmap.layout(), 'depthmap_kernel_size', FIELD_INT, 'Kernel size (px)',
             expert=True,
