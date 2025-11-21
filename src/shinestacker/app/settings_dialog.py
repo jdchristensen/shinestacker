@@ -1,7 +1,9 @@
 # pylint: disable=C0114, C0115, C0116, E0611, R0913, R0917, E1121
 from abc import ABC, abstractmethod
 from PySide6.QtCore import Signal
-from PySide6.QtWidgets import QLabel, QCheckBox, QComboBox, QDoubleSpinBox, QSpinBox
+from PySide6.QtWidgets import (
+    QLabel, QCheckBox, QComboBox, QDoubleSpinBox, QSpinBox, QLineEdit, QPushButton,
+    QHBoxLayout, QWidget, QFileDialog)
 from .. config.settings import Settings
 from .. config.constants import constants
 from .. config.gui_constants import gui_constants
@@ -178,6 +180,52 @@ class NestedCheckBoxParameter(CheckBoxParameter, NestedParameter):
         NestedParameter.__init__(self, parent_key, key, label, tooltip)
 
 
+class FolderParameter(BaseParameter):
+    def __init__(self, key, label, default_value="", tooltip=""):
+        super().__init__(key, label, tooltip)
+        self.default_value = default_value
+        self.line_edit = None
+        self.browse_button = None
+
+    def create_widget(self, parent):
+        container = QWidget(parent)
+        layout = QHBoxLayout(container)
+        layout.setContentsMargins(0, 0, 0, 0)
+        self.line_edit = QLineEdit(container)
+        if self.tooltip:
+            self.line_edit.setToolTip(self.tooltip)
+        self.browse_button = QPushButton("Browse...", container)
+        self.browse_button.clicked.connect(self._browse_folder)
+        layout.addWidget(self.line_edit)
+        layout.addWidget(self.browse_button)
+        self.widget = container
+        return self.widget
+
+    def _browse_folder(self):
+        folder = QFileDialog.getExistingDirectory(
+            self.widget,
+            f"Select {self.label}",
+            self.line_edit.text() or ""
+        )
+        if folder:
+            self.line_edit.setText(folder)
+
+    def get_value(self):
+        return self.line_edit.text()
+
+    def set_value(self, value):
+        self.line_edit.setText(value)
+
+    def set_default(self):
+        self.line_edit.setText(self.default_value)
+
+
+class NestedFolderParameter(FolderParameter, NestedParameter):
+    def __init__(self, parent_key, key, label, default_value="", tooltip=""):
+        FolderParameter.__init__(self, key, label, default_value, tooltip)
+        NestedParameter.__init__(self, parent_key, key, label, tooltip)
+
+
 class SettingsDialog(ConfigDialog, AlignFramesConfigBase):
     update_project_config_requested = Signal()
     update_retouch_config_requested = Signal()
@@ -195,76 +243,97 @@ class SettingsDialog(ConfigDialog, AlignFramesConfigBase):
     def _init_parameters(self):
         if self.project_settings:
             self.project_parameters = [
-                CheckBoxParameter(
-                    'expert_options', 'Expert options:',
-                    DEFAULTS['expert_options']),
-                NestedSpinBoxParameter(
-                    'combined_actions_params', 'max_threads',
-                    'Combined actions, max num. of cores:',
-                    DEFAULTS['combined_actions_params']['max_threads'], 0, 64),
-                NestedDoubleSpinBoxParameter(
-                    'align_frames_params', 'memory_limit',
-                    'Align frames, mem. limit (approx., GBytes):',
-                    DEFAULTS['align_frames_params']['memory_limit'], 1.0, 64.0, 1.0),
-                NestedSpinBoxParameter(
-                    'align_frames_params', 'max_threads',
-                    'Align frames, max num. of cores:',
-                    DEFAULTS['align_frames_params']['max_threads'], 0, 64),
-                NestedCallbackComboBoxParameter(
-                    'align_frames_params', 'detector', 'Detector:',
-                    DEFAULTS['align_frames_params']['detector'],
-                    [(d, d) for d in constants.VALID_DETECTORS],
-                    tooltip=self.DETECTOR_DESCRIPTOR_TOOLTIPS['detector'],
-                    on_change=self.change_match_config_settings),
-                NestedCallbackComboBoxParameter(
-                    'align_frames_params', 'descriptor', 'Descriptor:',
-                    DEFAULTS['align_frames_params']['descriptor'],
-                    [(d, d) for d in constants.VALID_DESCRIPTORS],
-                    tooltip=self.DETECTOR_DESCRIPTOR_TOOLTIPS['descriptor'],
-                    on_change=self.change_match_config_settings),
-                NestedCallbackComboBoxParameter(
-                    'align_frames_params', 'match_method', 'Match method:',
-                    DEFAULTS['align_frames_params']['match_method'],
-                    list(zip(self.MATCHING_METHOD_OPTIONS, constants.VALID_MATCHING_METHODS)),
-                    tooltip=self.DETECTOR_DESCRIPTOR_TOOLTIPS['match_method']),
-                NestedCallbackComboBoxParameter(
-                    'align_frames_params', 'subsample', 'Subsample:',
-                    DEFAULTS['align_frames_params']['subsample'],
-                    list(zip(constants.FIELD_SUBSAMPLE_OPTIONS, constants.FIELD_SUBSAMPLE_VALUES))),
-                NestedDoubleSpinBoxParameter(
-                    'focus_stack_params', 'memory_limit',
-                    'Focus stacking, mem. limit (approx., GBytes):',
-                    DEFAULTS['focus_stack_params']['memory_limit'], 1.0, 64.0, 1.0),
-                NestedSpinBoxParameter(
-                    'focus_stack_params', 'max_threads', 'Focus stacking, max. num. of cores:',
-                    DEFAULTS['focus_stack_params']['max_threads'], 0, 64),
+                ("General", [
+                    CheckBoxParameter(
+                        'expert_options', 'Expert options:',
+                        DEFAULTS['expert_options']),
+                    FolderParameter(
+                        'temp_folder_path', 'Scratch disk folder:',
+                        DEFAULTS['temp_folder_path'],
+                        'Temporary folder for processing files.\n'
+                        'Using a fast drive (SSD recommended) \n'
+                        'with ample free space will improve\nperformance.')
+                ]),
+                ("Combined Actions", [
+                    NestedSpinBoxParameter(
+                        'combined_actions_params', 'max_threads',
+                        'Max num. of cores:',
+                        DEFAULTS['combined_actions_params']['max_threads'], 0, 64)
+                ]),
+                ("Align Frames", [
+                    NestedDoubleSpinBoxParameter(
+                        'align_frames_params', 'memory_limit',
+                        'Mem. limit (approx., GBytes):',
+                        DEFAULTS['align_frames_params']['memory_limit'], 1.0, 64.0, 1.0),
+                    NestedSpinBoxParameter(
+                        'align_frames_params', 'max_threads',
+                        'Max num. of cores:',
+                        DEFAULTS['align_frames_params']['max_threads'], 0, 64),
+                    NestedCallbackComboBoxParameter(
+                        'align_frames_params', 'detector', 'Detector:',
+                        DEFAULTS['align_frames_params']['detector'],
+                        [(d, d) for d in constants.VALID_DETECTORS],
+                        tooltip=self.DETECTOR_DESCRIPTOR_TOOLTIPS['detector'],
+                        on_change=self.change_match_config_settings),
+                    NestedCallbackComboBoxParameter(
+                        'align_frames_params', 'descriptor', 'Descriptor:',
+                        DEFAULTS['align_frames_params']['descriptor'],
+                        [(d, d) for d in constants.VALID_DESCRIPTORS],
+                        tooltip=self.DETECTOR_DESCRIPTOR_TOOLTIPS['descriptor'],
+                        on_change=self.change_match_config_settings),
+                    NestedCallbackComboBoxParameter(
+                        'align_frames_params', 'match_method', 'Match method:',
+                        DEFAULTS['align_frames_params']['match_method'],
+                        list(zip(self.MATCHING_METHOD_OPTIONS, constants.VALID_MATCHING_METHODS)),
+                        tooltip=self.DETECTOR_DESCRIPTOR_TOOLTIPS['match_method']),
+                    NestedCallbackComboBoxParameter(
+                        'align_frames_params', 'subsample', 'Subsample:',
+                        DEFAULTS['align_frames_params']['subsample'],
+                        list(zip(constants.FIELD_SUBSAMPLE_OPTIONS,
+                                 constants.FIELD_SUBSAMPLE_VALUES)))
+                ]),
+                ("Focus Stacking", [
+                    NestedDoubleSpinBoxParameter(
+                        'focus_stack_params', 'memory_limit',
+                        'Mem. limit (approx., GBytes):',
+                        DEFAULTS['focus_stack_params']['memory_limit'], 1.0, 64.0, 1.0),
+                    NestedSpinBoxParameter(
+                        'focus_stack_params', 'max_threads', 'Max. num. of cores:',
+                        DEFAULTS['focus_stack_params']['max_threads'], 0, 64)
+                ])
             ]
         if self.retouch_settings:
             self.retouch_parameters = [
-                ComboBoxParameter(
-                    'view_strategy', 'View strategy:',
-                    DEFAULTS['view_strategy'],
-                    [
-                        ("Overlaid", "overlaid"),
-                        ("Side by side", "sidebyside"),
-                        ("Top-Bottom", "topbottom")
-                    ]),
-                SpinBoxParameter(
-                    'brush_size', 'Brush initial size:',
-                    DEFAULTS['brush_size'],
-                    gui_constants.BRUSH_SIZES['min'], gui_constants.BRUSH_SIZES['max']),
-                DoubleSpinBoxParameter(
-                    'min_mouse_step_brush_fraction', 'Min. mouse step in brush units:',
-                    DEFAULTS['min_mouse_step_brush_fraction'], 0, 1, 0.02),
-                SpinBoxParameter(
-                    'paint_refresh_time', 'Paint refresh time:',
-                    DEFAULTS['paint_refresh_time'], 0, 1000),
-                SpinBoxParameter(
-                    'display_refresh_time', 'Display refresh time:',
-                    DEFAULTS['display_refresh_time'], 0, 200),
-                SpinBoxParameter(
-                    'cursor_update_time', 'Cursor refresh time:',
-                    DEFAULTS['cursor_update_time'], 0, 50),
+                ("General Appearance", [
+                    ComboBoxParameter(
+                        'view_strategy', 'View strategy:',
+                        DEFAULTS['view_strategy'],
+                        [
+                            ("Overlaid", "overlaid"),
+                            ("Side by side", "sidebyside"),
+                            ("Top-Bottom", "topbottom")
+                        ])
+                ]),
+                ("Brush Options", [
+                    SpinBoxParameter(
+                        'brush_size', 'Brush initial size:',
+                        DEFAULTS['brush_size'],
+                        gui_constants.BRUSH_SIZES['min'], gui_constants.BRUSH_SIZES['max']),
+                    DoubleSpinBoxParameter(
+                        'min_mouse_step_brush_fraction', 'Min. mouse step in brush units:',
+                        DEFAULTS['min_mouse_step_brush_fraction'], 0, 1, 0.02)
+                ]),
+                ("Refresh Times", [
+                    SpinBoxParameter(
+                        'paint_refresh_time', 'Paint refresh time:',
+                        DEFAULTS['paint_refresh_time'], 0, 1000),
+                    SpinBoxParameter(
+                        'display_refresh_time', 'Display refresh time:',
+                        DEFAULTS['display_refresh_time'], 0, 200),
+                    SpinBoxParameter(
+                        'cursor_update_time', 'Cursor refresh time:',
+                        DEFAULTS['cursor_update_time'], 0, 50)
+                ])
             ]
 
     def create_form_content(self):
@@ -279,13 +348,14 @@ class SettingsDialog(ConfigDialog, AlignFramesConfigBase):
     def create_project_settings(self, layout=None):
         if layout is None:
             layout = self.container_layout
-        label = QLabel("Project settings:")
-        label.setStyleSheet("font-weight: bold")
-        layout.addRow(label)
-        for param in self.project_parameters:
-            widget = param.create_widget(self)
-            param.set_value(self._get_current_value(param))
-            layout.addRow(param.label, widget)
+        for group_name, parameters in self.project_parameters:
+            label = QLabel(group_name + ":")
+            label.setStyleSheet("font-weight: bold; margin-top: 10px;")
+            layout.addRow(label)
+            for param in parameters:
+                widget = param.create_widget(self)
+                param.set_value(self._get_current_value(param))
+                layout.addRow(param.label, widget)
         self.info_label = QLabel()
         self.info_label.setStyleSheet("color: orange; font-style: italic;")
         layout.addRow(self.info_label)
@@ -293,13 +363,14 @@ class SettingsDialog(ConfigDialog, AlignFramesConfigBase):
     def create_retouch_settings(self, layout=None):
         if layout is None:
             layout = self.container_layout
-        label = QLabel("Retouch settings:")
-        label.setStyleSheet("font-weight: bold")
-        layout.addRow(label)
-        for param in self.retouch_parameters:
-            widget = param.create_widget(self)
-            param.set_value(self._get_current_value(param))
-            layout.addRow(param.label, widget)
+        for group_name, parameters in self.retouch_parameters:
+            label = QLabel(group_name + ":")
+            label.setStyleSheet("font-weight: bold; margin-top: 10px;")
+            layout.addRow(label)
+            for param in parameters:
+                widget = param.create_widget(self)
+                param.set_value(self._get_current_value(param))
+                layout.addRow(param.label, widget)
 
     def _get_current_value(self, param):
         if isinstance(param, NestedParameter):
@@ -316,24 +387,27 @@ class SettingsDialog(ConfigDialog, AlignFramesConfigBase):
         detector_widget = None
         descriptor_widget = None
         matching_method_widget = None
-        for param in self.project_parameters:
-            if (isinstance(param, NestedParameter) and
-                    param.parent_key == 'align_frames_params'):
-                if param.key == 'detector':
-                    detector_widget = param.widget
-                elif param.key == 'descriptor':
-                    descriptor_widget = param.widget
-                elif param.key == 'match_method':
-                    matching_method_widget = param.widget
+        for _group_name, parameters in self.project_parameters:
+            for param in parameters:
+                if (isinstance(param, NestedParameter) and
+                        param.parent_key == 'align_frames_params'):
+                    if param.key == 'detector':
+                        detector_widget = param.widget
+                    elif param.key == 'descriptor':
+                        descriptor_widget = param.widget
+                    elif param.key == 'match_method':
+                        matching_method_widget = param.widget
         if detector_widget and descriptor_widget and matching_method_widget:
             self.change_match_config(
                 detector_widget, descriptor_widget, matching_method_widget, self.show_info)
 
     def accept(self):
-        for param in self.project_parameters:
-            self._set_current_value(param, param.get_value())
-        for param in self.retouch_parameters:
-            self._set_current_value(param, param.get_value())
+        for _group_name, parameters in self.project_parameters:
+            for param in parameters:
+                self._set_current_value(param, param.get_value())
+        for _group_name, parameters in self.retouch_parameters:
+            for param in parameters:
+                self._set_current_value(param, param.get_value())
         self.settings.update()
         if self.project_settings:
             self.update_project_config_requested.emit()
@@ -342,10 +416,12 @@ class SettingsDialog(ConfigDialog, AlignFramesConfigBase):
         super().accept()
 
     def reset_to_defaults(self):
-        for param in self.project_parameters:
-            param.set_default()
-        for param in self.retouch_parameters:
-            param.set_default()
+        for _group_name, parameters in self.project_parameters:
+            for param in parameters:
+                param.set_default()
+        for _group_name, parameters in self.retouch_parameters:
+            for param in parameters:
+                param.set_default()
 
 
 def show_settings_dialog(

@@ -13,6 +13,7 @@ DEFAULTS = {
     'brush_hardness': 50,
     'brush_opacity': 100,
     'brush_flow': 100,
+    'temp_folder_path': '',
     'sequential_task': {
         'max_threads': 8,
         'chunk_submit': True

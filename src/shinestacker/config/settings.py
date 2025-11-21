@@ -1,9 +1,10 @@
-# pylint: disable=C0114, C0115, C0116, E0611, W0718, R0903, E0611
+# pylint: disable=C0114, C0115, C0116, E0611, W0718, R0903, E0611, R0911
 import os
 import json
 import traceback
 import copy
 import jsonpickle
+import numpy as np
 from PySide6.QtCore import QStandardPaths
 from .. config.defaults import DEFAULTS
 
@@ -60,25 +61,23 @@ class Settings(StdPathFile):
 
     def _convert_to_python_types(self, obj):
         try:
-            import numpy as np
             numpy_available = True
         except ImportError:
             numpy_available = False
         if numpy_available:
             if hasattr(obj, 'item') and hasattr(obj, 'dtype'):
                 return obj.item()
-            elif isinstance(obj, np.bool_):
+            if isinstance(obj, np.bool_):
                 return bool(obj)
-            elif isinstance(obj, np.ndarray):
+            if isinstance(obj, np.ndarray):
                 return obj.tolist()
         if isinstance(obj, dict):
             return {k: self._convert_to_python_types(v) for k, v in obj.items()}
-        elif isinstance(obj, list):
+        if isinstance(obj, list):
             return [self._convert_to_python_types(item) for item in obj]
-        elif isinstance(obj, tuple):
+        if isinstance(obj, tuple):
             return tuple(self._convert_to_python_types(item) for item in obj)
-        else:
-            return obj
+        return obj
 
     def _deep_merge_settings(self, file_settings):
         for key, value in file_settings.items():

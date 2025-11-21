@@ -5,6 +5,7 @@ This page reports the main releases only and the main changes therein.
 ## [vx.x.x] - 2025-11-21
 
 ### Added
+- customizable temporary scratch disk area in settings
 - more depth map customizable parameters
 
 ### Fixed
@@ -12,6 +13,7 @@ This page reports the main releases only and the main changes therein.
 
 ### Changed
 - some code cleanup
+- minor GUI refinements
 
 --------------------------
 
