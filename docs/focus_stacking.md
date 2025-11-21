@@ -69,7 +69,7 @@ Arguments for the constructor are the same ad for ```PyramidStack``` plus:
 
 Arguments for the constructor are:
    * ```map_type``` (optional)_ possible values are  ```DM_MAP_MAX``` (default) and ```DM_MAP_AVERAGE```. ```DM_MAP_MAX``` select for wach pixel the layer which has the best focus. ```DM_MAP_AVERAGE``` performs for each pixel an average of all layers weighted by the quality of focus.
-   * ```energy``` (optional): possible values are ```DM_ENERGY_LAPLACIAN``` (default), ```DM_ENERGY_MOD_LAPLACIAN```, ```DM_ENERGY_SOBEL```, ```DM_ENERGY_VARIANCE``` and ```DM_ENERGY_teneNGraD```.
+   * ```energy``` (optional, default: ```DM_ENERGY_TENENGRAD```): possible values are ```DM_ENERGY_LAPLACIAN``` (default), ```DM_ENERGY_MOD_LAPLACIAN```, ```DM_ENERGY_SOBEL```, ```DM_ENERGY_VARIANCE``` and ```DM_ENERGY_TENENGRAD```.
    * ```kernel_size``` (optional, default: 5): size in pixels of Laplacian kernel.
    * ```blur_size``` (optional, default: 5): size in pixels of the pre-Laplacian Gaussian blur.
    * ```smooth_size``` (optional, default: 15): size of energy smoothing.

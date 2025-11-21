@@ -84,7 +84,7 @@ DEFAULTS = {
     'depth_map_params': {
         'float_type': 'float-32',
         'map_type': 'average',
-        'energy': 'laplacian',
+        'energy': 'tenengrad',
         'kernel_size': 5,
         'blur_size': 5,
         'smooth_size': 15,

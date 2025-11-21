@@ -121,6 +121,11 @@ class DepthMapStack(BaseStackAlgo):
                 'energy', self.energy, details=f" valid values are "
                 f"{constants.DM_ENERGY_SOBEL} and {constants.DM_ENERGY_LAPLACIAN}."
             )
+
+        # for i in range(energies.shape[0]):
+        #     energy_debug = (energies[i] / np.max(energies[i]) * 255).astype(np.uint8)
+        #     cv2.imwrite(f"/tmp/energy_map_{i}.png", energy_debug)
+
         for i in range(energies.shape[0]):
             img_max = np.max(energies[i])
             if img_max > 0:

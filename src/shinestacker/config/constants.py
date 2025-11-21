@@ -145,16 +145,16 @@ class _Constants:
     FLOAT_64 = 'float-64'
     VALID_FLOATS = [FLOAT_32, FLOAT_64]
 
+    DM_ENERGY_VARIANCE = "variance"
+    DM_ENERGY_TENENGRAD = "tenengrad"
     DM_ENERGY_LAPLACIAN = "laplacian"
     DM_ENERGY_MOD_LAPLACIAN = "mod_laplacian"
     DM_ENERGY_SOBEL = "sobel"
-    DM_ENERGY_VARIANCE = "variance"
-    DM_ENERGY_TENENGRAD = "tenengrad"
     DM_MAP_AVERAGE = "average"
     DM_MAP_MAX = "max"
     VALID_DM_MAP = [DM_MAP_AVERAGE, DM_MAP_MAX]
-    VALID_DM_ENERGY = [DM_ENERGY_LAPLACIAN, DM_ENERGY_MOD_LAPLACIAN, DM_ENERGY_SOBEL,
-                       DM_ENERGY_VARIANCE, DM_ENERGY_TENENGRAD]
+    VALID_DM_ENERGY = [DM_ENERGY_TENENGRAD, DM_ENERGY_VARIANCE, DM_ENERGY_LAPLACIAN,
+                       DM_ENERGY_MOD_LAPLACIAN, DM_ENERGY_SOBEL]
 
     PY_VALID_MODES = ['auto', 'memory', 'tiled']
     PY_MEMORY_OVERHEAD = 2.5
