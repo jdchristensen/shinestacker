@@ -246,7 +246,7 @@ class NoiseDetectionConfigurator(DefaultActionConfigurator):
 
 
 class FocusStackBaseConfigurator(DefaultActionConfigurator):
-    ENERGY_OPTIONS = ['Laplacian', 'Sobel']
+    ENERGY_OPTIONS = ['Laplacian', 'Mod. Laplacian', 'Sobel', 'Variance', 'Tenengrad']
     MAP_TYPE_OPTIONS = ['Average', 'Maximum']
     FLOAT_OPTIONS = ['float 32 bits', 'float 64 bits']
     MODE_OPTIONS = ['Auto', 'All in memory', 'Tiled I/O buffered']

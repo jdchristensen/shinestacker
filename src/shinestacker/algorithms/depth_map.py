@@ -46,6 +46,33 @@ class DepthMapStack(BaseStackAlgo):
             laplacian[i] = np.abs(cv2.Laplacian(blurred, cv2.CV_64F, ksize=self.kernel_size))
         return laplacian
 
+    def get_modified_laplacian(self, gray_images):
+        mod_laplacian = np.zeros(gray_images.shape, dtype=self.float_type)
+        for i in range(gray_images.shape[0]):
+            img = gray_images[i]
+            dx = cv2.Sobel(img, cv2.CV_64F, 1, 0, ksize=3)
+            dy = cv2.Sobel(img, cv2.CV_64F, 0, 1, ksize=3)
+            mod_laplacian[i] = np.abs(dx) + np.abs(dy)
+        return mod_laplacian
+
+    def get_variance_map(self, gray_images, window_size=5):
+        variance = np.zeros(gray_images.shape, dtype=self.float_type)
+        for i in range(gray_images.shape[0]):
+            mean = cv2.boxFilter(gray_images[i], -1, (window_size, window_size))
+            mean_sq = cv2.boxFilter(gray_images[i]**2, -1, (window_size, window_size))
+            variance[i] = mean_sq - mean**2
+        return variance
+
+    def get_tenengrad(self, gray_images, threshold=5):
+        tenengrad = np.zeros(gray_images.shape, dtype=self.float_type)
+        for i in range(gray_images.shape[0]):
+            img = gray_images[i]
+            gx = cv2.Sobel(img, cv2.CV_64F, 1, 0, ksize=3)
+            gy = cv2.Sobel(img, cv2.CV_64F, 0, 1, ksize=3)
+            tenengrad[i] = gx * gx + gy * gy
+            tenengrad[i] = np.where(tenengrad[i] > threshold, tenengrad[i], 0)
+        return tenengrad
+
     def smooth_energy(self, energy_map):
         if self.smooth_size <= 0:
             return energy_map
@@ -83,6 +110,12 @@ class DepthMapStack(BaseStackAlgo):
             energies = self.get_sobel_map(gray_images)
         elif self.energy == constants.DM_ENERGY_LAPLACIAN:
             energies = self.get_laplacian_map(gray_images)
+        elif self.energy == constants.DM_ENERGY_MOD_LAPLACIAN:
+            energies = self.get_modified_laplacian(gray_images)
+        elif self.energy == constants.DM_ENERGY_VARIANCE:
+            energies = self.get_variance_map(gray_images)
+        elif self.energy == constants.DM_ENERGY_TENENGRAD:
+            energies = self.get_tenengrad(gray_images)
         else:
             raise InvalidOptionError(
                 'energy', self.energy, details=f" valid values are "

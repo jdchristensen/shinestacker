@@ -6,7 +6,7 @@ This page reports the main releases only and the main changes therein.
 
 ### Added
 - customizable temporary scratch disk area in settings
-- more depth map customizable parameters
+- more depth map customizable options
 
 ### Fixed
 - added protection into persistent settings against potentially dangerous data types

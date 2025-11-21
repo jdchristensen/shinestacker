@@ -68,10 +68,12 @@ Arguments for the constructor are the same ad for ```PyramidStack``` plus:
 ```DepthMapStack```, Depth map focus stacking algorithm
 
 Arguments for the constructor are:
-   * ```map_type``` (optional), possible values are  ```MAP_MAX``` (default) and ```MAP_AVERAGE```. ```MAP_MAX``` select for wach pixel the layer which has the best focus. ```MAP_AVERAGE``` performs for each pixel an average of all layers weighted by the quality of focus.
-   * ```energy``` (optional), possible values are ```ENERGY_LAPLACIAN``` (default) and ```ENERGY_SOBEL```.
-   * ```kernel_size``` (optional, default: 5) size in pixels of Laplacian kernel.
-   * ```blur_size``` (optional, default: 5) size in pixels of the pre-Laplacian Gaussian blur.
-   * ```smooth_size``` (optional, default: 15) size of energy smoothing.
-   * ```temperature``` (optional, default: 0.1) controls fision transition: lower value means sharper transitions.
-   * ```levels``` (optional, defauls: 3) number of levels for the Laplacian pyramid.
+   * ```map_type``` (optional)_ possible values are  ```DM_MAP_MAX``` (default) and ```DM_MAP_AVERAGE```. ```DM_MAP_MAX``` select for wach pixel the layer which has the best focus. ```DM_MAP_AVERAGE``` performs for each pixel an average of all layers weighted by the quality of focus.
+   * ```energy``` (optional): possible values are ```DM_ENERGY_LAPLACIAN``` (default), ```DM_ENERGY_MOD_LAPLACIAN```, ```DM_ENERGY_SOBEL```, ```DM_ENERGY_VARIANCE``` and ```DM_ENERGY_teneNGraD```.
+   * ```kernel_size``` (optional, default: 5): size in pixels of Laplacian kernel.
+   * ```blur_size``` (optional, default: 5): size in pixels of the pre-Laplacian Gaussian blur.
+   * ```smooth_size``` (optional, default: 15): size of energy smoothing.
+   * ```bilateral_sigma_color``` (optiona, default: 25): controls how much energy values can differ while still smoothing together.
+   * ```bilateral_sigma_space``` (optional, default: 25): controls the spatial distance for smoothing neighborhood.
+   * ```temperature``` (optional, default: 0.1): controls fision transition: lower value means sharper transitions.
+   * ```levels``` (optional, defauls: 3): number of levels for the Laplacian pyramid.
