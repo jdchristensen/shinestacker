@@ -388,12 +388,12 @@ class FocusStackBaseConfigurator(DefaultActionConfigurator):
             q_depthmap.layout(), 'depthmap_kernel_size', FIELD_INT, 'Laplacian kernel size (px)',
             expert=True,
             required=False, default=AppConfig.get('depth_map_params')['kernel_size'],
-            min_val=3, max_val=21)
+            min_val=3, max_val=256)
         self.add_field_to_layout(
             q_depthmap.layout(), 'depthmap_blur_size', FIELD_INT, 'Laplacian blur size (px)',
             expert=True,
             required=False, default=AppConfig.get('depth_map_params')['blur_size'],
-            min_val=1, max_val=21)
+            min_val=1, max_val=256)
         self.add_field_to_layout(
             q_depthmap.layout(), 'depthmap_smooth_size', FIELD_INT, 'Smooth size (px)',
             expert=True,
