@@ -1,4 +1,4 @@
-# pylint: disable=C0114, C0115, C0116, E0611, R0913, R0917, R0915, R0912
+# pylint: disable=C0114, C0115, C0116, E0611, R0913, R0917, R0915, R0912, R0902
 # pylint: disable=E0606, W0718, R1702, W0102, W0221, R0914, C0302, R0903
 import os
 import traceback
@@ -257,6 +257,15 @@ class FocusStackBaseConfigurator(DefaultActionConfigurator):
         self.tab_widget = None
         self.general_tab_layout = None
         self.algorithm_tab_layout = None
+        self.depthmap_energy = None
+        self.depthmap_kernel_size = None
+        self.depthmap_blur_size = None
+        self.depthmap_energy_smooth_size = None
+        self.depthmap_energy_sigma_color = None
+        self.depthmap_energy_sigma_space = None
+        self.depthmap_weights_smooth_size = None
+        self.depthmap_weights_sigma_color = None
+        self.depthmap_weights_sigma_space = None
 
     def create_form(self, layout, action):
         super().create_form(layout, action)
