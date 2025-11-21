@@ -22,7 +22,7 @@ class DepthMapStack(BaseStackAlgo):
                  temperature=DEFAULTS['depth_map_params']['temperature'],
                  levels=DEFAULTS['depth_map_params']['levels'],
                  float_type=DEFAULTS['depth_map_params']['float_type']):
-        steps_per_frame = (3 if smooth_size <=0 else 4) + \
+        steps_per_frame = (3 if smooth_size <= 0 else 4) + \
             (1 if blend_mode == constants.DM_MODE_BEST else 0)
         super().__init__("depth map", steps_per_frame, float_type)
         self.map_type = map_type
@@ -165,12 +165,7 @@ class DepthMapStack(BaseStackAlgo):
                 'energy', self.energy, details=f" valid values are "
                 f"{constants.DM_ENERGY_SOBEL} and {constants.DM_ENERGY_LAPLACIAN}."
             )
-
-        # for i in range(energies.shape[0]):
-        #     energy_debug = (energies[i] / np.max(energies[i]) * 255).astype(np.uint8)
-        #     cv2.imwrite(f"/tmp/energy_map_{i}.png", energy_debug)
-
-        self.print_message(f": normalize energy maps")
+        self.print_message(": normalize energy maps")
         global_max = np.max(energies)
         if global_max > 0:
             energies = energies / global_max
