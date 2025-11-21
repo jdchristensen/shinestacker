@@ -78,4 +78,3 @@ Arguments for the constructor are:
    * ```bilateral_sigma_color``` (optiona, default: 25): controls how much energy values can differ while still smoothing together.
    * ```bilateral_sigma_space``` (optional, default: 25): controls the spatial distance for smoothing neighborhood.
    * ```temperature``` (optional, default: 0.1): controls fision transition: lower value means sharper transitions.
-   * ```levels``` (optional, defauls: 3): number of levels for the Laplacian pyramid.

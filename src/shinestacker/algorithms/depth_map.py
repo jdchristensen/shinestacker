@@ -20,7 +20,6 @@ class DepthMapStack(BaseStackAlgo):
                  bilateral_sigma_color=DEFAULTS['depth_map_params']['bilateral_sigma_color'],
                  bilateral_sigma_space=DEFAULTS['depth_map_params']['bilateral_sigma_space'],
                  temperature=DEFAULTS['depth_map_params']['temperature'],
-                 levels=DEFAULTS['depth_map_params']['levels'],
                  float_type=DEFAULTS['depth_map_params']['float_type']):
         steps_per_frame = (3 if smooth_size <= 0 else 4) + \
             (1 if blend_mode == constants.DM_MODE_BEST else 0)
@@ -35,7 +34,6 @@ class DepthMapStack(BaseStackAlgo):
         self.bilateral_sigma_color = bilateral_sigma_color
         self.bilateral_sigma_space = bilateral_sigma_space
         self.temperature = temperature
-        self.levels = levels
 
     def get_sobel_map(self, gray_images):
         n_images = len(self.filenames)
@@ -47,17 +45,20 @@ class DepthMapStack(BaseStackAlgo):
             energies[i] = np.abs(cv2.Sobel(img, cv2.CV_64F, 1, 0, ksize=3)) + \
                 np.abs(cv2.Sobel(img, cv2.CV_64F, 0, 1, ksize=3))
             self.after_step(i + n_images)
+            self.check_running()
         return energies
 
     def get_laplacian_map(self, gray_images):
-        n_images = len(self.filenames)
         laplacian = np.zeros(gray_images.shape, dtype=self.float_type)
         n = gray_images.shape[0]
         for i in range(n):
-            self.print_message(f": create laplacian map,  {i + 1}/{n}")
-            blurred = cv2.GaussianBlur(gray_images[i], (self.blur_size, self.blur_size), 0)
-            laplacian[i] = np.abs(cv2.Laplacian(blurred, cv2.CV_64F, ksize=self.kernel_size))
+            blurred = cv2.GaussianBlur(gray_images[i], (self.blur_size, self.blur_size), 0)            
+            lap_result = cv2.Laplacian(
+                blurred, cv2.CV_32F if self.float_type == np.float32 else cv2.CV_64F, 
+                ksize=self.kernel_size)
+            laplacian[i] = np.abs(lap_result)
             self.after_step(i + n_images)
+            self.check_running()
         return laplacian
 
     def get_modified_laplacian(self, gray_images):
@@ -71,6 +72,7 @@ class DepthMapStack(BaseStackAlgo):
             dy = cv2.Sobel(img, cv2.CV_64F, 0, 1, ksize=3)
             mod_laplacian[i] = np.abs(dx) + np.abs(dy)
             self.after_step(i + n_images)
+            self.check_running()
         return mod_laplacian
 
     def get_variance_map(self, gray_images, window_size=5):
@@ -83,6 +85,7 @@ class DepthMapStack(BaseStackAlgo):
             mean_sq = cv2.boxFilter(gray_images[i]**2, -1, (window_size, window_size))
             variance[i] = mean_sq - mean**2
             self.after_step(i + n_images)
+            self.check_running()
         return variance
 
     def get_tenengrad(self, gray_images, threshold=5):
@@ -97,6 +100,7 @@ class DepthMapStack(BaseStackAlgo):
             tenengrad[i] = gx * gx + gy * gy
             tenengrad[i] = np.where(tenengrad[i] > threshold, tenengrad[i], 0)
             self.after_step(i + n_images)
+            self.check_running()
         return tenengrad
 
     def smooth_energy(self, energy_map):
@@ -113,6 +117,7 @@ class DepthMapStack(BaseStackAlgo):
                 self.bilateral_sigma_color, self.bilateral_sigma_space)
             smoothed[i] = smoothed_32f.astype(energy_map.dtype)
             self.after_step(i + n_images * 2)
+            self.check_running()
         return smoothed
 
     def get_focus_map(self, energies):
@@ -203,6 +208,7 @@ class DepthMapStack(BaseStackAlgo):
             mask = best_indices == i
             result[mask] = color_images[i][mask]
             self.after_step(i + n_images * (3 if self.smooth_size <= 0 else 4))
+            self.check_running()
             self.process.callback(constants.CALLBACK_UPDATE_FRAME_STATUS,
                                   self.process.input_path, filename, 201)
             self.check_running()
@@ -221,6 +227,7 @@ class DepthMapStack(BaseStackAlgo):
             result += img * weight[:, :, np.newaxis]
             total_weight += weight
             self.after_step(i + n_images * (2 if self.smooth_size <= 0 else 3))
+            self.check_running()
             self.process.callback(constants.CALLBACK_UPDATE_FRAME_STATUS,
                                   self.process.input_path, filename, 201)
             self.check_running()

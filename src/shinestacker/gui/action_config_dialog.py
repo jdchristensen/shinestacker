@@ -417,10 +417,6 @@ class FocusStackBaseConfigurator(DefaultActionConfigurator):
             required=False, default=AppConfig.get('depth_map_params')['temperature'],
             min_val=0, max_val=1, step=0.05)
         self.add_field_to_layout(
-            q_depthmap.layout(), 'depthmap_levels', FIELD_INT, 'Levels', required=False,
-            expert=True,
-            default=AppConfig.get('depth_map_params')['levels'], min_val=2, max_val=6)
-        self.add_field_to_layout(
             q_depthmap.layout(), 'depthmap_float_type', FIELD_COMBO,
             'Precision', required=False,
             expert=True,

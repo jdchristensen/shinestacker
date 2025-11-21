@@ -92,8 +92,7 @@ DEFAULTS = {
         'smooth_size': 3,
         'bilateral_sigma_color': 10,
         'bilateral_sigma_space': 10,
-        'temperature': 0.1,
-        'levels': 3
+        'temperature': 0.1
     },
     'pyramid_params': {
         'method': 'rgb',
