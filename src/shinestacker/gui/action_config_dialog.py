@@ -363,11 +363,30 @@ class FocusStackBaseConfigurator(DefaultActionConfigurator):
         mode.currentIndexChanged.connect(change_mode)
         change_mode()
 
-        self.add_field_to_layout(
+        self.depthmap_energy = self.add_field_to_layout(
             q_depthmap.layout(), 'depthmap_energy', FIELD_COMBO, 'Energy', required=False,
             options=self.ENERGY_OPTIONS, values=constants.VALID_DM_ENERGY,
             default=dict(zip(constants.VALID_DM_ENERGY,
                              self.ENERGY_OPTIONS))[AppConfig.get('depth_map_params')['energy']])
+        self.depthmap_kernel_size = self.add_field_to_layout(
+            q_depthmap.layout(), 'depthmap_kernel_size', FIELD_INT, 'Laplacian kernel size (px)',
+            expert=True,
+            required=False, default=AppConfig.get('depth_map_params')['kernel_size'],
+            min_val=3, max_val=256)
+        self.depthmap_blur_size = self.add_field_to_layout(
+            q_depthmap.layout(), 'depthmap_blur_size', FIELD_INT, 'Laplacian blur size (px)',
+            expert=True,
+            required=False, default=AppConfig.get('depth_map_params')['blur_size'],
+            min_val=1, max_val=256)
+
+        def change_depthmap_energy():
+            enabled = self.depthmap_energy.currentText() == self.ENERGY_OPTIONS[2]
+            self.depthmap_kernel_size.setEnabled(enabled)
+            self.depthmap_blur_size.setEnabled(enabled)
+
+        self.depthmap_energy.currentIndexChanged.connect(change_depthmap_energy)
+        change_depthmap_energy()
+
         self.add_field_to_layout(
             q_depthmap.layout(), 'depthmap_map_type', FIELD_COMBO, 'Map type', required=False,
             options=self.MAP_TYPE_OPTIONS, values=constants.VALID_DM_MAP,
@@ -384,52 +403,61 @@ class FocusStackBaseConfigurator(DefaultActionConfigurator):
             expert=True,
             required=False, default=AppConfig.get('depth_map_params')['weight_power'],
             min_val=0.1, max_val=10, step=0.05)
-        self.add_field_to_layout(
-            q_depthmap.layout(), 'depthmap_kernel_size', FIELD_INT, 'Laplacian kernel size (px)',
-            expert=True,
-            required=False, default=AppConfig.get('depth_map_params')['kernel_size'],
-            min_val=3, max_val=256)
-        self.add_field_to_layout(
-            q_depthmap.layout(), 'depthmap_blur_size', FIELD_INT, 'Laplacian blur size (px)',
-            expert=True,
-            required=False, default=AppConfig.get('depth_map_params')['blur_size'],
-            min_val=1, max_val=256)
-        self.add_field_to_layout(
+        self.depthmap_energy_smooth_size = self.add_field_to_layout(
             q_depthmap.layout(), 'depthmap_energy_smooth_size', FIELD_INT,
             'Energy smooth size (px)',
             expert=True,
             required=False, default=AppConfig.get('depth_map_params')['energy_smooth_size'],
             min_val=0, max_val=256)
-        self.add_field_to_layout(
+        self.depthmap_energy_sigma_color = self.add_field_to_layout(
             q_depthmap.layout(), 'depthmap_energy_sigma_color', FIELD_FLOAT,
-            'Energy filter σ, color (px)',
+            'Energy filter σ, color',
             expert=True,
             required=False, default=AppConfig.get('depth_map_params')['energy_sigma_color'],
             min_val=0, max_val=10, step=0.1)
-        self.add_field_to_layout(
+        self.depthmap_energy_sigma_space = self.add_field_to_layout(
             q_depthmap.layout(), 'depthmap_energy_sigma_space', FIELD_INT,
             'Energy filter σ, space (px)',
             expert=True,
             required=False, default=AppConfig.get('depth_map_params')['energy_sigma_space'],
             min_val=0, max_val=256)
-        self.add_field_to_layout(
+
+        def change_depthmap_energy_smooth_size():
+            enabled = self.depthmap_energy_smooth_size.value() > 0
+            self.depthmap_energy_sigma_color.setEnabled(enabled)
+            self.depthmap_energy_sigma_space.setEnabled(enabled)
+
+        self.depthmap_energy_smooth_size.valueChanged.connect(
+            change_depthmap_energy_smooth_size)
+        change_depthmap_energy_smooth_size()
+
+        self.depthmap_weights_smooth_size = self.add_field_to_layout(
             q_depthmap.layout(), 'depthmap_weights_smooth_size', FIELD_INT,
             'Weigths smooth size (px)',
             expert=True,
             required=False, default=AppConfig.get('depth_map_params')['weights_smooth_size'],
             min_val=0, max_val=256)
-        self.add_field_to_layout(
+        self.depthmap_weights_sigma_color = self.add_field_to_layout(
             q_depthmap.layout(), 'depthmap_weights_sigma_color', FIELD_FLOAT,
-            'Weights filter σ, color (px)',
+            'Weights filter σ, color',
             expert=True,
             required=False, default=AppConfig.get('depth_map_params')['weights_sigma_color'],
             min_val=0, max_val=10, step=0.1)
-        self.add_field_to_layout(
-            q_depthmap.layout(), 'bdepthmap_weights_sigma_space', FIELD_INT,
+        self.depthmap_weights_sigma_space = self.add_field_to_layout(
+            q_depthmap.layout(), 'depthmap_weights_sigma_space', FIELD_INT,
             'Weights filter σ, space (px)',
             expert=True,
             required=False, default=AppConfig.get('depth_map_params')['weights_sigma_space'],
             min_val=0, max_val=256)
+
+        def change_depthmap_weights_smooth_size():
+            enabled = self.depthmap_weights_smooth_size.value() > 0
+            self.depthmap_weights_sigma_color.setEnabled(enabled)
+            self.depthmap_weights_sigma_space.setEnabled(enabled)
+
+        self.depthmap_weights_smooth_size.valueChanged.connect(
+            change_depthmap_weights_smooth_size)
+        change_depthmap_weights_smooth_size()
 
         self.add_field_to_layout(
             q_depthmap.layout(), 'depthmap_temperature', FIELD_FLOAT, 'Temperature',
