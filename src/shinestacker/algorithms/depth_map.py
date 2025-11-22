@@ -123,18 +123,23 @@ class DepthMapStack(BaseStackAlgo):
     def get_focus_map(self, energies):
         if self.map_type == constants.DM_MAP_AVERAGE:
             sum_energies = np.sum(energies, axis=0)
-            weights = np.divide(energies, sum_energies, where=sum_energies != 0)
+            sum_energies = np.where(sum_energies == 0, np.finfo(energies.dtype).eps, sum_energies)
+            weights = np.divide(energies, sum_energies)
         elif self.map_type == constants.DM_MAP_MAX:
             max_energy = np.max(energies, axis=0)
-            relative = np.exp((energies - max_energy) / max(self.temperature, 0.1))
-            weights = relative / np.sum(relative, axis=0)
+            temperature_safe = max(self.temperature, np.finfo(energies.dtype).eps)
+            relative = np.exp((energies - max_energy) / temperature_safe)
+            sum_relative = np.sum(relative, axis=0)
+            sum_relative = np.where(sum_relative == 0, np.finfo(energies.dtype).eps, sum_relative)
+            weights = relative / sum_relative
         else:
             raise InvalidOptionError("map_type", self.map_type, details=f" valid values are "
                                      f"{constants.DM_MAP_AVERAGE} and {constants.DM_MAP_MAX}.")
         if self.weight_power != 1.0:
             weights = np.power(weights, self.weight_power)
             sum_weights = np.sum(weights, axis=0)
-            weights = np.divide(weights, sum_weights, where=sum_weights != 0)
+            sum_weights = np.where(sum_weights == 0, np.finfo(weights.dtype).eps, sum_weights)
+            weights = np.divide(weights, sum_weights)
         return weights
 
     def focus_stack(self):
