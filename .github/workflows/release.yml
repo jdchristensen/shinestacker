@@ -1,5 +1,3 @@
----
-
 name: Create new release
 
 permissions:
@@ -13,11 +11,37 @@ on:
       - v**
 
 jobs:
+  detect-macos-architectures:
+    runs-on: ubuntu-latest
+    outputs:
+      intel-runner: ${{ steps.detect.outputs.intel-runner }}
+      silicon-runner: ${{ steps.detect.outputs.silicon-runner }}
+    steps:
+      - name: Detect available macOS runners
+        id: detect
+        run: |
+          # Default to known stable runners, but this can be updated over time
+          echo "intel-runner=macos-13" >> $GITHUB_OUTPUT
+          echo "silicon-runner=macos-14" >> $GITHUB_OUTPUT
+
   publish-release:
     runs-on: ${{ matrix.os }}
+    needs: detect-macos-architectures
     strategy:
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
+        include:
+          - os: ubuntu-latest
+            label: linux
+            artifact-name: shinestacker-ubuntu.tar.gz
+          - os: windows-latest
+            label: windows
+            artifact-name: shinestacker-windows.zip
+          - os: ${{ needs.detect-macos-architectures.outputs.intel-runner }}
+            label: macos-intel
+            artifact-name: shinestacker-macos-intel.dmg
+          - os: ${{ needs.detect-macos-architectures.outputs.silicon-runner }}
+            label: macos-apple-silicon  
+            artifact-name: shinestacker-macos-apple-silicon.dmg
         python-version: ["3.12"]
 
     steps:
@@ -46,16 +70,16 @@ jobs:
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: shinestacker-${{ matrix.os }}
+          name: shinestacker-${{ matrix.label }}
           path: |
             ${{ matrix.os == 'windows-latest' && 'dist/shinestacker-release.zip' || '' }}
             ${{ matrix.os == 'windows-latest' && 'dist/*.exe' || '' }}
             ${{ matrix.os == 'ubuntu-latest' && 'dist/shinestacker-release.tar.gz' || '' }}
-            ${{ matrix.os == 'macos-latest' && 'dist/shinestacker-release.dmg' || '' }}
+            ${{ contains(matrix.label, 'macos') && 'dist/shinestacker-release.dmg' || '' }}
           if-no-files-found: ignore
 
   create-release:
-    needs: publish-release
+    needs: [detect-macos-architectures, publish-release]
     runs-on: ubuntu-latest
     steps:
       - name: Download all artifacts
@@ -67,13 +91,14 @@ jobs:
         run: |
           mkdir -p release_assets
           # Linux
-          cp artifacts/shinestacker-ubuntu-latest/shinestacker-release.tar.gz release_assets/shinestacker-ubuntu.tar.gz
-          # macOS
-          cp artifacts/shinestacker-macos-latest/shinestacker-release.dmg release_assets/shinestacker-macos.dmg
+          cp artifacts/shinestacker-linux/shinestacker-release.tar.gz release_assets/shinestacker-ubuntu.tar.gz
+          # macOS - both architectures
+          cp artifacts/shinestacker-macos-intel/shinestacker-release.dmg release_assets/shinestacker-macos-intel.dmg
+          cp artifacts/shinestacker-macos-apple-silicon/shinestacker-release.dmg release_assets/shinestacker-macos-apple-silicon.dmg
           # Windows
-          cp artifacts/shinestacker-windows-latest/shinestacker-release.zip release_assets/shinestacker-windows.zip
-          if ls artifacts/shinestacker-windows-latest/shinestacker-setup.exe 1> /dev/null 2>&1; then
-            cp artifacts/shinestacker-windows-latest/shinestacker-setup.exe release_assets/
+          cp artifacts/shinestacker-windows/shinestacker-release.zip release_assets/shinestacker-windows.zip
+          if ls artifacts/shinestacker-windows/shinestacker-setup.exe 1> /dev/null 2>&1; then
+            cp artifacts/shinestacker-windows/shinestacker-setup.exe release_assets/
           fi
           ls -la release_assets/
 
@@ -83,6 +108,7 @@ jobs:
           draft: true
           files: |
             release_assets/shinestacker-ubuntu.tar.gz
-            release_assets/shinestacker-macos.dmg
+            release_assets/shinestacker-macos-intel.dmg
+            release_assets/shinestacker-macos-apple-silicon.dmg
             release_assets/shinestacker-windows.zip
             release_assets/shinestacker-setup.exe
