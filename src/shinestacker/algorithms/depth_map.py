@@ -162,7 +162,7 @@ class DepthMapStack(BaseStackAlgo):
             constants.DM_ENERGY_LAPLACIAN: "laplacian",
             constants.DM_ENERGY_MOD_LAPLACIAN: "modified laplacian",
             constants.DM_ENERGY_SOBEL: "sobel"
-        }[self.energy]
+        }.get(self.energy, '')
         self.print_message(f": computing energy map, method: {energy_str}")
         if self.energy == constants.DM_ENERGY_SOBEL:
             energies = self.get_sobel_map(gray_images)
@@ -196,7 +196,7 @@ class DepthMapStack(BaseStackAlgo):
         mode_str = {
             constants.DM_MODE_BEST: 'best frame',
             constants.DM_MODE_WEIGHTED: 'weighted frames'
-        }[self.blend_mode]
+        }.get(self.blend_mode, '')
         self.print_message(f": blending images, mode: {mode_str}")
         if self.blend_mode == constants.DM_MODE_WEIGHTED:
             weights = self.get_focus_map(energies)
