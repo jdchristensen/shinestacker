@@ -74,7 +74,12 @@ Arguments for the constructor are:
    * ```weight_power``` (optiona, default: 1): apply a power law correction to energy weights.
    * ```kernel_size``` (optional, default: 5): size in pixels of Laplacian kernel.
    * ```blur_size``` (optional, default: 5): size in pixels of the pre-Laplacian Gaussian blur.
-   * ```smooth_size``` (optional, default: 15): size of energy smoothing.
-   * ```bilateral_sigma_color``` (optiona, default: 25): controls how much energy values can differ while still smoothing together.
-   * ```bilateral_sigma_space``` (optional, default: 25): controls the spatial distance for smoothing neighborhood.
+   * ```energy_smooth_size``` (optional, default: 5): size of energy smoothing. Note: larger values require slower computation.
+   * ```energy_sigma_color``` (optiona, default: 0.2): controls how much energy values can differ while still smoothing together for the energy map.
+   * ```energy_sigma_space``` (optional, default: 6): controls the spatial distance for smoothing neighborhood. Note: larger values require slower computation.
+      * ```weights_smooth_size``` (optional, default: 12): size of weights smoothing. Note: larger values require slower computation.
+   * ```weights_sigma_color``` (optiona, default: 0.2): controls how much weights values can differ while still smoothing together.
+   * ```weights_sigma_space``` (optional, default: 6): controls the spatial distance for smoothing neighborhood for the weights map. Note: larger values require slower computation.
    * ```temperature``` (optional, default: 0.1): controls fision transition: lower value means sharper transitions.
+
+For more details about bilateral filters applied to energy and weights map, see [Bilateral Filtering](https://www.geeksforgeeks.org/python/python-bilateral-filtering/).
