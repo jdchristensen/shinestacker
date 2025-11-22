@@ -2,7 +2,7 @@
 
 This page reports the main releases only and the main changes therein.
 
-## [vx.x.x] - 2025-11-21
+## [v1.11-0-pre.1] - 2025-11-22
 
 ### Added
 - customizable temporary scratch disk area in settings
