@@ -122,8 +122,10 @@ def test_focus_map_with_examples(example_images):
     focus_map = dms.get_focus_map(sobel_map)
     assert focus_map.shape == sobel_map.shape
     assert focus_map.dtype == np.float32
-    assert np.all(focus_map >= 0)
-    assert np.all(focus_map <= 1)
+    assert np.all(np.isfinite(focus_map))
+    valid_mask = np.isfinite(focus_map)
+    assert np.all(focus_map[valid_mask] >= 0)
+    assert np.all(focus_map[valid_mask] <= 1)
 
 
 def test_weighted_pyramid_blend(example_images):
