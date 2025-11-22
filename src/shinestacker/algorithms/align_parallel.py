@@ -101,16 +101,16 @@ class AlignFramesParallel(AlignFramesBase):
                     self.step_counter += 1
                     self.process.after_step(self.step_counter)
                     self.process.callback(constants.CALLBACK_UPDATE_FRAME_STATUS,
-                                          self.process.name, filename, 101)
+                                          self.process.output_path, filename, 101)
                     self.process.check_running()
                 except RunStopException as e:
                     self.process.callback(constants.CALLBACK_UPDATE_FRAME_STATUS,
-                                          self.process.name, filename, 1001)
+                                          self.process.output_path, filename, 1001)
                     raise e
                 except Exception as e:
                     traceback.print_tb(e.__traceback__)
                     self.process.callback(constants.CALLBACK_UPDATE_FRAME_STATUS,
-                                          self.process.name, filename, 1001)
+                                          self.process.output_path, filename, 1001)
                     self.print_message(
                         f"failed processing {self.image_str(idx)}: {str(e)}")
             cached_images = 0

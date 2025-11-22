@@ -158,7 +158,7 @@ class PyramidStack(PyramidBase):
         count = 0
         n_layers = len(all_laplacians[0]) - 2
         self.process.callback(constants.CALLBACKS_SET_TOTAL_ACTIONS,
-                              self.process.name, self.output_filename, n_layers + 1)
+                              self.process.output_path, self.output_filename, n_layers + 1)
         action_count = 0
         for layer in range(n_layers, -1, -1):
             self.print_message(f': fusing pyramids, layer: {layer + 1}')
@@ -167,7 +167,7 @@ class PyramidStack(PyramidBase):
             count += 1
             self.after_step(self._steps_per_frame * self.n_frames + count)
             self.process.callback(constants.CALLBACK_UPDATE_FRAME_STATUS,
-                                  self.process.name, self.output_filename, action_count)
+                                  self.process.output_path, self.output_filename, action_count)
             action_count += 1
             self.check_running()
         self.print_message(': pyramids fusion completed')

@@ -24,12 +24,12 @@ class DepthMapStack(BaseStackAlgo):
                  weights_sigma_space=DEFAULTS['depth_map_params']['weights_sigma_space'],
                  temperature=DEFAULTS['depth_map_params']['temperature'],
                  float_type=DEFAULTS['depth_map_params']['float_type']):
-        steps_per_frame = 3
+        self.steps_per_frame = 3
         if energy_smooth_size > 0:
-            steps_per_frame += 1
+            self.steps_per_frame += 1
         if weights_smooth_size > 0:
-            steps_per_frame += 1
-        super().__init__("depth map", steps_per_frame, float_type)
+            self.steps_per_frame += 1
+        super().__init__("depth map", self.steps_per_frame, float_type)
         self.map_type = map_type
         self.energy = energy
         self.blend_mode = blend_mode
@@ -43,6 +43,7 @@ class DepthMapStack(BaseStackAlgo):
         self.weights_sigma_color = weights_sigma_color
         self.weights_sigma_space = weights_sigma_space
         self.temperature = temperature
+        self.steps_count = 0
 
     def _with_energy_progress(self, energy_func, message_template):
         def wrapper(gray_images, *args, **kwargs):
@@ -138,14 +139,23 @@ class DepthMapStack(BaseStackAlgo):
 
     def focus_stack(self):
         n_images = len(self.filenames)
+        self.process.callback(constants.CALLBACKS_SET_TOTAL_ACTIONS,
+                              self.process.output_path, self.output_filename,
+                              self.steps_per_frame)
         gray_images = np.empty((n_images, *self.shape), dtype=self.float_type)
         for i, img_path in enumerate(self.filenames):
             self.print_message(f": preprocessing {self.image_str(i)}")
+            self.process.callback(constants.CALLBACK_UPDATE_FRAME_STATUS,
+                                  self.process.input_path, img_path, 200)
             img = read_and_validate_img(img_path, self.shape, self.dtype)
             gray = img_bw(img)
             gray_images[i] = gray.astype(self.float_type)
             self.after_step(i)
             self.check_running()
+        self.steps_count = 1
+        self.process.callback(constants.CALLBACK_UPDATE_FRAME_STATUS,
+                              self.process.name, self.output_filename,
+                              self.steps_count)
         energy_str = {
             constants.DM_ENERGY_VARIANCE: "variance",
             constants.DM_ENERGY_TENENGRAD: "tenengrad",
@@ -169,12 +179,20 @@ class DepthMapStack(BaseStackAlgo):
                 'energy', self.energy, details=f" valid values are "
                 f"{constants.DM_ENERGY_SOBEL} and {constants.DM_ENERGY_LAPLACIAN}."
             )
+        self.steps_count += 1
+        self.process.callback(constants.CALLBACK_UPDATE_FRAME_STATUS,
+                              self.process.name, self.output_filename,
+                              self.steps_count)
         self.print_message(": normalize energy maps")
         global_max = np.max(energies)
         if global_max > 0:
             energies = energies / global_max
         if self.energy_smooth_size > 0:
             energies = self.smooth_energy(energies)
+            self.steps_count += 1
+            self.process.callback(constants.CALLBACK_UPDATE_FRAME_STATUS,
+                                  self.process.name, self.output_filename,
+                                  self.steps_count)
         mode_str = {
             constants.DM_MODE_BEST: 'best frame',
             constants.DM_MODE_WEIGHTED: 'weighted frames'
@@ -182,12 +200,19 @@ class DepthMapStack(BaseStackAlgo):
         self.print_message(f": blending images, mode: {mode_str}")
         if self.blend_mode == constants.DM_MODE_WEIGHTED:
             weights = self.get_focus_map(energies)
-            return self._weighted_pyramid_blend(weights, n_images)
-        if self.blend_mode == constants.DM_MODE_BEST:
-            return self._best_pixel_selection(energies, n_images)
-        raise InvalidOptionError(
-            "blend_mode", self.blend_mode,
-            details=f"Valid values are {constants.DM_MODE_WEIGHTED} and {constants.DM_MODE_BEST}")
+            result = self._weighted_pyramid_blend(weights, n_images)
+        elif self.blend_mode == constants.DM_MODE_BEST:
+            result = self._best_pixel_selection(energies, n_images)
+        else:
+            raise InvalidOptionError(
+                "blend_mode", self.blend_mode,
+                details=f"Valid values are {constants.DM_MODE_WEIGHTED} "
+                        "and {constants.DM_MODE_BEST}")
+        self.steps_count += 1
+        self.process.callback(constants.CALLBACK_UPDATE_FRAME_STATUS,
+                              self.process.name, self.output_filename,
+                              self.steps_count)
+        return result
 
     def _best_pixel_selection(self, energies, n_images):
         best_indices = np.argmax(energies, axis=0)
@@ -204,8 +229,6 @@ class DepthMapStack(BaseStackAlgo):
         for i, img_path in enumerate(self.filenames):
             self.print_message(f": blending {self.image_str(i)}")
             filename = os.path.basename(img_path)
-            self.process.callback(constants.CALLBACK_UPDATE_FRAME_STATUS,
-                                  self.process.input_path, filename, 200)
             mask = best_indices == i
             result[mask] = color_images[i][mask]
             self.after_step(i + n_images * n_steps)
@@ -228,6 +251,10 @@ class DepthMapStack(BaseStackAlgo):
                 self.after_step(i + n_images * n_steps)
                 self.check_running()
             n_steps += 1
+            self.steps_count += 1
+            self.process.callback(constants.CALLBACK_UPDATE_FRAME_STATUS,
+                                  self.process.name, self.output_filename,
+                                  self.steps_count)
         sum_weights = np.sum(weights, axis=0)
         weights = np.divide(weights, sum_weights, where=sum_weights != 0)
         result = np.zeros((self.shape[0], self.shape[1], 3), dtype=self.float_type)
@@ -235,8 +262,6 @@ class DepthMapStack(BaseStackAlgo):
         for i, img_path in enumerate(self.filenames):
             self.print_message(f": blending {self.image_str(i)}")
             filename = os.path.basename(img_path)
-            self.process.callback(constants.CALLBACK_UPDATE_FRAME_STATUS,
-                                  self.process.input_path, filename, 200)
             img = read_img(img_path).astype(self.float_type)
             weight = weights[i]
             result += img * weight[:, :, np.newaxis]
