@@ -141,8 +141,6 @@ def get_version(project_root):
             match = re.search(r"__version__\s*=\s*['\"]([^'\"]+)['\"]", content)
             if match:
                 version = match.group(1)
-                if '-' in version:
-                    version = version.split('-')[0]
     return version
 
 
