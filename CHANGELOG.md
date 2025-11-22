@@ -2,7 +2,8 @@
 
 This page reports the main releases only and the main changes therein.
 
-## [v1.11-0-pre.1] - 2025-11-22
+## [v1.11-0-pre.1] - 2025-11-2
+**improved DepthMap algorithm**
 
 ### Added
 - customizable temporary scratch disk area in settings
