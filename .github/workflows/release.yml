@@ -8,7 +8,8 @@ permissions:
 on:
   push:
     tags:
-      - v**
+      - 'v*'
+  workflow_dispatch:
 
 jobs:
   detect-macos-architectures:
@@ -20,7 +21,6 @@ jobs:
       - name: Detect available macOS runners
         id: detect
         run: |
-          # Default to known stable runners, but this can be updated over time
           echo "intel-runner=macos-13" >> $GITHUB_OUTPUT
           echo "silicon-runner=macos-14" >> $GITHUB_OUTPUT
 
@@ -32,17 +32,16 @@ jobs:
         include:
           - os: ubuntu-latest
             label: linux
-            artifact-name: shinestacker-ubuntu.tar.gz
+            python-version: "3.12"
           - os: windows-latest
-            label: windows
-            artifact-name: shinestacker-windows.zip
+            label: windows  
+            python-version: "3.12"
           - os: ${{ needs.detect-macos-architectures.outputs.intel-runner }}
             label: macos-intel
-            artifact-name: shinestacker-macos-intel.dmg
+            python-version: "3.12"
           - os: ${{ needs.detect-macos-architectures.outputs.silicon-runner }}
-            label: macos-apple-silicon  
-            artifact-name: shinestacker-macos-apple-silicon.dmg
-        python-version: ["3.12"]
+            label: macos-apple-silicon
+            python-version: "3.12"
 
     steps:
       - name: Checkout repo
@@ -51,7 +50,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: "3.12"
+          python-version: ${{ matrix.python-version }}
 
       - name: Install Inno Setup
         if: runner.os == 'Windows'
@@ -90,25 +89,27 @@ jobs:
       - name: Prepare release assets
         run: |
           mkdir -p release_assets
-          # Linux
-          cp artifacts/shinestacker-linux/shinestacker-release.tar.gz release_assets/shinestacker-ubuntu.tar.gz
-          # macOS - both architectures
-          cp artifacts/shinestacker-macos-intel/shinestacker-release.dmg release_assets/shinestacker-macos-intel.dmg
-          cp artifacts/shinestacker-macos-apple-silicon/shinestacker-release.dmg release_assets/shinestacker-macos-apple-silicon.dmg
-          # Windows
-          cp artifacts/shinestacker-windows/shinestacker-release.zip release_assets/shinestacker-windows.zip
+          # Check and copy each artifact if it exists
+          if [ -f "artifacts/shinestacker-linux/shinestacker-release.tar.gz" ]; then
+            cp artifacts/shinestacker-linux/shinestacker-release.tar.gz release_assets/shinestacker-ubuntu.tar.gz
+          fi
+          if [ -f "artifacts/shinestacker-macos-intel/shinestacker-release.dmg" ]; then
+            cp artifacts/shinestacker-macos-intel/shinestacker-release.dmg release_assets/shinestacker-macos-intel.dmg
+          fi
+          if [ -f "artifacts/shinestacker-macos-apple-silicon/shinestacker-release.dmg" ]; then
+            cp artifacts/shinestacker-macos-apple-silicon/shinestacker-release.dmg release_assets/shinestacker-macos-apple-silicon.dmg
+          fi
+          if [ -f "artifacts/shinestacker-windows/shinestacker-release.zip" ]; then
+            cp artifacts/shinestacker-windows/shinestacker-release.zip release_assets/shinestacker-windows.zip
+          fi
           if ls artifacts/shinestacker-windows/shinestacker-setup.exe 1> /dev/null 2>&1; then
             cp artifacts/shinestacker-windows/shinestacker-setup.exe release_assets/
           fi
+          echo "Available release assets:"
           ls -la release_assets/
 
       - name: Create release
         uses: softprops/action-gh-release@v1
         with:
           draft: true
-          files: |
-            release_assets/shinestacker-ubuntu.tar.gz
-            release_assets/shinestacker-macos-intel.dmg
-            release_assets/shinestacker-macos-apple-silicon.dmg
-            release_assets/shinestacker-windows.zip
-            release_assets/shinestacker-setup.exe
+          files: release_assets/*
