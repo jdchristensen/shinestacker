@@ -9,14 +9,14 @@ from .base_stack_algo import BaseStackAlgo
 
 
 class PyramidBase(BaseStackAlgo):
-    def __init__(self, name, min_size=DEFAULTS['pyramid_params']['min_size'],
-                 kernel_size=DEFAULTS['pyramid_params']['kernel_size'],
-                 gen_kernel=DEFAULTS['pyramid_params']['gen_kernel'],
-                 float_type=DEFAULTS['pyramid_params']['float_type']):
+    def __init__(self, name, **kwargs):
+        default_params = DEFAULTS['pyramid_params']
+        float_type = kwargs.get('float_type', default_params['float_type'])
         super().__init__(name, 1, float_type)
-        self.min_size = min_size
-        self.kernel_size = kernel_size
+        self.min_size = kwargs.get('min_size', default_params['min_size'])
+        kernel_size = kwargs.get('kernel_size', default_params['kernel_size'])
         self.pad_amount = (kernel_size - 1) // 2
+        gen_kernel = kwargs.get('gen_kernel', default_params['gen_kernel'])
         kernel = np.array([0.25 - gen_kernel / 2.0, 0.25,
                            gen_kernel, 0.25, 0.25 - gen_kernel / 2.0])
         self.gen_kernel = np.outer(kernel, kernel)
@@ -142,11 +142,8 @@ class PyramidBase(BaseStackAlgo):
 
 
 class PyramidStack(PyramidBase):
-    def __init__(self, min_size=DEFAULTS['pyramid_params']['min_size'],
-                 kernel_size=DEFAULTS['pyramid_params']['kernel_size'],
-                 gen_kernel=DEFAULTS['pyramid_params']['gen_kernel'],
-                 float_type=DEFAULTS['pyramid_params']['float_type']):
-        super().__init__("pyramid", min_size, kernel_size, gen_kernel, float_type)
+    def __init__(self, **kwargs):
+        super().__init__("pyramid", **kwargs)
         self.offset = np.arange(-self.pad_amount, self.pad_amount + 1)
 
     def process_single_image(self, img, levels):

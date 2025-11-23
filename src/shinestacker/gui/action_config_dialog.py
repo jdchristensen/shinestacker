@@ -957,7 +957,8 @@ class BalanceFramesConfigurator(SubsampleActionConfigurator):
         self.add_field(
             'mask_size', FIELD_FLOAT, 'Mask size', required=False,
             expert=True,
-            default=0, min_val=0, max_val=5, step=0.1)
+            default=AppConfig.get('balance_frames_params')['mask_size'],
+            min_val=0, max_val=5, step=0.1)
         self.add_field(
             'intensity_interval', FIELD_INT_TUPLE, 'Intensity range',
             required=False, size=2,

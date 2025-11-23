@@ -64,6 +64,7 @@ DEFAULTS = {
         'resolution_target': 2,  # Mpx
         'corr_map': 'LINEAR',
         'channel': 'LUMI',
+        'mask_size': 0,
         'intensity_interval': {'min': 0, 'max': -1}
     },
     'stacker': 'Pyramid',

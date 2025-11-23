@@ -9,41 +9,34 @@ from .pyramid_tiles import PyramidTilesStack
 
 
 class PyramidAutoStack(BaseStackAlgo):
-    def __init__(self, min_size=DEFAULTS['pyramid_params']['min_size'],
-                 kernel_size=DEFAULTS['pyramid_params']['kernel_size'],
-                 gen_kernel=DEFAULTS['pyramid_params']['gen_kernel'],
-                 float_type=DEFAULTS['pyramid_params']['float_type'],
-                 tile_size=DEFAULTS['pyramid_params']['tile_size'],
-                 n_tiled_layers=DEFAULTS['pyramid_params']['n_tiled_layers'],
-                 memory_limit=DEFAULTS['focus_stack_params']['memory_limit'],
-                 max_threads=DEFAULTS['focus_stack_params']['max_threads'],
-                 max_tile_size=DEFAULTS['pyramid_params']['max_tile_size'],
-                 min_tile_size=DEFAULTS['pyramid_params']['min_tile_size'],
-                 min_n_tiled_layers=DEFAULTS['pyramid_params']['min_n_tiled_layers'],
-                 mode='auto'):
-        super().__init__("auto_pyramid", 1, float_type)
-        self.min_size = min_size
-        self.kernel_size = kernel_size
-        self.gen_kernel = gen_kernel
-        self.float_type = float_type
-        self.tile_size = tile_size
-        self.n_tiled_layers = n_tiled_layers
-        self.memory_limit = memory_limit * constants.ONE_GIGA
-        self.max_threads = max_threads
+    def __init__(self, **kwargs):
+        pyramid_default_params = DEFAULTS['pyramid_params']
+        focus_stack_defaults_params = DEFAULTS['focus_stack_params']
+        self.float_type_opt = kwargs.get('float_type', pyramid_default_params['float_type'])
+        super().__init__("auto_pyramid", 1, self.float_type_opt)
+        self.mode = kwargs.get('mode', pyramid_default_params['mode'])
+        self.min_size = kwargs.get('min_size', pyramid_default_params['min_size'])
+        self.kernel_size = kwargs.get('kernel_size', pyramid_default_params['kernel_size'])
+        self.gen_kernel = kwargs.get('gen_kernel', pyramid_default_params['gen_kernel'])
+        self.tile_size = kwargs.get('tile_size', pyramid_default_params['tile_size'])
+        self.n_tiled_layers = kwargs.get('n_tiled_layers', pyramid_default_params['n_tiled_layers'])
+        self.memory_limit = kwargs.get(
+            'memory_limit', focus_stack_defaults_params['memory_limit']) * constants.ONE_GIGA
+        max_threads = kwargs.get(
+            'max_threads', focus_stack_defaults_params['max_threads'])
         available_cores = os.cpu_count() or 1
         self.num_threads = min(max_threads, available_cores)
-        self.max_tile_size = max_tile_size
-        self.min_tile_size = min_tile_size
-        self.min_n_tiled_layers = min_n_tiled_layers
-        self.mode = mode
+        self.max_tile_size = kwargs.get('max_tile_size', pyramid_default_params['max_tile_size'])
+        self.min_tile_size = kwargs.get('min_tile_size', pyramid_default_params['min_tile_size'])
+        self.min_n_tiled_layers = kwargs.get(
+            'min_n_tiled_layers', pyramid_default_params['min_n_tiled_layers'])
         self._implementation = None
         self.dtype = None
         self.shape = None
         self.n_levels = None
         self.n_frames = 0
         self.channels = 3  # r, g, b
-        dtype = np.float32 if self.float_type == constants.FLOAT_32 else np.float64
-        self.bytes_per_pixel = self.channels * np.dtype(dtype).itemsize
+        self.bytes_per_pixel = self.channels * np.dtype(self.float_type).itemsize
         self.overhead = constants.PY_MEMORY_OVERHEAD
 
     def init(self, filenames):
@@ -57,7 +50,7 @@ class PyramidAutoStack(BaseStackAlgo):
                 min_size=self.min_size,
                 kernel_size=self.kernel_size,
                 gen_kernel=self.gen_kernel,
-                float_type=self.float_type
+                float_type=self.float_type_opt
             )
             self.print_message(": using memory-based pyramid stacking")
         else:
@@ -66,7 +59,7 @@ class PyramidAutoStack(BaseStackAlgo):
                 min_size=self.min_size,
                 kernel_size=self.kernel_size,
                 gen_kernel=self.gen_kernel,
-                float_type=self.float_type,
+                float_type=self.float_type_opt,
                 tile_size=optimal_params['tile_size'],
                 n_tiled_layers=optimal_params['n_tiled_layers'],
                 max_threads=self.num_threads

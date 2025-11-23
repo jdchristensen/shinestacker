@@ -4,13 +4,12 @@ import logging
 import numpy as np
 from .. core.exceptions import InvalidOptionError, RunStopException
 from .. config.constants import constants
-from .. config.defaults import DEFAULTS
 from .. core.colors import color_str
 from .utils import read_img, get_img_metadata, get_first_image_file
 
 
 class BaseStackAlgo:
-    def __init__(self, name, steps_per_frame, float_type=DEFAULTS['pyramid_params']['float_type']):
+    def __init__(self, name, steps_per_frame, float_type):
         self._name = name
         self._steps_per_frame = steps_per_frame
         self.process = None

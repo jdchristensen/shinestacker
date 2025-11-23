@@ -1,6 +1,6 @@
 
 # pylint: disable=C0114, C0115, C0116, E1101, R0914, R1702, R1732, R0913
-# pylint: disable=R0917, R0912, R0915, R0902, W0718
+# pylint: disable=R0917, R0912, R0915, R0902, W0718, E1121
 import os
 import gc
 import time
@@ -20,20 +20,16 @@ from .pyramid import PyramidBase
 
 
 class PyramidTilesStack(PyramidBase):
-    def __init__(self, min_size=DEFAULTS['pyramid_params']['min_size'],
-                 kernel_size=DEFAULTS['pyramid_params']['kernel_size'],
-                 gen_kernel=DEFAULTS['pyramid_params']['gen_kernel'],
-                 float_type=DEFAULTS['pyramid_params']['float_type'],
-                 tile_size=DEFAULTS['pyramid_params']['tile_size'],
-                 n_tiled_layers=DEFAULTS['pyramid_params']['n_tiled_layers'],
-                 max_threads=DEFAULTS['focus_stack_params']['max_threads']):
-        super().__init__("fast_pyramid", min_size, kernel_size, gen_kernel, float_type)
+    def __init__(self, **kwargs):
+        super().__init__("fast_pyramid", **kwargs)
+        pyramid_default_params = DEFAULTS['pyramid_params']
+        focus_stack_defaults_params = DEFAULTS['focus_stack_params']
         self.offset = np.arange(-self.pad_amount, self.pad_amount + 1)
         self.dtype = None
         self.num_pixel_values = None
         self.max_pixel_value = None
-        self.tile_size = tile_size
-        self.n_tiled_layers = n_tiled_layers
+        self.tile_size = kwargs.get('tile_size', pyramid_default_params['tile_size'])
+        self.n_tiled_layers = kwargs.get('n_tiled_layers', pyramid_default_params['n_tiled_layers'])
         self.temp_folder = AppConfig.get('temp_folder_path')
         base_temp_dir = AppConfig.get('temp_folder_path')
         if base_temp_dir and base_temp_dir != '':
@@ -46,6 +42,7 @@ class PyramidTilesStack(PyramidBase):
         self.n_tiles = 0
         self.level_shapes = {}
         available_cores = os.cpu_count() or 1
+        max_threads = kwargs.get('max_threads', focus_stack_defaults_params['max_threads'])
         self.num_threads = max(1, min(max_threads, available_cores))
         self.min_free_space_gb = 5
 

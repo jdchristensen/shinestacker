@@ -10,39 +10,34 @@ from .base_stack_algo import BaseStackAlgo
 
 
 class DepthMapStack(BaseStackAlgo):
-    def __init__(self, map_type=DEFAULTS['depth_map_params']['map_type'],
-                 energy=DEFAULTS['depth_map_params']['energy'],
-                 blend_mode=DEFAULTS['depth_map_params']['blend_mode'],
-                 weight_power=DEFAULTS['depth_map_params']['weight_power'],
-                 kernel_size=DEFAULTS['depth_map_params']['kernel_size'],
-                 blur_size=DEFAULTS['depth_map_params']['blur_size'],
-                 energy_smooth_size=DEFAULTS['depth_map_params']['energy_smooth_size'],
-                 energy_sigma_color=DEFAULTS['depth_map_params']['energy_sigma_color'],
-                 energy_sigma_space=DEFAULTS['depth_map_params']['energy_sigma_space'],
-                 weights_smooth_size=DEFAULTS['depth_map_params']['weights_smooth_size'],
-                 weights_sigma_color=DEFAULTS['depth_map_params']['weights_sigma_color'],
-                 weights_sigma_space=DEFAULTS['depth_map_params']['weights_sigma_space'],
-                 temperature=DEFAULTS['depth_map_params']['temperature'],
-                 float_type=DEFAULTS['depth_map_params']['float_type']):
+    def __init__(self, **kwargs):
+        default_params = DEFAULTS['depth_map_params']
         self.steps_per_frame = 3
-        if energy_smooth_size > 0:
+        self.energy_smooth_size = kwargs.get(
+            'energy_smooth_size', default_params['energy_smooth_size'])
+        if self.energy_smooth_size > 0:
             self.steps_per_frame += 1
-        if weights_smooth_size > 0:
+        self.weights_smooth_size = kwargs.get(
+            'weights_smooth_size', default_params['weights_smooth_size'])
+        if self.weights_smooth_size > 0:
             self.steps_per_frame += 1
+        float_type = kwargs.get('float_type', default_params['float_type'])
         super().__init__("depth map", self.steps_per_frame, float_type)
-        self.map_type = map_type
-        self.energy = energy
-        self.blend_mode = blend_mode
-        self.weight_power = weight_power
-        self.kernel_size = kernel_size
-        self.blur_size = blur_size
-        self.energy_smooth_size = energy_smooth_size
-        self.energy_sigma_color = energy_sigma_color
-        self.energy_sigma_space = energy_sigma_space
-        self.weights_smooth_size = weights_smooth_size
-        self.weights_sigma_color = weights_sigma_color
-        self.weights_sigma_space = weights_sigma_space
-        self.temperature = temperature
+        self.map_type = kwargs.get('map_type', default_params['map_type'])
+        self.energy = kwargs.get('energy', default_params['energy'])
+        self.blend_mode = kwargs.get('blend_mode', default_params['blend_mode'])
+        self.weight_power = kwargs.get('weight_power', default_params['weight_power'])
+        self.kernel_size = kwargs.get('kernel_size', default_params['kernel_size'])
+        self.blur_size = kwargs.get('blur_size', default_params['blur_size'])
+        self.energy_sigma_color = kwargs.get(
+            'energy_sigma_color', default_params['energy_sigma_color'])
+        self.energy_sigma_space = kwargs.get(
+            'energy_sigma_space', default_params['energy_sigma_space'])
+        self.weights_sigma_color = kwargs.get('weights_sigma_color',
+                                              default_params['weights_sigma_color'])
+        self.weights_sigma_space = kwargs.get(
+            'weights_sigma_space', default_params['weights_sigma_space'])
+        self.temperature = kwargs.get('temperature', default_params['temperature'])
         self.steps_count = 0
 
     def _with_energy_progress(self, energy_func, message_template):

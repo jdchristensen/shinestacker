@@ -2,7 +2,7 @@
 
 This page reports the main releases only and the main changes therein.
 
-## [v1.11-0-pre.1] - 2025-11-2
+## [v1.11.x] - 2025-11-23
 **improved DepthMap algorithm**
 
 ### Added
@@ -12,6 +12,7 @@ This page reports the main releases only and the main changes therein.
 
 ### Fixed
 - added protection into persistent settings against potentially dangerous data types
+- falut-tolerant argument list in modules prevent potential issues when reading project files from older releases
 
 ### Changed
 - some minor fixes and code cleanup

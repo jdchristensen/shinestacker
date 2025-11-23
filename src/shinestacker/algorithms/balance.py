@@ -569,15 +569,12 @@ class BalanceFrames(SubAction):
         super().__init__(enabled=enabled)
         self.process = None
         self.shape = None
-        self.corr_map = kwargs.get(
-            'corr_map', DEFAULTS['balance_frames_params']['corr_map'])
-        self.subsample = kwargs.get(
-            'subsample', DEFAULTS['balance_frames_params']['subsample'])
-        self.fast_subsampling = kwargs.get(
-            'fast_subsampling', DEFAULTS['balance_frames_params']['fast_subsampling'])
-        self.channel = kwargs.get(
-            'channel', DEFAULTS['balance_frames_params']['channel'])
-        self.mask_size = kwargs.get('mask_size', 0)
+        default_params = DEFAULTS['balance_frames_params']
+        self.corr_map = kwargs.get('corr_map', default_params['corr_map'])
+        self.subsample = kwargs.get('subsample', default_params['subsample'])
+        self.fast_subsampling = kwargs.get('fast_subsampling', default_params['fast_subsampling'])
+        self.channel = kwargs.get('channel', default_params['channel'])
+        self.mask_size = kwargs.get('mask_size', default_params['mask_size'])
         self.plot_summary = kwargs.get('plot_summary', False)
         self.plot_histograms = kwargs.get('plot_histograms', False)
         if self.subsample == -1:
