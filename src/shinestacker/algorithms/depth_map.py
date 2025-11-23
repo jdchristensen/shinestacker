@@ -17,13 +17,14 @@ class DepthMapStack(BaseStackAlgo):
             'energy_smooth_size', default_params['energy_smooth_size'])
         if self.energy_smooth_size > 0:
             self.steps_per_frame += 1
-        self.weights_smooth_size = kwargs.get(
-            'weights_smooth_size', default_params['weights_smooth_size'])
-        if self.weights_smooth_size > 0:
+        self.pyramid_smooth_size = kwargs.get(
+            'pyramid_smooth_size', default_params['pyramid_smooth_size'])
+        if self.pyramid_smooth_size > 0:
             self.steps_per_frame += 1
         float_type = kwargs.get('float_type', default_params['float_type'])
         super().__init__("depth map", self.steps_per_frame, float_type)
         self.map_type = kwargs.get('map_type', default_params['map_type'])
+        self.pyramid_levels = kwargs.get('pyramid_levels', default_params['pyramid_levels'])
         self.energy = kwargs.get('energy', default_params['energy'])
         self.blend_mode = kwargs.get('blend_mode', default_params['blend_mode'])
         self.weight_power = kwargs.get('weight_power', default_params['weight_power'])
@@ -33,10 +34,6 @@ class DepthMapStack(BaseStackAlgo):
             'energy_sigma_color', default_params['energy_sigma_color'])
         self.energy_sigma_space = kwargs.get(
             'energy_sigma_space', default_params['energy_sigma_space'])
-        self.weights_sigma_color = kwargs.get('weights_sigma_color',
-                                              default_params['weights_sigma_color'])
-        self.weights_sigma_space = kwargs.get(
-            'weights_sigma_space', default_params['weights_sigma_space'])
         self.temperature = kwargs.get('temperature', default_params['temperature'])
         self.steps_count = 0
 
@@ -236,18 +233,17 @@ class DepthMapStack(BaseStackAlgo):
             self.process.callback(constants.CALLBACK_UPDATE_FRAME_STATUS,
                                   self.process.input_path, filename, 201)
             self.check_running()
-        return np.clip(np.absolute(result), 0, self.num_pixel_values).astype(self.dtype)
+        return np.clip(result, 0, self.num_pixel_values).astype(self.dtype)
 
     def _weighted_pyramid_blend(self, weights, n_images):
         n_steps = 2 if self.energy_smooth_size <= 0 else 3
-        if self.weights_smooth_size > 0:
+        if self.pyramid_smooth_size > 0:
             for i in range(weights.shape[0]):
-                self.print_message(f": filter weights, {self.image_str(i)}")
-                weights[i] = cv2.bilateralFilter(
-                    weights[i].astype(np.float32),
-                    d=self.weights_smooth_size,
-                    sigmaColor=self.weights_sigma_color,
-                    sigmaSpace=self.weights_sigma_space).astype(weights.dtype)
+                self.print_message(f": smooth weights for pyramid, {self.image_str(i)}")
+                ksize = self.pyramid_smooth_size
+                if ksize % 2 == 0:
+                    ksize += 1
+                weights[i] = cv2.GaussianBlur(weights[i], (ksize, ksize), 0)
                 self.after_step(i + n_images * n_steps)
                 self.check_running()
             n_steps += 1
@@ -257,20 +253,68 @@ class DepthMapStack(BaseStackAlgo):
                                   self.steps_count)
         sum_weights = np.sum(weights, axis=0)
         weights = np.divide(weights, sum_weights, where=sum_weights != 0)
-        result = np.zeros((self.shape[0], self.shape[1], 3), dtype=self.float_type)
-        total_weight = np.zeros((self.shape[0], self.shape[1]), dtype=self.float_type)
+        blended_pyramid = None
+        weight_pyramid_accum = None
         for i, img_path in enumerate(self.filenames):
-            self.print_message(f": blending {self.image_str(i)}")
+            self.print_message(f": pyramid blending {self.image_str(i)}")
             filename = os.path.basename(img_path)
-            img = read_img(img_path).astype(self.float_type)
+            img = read_img(img_path)
+            if img.dtype == np.uint8:
+                img_float = img.astype(self.float_type) / 255.0
+            elif img.dtype == np.uint16:
+                img_float = img.astype(self.float_type) / 65535.0
+            else:
+                img_float = img.astype(self.float_type)
+                if img_float.max() > 1.0:
+                    img_float = img_float / self.num_pixel_values
             weight = weights[i]
-            result += img * weight[:, :, np.newaxis]
-            total_weight += weight
+            gp_img = [img_float]  # Use normalized float image
+            gp_weight = [weight]
+            for level in range(self.pyramid_levels - 1):
+                gp_img.append(cv2.pyrDown(gp_img[-1]))
+                gp_weight.append(cv2.pyrDown(gp_weight[-1]))
+            lp_img = [gp_img[-1]]
+            for level in range(self.pyramid_levels - 1, 0, -1):
+                size = (gp_img[level - 1].shape[1], gp_img[level - 1].shape[0])
+                expanded = cv2.pyrUp(gp_img[level], dstsize=size)
+                laplacian = gp_img[level - 1] - expanded
+                lp_img.append(laplacian)
+            current_blend = []
+            current_weights = []
+            for level in range(self.pyramid_levels):
+                weighted_level = lp_img[level] * \
+                    gp_weight[self.pyramid_levels - 1 - level][..., np.newaxis]
+                current_blend.append(weighted_level)
+                current_weights.append(gp_weight[self.pyramid_levels - 1 - level])
+            if blended_pyramid is None:
+                blended_pyramid = current_blend
+                weight_pyramid_accum = current_weights
+            else:
+                blended_pyramid = [bp + cb for bp, cb in zip(blended_pyramid, current_blend)]
+                weight_pyramid_accum = [wp + cw for wp, cw
+                                        in zip(weight_pyramid_accum, current_weights)]
             self.after_step(i + n_images * n_steps)
             self.check_running()
             self.process.callback(constants.CALLBACK_UPDATE_FRAME_STATUS,
                                   self.process.input_path, filename, 201)
             self.check_running()
-        total_weight_3d = np.maximum(total_weight[:, :, np.newaxis], 1e-8)
-        result = result / total_weight_3d
-        return np.clip(result, 0, self.num_pixel_values).astype(self.dtype)
+        for level in range(self.pyramid_levels):
+            mask = weight_pyramid_accum[level] > 1e-8
+            if np.any(mask):
+                if len(blended_pyramid[level].shape) == 3:
+                    weight_expanded = weight_pyramid_accum[level][:, :, np.newaxis]
+                else:
+                    weight_expanded = weight_pyramid_accum[level]
+                blended_pyramid[level][mask] = blended_pyramid[level][mask] / weight_expanded[mask]
+        self.print_message(': reconstructing pyramid')
+        result = blended_pyramid[0]
+        for level in range(1, self.pyramid_levels):
+            size = (blended_pyramid[level].shape[1], blended_pyramid[level].shape[0])
+            result = cv2.pyrUp(result, dstsize=size) + blended_pyramid[level]
+        if self.dtype == np.uint8:
+            result = np.clip(result * 255.0, 0, 255).astype(np.uint8)
+        elif self.dtype == np.uint16:
+            result = np.clip(result * 65535.0, 0, 65535).astype(np.uint16)
+        else:
+            result = np.clip(result, 0, 1.0).astype(self.dtype)
+        return result

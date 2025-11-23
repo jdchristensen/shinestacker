@@ -251,6 +251,7 @@ class FocusStackBaseConfigurator(DefaultActionConfigurator):
     FLOAT_OPTIONS = ['float 32 bits', 'float 64 bits']
     MODE_OPTIONS = ['Auto', 'All in memory', 'Tiled I/O buffered']
     BLEND_MODE_OPTIONS = ['Best frame', 'Weighted']
+    BLEND_METHODS_OPTIONS = ['Pyramid', 'Bilateral']
 
     def __init__(self, expert, current_wd):
         super().__init__(expert, current_wd)
@@ -413,6 +414,12 @@ class FocusStackBaseConfigurator(DefaultActionConfigurator):
             required=False, default=AppConfig.get('depth_map_params')['weight_power'],
             min_val=0.1, max_val=10, step=0.05)
         self.depthmap_energy_smooth_size = self.add_field_to_layout(
+            q_depthmap.layout(), 'depthmap_pyramid_levels', FIELD_INT,
+            'Pyramid levels',
+            expert=True,
+            required=False, default=AppConfig.get('depth_map_params')['pyramid_levels'],
+            min_val=1, max_val=8)
+        self.depthmap_energy_smooth_size = self.add_field_to_layout(
             q_depthmap.layout(), 'depthmap_energy_smooth_size', FIELD_INT,
             'Energy smooth size (px)',
             expert=True,
@@ -441,33 +448,11 @@ class FocusStackBaseConfigurator(DefaultActionConfigurator):
         change_depthmap_energy_smooth_size()
 
         self.depthmap_weights_smooth_size = self.add_field_to_layout(
-            q_depthmap.layout(), 'depthmap_weights_smooth_size', FIELD_INT,
-            'Weigths smooth size (px)',
+            q_depthmap.layout(), 'depthmap_pyramid_smooth_size', FIELD_INT,
+            'Pyramid smooth size (px)',
             expert=True,
-            required=False, default=AppConfig.get('depth_map_params')['weights_smooth_size'],
+            required=False, default=AppConfig.get('depth_map_params')['pyramid_smooth_size'],
             min_val=0, max_val=256)
-        self.depthmap_weights_sigma_color = self.add_field_to_layout(
-            q_depthmap.layout(), 'depthmap_weights_sigma_color', FIELD_FLOAT,
-            'Weights filter σ, color',
-            expert=True,
-            required=False, default=AppConfig.get('depth_map_params')['weights_sigma_color'],
-            min_val=0, max_val=10, step=0.1)
-        self.depthmap_weights_sigma_space = self.add_field_to_layout(
-            q_depthmap.layout(), 'depthmap_weights_sigma_space', FIELD_INT,
-            'Weights filter σ, space (px)',
-            expert=True,
-            required=False, default=AppConfig.get('depth_map_params')['weights_sigma_space'],
-            min_val=0, max_val=256)
-
-        def change_depthmap_weights_smooth_size():
-            enabled = self.depthmap_weights_smooth_size.value() > 0
-            self.depthmap_weights_sigma_color.setEnabled(enabled)
-            self.depthmap_weights_sigma_space.setEnabled(enabled)
-
-        self.depthmap_weights_smooth_size.valueChanged.connect(
-            change_depthmap_weights_smooth_size)
-        change_depthmap_weights_smooth_size()
-
         self.add_field_to_layout(
             q_depthmap.layout(), 'depthmap_temperature', FIELD_FLOAT, 'Temperature',
             expert=True,

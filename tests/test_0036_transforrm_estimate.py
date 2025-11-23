@@ -397,4 +397,3 @@ def test_check_homography_distortion_complex():
     assert reason is not None
     if result is not None:
         assert len(result) == 3
-

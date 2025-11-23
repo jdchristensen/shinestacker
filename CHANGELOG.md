@@ -3,16 +3,26 @@
 This page reports the main releases only and the main changes therein.
 
 ## [v1.11.x] - 2025-11-23
+**fixes to new DepthMap algorithm**
+
+### Fixed
+- falut-tolerant argument list in modules prevent potential issues when reading project files from older releases
+
+### Changed
+- fixed and improved DepthMap layer blending using pyramid method
+
+--------------------------
+
+## [v1.11.0] - 2025-11-22
 **improved DepthMap algorithm**
 
 ### Added
-- customizable temporary scratch disk area in settings
 - optimized depth map algorith with more energy calculations and more blending modes
 - new customizable parameters for depth map algorithm
+- customizable temporary scratch disk area in settings
 
 ### Fixed
-- added protection into persistent settings against potentially dangerous data types
-- falut-tolerant argument list in modules prevent potential issues when reading project files from older releases
+- added protection to persistent settings against potentially dangerous data types
 
 ### Changed
 - some minor fixes and code cleanup
