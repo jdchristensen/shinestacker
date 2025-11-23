@@ -147,24 +147,6 @@ def test_weighted_pyramid_blend(example_images):
     assert result.dtype == np.uint8
 
 
-def test_best_pixel_selection(example_images):
-    dms = DepthMapStack()
-    dms.init(example_images[:3])
-    dms.print_message = MagicMock()
-    dms.after_step = MagicMock()
-    dms.check_running = MagicMock()
-    dms.process = MagicMock()
-    gray_images = []
-    for img_path in example_images[:3]:
-        img = cv2.imread(img_path, cv2.IMREAD_GRAYSCALE)
-        gray_images.append(img.astype(np.float32))
-    gray_images = np.array(gray_images)
-    sobel_map = dms.get_sobel_map(gray_images)
-    result = dms._best_pixel_selection(sobel_map, 3)
-    assert result.shape == (gray_images.shape[1], gray_images.shape[2], 3)
-    assert result.dtype == np.uint8
-
-
 def test_performance_with_all_images(example_images):
     dms = DepthMapStack()
     dms.process = MagicMock()
@@ -193,11 +175,64 @@ def test_focus_stack_invalid_energy(example_images):
         dms.focus_stack()
 
 
-def test_focus_stack_invalid_blend_mode(example_images):
+def test_focus_map_max_type(example_images):
+    dms = DepthMapStack(map_type='max')
+    dms.init(example_images[:3])
+    dms.print_message = MagicMock()
+    dms.after_step = MagicMock()
+    dms.check_running = MagicMock()
+    gray_images = []
+    for img_path in example_images[:3]:
+        img = cv2.imread(img_path, cv2.IMREAD_GRAYSCALE)
+        gray_images.append(img.astype(np.float32))
+    gray_images = np.array(gray_images)
+    sobel_map = dms.get_sobel_map(gray_images)
+    focus_map = dms.get_focus_map(sobel_map)
+    assert focus_map.shape == sobel_map.shape
+    assert focus_map.dtype == np.float32
+    assert np.all(np.isfinite(focus_map))
+    sum_weights = np.sum(focus_map, axis=0)
+    assert np.allclose(sum_weights, 1.0, atol=1e-6)
+
+
+def test_focus_map_invalid_type(example_images):
     dms = DepthMapStack()
     dms.init(example_images[:3])
-    dms.process = MagicMock()
-    dms.print_message = MagicMock()
-    dms.blend_mode = "invalid_mode"
+    dms.map_type = 'invalid_type'
+    gray_images = []
+    for img_path in example_images[:3]:
+        img = cv2.imread(img_path, cv2.IMREAD_GRAYSCALE)
+        gray_images.append(img.astype(np.float32))
+    gray_images = np.array(gray_images)
+    energies = np.random.random(gray_images.shape).astype(np.float32)
     with pytest.raises(InvalidOptionError):
-        dms.focus_stack()
+        dms.get_focus_map(energies)
+
+
+def test_focus_map_max_with_temperature(example_images):
+    dms_high_temp = DepthMapStack(map_type='max', temperature=1.0)
+    dms_high_temp.init(example_images[:3])
+    dms_high_temp.print_message = MagicMock()
+    dms_high_temp.after_step = MagicMock()
+    dms_high_temp.check_running = MagicMock()
+    dms_low_temp = DepthMapStack(map_type='max', temperature=0.01)
+    dms_low_temp.init(example_images[:3])
+    dms_low_temp.print_message = MagicMock()
+    dms_low_temp.after_step = MagicMock()
+    dms_low_temp.check_running = MagicMock()
+    gray_images = []
+    for img_path in example_images[:3]:
+        img = cv2.imread(img_path, cv2.IMREAD_GRAYSCALE)
+        gray_images.append(img.astype(np.float32))
+    gray_images = np.array(gray_images)
+    sobel_map = dms_high_temp.get_sobel_map(gray_images)
+    focus_map_high_temp = dms_high_temp.get_focus_map(sobel_map)
+    focus_map_low_temp = dms_low_temp.get_focus_map(sobel_map)
+
+    def weight_entropy(weights):
+        epsilon = 1e-10
+        return -np.sum(weights * np.log(weights + epsilon), axis=0)
+
+    avg_entropy_high = np.mean(weight_entropy(focus_map_high_temp))
+    avg_entropy_low = np.mean(weight_entropy(focus_map_low_temp))
+    assert avg_entropy_low < avg_entropy_high

@@ -88,7 +88,6 @@ DEFAULTS = {
         'energy': 'tenengrad',
         'weight_power': 2.0,
         'pyramid_levels': 5,
-        'blend_mode': 'weight',
         'kernel_size': 3,
         'blur_size': 3,
         'energy_smooth_size': 7,

@@ -26,7 +26,6 @@ class DepthMapStack(BaseStackAlgo):
         self.map_type = kwargs.get('map_type', default_params['map_type'])
         self.pyramid_levels = kwargs.get('pyramid_levels', default_params['pyramid_levels'])
         self.energy = kwargs.get('energy', default_params['energy'])
-        self.blend_mode = kwargs.get('blend_mode', default_params['blend_mode'])
         self.weight_power = kwargs.get('weight_power', default_params['weight_power'])
         self.kernel_size = kwargs.get('kernel_size', default_params['kernel_size'])
         self.blur_size = kwargs.get('blur_size', default_params['blur_size'])
@@ -190,50 +189,14 @@ class DepthMapStack(BaseStackAlgo):
             self.process.callback(constants.CALLBACK_UPDATE_FRAME_STATUS,
                                   self.process.name, self.output_filename,
                                   self.steps_count)
-        mode_str = {
-            constants.DM_MODE_BEST: 'best frame',
-            constants.DM_MODE_WEIGHTED: 'weighted frames'
-        }.get(self.blend_mode, '')
-        self.print_message(f": blending images, mode: {mode_str}")
-        if self.blend_mode == constants.DM_MODE_WEIGHTED:
-            weights = self.get_focus_map(energies)
-            result = self._weighted_pyramid_blend(weights, n_images)
-        elif self.blend_mode == constants.DM_MODE_BEST:
-            result = self._best_pixel_selection(energies, n_images)
-        else:
-            raise InvalidOptionError(
-                "blend_mode", self.blend_mode,
-                details=f"Valid values are {constants.DM_MODE_WEIGHTED} "
-                        "and {constants.DM_MODE_BEST}")
+        self.print_message(": blending images")
+        weights = self.get_focus_map(energies)
+        result = self._weighted_pyramid_blend(weights, n_images)
         self.steps_count += 1
         self.process.callback(constants.CALLBACK_UPDATE_FRAME_STATUS,
                               self.process.name, self.output_filename,
                               self.steps_count)
         return result
-
-    def _best_pixel_selection(self, energies, n_images):
-        best_indices = np.argmax(energies, axis=0)
-        color_images = []
-        n_steps = 2 if self.energy_smooth_size <= 0 else 3
-        for i, img_path in enumerate(self.filenames):
-            self.print_message(f": reading image {self.image_str(i)}")
-            img = read_img(img_path).astype(self.float_type)
-            color_images.append(img)
-            self.after_step(i + n_images * n_steps)
-            self.check_running()
-        result = np.zeros_like(color_images[0])
-        n_steps += 1
-        for i, img_path in enumerate(self.filenames):
-            self.print_message(f": blending {self.image_str(i)}")
-            filename = os.path.basename(img_path)
-            mask = best_indices == i
-            result[mask] = color_images[i][mask]
-            self.after_step(i + n_images * n_steps)
-            self.check_running()
-            self.process.callback(constants.CALLBACK_UPDATE_FRAME_STATUS,
-                                  self.process.input_path, filename, 201)
-            self.check_running()
-        return np.clip(result, 0, self.num_pixel_values).astype(self.dtype)
 
     def _weighted_pyramid_blend(self, weights, n_images):
         n_steps = 2 if self.energy_smooth_size <= 0 else 3
