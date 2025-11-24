@@ -5,6 +5,7 @@ import numpy as np
 import cv2
 from .. config.constants import constants
 from .. config.defaults import DEFAULTS
+from .. config.app_config import AppConfig
 from .. core.exceptions import InvalidOptionError
 from .utils import read_img, read_and_validate_img, img_bw
 from .base_stack_algo import BaseStackAlgo
@@ -40,6 +41,14 @@ class DepthMapStack(BaseStackAlgo):
         self.memory_limit = kwargs.get('memory_limit', focus_stack_params['memory_limit'])
         self.steps_count = 0
         self.cv_float = cv2.CV_64F if self.float_type == np.float64 else cv2.CV_32F
+        base_temp_dir = AppConfig.get('temp_folder_path')
+        if base_temp_dir and base_temp_dir != '':
+            self.temp_dir_path = base_temp_dir
+            self.temp_dir_manager = None
+            os.makedirs(self.temp_dir_path, exist_ok=True)
+        else:
+            self.temp_dir_manager = tempfile.TemporaryDirectory()
+            self.temp_dir_path = self.temp_dir_manager.name
 
     def get_sobel_map(self, gray_img):
         sobel_energy = np.abs(cv2.Sobel(gray_img, self.cv_float, 1, 0, ksize=3)) + \
@@ -123,7 +132,7 @@ class DepthMapStack(BaseStackAlgo):
         if use_disk:
             self.print_message(
                 f": using disk-based processing (estimated {energy_memory_gb:.1f} GB)")
-            temp_dir = tempfile.mkdtemp()
+            temp_dir = self.temp_dir_path
             energy_files = []
             if self.map_type == constants.DM_MAP_AVERAGE:
                 sum_energies = np.zeros(self.shape, dtype=self.float_type)
@@ -218,17 +227,13 @@ class DepthMapStack(BaseStackAlgo):
         return weights
 
     def cleanup_temp_files(self, energy_files):
-        temp_dir = os.path.dirname(energy_files[0]) if energy_files else None
         for energy_file in energy_files:
             try:
                 os.remove(energy_file)
             except OSError:
                 pass
-        if temp_dir and os.path.exists(temp_dir):
-            try:
-                os.rmdir(temp_dir)
-            except OSError:
-                pass
+        if self.temp_dir_manager is not None:
+            self.temp_dir_manager.cleanup()
 
     def weighted_pyramid_blend(self, weights, n_images):
         n_steps = 2 if self.energy_smooth_size <= 0 else 3
