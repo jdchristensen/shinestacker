@@ -1,5 +1,6 @@
 # pylint: disable=C0114, C0115, C0116, E1101, R0902, R0913, R0917, R0914, R0912, R0915
 import os
+import tempfile
 import numpy as np
 import cv2
 from .. config.constants import constants
@@ -34,6 +35,8 @@ class DepthMapStack(BaseStackAlgo):
         self.energy_sigma_space = kwargs.get(
             'energy_sigma_space', default_params['energy_sigma_space'])
         self.temperature = kwargs.get('temperature', default_params['temperature'])
+        self.mode = kwargs.get('mode', default_params['mode'])
+        self.memory_limit = kwargs.get('memory_limit', default_params['memory_limit'])
         self.steps_count = 0
         self.cv_float = cv2.CV_64F if self.float_type == np.float64 else cv2.CV_32F
 
@@ -44,7 +47,7 @@ class DepthMapStack(BaseStackAlgo):
 
     def get_laplacian_map(self, gray_img):
         blurred = cv2.GaussianBlur(gray_img, (self.blur_size, self.blur_size), 0)
-        lap_result = cv2.Laplacian(blurred, self.cv_float,ksize=self.kernel_size)
+        lap_result = cv2.Laplacian(blurred, self.cv_float, ksize=self.kernel_size)
         return np.abs(lap_result)
 
     def get_modified_laplacian(self, gray_img):
@@ -86,37 +89,46 @@ class DepthMapStack(BaseStackAlgo):
         else:
             raise InvalidOptionError("map_type", self.map_type, details=f" valid values are "
                                      f"{constants.DM_MAP_AVERAGE} and {constants.DM_MAP_MAX}.")
-        if self.weight_power != 1.0:
-            weights = np.power(weights, self.weight_power)
-            sum_weights = np.sum(weights, axis=0)
-            sum_weights = np.where(sum_weights == 0, np.finfo(weights.dtype).eps, sum_weights)
-            weights = np.divide(weights, sum_weights)
         return weights
 
     def compute_energy_map(self, gray_img):
         if self.energy == constants.DM_ENERGY_SOBEL:
             return self.get_sobel_map(gray_img)
-        elif self.energy == constants.DM_ENERGY_LAPLACIAN:
+        if self.energy == constants.DM_ENERGY_LAPLACIAN:
             return self.get_laplacian_map(gray_img)
-        elif self.energy == constants.DM_ENERGY_MOD_LAPLACIAN:
+        if self.energy == constants.DM_ENERGY_MOD_LAPLACIAN:
             return self.get_modified_laplacian(gray_img)
-        elif self.energy == constants.DM_ENERGY_VARIANCE:
+        if self.energy == constants.DM_ENERGY_VARIANCE:
             return self.get_variance_map(gray_img)
-        elif self.energy == constants.DM_ENERGY_TENENGRAD:
+        if self.energy == constants.DM_ENERGY_TENENGRAD:
             return self.get_tenengrad(gray_img)
-        else:
-            raise InvalidOptionError(
-                'energy', self.energy,
-                details=f"Valid values are {constants.DM_ENERGY_SOBEL} and "
-                        f"{constants.DM_ENERGY_LAPLACIAN}."
-            )
+        raise InvalidOptionError(
+            'energy', self.energy,
+            details=f"Valid values are {constants.DM_ENERGY_SOBEL} and "
+                    f"{constants.DM_ENERGY_LAPLACIAN}.")
 
     def focus_stack(self):
         n_images = len(self.filenames)
         self.process.callback(constants.CALLBACKS_SET_TOTAL_ACTIONS,
                               self.process.output_path, self.output_filename,
                               self.steps_per_frame)
-        energies = np.empty((n_images, *self.shape), dtype=self.float_type)
+
+        energy_memory_gb = (n_images * self.shape[0] * self.shape[1] *
+                            np.dtype(self.float_type).itemsize) / (1024**3)
+        if self.mode == 'auto':
+            use_disk = energy_memory_gb > self.memory_limit
+        else:
+            use_disk = self.mode == 'i/o'
+        if use_disk:
+            self.print_message(
+                f": using disk-based processing (estimated {energy_memory_gb:.1f} GB)")
+            temp_dir = tempfile.mkdtemp()
+            energy_files = []
+        else:
+            self.print_message(
+                f": using in-memory processing (estimated {energy_memory_gb:.1f} GB)")
+        energies = None if use_disk else np.empty((n_images, *self.shape), dtype=self.float_type)
+        step_count = 0
         for i, img_path in enumerate(self.filenames):
             self.print_message(f": computing energy for {self.image_str(i)}")
             self.process.callback(constants.CALLBACK_UPDATE_FRAME_STATUS,
@@ -124,34 +136,92 @@ class DepthMapStack(BaseStackAlgo):
             img = read_and_validate_img(img_path, self.shape, self.dtype)
             gray = img_bw(img).astype(self.float_type)
             energy_map = self.compute_energy_map(gray)
-            energies[i] = energy_map
-            self.after_step(i)
+            step_count += 1
+            self.after_step(step_count)
             self.check_running()
-        self.steps_count = 1
-        self.process.callback(constants.CALLBACK_UPDATE_FRAME_STATUS,
-                              self.process.name, self.output_filename,
-                              self.steps_count)
-        self.print_message(": normalize energy maps")
-        if self.energy_smooth_size > 0:
-            self.print_message(": smoothing energy maps")
-            for i in range(energies.shape[0]):
+            if self.energy_smooth_size > 0:
                 self.print_message(f": smoothing energy for {self.image_str(i)}")
-                energies[i] = self.smooth_energy(energies[i])
-                self.after_step(i + n_images)
+                energy_map = self.smooth_energy(energy_map)
+                step_count += 1
+                self.after_step(step_count)
                 self.check_running()
+            if use_disk:
+                temp_file = os.path.join(temp_dir, f"energy_{i:06d}.npy")
+                np.save(temp_file, energy_map)
+                energy_files.append(temp_file)
+            else:
+                energies[i] = energy_map
         self.steps_count += 1
         self.process.callback(constants.CALLBACK_UPDATE_FRAME_STATUS,
                               self.process.name, self.output_filename,
                               self.steps_count)
         self.print_message(": create focus map")
-        weights = self.get_focus_map(energies)
+        if use_disk:
+            weights = self.get_focus_map_from_disk(energy_files, n_images)
+        else:
+            weights = self.get_focus_map(energies)
+            del energies
+        if self.weight_power != 1.0:
+            self.print_message(": apply weights power correction")
+            weights = np.power(weights, self.weight_power)
+            sum_weights = np.sum(weights, axis=0)
+            sum_weights = np.where(sum_weights == 0, np.finfo(weights.dtype).eps, sum_weights)
+            weights = np.divide(weights, sum_weights)
         result = self.weighted_pyramid_blend(weights, n_images)
         self.steps_count += 1
         self.process.callback(constants.CALLBACK_UPDATE_FRAME_STATUS,
                               self.process.name, self.output_filename,
                               self.steps_count)
-        del energies
         return result
+
+    def get_focus_map_from_disk(self, energy_files, n_images):
+        if self.map_type == constants.DM_MAP_AVERAGE:
+            sum_energies = np.zeros(self.shape, dtype=self.float_type)
+            for i, energy_file in enumerate(energy_files):
+                self.print_message(f": accumulate weight, {self.image_str(i)}")
+                energy_map = np.load(energy_file)
+                sum_energies += energy_map
+                self.check_running()
+            sum_energies = np.where(sum_energies == 0, np.finfo(self.float_type).eps, sum_energies)
+            weights = np.empty((n_images, *self.shape), dtype=self.float_type)
+            for i, energy_file in enumerate(energy_files):
+                self.print_message(f": compute weight, {self.image_str(i)}")
+                energy_map = np.load(energy_file)
+                weights[i] = energy_map / sum_energies
+                self.check_running()
+        else:  # DM_MAP_MAX
+            max_energy = np.zeros(self.shape, dtype=self.float_type)
+            for i, energy_file in enumerate(energy_files):
+                self.print_message(f": accumulate weight, {self.image_str(i)}")
+                energy_map = np.load(energy_file)
+                max_energy = np.maximum(max_energy, energy_map)
+                self.check_running()
+            temperature_safe = max(self.temperature, np.finfo(self.float_type).eps)
+            sum_relative = np.zeros(self.shape, dtype=self.float_type)
+            relative_maps = []
+            for i, energy_file in enumerate(energy_files):
+                self.print_message(f": apply temperature, {self.image_str(i)}")
+                energy_map = np.load(energy_file)
+                relative = np.exp((energy_map - max_energy) / temperature_safe)
+                relative_maps.append(relative)
+                sum_relative += relative
+                self.check_running()
+            sum_relative = np.where(sum_relative == 0, np.finfo(self.float_type).eps, sum_relative)
+            weights = np.empty((n_images, *self.shape), dtype=self.float_type)
+            for i, relative in enumerate(relative_maps):
+                self.print_message(f": compute weight, {self.image_str(i)}")
+                weights[i] = relative / sum_relative
+                self.check_running()
+        for energy_file in energy_files:
+            try:
+                os.remove(energy_file)
+            except OSError:
+                pass
+        try:
+            os.rmdir(temp_dir)
+        except OSError:
+            pass
+        return weights
 
     def weighted_pyramid_blend(self, weights, n_images):
         n_steps = 2 if self.energy_smooth_size <= 0 else 3

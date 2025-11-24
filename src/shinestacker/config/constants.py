@@ -157,6 +157,7 @@ class _Constants:
                        DM_ENERGY_MOD_LAPLACIAN, DM_ENERGY_SOBEL]
 
     PY_VALID_MODES = ['auto', 'memory', 'tiled']
+    DM_VALID_MODES = ['auto', 'memory', 'i/o']
     PY_MEMORY_OVERHEAD = 2.5
 
     NOISE_METHOD_RGB = 'rgb'

@@ -249,8 +249,9 @@ class FocusStackBaseConfigurator(DefaultActionConfigurator):
     ENERGY_OPTIONS = ['Tenengrad', 'Variance', 'Laplacian', 'Mod. Laplacian', 'Sobel']
     MAP_TYPE_OPTIONS = ['Average', 'Maximum']
     FLOAT_OPTIONS = ['float 32 bits', 'float 64 bits']
-    MODE_OPTIONS = ['Auto', 'All in memory', 'Tiled I/O buffered']
+    PY_MODE_OPTIONS = ['Auto', 'All in memory', 'Tiled I/O buffered']
     BLEND_METHODS_OPTIONS = ['Pyramid', 'Bilateral']
+    DM_MODE_OPTIONS = ['Auto', 'All in memory', 'I/O buffered']
 
     def __init__(self, expert, current_wd):
         super().__init__(expert, current_wd)
@@ -333,13 +334,13 @@ class FocusStackBaseConfigurator(DefaultActionConfigurator):
             options=self.FLOAT_OPTIONS, values=constants.VALID_FLOATS,
             default=dict(zip(constants.VALID_FLOATS,
                              self.FLOAT_OPTIONS))[AppConfig.get('pyramid_params')['float_type']])
-        mode = self.add_field_to_layout(
+        py_mode = self.add_field_to_layout(
             q_pyramid.layout(), 'pyramid_mode', FIELD_COMBO, 'Mode',
             expert=True,
-            required=False, options=self.MODE_OPTIONS, values=constants.PY_VALID_MODES,
+            required=False, options=self.PY_MODE_OPTIONS, values=constants.PY_VALID_MODES,
             default=dict(zip(constants.PY_VALID_MODES,
-                             self.MODE_OPTIONS))[AppConfig.get('pyramid_params')['mode']])
-        memory_limit = self.add_field_to_layout(
+                             self.PY_MODE_OPTIONS))[AppConfig.get('pyramid_params')['mode']])
+        py_memory_limit = self.add_field_to_layout(
             q_pyramid.layout(), 'pyramid_memory_limit', FIELD_FLOAT,
             'Memory limit (approx., GBytes)',
             expert=True,
@@ -361,16 +362,16 @@ class FocusStackBaseConfigurator(DefaultActionConfigurator):
             required=False, default=AppConfig.get('pyramid_params')['n_tiled_layers'],
             min_val=0, max_val=6)
 
-        def change_mode():
-            text = mode.currentText()
-            enabled = text == self.MODE_OPTIONS[2]
+        def change_py_mode():
+            text = py_mode.currentText()
+            enabled = text == self.PY_MODE_OPTIONS[2]
             tile_size.setEnabled(enabled)
             n_tiled_layers.setEnabled(enabled)
-            memory_limit.setEnabled(text == self.MODE_OPTIONS[0])
-            max_threads.setEnabled(text != self.MODE_OPTIONS[1])
+            py_memory_limit.setEnabled(text == self.PY_MODE_OPTIONS[0])
+            max_threads.setEnabled(text != self.PY_MODE_OPTIONS[1])
 
-        mode.currentIndexChanged.connect(change_mode)
-        change_mode()
+        py_mode.currentIndexChanged.connect(change_py_mode)
+        change_py_mode()
 
         self.depthmap_energy = self.add_field_to_layout(
             q_depthmap.layout(), 'depthmap_energy', FIELD_COMBO, 'Energy', required=False,
@@ -458,6 +459,26 @@ class FocusStackBaseConfigurator(DefaultActionConfigurator):
             options=self.FLOAT_OPTIONS, values=constants.VALID_FLOATS,
             default=dict(zip(constants.VALID_FLOATS,
                              self.FLOAT_OPTIONS))[AppConfig.get('depth_map_params')['float_type']])
+        dm_mode = self.add_field_to_layout(
+            q_depthmap.layout(), 'depthmap_mode', FIELD_COMBO, 'Mode',
+            expert=True,
+            required=False, options=self.DM_MODE_OPTIONS, values=constants.DM_VALID_MODES,
+            default=dict(zip(constants.DM_VALID_MODES,
+                             self.DM_MODE_OPTIONS))[AppConfig.get('depth_map_params')['mode']])
+        dm_memory_limit = self.add_field_to_layout(
+            q_depthmap.layout(), 'depthmap_memory_limit', FIELD_FLOAT,
+            'Memory limit (approx., GBytes)',
+            expert=True,
+            required=False, default=AppConfig.get('depth_map_params')['memory_limit'],
+            min_val=1.0, max_val=64.0)
+
+        def change_dm_mode():
+            text = dm_mode.currentText()
+            dm_memory_limit.setEnabled(text == self.PY_MODE_OPTIONS[0])
+
+        dm_mode.currentIndexChanged.connect(change_dm_mode)
+        change_dm_mode()
+
         layout.addRow(stacked)
         combo.currentIndexChanged.connect(change)
 

@@ -83,6 +83,8 @@ DEFAULTS = {
         'plot_stack': True
     },
     'depth_map_params': {
+        'mode': 'auto',
+        'memory_limit': 8,  # GB
         'float_type': 'float-32',
         'map_type': 'average',
         'energy': 'tenengrad',
