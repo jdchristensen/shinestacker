@@ -411,7 +411,7 @@ class FocusStackBaseConfigurator(DefaultActionConfigurator):
             'Pyramid levels',
             expert=True,
             required=False, default=AppConfig.get('depth_map_params')['pyramid_levels'],
-            min_val=1, max_val=8)
+            min_val=1, max_val=10)
         self.depthmap_energy_smooth_size = self.add_field_to_layout(
             q_depthmap.layout(), 'depthmap_energy_smooth_size', FIELD_INT,
             'Energy smooth size (px)',
