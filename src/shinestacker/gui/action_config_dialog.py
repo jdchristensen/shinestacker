@@ -469,7 +469,7 @@ class FocusStackBaseConfigurator(DefaultActionConfigurator):
             q_depthmap.layout(), 'depthmap_memory_limit', FIELD_FLOAT,
             'Memory limit (approx., GBytes)',
             expert=True,
-            required=False, default=AppConfig.get('depth_map_params')['memory_limit'],
+            required=False, default=AppConfig.get('focus_stack_params')['memory_limit'],
             min_val=1.0, max_val=64.0)
 
         def change_dm_mode():
