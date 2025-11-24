@@ -150,7 +150,7 @@ class DepthMapStack(BaseStackAlgo):
         self.process.callback(constants.CALLBACK_UPDATE_FRAME_STATUS,
                               self.process.name, self.output_filename,
                               self.steps_count)
-        self.print_message(": blending images")
+        self.print_message(": create focus map")
         weights = self.get_focus_map(energies)
         result = self.weighted_pyramid_blend(weights, n_images)
         self.steps_count += 1
