@@ -13,6 +13,7 @@ from .base_stack_algo import BaseStackAlgo
 class DepthMapStack(BaseStackAlgo):
     def __init__(self, **kwargs):
         default_params = DEFAULTS['depth_map_params']
+        focus_stack_params = DEFAULTS['focus_stack_params']
         self.steps_per_frame = 3
         self.energy_smooth_size = kwargs.get(
             'energy_smooth_size', default_params['energy_smooth_size'])
@@ -36,7 +37,7 @@ class DepthMapStack(BaseStackAlgo):
             'energy_sigma_space', default_params['energy_sigma_space'])
         self.temperature = kwargs.get('temperature', default_params['temperature'])
         self.mode = kwargs.get('mode', default_params['mode'])
-        self.memory_limit = kwargs.get('memory_limit', default_params['memory_limit'])
+        self.memory_limit = kwargs.get('memory_limit', focus_stack_params['memory_limit'])
         self.steps_count = 0
         self.cv_float = cv2.CV_64F if self.float_type == np.float64 else cv2.CV_32F
 
@@ -124,6 +125,10 @@ class DepthMapStack(BaseStackAlgo):
                 f": using disk-based processing (estimated {energy_memory_gb:.1f} GB)")
             temp_dir = tempfile.mkdtemp()
             energy_files = []
+            if self.map_type == constants.DM_MAP_AVERAGE:
+                sum_energies = np.zeros(self.shape, dtype=self.float_type)
+            else:  # DM_MAP_MAX
+                max_energy = np.zeros(self.shape, dtype=self.float_type)
         else:
             self.print_message(
                 f": using in-memory processing (estimated {energy_memory_gb:.1f} GB)")
@@ -149,6 +154,10 @@ class DepthMapStack(BaseStackAlgo):
                 temp_file = os.path.join(temp_dir, f"energy_{i:06d}.npy")
                 np.save(temp_file, energy_map)
                 energy_files.append(temp_file)
+                if self.map_type == constants.DM_MAP_AVERAGE:
+                    sum_energies += energy_map  # Accumulate sum
+                else:  # DM_MAP_MAX
+                    max_energy = np.maximum(max_energy, energy_map)
             else:
                 energies[i] = energy_map
         self.steps_count += 1
@@ -157,7 +166,10 @@ class DepthMapStack(BaseStackAlgo):
                               self.steps_count)
         self.print_message(": create focus map")
         if use_disk:
-            weights = self.get_focus_map_from_disk(energy_files, n_images)
+            if self.map_type == constants.DM_MAP_AVERAGE:
+                weights = self.get_focus_map_from_disk_average(energy_files, sum_energies, n_images)
+            else:  # DM_MAP_MAX
+                weights = self.get_focus_map_from_disk_max(energy_files, max_energy, n_images)
         else:
             weights = self.get_focus_map(energies)
             del energies
@@ -174,54 +186,49 @@ class DepthMapStack(BaseStackAlgo):
                               self.steps_count)
         return result
 
-    def get_focus_map_from_disk(self, energy_files, n_images):
-        if self.map_type == constants.DM_MAP_AVERAGE:
-            sum_energies = np.zeros(self.shape, dtype=self.float_type)
-            for i, energy_file in enumerate(energy_files):
-                self.print_message(f": accumulate weight, {self.image_str(i)}")
-                energy_map = np.load(energy_file)
-                sum_energies += energy_map
-                self.check_running()
-            sum_energies = np.where(sum_energies == 0, np.finfo(self.float_type).eps, sum_energies)
-            weights = np.empty((n_images, *self.shape), dtype=self.float_type)
-            for i, energy_file in enumerate(energy_files):
-                self.print_message(f": compute weight, {self.image_str(i)}")
-                energy_map = np.load(energy_file)
-                weights[i] = energy_map / sum_energies
-                self.check_running()
-        else:  # DM_MAP_MAX
-            max_energy = np.zeros(self.shape, dtype=self.float_type)
-            for i, energy_file in enumerate(energy_files):
-                self.print_message(f": accumulate weight, {self.image_str(i)}")
-                energy_map = np.load(energy_file)
-                max_energy = np.maximum(max_energy, energy_map)
-                self.check_running()
-            temperature_safe = max(self.temperature, np.finfo(self.float_type).eps)
-            sum_relative = np.zeros(self.shape, dtype=self.float_type)
-            relative_maps = []
-            for i, energy_file in enumerate(energy_files):
-                self.print_message(f": apply temperature, {self.image_str(i)}")
-                energy_map = np.load(energy_file)
-                relative = np.exp((energy_map - max_energy) / temperature_safe)
-                relative_maps.append(relative)
-                sum_relative += relative
-                self.check_running()
-            sum_relative = np.where(sum_relative == 0, np.finfo(self.float_type).eps, sum_relative)
-            weights = np.empty((n_images, *self.shape), dtype=self.float_type)
-            for i, relative in enumerate(relative_maps):
-                self.print_message(f": compute weight, {self.image_str(i)}")
-                weights[i] = relative / sum_relative
-                self.check_running()
+    def get_focus_map_from_disk_average(self, energy_files, sum_energies, n_images):
+        sum_energies = np.where(sum_energies == 0, np.finfo(self.float_type).eps, sum_energies)
+        weights = np.empty((n_images, *self.shape), dtype=self.float_type)
+        for i, energy_file in enumerate(energy_files):
+            self.print_message(f": compute weight, {self.image_str(i)}")
+            energy_map = np.load(energy_file)
+            weights[i] = energy_map / sum_energies
+            self.check_running()
+        self.cleanup_temp_files(energy_files)
+        return weights
+
+    def get_focus_map_from_disk_max(self, energy_files, max_energy, n_images):
+        temperature_safe = max(self.temperature, np.finfo(self.float_type).eps)
+        sum_relative = np.zeros(self.shape, dtype=self.float_type)
+        relative_maps = []
+        for i, energy_file in enumerate(energy_files):
+            self.print_message(f": apply temperature, {self.image_str(i)}")
+            energy_map = np.load(energy_file)
+            relative = np.exp((energy_map - max_energy) / temperature_safe)
+            relative_maps.append(relative)
+            sum_relative += relative
+            self.check_running()
+        sum_relative = np.where(sum_relative == 0, np.finfo(self.float_type).eps, sum_relative)
+        weights = np.empty((n_images, *self.shape), dtype=self.float_type)
+        for i, relative in enumerate(relative_maps):
+            self.print_message(f": compute weight, {self.image_str(i)}")
+            weights[i] = relative / sum_relative
+            self.check_running()
+        self.cleanup_temp_files(energy_files)
+        return weights
+
+    def cleanup_temp_files(self, energy_files):
+        temp_dir = os.path.dirname(energy_files[0]) if energy_files else None
         for energy_file in energy_files:
             try:
                 os.remove(energy_file)
             except OSError:
                 pass
-        try:
-            os.rmdir(temp_dir)
-        except OSError:
-            pass
-        return weights
+        if temp_dir and os.path.exists(temp_dir):
+            try:
+                os.rmdir(temp_dir)
+            except OSError:
+                pass
 
     def weighted_pyramid_blend(self, weights, n_images):
         n_steps = 2 if self.energy_smooth_size <= 0 else 3

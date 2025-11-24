@@ -1,10 +1,14 @@
+import time
+import tempfile
 import pytest
 import numpy as np
 import cv2
 import os
 from unittest.mock import MagicMock
+from shinestacker.config.constants import constants
 from shinestacker.config.defaults import DEFAULTS
 from shinestacker.core.exceptions import InvalidOptionError
+from shinestacker.algorithms.utils import read_and_validate_img, img_bw
 from shinestacker.algorithms.depth_map import DepthMapStack
 
 n_images = 6
@@ -122,7 +126,6 @@ def test_performance_with_all_images(example_images):
     dms = DepthMapStack()
     dms.process = MagicMock()
     dms.process.callback.return_value = True
-    import time
     start = time.time()
     dms.init(example_images)
     result = dms.focus_stack()
@@ -204,3 +207,163 @@ def test_focus_map_max_with_temperature(example_images):
     avg_entropy_high = np.mean(weight_entropy(focus_map_high_temp))
     avg_entropy_low = np.mean(weight_entropy(focus_map_low_temp))
     assert avg_entropy_low < avg_entropy_high
+
+
+def test_focus_stack_disk_mode_average(example_images):
+    dms = DepthMapStack(mode='i/o', map_type='average')
+    dms.process = MagicMock()
+    dms.process.callback.return_value = True
+    dms.print_message = MagicMock()
+    dms.after_step = MagicMock()
+    dms.check_running = MagicMock()
+    dms.init(example_images[:3])
+    result = dms.focus_stack()
+    assert len(result.shape) == 3
+    assert result.dtype == np.uint8
+
+
+def test_focus_stack_disk_mode_max(example_images):
+    dms = DepthMapStack(mode='i/o', map_type='max')
+    dms.process = MagicMock()
+    dms.process.callback.return_value = True
+    dms.print_message = MagicMock()
+    dms.after_step = MagicMock()
+    dms.check_running = MagicMock()
+    dms.init(example_images[:3])
+    result = dms.focus_stack()
+    assert len(result.shape) == 3
+    assert result.dtype == np.uint8
+
+
+def test_focus_stack_auto_mode_disk(example_images):
+    dms = DepthMapStack(mode='auto', memory_limit=0.001)
+    dms.process = MagicMock()
+    dms.process.callback.return_value = True
+    dms.print_message = MagicMock()
+    dms.after_step = MagicMock()
+    dms.check_running = MagicMock()
+    dms.init(example_images[:3])
+    result = dms.focus_stack()
+    assert len(result.shape) == 3
+    assert result.dtype == np.uint8
+
+
+def test_focus_stack_disk_mode_weight_power(example_images):
+    dms = DepthMapStack(mode='i/o', weight_power=2.0)
+    dms.process = MagicMock()
+    dms.process.callback.return_value = True
+    dms.print_message = MagicMock()
+    dms.after_step = MagicMock()
+    dms.check_running = MagicMock()
+    dms.init(example_images[:3])
+    result = dms.focus_stack()
+    assert len(result.shape) == 3
+    assert result.dtype == np.uint8
+
+
+def test_focus_stack_memory_vs_disk_identical(example_images):
+    dms_memory = DepthMapStack(mode='memory')
+    dms_disk = DepthMapStack(mode='i/o')
+    for dms in [dms_memory, dms_disk]:
+        dms.process = MagicMock()
+        dms.process.callback.return_value = True
+        dms.print_message = MagicMock()
+        dms.after_step = MagicMock()
+        dms.check_running = MagicMock()
+        dms.init(example_images[:3])
+    result_memory = dms_memory.focus_stack()
+    result_disk = dms_disk.focus_stack()
+    assert np.array_equal(result_memory, result_disk)
+
+
+def test_focus_stack_disk_mode_energy_smoothing(example_images):
+    dms = DepthMapStack(mode='i/o', energy_smooth_size=5)
+    dms.process = MagicMock()
+    dms.process.callback.return_value = True
+    dms.print_message = MagicMock()
+    dms.after_step = MagicMock()
+    dms.check_running = MagicMock()
+    dms.init(example_images[:3])
+    result = dms.focus_stack()
+    assert len(result.shape) == 3
+    assert result.dtype == np.uint8
+
+
+def test_focus_stack_disk_mode_pyramid_smoothing(example_images):
+    dms = DepthMapStack(mode='i/o', pyramid_smooth_size=5)
+    dms.process = MagicMock()
+    dms.process.callback.return_value = True
+    dms.print_message = MagicMock()
+    dms.after_step = MagicMock()
+    dms.check_running = MagicMock()
+    dms.init(example_images[:3])
+    result = dms.focus_stack()
+    assert len(result.shape) == 3
+    assert result.dtype == np.uint8
+
+
+def test_focus_stack_disk_mode_all_energy_types(example_images):
+    energy_types = [
+        constants.DM_ENERGY_SOBEL,
+        constants.DM_ENERGY_LAPLACIAN,
+        constants.DM_ENERGY_MOD_LAPLACIAN,
+        constants.DM_ENERGY_VARIANCE,
+        constants.DM_ENERGY_TENENGRAD
+    ]
+    for energy_type in energy_types:
+        dms = DepthMapStack(mode='i/o', energy=energy_type)
+        dms.process = MagicMock()
+        dms.process.callback.return_value = True
+        dms.print_message = MagicMock()
+        dms.after_step = MagicMock()
+        dms.check_running = MagicMock()
+        dms.init(example_images[:2])
+        result = dms.focus_stack()
+        assert len(result.shape) == 3
+        assert result.dtype == np.uint8
+
+
+def test_get_focus_map_from_disk_average(example_images):
+    dms = DepthMapStack(mode='i/o', map_type='average')
+    dms.process = MagicMock()
+    dms.print_message = MagicMock()
+    dms.check_running = MagicMock()
+    dms.init(example_images[:2])
+    temp_dir = tempfile.mkdtemp()
+    energy_files = []
+    sum_energies = np.zeros(dms.shape, dtype=dms.float_type)
+    for i, img_path in enumerate(example_images[:2]):
+        img = read_and_validate_img(img_path, dms.shape, dms.dtype)
+        gray = img_bw(img).astype(dms.float_type)
+        energy_map = dms.compute_energy_map(gray)
+        temp_file = os.path.join(temp_dir, f"energy_{i:06d}.npy")
+        np.save(temp_file, energy_map)
+        energy_files.append(temp_file)
+        sum_energies += energy_map
+    weights = dms.get_focus_map_from_disk_average(energy_files, sum_energies, 2)
+    assert weights.shape == (2, *dms.shape)
+    assert weights.dtype == dms.float_type
+    assert np.all(np.isfinite(weights))
+
+
+def test_get_focus_map_from_disk_max(example_images):
+    dms = DepthMapStack(mode='i/o', map_type='max')
+    dms.process = MagicMock()
+    dms.print_message = MagicMock()
+    dms.check_running = MagicMock()
+    dms.init(example_images[:2])
+    temp_dir = tempfile.mkdtemp()
+    energy_files = []
+    max_energy = np.zeros(dms.shape, dtype=dms.float_type)
+    for i, img_path in enumerate(example_images[:2]):
+        img = read_and_validate_img(img_path, dms.shape, dms.dtype)
+        gray = img_bw(img).astype(dms.float_type)
+        energy_map = dms.compute_energy_map(gray)
+        temp_file = os.path.join(temp_dir, f"energy_{i:06d}.npy")
+        np.save(temp_file, energy_map)
+        energy_files.append(temp_file)
+        max_energy = np.maximum(max_energy, energy_map)
+    weights = dms.get_focus_map_from_disk_max(energy_files, max_energy, 2)
+    assert weights.shape == (2, *dms.shape)
+    assert weights.dtype == dms.float_type
+    assert np.all(np.isfinite(weights))

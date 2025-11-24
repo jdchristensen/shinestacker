@@ -2,7 +2,7 @@
 
 This page reports the main releases only and the main changes therein.
 
-## [v1.11.x] - 2025-11-23
+## [v1.11.x] - 2025-11-24
 **fixes to new DepthMap algorithm**
 
 ### Fixed
@@ -10,6 +10,7 @@ This page reports the main releases only and the main changes therein.
 
 ### Changed
 - fixed and improved DepthMap layer blending using pyramid method
+- depth map uses I/O buffer to prevent large memory requirements
 
 --------------------------
 
