@@ -78,6 +78,7 @@ class DepthMapStack(BaseStackAlgo):
             sum_energies = np.where(sum_energies == 0, np.finfo(energies.dtype).eps, sum_energies)
             weights = np.divide(energies, sum_energies)
         elif self.map_type == constants.DM_MAP_MAX:
+            # already computed!
             max_energy = np.max(energies, axis=0)
             temperature_safe = max(self.temperature, np.finfo(energies.dtype).eps)
             relative = np.exp((energies - max_energy) / temperature_safe)
@@ -107,8 +108,9 @@ class DepthMapStack(BaseStackAlgo):
             return self.get_tenengrad(gray_img)
         else:
             raise InvalidOptionError(
-                'energy', self.energy, 
-                details=f"Valid values are {constants.DM_ENERGY_SOBEL} and {constants.DM_ENERGY_LAPLACIAN}."
+                'energy', self.energy,
+                details=f"Valid values are {constants.DM_ENERGY_SOBEL} and "
+                        f"{constants.DM_ENERGY_LAPLACIAN}."
             )
 
     def focus_stack(self):
@@ -117,15 +119,6 @@ class DepthMapStack(BaseStackAlgo):
                               self.process.output_path, self.output_filename,
                               self.steps_per_frame)
         energies = np.empty((n_images, *self.shape), dtype=self.float_type)
-        energy_str = {
-            constants.DM_ENERGY_VARIANCE: "variance",
-            constants.DM_ENERGY_TENENGRAD: "tenengrad",
-            constants.DM_ENERGY_LAPLACIAN: "laplacian",
-            constants.DM_ENERGY_MOD_LAPLACIAN: "modified laplacian",
-            constants.DM_ENERGY_SOBEL: "sobel"
-        }.get(self.energy, '')
-        self.print_message(f": computing energy maps, method: {energy_str}")
-        global_max = 0.0
         for i, img_path in enumerate(self.filenames):
             self.print_message(f": computing energy for {self.image_str(i)}")
             self.process.callback(constants.CALLBACK_UPDATE_FRAME_STATUS,
@@ -133,9 +126,6 @@ class DepthMapStack(BaseStackAlgo):
             img = read_and_validate_img(img_path, self.shape, self.dtype)
             gray = img_bw(img).astype(self.float_type)
             energy_map = self.compute_energy_map(gray)
-            current_max = np.max(energy_map)
-            if current_max > global_max:
-                global_max = current_max
             energies[i] = energy_map
             self.after_step(i)
             self.check_running()
@@ -144,11 +134,10 @@ class DepthMapStack(BaseStackAlgo):
                               self.process.name, self.output_filename,
                               self.steps_count)
         self.print_message(": normalize energy maps")
-        if global_max > 0:
-            energies = energies / global_max
         if self.energy_smooth_size > 0:
             self.print_message(": smoothing energy maps")
             for i in range(energies.shape[0]):
+                self.print_message(f": smoothing energy for {self.image_str(i)}")
                 energies[i] = self.smooth_energy(energies[i])
                 self.after_step(i + n_images)
                 self.check_running()
@@ -163,6 +152,7 @@ class DepthMapStack(BaseStackAlgo):
         self.process.callback(constants.CALLBACK_UPDATE_FRAME_STATUS,
                               self.process.name, self.output_filename,
                               self.steps_count)
+        del energies
         return result
 
     def weighted_pyramid_blend(self, weights, n_images):
