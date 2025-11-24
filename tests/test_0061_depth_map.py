@@ -26,53 +26,32 @@ def test_initialization():
     assert dms.energy == DEFAULTS['depth_map_params']['energy']
 
 
-def test_sobel_map_with_examples(example_images):
+def test_sobel_map_single_image(example_images):
     dms = DepthMapStack()
-    dms.init(example_images[:3])
-    dms.print_message = MagicMock()
-    dms.after_step = MagicMock()
-    dms.check_running = MagicMock()
-    gray_images = []
-    for img_path in example_images[:3]:
-        img = cv2.imread(img_path, cv2.IMREAD_GRAYSCALE)
-        gray_images.append(img.astype(np.float32))
-    gray_images = np.array(gray_images)
-    sobel_map = dms.get_sobel_map(gray_images)
-    assert sobel_map.shape == gray_images.shape
+    img = cv2.imread(example_images[0], cv2.IMREAD_GRAYSCALE)
+    gray_img = img.astype(np.float32)
+    sobel_map = dms.get_sobel_map(gray_img)
+    assert sobel_map.shape == gray_img.shape
     assert sobel_map.dtype == np.float32
-    assert np.all(sobel_map >= 0)  # Energy should always be positive
+    assert np.all(sobel_map >= 0)
 
 
-def test_laplacian_map_with_examples(example_images):
+def test_laplacian_map_single_image(example_images):
     dms = DepthMapStack()
-    dms.init(example_images[:3])
-    dms.print_message = MagicMock()
-    dms.after_step = MagicMock()
-    dms.check_running = MagicMock()
-    gray_images = []
-    for img_path in example_images[:3]:
-        img = cv2.imread(img_path, cv2.IMREAD_GRAYSCALE)
-        gray_images.append(img.astype(np.float32))
-    gray_images = np.array(gray_images)
-    laplacian_map = dms.get_laplacian_map(gray_images)
-    assert laplacian_map.shape == gray_images.shape
+    img = cv2.imread(example_images[0], cv2.IMREAD_GRAYSCALE)
+    gray_img = img.astype(np.float32)
+    laplacian_map = dms.get_laplacian_map(gray_img)
+    assert laplacian_map.shape == gray_img.shape
     assert laplacian_map.dtype == np.float32
     assert np.all(laplacian_map >= 0)
 
 
-def test_modified_laplacian_with_examples(example_images):
+def test_modified_laplacian_single_image(example_images):
     dms = DepthMapStack()
-    dms.init(example_images[:3])
-    dms.print_message = MagicMock()
-    dms.after_step = MagicMock()
-    dms.check_running = MagicMock()
-    gray_images = []
-    for img_path in example_images[:3]:
-        img = cv2.imread(img_path, cv2.IMREAD_GRAYSCALE)
-        gray_images.append(img.astype(np.float32))
-    gray_images = np.array(gray_images)
-    modified_laplacian_map = dms.get_modified_laplacian(gray_images)
-    assert modified_laplacian_map.shape == gray_images.shape
+    img = cv2.imread(example_images[0], cv2.IMREAD_GRAYSCALE)
+    gray_img = img.astype(np.float32)
+    modified_laplacian_map = dms.get_modified_laplacian(gray_img)
+    assert modified_laplacian_map.shape == gray_img.shape
     assert modified_laplacian_map.dtype == np.float32
     assert np.all(modified_laplacian_map >= 0)
 
@@ -80,7 +59,7 @@ def test_modified_laplacian_with_examples(example_images):
 def test_focus_stack_with_examples(example_images):
     dms = DepthMapStack()
     dms.process = MagicMock()
-    dms.process.callback.return_value = True  # Keep running
+    dms.process.callback.return_value = True
     dms.print_message = MagicMock()
     dms.init(example_images[:3])
     result = dms.focus_stack()
@@ -90,19 +69,12 @@ def test_focus_stack_with_examples(example_images):
     assert not np.array_equal(result, first_input)
 
 
-def test_variance_map_with_examples(example_images):
+def test_variance_map_single_image(example_images):
     dms = DepthMapStack()
-    dms.init(example_images[:3])
-    dms.print_message = MagicMock()
-    dms.after_step = MagicMock()
-    dms.check_running = MagicMock()
-    gray_images = []
-    for img_path in example_images[:3]:
-        img = cv2.imread(img_path, cv2.IMREAD_GRAYSCALE)
-        gray_images.append(img.astype(np.float32))
-    gray_images = np.array(gray_images)
-    variance_map = dms.get_variance_map(gray_images)
-    assert variance_map.shape == gray_images.shape
+    img = cv2.imread(example_images[0], cv2.IMREAD_GRAYSCALE)
+    gray_img = img.astype(np.float32)
+    variance_map = dms.get_variance_map(gray_img)
+    assert variance_map.shape == gray_img.shape
     assert variance_map.dtype == np.float32
     assert np.all(variance_map >= 0)
 
@@ -113,14 +85,14 @@ def test_focus_map_with_examples(example_images):
     dms.print_message = MagicMock()
     dms.after_step = MagicMock()
     dms.check_running = MagicMock()
-    gray_images = []
-    for img_path in example_images[:3]:
+    dms.process = MagicMock()
+    energies = np.empty((3, *dms.shape), dtype=np.float32)
+    for i, img_path in enumerate(example_images[:3]):
         img = cv2.imread(img_path, cv2.IMREAD_GRAYSCALE)
-        gray_images.append(img.astype(np.float32))
-    gray_images = np.array(gray_images)
-    sobel_map = dms.get_sobel_map(gray_images)
-    focus_map = dms.get_focus_map(sobel_map)
-    assert focus_map.shape == sobel_map.shape
+        gray_img = img.astype(np.float32)
+        energies[i] = dms.get_sobel_map(gray_img)
+    focus_map = dms.get_focus_map(energies)
+    assert focus_map.shape == energies.shape
     assert focus_map.dtype == np.float32
     assert np.all(np.isfinite(focus_map))
     valid_mask = np.isfinite(focus_map)
@@ -135,15 +107,14 @@ def test_weighted_pyramid_blend(example_images):
     dms.after_step = MagicMock()
     dms.check_running = MagicMock()
     dms.process = MagicMock()
-    gray_images = []
-    for img_path in example_images[:3]:
+    energies = np.empty((3, *dms.shape), dtype=np.float32)
+    for i, img_path in enumerate(example_images[:3]):
         img = cv2.imread(img_path, cv2.IMREAD_GRAYSCALE)
-        gray_images.append(img.astype(np.float32))
-    gray_images = np.array(gray_images)
-    sobel_map = dms.get_sobel_map(gray_images)
-    weights = dms.get_focus_map(sobel_map)
+        gray_img = img.astype(np.float32)
+        energies[i] = dms.get_sobel_map(gray_img)
+    weights = dms.get_focus_map(energies)
     result = dms._weighted_pyramid_blend(weights, 3)
-    assert result.shape == (gray_images.shape[1], gray_images.shape[2], 3)
+    assert result.shape == (dms.shape[0], dms.shape[1], 3)
     assert result.dtype == np.uint8
 
 
@@ -181,14 +152,13 @@ def test_focus_map_max_type(example_images):
     dms.print_message = MagicMock()
     dms.after_step = MagicMock()
     dms.check_running = MagicMock()
-    gray_images = []
-    for img_path in example_images[:3]:
+    energies = np.empty((3, *dms.shape), dtype=np.float32)
+    for i, img_path in enumerate(example_images[:3]):
         img = cv2.imread(img_path, cv2.IMREAD_GRAYSCALE)
-        gray_images.append(img.astype(np.float32))
-    gray_images = np.array(gray_images)
-    sobel_map = dms.get_sobel_map(gray_images)
-    focus_map = dms.get_focus_map(sobel_map)
-    assert focus_map.shape == sobel_map.shape
+        gray_img = img.astype(np.float32)
+        energies[i] = dms.get_sobel_map(gray_img)
+    focus_map = dms.get_focus_map(energies)
+    assert focus_map.shape == energies.shape
     assert focus_map.dtype == np.float32
     assert np.all(np.isfinite(focus_map))
     sum_weights = np.sum(focus_map, axis=0)
@@ -199,12 +169,11 @@ def test_focus_map_invalid_type(example_images):
     dms = DepthMapStack()
     dms.init(example_images[:3])
     dms.map_type = 'invalid_type'
-    gray_images = []
-    for img_path in example_images[:3]:
+    energies = np.empty((3, *dms.shape), dtype=np.float32)
+    for i, img_path in enumerate(example_images[:3]):
         img = cv2.imread(img_path, cv2.IMREAD_GRAYSCALE)
-        gray_images.append(img.astype(np.float32))
-    gray_images = np.array(gray_images)
-    energies = np.random.random(gray_images.shape).astype(np.float32)
+        gray_img = img.astype(np.float32)
+        energies[i] = dms.get_sobel_map(gray_img)
     with pytest.raises(InvalidOptionError):
         dms.get_focus_map(energies)
 
@@ -220,14 +189,13 @@ def test_focus_map_max_with_temperature(example_images):
     dms_low_temp.print_message = MagicMock()
     dms_low_temp.after_step = MagicMock()
     dms_low_temp.check_running = MagicMock()
-    gray_images = []
-    for img_path in example_images[:3]:
+    energies = np.empty((3, *dms_high_temp.shape), dtype=np.float32)
+    for i, img_path in enumerate(example_images[:3]):
         img = cv2.imread(img_path, cv2.IMREAD_GRAYSCALE)
-        gray_images.append(img.astype(np.float32))
-    gray_images = np.array(gray_images)
-    sobel_map = dms_high_temp.get_sobel_map(gray_images)
-    focus_map_high_temp = dms_high_temp.get_focus_map(sobel_map)
-    focus_map_low_temp = dms_low_temp.get_focus_map(sobel_map)
+        gray_img = img.astype(np.float32)
+        energies[i] = dms_high_temp.get_sobel_map(gray_img)
+    focus_map_high_temp = dms_high_temp.get_focus_map(energies)
+    focus_map_low_temp = dms_low_temp.get_focus_map(energies)
 
     def weight_entropy(weights):
         epsilon = 1e-10
