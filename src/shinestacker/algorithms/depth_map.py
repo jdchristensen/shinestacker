@@ -94,6 +94,23 @@ class DepthMapStack(BaseStackAlgo):
             weights = np.divide(weights, sum_weights)
         return weights
 
+    def compute_energy_map(self, gray_img):
+        if self.energy == constants.DM_ENERGY_SOBEL:
+            return self.get_sobel_map(gray_img)
+        elif self.energy == constants.DM_ENERGY_LAPLACIAN:
+            return self.get_laplacian_map(gray_img)
+        elif self.energy == constants.DM_ENERGY_MOD_LAPLACIAN:
+            return self.get_modified_laplacian(gray_img)
+        elif self.energy == constants.DM_ENERGY_VARIANCE:
+            return self.get_variance_map(gray_img)
+        elif self.energy == constants.DM_ENERGY_TENENGRAD:
+            return self.get_tenengrad(gray_img)
+        else:
+            raise InvalidOptionError(
+                'energy', self.energy, 
+                details=f"Valid values are {constants.DM_ENERGY_SOBEL} and {constants.DM_ENERGY_LAPLACIAN}."
+            )
+
     def focus_stack(self):
         n_images = len(self.filenames)
         self.process.callback(constants.CALLBACKS_SET_TOTAL_ACTIONS,
@@ -108,27 +125,17 @@ class DepthMapStack(BaseStackAlgo):
             constants.DM_ENERGY_SOBEL: "sobel"
         }.get(self.energy, '')
         self.print_message(f": computing energy maps, method: {energy_str}")
+        global_max = 0.0
         for i, img_path in enumerate(self.filenames):
             self.print_message(f": computing energy for {self.image_str(i)}")
             self.process.callback(constants.CALLBACK_UPDATE_FRAME_STATUS,
                                   self.process.input_path, img_path, 200)
             img = read_and_validate_img(img_path, self.shape, self.dtype)
             gray = img_bw(img).astype(self.float_type)
-            if self.energy == constants.DM_ENERGY_SOBEL:
-                energy_map = self.get_sobel_map(gray)
-            elif self.energy == constants.DM_ENERGY_LAPLACIAN:
-                energy_map = self.get_laplacian_map(gray)
-            elif self.energy == constants.DM_ENERGY_MOD_LAPLACIAN:
-                energy_map = self.get_modified_laplacian(gray)
-            elif self.energy == constants.DM_ENERGY_VARIANCE:
-                energy_map = self.get_variance_map(gray)
-            elif self.energy == constants.DM_ENERGY_TENENGRAD:
-                energy_map = self.get_tenengrad(gray)
-            else:
-                raise InvalidOptionError(
-                    'energy', self.energy, details=f" valid values are "
-                    f"{constants.DM_ENERGY_SOBEL} and {constants.DM_ENERGY_LAPLACIAN}."
-                )
+            energy_map = self.compute_energy_map(gray)
+            current_max = np.max(energy_map)
+            if current_max > global_max:
+                global_max = current_max
             energies[i] = energy_map
             self.after_step(i)
             self.check_running()
@@ -137,7 +144,6 @@ class DepthMapStack(BaseStackAlgo):
                               self.process.name, self.output_filename,
                               self.steps_count)
         self.print_message(": normalize energy maps")
-        global_max = np.max(energies)
         if global_max > 0:
             energies = energies / global_max
         if self.energy_smooth_size > 0:
