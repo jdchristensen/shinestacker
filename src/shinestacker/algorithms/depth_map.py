@@ -65,7 +65,7 @@ class DepthMapStack(BaseStackAlgo):
         tenengrad = gx * gx + gy * gy
         return np.where(tenengrad > threshold, tenengrad, 0)
 
-    def _smooth_single_energy(self, energy_map):
+    def smooth_energy(self, energy_map):
         energy_32f = energy_map.astype(np.float32)
         smoothed_32f = cv2.bilateralFilter(
             energy_32f, self.energy_smooth_size,
@@ -143,7 +143,7 @@ class DepthMapStack(BaseStackAlgo):
         if self.energy_smooth_size > 0:
             self.print_message(": smoothing energy maps")
             for i in range(energies.shape[0]):
-                energies[i] = self._smooth_single_energy(energies[i])
+                energies[i] = self.smooth_energy(energies[i])
                 self.after_step(i + n_images)
                 self.check_running()
         self.steps_count += 1
@@ -152,14 +152,14 @@ class DepthMapStack(BaseStackAlgo):
                               self.steps_count)
         self.print_message(": blending images")
         weights = self.get_focus_map(energies)
-        result = self._weighted_pyramid_blend(weights, n_images)
+        result = self.weighted_pyramid_blend(weights, n_images)
         self.steps_count += 1
         self.process.callback(constants.CALLBACK_UPDATE_FRAME_STATUS,
                               self.process.name, self.output_filename,
                               self.steps_count)
         return result
 
-    def _weighted_pyramid_blend(self, weights, n_images):
+    def weighted_pyramid_blend(self, weights, n_images):
         n_steps = 2 if self.energy_smooth_size <= 0 else 3
         if self.pyramid_smooth_size > 0:
             for i in range(weights.shape[0]):
@@ -192,7 +192,7 @@ class DepthMapStack(BaseStackAlgo):
                 if img_float.max() > 1.0:
                     img_float = img_float / self.num_pixel_values
             weight = weights[i]
-            gp_img = [img_float]  # Use normalized float image
+            gp_img = [img_float]
             gp_weight = [weight]
             for level in range(self.pyramid_levels - 1):
                 gp_img.append(cv2.pyrDown(gp_img[-1]))
