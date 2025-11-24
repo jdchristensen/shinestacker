@@ -68,18 +68,16 @@ Arguments for the constructor are the same ad for ```PyramidStack``` plus:
 ```DepthMapStack```, Depth map focus stacking algorithm
 
 Arguments for the constructor are:
-   * ```map_type``` (optional)_ possible values are  ```DM_MAP_MAX``` (default) and ```DM_MAP_AVERAGE```. ```DM_MAP_MAX``` select for wach pixel the layer which has the best focus. ```DM_MAP_AVERAGE``` performs for each pixel an average of all layers weighted by the quality of focus.
-   * ```energy``` (optional, default: ```DM_ENERGY_TENENGRAD```): possible values are ```DM_ENERGY_LAPLACIAN```, ```DM_ENERGY_MOD_LAPLACIAN```, ```DM_ENERGY_SOBEL```, ```DM_ENERGY_VARIANCE``` and ```DM_ENERGY_TENENGRAD```. For more information, see [Sobel Derivatives](https://docs.opencv.org/4.x/d2/d2c/tutorial_sobel_derivatives.html), 
-   * ```blend_mode``` (optional, default: ```DM_MODE_BEST```): possible values are ```DM_MODE_BEST```, picks the best frame, and```DM_MODE_WEIGHT```, weight frames by energy.
-   * ```weight_power``` (optiona, default: 1): apply a power law correction to energy weights.
-   * ```kernel_size``` (optional, default: 5): size in pixels of Laplacian kernel.
-   * ```blur_size``` (optional, default: 5): size in pixels of the pre-Laplacian Gaussian blur.
-   * ```energy_smooth_size``` (optional, default: 5): size of energy smoothing. Note: larger values require slower computation.
-   * ```energy_sigma_color``` (optiona, default: 0.2): controls how much energy values can differ while still smoothing together for the energy map.
-   * ```energy_sigma_space``` (optional, default: 6): controls the spatial distance for smoothing neighborhood. Note: larger values require slower computation.
-      * ```weights_smooth_size``` (optional, default: 12): size of weights smoothing. Note: larger values require slower computation.
-   * ```weights_sigma_color``` (optiona, default: 0.2): controls how much weights values can differ while still smoothing together.
-   * ```weights_sigma_space``` (optional, default: 6): controls the spatial distance for smoothing neighborhood for the weights map. Note: larger values require slower computation.
-   * ```temperature``` (optional, default: 0.1): controls fision transition: lower value means sharper transitions.
+   * ```map_type``` (optional)_ possible values are   ```DM_MAP_AVERAGE```  (default) and ```DM_MAP_MAX```. ```DM_MAP_MAX``` select for wach pixel the layer which has the best focus. ```DM_MAP_AVERAGE``` performs for each pixel an average of all layers weighted by the quality of focus.
+   * ```energy``` (optional): possible values are ```DM_ENERGY_TENENGRAD``` (default), ```DM_ENERGY_LAPLACIAN```, ```DM_ENERGY_MOD_LAPLACIAN```, ```DM_ENERGY_SOBEL``` and ```DM_ENERGY_VARIANCE```. For more information, see [Sobel Derivatives](https://docs.opencv.org/4.x/d2/d2c/tutorial_sobel_derivatives.html), 
+   * ```kernel_size``` (optional, default: 3): size in pixels of Laplacian kernel. Used only with the ```DM_ENERGY_MOD_LAPLACIAN``` ```energy``` option.
+   * ```blur_size``` (optional, default: 3): size in pixels of the pre-Laplacian Gaussian blur. Used only with the ```DM_ENERGY_MOD_LAPLACIAN``` ```energy``` option.
+   * ```weight_power``` (optiona, default: 2.0): apply a power law correction to energy weights.
+   * ```pyramid_smooth_size``` (optional, default: 7): smoothing size for the pyramid algorithm used for frames blending.
+   * ```pyramid_levels``` (optional, default: 5): number of levels for the pyramid algorithm used for frames blending.
+   * ```energy_smooth_size``` (optional, default: 7): size of energy smoothing. Note: larger values require slower computation.
+   * ```energy_sigma_color``` (optiona, default: 0.8): controls how much energy values can differ while still smoothing together for the energy map.
+   * ```energy_sigma_space``` (optional, default: 8): controls the spatial distance for smoothing neighborhood. Larger values require slower computation.
+   * ```temperature``` (optional, default: 0.15): controls fusion transition. Lower value means sharper transitions.
 
 For more details about bilateral filters applied to energy and weights map, see [Bilateral Filtering](https://www.geeksforgeeks.org/python/python-bilateral-filtering/).
