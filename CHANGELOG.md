@@ -10,7 +10,7 @@ This page reports the main releases only and the main changes therein.
 
 ### Changed
 - fixed and improved DepthMap layer blending using pyramid method
-- depth map uses I/O buffer to prevent large memory requirements
+- depth map algirithm optimized and uses I/O buffering to prevent large memory requirements
 
 --------------------------
 

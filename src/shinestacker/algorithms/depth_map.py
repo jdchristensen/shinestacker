@@ -15,7 +15,7 @@ class DepthMapStack(BaseStackAlgo):
     def __init__(self, **kwargs):
         default_params = DEFAULTS['depth_map_params']
         focus_stack_params = DEFAULTS['focus_stack_params']
-        self.steps_per_frame = 3
+        self.steps_per_frame = 2
         self.energy_smooth_size = kwargs.get(
             'energy_smooth_size', default_params['energy_smooth_size'])
         if self.energy_smooth_size > 0:
@@ -185,9 +185,12 @@ class DepthMapStack(BaseStackAlgo):
         if self.weight_power != 1.0:
             self.print_message(": apply weights power correction")
             weights = np.power(weights, self.weight_power)
+            self.check_running()
+            self.print_message(": normalize weights")
             sum_weights = np.sum(weights, axis=0)
             sum_weights = np.where(sum_weights == 0, np.finfo(weights.dtype).eps, sum_weights)
             weights = np.divide(weights, sum_weights)
+            self.check_running()
         result = self.weighted_pyramid_blend(weights, n_images)
         self.steps_count += 1
         self.process.callback(constants.CALLBACK_UPDATE_FRAME_STATUS,
@@ -202,6 +205,7 @@ class DepthMapStack(BaseStackAlgo):
             self.print_message(f": compute weight, {self.image_str(i)}")
             energy_map = np.load(energy_file)
             weights[i] = energy_map / sum_energies
+            self.after_step(i + n_images * 2)
             self.check_running()
         self.cleanup_temp_files(energy_files)
         return weights
@@ -222,6 +226,7 @@ class DepthMapStack(BaseStackAlgo):
         for i, relative in enumerate(relative_maps):
             self.print_message(f": compute weight, {self.image_str(i)}")
             weights[i] = relative / sum_relative
+            self.after_step(i + n_images * 2)
             self.check_running()
         self.cleanup_temp_files(energy_files)
         return weights
@@ -236,28 +241,21 @@ class DepthMapStack(BaseStackAlgo):
             self.temp_dir_manager.cleanup()
 
     def weighted_pyramid_blend(self, weights, n_images):
+        self.print_message(": begin pyramid blending")
         n_steps = 2 if self.energy_smooth_size <= 0 else 3
-        if self.pyramid_smooth_size > 0:
-            for i in range(weights.shape[0]):
-                self.print_message(f": smooth weights for pyramid, {self.image_str(i)}")
-                ksize = self.pyramid_smooth_size
-                if ksize % 2 == 0:
-                    ksize += 1
-                weights[i] = cv2.GaussianBlur(weights[i], (ksize, ksize), 0)
-                self.after_step(i + n_images * n_steps)
-                self.check_running()
-            n_steps += 1
-            self.steps_count += 1
-            self.process.callback(constants.CALLBACK_UPDATE_FRAME_STATUS,
-                                  self.process.name, self.output_filename,
-                                  self.steps_count)
         sum_weights = np.sum(weights, axis=0)
-        weights = np.divide(weights, sum_weights, where=sum_weights != 0)
+        sum_weights = np.where(sum_weights == 0, np.finfo(weights.dtype).eps, sum_weights)
         blended_pyramid = None
         weight_pyramid_accum = None
         for i, img_path in enumerate(self.filenames):
             self.print_message(f": pyramid blending {self.image_str(i)}")
             filename = os.path.basename(img_path)
+            weight = weights[i] / sum_weights
+            if self.pyramid_smooth_size > 0:
+                ksize = self.pyramid_smooth_size
+                if ksize % 2 == 0:
+                    ksize += 1
+                weight = cv2.GaussianBlur(weight, (ksize, ksize), 0)
             img = read_img(img_path)
             if img.dtype == np.uint8:
                 img_float = img.astype(self.float_type) / 255.0
@@ -267,7 +265,6 @@ class DepthMapStack(BaseStackAlgo):
                 img_float = img.astype(self.float_type)
                 if img_float.max() > 1.0:
                     img_float = img_float / self.num_pixel_values
-            weight = weights[i]
             gp_img = [img_float]
             gp_weight = [weight]
             for level in range(self.pyramid_levels - 1):
