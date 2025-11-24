@@ -65,22 +65,12 @@ class DepthMapStack(BaseStackAlgo):
         tenengrad = gx * gx + gy * gy
         return np.where(tenengrad > threshold, tenengrad, 0)
 
-    def smooth_energy(self, energy_map):
-        n_images = len(self.filenames)
-        if self.energy_smooth_size <= 0:
-            return energy_map
-        smoothed = np.zeros(energy_map.shape, dtype=np.float32)
-        n = energy_map.shape[0]
-        for i in range(n):
-            self.print_message(f": smooth energy map,  {i + 1}/{n}")
-            energy_32f = energy_map[i].astype(np.float32)
-            smoothed_32f = cv2.bilateralFilter(
-                energy_32f, self.energy_smooth_size,
-                self.energy_sigma_color, self.energy_sigma_space)
-            smoothed[i] = smoothed_32f.astype(energy_map.dtype)
-            self.after_step(i + n_images)
-            self.check_running()
-        return smoothed
+    def _smooth_single_energy(self, energy_map):
+        energy_32f = energy_map.astype(np.float32)
+        smoothed_32f = cv2.bilateralFilter(
+            energy_32f, self.energy_smooth_size,
+            self.energy_sigma_color, self.energy_sigma_space)
+        return smoothed_32f.astype(energy_map.dtype)
 
     def get_focus_map(self, energies):
         if self.map_type == constants.DM_MAP_AVERAGE:
@@ -151,11 +141,15 @@ class DepthMapStack(BaseStackAlgo):
         if global_max > 0:
             energies = energies / global_max
         if self.energy_smooth_size > 0:
-            energies = self.smooth_energy(energies)
-            self.steps_count += 1
-            self.process.callback(constants.CALLBACK_UPDATE_FRAME_STATUS,
-                                  self.process.name, self.output_filename,
-                                  self.steps_count)
+            self.print_message(": smoothing energy maps")
+            for i in range(energies.shape[0]):
+                energies[i] = self._smooth_single_energy(energies[i])
+                self.after_step(i + n_images)
+                self.check_running()
+        self.steps_count += 1
+        self.process.callback(constants.CALLBACK_UPDATE_FRAME_STATUS,
+                              self.process.name, self.output_filename,
+                              self.steps_count)
         self.print_message(": blending images")
         weights = self.get_focus_map(energies)
         result = self._weighted_pyramid_blend(weights, n_images)
