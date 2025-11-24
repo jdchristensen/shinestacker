@@ -35,22 +35,21 @@ class DepthMapStack(BaseStackAlgo):
             'energy_sigma_space', default_params['energy_sigma_space'])
         self.temperature = kwargs.get('temperature', default_params['temperature'])
         self.steps_count = 0
+        self.cv_float = cv2.CV_64F if self.float_type == np.float64 else cv2.CV_32F
 
     def get_sobel_map(self, gray_img):
-        sobel_energy = np.abs(cv2.Sobel(gray_img, cv2.CV_64F, 1, 0, ksize=3)) + \
-            np.abs(cv2.Sobel(gray_img, cv2.CV_64F, 0, 1, ksize=3))
+        sobel_energy = np.abs(cv2.Sobel(gray_img, self.cv_float, 1, 0, ksize=3)) + \
+            np.abs(cv2.Sobel(gray_img, self.cv_float, 0, 1, ksize=3))
         return sobel_energy.astype(self.float_type)
 
     def get_laplacian_map(self, gray_img):
         blurred = cv2.GaussianBlur(gray_img, (self.blur_size, self.blur_size), 0)
-        lap_result = cv2.Laplacian(
-            blurred, cv2.CV_32F if self.float_type == np.float32 else cv2.CV_64F,
-            ksize=self.kernel_size)
+        lap_result = cv2.Laplacian(blurred, self.cv_float,ksize=self.kernel_size)
         return np.abs(lap_result)
 
     def get_modified_laplacian(self, gray_img):
-        dx = cv2.Sobel(gray_img, cv2.CV_64F, 1, 0, ksize=3)
-        dy = cv2.Sobel(gray_img, cv2.CV_64F, 0, 1, ksize=3)
+        dx = cv2.Sobel(gray_img, self.cv_float, 1, 0, ksize=3)
+        dy = cv2.Sobel(gray_img, self.cv_float, 0, 1, ksize=3)
         mod_laplacian = np.abs(dx) + np.abs(dy)
         return mod_laplacian.astype(self.float_type)
 
@@ -60,8 +59,8 @@ class DepthMapStack(BaseStackAlgo):
         return mean_sq - mean**2
 
     def get_tenengrad(self, gray_img, threshold=5):
-        gx = cv2.Sobel(gray_img, cv2.CV_64F, 1, 0, ksize=3)
-        gy = cv2.Sobel(gray_img, cv2.CV_64F, 0, 1, ksize=3)
+        gx = cv2.Sobel(gray_img, self.cv_float, 1, 0, ksize=3)
+        gy = cv2.Sobel(gray_img, self.cv_float, 0, 1, ksize=3)
         tenengrad = gx * gx + gy * gy
         return np.where(tenengrad > threshold, tenengrad, 0)
 
@@ -78,7 +77,6 @@ class DepthMapStack(BaseStackAlgo):
             sum_energies = np.where(sum_energies == 0, np.finfo(energies.dtype).eps, sum_energies)
             weights = np.divide(energies, sum_energies)
         elif self.map_type == constants.DM_MAP_MAX:
-            # already computed!
             max_energy = np.max(energies, axis=0)
             temperature_safe = max(self.temperature, np.finfo(energies.dtype).eps)
             relative = np.exp((energies - max_energy) / temperature_safe)
