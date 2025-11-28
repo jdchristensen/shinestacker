@@ -1,27 +1,27 @@
 
 # pylint: disable=C0114, C0115, C0116, E1101, R0914, R1702, R1732, R0913
-# pylint: disable=R0917, R0912, R0915, R0902, W0718, E1121
+# pylint: disable=R0917, R0912, R0915, R0902, W0718, E1121, E0611
 import os
 import gc
 import time
 import glob
 import shutil
-import tempfile
 import logging
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import numpy as np
 from .. config.constants import constants
 from .. config.defaults import DEFAULTS
-from .. config.app_config import AppConfig
 from .. core.colors import color_str
 from .. core.exceptions import RunStopException
 from .utils import read_img, read_and_validate_img
+from .base_stack_algo import TempDirBase
 from .pyramid import PyramidBase
 
 
-class PyramidTilesStack(PyramidBase):
+class PyramidTilesStack(PyramidBase, TempDirBase):
     def __init__(self, **kwargs):
-        super().__init__("fast_pyramid", **kwargs)
+        PyramidBase.__init__(self, "fast_pyramid", **kwargs)
+        TempDirBase.__init__(self)
         pyramid_default_params = DEFAULTS['pyramid_params']
         focus_stack_defaults_params = DEFAULTS['focus_stack_params']
         self.offset = np.arange(-self.pad_amount, self.pad_amount + 1)
@@ -30,15 +30,6 @@ class PyramidTilesStack(PyramidBase):
         self.max_pixel_value = None
         self.tile_size = kwargs.get('tile_size', pyramid_default_params['tile_size'])
         self.n_tiled_layers = kwargs.get('n_tiled_layers', pyramid_default_params['n_tiled_layers'])
-        self.temp_folder = AppConfig.get('temp_folder_path')
-        base_temp_dir = AppConfig.get('temp_folder_path')
-        if base_temp_dir and base_temp_dir != '':
-            self.temp_dir_path = base_temp_dir
-            self.temp_dir_manager = None
-            os.makedirs(self.temp_dir_path, exist_ok=True)
-        else:
-            self.temp_dir_manager = tempfile.TemporaryDirectory()
-            self.temp_dir_path = self.temp_dir_manager.name
         self.n_tiles = 0
         self.level_shapes = {}
         available_cores = os.cpu_count() or 1

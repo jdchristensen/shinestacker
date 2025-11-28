@@ -2,8 +2,11 @@
 
 This page reports the main releases only and the main changes therein.
 
-## [v1.11.x] - 2025-11-24
+## [v1.11.x] - 2025-11-28
 **fixes to new DepthMap algorithm**
+
+### Added
+- optional sharpen filter after focus stacking stage
 
 ### Fixed
 - falut-tolerant argument list in modules prevent potential issues when reading project files from older releases

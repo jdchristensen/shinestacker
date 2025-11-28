@@ -291,6 +291,22 @@ class FocusStackBaseConfigurator(DefaultActionConfigurator):
         self.add_field_to_layout(
             layout, 'scratch_output_dir', FIELD_BOOL, 'Scratch output folder before run',
             required=False, default=True)
+        self.add_field_to_layout(
+            layout, 'denoise_amount', FIELD_FLOAT, 'Denoise, amount', required=False,
+            expert=False, default=AppConfig.get('focus_stack_params')['denoise_amount'],
+            min_val=0.0, max_val=10.0, step=0.05)
+        self.add_field_to_layout(
+            layout, 'sharpen_amount_percent', FIELD_FLOAT, 'Sharpen, amount (%)', required=False,
+            expert=False, default=AppConfig.get('focus_stack_params')['sharpen_amount_percent'],
+            min_val=0.0, max_val=300.0, step=1)
+        self.add_field_to_layout(
+            layout, 'sharpen_radius', FIELD_FLOAT, 'Sharpen, radius (px)', required=False,
+            expert=False, default=AppConfig.get('focus_stack_params')['sharpen_radius'],
+            min_val=0.0, max_val=4.0, step=0.05)
+        self.add_field_to_layout(
+            layout, 'sharpen_threshold', FIELD_FLOAT, 'Sharpen, threshold', required=False,
+            expert=False, default=AppConfig.get('focus_stack_params')['sharpen_threshold'],
+            min_val=0.0, max_val=64.0, step=1)
 
     def create_algorithm_tab(self, layout):
         self.add_bold_label_to_layout(layout, "Stacking algorithm:")

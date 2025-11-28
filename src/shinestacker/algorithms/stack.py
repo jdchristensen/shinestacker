@@ -12,17 +12,27 @@ from .utils import write_img, extension_supported
 from .stack_framework import ImageSequenceManager, SequentialTask
 from .exif import copy_exif_from_file_to_file
 from .denoise import denoise
+from .sharpen import unsharp_mask
 
 
 class FocusStackBase(TaskBase, ImageSequenceManager):
     def __init__(self, name, stack_algo, enabled=True, **kwargs):
         ImageSequenceManager.__init__(self, name, **kwargs)
         TaskBase.__init__(self, name, enabled)
+        default_params = DEFAULTS['focus_stack_params']
         self.stack_algo = stack_algo
         self.exif_path = kwargs.pop('exif_path', '')
-        self.prefix = kwargs.pop('prefix', DEFAULTS['focus_stack_params']['prefix'])
-        self.denoise_amount = kwargs.pop('denoise_amount', 0)
-        self.plot_stack = kwargs.pop('plot_stack', DEFAULTS['focus_stack_params']['plot_stack'])
+        self.prefix = kwargs.pop('prefix', default_params['prefix'])
+        self.denoise_amount = kwargs.pop(
+            'denoise_amount', default_params['denoise_amount'])
+        self.sharpen_amount = kwargs.pop(
+            'sharpen_amount_percent', default_params['sharpen_amount_percent']) / 100.0
+        self.sharpen_radius = kwargs.pop(
+            'sharpen_radius', default_params['sharpen_radius'])
+        self.sharpen_threshold = kwargs.pop(
+            'sharpen_threshold', default_params['sharpen_threshold'])
+        self.plot_stack = kwargs.pop(
+            'plot_stack', DEFAULTS['focus_stack_params']['plot_stack'])
         self.stack_algo.set_process(self)
         self.frame_count = -1
 
@@ -36,9 +46,14 @@ class FocusStackBase(TaskBase, ImageSequenceManager):
         self.callback(constants.CALLBACK_UPDATE_FRAME_STATUS, self.name, filename, 0)
         self.stack_algo.set_output_filename(filename)
         stacked_img = self.stack_algo.focus_stack()
-        if self.denoise_amount > 0:
-            self.sub_message_r(': denoise image')
-            stacked_img = denoise(stacked_img, self.denoise_amount, self.denoise_amount)
+        if self.denoise_amount > 0.0:
+            self.sub_message_r(color_str(': denoise image', constants.LOG_COLOR_LEVEL_3))
+            stacked_img = denoise(
+                stacked_img, self.denoise_amount)
+        if self.sharpen_amount > 0.0:
+            self.sub_message_r(color_str(': sharpen image', constants.LOG_COLOR_LEVEL_3))
+            stacked_img = unsharp_mask(
+                stacked_img, self.sharpen_amount, self.sharpen_radius, self.sharpen_threshold)
         write_img(out_filename, stacked_img)
         if self.exif_path != '':
             if stacked_img.dtype == np.uint16 and \

@@ -10,7 +10,10 @@ Arguments for the constructor of ```FocusStack``` are:
 * ```output_path``` (optional): the subdirectory within ```working_path``` where aligned images are written. If not specified,  it is equal to  ```name```.
 * ```working_path```: the directory that contains input and output image subdirectories. If not specified, it is the same as ```job.working_path```.
 * ```exif_path``` (optional): if specified, EXIF data are copied to the output file from file in the specified directory. If not specified, it is the source directory used as input for the first action. If set equal to ```''``` no EXIF data is saved.
-* ```denoise_amount``` (optoinal): if specified, a denois algorithm is applied. A value of 0.75 to 1.00 does not reduce details in an appreciable way, and is suitable for modest noise reduction. denoise may be useful for 8-bit images, or for images taken at large ISO. 16-bits images at low ISO usually don't require denoise. See [Image Denoising](https://docs.opencv.org/3.4/d5/d69/tutorial_py_non_local_means.html) for more details.
+* ```denoise_amount``` (optional; default: 0): if > 0, a denois algorithm is applied. A value of 0.75 to 1.00 does not reduce details in an appreciable way, and is suitable for modest noise reduction. denoise may be useful for 8-bit images, or for images taken at large ISO. 16-bits images at low ISO usually don't require denoise. See [Image Denoising](https://docs.opencv.org/3.4/d5/d69/tutorial_py_non_local_means.html) for more details.
+* ```sharpen_amount_percent``` (optional; default: 0): if > 0, a unsharp mask algorithm is applied. Values from 50% up apply a visible amount of sharpening.
+* ```sharpen_radius``` (optional; default: 1): specifies the radius, in pixels, of the unsharp mask algorithm.
+* ```sharpen_threshold``` (optional; default: 0): specifies the threshold value of the unsharp mask algorithm.
 * ```prefix``` (optional): if specified, the specified string is pre-pended to the file name. May be useful if more algorithms are ran, and different file names are used for the output of different algorithms.
 * ```enabled``` (optional, default: ``True```): allows to switch on and off this module.
 * ```scratch_output_dir``` (optional, default: ```True```): scratch output directory before processing. This avoids that existing files pollute the output.

@@ -1,17 +1,15 @@
 # pylint: disable=C0114, C0115, C0116, E1101, R0902, R0913, R0917, R0914, R0912, R0915
 import os
-import tempfile
 import numpy as np
 import cv2
 from .. config.constants import constants
 from .. config.defaults import DEFAULTS
-from .. config.app_config import AppConfig
 from .. core.exceptions import InvalidOptionError
 from .utils import read_img, read_and_validate_img, img_bw
-from .base_stack_algo import BaseStackAlgo
+from .base_stack_algo import BaseStackAlgo, TempDirBase
 
 
-class DepthMapStack(BaseStackAlgo):
+class DepthMapStack(BaseStackAlgo, TempDirBase):
     def __init__(self, **kwargs):
         default_params = DEFAULTS['depth_map_params']
         focus_stack_params = DEFAULTS['focus_stack_params']
@@ -25,7 +23,8 @@ class DepthMapStack(BaseStackAlgo):
         if self.pyramid_smooth_size > 0:
             self.steps_per_frame += 1
         float_type = kwargs.get('float_type', default_params['float_type'])
-        super().__init__("depth map", self.steps_per_frame, float_type)
+        BaseStackAlgo.__init__(self, "depth map", self.steps_per_frame, float_type)
+        TempDirBase.__init__(self)
         self.map_type = kwargs.get('map_type', default_params['map_type'])
         self.pyramid_levels = kwargs.get('pyramid_levels', default_params['pyramid_levels'])
         self.energy = kwargs.get('energy', default_params['energy'])
@@ -41,14 +40,6 @@ class DepthMapStack(BaseStackAlgo):
         self.memory_limit = kwargs.get('memory_limit', focus_stack_params['memory_limit'])
         self.steps_count = 0
         self.cv_float = cv2.CV_64F if self.float_type == np.float64 else cv2.CV_32F
-        base_temp_dir = AppConfig.get('temp_folder_path')
-        if base_temp_dir and base_temp_dir != '':
-            self.temp_dir_path = base_temp_dir
-            self.temp_dir_manager = None
-            os.makedirs(self.temp_dir_path, exist_ok=True)
-        else:
-            self.temp_dir_manager = tempfile.TemporaryDirectory()
-            self.temp_dir_path = self.temp_dir_manager.name
 
     def get_sobel_map(self, gray_img):
         sobel_energy = np.abs(cv2.Sobel(gray_img, self.cv_float, 1, 0, ksize=3)) + \

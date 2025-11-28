@@ -297,12 +297,14 @@ def test_fuse_level_tiles_parallel_exception():
 
 
 def test_temp_dir_manager_scenario():
-    with patch('shinestacker.algorithms.pyramid_tiles.AppConfig.get', return_value=''):
+    with patch('shinestacker.algorithms.base_stack_algo.AppConfig.get', return_value=''):
         pts = PyramidTilesStack()
         assert pts.temp_dir_manager is not None
         assert os.path.exists(pts.temp_dir_path)
-        pts.print_message = MagicMock()
-        pts.cleanup_temp_files()
+        pts.print_message = MagicMock()        
+        temp_dir_path = pts.temp_dir_path        
+        pts.cleanup_temp_files()        
+        assert not os.path.exists(temp_dir_path)
 
 
 def test_fuse_pyramids_no_tiled_layers():

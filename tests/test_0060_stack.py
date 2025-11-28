@@ -18,6 +18,19 @@ def test_jpg():
         assert False
 
 
+def test_jpg_filter():
+    try:
+        job = StackJob("job", "examples", input_path="input/img-jpg")
+        job.add_action(FocusStack("stack-pyramid", PyramidStack(),
+                                  output_path="output/img-jpg-stack",
+                                  delete_output_at_end=True,
+                                  denoise_amount=0.1, sharpen_amount_percent=10,
+                                  prefix='pyr_'))
+        job.run()
+    except Exception:
+        assert False
+
+
 def test_tif():
     try:
         job = StackJob("job", "examples", input_path="input/img-tif")
@@ -104,6 +117,7 @@ def test_bunches():
 
 if __name__ == '__main__':
     test_jpg()
+    test_jpg_filter()
     test_tif()
     test_jpg_dm()
     test_jpg_pt_1()

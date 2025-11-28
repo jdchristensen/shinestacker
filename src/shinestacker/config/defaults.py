@@ -72,7 +72,12 @@ DEFAULTS = {
         'memory_limit': 8,  # GB
         'max_threads': int(min(os.cpu_count() or 4, 8)),
         'prefix': "stack_",
-        'plot_stack': True
+        'plot_stack': True,
+        'denoise_amount': 0.0,
+        'sharpen_amount_percent': 0.0,
+        'sharpen_radius': 1.0,
+        'sharpen_threshold': 0.0
+
     },
     'focus_stack_bunch_params': {
         'memory_limit': 8,  # GB

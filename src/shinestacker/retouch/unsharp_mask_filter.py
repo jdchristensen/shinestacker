@@ -24,7 +24,7 @@ class UnsharpMaskFilter(BaseFilter):
         dlg.setWindowTitle("Unsharp Mask")
         dlg.setMinimumWidth(600)
         params = {
-            "Radius": (self.min_radius, self.max_radius, self.initial_radius, "{:.2f}"),
+            "Radius": (self.min_radius, self.max_radius, self.initial_radius, "{:.2f} px"),
             "Amount": (self.min_amount, self.max_amount, self.initial_amount, "{:.1%}"),
             "Threshold": (self.min_threshold, self.max_threshold, self.initial_threshold, "{:.2f}")
         }

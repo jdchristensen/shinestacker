@@ -1,9 +1,11 @@
-# pylint: disable=C0114, C0115, C0116, E0602, R0903, R0902
+# pylint: disable=C0114, C0115, C0116, E0602, R0903, R0902, R1732
 import os
 import logging
+import tempfile
 import numpy as np
 from .. core.exceptions import InvalidOptionError, RunStopException
 from .. config.constants import constants
+from .. config.app_config import AppConfig
 from .. core.colors import color_str
 from .utils import read_img, get_img_metadata, get_first_image_file
 
@@ -78,3 +80,15 @@ class BaseStackAlgo:
         if self.do_step_callback:
             self.process.callback(constants.CALLBACK_AFTER_STEP,
                                   self.process.id, self.process.name, step)
+
+
+class TempDirBase:
+    def __init__(self):
+        base_temp_dir = AppConfig.get('temp_folder_path')
+        if base_temp_dir and base_temp_dir != '':
+            self.temp_dir_path = base_temp_dir
+            self.temp_dir_manager = None
+            os.makedirs(self.temp_dir_path, exist_ok=True)
+        else:
+            self.temp_dir_manager = tempfile.TemporaryDirectory()
+            self.temp_dir_path = self.temp_dir_manager.name
