@@ -2,7 +2,7 @@
 
 This page reports the main releases only and the main changes therein.
 
-## [v1.11.x] - 2025-11-28
+## [v1.11.1] - 2025-11-28
 **fixes to new DepthMap algorithm**
 
 ### Added
