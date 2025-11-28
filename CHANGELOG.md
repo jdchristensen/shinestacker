@@ -9,7 +9,7 @@ This page reports the main releases only and the main changes therein.
 - optional sharpen filter after focus stacking stage
 
 ### Fixed
-- falut-tolerant argument list in modules prevent potential issues when reading project files from older releases
+- fault-tolerant argument list in modules prevent potential issues when reading project files from older releases
 
 ### Changed
 - fixed and improved DepthMap layer blending using pyramid method
