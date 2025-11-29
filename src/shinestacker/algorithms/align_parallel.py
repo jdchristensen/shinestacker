@@ -129,7 +129,7 @@ class AlignFramesParallel(AlignFramesBase):
                 "requested plot matches is not supported with parallel processing",
                 color=constants.LOG_COLOR_WARNING, level=logging.WARNING)
         n_frames = self.process.num_input_filepaths()
-        if n_frames == 0:
+        if n_frames < 2:
             return
         self.print_message(f"preprocess {n_frames} images in parallel, cores: {self.max_threads}")
         self.process.callback(constants.CALLBACK_STEP_COUNTS,
