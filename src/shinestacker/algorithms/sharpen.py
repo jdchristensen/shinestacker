@@ -14,6 +14,6 @@ def unsharp_mask(image, radius=1.0, amount=1.0, threshold=0.0):
         image_float = image.astype(np.float32)
         blurred_float = blurred.astype(np.float32)
         diff = image_float - blurred_float
-        mask = np.abs(diff) > threshold        
+        mask = np.abs(diff) > threshold
         sharpened = np.where(mask, sharpened_base, image)
     return sharpened
