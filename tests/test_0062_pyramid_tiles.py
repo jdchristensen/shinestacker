@@ -95,7 +95,7 @@ def test_check_disk_space_insufficient():
         mock_disk.return_value = (100, 95, 4 * 1024**3)
         with pytest.raises(Exception) as exc_info:
             pts._check_disk_space()
-        assert "insufficient temporary disk space" in str(exc_info.value).lower()
+        assert "critically low disk space during operation" in str(exc_info.value).lower()
 
 
 def test_focus_stack_parallel_mock(example_images):
