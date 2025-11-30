@@ -2,10 +2,11 @@
 
 This page reports the main releases only and the main changes therein.
 
-## [v1.11.x] - 2025-11-29
+## [v1.11.x] - 2025-11-30
 **Unreleased changes**
 
 ### Fixed
+- fixed threshold parameter behavior un unsharp mask filter
 - prevent failure in case a single file is selected for parallel alignment
 
 --------------------------
