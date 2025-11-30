@@ -80,7 +80,7 @@ job.run()
 
 ## Requirements
 
-* Python: 3.12 (3.13 may not work due to garbage collection issues)
+* Python: 3.12 or 3.14
 * RAM: 16GB+ recommended for >15 images at 20Mpx resolution
 
 ## Dependencies
@@ -101,9 +101,9 @@ pip install ipywidgets
 
 ## Known Issues
 
-| Issue    |  Workaround    |
-|----------|----------------|
-| RAW format unsupported  | Convert to TIFF/JPEG first |
-| EXIF data not supported for 16-bit PNG files | convert to 16-bit TIFF first |
-| EXIF exposure data in TIFF files may not be visible in Adobe PhotoShop | Export as JPEG for full Photoshop EXIF compatibility |
-| GUI tests limited     | Report any bugs as GitHub issuse |
+* RAW format is not unsupported. Convert your images to TIFF or JPEG with your favourite software
+* EXIF data not supported for 16-bit PNG files
+* EXIF exposure data in TIFF files may not be visible in Adobe PhotoShop. Export as JPEG for full Photoshop EXIF compatibility, if needed
+* Windows with ARM64 architecture can't be supported due to limitation of the OpenCV python library
+* GUI tests are limited. Please, report any bugs as GitHub issuse
+

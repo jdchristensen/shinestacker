@@ -32,16 +32,16 @@ jobs:
         include:
           - os: ubuntu-latest
             label: linux
-            python-version: "3.12"
+            python-version: "3.14"
           - os: windows-latest
             label: windows  
-            python-version: "3.12"
+            python-version: "3.14"
           - os: ${{ needs.detect-macos-architectures.outputs.intel-runner }}
             label: macos-intel
-            python-version: "3.12"
+            python-version: "3.14"
           - os: ${{ needs.detect-macos-architectures.outputs.silicon-runner }}
             label: macos-apple-silicon
-            python-version: "3.12"
+            python-version: "3.14"
 
     steps:
       - name: Checkout repo
