@@ -3,7 +3,6 @@ import os
 import sys
 import gc
 import logging
-import traceback
 import threading
 import numpy as np
 import cv2
@@ -21,18 +20,20 @@ def check_windows_path(path):
         return
     try:
         path.encode('ascii')
-    except UnicodeEncodeError:
-        raise InvalidWinPath(path)
+    except UnicodeEncodeError as e:
+        raise InvalidWinPath(path) from e
     abs_path = os.path.abspath(path)
     if len(abs_path) > 260:
         try:
-            import winreg
+            # pylint: disable=C0415, E0401
+            import winreg  # Windows only
+            # pylint: enable=C0415, E0401
             with winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE,
                                 r"SYSTEM\CurrentControlSet\Control\FileSystem") as key:
                 if winreg.QueryValueEx(key, "LongPathsEnabled")[0] == 0:
                     raise PathTooLong(abs_path)
-        except Exception:
-            raise PathTooLong(abs_path)
+        except Exception as e:
+            raise PathTooLong(abs_path) from e
 
 
 EXTENSIONS_TIF = ['tif', 'tiff']

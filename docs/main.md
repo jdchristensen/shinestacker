@@ -28,7 +28,7 @@ job.run()
 ```
 
 ## Installation
-Clone the pagkage from GitHub:
+Clone the package from GitHub:
 
 ```bash
 git clone https://github.com/lucalista/shinestacker.git
@@ -80,7 +80,7 @@ job.run()
 
 ## Requirements
 
-* Python: 3.12 or 3.14
+* Python: 3.12
 * RAM: 16GB+ recommended for >15 images at 20Mpx resolution
 
 ## Dependencies
@@ -101,7 +101,7 @@ pip install ipywidgets
 
 ## Known Issues
 
-* RAW format is not unsupported. Convert your images to TIFF or JPEG with your favourite software
+* RAW format is not supported. Convert your images to TIFF or JPEG with your favourite software
 * EXIF data not supported for 16-bit PNG files
 * EXIF exposure data in TIFF files may not be visible in Adobe PhotoShop. Export as JPEG for full Photoshop EXIF compatibility, if needed
 * Windows with ARM64 architecture can't be supported due to limitation of the OpenCV python library
