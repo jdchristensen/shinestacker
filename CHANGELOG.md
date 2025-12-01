@@ -10,6 +10,7 @@ This page reports the main releases only and the main changes therein.
 - prevent failure in case a single file is selected for parallel alignment
 - reverts to sequential pyramid focus stacking if temporary disk space is insufficient
 - added protections against invalid file content
+- added protections against invalid paths on Windows
 
 ### Changed
 - optimized temporary disk cache for parallel pyramid focus stacking

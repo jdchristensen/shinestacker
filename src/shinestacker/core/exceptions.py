@@ -57,3 +57,7 @@ class PathTooLong(FocusStackError):
         super().__init__(f'Path exceeds Windows 260 characters limits: {path}. '
                          'You can enable long path following the instructions give in this page: '
                          'https://learn.microsoft.com/en-us/windows/win32/fileio/maximum-file-path-limitation')
+
+class InvalidWinPath(FocusStackError):
+    def __init__(self, path):
+        super().__init__(f'Only ASCII characters are supported on Windows, please rename the path: {path}')
