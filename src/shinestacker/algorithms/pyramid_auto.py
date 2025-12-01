@@ -1,8 +1,11 @@
 # pylint: disable=C0114, C0115, C0116, E1101, R0913, R0902, R0914, R0917
 import os
+import logging
 import numpy as np
 from .. config.constants import constants
 from .. config.defaults import DEFAULTS
+from .. core.exceptions import RunStopException
+from .. core.colors import color_str
 from .base_stack_algo import BaseStackAlgo
 from .pyramid import PyramidStack
 from .pyramid_tiles import PyramidTilesStack
@@ -68,10 +71,13 @@ class PyramidAutoStack(BaseStackAlgo):
                                f"tile size: {optimal_params['tile_size']}, "
                                f"n. tiled layers: {optimal_params['n_tiled_layers']}, "
                                f"{self.num_threads} cores.")
-        self._implementation.init(filenames)
-        self._implementation.set_do_step_callback(self.do_step_callback)
+        self.init_implementation(self._implementation)
+
+    def init_implementation(self, impl):
+        impl.init(self.filenames)
+        impl.set_do_step_callback(self.do_step_callback)
         if self.process is not None:
-            self._implementation.set_process(self.process)
+            impl.set_process(self.process)
         else:
             raise RuntimeError("self.process must be initialized.")
 
@@ -120,7 +126,21 @@ class PyramidAutoStack(BaseStackAlgo):
     def focus_stack(self):
         if self._implementation is None:
             raise RuntimeError("PyramidAutoStack not initialized")
-        return self._implementation.focus_stack()
+        try:
+            return self._implementation.focus_stack()
+        except RunStopException:
+            self.print_message(
+                color_str("reverting to sequential processing", constants.LOG_COLOR_WARNING),
+                level=logging.WARNING
+            )
+            self._implementation = PyramidStack(
+                min_size=self.min_size,
+                kernel_size=self.kernel_size,
+                gen_kernel=self.gen_kernel,
+                float_type=self.float_type_opt
+            )
+            self.init_implementation(self._implementation)
+            return self._implementation.focus_stack()
 
     def after_step(self, step):
         if self._implementation is not None:

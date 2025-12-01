@@ -4,6 +4,7 @@
 import os
 import gc
 import time
+import traceback
 import glob
 import shutil
 import logging
@@ -11,8 +12,8 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 import numpy as np
 from .. config.constants import constants
 from .. config.defaults import DEFAULTS
-from .. core.colors import color_str
 from .. core.exceptions import RunStopException
+from .. core.colors import color_str
 from .utils import read_img, read_and_validate_img
 from .base_stack_algo import TempDirBase
 from .pyramid import PyramidBase
@@ -54,18 +55,6 @@ class PyramidTilesStack(PyramidBase, TempDirBase):
         self.check_running(self.cleanup_temp_files)
         level_count = self.process_single_image(img, self.n_levels, idx)
         return idx, img_path, level_count
-
-    def _check_disk_space(self):
-        _total, _used, free = shutil.disk_usage(self.temp_dir_path)
-        free_gb = free / constants.ONE_GIGA  # Convert bytes to GB
-        if free_gb < self.min_free_space_gb:
-            self.print_message(
-                color_str(
-                    f": insufficient temporary disk space, "
-                    f"only {free_gb:.2f} GB free, required at least {self.min_free_space_gb} GB",
-                    constants.LOG_COLOR_ALERT),
-                level=logging.ERROR)
-            raise RunStopException("insufficient temporary disk space.")
 
     def process_single_image(self, img, levels, img_index):
         laplacian = self.single_image_laplacian(img, levels)
@@ -110,7 +99,8 @@ class PyramidTilesStack(PyramidBase, TempDirBase):
                         os.remove(file_path)
                     except Exception:
                         pass
-        except Exception:
+        except Exception as e:
+            traceback.print_tb(e.__traceback__)
             try:
                 if self.temp_dir_manager:
                     shutil.rmtree(self.temp_dir_manager.name, ignore_errors=True)
@@ -121,8 +111,8 @@ class PyramidTilesStack(PyramidBase, TempDirBase):
                             os.remove(file_path)
                         except Exception:
                             pass
-            except Exception:
-                pass
+            except Exception as ee:
+                traceback.print_tb(ee.__traceback__)
 
     def _fuse_level_tiles_serial(self, level, num_images, all_level_counts, h, w, count):
         fused_level = np.zeros((h, w, 3), dtype=self.float_type)
@@ -175,6 +165,7 @@ class PyramidTilesStack(PyramidBase, TempDirBase):
                         level=logging.ERROR)
                     raise
                 except Exception as e:
+                    traceback.print_tb(e.__traceback__)
                     self.print_message(f": error processing tile ({y}, {x}): {str(e)}")
                 self.after_step(count)
                 self.check_running(self.cleanup_temp_files)
@@ -183,20 +174,36 @@ class PyramidTilesStack(PyramidBase, TempDirBase):
 
     def _process_tile(self, level, num_images, all_level_counts, y, x, h, w):
         laplacians = []
+        tiles_loaded = []
         for img_index in range(num_images):
             if level < all_level_counts[img_index]:
                 try:
                     tile = self.load_level_tile(img_index, level, y, x)
                     laplacians.append(tile)
-                except FileNotFoundError:
+                except FileNotFoundError as e:
+                    traceback.print_tb(e.__traceback__)
                     continue
         if laplacians:
             stacked = np.stack(laplacians, axis=0)
-            return self.fuse_laplacian(stacked)
+            result = self.fuse_laplacian(stacked)
+            for img_index, tile_y, tile_x in tiles_loaded:
+                self._delete_single_tile(img_index, level, tile_y, tile_x)
+            return result
         y_end = min(y + self.tile_size, h)
         x_end = min(x + self.tile_size, w)
         gc.collect()
         return np.zeros((y_end - y, x_end - x, 3), dtype=self.float_type)
+
+    def _delete_single_tile(self, img_index, level, y, x):
+        tile_path = os.path.join(
+            self.temp_dir_path,
+            f'img_{img_index}_level_{level}_tile_{y}_{x}.npy'
+        )
+        if os.path.exists(tile_path):
+            try:
+                os.remove(tile_path)
+            except Exception as e:
+                traceback.print_tb(e.__traceback__)
 
     def fuse_pyramids(self, all_level_counts):
         num_images = self.num_images()
@@ -223,6 +230,7 @@ class PyramidTilesStack(PyramidBase, TempDirBase):
                 else:
                     fused_level, count = self._fuse_level_tiles_serial(
                         level, num_images, all_level_counts, h, w, count)
+                self._delete_level_tiles(level, num_images, all_level_counts, h, w)
             else:
                 laplacians = []
                 for img_index in range(num_images):
@@ -235,6 +243,7 @@ class PyramidTilesStack(PyramidBase, TempDirBase):
                 else:
                     stacked = np.stack(laplacians, axis=0)
                     fused_level = self.fuse_laplacian(stacked)
+                self._delete_level_files(level, num_images, all_level_counts)
                 self.check_running(lambda: None)
             fused.append(fused_level)
             count += 1
@@ -246,7 +255,144 @@ class PyramidTilesStack(PyramidBase, TempDirBase):
         self.print_message(': pyramids fusion completed')
         return fused[::-1]
 
+    def _delete_level_tiles(self, level, num_images, all_level_counts, h, w):
+        self.print_message(f': cleaning up tiles for level {level}')
+        deleted_count = 0
+        for img_index in range(num_images):
+            if level < all_level_counts[img_index]:
+                for y in range(0, h, self.tile_size):
+                    for x in range(0, w, self.tile_size):
+                        tile_path = os.path.join(
+                            self.temp_dir_path,
+                            f'img_{img_index}_level_{level}_tile_{y}_{x}.npy'
+                        )
+                        if os.path.exists(tile_path):
+                            try:
+                                os.remove(tile_path)
+                                deleted_count += 1
+                            except Exception as e:
+                                traceback.print_tb(e.__traceback__)
+                                self.print_message(
+                                    f': warning: could not delete {tile_path}: {str(e)}')
+        self.print_message(f': deleted {deleted_count} '
+                           f'tile files for level {level + 1}')
+
+    def _delete_level_files(self, level, num_images, all_level_counts):
+        self.print_message(f': cleaning up level {level} files')
+        deleted_count = 0
+        for img_index in range(num_images):
+            if level < all_level_counts[img_index]:
+                level_path = os.path.join(
+                    self.temp_dir_path,
+                    f'img_{img_index}_level_{level}.npy'
+                )
+                if os.path.exists(level_path):
+                    try:
+                        os.remove(level_path)
+                        deleted_count += 1
+                    except Exception as e:
+                        traceback.print_tb(e.__traceback__)
+                        self.print_message(f': warning: could not delete {level_path}: {str(e)}')
+        self.print_message(f': deleted {deleted_count} level files for level {level}')
+
+    def calculate_max_disk_space_required(self):
+        total_size_bytes = 0
+        processing_size_bytes = 0
+        for _img_index in range(self.num_images()):
+            for level in range(self.n_levels):
+                h = max(1, self.shape[0] // (2 ** level))
+                w = max(1, self.shape[1] // (2 ** level))
+                if level < self.n_tiled_layers:
+                    for y in range(0, h, self.tile_size):
+                        for x in range(0, w, self.tile_size):
+                            y_end = min(y + self.tile_size, h)
+                            x_end = min(x + self.tile_size, w)
+                            tile_height = y_end - y
+                            tile_width = x_end - x
+                            tile_size_bytes = tile_height * tile_width * 3 * 4
+                            processing_size_bytes += tile_size_bytes
+                else:
+                    level_size_bytes = h * w * 3 * 4  # float32
+                    processing_size_bytes += level_size_bytes
+        fusion_size_bytes = 0
+        largest_level_size = 0
+        for level in range(min(self.n_tiled_layers, self.n_levels)):
+            h = max(1, self.shape[0] // (2 ** level))
+            w = max(1, self.shape[1] // (2 ** level))
+            level_tiles_size = 0
+            for _img_index in range(self.num_images()):
+                for y in range(0, h, self.tile_size):
+                    for x in range(0, w, self.tile_size):
+                        y_end = min(y + self.tile_size, h)
+                        x_end = min(x + self.tile_size, w)
+                        tile_height = y_end - y
+                        tile_width = x_end - x
+                        tile_size_bytes = tile_height * tile_width * 3 * 4
+                        level_tiles_size += tile_size_bytes
+            fused_level_size = h * w * 3 * 4
+            total_level_size = level_tiles_size + fused_level_size
+            largest_level_size = max(largest_level_size, total_level_size)
+        fusion_size_bytes = largest_level_size
+        total_size_bytes = max(processing_size_bytes, fusion_size_bytes)
+        total_size_gb = (total_size_bytes / constants.ONE_GIGA) * 1.20
+        self.print_message(
+            ": disk space estimate - processing phase: "
+            f"{processing_size_bytes / constants.ONE_GIGA:.2f} GB, "
+            f"fusion phase: {fusion_size_bytes / constants.ONE_GIGA:.2f} GB, "
+            f"required: {total_size_gb:.2f} GB"
+        )
+        return total_size_gb
+
+    def check_disk_space_before_processing(self):
+        required_space_gb = self.calculate_max_disk_space_required()
+        _total, _used, free = shutil.disk_usage(self.temp_dir_path)
+        free_gb = free / constants.ONE_GIGA
+        self.print_message(
+            f": estimated disk space required: {required_space_gb:.2f} GB, "
+            f"available: {free_gb:.2f} GB"
+        )
+        if free_gb < required_space_gb:
+            self.print_message(
+                color_str(
+                    f": insufficient temporary disk space: "
+                    f"required {required_space_gb:.2f} GB, "
+                    f"only {free_gb:.2f} GB available",
+                    constants.LOG_COLOR_ALERT
+                ),
+                level=logging.ERROR
+            )
+            raise RunStopException("insufficient temporary disk space for tile processing")
+
+    def _check_disk_space(self):
+        _total, _used, free = shutil.disk_usage(self.temp_dir_path)
+        free_gb = free / constants.ONE_GIGA
+        runtime_min_gb = max(1.0, self.min_free_space_gb)  # At least 1GB
+        if free_gb < runtime_min_gb:
+            self.print_message(
+                color_str(
+                    f": critically low disk space during operation, "
+                    f"only {free_gb:.2f} GB free",
+                    constants.LOG_COLOR_ALERT
+                ),
+                level=logging.ERROR
+            )
+            raise RunStopException("critically low disk space during operation")
+
+    def _safe_cleanup(self):
+        try:
+            self.cleanup_temp_files()
+        except Exception as e:
+            traceback.print_tb(e.__traceback__)
+            self.print_message(f": warning during cleanup: {str(e)}")
+            time.sleep(1)
+            try:
+                self.cleanup_temp_files()
+            except Exception as ee:
+                traceback.print_tb(ee.__traceback__)
+                self.print_message(": could not fully clean up temporary files")
+
     def focus_stack(self):
+        self.check_disk_space_before_processing()
         all_level_counts = [0] * self.num_images()
         if self.num_threads > 1:
             self.print_message(f': starting parallel processing on {self.num_threads} cores')
@@ -275,12 +421,14 @@ class PyramidTilesStack(PyramidBase, TempDirBase):
                         self.print_message(
                             f": preprocessing completed, {self.image_str(completed_count - 1)}")
                     except RunStopException as e:
+                        traceback.print_tb(e.__traceback__)
                         self.print_message(
                             color_str(f": error processing {self.image_str(i)}: {str(e)}",
                                       constants.LOG_COLOR_ALERT),
                             level=logging.ERROR)
                         raise
                     except Exception as e:
+                        traceback.print_tb(e.__traceback__)
                         self.print_message(
                             f": error processing {self.image_str(i)}: {str(e)}")
                     self.after_step(completed_count)
@@ -316,14 +464,3 @@ class PyramidTilesStack(PyramidBase, TempDirBase):
             raise
         finally:
             self._safe_cleanup()
-
-    def _safe_cleanup(self):
-        try:
-            self.cleanup_temp_files()
-        except Exception as e:
-            self.print_message(f": warning during cleanup: {str(e)}")
-            time.sleep(1)
-            try:
-                self.cleanup_temp_files()
-            except Exception:
-                self.print_message(": could not fully clean up temporary files")
