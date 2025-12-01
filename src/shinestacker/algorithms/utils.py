@@ -1,17 +1,39 @@
 # pylint: disable=C0114, C0116, E1101, R0914
 import os
+import sys
 import gc
 import logging
+import traceback
 import threading
 import numpy as np
 import cv2
 import matplotlib.pyplot as plt
 from .. config.config import config
-from .. core.exceptions import ShapeError, BitDepthError
+from .. core.exceptions import ShapeError, BitDepthError, PathTooLong
 
 
 def get_path_extension(path):
     return os.path.splitext(path)[1].lstrip('.')
+
+
+def check_path_length_win(path):
+    if not sys.platform.startswith('win'):
+        return True
+    abs_path = os.path.abspath(path)
+    long_paths_enabled = False
+    try:
+        import winreg
+        with winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, 
+                            r"SYSTEM\CurrentControlSet\Control\FileSystem") as key:
+            print("key: ",  winreg.QueryValueEx(key, "LongPathsEnabled")[0])
+            long_paths_enabled = winreg.QueryValueEx(key, "LongPathsEnabled")[0] == 1
+    except Exception as e:
+        traceback.print_tb(e.__traceback__)
+    if long_paths_enabled:
+        return True
+    if len(abs_path) >= 260:
+        return False
+    return True
 
 
 EXTENSIONS_TIF = ['tif', 'tiff']
@@ -70,6 +92,8 @@ def extension_supported(path):
 
 
 def read_img(file_path):
+    if not check_path_length_win(file_path):
+        raise PathTooLong(file_path)
     if not os.path.isfile(file_path):
         raise RuntimeError("File does not exist: " + file_path)
     img = None
@@ -81,6 +105,8 @@ def read_img(file_path):
 
 
 def write_img(file_path, img):
+    if not check_path_length_win(file_path):
+        raise PathTooLong(file_path)
     if extension_jpg(file_path):
         cv2.imwrite(file_path, img, [int(cv2.IMWRITE_JPEG_QUALITY), 100])
     elif extension_tif(file_path):

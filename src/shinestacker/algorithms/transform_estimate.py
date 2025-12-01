@@ -111,6 +111,8 @@ def check_homography_distortion(m, img_shape, homography_thresholds):  # =_HOMOG
 
 def check_transform(m, img_shape, transform_type,
                     affine_thresholds, homography_thresholds):
+    if img_shape is None:
+        return False, 'null image shape', None
     if transform_type == constants.ALIGN_RIGID:
         return check_affine_matrix(
             m, img_shape, affine_thresholds)
