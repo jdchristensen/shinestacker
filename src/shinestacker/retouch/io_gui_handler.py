@@ -98,18 +98,18 @@ class IOGuiHandler(QObject, LayerCollectionHandler):
         self.frame_loading_dialog.hide()
         self.frame_loading_dialog.deleteLater()
         empty_viewer = self.image_viewer.empty()
-        self.image_viewer.set_master_image_np(master)
-        if self.layer_stack() is None and len(stack) > 0:
+        if self.number_of_layers() == 0:
+            self.image_viewer.set_master_image_np(master)
             self.set_layer_stack(np.array(stack))
             if labels is None:
-                labels = self.layer_labels()
-            else:
-                self.set_layer_labels(labels)
+                labels = [f'Layer {i:03d}' for i in range(len(stack))]
+            self.set_layer_labels(labels)
             self.set_master_layer(master)
             self.set_blank_layer()
         else:
             if labels is None:
-                labels = self.layer_labels()
+                current_count = self.number_of_layers()
+                labels = [f'Layer {current_count + i:03d}' for i in range(len(stack))]
             for img, label in zip(stack, labels):
                 self.add_layer_label(label)
                 self.add_layer(img)

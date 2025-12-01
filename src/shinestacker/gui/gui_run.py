@@ -173,6 +173,7 @@ class RunWindow(QTextEditLogger):
                     return current
                 current = current.parent()
             return None
+
         parent = find_parent(self, "mainWindow")
         if parent:
             parent.retouch_callback(path[1])
