@@ -2,14 +2,14 @@
 
 This page reports the main releases only and the main changes therein.
 
-## [v1.11.x] - 2025-12-01
-**Unreleased changes**
+## [v1.11.2] - 2025-12-04
+**Bug fix release**
 
 ### Fixed
-- fixed threshold parameter behavior un unsharp mask filter
+- fixed threshold parameter for unsharp mask filter
 - fixed frames import in retouch mode
-- prevent failure in case a single file is selected for parallel alignment
 - reverts to sequential pyramid focus stacking if temporary disk space is insufficient
+- prevent failure in case a single file is selected for parallel alignment
 - added protections against invalid file content
 - added protections against invalid paths on Windows
 
