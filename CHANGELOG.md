@@ -2,6 +2,13 @@
 
 This page reports the main releases only and the main changes therein.
 
+## [v1.11.x] - 2025-12-07
+
+### Fixed
+- minor logging printout fix
+
+--------------------------
+
 ## [v1.11.2] - 2025-12-04
 **Bug fix release**
 

@@ -130,7 +130,7 @@ class PyramidAutoStack(BaseStackAlgo):
             return self._implementation.focus_stack()
         except RunStopException:
             self.print_message(
-                color_str("reverting to sequential processing", constants.LOG_COLOR_WARNING),
+                color_str(": reverting to sequential processing", constants.LOG_COLOR_WARNING),
                 level=logging.WARNING
             )
             self._implementation = PyramidStack(
