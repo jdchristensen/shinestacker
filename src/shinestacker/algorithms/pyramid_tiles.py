@@ -173,26 +173,33 @@ class PyramidTilesStack(PyramidBase, TempDirBase):
         return fused_level, count
 
     def _process_tile(self, level, num_images, all_level_counts, y, x, h, w):
-        laplacians = []
-        tiles_loaded = []
-        for img_index in range(num_images):
-            if level < all_level_counts[img_index]:
-                try:
-                    tile = self.load_level_tile(img_index, level, y, x)
-                    laplacians.append(tile)
-                except FileNotFoundError as e:
-                    traceback.print_tb(e.__traceback__)
-                    continue
-        if laplacians:
-            stacked = np.stack(laplacians, axis=0)
-            result = self.fuse_laplacian(stacked)
-            for img_index, tile_y, tile_x in tiles_loaded:
-                self._delete_single_tile(img_index, level, tile_y, tile_x)
-            return result
-        y_end = min(y + self.tile_size, h)
-        x_end = min(x + self.tile_size, w)
-        gc.collect()
-        return np.zeros((y_end - y, x_end - x, 3), dtype=self.float_type)
+        try:
+            laplacians = []
+            tiles_loaded = []
+            for img_index in range(num_images):
+                if level < all_level_counts[img_index]:
+                    try:
+                        tile = self.load_level_tile(img_index, level, y, x)
+                        laplacians.append(tile)
+                    except FileNotFoundError as e:
+                        traceback.print_tb(e.__traceback__)
+                        continue
+            if laplacians:
+                stacked = np.stack(laplacians, axis=0)
+                result = self.fuse_laplacian(stacked)
+                for img_index, tile_y, tile_x in tiles_loaded:
+                    self._delete_single_tile(img_index, level, tile_y, tile_x)
+                return result
+            y_end = min(y + self.tile_size, h)
+            x_end = min(x + self.tile_size, w)
+            gc.collect()
+            return np.zeros((y_end - y, x_end - x, 3), dtype=self.float_type)
+        except Exception as e:
+            traceback.print_tb(e.__traceback__)
+            self.print_message(color_str(
+                f": failed to process tile ({y},{x}) at level {level}: ",
+                constants.LOG_COLOR_ALERT), level=logging.ERROR)
+            raise
 
     def _delete_single_tile(self, img_index, level, y, x):
         tile_path = os.path.join(
@@ -450,15 +457,31 @@ class PyramidTilesStack(PyramidBase, TempDirBase):
                 self.print_message(
                     f": processing {self.image_str(i)}")
                 img = read_img(file_path)
-                level_count = self.process_single_image(img, self.n_levels, i)
-                all_level_counts[i] = level_count
+                try:
+                    level_count = self.process_single_image(img, self.n_levels, i)
+                    all_level_counts[i] = level_count
+                except Exception as e:
+                    traceback.print_tb(e.__traceback__)
+                    self.process.sub_message_r(color_str(
+                        f": failed to process {self.image_str(i)}: ", constants.LOG_COLOR_ALERT),
+                        level=logging.ERROR)
+                    self._safe_cleanup()
+                    raise RuntimeError(f"failed to process {self.image_str(i)}: {str(e)}") from e
                 self.after_step(i + 1)
                 self.check_running(lambda: None)
         try:
             self.check_running(lambda: None)
-            fused_pyramid = self.fuse_pyramids(all_level_counts)
-            stacked_image = self.collapse(fused_pyramid)
-            return stacked_image.astype(self.dtype)
+            try:
+                fused_pyramid = self.fuse_pyramids(all_level_counts)
+                stacked_image = self.collapse(fused_pyramid).astype(self.dtype)
+            except Exception as e:
+                traceback.print_tb(e.__traceback__)
+                self.process.sub_message_r(color_str(
+                    f": failed to process {self.image_str(i)}: ", constants.LOG_COLOR_ALERT),
+                    level=logging.ERROR)
+                self._safe_cleanup()
+                raise RuntimeError(f"failed to process {self.image_str(i)}: {str(e)}") from e
+            return stacked_image
         except RunStopException:
             self.print_message(": stopping pyramid fusion...")
             raise

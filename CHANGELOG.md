@@ -2,10 +2,11 @@
 
 This page reports the main releases only and the main changes therein.
 
-## [v1.11.x] - 2025-12-07
+## [v1.11.x] - 2025-12-08
 
 ### Fixed
 - minor logging printout fix
+- added more exeption protection to focus stacking algorithm
 
 --------------------------
 
