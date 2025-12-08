@@ -188,11 +188,11 @@ class PyramidStack(PyramidBase):
             try:
                 all_laplacians.append(self.process_single_image(img, self.n_levels))
             except Exception as e:
-                self.process.sub_message_r(color_str(
-                    f": failed to process {self.image_str(i)}: ", constants.LOG_COLOR_ALERT),
-                    level=logging.ERROR)
+                err_msg = f": failed to process {self.image_str(i)}: {str(e)}"
+                self.process.sub_message_r(color_str(err_msg, constants.LOG_COLOR_ALERT),
+                                           level=logging.ERROR)
                 traceback.print_tb(e.__traceback__)
-                raise RuntimeError(f"failed to process {self.image_str(i)}: {str(e)}") from e
+                raise RuntimeError(err_msg) from e
             self.after_step(i + 1)
             self.process.callback(constants.CALLBACK_UPDATE_FRAME_STATUS,
                                   self.process.input_path, filename, 201)
