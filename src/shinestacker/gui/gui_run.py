@@ -150,6 +150,9 @@ class RunWindow(QTextEditLogger):
     def adjust_splitter(self):
         if self.user_manually_adjusted_splitter:
             return
+        QTimer.singleShot(50, self._delayed_adjust_splitter)
+
+    def _delayed_adjust_splitter(self):
         content_height = self.frames_status_box.get_content_height()
         if content_height > 0:
             current_sizes = self.splitter.sizes()
