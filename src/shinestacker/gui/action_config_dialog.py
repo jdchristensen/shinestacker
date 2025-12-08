@@ -192,11 +192,9 @@ class NoiseDetectionConfigurator(DefaultActionConfigurator):
 
         def change_method():
             method = self.method.currentText()
-            print("method: ", method)
             if method == self.METHOD_OPTIONS[2]:
                 for i, (si, li, so, lo) in enumerate(zip(masked_px_spins, masked_px_labels,
                                                          thresholds_spins, thresholds_labels)):
-                    print(i)
                     si.setEnabled(True)
                     si.show()
                     li.setText(constants.RGB_LABELS[i].upper())
@@ -209,7 +207,6 @@ class NoiseDetectionConfigurator(DefaultActionConfigurator):
             else:
                 for i, (si, li, so, lo) in enumerate(zip(masked_px_spins, masked_px_labels,
                                                          thresholds_spins, thresholds_labels)):
-                    print(i)
                     li.setText('')
                     li.hide()
                     lo.setText('')
