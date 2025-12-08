@@ -6,7 +6,7 @@ import matplotlib.backends.backend_pdf
 matplotlib.use('agg')
 from PySide6.QtWidgets import (QApplication, QMainWindow, QVBoxLayout, QHBoxLayout, QStackedWidget,
                                QMenu, QMessageBox, QDialog, QLabel, QListWidget, QPushButton)
-from PySide6.QtGui import QAction, QGuiApplication
+from PySide6.QtGui import QAction, QGuiApplication, QCursor
 from PySide6.QtCore import QEvent, QTimer, Signal
 from shinestacker.config.config import config
 config.init(DISABLE_TQDM=True, COMBINED_APP=True, DONT_USE_NATIVE_MENU=True)
@@ -80,9 +80,13 @@ class MainApp(QMainWindow):
     def __init__(self):
         super().__init__()
         self.setWindowTitle(constants.APP_TITLE)
-        screen = QGuiApplication.primaryScreen().availableGeometry()
-        self.resize(min(1400, screen.width()), min(900, screen.height()))
-        center = QGuiApplication.primaryScreen().geometry().center()
+        cursor_pos = QCursor.pos()
+        screen = QGuiApplication.screenAt(cursor_pos)
+        if not screen:
+            screen = QGuiApplication.primaryScreen()
+        available = screen.availableGeometry()
+        self.resize(min(1400, available.width()), min(900, available.height()))
+        center = available.center()
         self.move(center - self.rect().center())
         self.stacked_widget = QStackedWidget()
         self.setCentralWidget(self.stacked_widget)
