@@ -287,4 +287,8 @@ class PreprocessingStatusWidget(QWidget):
             self.grid_layout.addWidget(widget, row, col)
         num_rows = math.ceil(len(self.frame_widgets) / num_cols) if num_cols > 0 else 0
         total_height = num_rows * (self.current_box_height + spacing)
-        self.setMinimumHeight(total_height + 10)
+        new_min_height = total_height + 10
+        if new_min_height != self.minimumHeight():
+            self.blockSignals(True)
+            self.setMinimumHeight(new_min_height)
+            self.blockSignals(False)
