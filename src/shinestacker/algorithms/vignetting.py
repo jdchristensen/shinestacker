@@ -149,7 +149,7 @@ class Vignetting(SubAction):
 
     def run_frame(self, idx, _ref_idx, img_0):
         self.process.print_message(
-            color_str(f"{self.process.idx_tot_str(idx)}: compute vignetting", "cyan"))
+            color_str(f"{self.process.frame_str(idx)}: compute vignetting", "cyan"))
         h, w = img_0.shape[:2]
         self.w_2, self.h_2 = w / 2, h / 2
         self.r_max = np.sqrt((w / 2)**2 + (h / 2)**2)
@@ -169,7 +169,7 @@ class Vignetting(SubAction):
         self.v0 = sigmoid_model(0, *params)
         i0_fit, k_fit, r0_fit = params
         self.process.print_message(
-            color_str(f"{self.process.idx_tot_str(idx)}: vignetting model parameters: ", "cyan") +
+            color_str(f"{self.process.frame_str(idx)}: vignetting model parameters: ", "cyan") +
             color_str(f"i0={i0_fit / 2:.4f}, "
                       f"k={k_fit * self.r_max:.4f}, "
                       f"r0={r0_fit / self.r_max:.4f}",
@@ -210,7 +210,7 @@ class Vignetting(SubAction):
                 c = self.r_max
             self.corrections[i][idx] = c
         self.process.print_message(
-            color_str(f"{self.process.idx_tot_str(idx)}: correct vignetting", "cyan"))
+            color_str(f"{self.process.frame_str(idx)}: correct vignetting", "cyan"))
         return correct_vignetting(
             img_0, self.max_correction, self.black_threshold, None, params, self.v0,
             subsample, self.fast_subsampling)
