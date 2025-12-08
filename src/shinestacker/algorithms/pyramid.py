@@ -1,9 +1,12 @@
 # pylint: disable=C0114, C0115, C0116, E1101, R0913, R0917, R0902
 import os
+import traceback
+import logging
 import numpy as np
 import cv2
 from .. config.constants import constants
 from .. config.defaults import DEFAULTS
+from .. core.colors import color_str
 from .utils import read_and_validate_img
 from .base_stack_algo import BaseStackAlgo
 
@@ -182,7 +185,14 @@ class PyramidStack(PyramidBase):
             self.check_running()
             self.print_message(
                 f": processing {self.image_str(i)}")
-            all_laplacians.append(self.process_single_image(img, self.n_levels))
+            try:
+                all_laplacians.append(self.process_single_image(img, self.n_levels))
+            except Exception as e:
+                self.process.sub_message_r(color_str(
+                    f": failed to process {self.image_str(i)}: ", constants.LOG_COLOR_ALERT),
+                    level=logging.ERROR)
+                traceback.print_tb(e.__traceback__)
+                raise RuntimeError(f"failed to process {self.image_str(i)}: {str(e)}") from e
             self.after_step(i + 1)
             self.process.callback(constants.CALLBACK_UPDATE_FRAME_STATUS,
                                   self.process.input_path, filename, 201)
