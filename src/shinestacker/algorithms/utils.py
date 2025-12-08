@@ -1,4 +1,4 @@
-# pylint: disable=C0114, C0116, E1101, R0914
+# pylint: disable=C0114, C0116, E1101, R0914, W0718
 import os
 import sys
 import gc
@@ -174,25 +174,38 @@ def read_and_validate_img(filename, expected_shape=None, expected_dtype=None):
 
 
 def save_plot(filename, fig=None):
-    logging.getLogger(__name__).debug(msg=f"save plot file: {filename}")
+    logger = logging.getLogger(__name__)
+    logger.debug(msg=f"Saving plot to: {filename}")
+    dir_path = os.path.dirname(filename)
+    if dir_path and not os.path.isdir(dir_path):
+        os.makedirs(dir_path, exist_ok=True)
     save_lock = threading.Lock()
-    with save_lock:
-        dir_path = os.path.dirname(filename)
-        if not dir_path:
-            dir_path = '.'
-        if not os.path.isdir(dir_path):
-            os.makedirs(dir_path)
-        if fig is None:
-            logging_level = logging.getLogger().level
-            logger = logging.getLogger()
-            logger.setLevel(logging.WARNING)
-            fig = plt.gcf()
-            fig.savefig(filename, dpi=150)
-            logger.setLevel(logging_level)
-        if config.JUPYTER_NOTEBOOK:
-            plt.show()
-        plt.close(fig)
-    gc.collect()
+    try:
+        with save_lock:
+            original_level = logging.getLogger().level
+            if original_level < logging.WARNING:
+                logging.getLogger().setLevel(logging.WARNING)
+            if fig is None:
+                fig = plt.gcf()
+            fig.savefig(filename, dpi=150, bbox_inches='tight')
+            if original_level < logging.WARNING:
+                logging.getLogger().setLevel(original_level)
+            if config.JUPYTER_NOTEBOOK:
+                try:
+                    plt.show()
+                except Exception as e:
+                    logger.warning(msg=f"Could not display plot in Jupyter: {e}")
+            plt.close(fig)
+    except Exception as e:
+        logger.error(msg=f"Failed to save plot to {filename}: {e}")
+        try:
+            plt.close(fig)
+        except Exception:
+            pass
+        raise
+    finally:
+        gc.collect()
+    return True
 
 
 def img_subsample(img, subsample, fast=True):
