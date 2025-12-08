@@ -220,6 +220,7 @@ class PreprocessingStatusWidget(QWidget):
         self.ASPECT_RATIO = 3.0 / 4.0
         self.current_box_width = self.MAX_BOX_WIDTH
         self.current_box_height = int(self.current_box_width * self.ASPECT_RATIO)
+        self._in_resize = False
 
     def add_frame(self, filename, total_actions):
         if filename in self.frame_widgets:
@@ -243,8 +244,18 @@ class PreprocessingStatusWidget(QWidget):
             raise RuntimeError(f"Unknown filename {key}")
 
     def resizeEvent(self, event):
-        super().resizeEvent(event)
-        self._update_layout()
+        new_size = event.size()
+        if self._in_resize:
+            super().resizeEvent(event)
+            return
+        try:
+            self._in_resize = True
+            super().resizeEvent(event)
+            if not hasattr(self, '_last_size') or self._last_size != new_size:
+                self._last_size = new_size
+                self._update_layout()
+        finally:
+            self._in_resize = False
 
     def _calculate_optimal_box_width(self):
         available_width = self.width() - 10
