@@ -80,7 +80,8 @@ class MainApp(QMainWindow):
     def __init__(self):
         super().__init__()
         self.setWindowTitle(constants.APP_TITLE)
-        self.resize(1400, 900)
+        screen = QGuiApplication.primaryScreen().availableGeometry()
+        self.resize(min(1400, screen.width()), min(900, screen.height()))
         center = QGuiApplication.primaryScreen().geometry().center()
         self.move(center - self.rect().center())
         self.stacked_widget = QStackedWidget()
