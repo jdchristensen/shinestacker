@@ -3,6 +3,7 @@ import os
 
 DEFAULTS = {
     'expert_options': False,
+    'plots_format': 'png',
     'view_strategy': 'overlaid',
     'paint_refresh_time': 50,  # ms
     'display_refresh_time': 50,  # ms

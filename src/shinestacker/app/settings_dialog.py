@@ -247,6 +247,14 @@ class SettingsDialog(ConfigDialog, AlignFramesConfigBase):
                     CheckBoxParameter(
                         'expert_options', 'Expert options:',
                         DEFAULTS['expert_options']),
+                    ComboBoxParameter(
+                        'plots_format', 'Plots format:',
+                        DEFAULTS['plots_format'],
+                        [
+                            ("PNG", "png"),
+                            ("PDF", "pdf")
+                        ]
+                    ),
                     FolderParameter(
                         'temp_folder_path', 'Scratch disk folder:',
                         DEFAULTS['temp_folder_path'],
