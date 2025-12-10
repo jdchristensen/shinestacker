@@ -1,5 +1,8 @@
 # pylint: disable=C0114, C0115, C0116, E0611, W0718, R0903
+import traceback
 import json
+import ssl
+import warnings
 from urllib.request import urlopen, Request
 from urllib.error import URLError
 from PySide6.QtWidgets import QDialog, QVBoxLayout, QHBoxLayout, QPushButton, QLabel
@@ -72,10 +75,22 @@ def get_latest_version():
         url = "https://api.github.com/repos/lucalista/shinestacker/releases/latest"
         headers = {'User-Agent': 'ShineStacker'}
         req = Request(url, headers=headers)
-        with urlopen(req, timeout=5) as response:
-            data = json.loads(response.read().decode())
-            return data['tag_name']
-    except (URLError, ValueError, KeyError, TimeoutError):
+        try:
+            with urlopen(req, timeout=5) as response:
+                data = json.loads(response.read().decode())
+                return data['tag_name']
+        except URLError as ssl_error:
+            if "CERTIFICATE_VERIFY_FAILED" in str(ssl_error):
+                warnings.warn("SSL verification failed, using unverified context", RuntimeWarning)
+                context = ssl._create_unverified_context()
+                with urlopen(req, timeout=5, context=context) as response:
+                    data = json.loads(response.read().decode())
+                    return data['tag_name']
+            else:
+                raise
+    except (URLError, ValueError, KeyError, TimeoutError) as e:
+        print(f"error: {str(e)}")
+        traceback.print_tb(e.__traceback__)
         return None
 
 
@@ -84,7 +99,8 @@ def show_about_dialog(parent):
     latest_version = None
     try:
         latest_version = get_latest_version()
-    except Exception:
+    except Exception as e:
+        traceback.print_tb(e.__traceback__)
         pass
     update_text = ""
     if latest_version:

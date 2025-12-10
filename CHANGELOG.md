@@ -2,6 +2,14 @@
 
 This page reports the main releases only and the main changes therein.
 
+## [v1.11.x] - 2025-12-10
+
+### Fixed
+- fixed version retrival if ssl fails in about dialog
+
+--------------------------
+
+
 ## [v1.11.3] - 2025-12-10
 **Bug fix release**
 
