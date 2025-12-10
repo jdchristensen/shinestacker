@@ -10,7 +10,7 @@ from .. config.defaults import DEFAULTS
 from .. core.exceptions import InvalidOptionError
 from .. core.colors import color_str
 from .. core.core_utils import setup_matplotlib_mode
-from .utils import (read_img, save_plot, img_subsample, bgr_to_hsv, bgr_to_hls,
+from .utils import (read_img, img_subsample, bgr_to_hsv, bgr_to_hls,
                     hsv_to_bgr, hls_to_bgr, bgr_to_lab, lab_to_bgr)
 from .stack_framework import SubAction
 setup_matplotlib_mode()
@@ -43,21 +43,21 @@ class BaseHistogrammer:
         x_values = np.linspace(0, self.max_pixel_value, len(hist))
         ax.plot(x_values, hist, color=color, alpha=alpha)
 
-    def save_plot(self, idx, fig=None):
+    def save_plot(self, fig, idx):
         idx_str = f"{idx:04d}"
         plot_path = f"{self.process.working_path}/{self.process.plot_path}/" \
                     f"{self.process.name}-hist-{idx_str}.pdf"
-        save_plot(plot_path, fig)
+        self.process.plot_manager.save_plot(plot_path, fig)
         self.process.callback(
             'save_plot',
             self.process.id, f"{self.process.name}: balance\nframe {idx_str}",
             plot_path
         )
 
-    def save_summary_plot(self, name='balance'):
+    def save_summary_plot(self, fig, name='balance'):
         plot_path = f"{self.process.working_path}/{self.process.plot_path}/" \
                     f"{self.process.name}-{name}.pdf"
-        save_plot(plot_path)
+        self.process.plot_manager.save_plot(plot_path, fig)
         self.process.callback(
             'save_plot', self.process.id,
             f"{self.process.name}: {name}", plot_path
@@ -77,10 +77,10 @@ class LumiHistogrammer(BaseHistogrammer):
             self.histo_plot(axs[1], hist_col, "R, G, B intensity", color, alpha=0.5)
         fig.suptitle("Image histograms")
         plt.xlim(0, self.max_pixel_value)
-        self.save_plot(idx, fig)
+        self.save_plot(fig, idx)
 
     def generate_summary_plot(self, ref_idx):
-        plt.figure(figsize=constants.PLT_FIG_SIZE)
+        fig = plt.figure(figsize=constants.PLT_FIG_SIZE)
         x = np.arange(0, len(self.corrections), dtype=int)
         y = self.corrections
         plt.plot([ref_idx, ref_idx], [0, np.max(y)], color='cornflowerblue',
@@ -94,7 +94,7 @@ class LumiHistogrammer(BaseHistogrammer):
         plt.legend()
         plt.xlim(x[0], x[-1])
         plt.ylim(0, np.max(y) * 1.1)
-        self.save_summary_plot()
+        self.save_summary_plot(fig)
 
 
 class RGBHistogrammer(BaseHistogrammer):
@@ -108,10 +108,10 @@ class RGBHistogrammer(BaseHistogrammer):
             self.histo_plot(axs[c], hists[c], self.colors[c] + " luminosity", self.colors[c])
         fig.suptitle("Image histograms")
         plt.xlim(0, self.max_pixel_value)
-        self.save_plot(idx, fig)
+        self.save_plot(fig, idx)
 
     def generate_summary_plot(self, ref_idx):
-        plt.figure(figsize=constants.PLT_FIG_SIZE)
+        fig = plt.figure(figsize=constants.PLT_FIG_SIZE)
         x = np.arange(0, len(self.corrections), dtype=int)
         y = self.corrections
         max_val = np.max(y) if np.any(y) else 1.0
@@ -128,7 +128,7 @@ class RGBHistogrammer(BaseHistogrammer):
         plt.legend()
         plt.xlim(x[0], x[-1])
         plt.ylim(0, max_val * 1.1)
-        self.save_summary_plot()
+        self.save_summary_plot(fig)
 
 
 class Ch1Histogrammer(BaseHistogrammer):
@@ -144,10 +144,10 @@ class Ch1Histogrammer(BaseHistogrammer):
         fig.suptitle("Image histograms")
         for ax in axs:
             ax.set_xlim(0, self.max_pixel_value)
-        self.save_plot(idx)
+        self.save_plot(fig, idx)
 
     def generate_summary_plot(self, ref_idx):
-        plt.figure(figsize=constants.PLT_FIG_SIZE)
+        fig = plt.figure(figsize=constants.PLT_FIG_SIZE)
         x = np.arange(0, len(self.corrections), dtype=int)
         y = self.corrections
         max_val = np.max(y) if np.any(y) else 1.0
@@ -162,7 +162,7 @@ class Ch1Histogrammer(BaseHistogrammer):
         plt.legend()
         plt.xlim(x[0], x[-1])
         plt.ylim(0, max_val * 1.1)
-        self.save_summary_plot()
+        self.save_summary_plot(fig)
 
 
 class Ch2Histogrammer(BaseHistogrammer):
@@ -178,10 +178,10 @@ class Ch2Histogrammer(BaseHistogrammer):
         fig.suptitle("Image histograms")
         for ax in axs:
             ax.set_xlim(0, self.max_pixel_value)
-        self.save_plot(idx)
+        self.save_plot(fig, idx)
 
     def generate_summary_plot(self, ref_idx):
-        plt.figure(figsize=constants.PLT_FIG_SIZE)
+        fig = plt.figure(figsize=constants.PLT_FIG_SIZE)
         x = np.arange(0, len(self.corrections), dtype=int)
         y = self.corrections
         max_val = np.max(y) if np.any(y) else 1.0
@@ -197,7 +197,7 @@ class Ch2Histogrammer(BaseHistogrammer):
         plt.legend()
         plt.xlim(x[0], x[-1])
         plt.ylim(0, max_val * 1.1)
-        self.save_summary_plot()
+        self.save_summary_plot(fig)
 
 
 class CorrectionMapBase:
@@ -615,10 +615,10 @@ class BalanceFrames(SubAction):
             img = np.zeros(shape)
             mask_radius = int(min(*shape) * self.mask_size / 2)
             cv2.circle(img, (shape[1] // 2, shape[0] // 2), mask_radius, 255, -1)
-            plt.figure(figsize=constants.PLT_FIG_SIZE)
+            fig = plt.figure(figsize=constants.PLT_FIG_SIZE)
             plt.title('Image balance mask')
             plt.imshow(img, 'gray')
-            self.correction.histogrammer.save_summary_plot("mask")
+            self.correction.histogrammer.save_summary_plot(fig, "mask")
 
     def run_frame(self, idx, _ref_idx, image):
         if idx != self.process.ref_idx:
