@@ -245,6 +245,9 @@ class SettingsDialog(ConfigDialog, AlignFramesConfigBase):
             self.project_parameters = [
                 ("General", [
                     CheckBoxParameter(
+                        'check_for_updates', 'Check for updates:',
+                        DEFAULTS['check_for_updates']),
+                    CheckBoxParameter(
                         'expert_options', 'Expert options:',
                         DEFAULTS['expert_options']),
                     ComboBoxParameter(

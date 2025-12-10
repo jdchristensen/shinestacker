@@ -11,6 +11,7 @@ from PySide6.QtCore import QEvent, QTimer, Signal
 from shinestacker.config.config import config
 config.init(DISABLE_TQDM=True, COMBINED_APP=True, DONT_USE_NATIVE_MENU=True)
 from shinestacker.config.constants import constants
+from shinestacker.config.app_config import AppConfig
 from shinestacker.gui.main_window import MainWindow
 from shinestacker.retouch.image_editor_ui import ImageEditorUI
 from shinestacker.app.gui_utils import fill_app_menu
@@ -273,7 +274,8 @@ open retouch window at startup instead of project windows.
             if args['new-project']:
                 QTimer.singleShot(100, main_app.project_window.project_controller.new_project)
     QTimer.singleShot(100, main_app.setFocus)
-    QTimer.singleShot(500, lambda: show_update_dialog(main_app))
+    if AppConfig.get('check_for_updates'):
+        QTimer.singleShot(500, lambda: show_update_dialog(main_app))
     sys.exit(app.exec())
 
 

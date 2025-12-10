@@ -2,6 +2,7 @@
 import os
 
 DEFAULTS = {
+    'check_for_updates': True,
     'expert_options': False,
     'plots_format': 'png',
     'view_strategy': 'overlaid',
