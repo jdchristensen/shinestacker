@@ -27,7 +27,7 @@ class JobLogWorker(RunWorker):
         self.tag = "Job"
 
     def do_run(self):
-        converter = ProjectConverter()
+        converter = ProjectConverter(self.plot_manager)
         return converter.run_job(self.job, self.id_str, self.callbacks)
 
 
@@ -38,7 +38,7 @@ class ProjectLogWorker(RunWorker):
         self.tag = "Project"
 
     def do_run(self):
-        converter = ProjectConverter()
+        converter = ProjectConverter(self.plot_manager)
         return converter.run_project(self.project, self.id_str, self.callbacks)
 
 
@@ -537,6 +537,7 @@ class MainWindow(QMainWindow, LogManager):
         worker.add_frame_signal.connect(window.handle_add_frame)
         worker.set_total_actions_signal.connect(window.handle_set_total_actions)
         worker.update_frame_status_signal.connect(window.handle_update_frame_status)
+        worker.plot_manager.save_plot_signal.connect(window.handle_save_plot_via_manager)
 
     def run_job(self):
         current_index = self.current_job_index()

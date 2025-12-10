@@ -2,12 +2,13 @@
 
 This page reports the main releases only and the main changes therein.
 
-## [v1.11.x] - 2025-12-08
+## [v1.11.x] - 2025-12-10
 
 ### Fixed
 - minor logging printout fix
 - added more exeption protection to focus stacking algorithm
-- plot images are by default in png format to prevent a potential issue with too many pdf generation with matplotlib
+- multithread conflict in plot generation
+- plot images are by default in png format to prevent a potential issue with too many pdf generation with matplotlib. PDF is optional in the settings.
 
 --------------------------
 

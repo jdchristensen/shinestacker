@@ -221,6 +221,7 @@ class PreprocessingStatusWidget(QWidget):
         self.current_box_width = self.MAX_BOX_WIDTH
         self.current_box_height = int(self.current_box_width * self.ASPECT_RATIO)
         self._in_resize = False
+        self._last_size = -1
 
     def add_frame(self, filename, total_actions):
         if filename in self.frame_widgets:
@@ -251,7 +252,7 @@ class PreprocessingStatusWidget(QWidget):
         try:
             self._in_resize = True
             super().resizeEvent(event)
-            if not hasattr(self, '_last_size') or self._last_size != new_size:
+            if self._last_size != new_size:
                 self._last_size = new_size
                 self._update_layout()
         finally:

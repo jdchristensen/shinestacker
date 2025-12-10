@@ -9,10 +9,13 @@ from .. core.framework import Job, SequentialTask
 from .. core.core_utils import check_path_exists
 from .. core.exceptions import RunStopException
 from .utils import read_img, write_img, extension_supported, get_img_metadata, validate_image
+from .plot_manager import DirectPlotManager
 
 
 class StackJob(Job):
-    def __init__(self, name, working_path, input_path='', input_filepaths=[], **kwargs):
+    def __init__(
+            self, name, working_path, input_path='', input_filepaths=[], plot_manager=None,
+            **kwargs):
         check_path_exists(working_path)
         self.working_path = working_path
         self._input_path = input_path
@@ -20,10 +23,11 @@ class StackJob(Job):
         self._input_filepaths = []
         self._input_full_path = None
         self._input_filepaths = input_filepaths
+        self.plot_manager = plot_manager if plot_manager is not None else DirectPlotManager()
         Job.__init__(self, name, **kwargs)
 
-    def init(self, a):
-        a.init(self)
+    def init(self, action):
+        action.init(self)
 
     def input_filepaths(self):
         return self._input_filepaths

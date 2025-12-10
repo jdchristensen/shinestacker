@@ -1,4 +1,4 @@
-# pylint: disable=C0114, C0115, C0116, E0611, R0903, R0915, R0914, R0917, R0913, R0902
+# pylint: disable=C0114, C0115, C0116, E0611, R0903, R0915, R0914, R0917, R0913, R0902, R0904
 import os
 import traceback
 from PySide6.QtWidgets import (QWidget, QPushButton, QVBoxLayout, QHBoxLayout, QSplitter,
@@ -20,6 +20,8 @@ from .time_progress_bar import TimerProgressBar
 from .flow_layout import FlowLayout
 from .sys_mon import StatusBarSystemMonitor
 from .processing_widget import MultiModuleStatusContainer
+from .qt_plot_manager import QtPlotManager
+from .. algorithms.plot_manager import DirectPlotManager
 
 COLOR_RED = "FF5050"
 COLOR_BLUE = "5050FF"
@@ -143,6 +145,7 @@ class RunWindow(QTextEditLogger):
         self.setLayout(layout)
         self.user_manually_adjusted_splitter = False
         self.splitter.splitterMoved.connect(self._on_splitter_moved)
+        self.plot_manager = DirectPlotManager()
 
     def _on_splitter_moved(self):
         self.user_manually_adjusted_splitter = True
@@ -316,6 +319,10 @@ class RunWindow(QTextEditLogger):
     def handle_set_total_actions(self, module_name, filename, status_id):
         self.frames_status_box.set_frame_total_actions(module_name, filename, status_id)
 
+    @Slot(str, object)
+    def handle_save_plot_via_manager(self, filename, fig):
+        self.plot_manager.save_plot(filename, fig)
+
 
 class RunWorker(LogWorker):
     before_action_signal = Signal(int, str)
@@ -354,6 +361,7 @@ class RunWorker(LogWorker):
             constants.CALLBACK_UPDATE_FRAME_STATUS: self.update_frame_status
         }
         self.tag = ""
+        self.plot_manager = QtPlotManager(self)
 
     def before_action(self, run_id, name):
         self.before_action_signal.emit(run_id, name)

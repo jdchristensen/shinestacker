@@ -175,12 +175,13 @@ def read_and_validate_img(filename, expected_shape=None, expected_dtype=None):
 
 PLOT_SAVE_LOCK = threading.Lock()
 
+
 def save_plot(filename, fig=None):
     logger = logging.getLogger(__name__)
     logger.debug(msg=f"Saving plot to: {filename}")
     dir_path = os.path.dirname(filename)
     if dir_path and not os.path.isdir(dir_path):
-        os.makedirs(dir_path, exist_ok=True)    
+        os.makedirs(dir_path, exist_ok=True)
     try:
         with PLOT_SAVE_LOCK:
             original_level = logging.getLogger().level

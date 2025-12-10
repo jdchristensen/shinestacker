@@ -15,7 +15,7 @@ from .. core.framework import TaskBase
 from .. core.core_utils import make_tqdm_bar, setup_matplotlib_mode
 from .. core.exceptions import RunStopException, ShapeError
 from .stack_framework import ImageSequenceManager, SubAction
-from .utils import read_img, save_plot, get_img_metadata, validate_image, bgr_to_lab
+from .utils import read_img, get_img_metadata, validate_image, bgr_to_lab
 setup_matplotlib_mode()
 
 
@@ -62,6 +62,10 @@ class NoiseDetectionRGB:
             'noisy_masked_px', DEFAULTS['noise_detection_params']['noisy_masked_px'])
         self.channel_thresholds = kwargs.get(
             'channel_thresholds', DEFAULTS['noise_detection_params']['channel_thresholds'])
+        self.plot_manager = None
+
+    def set_plot_manager(self, plot_manager):
+        self.plot_manager = plot_manager
 
     def hot_map(self, ch, th):
         return cv2.threshold(ch, th, 255, cv2.THRESH_BINARY)[1]
@@ -102,7 +106,7 @@ class NoiseDetectionRGB:
             plot_path, name, callback, idx):
         diff = cv2.absdiff(mean_img, blurred)
         channels = cv2.split(diff)
-        plt.figure(figsize=constants.PLT_FIG_SIZE)
+        fig = plt.figure(figsize=constants.PLT_FIG_SIZE)
         for i, ch, color in zip(range(3), channels, constants.RGB_LABELS):
             min_val, max_val = ch.min(), ch.max()
             bin_edges = np.arange(min_val, max_val + 0.2, 0.2)
@@ -123,9 +127,8 @@ class NoiseDetectionRGB:
         plt.yscale("log", nonpositive='clip')
         plots_ext = AppConfig.get('plots_format')
         plot_path = f"{working_path}/{plot_path}/{name}-hot-pixels.{plots_ext}"
-        save_plot(plot_path)
+        self.plot_manager.save_plot(plot_path, fig)
         callback(constants.CALLBACK_SAVE_PLOT, idx, f"{name}: noise", plot_path)
-        plt.close('all')
 
 
 class NoiseDetectionLAB:
@@ -136,6 +139,10 @@ class NoiseDetectionLAB:
             'channel_thresholds', DEFAULTS['noise_detection_params']['channel_thresholds'])
         self.use_lab_space = kwargs.get(
             'use_lab_space', DEFAULTS['noise_detection_params']['use_lab_space'])
+        self.plot_manager = None
+
+    def set_plot_manager(self, plot_manager):
+        self.plot_manager = plot_manager
 
     def calculate_distance_metric(self, mean_img, blurred):
         if self.use_lab_space:
@@ -190,7 +197,7 @@ class NoiseDetectionLAB:
         bin_edges = np.arange(min_val, max_val + 0.01, 0.01)
         hist, bin_edges = np.histogram(distance_map, bins=bin_edges)
         pxls_count = np.cumsum(hist[::-1])[::-1]
-        plt.figure(figsize=constants.PLT_FIG_SIZE)
+        fig = plt.figure(figsize=constants.PLT_FIG_SIZE)
         label = "LAB norm" if self.use_lab_space else "RGB norm"
         plt.step(bin_edges[:-1], pxls_count, c='blue', label=label + " distribution")
         idx = np.argmin(np.abs(bin_edges[:-1] - adaptive_threshold))
@@ -206,7 +213,7 @@ class NoiseDetectionLAB:
         plt.yscale("log", nonpositive='clip')
         plots_ext = AppConfig.get('plots_format')
         plot_path = f"{working_path}/{plot_path}/{name}-distance-histogram.{plots_ext}"
-        save_plot(plot_path)
+        self.plot_manager.save_plot(plot_path, fig)
         callback(constants.CALLBACK_SAVE_PLOT, id, f"{name}: distance histogram", plot_path)
         plt.close('all')
 
@@ -238,6 +245,10 @@ class NoiseDetection(TaskBase, ImageSequenceManager):
             self._implementation = NoiseDetectionLAB(use_lab_space=False, **kwargs)
         else:
             raise InvalidOptionError("method", self.method)
+
+    def init(self, job):
+        ImageSequenceManager.init(self, job)
+        self._implementation.set_plot_manager(job.plot_manager)
 
     def progress(self, i):
         self.callback(constants.CALLBACK_AFTER_STEP, self.id, self.name, i)

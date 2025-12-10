@@ -17,6 +17,9 @@ from .project_model import Project, ActionConfig
 
 
 class ProjectConverter:
+    def __init__(self, plot_manager):
+        self.plot_manager = plot_manager
+
     def get_logger(self, logger_name=None):
         return logging.getLogger(__name__ if logger_name is None else logger_name)
 
@@ -140,7 +143,7 @@ class ProjectConverter:
             input_path = action_config.params.get('input_path', '')
             input_filepaths = action_config.params.get('input_filepaths', [])
             stack_job = StackJob(name, working_path, enabled=enabled, input_path=input_path,
-                                 input_filepaths=input_filepaths,
+                                 input_filepaths=input_filepaths, plot_manager=self.plot_manager,
                                  logger_name=logger_name, callbacks=callbacks)
             for sub in action_config.sub_actions:
                 action = self.action(sub)

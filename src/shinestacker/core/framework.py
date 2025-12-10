@@ -169,16 +169,16 @@ class Job(TaskBase):
     def time(self):
         return time.time() - self._t0
 
-    def init(self, a):
+    def init(self, action):
         pass
 
-    def add_action(self, a: TaskBase):
-        a.id = self.action_counter
+    def add_action(self, action):
+        action.id = self.action_counter
         self.action_counter += 1
-        a.logger = self.logger
-        a.callbacks = self.callbacks
-        self.init(a)
-        self.__actions.append(a)
+        action.logger = self.logger
+        action.callbacks = self.callbacks
+        self.init(action)
+        self.__actions.append(action)
 
     def run_core(self):
         fail = False
