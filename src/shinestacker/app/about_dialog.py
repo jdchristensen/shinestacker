@@ -70,6 +70,10 @@ def show_update_dialog(parent):
     </ul>
     <p>Download the latest version from:</p>
     <p><a href="https://github.com/lucalista/shinestacker/releases/latest">https://github.com/lucalista/shinestacker/releases/latest</a></p>
+    <p style="color: #666666; font-size: small;">
+    To hide this message in the future, uncheck:<br>
+    Settings → Project Settings → General → "Check for updates"
+    </p>
     </html>
     """ # noqa E501
     dialog.setText(message)

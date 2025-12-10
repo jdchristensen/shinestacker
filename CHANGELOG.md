@@ -5,7 +5,7 @@ This page reports the main releases only and the main changes therein.
 ## [v1.11.x] - 2025-12-10
 
 ### Added
-- startup dialog reporting new available version
+- startup dialog prompts an update if a new version is available
 
 ### Fixed
 - fixed version retrival if ssl fails in about dialog
