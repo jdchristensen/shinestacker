@@ -1,11 +1,11 @@
-# pylint: disable=C0114, C0115, C0116, E0611, W0718, R0903
+# pylint: disable=C0114, C0115, C0116, E0611, W0718, R0903, W0212
 import traceback
 import json
 import ssl
 import warnings
 from urllib.request import urlopen, Request
 from urllib.error import URLError
-from PySide6.QtWidgets import QDialog, QVBoxLayout, QHBoxLayout, QPushButton, QLabel
+from PySide6.QtWidgets import QDialog, QVBoxLayout, QHBoxLayout, QPushButton, QLabel, QMessageBox
 from PySide6.QtCore import Qt
 from .. import __version__
 from .. retouch.icon_container import icon_container
@@ -39,6 +39,44 @@ class AboutDialog(QDialog):
         button_layout.addWidget(button)
         button_layout.addStretch()
         layout.addLayout(button_layout)
+
+
+def check_version():
+    version_clean = __version__.split("+", maxsplit=1)[0]
+    latest_version = get_latest_version()
+    if not latest_version:
+        return None
+    latest_clean = latest_version.lstrip('v')
+    return compare_versions(version_clean, latest_clean) < 0, latest_version
+
+
+def show_update_dialog(parent):
+    result = check_version()
+    if not result:
+        return
+    update_available, latest_version = result
+    if not update_available:
+        return
+    version_clean = __version__.split("+", maxsplit=1)[0]
+    dialog = QMessageBox(parent)
+    dialog.setWindowTitle("Update Available")
+    dialog.setIcon(QMessageBox.Information)
+    message = f"""
+    <html>
+    <p><b>A new version of {constants.APP_TITLE} is available!</b></p>
+    <ul>
+    <li><b>Your version:</b> v{version_clean}</li>
+    <li><b>Latest version:</b> {latest_version}</li>
+    </ul>
+    <p>Download the latest version from:</p>
+    <p><a href="https://github.com/lucalista/shinestacker/releases/latest">https://github.com/lucalista/shinestacker/releases/latest</a></p>
+    </html>
+    """ # noqa E501
+    dialog.setText(message)
+    dialog.setInformativeText("You can always check for updates in the About dialog.")
+    dialog.setStandardButtons(QMessageBox.Ok)
+    dialog.setDefaultButton(QMessageBox.Ok)
+    dialog.exec()
 
 
 def compare_versions(current, latest):
@@ -96,16 +134,16 @@ def get_latest_version():
 
 def show_about_dialog(parent):
     version_clean = __version__.split("+", maxsplit=1)[0]
-    latest_version = None
+    update_available, latest_version = False, None
     try:
-        latest_version = get_latest_version()
+        result = check_version()
+        if result:
+            update_available, latest_version = result
     except Exception as e:
         traceback.print_tb(e.__traceback__)
-        pass
     update_text = ""
     if latest_version:
-        latest_clean = latest_version.lstrip('v')
-        if compare_versions(version_clean, latest_clean) < 0:
+        if update_available:
             update_text = f"""
             <p style="color: red; font-weight: bold;">
                 Update available! Latest version: {latest_version}

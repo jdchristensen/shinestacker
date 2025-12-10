@@ -21,6 +21,7 @@ from shinestacker.app.args_parser_opts import (
     setup_filename_argument, process_filename_argument
 )
 from shinestacker.app.gui_utils import make_app
+from shinestacker.app.about_dialog import show_update_dialog
 
 
 class SelectionDialog(QDialog):
@@ -272,6 +273,7 @@ open retouch window at startup instead of project windows.
             if args['new-project']:
                 QTimer.singleShot(100, main_app.project_window.project_controller.new_project)
     QTimer.singleShot(100, main_app.setFocus)
+    QTimer.singleShot(500, lambda: show_update_dialog(main_app))
     sys.exit(app.exec())
 
 
