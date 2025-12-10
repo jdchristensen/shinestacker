@@ -65,6 +65,7 @@ class ImageSequenceManager:
         self.delete_output_at_end = delete_output_at_end
         self.enabled = None
         self.base_message = ''
+        self.plot_manager = None
         self._input_full_path = None
         self._output_full_path = None
         self._input_filepaths = None
@@ -181,6 +182,7 @@ class ImageSequenceManager:
                         filepath = os.path.join(self.input_full_path(), filepath)
                     self._input_filepaths.append(filepath)
         job.add_action_path(self.output_path)
+        self.plot_manager = job.plot_manager
 
     def end_job(self):
         if self.delete_output_at_end:

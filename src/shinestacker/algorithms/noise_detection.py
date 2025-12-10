@@ -250,7 +250,7 @@ class NoiseDetection(TaskBase, ImageSequenceManager):
 
     def init(self, job):
         ImageSequenceManager.init(self, job)
-        self._implementation.set_plot_manager(job.plot_manager)
+        self._implementation.set_plot_manager(self.plot_manager)
 
     def progress(self, i):
         self.callback(constants.CALLBACK_AFTER_STEP, self.id, self.name, i)

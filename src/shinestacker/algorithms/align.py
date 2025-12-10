@@ -10,7 +10,6 @@ from .. config.constants import constants
 from .. config.defaults import DEFAULTS
 from .. core.exceptions import InvalidOptionError
 from .. core.colors import color_str
-from .utils import save_plot
 from .stack_framework import SubAction
 from .feature_match import (
     SubsamplingFeatureMatcher,
@@ -160,7 +159,7 @@ class AlignFramesBase(SubAction):
             return x, y, y_ref
 
         if self.plot_summary:
-            plt.figure(figsize=constants.PLT_FIG_SIZE)
+            fig = plt.figure(figsize=constants.PLT_FIG_SIZE)
             x, y, y_ref = get_coordinates(self._n_good_matches)
             plt.plot([self.process.ref_idx + 1, self.process.ref_idx + 1],
                      [0, y_ref], color='cornflowerblue', linestyle='--', label='reference frame')
@@ -175,13 +174,13 @@ class AlignFramesBase(SubAction):
             plt.xlim(x[0], x[-1])
             plot_path = f"{self.process.working_path}/{self.process.plot_path}/" \
                         f"{self.process.name}-matches.pdf"
-            save_plot(plot_path)
+            self.process.plot_manager.save_plot(plot_path, fig)
             self.process.callback(constants.CALLBACK_SAVE_PLOT, self.process.id,
                                   f"{self.process.name}: matches", plot_path)
             transform = self.alignment_config['transform']
             title = "Transformation parameters rel. to reference frame"
             if transform == constants.ALIGN_RIGID:
-                plt.figure(figsize=constants.PLT_FIG_SIZE)
+                fig = plt.figure(figsize=constants.PLT_FIG_SIZE)
                 x, y, y_ref = get_coordinates(self._rotation)
                 plt.plot([self.process.ref_idx + 1, self.process.ref_idx + 1],
                          [0, y_ref], color='cornflowerblue',
@@ -197,10 +196,10 @@ class AlignFramesBase(SubAction):
                 plt.xlim(x[0], x[-1])
                 plot_path = f"{self.process.working_path}/{self.process.plot_path}/" \
                             f"{self.process.name}-rotation.pdf"
-                save_plot(plot_path)
+                self.process.plot_manager.save_plot(plot_path, fig)
                 self.process.callback(constants.CALLBACK_SAVE_PLOT, self.process.id,
                                       f"{self.process.name}: rotation", plot_path)
-                plt.figure(figsize=constants.PLT_FIG_SIZE)
+                fig = plt.figure(figsize=constants.PLT_FIG_SIZE)
                 x, y_x, y_x_ref = get_coordinates(self._translation_x)
                 x, y_y, y_y_ref = get_coordinates(self._translation_y)
                 plt.plot([self.process.ref_idx + 1, self.process.ref_idx + 1],
@@ -218,11 +217,11 @@ class AlignFramesBase(SubAction):
                 plt.xlim(x[0], x[-1])
                 plot_path = f"{self.process.working_path}/{self.process.plot_path}/" \
                             f"{self.process.name}-translation.pdf"
-                save_plot(plot_path)
+                self.process.plot_manager.save_plot(plot_path, fig)
                 self.process.callback(constants.CALLBACK_SAVE_PLOT, self.process.id,
                                       f"{self.process.name}: translation", plot_path)
 
-                plt.figure(figsize=constants.PLT_FIG_SIZE)
+                fig = plt.figure(figsize=constants.PLT_FIG_SIZE)
                 x, y, y_ref = get_coordinates(self._scale_x)
                 plt.plot([self.process.ref_idx + 1, self.process.ref_idx + 1],
                          [1, y_ref], color='cornflowerblue',
@@ -238,11 +237,11 @@ class AlignFramesBase(SubAction):
                 plt.xlim(x[0], x[-1])
                 plot_path = f"{self.process.working_path}/{self.process.plot_path}/" \
                             f"{self.process.name}-scale.pdf"
-                save_plot(plot_path)
+                self.process.plot_manager.save_plot(plot_path, fig)
                 self.process.callback(constants.CALLBACK_SAVE_PLOT, self.process.id,
                                       f"{self.process.name}: scale", plot_path)
             elif transform == constants.ALIGN_HOMOGRAPHY:
-                plt.figure(figsize=constants.PLT_FIG_SIZE)
+                fig = plt.figure(figsize=constants.PLT_FIG_SIZE)
                 x, y, y_ref = get_coordinates(self._area_ratio)
                 plt.plot([self.process.ref_idx + 1, self.process.ref_idx + 1],
                          [0, y_ref], color='cornflowerblue',
@@ -258,10 +257,10 @@ class AlignFramesBase(SubAction):
                 plt.xlim(x[0], x[-1])
                 plot_path = f"{self.process.working_path}/{self.process.plot_path}/" \
                             f"{self.process.name}-area-ratio.pdf"
-                save_plot(plot_path)
+                self.process.plot_manager.save_plot(plot_path, fig)
                 self.process.callback(constants.CALLBACK_SAVE_PLOT, self.process.id,
                                       f"{self.process.name}: area ratio", plot_path)
-                plt.figure(figsize=constants.PLT_FIG_SIZE)
+                fig = plt.figure(figsize=constants.PLT_FIG_SIZE)
                 x, y, y_ref = get_coordinates(self._aspect_ratio)
                 plt.plot([self.process.ref_idx + 1, self.process.ref_idx + 1],
                          [0, y_ref], color='cornflowerblue',
@@ -278,10 +277,10 @@ class AlignFramesBase(SubAction):
                 plt.xlim(x[0], x[-1])
                 plot_path = f"{self.process.working_path}/{self.process.plot_path}/" \
                             f"{self.process.name}-aspect-ratio.pdf"
-                save_plot(plot_path)
+                self.process.plot_manager.save_plot(plot_path, fig)
                 self.process.callback(constants.CALLBACK_SAVE_PLOT, self.process.id,
                                       f"{self.process.name}: aspect ratio", plot_path)
-                plt.figure(figsize=constants.PLT_FIG_SIZE)
+                fig = plt.figure(figsize=constants.PLT_FIG_SIZE)
                 x, y, y_ref = get_coordinates(self._max_angle_dev)
                 plt.plot([self.process.ref_idx + 1, self.process.ref_idx + 1],
                          [0, y_ref], color='cornflowerblue',
@@ -297,7 +296,7 @@ class AlignFramesBase(SubAction):
                 plt.xlim(x[0], x[-1])
                 plot_path = f"{self.process.working_path}/{self.process.plot_path}/" \
                             f"{self.process.name}-rotation.pdf"
-                save_plot(plot_path)
+                self.process.plot_manager.save_plot(plot_path, fig)
                 self.process.callback(constants.CALLBACK_SAVE_PLOT, self.process.id,
                                       f"{self.process.name}: rotation", plot_path)
 

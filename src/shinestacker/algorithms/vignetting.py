@@ -10,7 +10,7 @@ from .. core.colors import color_str
 from .. core.core_utils import setup_matplotlib_mode
 from .. config.constants import constants
 from .. config.defaults import DEFAULTS
-from .utils import img_8bit, save_plot, img_subsample
+from .utils import img_8bit, img_subsample
 from .stack_framework import SubAction
 setup_matplotlib_mode()
 
@@ -176,7 +176,7 @@ class Vignetting(SubAction):
                       "light_blue"),
             level=logging.DEBUG)
         if self.plot_correction:
-            plt.figure(figsize=constants.PLT_FIG_SIZE)
+            fig = plt.figure(figsize=constants.PLT_FIG_SIZE)
             plt.plot(radii, intensities, label="image mean intensity")
             plt.plot(radii, sigmoid_model(radii * subsample, *params), label="sigmoid fit")
             plt.xlabel('radius (pixels)')
@@ -188,7 +188,7 @@ class Vignetting(SubAction):
             plot_path = f"{self.process.working_path}/" \
                 f"{self.process.plot_path}/{self.process.name}-" \
                 f"radial-intensity-{idx_str}.pdf"
-            save_plot(plot_path)
+            self.process.plot_manager.save_plot(plot_path, fig)
             plt.close('all')
             self.process.callback(
                 constants.CALLBACK_SAVE_PLOT, self.process.id,
@@ -222,7 +222,7 @@ class Vignetting(SubAction):
 
     def end(self):
         if self.plot_summary:
-            plt.figure(figsize=constants.PLT_FIG_SIZE)
+            fig = plt.figure(figsize=constants.PLT_FIG_SIZE)
             xs = np.arange(1, len(self.corrections[0]) + 1, dtype=int)
             for i, p in enumerate(self.percentiles):
                 linestyle = 'solid'
@@ -252,7 +252,7 @@ class Vignetting(SubAction):
             plt.ylim(0, self.r_max * 1.05)
             plot_path = f"{self.process.working_path}/{self.process.plot_path}/" \
                         f"{self.process.name}-r0.pdf"
-            save_plot(plot_path)
+            self.process.plot_manager.save_plot(plot_path, fig)
             plt.close('all')
             self.process.callback(constants.CALLBACK_SAVE_PLOT, self.process.id,
                                   f"{self.process.name}: vignetting", plot_path)
