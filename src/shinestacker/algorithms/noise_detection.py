@@ -237,6 +237,8 @@ class NoiseDetection(TaskBase, ImageSequenceManager):
         if self.method != constants.NOISE_METHOD_RGB:
             kwargs['noisy_masked_px'] = kwargs.get(
                 'noisy_masked_px', DEFAULTS['noise_detection_params']['noisy_masked_px'])[0]
+        self.max_noisy_pxls = kwargs.pop(
+            'max_noisy_pxls', DEFAULTS['mask_noise_params']['max_noisy_pxls'])
         if self.method == constants.NOISE_METHOD_RGB:
             self._implementation = NoiseDetectionRGB(**kwargs)
         elif self.method == constants.NOISE_METHOD_NORM_LAB:
@@ -291,9 +293,13 @@ class NoiseDetection(TaskBase, ImageSequenceManager):
         hot_rgb, detection_info = self._implementation.detect_hot_pixels(mean_img, blurred)
         if 'message' in detection_info:
             self.print_message(color_str(detection_info['message'], constants.LOG_COLOR_LEVEL_2))
-        n_hot_pixels = np.count_nonzero(hot_rgb > 0)
-        self.print_message(color_str(f"hot pixels detected: {n_hot_pixels}",
+        n_noisy_pixels = np.count_nonzero(hot_rgb > 0)
+        self.print_message(color_str(f"hot pixels detected: {n_noisy_pixels}",
                            constants.LOG_COLOR_LEVEL_2))
+        if n_noisy_pixels > self.max_noisy_pxls:
+            raise RuntimeError(
+                f"Too many hot pixels selected: {n_noisy_pixels} > {self.max_noisy_pxls}.\n"
+                "Reduce the number of noisy pixels to mask.")
         output_full_path = os.path.join(self.working_path, self.output_path)
         if not os.path.exists(output_full_path):
             self.print_message(f"create directory: {self.output_path}")
@@ -359,7 +365,8 @@ class MaskNoise(SubAction):
         noise_coords = np.argwhere(self.noise_mask_img > 0)
         n_noisy_pixels = noise_coords.shape[0]
         if n_noisy_pixels > self.max_noisy_pxls:
-            raise RuntimeError(f"Noise map contains too many hot pixels: {n_noisy_pixels}")
+            raise RuntimeError(
+                f"Noise map contains too many hot pixels: {n_noisy_pixels} > {self.max_noisy_pxls}")
         for y, x in noise_coords:
             neighborhood = channel[
                 max(0, y - self.ks2):min(channel.shape[0], y + self.ks2_1),
