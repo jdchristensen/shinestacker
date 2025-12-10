@@ -10,6 +10,7 @@ This page reports the main releases only and the main changes therein.
 - multithread conflict in plot generation
 - plot images are by default in png format to prevent a potential issue with too many pdf generation with matplotlib. PDF is optional in the settings
 - prevents to save a noisy pixel map that contains too many pixels
+- missing match plot in parallel alignment module
 
 --------------------------
 

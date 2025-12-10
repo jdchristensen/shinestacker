@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 from .. config.constants import constants
 from .. config.defaults import DEFAULTS
 from .. core.exceptions import InvalidOptionError
-from .utils import img_8bit, save_plot
+from .utils import img_8bit
 
 
 AFFINE_THRESHOLDS = {
@@ -237,16 +237,26 @@ def find_transform_phase_correlation(img_ref, img_0):
     return m
 
 
-def plot_matches(msk, img_ref_sub, img_0_sub, kp_ref, kp_0, good_matches, plot_path):
+def plot_matches(msk, img_ref_sub, img_0_sub, kp_ref, kp_0, good_matches,
+                 plot_path, plot_manager=None):
     matches_mask = msk.ravel().tolist()
-    img_match = cv2.cvtColor(cv2.drawMatches(
+    if len(good_matches) == 0:
+        return
+    match_result = cv2.drawMatches(
         img_8bit(img_0_sub), kp_0, img_8bit(img_ref_sub),
         kp_ref, good_matches, None, matchColor=(0, 255, 0),
         singlePointColor=None, matchesMask=matches_mask,
-        flags=2), cv2.COLOR_BGR2RGB)
-    plt.figure(figsize=constants.PLT_FIG_SIZE)
-    plt.imshow(img_match, 'gray')
-    save_plot(plot_path)
+        flags=2)
+    if match_result is None:
+        return
+    img_match = cv2.cvtColor(match_result, cv2.COLOR_BGR2RGB)
+    fig, ax = plt.subplots(figsize=constants.PLT_FIG_SIZE)
+    ax.imshow(img_match)
+    ax.set_axis_off()
+    plt.tight_layout()
+    if plot_manager is not None and plot_path is not None:
+        plot_manager.save_plot(plot_path, fig)
+    plt.close(fig)
 
 
 class TransformationExtractor:
@@ -256,7 +266,7 @@ class TransformationExtractor:
         self.homography_thresholds = homography_thresholds
 
     def extract_transformation(self, match_result, img_ref_sub, img_0_sub, subsample,
-                               original_shape, callbacks=None, plot_path=None):
+                               original_shape, callbacks=None, plot_path=None, plot_manager=None):
         transform_type = self.alignment_config['transform']
         min_matches = 4 if transform_type == constants.ALIGN_HOMOGRAPHY else 3
         min_good_matches = self.alignment_config['min_good_matches']
@@ -273,9 +283,9 @@ class TransformationExtractor:
                 *(self.alignment_config[k]
                   for k in ['rans_threshold', 'max_iters',
                             'align_confidence', 'refine_iters']))
-            if m is not None and plot_path is not None:
+            if m is not None and plot_path is not None and plot_manager is not None:
                 plot_matches(msk, img_ref_sub, img_0_sub, match_result.kp_ref, match_result.kp_0,
-                             match_result.good_matches, plot_path)
+                             match_result.good_matches, plot_path, plot_manager)
                 if callbacks and 'save_plot' in callbacks:
                     callbacks['save_plot'](plot_path)
         if m is None or not match_result.has_sufficient_matches(min_matches):

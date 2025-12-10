@@ -244,13 +244,15 @@ def test_extract_transformation_with_plot_path():
     callbacks = {'warning': MagicMock(), 'save_plot': MagicMock()}
     img_ref_sub = np.ones((50, 50, 3), dtype=np.uint8)
     img_0_sub = np.ones((50, 50, 3), dtype=np.uint8)
+    plot_manager = MagicMock()
     with patch('shinestacker.algorithms.transform_estimate.find_transform') as mock_find:
         with patch('shinestacker.algorithms.transform_estimate.check_transform') as mock_check:
             with patch('shinestacker.algorithms.transform_estimate.plot_matches') as mock_plot:
                 mock_find.return_value = (np.float32([[1, 0, 0], [0, 1, 0]]), np.array([1, 1, 1]))
                 mock_check.return_value = (True, "Valid", None)
                 extractor.extract_transformation(
-                    match_result, img_ref_sub, img_0_sub, 1, (100, 100), callbacks, "test_plot.png")
+                    match_result, img_ref_sub, img_0_sub, 1, (100, 100),
+                    callbacks, "test_plot.png", plot_manager)
                 mock_plot.assert_called_once()
                 callbacks['save_plot'].assert_called_once_with("test_plot.png")
 
@@ -296,10 +298,15 @@ def test_plot_matches():
     kp_0 = [cv2.KeyPoint(15, 15, 5), cv2.KeyPoint(25, 25, 5), cv2.KeyPoint(35, 35, 5)]
     good_matches = [cv2.DMatch(0, 0, 0, 0), cv2.DMatch(1, 1, 0, 0), cv2.DMatch(2, 2, 0, 0)]
     plot_path = "test_plot.png"
-    plot_matches(msk, img_ref_sub, img_0_sub, kp_ref, kp_0, good_matches, plot_path)
-    import os
-    assert os.path.exists(plot_path)
-    os.remove(plot_path)
+    plot_manager = MagicMock()
+    plot_matches(msk, img_ref_sub, img_0_sub, kp_ref, kp_0, good_matches, plot_path, plot_manager)
+    plot_manager.save_plot.assert_called_once()
+    plot_matches(msk, img_ref_sub, img_0_sub, kp_ref, kp_0, good_matches, plot_path, None)
+    plot_matches(msk, img_ref_sub, img_0_sub, kp_ref, kp_0, [], plot_path, plot_manager)
+    with patch('cv2.drawMatches') as mock_draw:
+        mock_draw.return_value = None
+        plot_matches(msk, img_ref_sub, img_0_sub, kp_ref, kp_0, good_matches,
+                     plot_path, plot_manager)
 
 
 def test_apply_alignment_transform_rigid_valid():

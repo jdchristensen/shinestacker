@@ -27,7 +27,7 @@ def align_images_phase_correlation(img_ref, img_0):
 
 
 def align_images(img_ref, img_0, feature_config=None, matching_config=None, alignment_config=None,
-                 plot_path=None, callbacks=None,
+                 plot_path=None, plot_manager=None, callbacks=None,
                  affine_thresholds=AFFINE_THRESHOLDS,
                  homography_thresholds=HOMOGRAPHY_THRESHOLDS):
     feature_config = {**DEFAULT_FEATURE_CONFIG, **(feature_config or {})}
@@ -53,7 +53,8 @@ def align_images(img_ref, img_0, feature_config=None, matching_config=None, alig
     extractor = TransformationExtractor(
         alignment_config, affine_thresholds, homography_thresholds)
     m, _phase_corr_called, _msk = extractor.extract_transformation(
-        match_result, img_ref_sub, img_0_sub, subsample, img_0.shape, callbacks, plot_path)
+        match_result, img_ref_sub, img_0_sub, subsample, img_0.shape, callbacks,
+        plot_path, plot_manager)
     if m is None:
         if callbacks and 'warning' in callbacks:
             callbacks['warning']('could not extract transformation, alignment failed')
@@ -369,7 +370,8 @@ class AlignFrames(AlignFramesBase):
         n_good_matches = match_result.n_good_matches()
         img_ref_sub, img_0_sub = self.feature_matcher.get_last_subsampled_images()
         m, _phase_corr_called, _msk = self.transformation_extractor.extract_transformation(
-            match_result, img_ref_sub, img_0_sub, subsample, img_0.shape, callbacks, plot_path)
+            match_result, img_ref_sub, img_0_sub, subsample, img_0.shape, callbacks,
+            plot_path, self.process.plot_manager)
         if m is None:
             self._n_good_matches[idx] = n_good_matches
             return None

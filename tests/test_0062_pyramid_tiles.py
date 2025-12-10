@@ -301,9 +301,9 @@ def test_temp_dir_manager_scenario():
         pts = PyramidTilesStack()
         assert pts.temp_dir_manager is not None
         assert os.path.exists(pts.temp_dir_path)
-        pts.print_message = MagicMock()        
-        temp_dir_path = pts.temp_dir_path        
-        pts.cleanup_temp_files()        
+        pts.print_message = MagicMock()
+        temp_dir_path = pts.temp_dir_path
+        pts.cleanup_temp_files()
         assert not os.path.exists(temp_dir_path)
 
 

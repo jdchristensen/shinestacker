@@ -112,7 +112,9 @@ class AlignFramesParallel(AlignFramesBase):
                     self.process.callback(constants.CALLBACK_UPDATE_FRAME_STATUS,
                                           self.process.output_path, filename, 1001)
                     self.print_message(
-                        f"failed processing {self.image_str(idx)}: {str(e)}")
+                        color_str(f"failed processing {self.image_str(idx)}: {str(e)}",
+                                  constants.LOG_COLOR_WARNING),
+                        level=logging.WARNING)
             cached_images = 0
             for i in range(self.process.num_input_filepaths()):
                 if self._img_locks[i] >= 2:
@@ -124,10 +126,6 @@ class AlignFramesParallel(AlignFramesBase):
 
     def begin(self, process):
         super().begin(process)
-        if self.plot_matches:
-            self.print_message(
-                "requested plot matches is not supported with parallel processing",
-                color=constants.LOG_COLOR_WARNING, level=logging.WARNING)
         n_frames = self.process.num_input_filepaths()
         if n_frames < 2:
             return
@@ -265,9 +263,23 @@ class AlignFramesParallel(AlignFramesBase):
         )
         self._n_good_matches[idx] = match_result.n_good_matches()
         img_ref_sub, img_0_sub = self.feature_matcher.get_last_subsampled_images()
+        idx_str = f"{idx:04d}"
+        if self.plot_matches:
+            plot_path = os.path.join(
+                self.process.working_path,
+                self.process.plot_path,
+                f"{self.process.name}-matches-{idx_str}.pdf")
+        else:
+            plot_path = None
+        callbacks = {
+            'save_plot': lambda plot_path: self.process.callback(
+                constants.CALLBACK_SAVE_PLOT, self.process.id,
+                f"{self.process.name}: matches\nframe {idx_str}", plot_path),
+        }
         m, phase_corr_called, _ = \
             self.transformation_extractor.extract_transformation(
-                match_result, img_ref_sub, img_0_sub, subsample, img_0.shape)
+                match_result, img_ref_sub, img_0_sub, subsample, img_0.shape, callbacks,
+                plot_path, self.process.plot_manager)
         if m is None:
             if phase_corr_called:
                 return info_messages, warning_messages

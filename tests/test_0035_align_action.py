@@ -1,6 +1,7 @@
 # pylint: disable= C0116, C0114, W0212, E1101
 import math
 import logging
+from unittest.mock import MagicMock
 import numpy as np
 from shinestacker.config import constants
 from shinestacker.algorithms.align import (
@@ -623,6 +624,7 @@ def test_align_frames_end_with_plot_summary_rigid():
         name = "test"
         id = 1
         callback_calls = []
+        plot_manager = MagicMock()
 
         def callback(self, callback_type, process_id, description, plot_path):
             self.callback_calls.append((callback_type, description, plot_path))
@@ -638,6 +640,7 @@ def test_align_frames_end_with_plot_summary_rigid():
     align_frames._shear = np.array([0.0, 0.3, 0.0, -0.4, 0.1])
     align_frames.end()
     assert len(process.callback_calls) == 4
+    process.plot_manager.save_plot.assert_called()
 
 
 def test_align_frames_end_with_plot_summary_homography():
@@ -651,6 +654,7 @@ def test_align_frames_end_with_plot_summary_homography():
         name = "test"
         id = 1
         callback_calls = []
+        plot_manager = MagicMock()
 
         def callback(self, callback_type, process_id, description, plot_path):
             self.callback_calls.append((callback_type, description, plot_path))
@@ -663,6 +667,7 @@ def test_align_frames_end_with_plot_summary_homography():
     align_frames._max_angle_dev = np.array([0.0, 0.0, 1.0, 2.0])
     align_frames.end()
     assert len(process.callback_calls) == 4
+    process.plot_manager.save_plot.assert_called()
 
 
 def test_align_frames_image_str():

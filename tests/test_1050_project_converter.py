@@ -11,7 +11,7 @@ from shinestacker.core.exceptions import RunStopException
 
 @pytest.fixture
 def converter():
-    return ProjectConverter()
+    return ProjectConverter(None)
 
 
 @pytest.fixture
