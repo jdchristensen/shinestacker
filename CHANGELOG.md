@@ -2,15 +2,16 @@
 
 This page reports the main releases only and the main changes therein.
 
-## [v1.11.x] - 2025-12-10
+## [v1.11.3] - 2025-12-10
+**Bug fix release**
 
 ### Fixed
-- minor logging printout fix
-- added more exeption protection to focus stacking algorithm
 - multithread conflict in plot generation
-- plot images are by default in png format to prevent a potential issue with too many pdf generation with matplotlib. PDF is optional in the settings
 - prevents to save a noisy pixel map that contains too many pixels
 - missing match plot in parallel alignment module
+- plot images are by default in png format to prevent a potential issue with too many pdf generation with matplotlib. PDF is optional in the settings
+- added more exeption protection to focus stacking algorithm
+- minor logging printout fix
 
 --------------------------
 
