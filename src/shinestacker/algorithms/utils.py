@@ -1,13 +1,8 @@
 # pylint: disable=C0114, C0116, E1101, R0914, W0718
 import os
 import sys
-import gc
-import logging
-import threading
 import numpy as np
 import cv2
-import matplotlib.pyplot as plt
-from .. config.config import config
 from .. core.exceptions import ShapeError, BitDepthError, PathTooLong, InvalidWinPath
 
 
@@ -171,43 +166,6 @@ def validate_image(img, expected_shape=None, expected_dtype=None):
 
 def read_and_validate_img(filename, expected_shape=None, expected_dtype=None):
     return validate_image(read_img(filename), expected_shape, expected_dtype)
-
-
-PLOT_SAVE_LOCK = threading.Lock()
-
-
-def save_plot(filename, fig=None):
-    logger = logging.getLogger(__name__)
-    logger.debug(msg=f"Saving plot to: {filename}")
-    dir_path = os.path.dirname(filename)
-    if dir_path and not os.path.isdir(dir_path):
-        os.makedirs(dir_path, exist_ok=True)
-    try:
-        with PLOT_SAVE_LOCK:
-            original_level = logging.getLogger().level
-            if original_level < logging.WARNING:
-                logging.getLogger().setLevel(logging.WARNING)
-            if fig is None:
-                fig = plt.gcf()
-            fig.savefig(filename, dpi=150, bbox_inches='tight')
-            if original_level < logging.WARNING:
-                logging.getLogger().setLevel(original_level)
-            if config.JUPYTER_NOTEBOOK:
-                try:
-                    plt.show()
-                except Exception as e:
-                    logger.warning(msg=f"Could not display plot in Jupyter: {e}")
-            plt.close(fig)
-    except Exception as e:
-        logger.error(msg=f"Failed to save plot to {filename}: {e}")
-        try:
-            plt.close(fig)
-        except Exception:
-            pass
-        raise
-    finally:
-        gc.collect()
-    return True
 
 
 def img_subsample(img, subsample, fast=True):
