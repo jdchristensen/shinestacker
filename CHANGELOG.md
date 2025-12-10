@@ -7,6 +7,7 @@ This page reports the main releases only and the main changes therein.
 ### Fixed
 - minor logging printout fix
 - added more exeption protection to focus stacking algorithm
+- plot images are by default in png format to prevent a potential issue with too many pdf generation with matplotlib
 
 --------------------------
 

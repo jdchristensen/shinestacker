@@ -252,6 +252,7 @@ class SettingsDialog(ConfigDialog, AlignFramesConfigBase):
                         DEFAULTS['plots_format'],
                         [
                             ("PNG", "png"),
+                            ("JPEG", "jpg"),
                             ("PDF", "pdf")
                         ]
                     ),

@@ -8,6 +8,7 @@ import matplotlib.pyplot as plt
 from .. config.config import config
 from .. config.constants import constants
 from .. config.defaults import DEFAULTS
+from .. config.app_config import AppConfig
 from .. core.colors import color_str
 from .. core.exceptions import ImageLoadError, InvalidOptionError
 from .. core.framework import TaskBase
@@ -120,7 +121,8 @@ class NoiseDetectionRGB:
         plt.legend()
         plt.xlim(bin_edges[0], bin_edges[-2])
         plt.yscale("log", nonpositive='clip')
-        plot_path = f"{working_path}/{plot_path}/{name}-hot-pixels.pdf"
+        plots_ext = AppConfig.get('plots_format')
+        plot_path = f"{working_path}/{plot_path}/{name}-hot-pixels.{plots_ext}"
         save_plot(plot_path)
         callback(constants.CALLBACK_SAVE_PLOT, idx, f"{name}: noise", plot_path)
         plt.close('all')
@@ -202,7 +204,8 @@ class NoiseDetectionLAB:
         if len(bin_edges) > 1:
             plt.xlim(bin_edges[0], bin_edges[-2])
         plt.yscale("log", nonpositive='clip')
-        plot_path = f"{working_path}/{plot_path}/{name}-distance-histogram.pdf"
+        plots_ext = AppConfig.get('plots_format')
+        plot_path = f"{working_path}/{plot_path}/{name}-distance-histogram.{plots_ext}"
         save_plot(plot_path)
         callback(constants.CALLBACK_SAVE_PLOT, id, f"{name}: distance histogram", plot_path)
         plt.close('all')

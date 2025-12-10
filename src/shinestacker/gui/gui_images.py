@@ -79,32 +79,54 @@ class GuiImageView(QWidget):
         self.setLayout(self.main_layout)
         try:
             img = read_img(file_path)
+            if img is None:
+                raise RuntimeError(f"Failed to load image: {file_path}")
+            if img.dtype == np.uint16:
+                img = (img // 256).astype(np.uint8)
             height, width = img.shape[:2]
             scale_factor = gui_constants.GUI_IMG_WIDTH / width
             new_height = int(height * scale_factor)
-            img = cv2.resize(img, (gui_constants.GUI_IMG_WIDTH, new_height),
-                             interpolation=cv2.INTER_LINEAR)
+
+            def resize_high_quality(image, target_width, target_height):
+                current_height, current_width = image.shape[:2]
+                if target_width > current_width * 0.5:
+                    return cv2.resize(image, (target_width, target_height),
+                                      interpolation=cv2.INTER_AREA)
+                result = image.copy()
+                steps = []
+                while current_width > target_width * 2:
+                    current_width = max(current_width // 2, target_width)
+                    current_height = max(current_height // 2, target_height)
+                    steps.append((current_width, current_height))
+                for w, h in steps:
+                    result = cv2.resize(result, (w, h), interpolation=cv2.INTER_AREA)
+                return cv2.resize(result, (target_width, target_height),
+                                  interpolation=cv2.INTER_AREA)
+
+            img = resize_high_quality(img, gui_constants.GUI_IMG_WIDTH, new_height)
+            if len(img.shape) == 3:
+                h, w, ch = img.shape
+                if ch == 4:
+                    rgb_image = cv2.cvtColor(img, cv2.COLOR_BGRA2RGBA)
+                    bytes_per_line = ch * w
+                    q_img = QImage(rgb_image.data, w, h, bytes_per_line, QImage.Format_RGBA8888)
+                elif ch == 3:
+                    rgb_image = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+                    bytes_per_line = 3 * w
+                    q_img = QImage(rgb_image.data, w, h, bytes_per_line, QImage.Format_RGB888)
+                else:
+                    raise RuntimeError(f"Unsupported number of channels: {ch}")
+            else:
+                h, w = img.shape
+                bytes_per_line = w
+                q_img = QImage(img.data, w, h, bytes_per_line, QImage.Format_Grayscale8)
+            pixmap = QPixmap.fromImage(q_img)
+            if pixmap.isNull():
+                raise RuntimeError(f"Failed to create pixmap from image: {file_path}")
+            self.image_label.setPixmap(pixmap)
+            self.setFixedSize(pixmap.size())
         except Exception as e:
-            raise RuntimeError(f"Can't load file: {file_path}.") from e
-        if img.dtype == np.uint16:
-            img = (img // 256).astype(np.uint8)
-        if len(img.shape) == 3:
-            h, w, ch = img.shape
-            bytes_per_line = ch * w
-            rgb_image = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-            q_img = QImage(rgb_image.data, w, h, bytes_per_line, QImage.Format_RGB888)
-        else:
-            h, w = img.shape
-            bytes_per_line = w
-            q_img = QImage(img.data, w, h, bytes_per_line, QImage.Format_Grayscale8)
-        pixmap = QPixmap.fromImage(q_img)
-        self.image_label.setPixmap(pixmap)
-        if pixmap:
-            scaled_pixmap = pixmap.scaledToWidth(
-                gui_constants.GUI_IMG_WIDTH, Qt.SmoothTransformation)
-            self.image_label.setPixmap(scaled_pixmap)
-        else:
-            raise RuntimeError(f"Can't load file: {file_path}.")
+            raise RuntimeError(f"Can't load file: {file_path}. Error: {str(e)}") from e
         self.setStyleSheet('''
         QWidget {
             border: 2px solid #0000a0;
