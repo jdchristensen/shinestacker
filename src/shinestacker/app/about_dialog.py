@@ -5,11 +5,13 @@ import ssl
 import warnings
 from urllib.request import urlopen, Request
 from urllib.error import URLError
-from PySide6.QtWidgets import QDialog, QVBoxLayout, QHBoxLayout, QPushButton, QLabel, QMessageBox
+from PySide6.QtWidgets import (
+    QDialog, QVBoxLayout, QHBoxLayout, QPushButton, QLabel, QMessageBox, QCheckBox)
 from PySide6.QtCore import Qt
 from .. import __version__
 from .. retouch.icon_container import icon_container
 from .. config.constants import constants
+from .. config.settings import Settings
 
 
 class AboutDialog(QDialog):
@@ -58,6 +60,8 @@ def show_update_dialog(parent):
     if not update_available:
         return
     version_clean = __version__.split("+", maxsplit=1)[0]
+    settings = Settings.instance()
+    check_for_updates = settings.get('check_for_updates')
     dialog = QMessageBox(parent)
     dialog.setWindowTitle("Update Available")
     dialog.setIcon(QMessageBox.Information)
@@ -70,17 +74,20 @@ def show_update_dialog(parent):
     </ul>
     <p>Download the latest version from:</p>
     <p><a href="https://github.com/lucalista/shinestacker/releases/latest">https://github.com/lucalista/shinestacker/releases/latest</a></p>
-    <p style="color: #666666; font-size: small;">
-    To hide this message in the future, uncheck:<br>
-    Settings → Project Settings → General → "Check for updates"
-    </p>
     </html>
-    """ # noqa E501
+    """  # noqa E501
     dialog.setText(message)
-    dialog.setInformativeText("You can always check for updates in the About dialog.")
-    dialog.setStandardButtons(QMessageBox.Ok)
+    dialog.setInformativeText('You can always check for updates in the About dialog.')
+    checkbox = QCheckBox("Don't show this message again")
+    checkbox.setChecked(not check_for_updates)
+    dialog.setCheckBox(checkbox)
+    dialog.setStandardButtons(QMessageBox.Ok | QMessageBox.Cancel)
     dialog.setDefaultButton(QMessageBox.Ok)
-    dialog.exec()
+    result = dialog.exec()
+    if result == QMessageBox.Ok:
+        new_setting = not checkbox.isChecked()
+        settings.set('check_for_updates', new_setting)
+        settings.update()
 
 
 def compare_versions(current, latest):

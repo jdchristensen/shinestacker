@@ -2,7 +2,7 @@
 
 This page reports the main releases only and the main changes therein.
 
-## [v1.11.x] - 2025-12-10
+## [v1.11.x] - 2025-12-11
 
 ### Added
 - startup dialog prompts an update if a new version is available
