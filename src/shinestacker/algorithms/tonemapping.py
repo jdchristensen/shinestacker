@@ -21,15 +21,12 @@ def local_tonemapping(img, amount, clip_limit, tile_size):
         l_scaled = (l_channel.astype(np.float32) / 65535.0 * 255.0).astype(np.uint8)
         l_enhanced_8bit = clahe.apply(l_scaled)
         l_enhanced = (l_enhanced_8bit.astype(np.float32) / 255.0 * 65535.0).astype(np.uint16)
-    if amount < 1.0:
-        if amount <= 0:
-            return img
-        if amount < 1.0:
-            l_final = cv2.addWeighted(l_channel, 1 - amount, l_enhanced, amount, 0)
-        else:
-            l_final = l_enhanced
-    else:
+    if amount <= 0:
+        return img
+    elif amount >= 1.0:
         l_final = l_enhanced
+    else:
+        l_final = cv2.addWeighted(l_channel, 1 - amount, l_enhanced, amount, 0)
     if is_color:
         lab_enhanced = cv2.merge([l_final, a, b])
         return lab_to_bgr(lab_enhanced)
