@@ -37,11 +37,9 @@ def test_vibrance():
     if not os.path.exists(out_path):
         os.makedirs(out_path)
     try:
-        img_corr = bgr_to_hls(img)
-        h, l, s = cv2.split(img_corr)
+        h, l, s = cv2.split(bgr_to_hls(img))
         s_corr = contrast_correction(s, - 0.5)
-        img_corr = cv2.merge([h, l, s_corr])
-        img_corr = hls_to_bgr(img_corr)
+        img_corr = hls_to_bgr(cv2.merge([h, l, s_corr]))
         write_img(f"{out_path}/test-vibrance.jpg", img_corr)
         assert True
     except Exception:
@@ -53,11 +51,9 @@ def test_saturation():
     if not os.path.exists(out_path):
         os.makedirs(out_path)
     try:
-        img_corr = bgr_to_hls(img)
-        h, l, s = cv2.split(img_corr)
-        s_corr = gamma_correction(s, math.exp(0.5 * 1.2))
-        img_corr = cv2.merge([h, l, s_corr])
-        img_corr = hls_to_bgr(img_corr)
+        h, l, s = cv2.split(bgr_to_hls(img))
+        s_corr = gamma_correction(s, math.exp(0.5 * 0.8))
+        img_corr = hls_to_bgr(cv2.merge([h, l, s_corr]))
         write_img(f"{out_path}/test-saturation.jpg", img_corr)
         assert True
     except Exception:
@@ -93,11 +89,9 @@ def test_vibrance_16():
     if not os.path.exists(out_path):
         os.makedirs(out_path)
     try:
-        img_corr = bgr_to_hls(img)
-        h, l, s = cv2.split(img_corr)
+        h, l, s = cv2.split(bgr_to_hls(img))
         s_corr = contrast_correction(s, - 0.5)
-        img_corr = cv2.merge([h, l, s_corr])
-        img_corr = hls_to_bgr(img_corr)
+        img_corr = hls_to_bgr(cv2.merge([h, l, s_corr]))
         write_img(f"{out_path}/test-vibrance.tif", img_corr)
         assert True
     except Exception:
@@ -109,11 +103,9 @@ def test_saturation_16():
     if not os.path.exists(out_path):
         os.makedirs(out_path)
     try:
-        img_corr = bgr_to_hls(img)
-        h, l, s = cv2.split(img_corr)
-        s_corr = gamma_correction(s, math.exp(0.5 * 1.2))
-        img_corr = cv2.merge([h, l, s_corr])
-        img_corr = hls_to_bgr(img_corr)
+        h, l, s = cv2.split(bgr_to_hls(img))
+        s_corr = gamma_correction(s, math.exp(0.5 * 0.8))
+        img_corr = hls_to_bgr(cv2.merge([h, l, s_corr]))
         write_img(f"{out_path}/test-saturation.tif", img_corr)
         assert True
     except Exception:
