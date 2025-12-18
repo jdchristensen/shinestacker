@@ -6,22 +6,13 @@ This page reports the main releases only and the main changes therein.
 
 ### Added
 - tonemapping filter
-
-### Fixed
-- reverted Lab conversions to safer 8-bit implementation also for 16-bits 
-
---------------------------
-
-## [v1.11.4] - 2025-12-16
-
-### Added
 - startup dialog prompts an update if a new version is available
 
 ### Fixed
+- fixed Lab colorspace conversions for 16-bits 
 - fixed version retrival if ssl fails in about dialog
 
 --------------------------
-
 
 ## [v1.11.3] - 2025-12-10
 **Bug fix release**

@@ -1,4 +1,4 @@
-# pylint: disable=C0114, C0116, E1101, R0914, W0718
+# pylint: disable=C0114, C0116, E1101, R0914, W0718, C0103
 import os
 import sys
 import numpy as np
@@ -300,16 +300,99 @@ def bgr_to_lab(bgr_img):
         return cv2.cvtColor(bgr_img, cv2.COLOR_BGR2LAB)
     if len(bgr_img.shape) == 2:
         bgr_img = cv2.merge([bgr_img, bgr_img, bgr_img])
-    bgr_8bit = (bgr_img.astype(np.float32) / 65535 * 255).astype(np.uint8)
-    lab_8bit = cv2.cvtColor(bgr_8bit, cv2.COLOR_BGR2LAB)
-    lab_16bit = (lab_8bit.astype(np.float32) / 255 * 65535).astype(np.uint16)
-    return lab_16bit
+    bgr_float = bgr_img.astype(np.float32) / 65535.0
+    B, G, R = bgr_float[..., 0], bgr_float[..., 1], bgr_float[..., 2]
+
+    def inv_compand(c):
+        result = np.empty_like(c)
+        mask = c <= 0.04045
+        result[mask] = c[mask] / 12.92
+        not_mask = ~mask
+        if np.any(not_mask):
+            result[not_mask] = ((c[not_mask] + 0.055) / 1.055) ** 2.4
+        return result
+
+    R_lin, G_lin, B_lin = inv_compand(R), inv_compand(G), inv_compand(B)
+    X = 0.412453 * R_lin + 0.357580 * G_lin + 0.180423 * B_lin
+    Y = 0.212671 * R_lin + 0.715160 * G_lin + 0.072169 * B_lin
+    Z = 0.019334 * R_lin + 0.119193 * G_lin + 0.950227 * B_lin
+    X /= 0.950456
+    Z /= 1.088754
+
+    def f_xyz_to_lab(t):
+        delta = 6.0 / 29.0
+        delta_cubed = delta ** 3
+        result = np.empty_like(t)
+        mask = t > delta_cubed
+        result[mask] = t[mask] ** (1.0 / 3.0)
+        not_mask = ~mask
+        if np.any(not_mask):
+            result[not_mask] = t[not_mask] / (3 * delta * delta) + 4.0 / 29.0
+        return result
+
+    fY = f_xyz_to_lab(Y)
+    L = 116.0 * fY - 16.0
+    fX = f_xyz_to_lab(X)
+    fZ = f_xyz_to_lab(Z)
+    a = 500.0 * (fX - fY)
+    b = 200.0 * (fY - fZ)
+    L_scaled = np.clip(L * 652.80, 0, 65280).astype(np.uint16)
+    a_scaled = np.clip((a + 128.0) * 256.0, 0, 65535).astype(np.uint16)
+    b_scaled = np.clip((b + 128.0) * 256.0, 0, 65535).astype(np.uint16)
+    return np.stack([L_scaled, a_scaled, b_scaled], axis=-1)
 
 
 def lab_to_bgr(lab_img):
     if lab_img.dtype == np.uint8:
         return cv2.cvtColor(lab_img, cv2.COLOR_LAB2BGR)
-    lab_8bit = (lab_img.astype(np.float32) / 65535 * 255).astype(np.uint8)
-    bgr_8bit = cv2.cvtColor(lab_8bit, cv2.COLOR_LAB2BGR)
-    bgr_16bit = (bgr_8bit.astype(np.float32) / 255 * 65535).astype(np.uint16)
+    if len(lab_img.shape) == 2:
+        lab_img = cv2.merge([lab_img, lab_img, lab_img])
+    L = lab_img[..., 0].astype(np.float32) / 652.80
+    a = lab_img[..., 1].astype(np.float32) / 256.0 - 128.0
+    b = lab_img[..., 2].astype(np.float32) / 256.0 - 128.0
+    fY = (L + 16.0) / 116.0
+    Y = np.empty_like(fY)
+    delta = 6.0 / 29.0
+    mask = fY > delta
+    Y[mask] = fY[mask] ** 3
+    not_mask = ~mask
+    if np.any(not_mask):
+        Y[not_mask] = 3 * delta * delta * (fY[not_mask] - 4.0 / 29.0)
+    fX = a / 500.0 + fY
+    fZ = fY - b / 200.0
+    X = np.empty_like(fX)
+    Z = np.empty_like(fZ)
+    mask_x = fX > delta
+    X[mask_x] = fX[mask_x] ** 3
+    not_mask_x = ~mask_x
+    if np.any(not_mask_x):
+        X[not_mask_x] = 3 * delta * delta * (fX[not_mask_x] - 4.0 / 29.0)
+    mask_z = fZ > delta
+    Z[mask_z] = fZ[mask_z] ** 3
+    not_mask_z = ~mask_z
+    if np.any(not_mask_z):
+        Z[not_mask_z] = 3 * delta * delta * (fZ[not_mask_z] - 4.0 / 29.0)
+    X *= 0.950456
+    Z *= 1.088754
+    R_lin = 3.240479 * X - 1.537150 * Y - 0.498535 * Z
+    G_lin = -0.969256 * X + 1.875992 * Y + 0.041556 * Z
+    B_lin = 0.055648 * X - 0.204043 * Y + 1.057311 * Z
+    R_lin = np.clip(R_lin, 0, 1)
+    G_lin = np.clip(G_lin, 0, 1)
+    B_lin = np.clip(B_lin, 0, 1)
+
+    def compand(c):
+        result = np.empty_like(c)
+        mask = c <= 0.0031308
+        result[mask] = 12.92 * c[mask]
+        not_mask = ~mask
+        if np.any(not_mask):
+            result[not_mask] = 1.055 * (c[not_mask] ** (1 / 2.4)) - 0.055
+        return result
+
+    R = compand(R_lin)
+    G = compand(G_lin)
+    B = compand(B_lin)
+    bgr_float = np.stack([B, G, R], axis=-1)
+    bgr_16bit = np.clip(bgr_float * 65535.0, 0, 65535).astype(np.uint16)
     return bgr_16bit
