@@ -19,8 +19,13 @@ class TestUtils(unittest.TestCase):
             'tif': 'examples/input/img-tif/0000.tif',
             'png': 'examples/input/img-png-16/0000.png'
         }
-        self.test_color_img = np.random.randint(0, 255, (100, 100, 3), dtype=np.uint8)
-        self.test_color_img_16bit = np.random.randint(0, 65535, (100, 100, 3), dtype=np.uint16)
+        self.test_color_img = np.zeros((100, 100, 3), dtype=np.uint8)
+        self.test_color_img[0:50, 0:50, 2] = 255  # Red
+        self.test_color_img[0:50, 50:100, 1] = 255  # Green
+        self.test_color_img[50:100, 0:50, 0] = 255  # Blue
+        self.test_color_img[50:100, 50:100, :] = 128  # Gray
+        self.test_color_img_16bit = (
+            self.test_color_img.astype(np.float32) * 65535 / 255).astype(np.uint16)
 
     def test_get_path_extension(self):
         self.assertEqual(get_path_extension('image.jpg'), 'jpg')
@@ -150,26 +155,55 @@ class TestUtils(unittest.TestCase):
         hsv = bgr_to_hsv(self.test_color_img)
         bgr_back = hsv_to_bgr(hsv)
         self.assertEqual(bgr_back.shape, self.test_color_img.shape)
+        diff = np.max(np.abs(bgr_back.astype(np.float32) - self.test_color_img.astype(np.float32)))
+        self.assertLess(diff, 10, f"HSV round-trip diff too large: {diff}")
         hls = bgr_to_hls(self.test_color_img)
         bgr_back = hls_to_bgr(hls)
         self.assertEqual(bgr_back.shape, self.test_color_img.shape)
+        diff = np.max(np.abs(bgr_back.astype(np.float32) - self.test_color_img.astype(np.float32)))
+        self.assertLess(diff, 10, f"HLS round-trip diff too large: {diff}")
         lab = bgr_to_lab(self.test_color_img)
         bgr_back = lab_to_bgr(lab)
         self.assertEqual(bgr_back.shape, self.test_color_img.shape)
+        diff = np.max(np.abs(bgr_back.astype(np.float32) - self.test_color_img.astype(np.float32)))
+        self.assertLess(diff, 30, f"LAB round-trip diff too large: {diff}")
 
     def test_color_conversions_16bit(self):
-        hsv = bgr_to_hsv(self.test_color_img_16bit)
-        bgr_back = hsv_to_bgr(hsv)
-        self.assertEqual(bgr_back.shape, self.test_color_img_16bit.shape)
-        self.assertEqual(bgr_back.dtype, np.uint16)
-        hls = bgr_to_hls(self.test_color_img_16bit)
-        bgr_back = hls_to_bgr(hls)
-        self.assertEqual(bgr_back.shape, self.test_color_img_16bit.shape)
-        self.assertEqual(bgr_back.dtype, np.uint16)
-        lab = bgr_to_lab(self.test_color_img_16bit)
-        bgr_back = lab_to_bgr(lab)
-        self.assertEqual(bgr_back.shape, self.test_color_img_16bit.shape)
-        self.assertEqual(bgr_back.dtype, np.uint16)
+        simple_img = np.zeros((100, 100, 3), dtype=np.uint16)
+        simple_img[0:50, 0:50, 2] = 65535  # Red
+        simple_img[0:50, 50:100, 1] = 65535  # Green
+        simple_img[50:100, 0:50, 0] = 65535  # Blue
+        simple_img[50:100, 50:100, :] = 32768  # Gray
+        gradient = np.zeros((100, 100, 3), dtype=np.uint16)
+        for i in range(3):
+            gradient[:, :, i] = np.linspace(0, 65535, 100).reshape(1, -1)
+        test_cases = [
+            ("simple_colors", simple_img),
+            ("gradient", gradient)
+        ]
+        for name, test_img in test_cases:
+            print(f"\nTesting {name}...")
+            hsv = bgr_to_hsv(test_img)
+            bgr_back = hsv_to_bgr(hsv)
+            self.assertEqual(bgr_back.shape, test_img.shape)
+            self.assertEqual(bgr_back.dtype, np.uint16)
+            diff = np.max(np.abs(bgr_back.astype(np.float32) - test_img.astype(np.float32)))
+            self.assertLess(diff, 1000, f"HSV {name} diff too large: {diff}")
+            hls = bgr_to_hls(test_img)
+            bgr_back = hls_to_bgr(hls)
+            self.assertEqual(bgr_back.shape, test_img.shape)
+            self.assertEqual(bgr_back.dtype, np.uint16)
+            diff = np.max(np.abs(bgr_back.astype(np.float32) - test_img.astype(np.float32)))
+            self.assertLess(diff, 1000, f"HLS {name} diff too large: {diff}")
+            lab = bgr_to_lab(test_img)
+            bgr_back = lab_to_bgr(lab)
+            self.assertEqual(bgr_back.shape, test_img.shape)
+            self.assertEqual(bgr_back.dtype, np.uint16)
+            diff = np.max(np.abs(bgr_back.astype(np.float32) - test_img.astype(np.float32)))
+            if name == "simple_colors":
+                self.assertLess(diff, 2000, f"LAB {name} diff too large: {diff}")
+            else:
+                self.assertLess(diff, 5000, f"LAB {name} diff too large: {diff}")
 
     def test_grayscale_color_conversions(self):
         gray_img = np.random.randint(0, 65535, (50, 50), dtype=np.uint16)

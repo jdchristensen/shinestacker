@@ -37,20 +37,14 @@ class UnsharpMaskFilter(BaseFilter):
             elif name == "Threshold":
                 self.threshold_slider = slider
 
-        value_labels = self.create_sliders(params, dlg, layout, set_slider)
-
-        def update_value(name, value, max_val, fmt):
-            float_value = max_val * value / self.max_range
-            value_labels[name].setText(fmt.format(float_value))
-            if self.preview_check.isChecked():
-                self.preview_timer.start()
+        self.value_labels = self.create_sliders(params, dlg, layout, set_slider)
 
         self.radius_slider.valueChanged.connect(
-            lambda v: update_value("Radius", v, self.max_radius, params["Radius"][3]))
+            lambda v: self.update_value("Radius", v, self.max_radius, params["Radius"][3]))
         self.amount_slider.valueChanged.connect(
-            lambda v: update_value("Amount", v, self.max_amount, params["Amount"][3]))
+            lambda v: self.update_value("Amount", v, self.max_amount, params["Amount"][3]))
         self.threshold_slider.valueChanged.connect(
-            lambda v: update_value("Threshold", v, self.max_threshold, params["Threshold"][3]))
+            lambda v: self.update_value("Threshold", v, self.max_threshold, params["Threshold"][3]))
         self.set_timer(do_preview, restore_original, dlg)
 
     def get_params(self):

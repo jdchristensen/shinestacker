@@ -29,6 +29,12 @@ class BaseFilter(QObject, LayerCollectionHandler):
         self.button_box = None
         self.preview_timer = None
         self.max_range = 500
+        self.value_labels = None
+
+    def update_value(self, name, value, max_val, fmt):
+        self.value_labels[name].setText(fmt.format(max_val * value / self.max_range))
+        if self.preview_check.isChecked():
+            self.preview_timer.start()
 
     @abstractmethod
     def setup_ui(self, dlg, layout, do_preview, restore_original, **kwargs):

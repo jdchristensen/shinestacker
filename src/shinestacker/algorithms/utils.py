@@ -180,7 +180,7 @@ def img_subsample(img, subsample, fast=True):
 
 def bgr_to_hsv(bgr_img):
     if bgr_img.dtype == np.uint8:
-        return cv2.cvtColor(bgr_img, cv2.COLOR_BGR2HLS)
+        return cv2.cvtColor(bgr_img, cv2.COLOR_BGR2HSV)
     if len(bgr_img.shape) == 2:
         bgr_img = cv2.merge([bgr_img, bgr_img, bgr_img])
     bgr_normalized = bgr_img.astype(np.float32) / 65535.0
@@ -300,53 +300,16 @@ def bgr_to_lab(bgr_img):
         return cv2.cvtColor(bgr_img, cv2.COLOR_BGR2LAB)
     if len(bgr_img.shape) == 2:
         bgr_img = cv2.merge([bgr_img, bgr_img, bgr_img])
-    bgr_normalized = bgr_img.astype(np.float32) / 65535.0
-    b, g, r = cv2.split(bgr_normalized)
-    r_linear = np.where(r > 0.04045, ((r + 0.055) / 1.055) ** 2.4, r / 12.92)
-    g_linear = np.where(g > 0.04045, ((g + 0.055) / 1.055) ** 2.4, g / 12.92)
-    b_linear = np.where(b > 0.04045, ((b + 0.055) / 1.055) ** 2.4, b / 12.92)
-    x = r_linear * 0.4124564 + g_linear * 0.3575761 + b_linear * 0.1804375
-    y = r_linear * 0.2126729 + g_linear * 0.7151522 + b_linear * 0.0721750
-    z = r_linear * 0.0193339 + g_linear * 0.1191920 + b_linear * 0.9503041
-    x /= 0.950456
-    z /= 1.088754
-    x = np.where(x > 0.008856, x ** (1 / 3), (7.787 * x) + (16 / 116))
-    y = np.where(y > 0.008856, y ** (1 / 3), (7.787 * y) + (16 / 116))
-    z = np.where(z > 0.008856, z ** (1 / 3), (7.787 * z) + (16 / 116))
-    l = (116 * y) - 16  # noqa
-    a = 500 * (x - y)
-    b_val = 200 * (y - z)
-    l_16bit = np.clip(l * 65535 / 100, 0, 65535).astype(np.uint16)
-    a_16bit = np.clip((a + 128) * 65535 / 255, 0, 65535).astype(np.uint16)
-    b_16bit = np.clip((b_val + 128) * 65535 / 255, 0, 65535).astype(np.uint16)
-    return cv2.merge([l_16bit, a_16bit, b_16bit])
+    bgr_8bit = (bgr_img.astype(np.float32) / 65535 * 255).astype(np.uint8)
+    lab_8bit = cv2.cvtColor(bgr_8bit, cv2.COLOR_BGR2LAB)
+    lab_16bit = (lab_8bit.astype(np.float32) / 255 * 65535).astype(np.uint16)
+    return lab_16bit
 
 
 def lab_to_bgr(lab_img):
     if lab_img.dtype == np.uint8:
         return cv2.cvtColor(lab_img, cv2.COLOR_LAB2BGR)
-    l, a, b = cv2.split(lab_img)
-    l_normalized = l.astype(np.float32) * 100 / 65535.0
-    a_normalized = a.astype(np.float32) * 255 / 65535.0 - 128
-    b_normalized = b.astype(np.float32) * 255 / 65535.0 - 128
-    y = (l_normalized + 16) / 116
-    x = a_normalized / 500 + y
-    z = y - b_normalized / 200
-    x = np.where(x > 0.206893, x ** 3, (x - 16 / 116) / 7.787)
-    y = np.where(y > 0.206893, y ** 3, (y - 16 / 116) / 7.787)
-    z = np.where(z > 0.206893, z ** 3, (z - 16 / 116) / 7.787)
-    x *= 0.950456
-    z *= 1.088754
-    r_linear = x * 3.2404542 + y * -1.5371385 + z * -0.4985314
-    g_linear = x * -0.9692660 + y * 1.8760108 + z * 0.0415560
-    b_linear = x * 0.0556434 + y * -0.2040259 + z * 1.0572252
-    r_linear = np.clip(r_linear, 0, 1)
-    g_linear = np.clip(g_linear, 0, 1)
-    b_linear = np.clip(b_linear, 0, 1)
-    r = np.where(r_linear > 0.0031308, 1.055 * (r_linear ** (1 / 2.4)) - 0.055, 12.92 * r_linear)
-    g = np.where(g_linear > 0.0031308, 1.055 * (g_linear ** (1 / 2.4)) - 0.055, 12.92 * g_linear)
-    b = np.where(b_linear > 0.0031308, 1.055 * (b_linear ** (1 / 2.4)) - 0.055, 12.92 * b_linear)
-    r = np.clip(r * 65535, 0, 65535).astype(np.uint16)
-    g = np.clip(g * 65535, 0, 65535).astype(np.uint16)
-    b = np.clip(b * 65535, 0, 65535).astype(np.uint16)
-    return cv2.merge([b, g, r])
+    lab_8bit = (lab_img.astype(np.float32) / 65535 * 255).astype(np.uint8)
+    bgr_8bit = cv2.cvtColor(lab_8bit, cv2.COLOR_LAB2BGR)
+    bgr_16bit = (bgr_8bit.astype(np.float32) / 255 * 65535).astype(np.uint16)
+    return bgr_16bit

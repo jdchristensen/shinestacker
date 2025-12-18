@@ -2,7 +2,17 @@
 
 This page reports the main releases only and the main changes therein.
 
-## [v1.11.x] - 2025-12-11
+## [v1.11.x] - 2025-12-18
+
+### Added
+- tonemapping filter
+
+### Fixed
+- reverted Lab conversions to safer 8-bit implementation also for 16-bits 
+
+--------------------------
+
+## [v1.11.4] - 2025-12-16
 
 ### Added
 - startup dialog prompts an update if a new version is available

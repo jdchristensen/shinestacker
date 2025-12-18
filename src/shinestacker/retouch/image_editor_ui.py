@@ -26,6 +26,7 @@ from .unsharp_mask_filter import UnsharpMaskFilter
 from .white_balance_filter import WhiteBalanceFilter
 from .vignetting_filter import VignettingFilter
 from .adjustments import LumiContrastFilter, SaturationVibranceFilter
+from .local_tonemapping_filter import LocalTonemappingFilter
 from .transformation_manager import TransfromationManager
 from .exif_data import ExifData
 from .reset_slider import ResetSlider
@@ -405,6 +406,8 @@ class ImageEditorUI(QMainWindow, LayerCollectionHandler):
         self.filter_manager.register_filter(
             "Unsharp Mask", UnsharpMaskFilter, *filter_handles)
         self.filter_manager.register_filter(
+            "Local Tonemapping", LocalTonemappingFilter, *filter_handles)
+        self.filter_manager.register_filter(
             "White Balance", WhiteBalanceFilter, *filter_handles)
         self.filter_manager.register_filter(
             "Vignetting Correction", VignettingFilter, *filter_handles)
@@ -519,6 +522,12 @@ class ImageEditorUI(QMainWindow, LayerCollectionHandler):
         unsharp_mask_action.setProperty("requires_file", True)
         unsharp_mask_action.triggered.connect(self.unsharp_mask)
         filter_menu.addAction(unsharp_mask_action)
+
+        local_tonemapping_action = QAction("Local Tonemapping", self)
+        local_tonemapping_action.setProperty("requires_file", True)
+        local_tonemapping_action.triggered.connect(self.local_tonemapping)
+        filter_menu.addAction(local_tonemapping_action)
+
         vignetting_action = QAction("Vignetting Correction", self)
         vignetting_action.setProperty("requires_file", True)
         vignetting_action.triggered.connect(self.vignetting_correction)
@@ -853,6 +862,9 @@ class ImageEditorUI(QMainWindow, LayerCollectionHandler):
 
     def unsharp_mask(self):
         self.filter_manager.apply("Unsharp Mask")
+
+    def local_tonemapping(self):
+        self.filter_manager.apply("Local Tonemapping")
 
     def white_balance(self, init_val=None):
         self.filter_manager.apply("White Balance", init_val=init_val or (128, 128, 128))
