@@ -203,6 +203,26 @@ class TestUtils(unittest.TestCase):
         self.assertEqual(len(lab.shape), 3)
         self.assertEqual(lab.shape[2], 3)
 
+    def test_hls_8bit_16bit_equivalence(self):
+        img_16bit_path = "examples/input/img-tif/0000.tif"
+        if not os.path.exists(img_16bit_path):
+            return
+        img_16bit = read_img(img_16bit_path)
+        if img_16bit is None:
+            return
+        hls_16bit = bgr_to_hls(img_16bit)
+        img_8bit = (img_16bit >> 8).astype(np.uint8)
+        hls_from_8bit = bgr_to_hls(img_8bit)
+        h_16bit = hls_16bit[..., 0]
+        l_16bit = hls_16bit[..., 1]
+        s_16bit = hls_16bit[..., 2]
+        h_16bit_scaled = ((h_16bit.astype(np.float32) * 2 / 256)).astype(np.uint8)
+        l_16bit_scaled = (l_16bit >> 8).astype(np.uint8)
+        s_16bit_scaled = (s_16bit >> 8).astype(np.uint8)
+        hls_16bit_8bit = cv2.merge([h_16bit_scaled, l_16bit_scaled, s_16bit_scaled])
+        diff = np.max(np.abs(hls_16bit_8bit.astype(float) - hls_from_8bit.astype(float)))
+        self.assertLess(diff, 5)
+
 
 if __name__ == '__main__':
     loader = unittest.TestLoader()

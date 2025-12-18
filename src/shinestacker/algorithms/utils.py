@@ -239,26 +239,26 @@ def hsv_to_bgr(hsv_img):
 def bgr_to_hls(bgr_img):
     if bgr_img.dtype == np.uint8:
         return cv2.cvtColor(bgr_img, cv2.COLOR_BGR2HLS)
-    if len(bgr_img.shape) == 2:
-        bgr_img = cv2.merge([bgr_img, bgr_img, bgr_img])
-    bgr_normalized = bgr_img.astype(np.float32) / 65535.0
-    b, g, r = cv2.split(bgr_normalized)
-    max_val = np.max(bgr_normalized, axis=2)
-    min_val = np.min(bgr_normalized, axis=2)
-    delta = max_val - min_val
-    l = (max_val + min_val) / 2  # noqa
+    bgr_float = bgr_img.astype(np.float32) / 65535.0
+    b, g, r = bgr_float[..., 0], bgr_float[..., 1], bgr_float[..., 2]
+    v_max = np.maximum(np.maximum(r, g), b)
+    v_min = np.minimum(np.minimum(r, g), b)
+    delta = v_max - v_min
+    l = (v_max + v_min) / 2.0
     s = np.zeros_like(l)
-    mask = delta != 0
-    s[mask] = delta[mask] / (1 - np.abs(2 * l[mask] - 1))
+    mask = delta > 0
+    l_lt_half = l < 0.5
+    denom = np.where(l_lt_half, v_max + v_min, 2.0 - v_max - v_min)
+    s[mask] = delta[mask] / denom[mask]
+    s = np.clip(s, 0, 1)
     h = np.zeros_like(l)
-    r_is_max = (max_val == r) & mask
+    r_is_max = (v_max == r) & mask
+    g_is_max = (v_max == g) & mask
+    b_is_max = (v_max == b) & mask
     h[r_is_max] = (60 * (g[r_is_max] - b[r_is_max]) / delta[r_is_max]) % 360
-    g_is_max = (max_val == g) & mask
     h[g_is_max] = (60 * (b[g_is_max] - r[g_is_max]) / delta[g_is_max] + 120) % 360
-    b_is_max = (max_val == b) & mask
     h[b_is_max] = (60 * (r[b_is_max] - g[b_is_max]) / delta[b_is_max] + 240) % 360
-    h[h < 0] += 360
-    h_16bit = (h / 360 * 65535).astype(np.uint16)
+    h_16bit = (h * 65535 / 360).astype(np.uint16)
     l_16bit = (l * 65535).astype(np.uint16)
     s_16bit = (s * 65535).astype(np.uint16)
     return cv2.merge([h_16bit, l_16bit, s_16bit])
@@ -267,31 +267,34 @@ def bgr_to_hls(bgr_img):
 def hls_to_bgr(hls_img):
     if hls_img.dtype == np.uint8:
         return cv2.cvtColor(hls_img, cv2.COLOR_HLS2BGR)
-    h, l, s = cv2.split(hls_img)
-    h_normalized = h.astype(np.float32) / 65535.0 * 360
-    l_normalized = l.astype(np.float32) / 65535.0
-    s_normalized = s.astype(np.float32) / 65535.0
-    c = (1 - np.abs(2 * l_normalized - 1)) * s_normalized
-    x = c * (1 - np.abs((h_normalized / 60) % 2 - 1))
-    m = l_normalized - c / 2
-    r = np.zeros_like(h, dtype=np.float32)
-    g = np.zeros_like(h, dtype=np.float32)
-    b = np.zeros_like(h, dtype=np.float32)
-    mask = (h_normalized >= 0) & (h_normalized < 60)
+    hls_float = hls_img.astype(np.float32) / 65535.0
+    h = hls_float[..., 0] * 360.0
+    l = hls_float[..., 1]
+    s = hls_float[..., 2]
+    c = (1 - np.abs(2 * l - 1)) * s
+    x = c * (1 - np.abs(np.mod(h / 60.0, 2) - 1))
+    m = l - c / 2.0
+    r = np.zeros_like(h)
+    g = np.zeros_like(h)
+    b = np.zeros_like(h)
+    mask = (h >= 0) & (h < 60)
     r[mask], g[mask], b[mask] = c[mask], x[mask], 0
-    mask = (h_normalized >= 60) & (h_normalized < 120)
+    mask = (h >= 60) & (h < 120)
     r[mask], g[mask], b[mask] = x[mask], c[mask], 0
-    mask = (h_normalized >= 120) & (h_normalized < 180)
+    mask = (h >= 120) & (h < 180)
     r[mask], g[mask], b[mask] = 0, c[mask], x[mask]
-    mask = (h_normalized >= 180) & (h_normalized < 240)
+    mask = (h >= 180) & (h < 240)
     r[mask], g[mask], b[mask] = 0, x[mask], c[mask]
-    mask = (h_normalized >= 240) & (h_normalized < 300)
+    mask = (h >= 240) & (h < 300)
     r[mask], g[mask], b[mask] = x[mask], 0, c[mask]
-    mask = (h_normalized >= 300) & (h_normalized < 360)
+    mask = (h >= 300) & (h < 360)
     r[mask], g[mask], b[mask] = c[mask], 0, x[mask]
-    r = np.clip((r + m) * 65535, 0, 65535).astype(np.uint16)
-    g = np.clip((g + m) * 65535, 0, 65535).astype(np.uint16)
-    b = np.clip((b + m) * 65535, 0, 65535).astype(np.uint16)
+    r += m
+    g += m
+    b += m
+    r = np.clip(r * 65535, 0, 65535).astype(np.uint16)
+    g = np.clip(g * 65535, 0, 65535).astype(np.uint16)
+    b = np.clip(b * 65535, 0, 65535).astype(np.uint16)
     return cv2.merge([b, g, r])
 
 
