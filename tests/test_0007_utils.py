@@ -2,6 +2,7 @@ import unittest
 import os
 import tempfile
 import numpy as np
+import cv2
 from shinestacker.algorithms.utils import (
     get_path_extension, extension_tif, extension_jpg, extension_png,
     extension_tif_jpg, extension_tif_png, extension_jpg_png, extension_jpg_tif_png,
@@ -212,11 +213,11 @@ class TestUtils(unittest.TestCase):
             return
         hls_16bit = bgr_to_hls(img_16bit)
         img_8bit = (img_16bit >> 8).astype(np.uint8)
-        hls_from_8bit = bgr_to_hls(img_8bit)
+        hls_from_8bit = bgr_to_hls(img_8bit)        
         h_16bit = hls_16bit[..., 0]
         l_16bit = hls_16bit[..., 1]
         s_16bit = hls_16bit[..., 2]
-        h_16bit_scaled = ((h_16bit.astype(np.float32) * 2 / 256)).astype(np.uint8)
+        h_16bit_scaled = ((h_16bit.astype(np.float32) / 65535.0 * 360) / 2).astype(np.uint8)
         l_16bit_scaled = (l_16bit >> 8).astype(np.uint8)
         s_16bit_scaled = (s_16bit >> 8).astype(np.uint8)
         hls_16bit_8bit = cv2.merge([h_16bit_scaled, l_16bit_scaled, s_16bit_scaled])
