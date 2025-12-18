@@ -175,21 +175,21 @@ class TestUtils(unittest.TestCase):
         self.assertEqual(bgr_back.dtype, np.uint16)
         diff = np.max(np.abs(bgr_back.astype(np.float32) -
                              self.test_color_img_16bit.astype(np.float32)))
-        self.assertLess(diff, 100, f"HSV round-trip diff too large: {diff}")
+        self.assertLess(diff, 50, f"HSV round-trip diff too large: {diff}")
         hls = bgr_to_hls(self.test_color_img_16bit)
         bgr_back = hls_to_bgr(hls)
         self.assertEqual(bgr_back.shape, self.test_color_img_16bit.shape)
         self.assertEqual(bgr_back.dtype, np.uint16)
         diff = np.max(np.abs(bgr_back.astype(np.float32) -
                              self.test_color_img_16bit.astype(np.float32)))
-        self.assertLess(diff, 100, f"HLS round-trip diff too large: {diff}")
+        self.assertLess(diff, 50, f"HLS round-trip diff too large: {diff}")
         lab = bgr_to_lab(self.test_color_img_16bit)
         bgr_back = lab_to_bgr(lab)
         self.assertEqual(bgr_back.shape, self.test_color_img_16bit.shape)
         self.assertEqual(bgr_back.dtype, np.uint16)
         diff = np.max(np.abs(bgr_back.astype(np.float32) -
                              self.test_color_img_16bit.astype(np.float32)))
-        self.assertLess(diff, 500, f"LAB round-trip diff too large: {diff}")
+        self.assertLess(diff, 50, f"LAB round-trip diff too large: {diff}")
 
     def test_grayscale_color_conversions(self):
         gray_img = np.random.randint(0, 65535, (50, 50), dtype=np.uint16)
