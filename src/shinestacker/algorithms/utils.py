@@ -244,7 +244,7 @@ def bgr_to_hls(bgr_img):
     v_max = np.maximum(np.maximum(r, g), b)
     v_min = np.minimum(np.minimum(r, g), b)
     delta = v_max - v_min
-    l = (v_max + v_min) / 2.0
+    l = (v_max + v_min) / 2.0  # noqa
     s = np.zeros_like(l)
     mask = delta > 0
     l_lt_half = l < 0.5
@@ -269,7 +269,7 @@ def hls_to_bgr(hls_img):
         return cv2.cvtColor(hls_img, cv2.COLOR_HLS2BGR)
     hls_float = hls_img.astype(np.float32) / 65535.0
     h = hls_float[..., 0] * 360.0
-    l = hls_float[..., 1]
+    l = hls_float[..., 1]  # noqa
     s = hls_float[..., 2]
     c = (1 - np.abs(2 * l - 1)) * s
     x = c * (1 - np.abs(np.mod(h / 60.0, 2) - 1))
