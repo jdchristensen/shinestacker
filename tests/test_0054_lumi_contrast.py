@@ -2,6 +2,9 @@
 import os
 import math
 import cv2
+
+print(f"OpenCV version: {cv2.__version__}")
+
 from shinestacker.algorithms.corrections import gamma_correction, contrast_correction
 from shinestacker.algorithms.utils import read_img, write_img, bgr_to_hls, hls_to_bgr
 

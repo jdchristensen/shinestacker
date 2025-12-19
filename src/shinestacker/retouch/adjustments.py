@@ -3,7 +3,7 @@ from abc import abstractmethod
 import math
 import cv2
 from .base_filter import BaseFilter
-from .. algorithms.utils import bgr_to_hls, hls_to_bgr, img_8bit
+from .. algorithms.utils import bgr_to_hls, hls_to_bgr
 from .. algorithms.corrections import gamma_correction, contrast_correction
 
 
@@ -82,9 +82,6 @@ class LumiContrastFilter(GammaSCurveFilter):
         return img_corr
 
 
-import numpy as np
-
-
 class SaturationVibranceFilter(GammaSCurveFilter):
     def __init__(self, name, parent, image_viewer, layer_collection, undo_manager):
         super().__init__(
@@ -92,7 +89,7 @@ class SaturationVibranceFilter(GammaSCurveFilter):
             "Saturation, Vibrance", "Saturation", "Vibrance")
 
     def apply(self, image, stauration, vibrance):
-        h, l, s = cv2.split(bgr_to_hls(img_8bit(image)))
+        h, l, s = cv2.split(bgr_to_hls(image))
         s = contrast_correction(s, - vibrance)
         s = gamma_correction(s, math.exp(0.5 * stauration))
-        return (hls_to_bgr(cv2.merge([h, l, s])).astype(np.float32) * 256).astype(np.uint16)
+        return hls_to_bgr(cv2.merge([h, l, s]))
