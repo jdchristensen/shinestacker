@@ -11,6 +11,7 @@ This page reports the main releases only and the main changes therein.
 ### Fixed
 - fixed Lab colorspace conversions for 16-bits 
 - fixed version retrival if ssl fails in about dialog
+- forced open-cv version 4.11 to prevent bug in hls color space
 
 --------------------------
 
