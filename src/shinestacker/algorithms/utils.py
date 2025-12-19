@@ -112,7 +112,7 @@ def write_img(file_path, img):
 
 
 def img_8bit(img):
-    return (img >> 8).astype('uint8') if img.dtype == np.uint16 else img
+    return (img >> 8).astype(np.uint8) if img.dtype == np.uint16 else img
 
 
 def img_bw_8bit(img):

@@ -250,6 +250,7 @@ class TestUtils(unittest.TestCase):
         diff2 = np.max(np.abs(bgr_16bit_scaled.astype(float) - bgr_from_8bit_hls.astype(float)))
         self.assertLess(diff2, 7)
 
+
 if __name__ == '__main__':
     loader = unittest.TestLoader()
     suite = loader.loadTestsFromTestCase(TestUtils)
