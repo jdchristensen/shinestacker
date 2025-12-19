@@ -2,7 +2,7 @@
 
 This page reports the main releases only and the main changes therein.
 
-## [v1.11.x] - 2025-12-18
+## [v1.x.x] - 2025-12-19
 
 ### Added
 - tonemapping filter
@@ -11,7 +11,7 @@ This page reports the main releases only and the main changes therein.
 ### Fixed
 - fixed Lab colorspace conversions for 16-bits 
 - fixed version retrival if ssl fails in about dialog
-- forced open-cv version 4.11 to prevent bug in hls color space
+- forced open-cv version 4.11 to prevent bug in 16 bits hls color space conversion
 
 --------------------------
 
