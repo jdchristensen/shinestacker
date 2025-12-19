@@ -208,27 +208,25 @@ def bgr_to_hsv(bgr_img):
 def hsv_to_bgr(hsv_img):
     if hsv_img.dtype == np.uint8:
         return cv2.cvtColor(hsv_img, cv2.COLOR_HSV2BGR)
-    h, s, v = cv2.split(hsv_img)
-    h_normalized = h.astype(np.float32) / 65535.0 * 360
-    s_normalized = s.astype(np.float32) / 65535.0
-    v_normalized = v.astype(np.float32) / 65535.0
-    c = v_normalized * s_normalized
-    x = c * (1 - np.abs((h_normalized / 60) % 2 - 1))
-    m = v_normalized - c
+    hsv_float = hsv_img.astype(np.float32) / 65535.0
+    h, s, v = hsv_float[..., 0] * 360, hsv_float[..., 1], hsv_float[..., 2]
+    c = v * s
+    x = c * (1 - np.abs((h / 60) % 2 - 1))
+    m = v - c
     r = np.zeros_like(h, dtype=np.float32)
     g = np.zeros_like(h, dtype=np.float32)
     b = np.zeros_like(h, dtype=np.float32)
-    mask = (h_normalized >= 0) & (h_normalized < 60)
+    mask = (h >= 0) & (h < 60)
     r[mask], g[mask], b[mask] = c[mask], x[mask], 0
-    mask = (h_normalized >= 60) & (h_normalized < 120)
+    mask = (h >= 60) & (h < 120)
     r[mask], g[mask], b[mask] = x[mask], c[mask], 0
-    mask = (h_normalized >= 120) & (h_normalized < 180)
+    mask = (h >= 120) & (h < 180)
     r[mask], g[mask], b[mask] = 0, c[mask], x[mask]
-    mask = (h_normalized >= 180) & (h_normalized < 240)
+    mask = (h >= 180) & (h < 240)
     r[mask], g[mask], b[mask] = 0, x[mask], c[mask]
-    mask = (h_normalized >= 240) & (h_normalized < 300)
+    mask = (h >= 240) & (h < 300)
     r[mask], g[mask], b[mask] = x[mask], 0, c[mask]
-    mask = (h_normalized >= 300) & (h_normalized < 360)
+    mask = (h >= 300) & (h < 360)
     r[mask], g[mask], b[mask] = c[mask], 0, x[mask]
     r = np.clip((r + m) * 65535, 0, 65535).astype(np.uint16)
     g = np.clip((g + m) * 65535, 0, 65535).astype(np.uint16)
