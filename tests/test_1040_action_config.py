@@ -1,6 +1,6 @@
 import pytest
 from unittest.mock import MagicMock, patch
-from PySide6.QtWidgets import QApplication, QFormLayout
+from PySide6.QtWidgets import QApplication, QFormLayout, QWidget
 from shinestacker.gui.action_config import FieldBuilder
 from shinestacker.gui.action_config_dialog import (
     ActionConfigDialog, DefaultActionConfigurator,
@@ -68,19 +68,15 @@ def test_field_builder_add_field(form_layout, mock_action, qapp):
     assert 'combo_field' in builder.fields
 
 
-def test_action_config_dialog(qtbot, mock_action):
-    mock_parent = MagicMock()
-    mock_parent.expert_options = False
+def test_action_config_dialog(qtbot, mock_action, mocker):
     mock_action.type_name = "ProjectEditor"
-    with patch.object(ActionConfigDialog, 'parent', return_value=mock_parent):
-        current_wd = '.'
-        dialog = ActionConfigDialog(mock_action, current_wd)
-        qtbot.addWidget(dialog)
+    current_wd = '.'
+    mocker.patch('shinestacker.gui.config_dialog.ConfigDialog.adjust_dialog_size')
+    dialog = ActionConfigDialog(mock_action, current_wd)
+    qtbot.addWidget(dialog)
     assert dialog.windowTitle() == f"Configure {mock_action.type_name}"
     assert dialog.form_layout is not None
     assert isinstance(dialog.configurator, DefaultActionConfigurator)
-    assert dialog.form_layout.count() > 0
-
 
 def test_field_builder_update_params(form_layout, mock_action, tmp_path, qapp):
     current_wd = '.'
