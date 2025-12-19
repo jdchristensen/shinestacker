@@ -213,7 +213,7 @@ class TestUtils(unittest.TestCase):
             return
         hls_16bit = bgr_to_hls(img_16bit)
         img_8bit = (img_16bit >> 8).astype(np.uint8)
-        hls_from_8bit = bgr_to_hls(img_8bit)        
+        hls_from_8bit = bgr_to_hls(img_8bit)
         h_16bit = hls_16bit[..., 0]
         l_16bit = hls_16bit[..., 1]
         s_16bit = hls_16bit[..., 2]
@@ -224,6 +224,31 @@ class TestUtils(unittest.TestCase):
         diff = np.max(np.abs(hls_16bit_8bit.astype(float) - hls_from_8bit.astype(float)))
         self.assertLess(diff, 5)
 
+    def test_hls_8bit_16bit_equivalence_hls_to_bgr(self):
+        img_16bit_path = "examples/input/img-tif/0000.tif"
+        if not os.path.exists(img_16bit_path):
+            return
+        img_16bit = read_img(img_16bit_path)
+        if img_16bit is None:
+            return
+        hls_16bit = bgr_to_hls(img_16bit)
+        h_16bit = hls_16bit[..., 0]
+        l_16bit = hls_16bit[..., 1]
+        s_16bit = hls_16bit[..., 2]
+        h_16bit_scaled = ((h_16bit.astype(np.float32) / 65535.0 * 360) / 2).astype(np.uint8)
+        l_16bit_scaled = (l_16bit >> 8).astype(np.uint8)
+        s_16bit_scaled = (s_16bit >> 8).astype(np.uint8)
+        hls_16bit_8bit = cv2.merge([h_16bit_scaled, l_16bit_scaled, s_16bit_scaled])
+        img_8bit = (img_16bit >> 8).astype(np.uint8)
+        hls_from_8bit = bgr_to_hls(img_8bit)
+        bgr_from_16bit_hls = hls_to_bgr(hls_16bit)
+        bgr_from_scaled_hls = hls_to_bgr(hls_16bit_8bit)
+        bgr_from_8bit_hls = hls_to_bgr(hls_from_8bit)
+        bgr_16bit_scaled = (bgr_from_16bit_hls >> 8).astype(np.uint8)
+        diff1 = np.max(np.abs(bgr_from_scaled_hls.astype(float) - bgr_from_8bit_hls.astype(float)))
+        self.assertLess(diff1, 7)
+        diff2 = np.max(np.abs(bgr_16bit_scaled.astype(float) - bgr_from_8bit_hls.astype(float)))
+        self.assertLess(diff2, 7)
 
 if __name__ == '__main__':
     loader = unittest.TestLoader()
