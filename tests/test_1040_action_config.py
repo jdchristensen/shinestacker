@@ -1,6 +1,6 @@
 import pytest
 from unittest.mock import MagicMock, patch
-from PySide6.QtWidgets import QApplication, QFormLayout, QWidget
+from PySide6.QtWidgets import QApplication, QFormLayout
 from shinestacker.gui.action_config import FieldBuilder
 from shinestacker.gui.action_config_dialog import (
     ActionConfigDialog, DefaultActionConfigurator,
@@ -77,6 +77,7 @@ def test_action_config_dialog(qtbot, mock_action, mocker):
     assert dialog.windowTitle() == f"Configure {mock_action.type_name}"
     assert dialog.form_layout is not None
     assert isinstance(dialog.configurator, DefaultActionConfigurator)
+
 
 def test_field_builder_update_params(form_layout, mock_action, tmp_path, qapp):
     current_wd = '.'
