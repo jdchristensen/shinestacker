@@ -531,7 +531,8 @@ class MainWindow(QMainWindow, LogManager):
         worker.after_step_signal.connect(window.handle_after_step)
         worker.save_plot_signal.connect(window.handle_save_plot)
         worker.open_app_signal.connect(window.handle_open_app)
-        worker.run_completed_signal.connect(window.handle_run_completed)
+        worker.run_completed_signal.connect(
+            lambda run_id: self.handle_run_completed(window, run_id))
         worker.run_stopped_signal.connect(window.handle_run_stopped)
         worker.run_failed_signal.connect(window.handle_run_failed)
         worker.add_status_box_signal.connect(window.handle_add_status_box)
@@ -589,6 +590,10 @@ class MainWindow(QMainWindow, LogManager):
         self.stop_worker(tab_position - 1)
         self.menu_manager.stop_action.setEnabled(False)
 
+    def handle_run_completed(self, window, run_id):
+        window.handle_run_completed(run_id)
+        self.menu_manager.stop_action.setEnabled(False)
+
     def delete_element(self):
         self.project_editor.delete_element()
         if self.job_list_count() > 0:
@@ -616,6 +621,7 @@ class MainWindow(QMainWindow, LogManager):
         for action in self.findChildren(QAction):
             if action.property("requires_file"):
                 action.setEnabled(enabled)
+        self.menu_manager.stop_action.setEnabled(False)
 
     def is_dark_theme(self):
         palette = QApplication.palette()

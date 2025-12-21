@@ -2,16 +2,16 @@
 
 This page reports the main releases only and the main changes therein.
 
-## [v1.x.x] - 2025-12-19
+## [v1.12.0] - 2025-12-21
 
 ### Added
-- tonemapping filter
+- new tonemapping filter
 - startup dialog prompts an update if a new version is available
-- stop button in the top bar
+- stop button available in the top bar
 
 ### Fixed
-- fixed Lab colorspace conversions for 16-bits 
-- fixed version retrival if ssl fails in about dialog
+- fixed LAB and HLHS colorspaces conversions for 16-bits 
+- fixed software version retrival if ssl fails in about dialog
 - forced open-cv version 4.11 to prevent bug in 16 bits hls color space conversion
 
 --------------------------
