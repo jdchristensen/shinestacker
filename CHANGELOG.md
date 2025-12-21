@@ -4,6 +4,9 @@ This page reports the main releases only and the main changes therein.
 
 ## [v1.x.x] - 2025-12-21
 
+### Changed
+- moved system monitor to main window
+
 ---
 
 ## [v1.12.0] - 2025-12-21
