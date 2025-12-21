@@ -71,6 +71,7 @@ class MainWindow(QMainWindow, LogManager):
             "Add Job": self.project_editor.add_job,
             "Run Job": self.run_job,
             "Run All Jobs": self.run_all_jobs,
+            "Stop": self.stop
         }
         dark_theme = self.is_dark_theme()
         self.menu_manager = MenuManager(
@@ -562,6 +563,7 @@ class MainWindow(QMainWindow, LogManager):
                 QMessageBox.warning(self, "Can't run Job",
                                     "Job " + job.params["name"] + " is disabled.")
                 return
+        self.menu_manager.stop_action.setEnabled(True)
 
     def run_all_jobs(self):
         labels = [[(self.action_text(a), a.enabled() and
@@ -580,6 +582,12 @@ class MainWindow(QMainWindow, LogManager):
         self.connect_worker_signals(worker, new_window)
         self.start_thread(worker)
         self._workers.append(worker)
+        self.menu_manager.stop_action.setEnabled(True)
+
+    def stop(self):
+        tab_position = self.tab_widget.count()
+        self.stop_worker(tab_position - 1)
+        self.menu_manager.stop_action.setEnabled(False)
 
     def delete_element(self):
         self.project_editor.delete_element()

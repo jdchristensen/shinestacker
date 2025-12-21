@@ -178,7 +178,7 @@ class LogManager:
     def last_id_str(self):
         return self.last_gui_logger.id_str() if self.last_gui_logger else ""
 
-    def add_gui_logger(self, gui_logger: GuiLogger):
+    def add_gui_logger(self, gui_logger):
         self.gui_loggers[gui_logger.id] = gui_logger
         self.last_gui_logger = gui_logger
 

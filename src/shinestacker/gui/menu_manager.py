@@ -44,19 +44,22 @@ class MenuManager(QObject):
             "Expert Options": "Ctrl+Shift+X",
             "Add Job": "Ctrl+P",
             "Run Job": "Ctrl+J",
-            "Run All Jobs": "Ctrl+Shift+J"
+            "Run All Jobs": "Ctrl+Shift+J",
+            "Stop": "Ctrl+Shift+X"
         }
         self.icons = {
             "Delete": "close-round-line-icon",
             "Add Job": "plus-round-line-icon",
             "Run Job": "play-button-round-icon",
             "Run All Jobs": "forward-button-icon",
+            "Stop": "stop-button-round-icon"
         }
         self.tooltips = {
             "Delete": "Delete",
             "Add Job": "Add job",
             "Run Job": "Run job",
             "Run All Jobs": "Run all jobs",
+            "Stop": "Stop run"
         }
 
     def get_icon(self, icon_name):
@@ -157,12 +160,16 @@ class MenuManager(QObject):
         self.add_job_action = self.action("Add Job", requires_file=True)
         menu.addAction(self.add_job_action)
         menu.addSeparator()
+
         self.run_job_action = self.action("Run Job", requires_file=True)
         self.run_job_action.setEnabled(False)
         menu.addAction(self.run_job_action)
         self.run_all_jobs_action = self.action("Run All Jobs", requires_file=True)
         self.set_enabled_run_all_jobs(False)
         menu.addAction(self.run_all_jobs_action)
+        self.stop_action = self.action("Stop", requires_file=True)
+        self.stop_action.setEnabled(False)
+        menu.addAction(self.stop_action)
 
     def add_actions_menu(self):
         menu = self.menubar.addMenu("&Actions")
@@ -278,6 +285,7 @@ class MenuManager(QObject):
         toolbar.addSeparator()
         toolbar.addAction(self.run_job_action)
         toolbar.addAction(self.run_all_jobs_action)
+        toolbar.addAction(self.stop_action)
 
     def set_enabled_sub_actions_gui(self, enabled):
         self.add_sub_action_entry_action.setEnabled(enabled)

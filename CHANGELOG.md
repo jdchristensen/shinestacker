@@ -7,6 +7,7 @@ This page reports the main releases only and the main changes therein.
 ### Added
 - tonemapping filter
 - startup dialog prompts an update if a new version is available
+- stop button in the top bar
 
 ### Fixed
 - fixed Lab colorspace conversions for 16-bits 
