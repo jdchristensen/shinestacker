@@ -50,7 +50,7 @@ class MainWindow(QMainWindow, LogManager):
         self.setObjectName("mainWindow")
         self.project_controller = ProjectController(self)
         self.project_controller.status_message_requested.connect(
-            lambda msg: self.show_status_message(msg, 2000))
+            lambda msg: self.show_status_message(msg, 4000))
         self.project_editor = self.project_controller.project_editor
         actions = {
             "&New...": self.project_controller.new_project,
