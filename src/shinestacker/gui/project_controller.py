@@ -126,6 +126,12 @@ class ProjectController(QObject):
     def get_current_action_at(self, job, action_index):
         return self.project_editor.get_current_action_at(job, action_index)
 
+    def get_action_at(self, action_row):
+        return self.project_editor.get_action_at(action_row)
+
+    def get_current_action(self):
+        return self.get_action_at(self.current_action_index())
+
     def action_config_dialog(self, action):
         return self.project_editor.action_config_dialog(action)
 

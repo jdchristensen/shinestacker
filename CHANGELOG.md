@@ -10,6 +10,7 @@ This page reports the main releases only and the main changes therein.
 ### Changed
 - moved system monitor to main window
 - minor improvements to status messages
+- code refactoring
 
 ---
 
