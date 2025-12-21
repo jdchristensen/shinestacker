@@ -18,6 +18,7 @@ from .project_model import get_action_working_path, get_action_input_path, get_a
 from .menu_manager import MenuManager
 from .project_controller import ProjectController
 from .tab_widget import TabWidgetWithPlaceholder
+from .sys_mon import StatusBarSystemMonitor
 
 
 class JobLogWorker(RunWorker):
@@ -139,6 +140,7 @@ class MainWindow(QMainWindow, LogManager):
         layout.addWidget(h_splitter)
         self.central_widget.setLayout(layout)
         self.update_title()
+        self.statusBar().addPermanentWidget(StatusBarSystemMonitor(self))
         QApplication.instance().paletteChanged.connect(self.on_theme_changed)
 
         def handle_modified(modified):

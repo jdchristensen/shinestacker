@@ -2,6 +2,10 @@
 
 This page reports the main releases only and the main changes therein.
 
+## [v1.x.x] - 2025-12-21
+
+---
+
 ## [v1.12.0] - 2025-12-21
 
 ### Added
@@ -14,7 +18,7 @@ This page reports the main releases only and the main changes therein.
 - fixed software version retrival if ssl fails in about dialog
 - forced open-cv version 4.11 to prevent bug in 16 bits hls color space conversion
 
---------------------------
+---
 
 ## [v1.11.3] - 2025-12-10
 **Bug fix release**
@@ -27,7 +31,7 @@ This page reports the main releases only and the main changes therein.
 - added more exeption protection to focus stacking algorithm
 - minor logging printout fix
 
---------------------------
+---
 
 ## [v1.11.2] - 2025-12-04
 **Bug fix release**
@@ -43,7 +47,7 @@ This page reports the main releases only and the main changes therein.
 ### Changed
 - optimized temporary disk cache for parallel pyramid focus stacking
 
---------------------------
+---
 
 ## [v1.11.1] - 2025-11-28
 **fixes to new DepthMap algorithm**
@@ -58,7 +62,7 @@ This page reports the main releases only and the main changes therein.
 - fixed and improved DepthMap layer blending using pyramid method
 - depth map algirithm optimized and uses I/O buffering to prevent large memory requirements
 
---------------------------
+---
 
 ## [v1.11.0] - 2025-11-22
 **improved DepthMap algorithm**
@@ -75,7 +79,7 @@ This page reports the main releases only and the main changes therein.
 - some minor fixes and code cleanup
 - minor GUI refinements
 
---------------------------
+---
 
 ## [v1.10.1] - 2025-11-19
 **Enhanced noise detection and interface improvements**
