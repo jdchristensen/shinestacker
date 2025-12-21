@@ -185,7 +185,7 @@ class MainWindow(QMainWindow, LogManager):
         """
         QApplication.instance().setStyleSheet(
             self.style_dark if dark_theme else self.style_light)
-        self.show_status_message("Shine Stacker ready.", 2000)
+        self.show_status_message("Shine Stacker ready.", 4000)
 
     def show_status_message(self, message, timeout=0):
         self.statusBar().showMessage(message, timeout)

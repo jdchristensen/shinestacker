@@ -79,7 +79,7 @@ class IOGuiHandler(QObject, LayerCollectionHandler):
         self.image_viewer.set_master_image_np(master_layer)
         self.set_blank_layer()
         self.undo_manager.reset()
-        self.finish_loading_setup(f"Loaded: {self.current_file_path()}")
+        self.finish_loading_setup(f"Loaded file: {os.path.basename(self.current_file_path())}.")
         self.image_viewer.reset_zoom()
 
     def on_file_error(self, error_msg):
@@ -90,7 +90,8 @@ class IOGuiHandler(QObject, LayerCollectionHandler):
         QMessageBox.critical(self.parent(), "Error", error_msg)
         self.current_file_path_master = ''
         self.current_file_path_multi = ''
-        self.status_message_requested.emit(f"Error loading: {self.current_file_path()}")
+        self.status_message_requested.emit(
+            f"Error loading: {os.path.basename(self.current_file_path())}.")
 
     def on_frames_imported(self, stack, labels, master):
         QApplication.restoreOverrideCursor()
@@ -113,7 +114,7 @@ class IOGuiHandler(QObject, LayerCollectionHandler):
             for img, label in zip(stack, labels):
                 self.add_layer_label(label)
                 self.add_layer(img)
-        self.finish_loading_setup("Selected frames imported")
+        self.finish_loading_setup("Selected frames imported.")
         if empty_viewer:
             self.image_viewer.update_master_display()
 
@@ -123,7 +124,7 @@ class IOGuiHandler(QObject, LayerCollectionHandler):
         self.frame_loading_dialog.hide()
         self.frame_loading_dialog.deleteLater()
         QMessageBox.critical(self.parent(), "Import Error", error_msg)
-        self.status_message_requested.emit("Error importing frames")
+        self.status_message_requested.emit("Error importing frames.")
 
     def on_multilayer_saved(self):
         QApplication.restoreOverrideCursor()
@@ -133,14 +134,15 @@ class IOGuiHandler(QObject, LayerCollectionHandler):
         self.mark_as_modified_requested.emit(False)
         self.update_title_requested.emit()
         self.add_recent_file_requested.emit(self.current_file_path_multi)
-        self.status_message_requested.emit(f"Saved multilayer to: {self.current_file_path_multi}")
+        self.status_message_requested.emit(
+            f"Saved multilayer to: {os.path.basename(self.current_file_path_multi)}.")
 
     def on_multilayer_save_error(self, error_msg):
         QApplication.restoreOverrideCursor()
         self.saving_timer.stop()
         self.saving_dialog.hide()
         self.saving_dialog.deleteLater()
-        QMessageBox.critical(self.parent(), "Save Error", f"Could not save file: {error_msg}")
+        QMessageBox.critical(self.parent(), "Save Error", f"Could not save file: {error_msg}.")
 
     def open_file(self, file_paths=None):
         self.cleanup_old_threads()
@@ -371,10 +373,13 @@ class IOGuiHandler(QObject, LayerCollectionHandler):
             self.current_file_path_master = os.path.abspath(path)
             self.update_title_requested.emit()
             self.add_recent_file_requested.emit(self.current_file_path_master)
-            self.status_message_requested.emit(f"Saved master layer to: {path}")
+            self.status_message_requested.emit(
+                f"Saved master layer to files: {os.path.basename(path)}.")
         except Exception as e:
             traceback.print_tb(e.__traceback__)
-            QMessageBox.critical(self.parent(), "Save Error", f"Could not save file: {str(e)}")
+            msg = f"Could not save file: {str(e)}."
+            self.status_message_requested.emit(msg)
+            QMessageBox.critical(self.parent(), "Save Error", msg)
 
     def save_file(self):
         if self.save_master_only is None:
@@ -435,7 +440,9 @@ class IOGuiHandler(QObject, LayerCollectionHandler):
             self.saver_thread.start()
         except Exception as e:
             traceback.print_tb(e.__traceback__)
-            QMessageBox.critical(self.parent(), "Save Error", f"Could not save file: {str(e)}")
+            msg = f"Could not save file: {str(e)}."
+            self.status_message_requested.emit(msg)
+            QMessageBox.critical(self.parent(), "Save Error", msg)
 
     def close_file(self):
         self.mark_as_modified_requested.emit(False)
@@ -448,7 +455,7 @@ class IOGuiHandler(QObject, LayerCollectionHandler):
         self.display_manager.update_thumbnails()
         self.update_title_requested.emit()
         self.set_enabled_file_open_close_actions_requested.emit(False)
-        self.status_message_requested.emit("File closed")
+        self.status_message_requested.emit("File closed.")
         self.reset_save_config()
 
     def cleanup_old_threads(self):

@@ -248,8 +248,10 @@ class ImageEditorUI(QMainWindow, LayerCollectionHandler):
             self.master_thumbnail_label, self.thumbnail_list, parent=self)
         self.filter_manager = FilterManager(self)
         self.io_gui_handler = IOGuiHandler(self.layer_collection, self.undo_manager, parent=self)
-        self.display_manager.status_message_requested.connect(self.show_status_message)
-        self.io_gui_handler.status_message_requested.connect(self.show_status_message)
+        self.display_manager.status_message_requested.connect(
+            lambda msg: self.show_status_message(msg, 4000))
+        self.io_gui_handler.status_message_requested.connect(
+            lambda msg: self.show_status_message(msg, 4000))
         self.io_gui_handler.update_title_requested.connect(self.update_title)
         self.io_gui_handler.mark_as_modified_requested.connect(self.mark_as_modified)
         self.io_gui_handler.change_layer_requested.connect(self.change_layer)
@@ -539,7 +541,7 @@ class ImageEditorUI(QMainWindow, LayerCollectionHandler):
 
         self.zoom_factor_label = QLabel("")
         self.statusBar().addPermanentWidget(self.zoom_factor_label)
-        self.statusBar().showMessage("Shine Stacker ready.", 2000)
+        self.statusBar().showMessage("Shine Stacker ready.", 4000)
 
         def shortcuts_help():
             self.shortcuts_help_dialog = ShortcutsHelp(self)
@@ -789,7 +791,8 @@ class ImageEditorUI(QMainWindow, LayerCollectionHandler):
             self.master_layer().setflags(write=True)
             self.display_manager.refresh_master_view()
             self.mark_as_modified()
-            self.statusBar().showMessage(f"Copied layer {self.current_layer_idx() + 1} to master")
+            self.statusBar().showMessage(
+                f"Copied layer {self.current_layer_idx() + 1} to master", 4000)
 
     def handle_needs_update(self):
         self.display_manager.needs_update = True
@@ -918,13 +921,13 @@ class ImageEditorUI(QMainWindow, LayerCollectionHandler):
         if self.undo_manager.undo(self.master_layer()):
             self.display_manager.refresh_master_view()
             self.mark_as_modified()
-            self.statusBar().showMessage("Undo applied", 2000)
+            self.statusBar().showMessage("Undo applied", 4000)
 
     def redo(self):
         if self.undo_manager.redo(self.master_layer()):
             self.display_manager.refresh_master_view()
             self.mark_as_modified()
-            self.statusBar().showMessage("Redo applied", 2000)
+            self.statusBar().showMessage("Redo applied", 4000)
 
     def handle_temp_view(self, start):
         if start:
