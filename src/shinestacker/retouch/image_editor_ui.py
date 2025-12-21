@@ -602,8 +602,8 @@ class ImageEditorUI(QMainWindow, LayerCollectionHandler):
         self._recent_file_manager.add_file(file_path)
         self.update_recent_files()
 
-    def show_status_message(self, message):
-        self.statusBar().showMessage(message)
+    def show_status_message(self, message, timeout=0):
+        self.statusBar().showMessage(message, timeout)
 
     def mark_as_modified(self, value=True):
         self.modified = value

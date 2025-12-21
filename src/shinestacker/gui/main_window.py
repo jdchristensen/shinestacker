@@ -49,6 +49,8 @@ class MainWindow(QMainWindow, LogManager):
         LogManager.__init__(self)
         self.setObjectName("mainWindow")
         self.project_controller = ProjectController(self)
+        self.project_controller.status_message_requested.connect(
+            lambda msg: self.show_status_message(msg, 2000))
         self.project_editor = self.project_controller.project_editor
         actions = {
             "&New...": self.project_controller.new_project,
@@ -183,6 +185,10 @@ class MainWindow(QMainWindow, LogManager):
         """
         QApplication.instance().setStyleSheet(
             self.style_dark if dark_theme else self.style_light)
+        self.show_status_message("Shine Stacker ready.", 2000)
+
+    def show_status_message(self, message, timeout=0):
+        self.statusBar().showMessage(message, timeout)
 
     def modified(self):
         return self.project_editor.modified()

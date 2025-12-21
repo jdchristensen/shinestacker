@@ -26,6 +26,7 @@ class ProjectController(QObject):
     enable_sub_actions_requested = Signal(bool)
     add_recent_file_requested = Signal(str)
     set_enabled_file_open_close_actions_requested = Signal(bool)
+    status_message_requested = Signal(str)
 
     def __init__(self, parent):
         super().__init__(parent)
@@ -144,6 +145,7 @@ class ProjectController(QObject):
             self.mark_as_modified(False)
             self.project_editor.reset_undo()
             self.set_enabled_file_open_close_actions_requested.emit(False)
+            self.status_message_requested.emit("Project closed.")
 
     def new_project(self):
         if not self.check_unsaved_changes():
@@ -252,6 +254,7 @@ class ProjectController(QObject):
             self.add_job_to_project(job)
             self.project_editor.set_modified(True)
             self.refresh_ui(0, -1)
+            self.status_message_requested.emit("New project created.")
         self.set_enabled_file_open_close_actions_requested.emit(True)
 
     def open_project(self, file_path=False):
@@ -268,7 +271,9 @@ class ProjectController(QObject):
                     json_obj = json.load(file)
                 project = Project.from_dict(json_obj['project'], json_obj['version'])
                 if project is None:
-                    raise RuntimeError(f"Project from file {file_path} produced a null project.")
+                    msg = f"Project from file {file_path} produced a null project."
+                    self.status_message_requested.emit(msg)
+                    raise RuntimeError(msg)
                 self.set_enabled_file_open_close_actions_requested.emit(True)
                 self.set_project(project)
                 self.mark_as_modified(False)
@@ -279,18 +284,24 @@ class ProjectController(QObject):
                     self.set_current_job(0)
             except Exception as e:
                 traceback.print_tb(e.__traceback__)
+                msg = f"Cannot open file {file_path}:\n{str(e)}"
+                self.status_message_requested.emit(msg)
                 QMessageBox.critical(
-                    self.parent, "Error", f"Cannot open file {file_path}:\n{str(e)}")
+                    self.parent, "Error", msg)
+                return
             if self.num_project_jobs() > 0:
                 self.set_current_job(0)
                 self.activate_window_requested.emit()
                 self.save_actions_set_enabled(True)
+                self.status_message_requested.emit(
+                    f"Project file {os.path.basename(file_path)} loaded.")
             for job in self.project_jobs():
                 if 'working_path' in job.params.keys():
                     working_path = job.params['working_path']
                     if not os.path.isdir(working_path):
+                        msg = "Working path not found"
                         QMessageBox.warning(
-                            self.parent, "Working path not found",
+                            self.parent, msg,
                             f'''The working path specified in the project file for the job:
                                 "{job.params['name']}"
                                 was not found.\n
@@ -300,8 +311,9 @@ class ProjectController(QObject):
                     if 'working_path' in job.params.keys():
                         working_path = job.params['working_path']
                         if working_path != '' and not os.path.isdir(working_path):
+                            msg = "Working path not found"
                             QMessageBox.warning(
-                                self.parent, "Working path not found",
+                                self.parent, msg,
                                 f'''The working path specified in the project file for the job:
                                 "{job.params['name']}"
                                 was not found.\n
@@ -335,8 +347,12 @@ class ProjectController(QObject):
             self.mark_as_modified(False)
             self.update_title_requested.emit()
             self.add_recent_file_requested.emit(file_path)
+            self.status_message_requested.emit(
+                f"Project file {os.path.basename(file_path)} saved.")
         except Exception as e:
-            QMessageBox.critical(self.parent, "Error", f"Cannot save file:\n{str(e)}")
+            msg = f"Cannot save file:\n{str(e)}"
+            self.status_message_requested.emit(msg)
+            QMessageBox.critical(self.parent, "Error", msg)
 
     def check_unsaved_changes(self) -> bool:
         if self.modified():
