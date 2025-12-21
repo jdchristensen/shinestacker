@@ -3,7 +3,8 @@
 import os
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QGuiApplication, QAction, QPalette
-from PySide6.QtWidgets import QWidget, QVBoxLayout, QToolBar, QMainWindow, QApplication
+from PySide6.QtWidgets import (
+    QWidget, QVBoxLayout, QToolBar, QMainWindow, QApplication, QStackedWidget)
 from .. config.constants import constants
 from .. config.app_config import AppConfig
 from .colors import ColorPalette
@@ -25,6 +26,7 @@ class MainWindow(QMainWindow):
         dark_theme = self.is_dark_theme()
         self.classic_view = ClassicProjectView(
             self.project_editor, self.project_controller, dark_theme, self)
+        self.modern_view = QWidget(self)
         actions = {
             "&New...": self.project_controller.new_project,
             "&Open...": self.project_controller.open_project,
@@ -47,7 +49,9 @@ class MainWindow(QMainWindow):
             "Add Job": self.project_editor.add_job,
             "Run Job": self.classic_view.run_job,
             "Run All Jobs": self.classic_view.run_all_jobs,
-            "Stop": self.classic_view.stop
+            "Stop": self.classic_view.stop,
+            "Classic View": self.set_classic_view,
+            "Modern View": self.set_modern_view
         }
         self.menu_manager = MenuManager(
             self.menuBar(), actions, self.project_editor, dark_theme, self)
@@ -87,7 +91,12 @@ class MainWindow(QMainWindow):
         self.setCentralWidget(self.central_widget)
         layout = QVBoxLayout()
         layout.setContentsMargins(0, 0, 0, 0)
-        layout.addWidget(self.classic_view)
+
+        self.view_stack = QStackedWidget()
+        self.view_stack.addWidget(self.classic_view)
+        self.view_stack.addWidget(self.modern_view)
+        self.view_stack.setCurrentIndex(0)
+        layout.addWidget(self.view_stack)
 
         self.job_list().itemDoubleClicked.connect(self.on_job_edit)
         self.action_list().itemDoubleClicked.connect(self.on_action_edit)
@@ -286,6 +295,12 @@ class MainWindow(QMainWindow):
             self.menu_manager.delete_element_action.setEnabled(True)
             self.menu_manager.run_job_action.setEnabled(True)
         self.menu_manager.set_enabled_run_all_jobs(self.job_list_count() > 1)
+
+    def set_classic_view(self):
+        self.view_stack.setCurrentIndex(0)
+
+    def set_modern_view(self):
+        self.view_stack.setCurrentIndex(1)
 
     def quit(self):
         if self.project_controller.check_unsaved_changes():

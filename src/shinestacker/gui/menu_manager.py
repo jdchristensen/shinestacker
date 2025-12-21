@@ -42,6 +42,8 @@ class MenuManager(QObject):
             "Enable All": "Ctrl+Shift+E",
             "Disable All": "Ctrl+Shift+B",
             "Expert Options": "Ctrl+Shift+X",
+            "Classic View": "Ctrl+1",
+            "Modern View": "Ctrl+2",
             "Add Job": "Ctrl+P",
             "Run Job": "Ctrl+J",
             "Run All Jobs": "Ctrl+Shift+J",
@@ -154,6 +156,28 @@ class MenuManager(QObject):
         self.expert_options_action.setCheckable(True)
         self.expert_options_action.setChecked(AppConfig.get('expert_options'))
         menu.addAction(self.expert_options_action)
+        self.view_strategy_menu = QMenu("View &Mode", menu)
+        self.view_mode_actions = {
+            'Classic': self.action("Classic"),
+            'Modern': self.action("Modern"),
+        }
+        self.classic_view_action = self.view_mode_actions['Classic']
+        self.modern_view_action = self.view_mode_actions['Modern']
+        self.view_strategy_menu.addAction(self.classic_view_action)
+        self.view_strategy_menu.addAction(self.modern_view_action)
+        self.classic_view_action.setCheckable(True)
+        self.modern_view_action.setCheckable(True)
+        self.classic_view_action.triggered.connect(lambda: self.set_view('Classic'))
+        self.modern_view_action.triggered.connect(lambda: self.set_view('Modern'))
+        self.set_view('Classic', False)
+        menu.addMenu(self.view_strategy_menu)
+
+    def set_view(self, view, do_switch=True):
+        for label, mode in self.view_mode_actions.items():
+            mode.setEnabled(label != view)
+            mode.setChecked(label == view)
+        if do_switch:
+            self.actions.get(view + " View")()
 
     def add_job_menu(self):
         menu = self.menubar.addMenu("&Jobs")
