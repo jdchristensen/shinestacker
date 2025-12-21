@@ -13,6 +13,7 @@ from .menu_manager import MenuManager
 from .project_controller import ProjectController
 from .sys_mon import StatusBarSystemMonitor
 from .classic_project_view import ClassicProjectView
+from .modern_project_view import ModernProjectView
 
 
 class MainWindow(QMainWindow):
@@ -26,7 +27,8 @@ class MainWindow(QMainWindow):
         dark_theme = self.is_dark_theme()
         self.classic_view = ClassicProjectView(
             self.project_editor, self.project_controller, dark_theme, self)
-        self.modern_view = QWidget(self)
+        self.modern_view = ModernProjectView(
+            self.project_editor, self.project_controller, dark_theme, self)
         actions = {
             "&New...": self.project_controller.new_project,
             "&Open...": self.project_controller.open_project,
@@ -47,15 +49,16 @@ class MainWindow(QMainWindow):
             "Disable All": self.project_editor.disable_all,
             "Expert Options": self.toggle_expert_options,
             "Add Job": self.project_editor.add_job,
-            "Run Job": self.classic_view.run_job,
-            "Run All Jobs": self.classic_view.run_all_jobs,
-            "Stop": self.classic_view.stop,
+            "Run Job": lambda: self.view_stack.currentWidget().run_job(),
+            "Run All Jobs": lambda: self.view_stack.currentWidget().run_all_jobs(),
+            "Stop": lambda: self.view_stack.currentWidget().stop(),
             "Classic View": self.set_classic_view,
             "Modern View": self.set_modern_view
         }
         self.menu_manager = MenuManager(
             self.menuBar(), actions, self.project_editor, dark_theme, self)
         self.classic_view.set_menu_manager(self.menu_manager)
+        self.modern_view.set_menu_manager(self.menu_manager)
         self.script_dir = os.path.dirname(__file__)
         self.retouch_callback = None
         self.list_style_sheet_light = f"""
@@ -304,7 +307,9 @@ class MainWindow(QMainWindow):
 
     def quit(self):
         if self.project_controller.check_unsaved_changes():
-            return self.classic_view.quit()
+            q_classic = self.classic_view.quit()
+            q_modern = self.modern_view.quit()
+            return q_classic and q_modern
         return False
 
     def handle_config(self):
