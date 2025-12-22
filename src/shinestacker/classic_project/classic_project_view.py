@@ -418,7 +418,7 @@ class ClassicProjectView(BaseProjectView):
         self.close()
         return True
 
-    def on_theme_changed(self, dark_theme):
+    def change_theme(self, dark_theme):
         self.dark_theme = dark_theme
         self.menu_manager.change_theme(dark_theme)
         self.tab_widget.change_theme(dark_theme)

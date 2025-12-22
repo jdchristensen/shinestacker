@@ -307,4 +307,5 @@ class MainWindow(QMainWindow):
         return brightness < 128
 
     def on_theme_changed(self):
-        self.classic_view.on_theme_changed(self.is_dark_theme())
+        self.classic_view.change_theme(self.is_dark_theme())
+        self.modern_view.change_theme(self.is_dark_theme())

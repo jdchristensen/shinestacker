@@ -47,3 +47,7 @@ class ModernProjectView(BaseProjectView):
 
     def quit(self):
         return True
+
+    def change_theme(self, dark_theme):
+        self.dark_theme = dark_theme
+        pass
