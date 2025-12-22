@@ -60,11 +60,14 @@ packages = [
     "shinestacker.app",
     "shinestacker.config",
     "shinestacker.core",
+    "shinestacker.classic_project",
     "shinestacker.algorithms",
     "shinestacker.gui",
     "shinestacker.gui.img",
     "shinestacker.gui.img.dark",
     "shinestacker.gui.img.light",
+    "shinestacker.modern_project",
+    "shinestacker.project",
     "shinestacker.retouch"
 ]
 include-package-data = true

@@ -7,13 +7,13 @@ from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QToolBar, QMainWindow, QApplication, QStackedWidget)
 from .. config.constants import constants
 from .. config.app_config import AppConfig
-from .colors import ColorPalette
-from .project_model import Project
-from .menu_manager import MenuManager
-from .project_controller import ProjectController
-from .sys_mon import StatusBarSystemMonitor
-from .classic_project_view import ClassicProjectView
-from .modern_project_view import ModernProjectView
+from .. gui.colors import ColorPalette
+from .. gui.project_model import Project
+from .. gui.menu_manager import MenuManager
+from .. gui.project_controller import ProjectController
+from .. gui.sys_mon import StatusBarSystemMonitor
+from .. classic_project.classic_project_view import ClassicProjectView
+from .. modern_project.modern_project_view import ModernProjectView
 
 
 class MainWindow(QMainWindow):

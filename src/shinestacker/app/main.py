@@ -12,7 +12,7 @@ from shinestacker.config.config import config
 config.init(DISABLE_TQDM=True, COMBINED_APP=True, DONT_USE_NATIVE_MENU=True)
 from shinestacker.config.constants import constants
 from shinestacker.config.app_config import AppConfig
-from shinestacker.gui.main_window import MainWindow
+from shinestacker.project.main_window import MainWindow
 from shinestacker.retouch.image_editor_ui import ImageEditorUI
 from shinestacker.app.gui_utils import fill_app_menu
 from shinestacker.app.help_menu import add_help_action

@@ -7,11 +7,12 @@ from PySide6.QtWidgets import (
 from PySide6.QtCore import Qt
 from .. config.constants import constants
 from .. core.core_utils import running_under_windows, running_under_macos
-from .project_model import get_action_working_path, get_action_input_path, get_action_output_path
+from .. gui.project_model import (
+    get_action_working_path, get_action_input_path, get_action_output_path)
+from .. gui.gui_logging import LogManager
+from .. gui.project_converter import ProjectConverter
 from .tab_widget import TabWidgetWithPlaceholder
 from .gui_run import RunWindow, RunWorker
-from .gui_logging import LogManager
-from .project_converter import ProjectConverter
 
 
 class JobLogWorker(RunWorker):
@@ -104,6 +105,9 @@ class ClassicProjectView(QWidget, LogManager):
 
     def project_job(self, i):
         return self.project_editor.project_job(i)
+
+    def num_project_jobs(self):
+        return self.project_editor.num_project_jobs()
 
     def get_action_at(self, action_row):
         return self.project_editor.get_action_at(action_row)

@@ -3,7 +3,7 @@ import json
 import tempfile
 from pathlib import Path
 from shinestacker.config.constants import constants
-from shinestacker.gui.main_window import MainWindow
+from shinestacker.project.main_window import MainWindow
 
 
 @pytest.fixture

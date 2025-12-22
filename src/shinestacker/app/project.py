@@ -10,7 +10,7 @@ from PySide6.QtCore import QTimer, QEvent
 from shinestacker.config.config import config
 config.init(DISABLE_TQDM=True, DONT_USE_NATIVE_MENU=True)
 from shinestacker.config.constants import constants
-from shinestacker.gui.main_window import MainWindow
+from shinestacker.project.main_window import MainWindow
 from shinestacker.app.gui_utils import fill_app_menu
 from shinestacker.app.help_menu import add_help_action
 from shinestacker.app.args_parser_opts import (

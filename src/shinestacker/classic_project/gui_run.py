@@ -8,19 +8,19 @@ from PySide6.QtCore import Qt, QTimer
 from PySide6.QtCore import Signal, Slot
 from .. config.constants import constants
 from .. config.gui_constants import gui_constants
-from .colors import RED_BUTTON_STYLE, BLUE_BUTTON_STYLE, BLUE_COMBO_STYLE
 from .. algorithms.utils import extension_supported, extension_pdf
-from .gui_logging import LogWorker, QTextEditLogger
-from .gui_images import GuiPdfView, GuiImageView, GuiOpenApp
-from .colors import (
+from .. algorithms.plot_manager import DirectPlotManager
+from .. gui.gui_logging import LogWorker, QTextEditLogger
+from .. gui.gui_images import GuiPdfView, GuiImageView, GuiOpenApp
+from .. gui.colors import (
     ColorPalette,
+    RED_BUTTON_STYLE, BLUE_BUTTON_STYLE, BLUE_COMBO_STYLE,
     ACTION_RUNNING_COLOR, ACTION_COMPLETED_COLOR,
     ACTION_STOPPED_COLOR, ACTION_FAILED_COLOR)
-from .time_progress_bar import TimerProgressBar
-from .flow_layout import FlowLayout
-from .processing_widget import MultiModuleStatusContainer
-from .qt_plot_manager import QtPlotManager
-from .. algorithms.plot_manager import DirectPlotManager
+from .. gui.time_progress_bar import TimerProgressBar
+from .. gui.flow_layout import FlowLayout
+from .. gui.processing_widget import MultiModuleStatusContainer
+from .. gui.qt_plot_manager import QtPlotManager
 
 COLOR_RED = "FF5050"
 COLOR_BLUE = "5050FF"

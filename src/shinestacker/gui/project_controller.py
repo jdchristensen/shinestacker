@@ -51,14 +51,14 @@ class ProjectController(QObject):
     def project_jobs(self):
         return self.project_editor.project_jobs()
 
+    def num_project_jobs(self):
+        return self.project_editor.num_project_jobs()
+
     def project_job(self, i):
         return self.project_editor.project_job(i)
 
     def add_job_to_project(self, job):
         self.project_editor.add_job_to_project(job)
-
-    def num_project_jobs(self):
-        return self.project_editor.num_project_jobs()
 
     def save_actions_set_enabled(self, enabled):
         self.enable_save_actions_requested.emit(enabled)
@@ -258,9 +258,9 @@ class ProjectController(QObject):
                      'input_path': constants.PATH_SEPARATOR.join(multi_input_path)})
                 job.add_sub_action(multi_layer)
             self.add_job_to_project(job)
-            self.project_editor.set_modified(True)
-            self.refresh_ui(0, -1)
-            self.status_message_requested.emit("New project created.")
+        self.project_editor.set_modified(True)
+        self.refresh_ui(0, -1)
+        self.status_message_requested.emit("New project created.")
         self.set_enabled_file_open_close_actions_requested.emit(True)
 
     def open_project(self, file_path=False):

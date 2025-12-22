@@ -3,8 +3,8 @@ import time
 from unittest.mock import MagicMock, patch
 from PySide6.QtWidgets import QApplication
 from shinestacker.gui.colors import ColorEntry
-from shinestacker.gui.gui_run import (ColorPalette, ColorButton,
-                                      TimerProgressBar, RunWindow, RunWorker, constants)
+from shinestacker.classic_project.gui_run import (
+    ColorPalette, ColorButton, TimerProgressBar, RunWindow, RunWorker, constants)
 
 
 @pytest.fixture(scope="session")
