@@ -9,8 +9,8 @@ from .. config.constants import constants
 from .. core.core_utils import running_under_windows, running_under_macos
 from .. gui.project_model import (
     get_action_working_path, get_action_input_path, get_action_output_path)
-from .. gui.gui_logging import LogManager
 from .. gui.project_converter import ProjectConverter
+from .. gui.base_project_view import BaseProjectView
 from .tab_widget import TabWidgetWithPlaceholder
 from .gui_run import RunWindow, RunWorker
 
@@ -37,13 +37,9 @@ class ProjectLogWorker(RunWorker):
         return converter.run_project(self.project, self.id_str, self.callbacks)
 
 
-class ClassicProjectView(QWidget, LogManager):
+class ClassicProjectView(BaseProjectView):
     def __init__(self, project_editor, project_controller, dark_theme, parent=None):
-        QWidget.__init__(self, parent)
-        LogManager.__init__(self)
-        self.project_editor = project_editor
-        self.project_controller = project_controller
-        self.menu_manager = None
+        super().__init__(project_editor, project_controller, parent)
         self.tab_widget = TabWidgetWithPlaceholder(dark_theme)
         self.tab_widget.resize(1000, 500)
         self._windows = []
@@ -57,9 +53,6 @@ class ClassicProjectView(QWidget, LogManager):
         self.job_retouch_path_action = None
         self._setup_ui()
         self._connect_signals()
-
-    def set_menu_manager(self, menu_manager):
-        self.menu_manager = menu_manager
 
     def _setup_ui(self):
         layout = QVBoxLayout(self)

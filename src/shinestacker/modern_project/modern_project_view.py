@@ -2,20 +2,14 @@
 import os
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QSplitter, QLabel
 from PySide6.QtCore import Qt
-from .. gui.gui_logging import QTextEditLogger, LogManager
+from .. gui.base_project_view import BaseProjectView
+from .. gui.gui_logging import QTextEditLogger
 
 
-class ModernProjectView(QWidget, LogManager):
-    def __init__(self, project_editor, project_controller, dark_theme, parent=None):
-        QWidget.__init__(self, parent)
-        LogManager.__init__(self)
-        self.project_editor = project_editor
-        self.project_controller = project_controller
-        self.menu_manager = None
+class ModernProjectView(BaseProjectView):
+    def __init__(self, project_editor, project_controller, _dark_theme, parent=None):
+        super().__init__(project_editor, project_controller, parent)
         self._setup_ui()
-
-    def set_menu_manager(self, menu_manager):
-        self.menu_manager = menu_manager
 
     def _setup_ui(self):
         main_splitter = QSplitter(Qt.Orientation.Vertical)

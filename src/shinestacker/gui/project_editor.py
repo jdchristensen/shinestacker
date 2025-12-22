@@ -7,6 +7,7 @@ from PySide6.QtWidgets import (QListWidget, QMessageBox, QDialog, QListWidgetIte
 from .. config.constants import constants
 from .action_config_dialog import ActionConfigDialog
 from .project_model import ActionConfig, get_action_input_path, get_action_output_path
+from .project_undo_manager import ProjectUndoManager
 
 
 @dataclass
@@ -71,33 +72,6 @@ def new_row_after_clone(job, action_row, is_sub_action, cloned):
     return action_row + 1 if is_sub_action else \
         sum(1 + len(action.sub_actions)
             for action in job.sub_actions[:job.sub_actions.index(cloned)])
-
-
-class ProjectUndoManager(QObject):
-    set_enabled_undo_action_requested = Signal(bool, str)
-
-    def __init__(self, parent=None):
-        super().__init__(parent)
-        self._undo_buffer = []
-
-    def add(self, item, description):
-        self._undo_buffer.append((item, description))
-        self.set_enabled_undo_action_requested.emit(True, description)
-
-    def pop(self):
-        last = self._undo_buffer.pop()
-        if len(self._undo_buffer) == 0:
-            self.set_enabled_undo_action_requested.emit(False, '')
-        else:
-            self.set_enabled_undo_action_requested.emit(True, self._undo_buffer[-1][1])
-        return last[0]
-
-    def filled(self):
-        return len(self._undo_buffer) != 0
-
-    def reset(self):
-        self._undo_buffer = []
-        self.set_enabled_undo_action_requested.emit(False, '')
 
 
 class HandCursorListWidget(QListWidget):
