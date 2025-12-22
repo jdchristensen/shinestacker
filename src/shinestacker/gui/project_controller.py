@@ -258,7 +258,7 @@ class ProjectController(QObject):
                      'input_path': constants.PATH_SEPARATOR.join(multi_input_path)})
                 job.add_sub_action(multi_layer)
             self.add_job_to_project(job)
-        self.project_editor.set_modified(True)
+            self.project_editor.set_modified(True)
         self.refresh_ui(0, -1)
         self.status_message_requested.emit("New project created.")
         self.set_enabled_file_open_close_actions_requested.emit(True)

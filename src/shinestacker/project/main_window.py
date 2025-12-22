@@ -28,7 +28,7 @@ class MainWindow(QMainWindow):
         self.classic_view = ClassicProjectView(
             self.project_editor, self.project_controller, dark_theme, self)
         self.modern_view = ModernProjectView(
-            self.project_editor, self.project_controller, dark_theme, self)
+            self.project_controller, dark_theme, self)
         actions = {
             "&New...": self.project_controller.new_project,
             "&Open...": self.project_controller.open_project,
