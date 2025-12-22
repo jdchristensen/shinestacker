@@ -4,10 +4,11 @@ from .. gui.gui_logging import LogManager
 
 
 class BaseProjectView(QWidget, LogManager):
-    def __init__(self, parent=None):
+    def __init__(self, dark_theme, parent=None):
         QWidget.__init__(self, parent)
         LogManager.__init__(self)
         self.menu_manager = None
+        self.dark_theme = dark_theme
 
     def set_menu_manager(self, menu_manager):
         self.menu_manager = menu_manager

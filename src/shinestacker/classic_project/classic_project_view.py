@@ -3,7 +3,7 @@ import os
 import subprocess
 from PySide6.QtGui import QAction
 from PySide6.QtWidgets import (
-    QWidget, QVBoxLayout, QHBoxLayout, QLabel, QSplitter, QMessageBox, QMenu)
+    QWidget, QVBoxLayout, QHBoxLayout, QLabel, QSplitter, QMessageBox, QMenu, QApplication)
 from PySide6.QtCore import Qt
 from .. config.constants import constants
 from .. core.core_utils import running_under_windows, running_under_macos
@@ -11,6 +11,7 @@ from .. gui.project_model import (
     get_action_working_path, get_action_input_path, get_action_output_path)
 from .. gui.project_converter import ProjectConverter
 from .. gui.base_project_view import BaseProjectView
+from .. gui.colors import ColorPalette
 from .tab_widget import TabWidgetWithPlaceholder
 from .gui_run import RunWindow, RunWorker
 
@@ -39,7 +40,7 @@ class ProjectLogWorker(RunWorker):
 
 class ClassicProjectView(BaseProjectView):
     def __init__(self, project_editor, project_controller, dark_theme, parent=None):
-        super().__init__(parent)
+        super().__init__(dark_theme, parent)
         self.project_editor = project_editor
         self.project_controller = project_controller
         self.tab_widget = TabWidgetWithPlaceholder(dark_theme)
@@ -53,6 +54,16 @@ class ClassicProjectView(BaseProjectView):
         self.browse_input_path_action = None
         self.browse_output_path_action = None
         self.job_retouch_path_action = None
+        self.style_light = f"""
+            QLabel[color-type="enabled"] {{ color: #{ColorPalette.DARK_BLUE.hex()}; }}
+            QLabel[color-type="disabled"] {{ color: #{ColorPalette.DARK_RED.hex()}; }}
+        """
+        self.style_dark = f"""
+            QLabel[color-type="enabled"] {{ color: #{ColorPalette.LIGHT_BLUE.hex()}; }}
+            QLabel[color-type="disabled"] {{ color: #{ColorPalette.LIGHT_RED.hex()}; }}
+        """
+        QApplication.instance().setStyleSheet(
+            self.style_dark if dark_theme else self.style_light)
         self._setup_ui()
         self._connect_signals()
 
@@ -139,6 +150,28 @@ class ClassicProjectView(BaseProjectView):
     def get_tab_position(self, id_str):
         i, _w = self.get_tab_and_position(id_str)
         return i
+
+    def set_style_sheet(self, dark_theme):
+        self.list_style_sheet_light = f"""
+            QListWidget::item:selected {{
+                background-color: #{ColorPalette.LIGHT_BLUE.hex()};
+            }}
+            QListWidget::item:hover {{
+                background-color: #F0F0F0;
+            }}
+        """
+        self.list_style_sheet_dark = f"""
+            QListWidget::item:selected {{
+                background-color: #{ColorPalette.DARK_BLUE.hex()};
+            }}
+            QListWidget::item:hover {{
+                background-color: #303030;
+            }}
+        """
+        list_style_sheet = self.list_style_sheet_dark \
+            if dark_theme else self.list_style_sheet_light
+        self.job_list().setStyleSheet(list_style_sheet)
+        self.action_list().setStyleSheet(list_style_sheet)
 
     def refresh_ui(self, job_row=-1, action_row=-1):
         self.project_editor.clear_job_list()
@@ -384,3 +417,14 @@ class ClassicProjectView(BaseProjectView):
             worker.stop()
         self.close()
         return True
+
+    def on_theme_changed(self, dark_theme):
+        self.dark_theme = dark_theme
+        self.menu_manager.change_theme(dark_theme)
+        self.tab_widget.change_theme(dark_theme)
+        QApplication.instance().setStyleSheet(
+            self.style_dark if dark_theme else self.style_light)
+        list_style_sheet = self.list_style_sheet_dark \
+            if dark_theme else self.list_style_sheet_light
+        self.job_list().setStyleSheet(list_style_sheet)
+        self.action_list().setStyleSheet(list_style_sheet)

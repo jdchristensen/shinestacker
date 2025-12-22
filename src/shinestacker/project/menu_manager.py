@@ -14,7 +14,7 @@ class MenuManager(QObject):
 
     def __init__(self, menubar, actions, project_editor, dark_theme, parent):
         super().__init__(parent)
-        self.script_dir = os.path.dirname(__file__)
+        self.script_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "gui")
         self._recent_file_manager = RecentFileManager("shinestacker-recent-project-files.txt")
         self.project_editor = project_editor
         self.dark_theme = dark_theme

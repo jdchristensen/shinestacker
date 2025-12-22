@@ -418,4 +418,3 @@ class ProjectController(QObject):
         dialog = self.action_config_dialog(action)
         if dialog.exec() == QDialog.Accepted:
             self.on_job_selected(self.current_job_index())
-            # self.mark_as_modified(True. "Edit Action") <-- done by dialog

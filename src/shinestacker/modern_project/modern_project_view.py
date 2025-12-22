@@ -7,8 +7,8 @@ from .. gui.gui_logging import QTextEditLogger
 
 
 class ModernProjectView(BaseProjectView):
-    def __init__(self, _dark_theme, parent=None):
-        super().__init__(parent)
+    def __init__(self, dark_theme, parent=None):
+        super().__init__(dark_theme, parent)
         self._setup_ui()
 
     def _setup_ui(self):

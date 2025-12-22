@@ -7,7 +7,6 @@ from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QToolBar, QMainWindow, QApplication, QStackedWidget)
 from .. config.constants import constants
 from .. config.app_config import AppConfig
-from .. gui.colors import ColorPalette
 from .. gui.project_model import Project
 from .. gui.project_controller import ProjectController
 from .. gui.sys_mon import StatusBarSystemMonitor
@@ -61,26 +60,7 @@ class MainWindow(QMainWindow):
         self.modern_view.set_menu_manager(self.menu_manager)
         self.script_dir = os.path.dirname(__file__)
         self.retouch_callback = None
-        self.list_style_sheet_light = f"""
-            QListWidget::item:selected {{
-                background-color: #{ColorPalette.LIGHT_BLUE.hex()};
-            }}
-            QListWidget::item:hover {{
-                background-color: #F0F0F0;
-            }}
-        """
-        self.list_style_sheet_dark = f"""
-            QListWidget::item:selected {{
-                background-color: #{ColorPalette.DARK_BLUE.hex()};
-            }}
-            QListWidget::item:hover {{
-                background-color: #303030;
-            }}
-        """
-        list_style_sheet = self.list_style_sheet_dark \
-            if dark_theme else self.list_style_sheet_light
-        self.job_list().setStyleSheet(list_style_sheet)
-        self.action_list().setStyleSheet(list_style_sheet)
+        self.classic_view.set_style_sheet(dark_theme)
         self.menu_manager.add_menus()
         toolbar = QToolBar(self)
         self.addToolBar(Qt.TopToolBarArea, toolbar)
@@ -101,8 +81,8 @@ class MainWindow(QMainWindow):
         self.view_stack.setCurrentIndex(0)
         layout.addWidget(self.view_stack)
 
-        self.job_list().itemDoubleClicked.connect(self.on_job_edit)
-        self.action_list().itemDoubleClicked.connect(self.on_action_edit)
+        self.job_list().itemDoubleClicked.connect(self.project_controller.on_job_edit)
+        self.action_list().itemDoubleClicked.connect(self.project_controller.on_action_edit)
 
         self.central_widget.setLayout(layout)
 
@@ -111,7 +91,7 @@ class MainWindow(QMainWindow):
         QApplication.instance().paletteChanged.connect(self.on_theme_changed)
 
         def handle_modified(modified):
-            self.save_actions_set_enabled(modified)
+            self.menu_manager.save_actions_set_enabled(modified)
             self.update_title()
 
         self.project_editor.modified_signal.connect(handle_modified)
@@ -140,32 +120,16 @@ class MainWindow(QMainWindow):
         self.menu_manager.open_file_requested.connect(
             self.project_controller.open_project)
         self.set_enabled_file_open_close_actions(False)
-        self.style_light = f"""
-            QLabel[color-type="enabled"] {{ color: #{ColorPalette.DARK_BLUE.hex()}; }}
-            QLabel[color-type="disabled"] {{ color: #{ColorPalette.DARK_RED.hex()}; }}
-        """
-        self.style_dark = f"""
-            QLabel[color-type="enabled"] {{ color: #{ColorPalette.LIGHT_BLUE.hex()}; }}
-            QLabel[color-type="disabled"] {{ color: #{ColorPalette.LIGHT_RED.hex()}; }}
-        """
-        QApplication.instance().setStyleSheet(
-            self.style_dark if dark_theme else self.style_light)
         self.show_status_message("Shine Stacker ready.", 4000)
 
     def show_status_message(self, message, timeout=0):
         self.statusBar().showMessage(message, timeout)
-
-    def modified(self):
-        return self.project_editor.modified()
 
     def mark_as_modified(self, modified=True, description=''):
         self.project_editor.mark_as_modified(modified, description)
 
     def set_project(self, project):
         self.project_editor.set_project(project)
-
-    def project(self):
-        return self.project_editor.project()
 
     def project_jobs(self):
         return self.project_editor.project_jobs()
@@ -245,36 +209,18 @@ class MainWindow(QMainWindow):
     def action_config_dialog(self, action):
         return self.project_editor.action_config_dialog(action)
 
-    def on_job_selected(self, index):
-        return self.project_editor.on_job_selected(index)
-
-    def get_action_at(self, action_row):
-        return self.project_editor.get_action_at(action_row)
-
-    def on_job_edit(self, item):
-        self.project_controller.on_job_edit(item)
-
-    def on_action_edit(self, item):
-        self.project_controller.on_action_edit(item)
-
-    def edit_current_action(self):
-        self.project_controller.edit_current_action()
-
     def edit_action(self, action):
         self.project_controller.edit_action(action)
 
     def set_retouch_callback(self, callback):
         self.retouch_callback = callback
 
-    def save_actions_set_enabled(self, enabled):
-        self.menu_manager.save_actions_set_enabled(enabled)
-
     def update_title(self):
         title = constants.APP_TITLE
         file_name = self.current_file_name()
         if file_name:
             title += f" - {file_name}"
-            if self.modified():
+            if self.project_editor.modified():
                 title += " *"
         self.window().setWindowTitle(title)
 
@@ -361,12 +307,4 @@ class MainWindow(QMainWindow):
         return brightness < 128
 
     def on_theme_changed(self):
-        dark_theme = self.is_dark_theme()
-        self.menu_manager.change_theme(dark_theme)
-        self.tab_widget.change_theme(dark_theme)
-        QApplication.instance().setStyleSheet(
-            self.style_dark if dark_theme else self.style_light)
-        list_style_sheet = self.list_style_sheet_dark \
-            if dark_theme else self.list_style_sheet_light
-        self.job_list().setStyleSheet(list_style_sheet)
-        self.action_list().setStyleSheet(list_style_sheet)
+        self.classic_view.on_theme_changed(self.is_dark_theme())
