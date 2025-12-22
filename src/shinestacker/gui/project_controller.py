@@ -12,7 +12,6 @@ from .. core.core_utils import get_app_base_path
 from .project_model import ActionConfig
 from .new_project import NewProjectDialog
 from .project_model import Project
-from .project_editor import ProjectEditor
 
 
 CURRENT_PROJECT_FILE_VERSION = 1
@@ -28,10 +27,10 @@ class ProjectController(QObject):
     set_enabled_file_open_close_actions_requested = Signal(bool)
     status_message_requested = Signal(str)
 
-    def __init__(self, parent):
+    def __init__(self, project_editor, parent):
         super().__init__(parent)
         self.parent = parent
-        self.project_editor = ProjectEditor(parent)
+        self.project_editor = project_editor
 
     def refresh_ui(self, job_row=-1, action_row=-1):
         self.refresh_ui_requested.emit(job_row, action_row)

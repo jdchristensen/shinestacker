@@ -12,6 +12,7 @@ from .. gui.project_model import Project
 from .. gui.menu_manager import MenuManager
 from .. gui.project_controller import ProjectController
 from .. gui.sys_mon import StatusBarSystemMonitor
+from .. gui.project_editor import ProjectEditor
 from .. classic_project.classic_project_view import ClassicProjectView
 from .. modern_project.modern_project_view import ModernProjectView
 
@@ -20,15 +21,14 @@ class MainWindow(QMainWindow):
     def __init__(self):
         QMainWindow.__init__(self)
         self.setObjectName("mainWindow")
-        self.project_controller = ProjectController(self)
+        self.project_editor = ProjectEditor(self)
+        self.project_controller = ProjectController(self.project_editor, self)
         self.project_controller.status_message_requested.connect(
             lambda msg: self.show_status_message(msg, 4000))
-        self.project_editor = self.project_controller.project_editor
         dark_theme = self.is_dark_theme()
         self.classic_view = ClassicProjectView(
             self.project_editor, self.project_controller, dark_theme, self)
-        self.modern_view = ModernProjectView(
-            self.project_controller, dark_theme, self)
+        self.modern_view = ModernProjectView(dark_theme, self)
         actions = {
             "&New...": self.project_controller.new_project,
             "&Open...": self.project_controller.open_project,
