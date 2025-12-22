@@ -9,12 +9,12 @@ from .. config.constants import constants
 from .. config.app_config import AppConfig
 from .. gui.colors import ColorPalette
 from .. gui.project_model import Project
-from .. gui.menu_manager import MenuManager
 from .. gui.project_controller import ProjectController
 from .. gui.sys_mon import StatusBarSystemMonitor
 from .. gui.project_editor import ProjectEditor
 from .. classic_project.classic_project_view import ClassicProjectView
 from .. modern_project.modern_project_view import ModernProjectView
+from .menu_manager import MenuManager
 
 
 class MainWindow(QMainWindow):
