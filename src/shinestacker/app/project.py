@@ -64,7 +64,7 @@ def main():
     app.window = window
     window.show()
     if filename:
-        QTimer.singleShot(100, lambda: window.project_controller.open_project(filename))
+        QTimer.singleShot(100, lambda: window.open_project(filename))
     elif args['new-project']:
         QTimer.singleShot(100, window.project_controller.new_project)
     sys.exit(app.exec())

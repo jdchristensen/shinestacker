@@ -174,10 +174,13 @@ class MainWindow(ProjectHandler, QMainWindow):
         return False
 
     def open_project(self, file_path=False):
-        opened = self.project_controller.open_project(file_path)
+        opened, msg = self.project_controller.open_project(file_path)
         if opened:
-            self.menu_manager.save_actions_set_enabled(False)
+            self.menu_manager.save_actions_set_enabled(True)
             self.show_status_message(f"Project file {os.path.basename(file_path)} loaded.")
+            if self.num_project_jobs() > 0:
+                self.project_editor.set_current_job(0)
+                self.activateWindow()
             for job in self.project_jobs():
                 if 'working_path' in job.params.keys():
                     working_path = job.params['working_path']
@@ -202,6 +205,8 @@ class MainWindow(ProjectHandler, QMainWindow):
                                 was not found.\n
                                 Please, select a valid working path.''')
                             self.project_editor.edit_action(action)
+        elif msg != '':
+            self.show_status_message(msg)
 
     def new_project(self):
         new_done = self.project_controller.new_project()
@@ -222,6 +227,16 @@ class MainWindow(ProjectHandler, QMainWindow):
             self.project_editor.clear_action_list()
             self.set_enabled_file_open_close_actions(False)
             self.show_status_message("Project closed.")
+
+    def do_save(self, file_path):
+        try:
+            self.project_controller.do_save(self, file_path)
+            self.update_title()
+            self.show_status_message_requested(f"Project file {os.path.basename(file_path)} saved.")
+        except Exception as e:
+            msg = f"Cannot save file:\n{str(e)}"
+            self.show_status_message(msg)
+            QMessageBox.critical(self.parent, "Error", msg)
 
     def handle_config(self):
         self.menu_manager.expert_options_action.setChecked(

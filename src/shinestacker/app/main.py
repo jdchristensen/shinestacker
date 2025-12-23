@@ -260,7 +260,7 @@ open retouch window at startup instead of project windows.
         filename = filenames[0]
         extension = filename.split('.')[-1]
         if len(filenames) == 1 and extension == 'fsp':
-            main_app.project_window.project_controller.open_project(filename)
+            main_app.project_window.open_project(filename)
             main_app.project_window.setFocus()
         else:
             main_app.switch_to_retouch()

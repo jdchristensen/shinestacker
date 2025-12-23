@@ -113,7 +113,7 @@ class ProjectController(ProjectIOHandler, QObject):
 
     def open_project(self, file_path=False):
         if not self.check_unsaved_changes():
-            return False
+            return False, ''
         if file_path is False:
             file_path, _ = QFileDialog.getOpenFileName(
                 self.parent, "Open Project", "", "Project Files (*.fsp);;All Files (*)")
@@ -123,22 +123,16 @@ class ProjectController(ProjectIOHandler, QObject):
                 self.set_enabled_file_open_close_actions_requested.emit(True)
                 self.add_recent_file_requested.emit(abs_file_path)
                 self.refresh_ui(0, -1)
-                if self.num_project_jobs() > 0:
-                    self.set_current_job(0)
+                return True, ''
             except InvalidProjectError as e:
                 QMessageBox.critical(self.parent, "Error", str(e))
-                return False
+                return False, str(e)
             except Exception as e:
                 traceback.print_tb(e.__traceback__)
                 msg = f"Cannot open file {file_path}:\n{str(e)}"
-                self.status_message_requested.emit(msg)
                 QMessageBox.critical(self.parent, "Error", msg)
-                return False
-            if self.num_project_jobs() > 0:
-                self.set_current_job(0)
-                self.activate_window_requested.emit()
-                return True
-        return False
+                return False, msg
+        return False, ''
 
     def save_project(self):
         path = self.current_file_path()
@@ -158,16 +152,8 @@ class ProjectController(ProjectIOHandler, QObject):
             os.chdir(os.path.dirname(file_path))
 
     def do_save(self, file_path):
-        try:
-            ProjectIOHandler.do_save(self, file_path)
-            self.update_title_requested.emit()
-            self.add_recent_file_requested.emit(file_path)
-            self.status_message_requested.emit(
-                f"Project file {os.path.basename(file_path)} saved.")
-        except Exception as e:
-            msg = f"Cannot save file:\n{str(e)}"
-            self.status_message_requested.emit(msg)
-            QMessageBox.critical(self.parent, "Error", msg)
+        ProjectIOHandler.do_save(self, file_path)
+        self.add_recent_file_requested.emit(file_path)
 
     def check_unsaved_changes(self):
         if self.modified():
