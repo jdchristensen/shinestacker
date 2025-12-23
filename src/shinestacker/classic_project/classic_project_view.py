@@ -62,6 +62,22 @@ class ClassicProjectView(BaseProjectView):
             QLabel[color-type="enabled"] {{ color: #{ColorPalette.LIGHT_BLUE.hex()}; }}
             QLabel[color-type="disabled"] {{ color: #{ColorPalette.LIGHT_RED.hex()}; }}
         """
+        self.list_style_sheet_light = f"""
+            QListWidget::item:selected {{
+                background-color: #{ColorPalette.LIGHT_BLUE.hex()};
+            }}
+            QListWidget::item:hover {{
+                background-color: #F0F0F0;
+            }}
+        """
+        self.list_style_sheet_dark = f"""
+            QListWidget::item:selected {{
+                background-color: #{ColorPalette.DARK_BLUE.hex()};
+            }}
+            QListWidget::item:hover {{
+                background-color: #303030;
+            }}
+        """
         QApplication.instance().setStyleSheet(
             self.style_dark if dark_theme else self.style_light)
         self._setup_ui()
@@ -152,22 +168,6 @@ class ClassicProjectView(BaseProjectView):
         return i
 
     def set_style_sheet(self, dark_theme):
-        self.list_style_sheet_light = f"""
-            QListWidget::item:selected {{
-                background-color: #{ColorPalette.LIGHT_BLUE.hex()};
-            }}
-            QListWidget::item:hover {{
-                background-color: #F0F0F0;
-            }}
-        """
-        self.list_style_sheet_dark = f"""
-            QListWidget::item:selected {{
-                background-color: #{ColorPalette.DARK_BLUE.hex()};
-            }}
-            QListWidget::item:hover {{
-                background-color: #303030;
-            }}
-        """
         list_style_sheet = self.list_style_sheet_dark \
             if dark_theme else self.list_style_sheet_light
         self.job_list().setStyleSheet(list_style_sheet)

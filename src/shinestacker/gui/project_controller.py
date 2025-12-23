@@ -27,9 +27,10 @@ class ProjectController(QObject):
     set_enabled_file_open_close_actions_requested = Signal(bool)
     status_message_requested = Signal(str)
 
-    def __init__(self, project_editor, parent):
+    def __init__(self, project_handler, project_editor, parent):
         super().__init__(parent)
         self.parent = parent
+        self.project_handler = project_handler
         self.project_editor = project_editor
 
     def refresh_ui(self, job_row=-1, action_row=-1):
@@ -41,23 +42,8 @@ class ProjectController(QObject):
     def modified(self):
         return self.project_editor.modified()
 
-    def set_project(self, project):
-        self.project_editor.set_project(project)
-
-    def project(self):
-        return self.project_editor.project()
-
-    def project_jobs(self):
-        return self.project_editor.project_jobs()
-
     def num_project_jobs(self):
-        return self.project_editor.num_project_jobs()
-
-    def project_job(self, i):
-        return self.project_editor.project_job(i)
-
-    def add_job_to_project(self, job):
-        self.project_editor.add_job_to_project(job)
+        return self.project_handler.num_project_jobs()
 
     def save_actions_set_enabled(self, enabled):
         self.enable_save_actions_requested.emit(enabled)
@@ -142,7 +128,7 @@ class ProjectController(QObject):
 
     def close_project(self):
         if self.check_unsaved_changes():
-            self.set_project(Project())
+            self.project_handler.set_project(Project())
             self.set_current_file_path('')
             self.update_title()
             self.clear_job_list()
@@ -160,7 +146,7 @@ class ProjectController(QObject):
         self.update_title()
         self.clear_job_list()
         self.clear_action_list()
-        self.set_project(Project())
+        self.project_handler.set_project(Project())
         self.save_actions_set_enabled(False)
         dialog = NewProjectDialog(self.parent)
         if dialog.exec() == QDialog.Accepted:
@@ -179,7 +165,7 @@ class ProjectController(QObject):
                 noise_detection = ActionConfig(constants.ACTION_NOISEDETECTION,
                                                {'name': noise_detection_name})
                 job_noise.add_sub_action(noise_detection)
-                self.add_job_to_project(job_noise)
+                self.project_handler.add_job_to_project(job_noise)
             job_params = {
                 'name': f'{input_path}-stack-job',
                 'working_path': working_path,
@@ -256,7 +242,7 @@ class ProjectController(QObject):
                     {'name': f'{input_path}-multi-layer',
                      'input_path': constants.PATH_SEPARATOR.join(multi_input_path)})
                 job.add_sub_action(multi_layer)
-            self.add_job_to_project(job)
+            self.project_handler.add_job_to_project(job)
             self.project_editor.set_modified(True)
         self.refresh_ui(0, -1)
         self.status_message_requested.emit("New project created.")
@@ -280,7 +266,7 @@ class ProjectController(QObject):
                     self.status_message_requested.emit(msg)
                     raise RuntimeError(msg)
                 self.set_enabled_file_open_close_actions_requested.emit(True)
-                self.set_project(project)
+                self.project_handler.set_project(project)
                 self.mark_as_modified(False)
                 self.add_recent_file_requested.emit(abs_file_path)
                 self.project_editor.reset_undo()
@@ -300,7 +286,7 @@ class ProjectController(QObject):
                 self.save_actions_set_enabled(True)
                 self.status_message_requested.emit(
                     f"Project file {os.path.basename(file_path)} loaded.")
-            for job in self.project_jobs():
+            for job in self.project_handler.project_jobs():
                 if 'working_path' in job.params.keys():
                     working_path = job.params['working_path']
                     if not os.path.isdir(working_path):
@@ -345,7 +331,8 @@ class ProjectController(QObject):
     def do_save(self, file_path):
         try:
             json_obj = jsonpickle.encode({
-                'project': self.project().to_dict(), 'version': CURRENT_PROJECT_FILE_VERSION
+                'project': self.project_handler.project().to_dict(),
+                'version': CURRENT_PROJECT_FILE_VERSION
             })
             with open(file_path, 'w', encoding="utf-8") as f:
                 f.write(json_obj)

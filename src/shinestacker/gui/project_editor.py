@@ -7,7 +7,6 @@ from PySide6.QtWidgets import (QListWidget, QMessageBox, QDialog, QListWidgetIte
 from .. config.constants import constants
 from .action_config_dialog import ActionConfigDialog
 from .project_model import ActionConfig, get_action_input_path, get_action_output_path
-from .project_undo_manager import ProjectUndoManager
 
 
 @dataclass
@@ -104,11 +103,10 @@ class ProjectEditor(QObject):
     refresh_ui_signal = Signal(int, int)
     enable_delete_action_signal = Signal(bool)
 
-    def __init__(self, parent=None):
+    def __init__(self, project_handler, parent=None):
         super().__init__(parent)
-        self.undo_manager = ProjectUndoManager()
+        self.project_handler = project_handler
         self._modified = False
-        self._project = None
         self._copy_buffer = None
         self._current_file_path = ''
         self._job_list = HandCursorListWidget()
@@ -116,16 +114,16 @@ class ProjectEditor(QObject):
         self.dialog = None
 
     def reset_undo(self):
-        self.undo_manager.reset()
+        self.project_handler.reset_undo()
 
     def add_undo(self, item, description=''):
-        self.undo_manager.add(item, description)
+        self.project_handler.add_undo(item, description)
 
     def pop_undo(self):
-        return self.undo_manager.pop()
+        return self.project_handler.pop_undo()
 
     def filled_undo(self):
-        return self.undo_manager.filled()
+        return self.project_handler.filled_undo()
 
     def set_modified(self, modified):
         self._modified = modified
@@ -133,26 +131,20 @@ class ProjectEditor(QObject):
     def mark_as_modified(self, modified=True, description=''):
         self._modified = modified
         if modified:
-            self.add_undo(self._project.clone(), description)
+            self.add_undo(self.project_handler.project.clone(), description)
         self.modified_signal.emit(modified)
 
     def modified(self):
         return self._modified
 
-    def set_project(self, project):
-        self._project = project
-
     def project(self):
-        return self._project
+        return self.project_handler.project
 
     def project_jobs(self):
-        return self._project.jobs
-
-    def add_job_to_project(self, job):
-        self._project.jobs.append(job)
+        return self.project_handler.project.jobs
 
     def num_project_jobs(self):
-        return len(self.project().jobs)
+        return self.project_handler.num_project_jobs()
 
     def copy_buffer(self):
         return self._copy_buffer
@@ -183,7 +175,7 @@ class ProjectEditor(QObject):
         os.chdir(self.current_file_directory())
 
     def project_job(self, index):
-        return self._project.jobs[index]
+        return self.project_jobs()[index]
 
     def job_list(self):
         return self._job_list
@@ -572,7 +564,7 @@ class ProjectEditor(QObject):
         job_row = self.current_job_index()
         action_row = self.current_action_index()
         if self.filled_undo():
-            self.set_project(self.pop_undo())
+            self.project_handler.set_project(self.pop_undo())
             self.refresh_ui_signal.emit(-1, -1)
             len_jobs = self.num_project_jobs()
             if len_jobs > 0:
