@@ -1,22 +1,22 @@
 import pytest
 from unittest.mock import Mock, patch
 from PySide6.QtWidgets import QListWidget, QListWidgetItem, QMessageBox
-from shinestacker.gui.project_editor import (
-    ProjectEditor,
-    ActionPosition,
-    constants,
+from shinestacker.config.constants import constants
+from shinestacker.classic_project.classic_project_editor import (
+    ClassicProjectEditor,
     new_row_after_delete,
     new_row_after_insert,
     new_row_after_paste,
     new_row_after_clone
 )
-from shinestacker.gui.project_holder import ProjectHolder
+from shinestacker.classic_project.list_container import ActionPosition
+from shinestacker.gui.project_handler import ProjectHolder
 
 
 @pytest.fixture
 def project_editor(qtbot):
     holder = ProjectHolder()
-    editor = ProjectEditor(holder)
+    editor = ClassicProjectEditor(holder)
     holder.project = Mock()
     holder.project.jobs = []
     holder.project.clone.return_value = Mock()
@@ -121,7 +121,7 @@ def test_delete_job(project_editor, mock_job):
     project_editor.project().jobs = [mock_job]
     project_editor._job_list.addItem(QListWidgetItem("Test Job"))
     project_editor.set_current_job(0)
-    with patch('shinestacker.gui.project_editor.QMessageBox.question',
+    with patch('shinestacker.classic_project.classic_project_editor.QMessageBox.question',
                return_value=QMessageBox.Yes):
         result = project_editor.delete_job()
         assert result == mock_job
@@ -141,7 +141,7 @@ def test_delete_action(project_editor, mock_job, mock_action):
     pos.action_index = 0
     pos.action = mock_action
     with patch.object(project_editor, 'get_current_action', return_value=(0, 0, pos)):
-        with patch('shinestacker.gui.project_editor.QMessageBox.question',
+        with patch('shinestacker.classic_project.classic_project_editor.QMessageBox.question',
                    return_value=QMessageBox.Yes):
             result = project_editor.delete_action()
             assert result == mock_action
@@ -170,7 +170,7 @@ def test_clone_action(project_editor, mock_job, mock_action):
     pos.action_index = 0
     pos.action = mock_action
     with patch.object(project_editor, 'get_current_action', return_value=(0, 0, pos)):
-        with patch('shinestacker.gui.project_editor.new_row_after_clone', return_value=1):
+        with patch('shinestacker.classic_project.classic_project_editor.new_row_after_clone', return_value=1):
             project_editor.clone_action()
             assert len(mock_job.sub_actions) == 2
             assert project_editor.modified()

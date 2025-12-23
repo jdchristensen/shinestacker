@@ -12,9 +12,9 @@ from .. gui.project_model import (
 from .. gui.project_converter import ProjectConverter
 from .. gui.project_view import ProjectView
 from .. gui.colors import ColorPalette
-from .. gui.project_handler import ProjectHandler
 from .tab_widget import TabWidgetWithPlaceholder
 from .gui_run import RunWindow, RunWorker
+from .list_container import ListContainer
 
 
 class JobLogWorker(RunWorker):
@@ -39,11 +39,10 @@ class ProjectLogWorker(RunWorker):
         return converter.run_project(self.project, self.id_str, self.callbacks)
 
 
-class ClassicProjectView(ProjectHandler, ProjectView):
-    def __init__(self, project_holder, project_editor, dark_theme, parent=None):
-        ProjectView.__init__(self, dark_theme, parent)
-        ProjectHandler.__init__(self, project_holder)
-        self.project_editor = project_editor
+class ClassicProjectView(ProjectView, ListContainer):
+    def __init__(self, project_holder, dark_theme, parent=None):
+        ProjectView.__init__(self, project_holder, dark_theme, parent)
+        ListContainer.__init__(self)
         self.tab_widget = TabWidgetWithPlaceholder(dark_theme)
         self.tab_widget.resize(1000, 500)
         self._windows = []
@@ -107,36 +106,11 @@ class ClassicProjectView(ProjectHandler, ProjectView):
         layout.addWidget(h_splitter)
 
     def _connect_signals(self):
-        self.job_list().currentRowChanged.connect(
-            self.project_editor.on_job_selected)
+        self.job_list().currentRowChanged.connect(self.on_job_selected)
         self.job_list().itemSelectionChanged.connect(
             self.parent().update_delete_action_state)
         self.action_list().itemSelectionChanged.connect(
             self.parent().update_delete_action_state)
-
-    def job_list(self):
-        return self.project_editor.job_list()
-
-    def action_list(self):
-        return self.project_editor.action_list()
-
-    def current_job_index(self):
-        return self.project_editor.current_job_index()
-
-    def get_action_at(self, action_row):
-        return self.project_editor.get_action_at(action_row)
-
-    def set_current_job(self, index):
-        return self.project_editor.set_current_job(index)
-
-    def set_current_action(self, index):
-        return self.project_editor.set_current_action(index)
-
-    def action_text(self, action, is_sub_action=False, indent=True, long_name=False, html=False):
-        return self.project_editor.action_text(action, is_sub_action, indent, long_name, html)
-
-    def job_text(self, job, long_name=False, html=False):
-        return self.project_editor.job_text(job, long_name, html)
 
     def get_tab_widget(self):
         return self.tab_widget
@@ -163,19 +137,19 @@ class ClassicProjectView(ProjectHandler, ProjectView):
         self.action_list().setStyleSheet(list_style_sheet)
 
     def refresh_ui(self, job_row=-1, action_row=-1):
-        self.project_editor.clear_job_list()
-        for job in self.project_editor.project_jobs():
-            self.project_editor.add_list_item(self.job_list(), job, False)
-        if self.project_editor.project_jobs():
-            self.project_editor.set_current_job(0)
+        self.clear_job_list()
+        for job in self.project_jobs():
+            self.add_list_item(self.job_list(), job, False)
+        if self.project_jobs():
+            self.set_current_job(0)
         if job_row >= 0:
-            self.project_editor.set_current_job(job_row)
+            self.set_current_job(job_row)
         if action_row >= 0:
-            self.project_editor.set_current_action(action_row)
+            self.set_current_action(action_row)
         ProjectView.refresh_ui(self)
 
     def select_first_job(self):
-        self.project_editor.set_current_job(0)
+        self.set_current_job(0)
 
     def create_new_window(self, title, labels, retouch_paths):
         new_window = RunWindow(labels,
@@ -297,7 +271,7 @@ class ClassicProjectView(ProjectHandler, ProjectView):
         current_action = None
         if item:
             index = self.job_list().row(item)
-            current_action = self.project_editor.get_job_at(index)
+            current_action = self.get_job_at(index)
             self.set_current_job(index)
         item = self.action_list().itemAt(self.action_list().viewport().mapFrom(self, event.pos()))
         if item:

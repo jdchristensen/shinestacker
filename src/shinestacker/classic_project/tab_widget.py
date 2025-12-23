@@ -11,7 +11,7 @@ class TabWidgetWithPlaceholder(QWidget):
 
     def __init__(self, dark_theme, parent=None):
         super().__init__(parent)
-        self.script_dir = os.path.dirname(__file__)
+        self.script_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "gui")
         self.dark_theme = dark_theme
         self.main_layout = QVBoxLayout(self)
         self.main_layout.setContentsMargins(0, 0, 0, 0)

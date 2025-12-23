@@ -2,12 +2,14 @@
 from PySide6.QtCore import Signal
 from PySide6.QtWidgets import QWidget
 from .. gui.gui_logging import LogManager
+from .. gui.project_handler import ProjectHandler
 
 
-class ProjectView(QWidget, LogManager):
+class ProjectView(QWidget, LogManager, ProjectHandler):
     refresh_ui_signal = Signal()
 
-    def __init__(self, dark_theme, parent=None):
+    def __init__(self, project_holder, dark_theme, parent=None):
+        ProjectHandler.__init__(self, project_holder)
         QWidget.__init__(self, parent)
         LogManager.__init__(self)
         self.menu_manager = None

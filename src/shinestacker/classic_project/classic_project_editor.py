@@ -1,34 +1,9 @@
 # pylint: disable=C0114, C0115, C0116, R0903, R0904, R1702, R0917, R0913, R0902, E0611, E1131, E1121
-import os
-from dataclasses import dataclass
-from PySide6.QtCore import Qt, Signal, QEvent, QSize
-from PySide6.QtWidgets import (QListWidget, QMessageBox, QDialog, QListWidgetItem, QLabel,
-                               QSizePolicy)
+from PySide6.QtCore import Signal
+from PySide6.QtWidgets import QMessageBox, QDialog
 from .. config.constants import constants
-from .. gui.project_model import ActionConfig, get_action_input_path, get_action_output_path
 from .. gui.project_editor import ProjectEditor
-
-
-@dataclass
-class ActionPosition:
-    actions: list
-    sub_actions: list
-    action_index: int
-    sub_action_index: int = -1
-
-    @property
-    def is_sub_action(self) -> bool:
-        return self.sub_action_index != -1
-
-    @property
-    def action(self):
-        return None if self.actions is None else self.actions[self.action_index]
-
-    @property
-    def sub_action(self):
-        return None if self.sub_actions is None or \
-                       self.sub_action_index == -1 \
-                       else self.sub_actions[self.sub_action_index]
+from .list_container import ListContainer, ActionPosition
 
 
 def new_row_after_delete(action_row, pos: ActionPosition):
@@ -73,121 +48,14 @@ def new_row_after_clone(job, action_row, is_sub_action, cloned):
             for action in job.sub_actions[:job.sub_actions.index(cloned)])
 
 
-class HandCursorListWidget(QListWidget):
-    def __init__(self, parent=None):
-        super().__init__(parent)
-        self.setMouseTracking(True)
-        self.viewport().setMouseTracking(True)
-        self.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
-        self.setWordWrap(False)
-
-    def event(self, event):
-        if event.type() == QEvent.HoverMove:
-            pos = event.position().toPoint()
-            item = self.itemAt(pos)
-            if item:
-                self.viewport().setCursor(Qt.PointingHandCursor)
-            else:
-                self.viewport().setCursor(Qt.ArrowCursor)
-        elif event.type() == QEvent.Leave:
-            self.viewport().setCursor(Qt.ArrowCursor)
-        return super().event(event)
-
-
-class ClassicProjectEditor(ProjectEditor):
-    INDENT_SPACE = "&nbsp;&nbsp;&nbsp;↪&nbsp;&nbsp;&nbsp;"
-    CLONE_POSTFIX = " (clone)"
-
-    select_signal = Signal()
+class ClassicProjectEditor(ProjectEditor, ListContainer):
     refresh_ui_signal = Signal(int, int)
     enable_delete_action_signal = Signal(bool)
     enable_sub_actions_requested = Signal(bool)
 
     def __init__(self, project_holder, parent=None):
         ProjectEditor.__init__(self, project_holder, parent)
-        self._job_list = HandCursorListWidget()
-        self._action_list = HandCursorListWidget()
-        self.dialog = None
-
-    def job_list(self):
-        return self._job_list
-
-    def action_list(self):
-        return self._action_list
-
-    def current_job_index(self):
-        return self._job_list.currentRow()
-
-    def current_action_index(self):
-        return self._action_list.currentRow()
-
-    def set_current_job(self, index):
-        self._job_list.setCurrentRow(index)
-
-    def set_current_action(self, index):
-        self._action_list.setCurrentRow(index)
-
-    def job_list_count(self):
-        return self._job_list.count()
-
-    def action_list_count(self):
-        return self._action_list.count()
-
-    def job_list_item(self, index):
-        return self._job_list.item(index)
-
-    def action_list_item(self, index):
-        return self._action_list.item(index)
-
-    def job_list_has_focus(self):
-        return self._job_list.hasFocus()
-
-    def action_list_has_focus(self):
-        return self._action_list.hasFocus()
-
-    def take_job(self, index):
-        return self._job_list.takeItem(index)
-
-    def clear_job_list(self):
-        self._job_list.clear()
-
-    def clear_action_list(self):
-        self._action_list.clear()
-
-    def num_selected_jobs(self):
-        return len(self._job_list.selectedItems())
-
-    def num_selected_actions(self):
-        return len(self._action_list.selectedItems())
-
-    def job_text(self, job, long_name=False, html=False):
-        txt = f"{job.params.get('name', '(job)')}"
-        if html:
-            txt = f"<b>{txt}</b>"
-        in_path = get_action_input_path(job)[0]
-        if os.path.isabs(in_path):
-            in_path = ".../" + os.path.basename(in_path)
-        ico = constants.ACTION_ICONS[constants.ACTION_JOB]
-        return txt + (f" [{ico}Job] - 📁 {in_path} → 📂 ..." if long_name else "")
-
-    def action_text(self, action, is_sub_action=False, indent=True, long_name=False, html=False):
-        ico = constants.ACTION_ICONS.get(action.type_name, '')
-        if is_sub_action and indent:
-            txt = self.INDENT_SPACE
-        else:
-            txt = ''
-        if action.params.get('name', '') != '':
-            txt += f"{action.params['name']}"
-            if html:
-                txt = f"<b>{txt}</b>"
-        in_path, out_path = get_action_input_path(action)[0], get_action_output_path(action)[0]
-        if os.path.isabs(in_path):
-            in_path = ".../" + os.path.basename(in_path)
-        if os.path.isabs(out_path):
-            out_path = ".../" + os.path.basename(out_path)
-        return f"{txt} [{ico}{action.type_name}]" + \
-               (f" - 📁 <i>{in_path}</i> → 📂 <i>{out_path}</i>"
-                if long_name and not is_sub_action else "")
+        ListContainer.__init__(self, None, None)
 
     def get_current_job(self):
         return self.project_job(self.current_job_index())
@@ -219,21 +87,6 @@ class ClassicProjectEditor(ProjectEditor):
                     not is_sub_action and current_action.type_name == constants.ACTION_COMBO
                 return selected_sub_action
         return False
-
-    def get_action_at(self, action_row):
-        job_row = self.current_job_index()
-        if job_row < 0 or action_row < 0:
-            return (job_row, action_row, None)
-        action, sub_action, sub_action_index = self.find_action_position(job_row, action_row)
-        if not action:
-            return (job_row, action_row, None)
-        job = self.project_job(job_row)
-        if sub_action:
-            return (job_row, action_row,
-                    ActionPosition(job.sub_actions, action.sub_actions,
-                                   job.sub_actions.index(action), sub_action_index))
-        return (job_row, action_row,
-                ActionPosition(job.sub_actions, None, job.sub_actions.index(action)))
 
     def find_action_position(self, job_index, ui_index):
         if not 0 <= job_index < self.num_project_jobs():
@@ -414,85 +267,6 @@ class ClassicProjectEditor(ProjectEditor):
                     self.set_current_job(job_index)
                     self.set_current_action(action_index)
 
-    def add_job(self):
-        job_action = ActionConfig("Job")
-        self.dialog = self.action_config_dialog(job_action)
-        if self.dialog.exec() == QDialog.Accepted:
-            self.mark_as_modified(True, "Add Job")
-            self.project_jobs().append(job_action)
-            self.add_list_item(self.job_list(), job_action, False)
-            self.set_current_job(self.job_list_count() - 1)
-            self.job_list_item(self.job_list_count() - 1).setSelected(True)
-            self.refresh_ui_signal.emit(-1, -1)
-
-    def add_action(self, type_name):
-        current_index = self.current_job_index()
-        if current_index < 0:
-            if self.num_project_jobs() > 0:
-                QMessageBox.warning(self.parent(),
-                                    "No Job Selected", "Please select a job first.")
-            else:
-                QMessageBox.warning(self.parent(),
-                                    "No Job Added", "Please add a job first.")
-            return
-        action = ActionConfig(type_name)
-        action.parent = self.get_current_job()
-        self.dialog = self.action_config_dialog(action)
-        if self.dialog.exec() == QDialog.Accepted:
-            self.mark_as_modified("Add Action")
-            self.project_job(current_index).add_sub_action(action)
-            self.add_list_item(self.action_list(), action, False)
-            self.enable_delete_action_signal.emit(False)
-
-    def add_list_item(self, widget_list, action, is_sub_action):
-        if action.type_name == constants.ACTION_JOB:
-            text = self.job_text(action, long_name=True, html=True)
-        else:
-            text = self.action_text(action, long_name=True, html=True, is_sub_action=is_sub_action)
-        item = QListWidgetItem()
-        item.setText('')
-        item.setToolTip("<b>Double-click:</b> configure parameters<br>"
-                        "<b>Right-click:</b> show menu")
-        item.setData(Qt.ItemDataRole.UserRole, True)
-        widget_list.addItem(item)
-        html_text = ("✅ " if action.enabled() else "🚫 ") + text
-        label = QLabel(html_text)
-        label.setProperty("color-type", "enabled" if action.enabled() else "disabled")
-        label.setTextFormat(Qt.RichText)
-        label.setWordWrap(False)
-        label.setSizePolicy(QSizePolicy.MinimumExpanding, QSizePolicy.Fixed)
-        label.adjustSize()
-        ideal_width = label.sizeHint().width()
-        widget_list.setItemWidget(item, label)
-        item.setSizeHint(QSize(ideal_width, label.sizeHint().height()))
-        widget_list.setItemWidget(item, label)
-
-    def add_sub_action(self, type_name):
-        current_job_index = self.current_job_index()
-        current_action_index = self.current_action_index()
-        if current_job_index < 0 or current_action_index < 0 or \
-           current_job_index >= self.num_project_jobs():
-            return
-        job = self.project_job(current_job_index)
-        action = None
-        action_counter = -1
-        for act in job.sub_actions:
-            action_counter += 1
-            if action_counter == current_action_index:
-                action = act
-                break
-            action_counter += len(act.sub_actions)
-        if not action or action.type_name != constants.ACTION_COMBO:
-            return
-        sub_action = ActionConfig(type_name)
-        self.dialog = self.action_config_dialog(sub_action)
-        if self.dialog.exec() == QDialog.Accepted:
-            self.mark_as_modified("Add Sub-action")
-            action.add_sub_action(sub_action)
-            self.on_job_selected(current_job_index)
-            self.set_current_action(current_action_index)
-            self.action_list_item(current_action_index).setSelected(True)
-
     def copy_job(self):
         current_index = self.current_job_index()
         if 0 <= current_index < self.num_project_jobs():
@@ -602,17 +376,6 @@ class ClassicProjectEditor(ProjectEditor):
 
     def disable_all(self):
         self.set_enabled_all(False)
-
-    def on_job_selected(self, index):
-        self.clear_action_list()
-        if 0 <= index < self.num_project_jobs():
-            job = self.project_job(index)
-            for action in job.sub_actions:
-                self.add_list_item(self.action_list(), action, False)
-                if len(action.sub_actions) > 0:
-                    for sub_action in action.sub_actions:
-                        self.add_list_item(self.action_list(), sub_action, True)
-            self.select_signal.emit()
 
     def get_current_action_at(self, job, action_index):
         action_counter = -1
