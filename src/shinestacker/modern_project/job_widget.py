@@ -1,90 +1,26 @@
 # pylint: disable=C0114, C0115, C0116, E0611, R0903
-import os
-from PySide6.QtWidgets import QFrame, QLabel, QVBoxLayout
-from PySide6.QtCore import Qt, Signal
-from PySide6.QtGui import QFont
-from .. gui.colors import ColorPalette
-from .. gui.project_model import get_action_input_path
+from .base_widget import BaseWidget
+from .action_widget import ActionWidget
+from ..gui.project_model import get_action_input_path
 
 
-class JobWidget(QFrame):
-    clicked = Signal()
-    double_clicked = Signal()
-
+class JobWidget(BaseWidget):
     def __init__(self, job, dark_theme=False, parent=None):
-        super().__init__(parent)
-        self._selected = False
-        self._dark_theme = dark_theme
-        self.setMinimumHeight(50)
-        self.setProperty("selected", False)
-        self.setProperty("dark_theme", dark_theme)
-        self.setFocusPolicy(Qt.NoFocus)
-        layout = QVBoxLayout(self)
-        layout.setContentsMargins(8, 8, 8, 8)
         job_name = job.params['name']
-        self.name_label = QLabel(job_name)
-        self.name_label.setAlignment(Qt.AlignLeft | Qt.AlignTop)
+        super().__init__(job_name, 50, dark_theme, parent)
+        self._action_widgets = []
         in_path = get_action_input_path(job)[0]
-        if os.path.isabs(in_path):
-            in_path = ".../" + os.path.basename(in_path)
-        self.path_label = QLabel(f"📁 {in_path}")
-        font = QFont()
-        font.setBold(True)
-        self.name_label.setFont(font)
-        layout.addWidget(self.name_label)
-        layout.addWidget(self.path_label)
-        self.setLayout(layout)
-        self.setAttribute(Qt.WA_Hover, True)
-        self._update_stylesheet()
+        self._add_path_label(f"📁 {self._format_path(in_path)}")
+        if hasattr(job, 'sub_actions') and job.sub_actions:
+            for action in job.sub_actions:
+                action_widget = ActionWidget(action, dark_theme)
+                self._action_widgets.append(action_widget)
+                self.layout().addWidget(action_widget)
 
-    def _update_stylesheet(self):
-        if self._dark_theme:
-            border_color = ColorPalette.LIGHT_BLUE.hex()
-            selected_bg = ColorPalette.DARK_BLUE.hex()
-            hover_bg = ColorPalette.MEDIUM_BLUE.hex()
-        else:
-            border_color = ColorPalette.DARK_BLUE.hex()
-            selected_bg = ColorPalette.LIGHT_BLUE.hex()
-            hover_bg = ColorPalette.MEDIUM_BLUE.hex()
-        stylesheet = f"""
-            JobWidget {{
-                border: 2px solid #{border_color};
-                border-radius: 4px;
-                margin: 2px;
-                background-color: palette(window);
-            }}
-            JobWidget[selected="true"] {{
-                background-color: #{selected_bg};
-            }}
-            JobWidget:hover {{
-                background-color: #{hover_bg};
-            }}
-        """
-        self.setStyleSheet(stylesheet)
-
-    # pylint: disable=C0103
-    def mousePressEvent(self, event):
-        self.clicked.emit()
-        event.accept()
-
-    def mouseDoubleClickEvent(self, event):
-        self.double_clicked.emit()
-        event.accept()
-    # pylint: enable=C0103
-
-    def set_selected(self, selected):
-        self._selected = selected
-        self.setProperty("selected", "true" if selected else "false")
-        self._update_stylesheet()
-        self.style().unpolish(self)
-        self.style().polish(self)
+    def widget_type(self):
+        return 'JobWidget'
 
     def set_dark_theme(self, dark_theme):
-        self._dark_theme = dark_theme
-        self.setProperty("dark_theme", dark_theme)
-        self._update_stylesheet()
-        self.style().unpolish(self)
-        self.style().polish(self)
-
-    def set_job_name(self, name):
-        self.name_label.setText(name)
+        super().set_dark_theme(dark_theme)
+        for action_widget in self._action_widgets:
+            action_widget.set_dark_theme(dark_theme)
