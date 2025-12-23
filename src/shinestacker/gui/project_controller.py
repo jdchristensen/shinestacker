@@ -144,14 +144,14 @@ class ProjectController(ProjectHandler, QObject):
         if file_path:
             try:
                 abs_file_path = os.path.abspath(file_path)
-                self.set_current_file_path(file_path)
-                with open(self.current_file_path(), 'r', encoding="utf-8") as file:
+                with open(abs_file_path, 'r', encoding="utf-8") as file:
                     json_obj = json.load(file)
                 project = Project.from_dict(json_obj['project'], json_obj['version'])
                 if project is None:
                     msg = f"Project from file {file_path} produced a null project."
                     self.status_message_requested.emit(msg)
                     raise RuntimeError(msg)
+                self.set_current_file_path(file_path)
                 self.set_enabled_file_open_close_actions_requested.emit(True)
                 self.set_project(project)
                 self.mark_as_modified(False)

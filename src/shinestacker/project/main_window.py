@@ -127,53 +127,8 @@ class MainWindow(ProjectHandler, QMainWindow):
     def show_status_message(self, message, timeout=0):
         self.statusBar().showMessage(message, timeout)
 
-    def job_list(self):
-        return self.project_editor.job_list()
-
-    def action_list(self):
-        return self.project_editor.action_list()
-
-    def current_job_index(self):
-        return self.project_editor.current_job_index()
-
-    def current_action_index(self):
-        return self.project_editor.current_action_index()
-
-    def set_current_job(self, index):
-        return self.project_editor.set_current_job(index)
-
-    def set_current_action(self, index):
-        return self.project_editor.set_current_action(index)
-
-    def job_list_count(self):
-        return self.project_editor.job_list_count()
-
-    def action_list_count(self):
-        return self.project_editor.action_list_count()
-
-    def job_list_item(self, index):
-        return self.project_editor.job_list_item(index)
-
-    def action_list_item(self, index):
-        return self.project_editor.action_list_item(index)
-
-    def job_list_has_focus(self):
-        return self.project_editor.job_list_has_focus()
-
-    def action_list_has_focus(self):
-        return self.project_editor.action_list_has_focus()
-
-    def clear_job_list(self):
-        self.project_editor.clear_job_list()
-
     def clear_action_list(self):
         self.project_editor.clear_action_list()
-
-    def num_selected_jobs(self):
-        return self.project_editor.num_selected_jobs()
-
-    def num_selected_actions(self):
-        return self.project_editor.num_selected_actions()
 
     def get_current_action_at(self, job, action_index):
         return self.project_editor.get_current_action_at(job, action_index)
@@ -196,7 +151,8 @@ class MainWindow(ProjectHandler, QMainWindow):
                 title += " *"
         self.window().setWindowTitle(title)
 
-    def refresh_ui(self, job_row=-1, action_row=-1):
+    def refresh_ui(self):
+        self.update_title()
         if self.num_project_jobs() == 0:
             self.menu_manager.add_action_entry_action.setEnabled(False)
             self.menu_manager.action_selector.setEnabled(False)
@@ -206,7 +162,7 @@ class MainWindow(ProjectHandler, QMainWindow):
             self.menu_manager.action_selector.setEnabled(True)
             self.menu_manager.delete_element_action.setEnabled(True)
             self.menu_manager.run_job_action.setEnabled(True)
-        self.menu_manager.set_enabled_run_all_jobs(self.job_list_count() > 1)
+        self.menu_manager.set_enabled_run_all_jobs(self.num_project_jobs() > 1)
 
     def set_classic_view(self):
         self.view_stack.setCurrentIndex(0)
@@ -234,26 +190,12 @@ class MainWindow(ProjectHandler, QMainWindow):
 
     def delete_element(self):
         self.project_editor.delete_element()
-        if self.job_list_count() > 0:
+        if self.num_project_jobs() > 0:
             self.menu_manager.delete_element_action.setEnabled(True)
 
     def update_delete_action_state(self):
-        has_job_selected = self.num_selected_jobs() > 0
-        has_action_selected = self.num_selected_actions() > 0
-        self.menu_manager.delete_element_action.setEnabled(
-            has_job_selected or has_action_selected)
-        if has_action_selected and has_job_selected:
-            job_index = min(self.current_job_index(), self.num_project_jobs() - 1)
-            action_index = self.current_action_index()
-            if job_index >= 0:
-                job = self.project_job(job_index)
-                current_action, is_sub_action = \
-                    self.get_current_action_at(job, action_index)
-                enable_sub_actions = current_action is not None and \
-                    not is_sub_action and current_action.type_name == constants.ACTION_COMBO
-                self.menu_manager.set_enabled_sub_actions_gui(enable_sub_actions)
-        else:
-            self.menu_manager.set_enabled_sub_actions_gui(False)
+        self.menu_manager.delete_element_action.setEnabled(self.project_editor.has_selection())
+        self.menu_manager.set_enabled_sub_actions_gui(self.project_editor.has_selected_sub_action())
 
     def set_enabled_file_open_close_actions(self, enabled):
         for action in self.findChildren(QAction):

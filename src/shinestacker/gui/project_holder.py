@@ -1,4 +1,4 @@
-# pylint: disable=C0114, C0115, C0116
+# pylint: disable=C0114, C0115, C0116, R0904
 import os
 from .project_model import Project
 from .project_undo_manager import ProjectUndoManager

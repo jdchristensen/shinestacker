@@ -204,6 +204,31 @@ class ProjectEditor(ProjectHandler, QObject):
     def get_current_action(self):
         return self.get_action_at(self.current_action_index())
 
+    def has_selected_jobs(self):
+        return self.num_selected_jobs() > 0
+
+    def has_selected_actions(self):
+        return self.num_selected_actions() > 0
+
+    def has_selection(self):
+        return self.has_selected_jobs() or self.has_selected_actions()
+
+    def has_selected_jobs_and_actions(self):
+        return self.has_selected_jobs() and self.has_selected_actions()
+
+    def has_selected_sub_action(self):
+        if self.has_selected_jobs_and_actions():
+            job_index = min(self.current_job_index(), self.num_project_jobs() - 1)
+            action_index = self.current_action_index()
+            if job_index >= 0:
+                job = self.project_job(job_index)
+                current_action, is_sub_action = \
+                    self.get_current_action_at(job, action_index)
+                selected_sub_action = current_action is not None and \
+                    not is_sub_action and current_action.type_name == constants.ACTION_COMBO
+                return selected_sub_action
+        return False
+
     def get_action_at(self, action_row):
         job_row = self.current_job_index()
         if job_row < 0 or action_row < 0:
@@ -463,12 +488,7 @@ class ProjectEditor(ProjectHandler, QObject):
     def paste_job(self):
         if self.copy_buffer().type_name != constants.ACTION_JOB:
             return
-        job_index = self.current_job_index()
-        if job_index < 0:
-            job_index = 0
-        if job_index >= self.num_project_jobs():
-            job_index = self.num_project_jobs() - 1
-        new_job_index = job_index
+        new_job_index = min(max(self.current_job_index(), 0), self.num_project_jobs() - 1)
         self.mark_as_modified(True, "Paste Job")
         self.project_jobs().insert(new_job_index, self.copy_buffer())
         self.set_current_job(new_job_index)

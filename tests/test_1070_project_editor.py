@@ -10,14 +10,16 @@ from shinestacker.gui.project_editor import (
     new_row_after_paste,
     new_row_after_clone
 )
+from shinestacker.gui.project_holder import ProjectHolder
 
 
 @pytest.fixture
 def project_editor(qtbot):
-    editor = ProjectEditor()
-    editor._project = Mock()
-    editor._project.jobs = []
-    editor._project.clone.return_value = Mock()
+    holder = ProjectHolder()
+    editor = ProjectEditor(holder)
+    holder.project = Mock()
+    holder.project.jobs = []
+    holder.project.clone.return_value = Mock()
     editor._job_list = QListWidget()
     editor._action_list = QListWidget()
     editor.parent = Mock()
@@ -90,18 +92,18 @@ def test_mark_as_modified(project_editor):
 def test_shift_job(project_editor, mock_job):
     job1, job2, job3 = Mock(), Mock(), Mock()
     job1.name, job2.name, job3.name = "job1", "job2", "job3"
-    project_editor._project.jobs = [job1, job2, job3]
+    project_editor.project().jobs = [job1, job2, job3]
     for i in range(3):
         project_editor._job_list.addItem(QListWidgetItem(f"Job {i}"))
     project_editor.set_current_job(1)
     project_editor.shift_job(-1)
-    assert project_editor._project.jobs[0].name == "job2"
+    assert project_editor.project().jobs[0].name == "job2"
     assert project_editor.modified()
 
 
 def test_shift_action_fail(project_editor, mock_job, mock_action):
     mock_job.sub_actions = [mock_action]
-    project_editor._project.jobs = [mock_job]
+    project_editor.project().jobs = [mock_job]
     project_editor._job_list.addItem(QListWidgetItem("Test Job"))
     project_editor.set_current_job(0)
     project_editor._action_list.addItem(QListWidgetItem("Test Action"))
@@ -116,19 +118,19 @@ def test_shift_action_fail(project_editor, mock_job, mock_action):
 
 
 def test_delete_job(project_editor, mock_job):
-    project_editor._project.jobs = [mock_job]
+    project_editor.project().jobs = [mock_job]
     project_editor._job_list.addItem(QListWidgetItem("Test Job"))
     project_editor.set_current_job(0)
     with patch('shinestacker.gui.project_editor.QMessageBox.question',
                return_value=QMessageBox.Yes):
         result = project_editor.delete_job()
         assert result == mock_job
-        assert len(project_editor._project.jobs) == 0
+        assert len(project_editor.project().jobs) == 0
 
 
 def test_delete_action(project_editor, mock_job, mock_action):
     mock_job.sub_actions = [mock_action]
-    project_editor._project.jobs = [mock_job]
+    project_editor.project().jobs = [mock_job]
     project_editor._job_list.addItem(QListWidgetItem("Test Job"))
     project_editor.set_current_job(0)
     project_editor._action_list.addItem(QListWidgetItem("Test Action"))
@@ -147,17 +149,17 @@ def test_delete_action(project_editor, mock_job, mock_action):
 
 
 def test_clone_job(project_editor, mock_job):
-    project_editor._project.jobs = [mock_job]
+    project_editor.project().jobs = [mock_job]
     project_editor._job_list.addItem(QListWidgetItem("Test Job"))
     project_editor.set_current_job(0)
     project_editor.clone_job()
-    assert len(project_editor._project.jobs) == 2
+    assert len(project_editor.project().jobs) == 2
     assert project_editor.modified()
 
 
 def test_clone_action(project_editor, mock_job, mock_action):
     mock_job.sub_actions = [mock_action]
-    project_editor._project.jobs = [mock_job]
+    project_editor.project().jobs = [mock_job]
     project_editor._job_list.addItem(QListWidgetItem("Test Job"))
     project_editor.set_current_job(0)
     project_editor._action_list.addItem(QListWidgetItem("Test Action"))
@@ -175,19 +177,19 @@ def test_clone_action(project_editor, mock_job, mock_action):
 
 
 def test_copy_paste_job(project_editor, mock_job):
-    project_editor._project.jobs = [mock_job]
+    project_editor.project().jobs = [mock_job]
     project_editor._job_list.addItem(QListWidgetItem("Test Job"))
     project_editor.set_current_job(0)
     project_editor.copy_job()
     assert project_editor.copy_buffer() is not None
     project_editor.paste_job()
-    assert len(project_editor._project.jobs) == 2
+    assert len(project_editor.project().jobs) == 2
     assert project_editor.modified()
 
 
 def test_copy_paste_action(project_editor, mock_job, mock_action):
     mock_job.sub_actions = [mock_action]
-    project_editor._project.jobs = [mock_job]
+    project_editor.project().jobs = [mock_job]
     project_editor._job_list.addItem(QListWidgetItem("Test Job"))
     project_editor.set_current_job(0)
     project_editor._action_list.addItem(QListWidgetItem("Test Action"))
@@ -206,7 +208,7 @@ def test_copy_paste_action(project_editor, mock_job, mock_action):
 
 
 def test_set_enabled(project_editor, mock_job):
-    project_editor._project.jobs = [mock_job]
+    project_editor.project().jobs = [mock_job]
     project_editor._job_list.addItem(QListWidgetItem("Test Job"))
     project_editor.set_current_job(0)
     with patch.object(project_editor, 'job_list_has_focus', return_value=True):
@@ -218,7 +220,7 @@ def test_set_enabled(project_editor, mock_job):
 def test_set_enabled_all(project_editor, mock_job, mock_action):
     mock_job.sub_actions = [mock_action]
     mock_job.set_enabled_all = Mock()
-    project_editor._project.jobs = [mock_job]
+    project_editor.project().jobs = [mock_job]
     project_editor._job_list.addItem(QListWidgetItem("Test Job"))
     project_editor.set_current_job(0)
     project_editor.set_enabled_all(False)
@@ -229,7 +231,7 @@ def test_set_enabled_all(project_editor, mock_job, mock_action):
 def test_on_job_selected(project_editor, mock_job, mock_action, mock_sub_action):
     mock_action.sub_actions = [mock_sub_action]
     mock_job.sub_actions = [mock_action]
-    project_editor._project.jobs = [mock_job]
+    project_editor.project().jobs = [mock_job]
     project_editor._job_list.addItem(QListWidgetItem("Test Job"))
     project_editor.on_job_selected(0)
     assert project_editor._action_list.count() == 2
