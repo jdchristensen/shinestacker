@@ -32,7 +32,7 @@ class MainWindow(ProjectIOHandler, QMainWindow):
         dark_theme = self.is_dark_theme()
         self.classic_view = ClassicProjectView(self.project_holder, dark_theme, self)
         self.classic_project_editor.set_lists(*self.classic_view.get_lists())
-        self.modern_view = ModernProjectView(dark_theme, self)
+        self.modern_view = ModernProjectView(self.project_holder, dark_theme, self)
         self.views = {
             'classic': self.classic_view,
             'modern': self.modern_view
