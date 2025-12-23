@@ -25,8 +25,6 @@ class MainWindow(ProjectHandler, QMainWindow):
         self.setObjectName("mainWindow")
         self.project_editor = ProjectEditor(self.project_holder, self)
         self.project_controller = ProjectController(self.project_holder, self.project_editor, self)
-        self.project_controller.status_message_requested.connect(
-            lambda msg: self.show_status_message(msg, 4000))
         dark_theme = self.is_dark_theme()
         self.classic_view = ClassicProjectView(
             self.project_holder, self.project_editor, self.project_controller, dark_theme, self)
@@ -107,22 +105,14 @@ class MainWindow(ProjectHandler, QMainWindow):
             self.menu_manager.delete_element_action.setEnabled)
         self.undo_manager().set_enabled_undo_action_requested.connect(
             self.menu_manager.set_enabled_undo_action)
-        self.project_controller.update_title_requested.connect(
-            self.update_title)
         self.project_controller.refresh_ui_requested.connect(self.classic_view.refresh_ui)
-        self.project_controller.activate_window_requested.connect(
-            self.activateWindow)
         self.project_editor.enable_sub_actions_requested.connect(
             self.menu_manager.set_enabled_sub_actions_gui)
-        self.project_controller.add_recent_file_requested.connect(
-            self.menu_manager.add_recent_file)
-        self.project_controller.set_enabled_file_open_close_actions_requested.connect(
-            self.set_enabled_file_open_close_actions)
         self.menu_manager.open_file_requested.connect(self.open_project)
         self.set_enabled_file_open_close_actions(False)
         self.show_status_message("Shine Stacker ready.", 4000)
 
-    def show_status_message(self, message, timeout=0):
+    def show_status_message(self, message, timeout=4000):
         self.statusBar().showMessage(message, timeout)
 
     def clear_action_list(self):
@@ -174,10 +164,12 @@ class MainWindow(ProjectHandler, QMainWindow):
         return False
 
     def open_project(self, file_path=False):
-        opened, msg = self.project_controller.open_project(file_path)
+        opened, file_path, msg = self.project_controller.open_project(file_path)
         if opened:
             self.menu_manager.save_actions_set_enabled(True)
             self.show_status_message(f"Project file {os.path.basename(file_path)} loaded.")
+            self.menu_manager.add_recent_file(os.path.abspath(file_path))
+            self.set_enabled_file_open_close_actions(True)
             if self.num_project_jobs() > 0:
                 self.project_editor.set_current_job(0)
                 self.activateWindow()
@@ -187,7 +179,7 @@ class MainWindow(ProjectHandler, QMainWindow):
                     if not os.path.isdir(working_path):
                         msg = "Working path not found"
                         QMessageBox.warning(
-                            self.parent, msg,
+                            self, msg,
                             f'''The working path specified in the project file for the job:
                                 "{job.params['name']}"
                                 was not found.\n
@@ -199,7 +191,7 @@ class MainWindow(ProjectHandler, QMainWindow):
                         if working_path != '' and not os.path.isdir(working_path):
                             msg = "Working path not found"
                             QMessageBox.warning(
-                                self.parent, msg,
+                                self, msg,
                                 f'''The working path specified in the project file for the job:
                                 "{job.params['name']}"
                                 was not found.\n
@@ -232,11 +224,12 @@ class MainWindow(ProjectHandler, QMainWindow):
         try:
             self.project_controller.do_save(self, file_path)
             self.update_title()
-            self.show_status_message_requested(f"Project file {os.path.basename(file_path)} saved.")
+            self.show_status_message(f"Project file {os.path.basename(file_path)} saved.")
+            self.menu_manager.add_recent_file(file_path)
         except Exception as e:
             msg = f"Cannot save file:\n{str(e)}"
             self.show_status_message(msg)
-            QMessageBox.critical(self.parent, "Error", msg)
+            QMessageBox.critical(self, "Error", msg)
 
     def handle_config(self):
         self.menu_manager.expert_options_action.setChecked(
