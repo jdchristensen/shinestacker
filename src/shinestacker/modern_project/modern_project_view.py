@@ -150,8 +150,7 @@ class ModernProjectView(ProjectView):
         self.selected_job_index = 0
 
     def add_job_widget(self, job):
-        job_name = job.params['name']
-        job_widget = JobWidget(job_name, self.dark_theme)
+        job_widget = JobWidget(job, self.dark_theme)
         job_widget.setFocusPolicy(Qt.StrongFocus)
         job_widget.clicked.connect(lambda w=job_widget: self._on_job_clicked(w))
         job_index = len(self.job_widgets)

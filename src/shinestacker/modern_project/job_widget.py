@@ -1,15 +1,17 @@
 # pylint: disable=C0114, C0115, C0116, E0611, R0903
+import os
 from PySide6.QtWidgets import QFrame, QLabel, QVBoxLayout
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QFont
-from ..gui.colors import ColorPalette
+from .. gui.colors import ColorPalette
+from .. gui.project_model import get_action_input_path
 
 
 class JobWidget(QFrame):
     clicked = Signal()
     double_clicked = Signal()
 
-    def __init__(self, job_name="Untitled Job", dark_theme=False, parent=None):
+    def __init__(self, job, dark_theme=False, parent=None):
         super().__init__(parent)
         self._selected = False
         self._dark_theme = dark_theme
@@ -19,12 +21,18 @@ class JobWidget(QFrame):
         self.setFocusPolicy(Qt.NoFocus)
         layout = QVBoxLayout(self)
         layout.setContentsMargins(8, 8, 8, 8)
+        job_name = job.params['name']
         self.name_label = QLabel(job_name)
         self.name_label.setAlignment(Qt.AlignLeft | Qt.AlignTop)
+        in_path = get_action_input_path(job)[0]
+        if os.path.isabs(in_path):
+            in_path = ".../" + os.path.basename(in_path)
+        self.path_label = QLabel(f"📁 {in_path}")
         font = QFont()
         font.setBold(True)
         self.name_label.setFont(font)
         layout.addWidget(self.name_label)
+        layout.addWidget(self.path_label)
         self.setLayout(layout)
         self.setAttribute(Qt.WA_Hover, True)
         self._update_stylesheet()
