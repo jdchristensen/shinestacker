@@ -27,32 +27,33 @@ class MainWindow(ProjectIOHandler, QMainWindow):
         project_holder = ProjectHolder()
         ProjectIOHandler.__init__(self, project_holder)
         self.setObjectName("mainWindow")
-        self.project_editor = ClassicProjectEditor(self.project_holder, self)
+        self.classic_project_editor = ClassicProjectEditor(self.project_holder, self)
         dark_theme = self.is_dark_theme()
         self.classic_view = ClassicProjectView(self.project_holder, dark_theme, self)
-        self.project_editor.set_lists(*self.classic_view.get_lists())
+        self.classic_project_editor.set_lists(*self.classic_view.get_lists())
         self.modern_view = ModernProjectView(dark_theme, self)
         self.views = {'classic': self.classic_view, 'modern': self.modern_view}
+        self.editors = {'classic': self.classic_project_editor}
         actions = {
             "&New...": self.new_project,
             "&Open...": self.open_project,
             "&Close": self.close_project,
             "&Save": self.save_project,
             "Save &As...": self.save_project_as,
-            "&Undo": self.project_editor.undo,
-            "&Cut": self.project_editor.cut_element,
-            "Cop&y": self.project_editor.copy_element,
-            "&Paste": self.project_editor.paste_element,
-            "Duplicate": self.project_editor.clone_element,
+            "&Undo": self.undo,
+            "&Cut": self.classic_project_editor.cut_element,
+            "Cop&y": self.classic_project_editor.copy_element,
+            "&Paste": self.classic_project_editor.paste_element,
+            "Duplicate": self.classic_project_editor.clone_element,
             "Delete": self.delete_element,
-            "Move &Up": self.project_editor.move_element_up,
-            "Move &Down": self.project_editor.move_element_down,
-            "E&nable": self.project_editor.enable,
-            "Di&sable": self.project_editor.disable,
-            "Enable All": self.project_editor.enable_all,
-            "Disable All": self.project_editor.disable_all,
+            "Move &Up": self.classic_project_editor.move_element_up,
+            "Move &Down": self.classic_project_editor.move_element_down,
+            "E&nable": self.classic_project_editor.enable,
+            "Di&sable": self.classic_project_editor.disable,
+            "Enable All": self.classic_project_editor.enable_all,
+            "Disable All": self.classic_project_editor.disable_all,
             "Expert Options": self.toggle_expert_options,
-            "Add Job": self.project_editor.add_job,
+            "Add Job": self.classic_project_editor.add_job,
             "Run Job": lambda: self.view_stack.currentWidget().run_job(),
             "Run All Jobs": lambda: self.view_stack.currentWidget().run_all_jobs(),
             "Stop": lambda: self.view_stack.currentWidget().stop(),
@@ -60,7 +61,7 @@ class MainWindow(ProjectIOHandler, QMainWindow):
             "Modern View": self.set_modern_view
         }
         self.menu_manager = MenuManager(
-            self.menuBar(), actions, self.project_editor, dark_theme, self)
+            self.menuBar(), actions, self.classic_project_editor, dark_theme, self)
         for _k, v in self.views.items():
             v.set_menu_manager(self.menu_manager)
         self.script_dir = os.path.dirname(__file__)
@@ -86,24 +87,24 @@ class MainWindow(ProjectIOHandler, QMainWindow):
         self.view_stack.setCurrentIndex(0)
         layout.addWidget(self.view_stack)
 
-        self.project_editor.connect_signals()
+        self.classic_project_editor.connect_signals()
 
         self.central_widget.setLayout(layout)
 
         self.update_title()
         self.statusBar().addPermanentWidget(StatusBarSystemMonitor(self))
         QApplication.instance().paletteChanged.connect(self.on_theme_changed)
-        self.project_editor.mark_as_modified_signal.connect(self.mark_as_modified)
-        self.project_editor.select_signal.connect(
+        self.classic_project_editor.mark_as_modified_signal.connect(self.mark_as_modified)
+        self.classic_project_editor.select_signal.connect(
             self.update_delete_action_state)
-        self.project_editor.refresh_ui_signal.connect(self.classic_view.refresh_ui)
+        self.classic_project_editor.refresh_ui_signal.connect(self.classic_view.refresh_ui)
         self.classic_view.refresh_ui_signal.connect(self.refresh_ui)
         self.modern_view.refresh_ui_signal.connect(self.refresh_ui)
-        self.project_editor.enable_delete_action_signal.connect(
+        self.classic_project_editor.enable_delete_action_signal.connect(
             self.menu_manager.delete_element_action.setEnabled)
         self.undo_manager().set_enabled_undo_action_requested.connect(
             self.menu_manager.set_enabled_undo_action)
-        self.project_editor.enable_sub_actions_requested.connect(
+        self.classic_project_editor.enable_sub_actions_requested.connect(
             self.menu_manager.set_enabled_sub_actions_gui)
         self.menu_manager.open_file_requested.connect(self.open_project)
         self.set_enabled_file_open_close_actions(False)
@@ -118,13 +119,13 @@ class MainWindow(ProjectIOHandler, QMainWindow):
         self.update_title()
 
     def clear_action_list(self):
-        self.project_editor.clear_action_list()
+        self.classic_project_editor.clear_action_list()
 
     def get_current_action_at(self, job, action_index):
-        return self.project_editor.get_current_action_at(job, action_index)
+        return self.classic_project_editor.get_current_action_at(job, action_index)
 
     def action_config_dialog(self, action):
-        return self.project_editor.action_config_dialog(action)
+        return self.classic_project_editor.action_config_dialog(action)
 
     def set_retouch_callback(self, callback):
         self.retouch_callback = callback
@@ -134,7 +135,7 @@ class MainWindow(ProjectIOHandler, QMainWindow):
         file_name = self.current_file_name()
         if file_name:
             title += f" - {file_name}"
-            if self.project_editor.modified():
+            if self.modified():
                 title += " *"
         self.window().setWindowTitle(title)
 
@@ -212,7 +213,7 @@ class MainWindow(ProjectIOHandler, QMainWindow):
             self.menu_manager.add_recent_file(os.path.abspath(file_path))
             self.set_enabled_file_open_close_actions(True)
             if self.num_project_jobs() > 0:
-                self.project_editor.set_current_job(0)
+                self.classic_project_editor.set_current_job(0)
                 self.activateWindow()
             for job in self.project_jobs():
                 if 'working_path' in job.params.keys():
@@ -225,7 +226,7 @@ class MainWindow(ProjectIOHandler, QMainWindow):
                                 "{job.params['name']}"
                                 was not found.\n
                                 Please, select a valid working path.''')
-                        self.project_editor.edit_action(job)
+                        self.classic_project_editor.edit_action(job)
                 for action in job.sub_actions:
                     if 'working_path' in job.params.keys():
                         working_path = job.params['working_path']
@@ -237,7 +238,7 @@ class MainWindow(ProjectIOHandler, QMainWindow):
                                 "{job.params['name']}"
                                 was not found.\n
                                 Please, select a valid working path.''')
-                            self.project_editor.edit_action(action)
+                            self.classic_project_editor.edit_action(action)
                 self.refresh_ui_and_select_first_job()
         elif msg != '':
             self.show_status_message(msg)
@@ -249,8 +250,8 @@ class MainWindow(ProjectIOHandler, QMainWindow):
             self.update_title()
             if fill_new_project(self.project(), self):
                 self.set_modified(True)
-                self.project_editor.clear_job_list()
-                self.project_editor.clear_action_list()
+                self.classic_project_editor.clear_job_list()
+                self.classic_project_editor.clear_action_list()
             self.refresh_ui_and_select_first_job()
             self.menu_manager.save_actions_set_enabled(False)
             self.set_enabled_file_open_close_actions(True)
@@ -260,8 +261,8 @@ class MainWindow(ProjectIOHandler, QMainWindow):
         if self.check_unsaved_changes():
             self.reset_project()
             self.update_title()
-            self.project_editor.clear_job_list()
-            self.project_editor.clear_action_list()
+            self.classic_project_editor.clear_job_list()
+            self.classic_project_editor.clear_action_list()
             self.set_enabled_file_open_close_actions(False)
             self.show_status_message("Project closed.")
 
@@ -304,14 +305,20 @@ class MainWindow(ProjectIOHandler, QMainWindow):
         self.menu_manager.run_job_action.setEnabled(False)
         self.menu_manager.run_all_jobs_action.setEnabled(False)
 
+    def undo(self):
+        # ProjectIOHandler.undo(self)
+        self.classic_project_editor.undo()
+
     def delete_element(self):
-        self.project_editor.delete_element()
+        self.classic_project_editor.delete_element()
         if self.num_project_jobs() > 0:
             self.menu_manager.delete_element_action.setEnabled(True)
 
     def update_delete_action_state(self):
-        self.menu_manager.delete_element_action.setEnabled(self.project_editor.has_selection())
-        self.menu_manager.set_enabled_sub_actions_gui(self.project_editor.has_selected_sub_action())
+        self.menu_manager.delete_element_action.setEnabled(
+            self.classic_project_editor.has_selection())
+        self.menu_manager.set_enabled_sub_actions_gui(
+            self.classic_project_editor.has_selected_sub_action())
 
     def set_enabled_file_open_close_actions(self, enabled):
         for action in self.findChildren(QAction):

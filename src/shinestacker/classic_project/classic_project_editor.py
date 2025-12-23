@@ -324,8 +324,8 @@ class ClassicProjectEditor(ProjectEditor, ListContainer):
     def undo(self):
         job_row = self.current_job_index()
         action_row = self.current_action_index()
-        if self.filled_undo():
-            self.set_project(self.pop_undo())
+        undo_done = ProjectEditor.undo(self)
+        if undo_done:
             self.refresh_ui_signal.emit(-1, -1)
             len_jobs = self.num_project_jobs()
             if len_jobs > 0:

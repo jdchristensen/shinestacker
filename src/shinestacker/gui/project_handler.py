@@ -56,6 +56,12 @@ class ProjectHolder:
     def filled_undo(self):
         return self.undo_manager.filled()
 
+    def undo(self):
+        if self.filled_undo():
+            self.set_project(self.pop_undo())
+            return True
+        return False
+
     def set_copy_buffer(self, item):
         self.copy_buffer = item
 
@@ -124,6 +130,9 @@ class ProjectHandler:
 
     def filled_undo(self):
         return self.project_holder.filled_undo()
+
+    def undo(self):
+        return self.project_holder.undo()
 
     def reset_project(self):
         self.project_holder.reset_project()
