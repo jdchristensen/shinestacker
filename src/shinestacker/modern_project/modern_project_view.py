@@ -57,10 +57,10 @@ class ModernProjectView(ProjectView):
     def refresh_ui(self):
         ProjectView.refresh_ui(self)
 
-    def refresh_and_set_status(self, status):
+    def refresh_and_set_status(self, _status):
         self.refresh_ui()
 
-    def refresh_and_select_job(self, job_idx):
+    def refresh_and_select_job(self, _job_idx):
         self.refresh_ui()
 
     def select_first_job(self):
