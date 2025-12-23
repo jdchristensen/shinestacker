@@ -2,7 +2,6 @@
 import os
 import os.path
 import traceback
-from PySide6.QtCore import Signal, QObject
 from PySide6.QtWidgets import QMessageBox, QFileDialog
 from .. core.core_utils import get_app_base_path
 from .. core.exceptions import InvalidProjectError
@@ -10,17 +9,11 @@ from .project_holder import ProjectIOHandler
 from .new_project import fill_new_project
 
 
-class ProjectController(ProjectIOHandler, QObject):
-    refresh_ui_requested = Signal(int, int)
-
+class ProjectController(ProjectIOHandler):
     def __init__(self, project_holder, project_editor, parent):
-        QObject.__init__(self, parent)
         ProjectIOHandler.__init__(self, project_holder)
         self.parent = parent
         self.project_editor = project_editor
-
-    def refresh_ui(self, job_row=-1, action_row=-1):
-        self.refresh_ui_requested.emit(job_row, action_row)
 
     def close_project(self):
         if self.check_unsaved_changes():
@@ -30,12 +23,13 @@ class ProjectController(ProjectIOHandler, QObject):
 
     def new_project(self):
         if not self.check_unsaved_changes():
-            return False
+            return False, False
         os.chdir(get_app_base_path())
         ProjectIOHandler.reset_project(self)
         if fill_new_project(self.project(), self.parent):
             self.set_modified(True)
-        return True
+            return True, True
+        return True, False
 
     def open_project(self, file_path=False):
         if not self.check_unsaved_changes():
@@ -46,7 +40,6 @@ class ProjectController(ProjectIOHandler, QObject):
         if file_path:
             try:
                 ProjectIOHandler.open_project(self, file_path)
-                self.refresh_ui(0, -1)
                 return True, file_path, ''
             except InvalidProjectError as e:
                 QMessageBox.critical(self.parent, "Error", str(e))

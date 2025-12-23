@@ -105,7 +105,6 @@ class MainWindow(ProjectHandler, QMainWindow):
             self.menu_manager.delete_element_action.setEnabled)
         self.undo_manager().set_enabled_undo_action_requested.connect(
             self.menu_manager.set_enabled_undo_action)
-        self.project_controller.refresh_ui_requested.connect(self.classic_view.refresh_ui)
         self.project_editor.enable_sub_actions_requested.connect(
             self.menu_manager.set_enabled_sub_actions_gui)
         self.menu_manager.open_file_requested.connect(self.open_project)
@@ -166,6 +165,7 @@ class MainWindow(ProjectHandler, QMainWindow):
     def open_project(self, file_path=False):
         opened, file_path, msg = self.project_controller.open_project(file_path)
         if opened:
+            self.classic_view.refresh_ui(0, -1)
             self.menu_manager.save_actions_set_enabled(True)
             self.show_status_message(f"Project file {os.path.basename(file_path)} loaded.")
             self.menu_manager.add_recent_file(os.path.abspath(file_path))
@@ -197,15 +197,17 @@ class MainWindow(ProjectHandler, QMainWindow):
                                 was not found.\n
                                 Please, select a valid working path.''')
                             self.project_editor.edit_action(action)
+                self.classic_view.refresh_ui(0, -1)
         elif msg != '':
             self.show_status_message(msg)
 
     def new_project(self):
-        new_done = self.project_controller.new_project()
+        new_done, filled = self.project_controller.new_project()
         if new_done:
             self.update_title()
-            self.project_editor.clear_job_list()
-            self.project_editor.clear_action_list()
+            if not filled:
+                self.project_editor.clear_job_list()
+                self.project_editor.clear_action_list()
             self.classic_view.refresh_ui(0, -1)  # ---> set selected job = 0
             self.menu_manager.save_actions_set_enabled(False)
             self.set_enabled_file_open_close_actions(True)

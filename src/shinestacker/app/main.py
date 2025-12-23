@@ -272,7 +272,7 @@ open retouch window at startup instead of project windows.
         else:
             main_app.switch_to_project()
             if args['new-project']:
-                QTimer.singleShot(100, main_app.project_window.project_controller.new_project)
+                QTimer.singleShot(100, main_app.project_window.new_project)
     QTimer.singleShot(100, main_app.setFocus)
     if AppConfig.get('check_for_updates'):
         QTimer.singleShot(500, lambda: show_update_dialog(main_app))
