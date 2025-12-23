@@ -409,11 +409,7 @@ class ClassicProjectView(ProjectView, ListContainer):
 
     def change_theme(self, dark_theme):
         self.dark_theme = dark_theme
-        self.menu_manager.change_theme(dark_theme)
         self.tab_widget.change_theme(dark_theme)
         QApplication.instance().setStyleSheet(
             self.style_dark if dark_theme else self.style_light)
-        list_style_sheet = self.list_style_sheet_dark \
-            if dark_theme else self.list_style_sheet_light
-        self.job_list().setStyleSheet(list_style_sheet)
-        self.action_list().setStyleSheet(list_style_sheet)
+        self.set_style_sheet(dark_theme)

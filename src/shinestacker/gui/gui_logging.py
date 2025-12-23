@@ -119,13 +119,12 @@ class GuiLogger(QWidget):
 class QTextEditLogger(GuiLogger):
     def __init__(self, parent=None):
         super().__init__(parent)
-        text_edit = QTextEdit(self)
-        text_edit.setWordWrapMode(QTextOption.WrapMode.WordWrap)
-        text_edit.setAcceptRichText(True)
-        text_edit.setReadOnly(True)
+        self.text_edit = QTextEdit(self)
+        self.text_edit.setWordWrapMode(QTextOption.WrapMode.WordWrap)
+        self.text_edit.setAcceptRichText(True)
+        self.text_edit.setReadOnly(True)
         font = QFont(constants.LOG_FONTS, 12)
-        text_edit.setFont(font)
-        self.text_edit = text_edit
+        self.text_edit.setFont(font)
         self.status_bar = QStatusBar()
 
     @Slot(str)

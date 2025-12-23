@@ -16,6 +16,7 @@ from .. gui.project_handler import ProjectHolder, ProjectIOHandler
 from .. gui.sys_mon import StatusBarSystemMonitor
 from .. gui.new_project import fill_new_project
 from .. gui.project_model import ActionConfig
+from .. gui.action_config_dialog import ActionConfigDialog
 from .. classic_project.classic_project_view import ClassicProjectView
 from .. classic_project.classic_project_editor import ClassicProjectEditor
 from .. modern_project.modern_project_view import ModernProjectView
@@ -115,6 +116,7 @@ class MainWindow(ProjectIOHandler, QMainWindow):
         self.set_enabled_file_open_close_actions(False)
         self.show_status_message("Shine Stacker ready.", 4000)
         self.set_view('classic')
+        self.action_dialog = None
 
     def show_status_message(self, message, timeout=4000):
         self.statusBar().showMessage(message, timeout)
@@ -129,9 +131,6 @@ class MainWindow(ProjectIOHandler, QMainWindow):
 
     def get_current_action_at(self, job, action_index):
         return self.classic_project_editor.get_current_action_at(job, action_index)
-
-    def action_config_dialog(self, action):
-        return self.classic_project_editor.action_config_dialog(action)
 
     def set_retouch_callback(self, callback):
         self.retouch_callback = callback
@@ -323,8 +322,8 @@ class MainWindow(ProjectIOHandler, QMainWindow):
     def perform_add_job(self):
         # self.classic_project_editor.add_job()
         job_action = ActionConfig("Job")
-        dialog = self.action_config_dialog(job_action)
-        if dialog.exec() == QDialog.Accepted:
+        self.action_dialog = ActionConfigDialog(job_action, self.current_file_directory(), self)
+        if self.action_dialog.exec() == QDialog.Accepted:
             self.mark_as_modified(True, "Add Job")
             new_job_index = 0 if self.num_project_jobs() == 0 \
                 else self.current_view.current_job_index() + 1
@@ -360,3 +359,4 @@ class MainWindow(ProjectIOHandler, QMainWindow):
         dark_theme = self.is_dark_theme()
         for _k, v in self.views.items():
             v.change_theme(dark_theme)
+        self.menu_manager.change_theme(dark_theme)
