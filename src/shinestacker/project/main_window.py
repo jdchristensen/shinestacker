@@ -4,7 +4,7 @@ import os
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QGuiApplication, QAction, QPalette
 from PySide6.QtWidgets import (
-    QWidget, QVBoxLayout, QToolBar, QMainWindow, QApplication, QStackedWidget)
+    QWidget, QVBoxLayout, QToolBar, QMainWindow, QApplication, QStackedWidget, QMessageBox)
 from .. config.constants import constants
 from .. config.app_config import AppConfig
 from .. gui.project_model import Project
@@ -31,10 +31,11 @@ class MainWindow(ProjectHandler, QMainWindow):
         self.classic_view = ClassicProjectView(
             self.project_holder, self.project_editor, self.project_controller, dark_theme, self)
         self.modern_view = ModernProjectView(dark_theme, self)
+        self.views = {'classic': self.classic_view, 'modern': self.modern_view}
         actions = {
-            "&New...": self.project_controller.new_project,
-            "&Open...": self.project_controller.open_project,
-            "&Close": self.project_controller.close_project,
+            "&New...": self.new_project,
+            "&Open...": self.open_project,
+            "&Close": self.close_project,
             "&Save": self.project_controller.save_project,
             "Save &As...": self.project_controller.save_project_as,
             "&Undo": self.project_editor.undo,
@@ -59,8 +60,8 @@ class MainWindow(ProjectHandler, QMainWindow):
         }
         self.menu_manager = MenuManager(
             self.menuBar(), actions, self.project_editor, dark_theme, self)
-        self.classic_view.set_menu_manager(self.menu_manager)
-        self.modern_view.set_menu_manager(self.menu_manager)
+        for _k, v in self.views.items():
+            v.set_menu_manager(self.menu_manager)
         self.script_dir = os.path.dirname(__file__)
         self.retouch_callback = None
         self.classic_view.set_style_sheet(dark_theme)
@@ -79,8 +80,8 @@ class MainWindow(ProjectHandler, QMainWindow):
         layout.setContentsMargins(0, 0, 0, 0)
 
         self.view_stack = QStackedWidget()
-        self.view_stack.addWidget(self.classic_view)
-        self.view_stack.addWidget(self.modern_view)
+        for _k, v in self.views.items():
+            self.view_stack.addWidget(v)
         self.view_stack.setCurrentIndex(0)
         layout.addWidget(self.view_stack)
 
@@ -111,16 +112,13 @@ class MainWindow(ProjectHandler, QMainWindow):
         self.project_controller.refresh_ui_requested.connect(self.classic_view.refresh_ui)
         self.project_controller.activate_window_requested.connect(
             self.activateWindow)
-        self.project_controller.enable_save_actions_requested.connect(
-            self.menu_manager.save_actions_set_enabled)
         self.project_editor.enable_sub_actions_requested.connect(
             self.menu_manager.set_enabled_sub_actions_gui)
         self.project_controller.add_recent_file_requested.connect(
             self.menu_manager.add_recent_file)
         self.project_controller.set_enabled_file_open_close_actions_requested.connect(
             self.set_enabled_file_open_close_actions)
-        self.menu_manager.open_file_requested.connect(
-            self.project_controller.open_project)
+        self.menu_manager.open_file_requested.connect(self.open_project)
         self.set_enabled_file_open_close_actions(False)
         self.show_status_message("Shine Stacker ready.", 4000)
 
@@ -169,10 +167,61 @@ class MainWindow(ProjectHandler, QMainWindow):
 
     def quit(self):
         if self.project_controller.check_unsaved_changes():
-            q_classic = self.classic_view.quit()
-            q_modern = self.modern_view.quit()
-            return q_classic and q_modern
+            q = True
+            for _k, v in self.views.items():
+                q = q and v.quit()
+            return q
         return False
+
+    def open_project(self, file_path=False):
+        opened = self.project_controller.open_project(file_path)
+        if opened:
+            self.menu_manager.save_actions_set_enabled(False)
+            self.show_status_message(f"Project file {os.path.basename(file_path)} loaded.")
+            for job in self.project_jobs():
+                if 'working_path' in job.params.keys():
+                    working_path = job.params['working_path']
+                    if not os.path.isdir(working_path):
+                        msg = "Working path not found"
+                        QMessageBox.warning(
+                            self.parent, msg,
+                            f'''The working path specified in the project file for the job:
+                                "{job.params['name']}"
+                                was not found.\n
+                                Please, select a valid working path.''')
+                        self.project_editor.edit_action(job)
+                for action in job.sub_actions:
+                    if 'working_path' in job.params.keys():
+                        working_path = job.params['working_path']
+                        if working_path != '' and not os.path.isdir(working_path):
+                            msg = "Working path not found"
+                            QMessageBox.warning(
+                                self.parent, msg,
+                                f'''The working path specified in the project file for the job:
+                                "{job.params['name']}"
+                                was not found.\n
+                                Please, select a valid working path.''')
+                            self.project_editor.edit_action(action)
+
+    def new_project(self):
+        new_done = self.project_controller.new_project()
+        if new_done:
+            self.update_title()
+            self.project_editor.clear_job_list()
+            self.project_editor.clear_action_list()
+            self.classic_view.refresh_ui(0, -1)  # ---> set selected job = 0
+            self.menu_manager.save_actions_set_enabled(False)
+            self.set_enabled_file_open_close_actions(True)
+            self.show_status_message("New project created.")
+
+    def close_project(self):
+        closed = self.project_controller.close_project()
+        if closed:
+            self.update_title()
+            self.project_editor.clear_job_list()
+            self.project_editor.clear_action_list()
+            self.set_enabled_file_open_close_actions(False)
+            self.show_status_message("Project closed.")
 
     def handle_config(self):
         self.menu_manager.expert_options_action.setChecked(
@@ -210,5 +259,5 @@ class MainWindow(ProjectHandler, QMainWindow):
 
     def on_theme_changed(self):
         dark_theme = self.is_dark_theme()
-        self.classic_view.change_theme(dark_theme)
-        self.modern_view.change_theme(dark_theme)
+        for _k, v in self.views.items():
+            v.change_theme(dark_theme)

@@ -17,7 +17,6 @@ class ProjectController(ProjectIOHandler, QObject):
     update_title_requested = Signal()
     refresh_ui_requested = Signal(int, int)
     activate_window_requested = Signal()
-    enable_save_actions_requested = Signal(bool)
     add_recent_file_requested = Signal(str)
     set_enabled_file_open_close_actions_requested = Signal(bool)
     status_message_requested = Signal(str)
@@ -30,9 +29,6 @@ class ProjectController(ProjectIOHandler, QObject):
 
     def refresh_ui(self, job_row=-1, action_row=-1):
         self.refresh_ui_requested.emit(job_row, action_row)
-
-    def save_actions_set_enabled(self, enabled):
-        self.enable_save_actions_requested.emit(enabled)
 
     def job_list(self):
         return self.project_editor.job_list()
@@ -103,31 +99,21 @@ class ProjectController(ProjectIOHandler, QObject):
     def close_project(self):
         if self.check_unsaved_changes():
             ProjectIOHandler.reset_project(self)
-            self.update_title()
-            self.clear_job_list()
-            self.clear_action_list()
-            self.set_enabled_file_open_close_actions_requested.emit(False)
-            self.status_message_requested.emit("Project closed.")
+            return True
+        return False
 
     def new_project(self):
         if not self.check_unsaved_changes():
-            return
+            return False
         os.chdir(get_app_base_path())
         ProjectIOHandler.reset_project(self)
-        self.update_title()
-        self.clear_job_list()
-        self.clear_action_list()
-        self.save_actions_set_enabled(False)
         if fill_new_project(self.project(), self.parent):
-            self.save_actions_set_enabled(True)
             self.set_modified(True)
-        self.refresh_ui(0, -1)
-        self.status_message_requested.emit("New project created.")
-        self.set_enabled_file_open_close_actions_requested.emit(True)
+        return True
 
     def open_project(self, file_path=False):
         if not self.check_unsaved_changes():
-            return
+            return False
         if file_path is False:
             file_path, _ = QFileDialog.getOpenFileName(
                 self.parent, "Open Project", "", "Project Files (*.fsp);;All Files (*)")
@@ -141,43 +127,18 @@ class ProjectController(ProjectIOHandler, QObject):
                     self.set_current_job(0)
             except InvalidProjectError as e:
                 QMessageBox.critical(self.parent, "Error", str(e))
-                return
+                return False
             except Exception as e:
                 traceback.print_tb(e.__traceback__)
                 msg = f"Cannot open file {file_path}:\n{str(e)}"
                 self.status_message_requested.emit(msg)
                 QMessageBox.critical(self.parent, "Error", msg)
-                return
+                return False
             if self.num_project_jobs() > 0:
                 self.set_current_job(0)
                 self.activate_window_requested.emit()
-                self.save_actions_set_enabled(True)
-                self.status_message_requested.emit(
-                    f"Project file {os.path.basename(file_path)} loaded.")
-            for job in self.project_jobs():
-                if 'working_path' in job.params.keys():
-                    working_path = job.params['working_path']
-                    if not os.path.isdir(working_path):
-                        msg = "Working path not found"
-                        QMessageBox.warning(
-                            self.parent, msg,
-                            f'''The working path specified in the project file for the job:
-                                "{job.params['name']}"
-                                was not found.\n
-                                Please, select a valid working path.''')
-                        self.project_editor.edit_action(job)
-                for action in job.sub_actions:
-                    if 'working_path' in job.params.keys():
-                        working_path = job.params['working_path']
-                        if working_path != '' and not os.path.isdir(working_path):
-                            msg = "Working path not found"
-                            QMessageBox.warning(
-                                self.parent, msg,
-                                f'''The working path specified in the project file for the job:
-                                "{job.params['name']}"
-                                was not found.\n
-                                Please, select a valid working path.''')
-                            self.project_editor.edit_action(action)
+                return True
+        return False
 
     def save_project(self):
         path = self.current_file_path()
@@ -208,7 +169,7 @@ class ProjectController(ProjectIOHandler, QObject):
             self.status_message_requested.emit(msg)
             QMessageBox.critical(self.parent, "Error", msg)
 
-    def check_unsaved_changes(self) -> bool:
+    def check_unsaved_changes(self):
         if self.modified():
             reply = QMessageBox.question(
                 self.parent, "Unsaved Changes",
