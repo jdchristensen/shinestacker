@@ -10,7 +10,7 @@ from .. core.core_utils import running_under_windows, running_under_macos
 from .. gui.project_model import (
     get_action_working_path, get_action_input_path, get_action_output_path)
 from .. gui.project_converter import ProjectConverter
-from .. gui.base_project_view import BaseProjectView
+from .. gui.project_view import ProjectView
 from .. gui.colors import ColorPalette
 from .. gui.project_handler import ProjectHandler
 from .tab_widget import TabWidgetWithPlaceholder
@@ -39,9 +39,9 @@ class ProjectLogWorker(RunWorker):
         return converter.run_project(self.project, self.id_str, self.callbacks)
 
 
-class ClassicProjectView(ProjectHandler, BaseProjectView):
+class ClassicProjectView(ProjectHandler, ProjectView):
     def __init__(self, project_holder, project_editor, dark_theme, parent=None):
-        BaseProjectView.__init__(self, dark_theme, parent)
+        ProjectView.__init__(self, dark_theme, parent)
         ProjectHandler.__init__(self, project_holder)
         self.project_editor = project_editor
         self.tab_widget = TabWidgetWithPlaceholder(dark_theme)
@@ -172,7 +172,7 @@ class ClassicProjectView(ProjectHandler, BaseProjectView):
             self.project_editor.set_current_job(job_row)
         if action_row >= 0:
             self.project_editor.set_current_action(action_row)
-        BaseProjectView.refresh_ui(self)
+        ProjectView.refresh_ui(self)
 
     def select_first_job(self):
         self.project_editor.set_current_job(0)

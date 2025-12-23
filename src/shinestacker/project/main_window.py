@@ -12,10 +12,10 @@ from .. config.app_config import AppConfig
 from .. core.exceptions import InvalidProjectError
 from .. gui.project_model import Project
 from .. gui.project_handler import ProjectHolder, ProjectIOHandler
-from .. gui.project_editor import ProjectEditor
 from .. gui.sys_mon import StatusBarSystemMonitor
 from .. gui.new_project import fill_new_project
 from .. classic_project.classic_project_view import ClassicProjectView
+from .. classic_project.classic_project_editor import ClassicProjectEditor
 from .. modern_project.modern_project_view import ModernProjectView
 from .. core.core_utils import get_app_base_path
 from .menu_manager import MenuManager
@@ -27,7 +27,7 @@ class MainWindow(ProjectIOHandler, QMainWindow):
         project_holder = ProjectHolder()
         ProjectIOHandler.__init__(self, project_holder)
         self.setObjectName("mainWindow")
-        self.project_editor = ProjectEditor(self.project_holder, self)
+        self.project_editor = ClassicProjectEditor(self.project_holder, self)
         dark_theme = self.is_dark_theme()
         self.classic_view = ClassicProjectView(
             self.project_holder, self.project_editor, dark_theme, self)

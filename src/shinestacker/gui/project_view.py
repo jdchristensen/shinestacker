@@ -4,7 +4,7 @@ from PySide6.QtWidgets import QWidget
 from .. gui.gui_logging import LogManager
 
 
-class BaseProjectView(QWidget, LogManager):
+class ProjectView(QWidget, LogManager):
     refresh_ui_signal = Signal()
 
     def __init__(self, dark_theme, parent=None):

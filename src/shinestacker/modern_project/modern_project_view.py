@@ -2,11 +2,11 @@
 import os
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QSplitter, QLabel
 from PySide6.QtCore import Qt
-from .. gui.base_project_view import BaseProjectView
+from .. gui.project_view import ProjectView
 from .. gui.gui_logging import QTextEditLogger
 
 
-class ModernProjectView(BaseProjectView):
+class ModernProjectView(ProjectView):
     def __init__(self, dark_theme, parent=None):
         super().__init__(dark_theme, parent)
         self._setup_ui()
@@ -52,7 +52,7 @@ class ModernProjectView(BaseProjectView):
         self.dark_theme = dark_theme
 
     def refresh_ui(self):
-        BaseProjectView.refresh_ui(self)
+        ProjectView.refresh_ui(self)
 
     def select_first_job(self):
         pass
