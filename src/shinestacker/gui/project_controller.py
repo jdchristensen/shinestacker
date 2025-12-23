@@ -38,18 +38,6 @@ class ProjectController(ProjectHandler, QObject):
     def save_actions_set_enabled(self, enabled):
         self.enable_save_actions_requested.emit(enabled)
 
-    def current_file_path(self):
-        return self.project_editor.current_file_path()
-
-    def current_file_directory(self):
-        return self.project_editor.current_file_directory()
-
-    def current_file_name(self):
-        return self.project_editor.current_file_name()
-
-    def set_current_file_path(self, path):
-        self.project_editor.set_current_file_path(path)
-
     def job_list(self):
         return self.project_editor.job_list()
 

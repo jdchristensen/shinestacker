@@ -50,3 +50,6 @@ class ModernProjectView(BaseProjectView):
 
     def change_theme(self, dark_theme):
         self.dark_theme = dark_theme
+
+    def refresh_ui(self):
+        BaseProjectView.refresh_ui(self)

@@ -100,16 +100,16 @@ class MainWindow(ProjectHandler, QMainWindow):
         self.project_editor.modified_signal.connect(handle_modified)
         self.project_editor.select_signal.connect(
             self.update_delete_action_state)
-        self.project_editor.refresh_ui_signal.connect(
-            self.refresh_ui)
+        self.project_editor.refresh_ui_signal.connect(self.classic_view.refresh_ui)
+        self.classic_view.refresh_ui_signal.connect(self.refresh_ui)
+        self.modern_view.refresh_ui_signal.connect(self.refresh_ui)
         self.project_editor.enable_delete_action_signal.connect(
             self.menu_manager.delete_element_action.setEnabled)
         self.undo_manager().set_enabled_undo_action_requested.connect(
             self.menu_manager.set_enabled_undo_action)
         self.project_controller.update_title_requested.connect(
             self.update_title)
-        self.project_controller.refresh_ui_requested.connect(
-            self.refresh_ui)
+        self.project_controller.refresh_ui_requested.connect(self.classic_view.refresh_ui)
         self.project_controller.activate_window_requested.connect(
             self.activateWindow)
         self.project_controller.enable_save_actions_requested.connect(
@@ -213,16 +213,7 @@ class MainWindow(ProjectHandler, QMainWindow):
         self.window().setWindowTitle(title)
 
     def refresh_ui(self, job_row=-1, action_row=-1):
-        self.clear_job_list()
-        for job in self.project_jobs():
-            self.project_editor.add_list_item(self.job_list(), job, False)
-        if self.project_jobs():
-            self.set_current_job(0)
-        if job_row >= 0:
-            self.set_current_job(job_row)
-        if action_row >= 0:
-            self.set_current_action(action_row)
-        if self.job_list_count() == 0:
+        if self.num_project_jobs() == 0:
             self.menu_manager.add_action_entry_action.setEnabled(False)
             self.menu_manager.action_selector.setEnabled(False)
             self.menu_manager.run_job_action.setEnabled(False)

@@ -107,8 +107,6 @@ class ProjectEditor(ProjectHandler, QObject):
     def __init__(self, project_holder, parent=None):
         QObject.__init__(self, parent)
         ProjectHandler.__init__(self, project_holder)
-        self._copy_buffer = None
-        self._current_file_path = ''
         self._job_list = HandCursorListWidget()
         self._action_list = HandCursorListWidget()
         self.dialog = None
@@ -116,37 +114,6 @@ class ProjectEditor(ProjectHandler, QObject):
     def mark_as_modified(self, modified=True, description=''):
         ProjectHandler.mark_as_modified(self, modified, description)
         self.modified_signal.emit(modified)
-
-    def copy_buffer(self):
-        return self._copy_buffer
-
-    def set_copy_buffer(self, item):
-        self._copy_buffer = item
-
-    def has_copy_buffer(self):
-        return self._copy_buffer is not None
-
-    def current_file_path(self):
-        return self._current_file_path
-
-    def current_file_directory(self):
-        if os.path.isdir(self._current_file_path):
-            return self._current_file_path
-        return os.path.dirname(self._current_file_path)
-
-    def current_file_name(self):
-        if os.path.isfile(self._current_file_path):
-            return os.path.basename(self._current_file_path)
-        return ''
-
-    def set_current_file_path(self, path):
-        if path and not os.path.exists(path):
-            raise RuntimeError(f"Path: {path} does not exist.")
-        self._current_file_path = os.path.abspath(path)
-        os.chdir(self.current_file_directory())
-
-    def project_job(self, index):
-        return self.project_jobs()[index]
 
     def job_list(self):
         return self._job_list
@@ -474,6 +441,7 @@ class ProjectEditor(ProjectHandler, QObject):
             action.add_sub_action(sub_action)
             self.on_job_selected(current_job_index)
             self.set_current_action(current_action_index)
+            self.action_list_item(current_action_index).setSelected(True)
 
     def copy_job(self):
         current_index = self.current_job_index()
@@ -496,17 +464,20 @@ class ProjectEditor(ProjectHandler, QObject):
         if self.copy_buffer().type_name != constants.ACTION_JOB:
             return
         job_index = self.current_job_index()
-        if 0 <= job_index < self.num_project_jobs():
-            new_job_index = job_index
-            self.mark_as_modified(True, "Paste Job")
-            self.project_jobs().insert(new_job_index, self.copy_buffer())
-            self.set_current_job(new_job_index)
-            self.set_current_action(new_job_index)
-            self.refresh_ui_signal.emit(new_job_index, -1)
+        if job_index < 0:
+            job_index = 0
+        if job_index >= self.num_project_jobs():
+            job_index = self.num_project_jobs() - 1
+        new_job_index = job_index
+        self.mark_as_modified(True, "Paste Job")
+        self.project_jobs().insert(new_job_index, self.copy_buffer())
+        self.set_current_job(new_job_index)
+        self.set_current_action(new_job_index)
+        self.refresh_ui_signal.emit(new_job_index, -1)
 
     def paste_action(self):
         job_row, action_row, pos = self.get_current_action()
-        if pos.actions is not None:
+        if pos is not None and pos.actions is not None:
             if not pos.is_sub_action:
                 if self.copy_buffer().type_name not in constants.ACTION_TYPES:
                     return

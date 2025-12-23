@@ -176,6 +176,7 @@ class ClassicProjectView(ProjectHandler, BaseProjectView):
             self.project_editor.set_current_job(job_row)
         if action_row >= 0:
             self.project_editor.set_current_action(action_row)
+        BaseProjectView.refresh_ui(self)
 
     def create_new_window(self, title, labels, retouch_paths):
         new_window = RunWindow(labels,
