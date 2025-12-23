@@ -40,11 +40,10 @@ class ProjectLogWorker(RunWorker):
 
 
 class ClassicProjectView(ProjectHandler, BaseProjectView):
-    def __init__(self, project_holder, project_editor, project_controller, dark_theme, parent=None):
+    def __init__(self, project_holder, project_editor, dark_theme, parent=None):
         BaseProjectView.__init__(self, dark_theme, parent)
         ProjectHandler.__init__(self, project_holder)
         self.project_editor = project_editor
-        self.project_controller = project_controller
         self.tab_widget = TabWidgetWithPlaceholder(dark_theme)
         self.tab_widget.resize(1000, 500)
         self._windows = []

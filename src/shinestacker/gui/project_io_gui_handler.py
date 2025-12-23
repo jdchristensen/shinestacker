@@ -9,7 +9,7 @@ from .project_holder import ProjectIOHandler
 from .new_project import fill_new_project
 
 
-class ProjectController(ProjectIOHandler):
+class ProjectIOGuiHandler(ProjectIOHandler):
     def __init__(self, project_holder, project_editor, parent):
         ProjectIOHandler.__init__(self, project_holder)
         self.parent = parent
@@ -50,26 +50,6 @@ class ProjectController(ProjectIOHandler):
                 QMessageBox.critical(self.parent, "Error", msg)
                 return False, file_path, msg
         return False, '', ''
-
-    def save_project(self):
-        path = self.current_file_path()
-        if path:
-            self.do_save(path)
-        else:
-            self.save_project_as()
-
-    def save_project_as(self):
-        file_path, _ = QFileDialog.getSaveFileName(
-            self.parent, "Save Project As", "", "Project Files (*.fsp);;All Files (*)")
-        if file_path:
-            if not file_path.endswith('.fsp'):
-                file_path += '.fsp'
-            self.do_save(file_path)
-            self.set_current_file_path(file_path)
-            os.chdir(os.path.dirname(file_path))
-
-    def do_save(self, file_path):
-        ProjectIOHandler.do_save(self, file_path)
 
     def check_unsaved_changes(self):
         if self.modified():

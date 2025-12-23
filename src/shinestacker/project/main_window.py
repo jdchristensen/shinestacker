@@ -4,12 +4,13 @@ import os
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QGuiApplication, QAction, QPalette
 from PySide6.QtWidgets import (
-    QWidget, QVBoxLayout, QToolBar, QMainWindow, QApplication, QStackedWidget, QMessageBox)
+    QWidget, QVBoxLayout, QToolBar, QMainWindow, QApplication, QStackedWidget, QMessageBox,
+    QFileDialog)
 from .. config.constants import constants
 from .. config.app_config import AppConfig
 from .. gui.project_model import Project
 from .. gui.project_holder import ProjectHandler, ProjectHolder
-from .. gui.project_controller import ProjectController
+from .. gui.project_io_gui_handler import ProjectIOGuiHandler
 from .. gui.project_editor import ProjectEditor
 from .. gui.sys_mon import StatusBarSystemMonitor
 from .. classic_project.classic_project_view import ClassicProjectView
@@ -24,18 +25,19 @@ class MainWindow(ProjectHandler, QMainWindow):
         ProjectHandler.__init__(self, project_holder)
         self.setObjectName("mainWindow")
         self.project_editor = ProjectEditor(self.project_holder, self)
-        self.project_controller = ProjectController(self.project_holder, self.project_editor, self)
+        self.project_io_handler = ProjectIOGuiHandler(
+            self.project_holder, self.project_editor, self)
         dark_theme = self.is_dark_theme()
         self.classic_view = ClassicProjectView(
-            self.project_holder, self.project_editor, self.project_controller, dark_theme, self)
+            self.project_holder, self.project_editor, dark_theme, self)
         self.modern_view = ModernProjectView(dark_theme, self)
         self.views = {'classic': self.classic_view, 'modern': self.modern_view}
         actions = {
             "&New...": self.new_project,
             "&Open...": self.open_project,
             "&Close": self.close_project,
-            "&Save": self.project_controller.save_project,
-            "Save &As...": self.project_controller.save_project_as,
+            "&Save": self.save_project,
+            "Save &As...": self.save_project_as,
             "&Undo": self.project_editor.undo,
             "&Cut": self.project_editor.cut_element,
             "Cop&y": self.project_editor.copy_element,
@@ -155,7 +157,7 @@ class MainWindow(ProjectHandler, QMainWindow):
         self.view_stack.setCurrentIndex(1)
 
     def quit(self):
-        if self.project_controller.check_unsaved_changes():
+        if self.project_io_handler.check_unsaved_changes():
             q = True
             for _k, v in self.views.items():
                 q = q and v.quit()
@@ -163,7 +165,7 @@ class MainWindow(ProjectHandler, QMainWindow):
         return False
 
     def open_project(self, file_path=False):
-        opened, file_path, msg = self.project_controller.open_project(file_path)
+        opened, file_path, msg = self.project_io_handler.open_project(file_path)
         if opened:
             self.classic_view.refresh_ui(0, -1)
             self.menu_manager.save_actions_set_enabled(True)
@@ -202,7 +204,7 @@ class MainWindow(ProjectHandler, QMainWindow):
             self.show_status_message(msg)
 
     def new_project(self):
-        new_done, filled = self.project_controller.new_project()
+        new_done, filled = self.project_io_handler.new_project()
         if new_done:
             self.update_title()
             if not filled:
@@ -214,7 +216,7 @@ class MainWindow(ProjectHandler, QMainWindow):
             self.show_status_message("New project created.")
 
     def close_project(self):
-        closed = self.project_controller.close_project()
+        closed = self.project_io_handler.close_project()
         if closed:
             self.update_title()
             self.project_editor.clear_job_list()
@@ -224,7 +226,7 @@ class MainWindow(ProjectHandler, QMainWindow):
 
     def do_save(self, file_path):
         try:
-            self.project_controller.do_save(self, file_path)
+            self.project_io_handler.do_save(file_path)
             self.update_title()
             self.show_status_message(f"Project file {os.path.basename(file_path)} saved.")
             self.menu_manager.add_recent_file(file_path)
@@ -232,6 +234,23 @@ class MainWindow(ProjectHandler, QMainWindow):
             msg = f"Cannot save file:\n{str(e)}"
             self.show_status_message(msg)
             QMessageBox.critical(self, "Error", msg)
+
+    def save_project(self):
+        path = self.current_file_path()
+        if path:
+            self.do_save(path)
+        else:
+            self.project_io_handler.save_project_as()
+
+    def save_project_as(self):
+        file_path, _ = QFileDialog.getSaveFileName(
+            self, "Save Project As", "", "Project Files (*.fsp);;All Files (*)")
+        if file_path:
+            if not file_path.endswith('.fsp'):
+                file_path += '.fsp'
+            self.do_save(file_path)
+            self.set_current_file_path(file_path)
+            os.chdir(os.path.dirname(file_path))
 
     def handle_config(self):
         self.menu_manager.expert_options_action.setChecked(
