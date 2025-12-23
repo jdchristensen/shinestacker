@@ -3,6 +3,12 @@ class FocusStackError(Exception):
     pass
 
 
+class InvalidProjectError(FocusStackError):
+    def __init__(self, file_path):
+        self.file_path = file_path
+        super().__init__(f"File {file_path} contains an invalid project.")
+
+
 class InvalidOptionError(FocusStackError):
     def __init__(self, option, value, details=""):
         self.option = option

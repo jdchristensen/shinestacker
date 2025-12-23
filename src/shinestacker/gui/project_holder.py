@@ -1,5 +1,8 @@
 # pylint: disable=C0114, C0115, C0116, R0904
 import os
+import json
+import jsonpickle
+from .. core.exceptions import InvalidProjectError
 from .project_model import Project
 from .project_undo_manager import ProjectUndoManager
 
@@ -15,6 +18,7 @@ class ProjectHolder:
     def reset_project(self):
         self.project = Project()
         self.modified = False
+        self.current_file_path = ''
         self.reset_undo()
 
     def set_project(self, project):
@@ -124,9 +128,6 @@ class ProjectHandler:
     def reset_project(self):
         self.project_holder.reset_project()
 
-    def close_project(self):
-        self.reset_project()
-
     def copy_buffer(self):
         return self.project_holder.copy_buffer
 
@@ -147,3 +148,30 @@ class ProjectHandler:
 
     def set_current_file_path(self, path):
         self.project_holder.set_current_file_path(path)
+
+
+CURRENT_PROJECT_FILE_VERSION = 1
+
+
+class ProjectIOHandler(ProjectHandler):
+    def open_project(self, file_path):
+        abs_file_path = os.path.abspath(file_path)
+        with open(abs_file_path, 'r', encoding="utf-8") as file:
+            json_obj = json.load(file)
+        project = Project.from_dict(json_obj['project'], json_obj['version'])
+        if project is None:
+            raise InvalidProjectError(file_path)
+        self.set_project(project)
+        self.set_current_file_path(file_path)
+        self.mark_as_modified(False)
+        self.reset_undo()
+        return abs_file_path
+
+    def do_save(self, file_path):
+        json_obj = jsonpickle.encode({
+            'project': self.project().to_dict(),
+            'version': CURRENT_PROJECT_FILE_VERSION
+        })
+        with open(file_path, 'w', encoding="utf-8") as f:
+            f.write(json_obj)
+        self.mark_as_modified(False)

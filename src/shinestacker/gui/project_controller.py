@@ -2,21 +2,19 @@
 import os
 import os.path
 import traceback
-import json
-import jsonpickle
 from PySide6.QtCore import Signal, QObject
 from PySide6.QtWidgets import QMessageBox, QFileDialog, QDialog
 from .. config.constants import constants
 from .. core.core_utils import get_app_base_path
-from .project_holder import ProjectHandler
+from .. core.exceptions import InvalidProjectError
+from .project_holder import ProjectIOHandler
 from .new_project import fill_new_project
-from .project_model import Project
 
 
 CURRENT_PROJECT_FILE_VERSION = 1
 
 
-class ProjectController(ProjectHandler, QObject):
+class ProjectController(ProjectIOHandler, QObject):
     update_title_requested = Signal()
     refresh_ui_requested = Signal(int, int)
     activate_window_requested = Signal()
@@ -28,7 +26,7 @@ class ProjectController(ProjectHandler, QObject):
 
     def __init__(self, project_holder, project_editor, parent):
         QObject.__init__(self, parent)
-        ProjectHandler.__init__(self, project_holder)
+        ProjectIOHandler.__init__(self, project_holder)
         self.parent = parent
         self.project_editor = project_editor
 
@@ -110,8 +108,7 @@ class ProjectController(ProjectHandler, QObject):
 
     def close_project(self):
         if self.check_unsaved_changes():
-            ProjectHandler.close_project(self)
-            self.set_current_file_path('')
+            ProjectIOHandler.reset_project(self)
             self.update_title()
             self.clear_job_list()
             self.clear_action_list()
@@ -122,11 +119,10 @@ class ProjectController(ProjectHandler, QObject):
         if not self.check_unsaved_changes():
             return
         os.chdir(get_app_base_path())
-        self.set_current_file_path('')
+        ProjectIOHandler.reset_project(self)
         self.update_title()
         self.clear_job_list()
         self.clear_action_list()
-        ProjectHandler.reset_project(self)
         self.save_actions_set_enabled(False)
         if fill_new_project(self.project(), self.parent):
             self.save_actions_set_enabled(True)
@@ -143,29 +139,20 @@ class ProjectController(ProjectHandler, QObject):
                 self.parent, "Open Project", "", "Project Files (*.fsp);;All Files (*)")
         if file_path:
             try:
-                abs_file_path = os.path.abspath(file_path)
-                with open(abs_file_path, 'r', encoding="utf-8") as file:
-                    json_obj = json.load(file)
-                project = Project.from_dict(json_obj['project'], json_obj['version'])
-                if project is None:
-                    msg = f"Project from file {file_path} produced a null project."
-                    self.status_message_requested.emit(msg)
-                    raise RuntimeError(msg)
-                self.set_current_file_path(file_path)
+                abs_file_path = ProjectIOHandler.open_project(self, file_path)
                 self.set_enabled_file_open_close_actions_requested.emit(True)
-                self.set_project(project)
-                self.mark_as_modified(False)
                 self.add_recent_file_requested.emit(abs_file_path)
-                self.project_editor.reset_undo()
                 self.refresh_ui(0, -1)
-                if self.job_list_count() > 0:
+                if self.num_project_jobs() > 0:
                     self.set_current_job(0)
+            except InvalidProjectError as e:
+                QMessageBox.critical(self.parent, "Error", str(e))
+                return
             except Exception as e:
                 traceback.print_tb(e.__traceback__)
                 msg = f"Cannot open file {file_path}:\n{str(e)}"
                 self.status_message_requested.emit(msg)
-                QMessageBox.critical(
-                    self.parent, "Error", msg)
+                QMessageBox.critical(self.parent, "Error", msg)
                 return
             if self.num_project_jobs() > 0:
                 self.set_current_job(0)
@@ -217,13 +204,7 @@ class ProjectController(ProjectHandler, QObject):
 
     def do_save(self, file_path):
         try:
-            json_obj = jsonpickle.encode({
-                'project': self.project().to_dict(),
-                'version': CURRENT_PROJECT_FILE_VERSION
-            })
-            with open(file_path, 'w', encoding="utf-8") as f:
-                f.write(json_obj)
-            self.mark_as_modified(False)
+            ProjectIOHandler.do_save(self, file_path)
             self.update_title_requested.emit()
             self.add_recent_file_requested.emit(file_path)
             self.status_message_requested.emit(
