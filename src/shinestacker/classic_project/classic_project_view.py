@@ -239,8 +239,9 @@ class ClassicProjectView(ProjectView, ListContainer):
 
     def stop(self):
         tab_position = self.tab_widget.count()
-        self.stop_worker(tab_position - 1)
-        self.menu_manager.stop_action.setEnabled(False)
+        if tab_position > 0:
+            self.stop_worker(tab_position - 1)
+            self.menu_manager.stop_action.setEnabled(False)
 
     def do_handle_end_message(self, status, id_str, message):
         self.menu_manager.run_job_action.setEnabled(True)

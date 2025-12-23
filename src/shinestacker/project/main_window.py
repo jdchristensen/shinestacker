@@ -57,8 +57,8 @@ class MainWindow(ProjectIOHandler, QMainWindow):
             "Run Job": lambda: self.view_stack.currentWidget().run_job(),
             "Run All Jobs": lambda: self.view_stack.currentWidget().run_all_jobs(),
             "Stop": lambda: self.view_stack.currentWidget().stop(),
-            "Classic View": self.set_classic_view,
-            "Modern View": self.set_modern_view
+            "Classic View": lambda: self.set_view(0),
+            "Modern View": lambda: self.set_view(1)
         }
         self.menu_manager = MenuManager(
             self.menuBar(), actions, self.classic_project_editor, dark_theme, self)
@@ -152,11 +152,11 @@ class MainWindow(ProjectIOHandler, QMainWindow):
             self.menu_manager.run_job_action.setEnabled(True)
         self.menu_manager.set_enabled_run_all_jobs(self.num_project_jobs() > 1)
 
-    def set_classic_view(self):
-        self.view_stack.setCurrentIndex(0)
-
-    def set_modern_view(self):
-        self.view_stack.setCurrentIndex(1)
+    def set_view(self, idx):
+        if self.view_stack.currentIndex() == idx:
+            return
+        self.view_stack.currentWidget().stop()
+        self.view_stack.setCurrentIndex(idx)
 
     def quit(self):
         if self.check_unsaved_changes():
