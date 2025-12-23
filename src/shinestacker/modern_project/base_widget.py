@@ -10,12 +10,15 @@ class BaseWidget(QFrame):
     clicked = Signal()
     double_clicked = Signal()
 
-    def __init__(self, name, min_height=40, dark_theme=False, parent=None):
+    def __init__(self, name, min_height=40, dark_theme=False, parent=None,
+                 layout_horizontal=False):
         super().__init__(parent)
         self._selected = False
         self._dark_theme = dark_theme
         self.min_height = min_height
         self.path_label = ''
+        self._child_widgets = []
+        self._layout_horizontal = layout_horizontal
         self.setFocusPolicy(Qt.NoFocus)
         self._init_widget(name)
         self.setAttribute(Qt.WA_Hover, True)
@@ -23,7 +26,7 @@ class BaseWidget(QFrame):
 
     def _init_widget(self, name):
         self.setMinimumHeight(self.min_height)
-        layout = QVBoxLayout(self)
+        layout = QVBoxLayout(self)  # Always use QVBoxLayout
         layout.setContentsMargins(8, 8, 8, 8)
         layout.setSpacing(2)
         self.name_label = QLabel(name)
@@ -49,6 +52,11 @@ class BaseWidget(QFrame):
             self.layout().addWidget(self.path_label)
         else:
             self.path_label.setText(text)
+
+    def add_child_widget(self, child_widget):
+        """Add a child widget (for composite pattern)"""
+        self._child_widgets.append(child_widget)
+        self.layout().addWidget(child_widget)
 
     def _update_stylesheet(self):
         if self._dark_theme:
@@ -76,7 +84,7 @@ class BaseWidget(QFrame):
         """
         self.setStyleSheet(stylesheet)
 
-# pylint: disable=C0103
+    # pylint: disable=C0103
     def mousePressEvent(self, event):
         self.clicked.emit()
         event.accept()
@@ -84,7 +92,7 @@ class BaseWidget(QFrame):
     def mouseDoubleClickEvent(self, event):
         self.double_clicked.emit()
         event.accept()
-# pylint: enable=C0103
+    # pylint: enable=C0103
 
     def set_selected(self, selected):
         self._selected = selected
@@ -99,6 +107,8 @@ class BaseWidget(QFrame):
         self._update_stylesheet()
         self.style().unpolish(self)
         self.style().polish(self)
+        for child in self._child_widgets:
+            child.set_dark_theme(dark_theme)
 
     def set_name(self, name):
         self.name_label.setText(name)
