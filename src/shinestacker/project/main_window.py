@@ -84,8 +84,7 @@ class MainWindow(ProjectHandler, QMainWindow):
         self.view_stack.setCurrentIndex(0)
         layout.addWidget(self.view_stack)
 
-        self.job_list().itemDoubleClicked.connect(self.project_controller.on_job_edit)
-        self.action_list().itemDoubleClicked.connect(self.project_controller.on_action_edit)
+        self.project_controller.connect_signals()
 
         self.central_widget.setLayout(layout)
 
@@ -127,21 +126,6 @@ class MainWindow(ProjectHandler, QMainWindow):
 
     def show_status_message(self, message, timeout=0):
         self.statusBar().showMessage(message, timeout)
-
-    def mark_as_modified(self, modified=True, description=''):
-        self.project_editor.mark_as_modified(modified, description)
-
-    def current_file_path(self):
-        return self.project_editor.current_file_path()
-
-    def current_file_directory(self):
-        return self.project_editor.current_file_directory()
-
-    def current_file_name(self):
-        return self.project_editor.current_file_name()
-
-    def set_current_file_path(self, path):
-        self.project_editor.set_current_file_path(path)
 
     def job_list(self):
         return self.project_editor.job_list()

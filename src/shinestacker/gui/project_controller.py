@@ -104,6 +104,10 @@ class ProjectController(ProjectHandler, QObject):
     def update_title(self):
         self.update_title_requested.emit()
 
+    def connect_signals(self):
+        self.job_list().itemDoubleClicked.connect(self.on_job_edit)
+        self.action_list().itemDoubleClicked.connect(self.on_action_edit)
+
     def close_project(self):
         if self.check_unsaved_changes():
             ProjectHandler.close_project(self)
