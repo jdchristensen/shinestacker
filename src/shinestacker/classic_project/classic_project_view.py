@@ -12,6 +12,7 @@ from .. gui.project_model import (
 from .. gui.project_converter import ProjectConverter
 from .. gui.base_project_view import BaseProjectView
 from .. gui.colors import ColorPalette
+from .. gui.project_holder import ProjectHandler
 from .tab_widget import TabWidgetWithPlaceholder
 from .gui_run import RunWindow, RunWorker
 
@@ -38,9 +39,10 @@ class ProjectLogWorker(RunWorker):
         return converter.run_project(self.project, self.id_str, self.callbacks)
 
 
-class ClassicProjectView(BaseProjectView):
-    def __init__(self, project_editor, project_controller, dark_theme, parent=None):
-        super().__init__(dark_theme, parent)
+class ClassicProjectView(ProjectHandler, BaseProjectView):
+    def __init__(self, project_holder, project_editor, project_controller, dark_theme, parent=None):
+        BaseProjectView.__init__(self, dark_theme, parent)
+        ProjectHandler.__init__(self, project_holder)
         self.project_editor = project_editor
         self.project_controller = project_controller
         self.tab_widget = TabWidgetWithPlaceholder(dark_theme)
@@ -121,15 +123,6 @@ class ClassicProjectView(BaseProjectView):
 
     def current_job_index(self):
         return self.project_editor.current_job_index()
-
-    def project_jobs(self):
-        return self.project_editor.project_jobs()
-
-    def project_job(self, i):
-        return self.project_editor.project_job(i)
-
-    def num_project_jobs(self):
-        return self.project_editor.num_project_jobs()
 
     def get_action_at(self, action_row):
         return self.project_editor.get_action_at(action_row)

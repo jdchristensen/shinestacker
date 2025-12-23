@@ -7,17 +7,16 @@ import jsonpickle
 from PySide6.QtCore import Signal, QObject
 from PySide6.QtWidgets import QMessageBox, QFileDialog, QDialog
 from .. config.constants import constants
-from .. config.defaults import DEFAULTS
 from .. core.core_utils import get_app_base_path
-from .project_model import ActionConfig
-from .new_project import NewProjectDialog
+from .project_holder import ProjectHandler
+from .new_project import fill_new_project
 from .project_model import Project
 
 
 CURRENT_PROJECT_FILE_VERSION = 1
 
 
-class ProjectController(QObject):
+class ProjectController(ProjectHandler, QObject):
     update_title_requested = Signal()
     refresh_ui_requested = Signal(int, int)
     activate_window_requested = Signal()
@@ -27,23 +26,14 @@ class ProjectController(QObject):
     set_enabled_file_open_close_actions_requested = Signal(bool)
     status_message_requested = Signal(str)
 
-    def __init__(self, project_handler, project_editor, parent):
-        super().__init__(parent)
+    def __init__(self, project_holder, project_editor, parent):
+        QObject.__init__(self, parent)
+        ProjectHandler.__init__(self, project_holder)
         self.parent = parent
-        self.project_handler = project_handler
         self.project_editor = project_editor
 
     def refresh_ui(self, job_row=-1, action_row=-1):
         self.refresh_ui_requested.emit(job_row, action_row)
-
-    def mark_as_modified(self, modified=True, description=''):
-        self.project_editor.mark_as_modified(modified, description)
-
-    def modified(self):
-        return self.project_editor.modified()
-
-    def num_project_jobs(self):
-        return self.project_handler.num_project_jobs()
 
     def save_actions_set_enabled(self, enabled):
         self.enable_save_actions_requested.emit(enabled)
@@ -128,13 +118,11 @@ class ProjectController(QObject):
 
     def close_project(self):
         if self.check_unsaved_changes():
-            self.project_handler.set_project(Project())
+            ProjectHandler.close_project(self)
             self.set_current_file_path('')
             self.update_title()
             self.clear_job_list()
             self.clear_action_list()
-            self.mark_as_modified(False)
-            self.project_editor.reset_undo()
             self.set_enabled_file_open_close_actions_requested.emit(False)
             self.status_message_requested.emit("Project closed.")
 
@@ -146,104 +134,11 @@ class ProjectController(QObject):
         self.update_title()
         self.clear_job_list()
         self.clear_action_list()
-        self.project_handler.set_project(Project())
+        ProjectHandler.reset_project(self)
         self.save_actions_set_enabled(False)
-        dialog = NewProjectDialog(self.parent)
-        if dialog.exec() == QDialog.Accepted:
+        if fill_new_project(self.project(), self.parent):
             self.save_actions_set_enabled(True)
-            self.project_editor.reset_undo()
-            input_folder = dialog.get_input_folder()
-            working_path = os.path.dirname(input_folder)
-            input_path = os.path.basename(input_folder)
-            selected_filenames = dialog.get_selected_filenames()
-            if dialog.get_noise_detection():
-                job_noise = ActionConfig(
-                    constants.ACTION_JOB,
-                    {'name': 'noise-job', 'working_path': working_path,
-                     'input_path': input_path})
-                noise_detection_name = 'detect-noise'
-                noise_detection = ActionConfig(constants.ACTION_NOISEDETECTION,
-                                               {'name': noise_detection_name})
-                job_noise.add_sub_action(noise_detection)
-                self.project_handler.add_job_to_project(job_noise)
-            job_params = {
-                'name': f'{input_path}-stack-job',
-                'working_path': working_path,
-                'input_path': input_path
-            }
-            if len(selected_filenames) > 0:
-                job_params['input_filepaths'] = selected_filenames
-            job = ActionConfig(constants.ACTION_JOB, job_params)
-            preprocess_name = ''
-            if dialog.get_noise_detection() or dialog.get_vignetting_correction() or \
-               dialog.get_align_frames() or dialog.get_balance_frames():
-                preprocess_name = f'{input_path}-preprocess'
-                combo_action = ActionConfig(
-                    constants.ACTION_COMBO, {'name': preprocess_name})
-                if dialog.get_noise_detection():
-                    mask_noise = ActionConfig(
-                        constants.ACTION_MASKNOISE,
-                        {'name': 'mask-noise',
-                         'noise_mask':
-                            os.path.join(noise_detection_name,
-                                         DEFAULTS['noise_detection_params']['noise_map_filename'])})
-                    combo_action.add_sub_action(mask_noise)
-                if dialog.get_vignetting_correction():
-                    vignetting = ActionConfig(
-                        constants.ACTION_VIGNETTING, {'name': 'vignetting'})
-                    combo_action.add_sub_action(vignetting)
-                if dialog.get_align_frames():
-                    align = ActionConfig(
-                        constants.ACTION_ALIGNFRAMES, {'name': 'align'})
-                    combo_action.add_sub_action(align)
-                if dialog.get_balance_frames():
-                    balance = ActionConfig(
-                        constants.ACTION_BALANCEFRAMES, {'name': 'balance'})
-                    combo_action.add_sub_action(balance)
-                job.add_sub_action(combo_action)
-            if dialog.get_bunch_stack():
-                bunch_stack_name = f'{input_path}-bunches'
-                bunch_stack = ActionConfig(
-                    constants.ACTION_FOCUSSTACKBUNCH,
-                    {'name': bunch_stack_name, 'frames': dialog.get_bunch_frames(),
-                     'overlap': dialog.get_bunch_overlap()})
-                job.add_sub_action(bunch_stack)
-            stack_input_path = bunch_stack_name if dialog.get_bunch_stack() else preprocess_name
-            if dialog.get_focus_stack_pyramid():
-                focus_pyramid_name = f'{input_path}-focus-stack-pyramid'
-                focus_pyramid_params = {'name': focus_pyramid_name,
-                                        'stacker': constants.STACK_ALGO_PYRAMID,
-                                        'exif_path': input_path}
-                if dialog.get_focus_stack_depth_map():
-                    focus_pyramid_params['input_path'] = stack_input_path
-                focus_pyramid = ActionConfig(constants.ACTION_FOCUSSTACK, focus_pyramid_params)
-                job.add_sub_action(focus_pyramid)
-            if dialog.get_focus_stack_depth_map():
-                focus_depth_map_name = f'{input_path}-focus-stack-depth-map'
-                focus_depth_map_params = {'name': focus_depth_map_name,
-                                          'stacker': constants.STACK_ALGO_DEPTH_MAP,
-                                          'exif_path': input_path}
-                if dialog.get_focus_stack_pyramid():
-                    focus_depth_map_params['input_path'] = stack_input_path
-                focus_depth_map = ActionConfig(constants.ACTION_FOCUSSTACK, focus_depth_map_params)
-                job.add_sub_action(focus_depth_map)
-            if dialog.get_multi_layer():
-                multi_input_path = []
-                if dialog.get_focus_stack_pyramid():
-                    multi_input_path.append(focus_pyramid_name)
-                if dialog.get_focus_stack_depth_map():
-                    multi_input_path.append(focus_depth_map_name)
-                if dialog.get_bunch_stack():
-                    multi_input_path.append(bunch_stack_name)
-                elif preprocess_name:
-                    multi_input_path.append(preprocess_name)
-                multi_layer = ActionConfig(
-                    constants.ACTION_MULTILAYER,
-                    {'name': f'{input_path}-multi-layer',
-                     'input_path': constants.PATH_SEPARATOR.join(multi_input_path)})
-                job.add_sub_action(multi_layer)
-            self.project_handler.add_job_to_project(job)
-            self.project_editor.set_modified(True)
+            self.set_modified(True)
         self.refresh_ui(0, -1)
         self.status_message_requested.emit("New project created.")
         self.set_enabled_file_open_close_actions_requested.emit(True)
@@ -266,7 +161,7 @@ class ProjectController(QObject):
                     self.status_message_requested.emit(msg)
                     raise RuntimeError(msg)
                 self.set_enabled_file_open_close_actions_requested.emit(True)
-                self.project_handler.set_project(project)
+                self.set_project(project)
                 self.mark_as_modified(False)
                 self.add_recent_file_requested.emit(abs_file_path)
                 self.project_editor.reset_undo()
@@ -286,7 +181,7 @@ class ProjectController(QObject):
                 self.save_actions_set_enabled(True)
                 self.status_message_requested.emit(
                     f"Project file {os.path.basename(file_path)} loaded.")
-            for job in self.project_handler.project_jobs():
+            for job in self.project_jobs():
                 if 'working_path' in job.params.keys():
                     working_path = job.params['working_path']
                     if not os.path.isdir(working_path):
@@ -331,7 +226,7 @@ class ProjectController(QObject):
     def do_save(self, file_path):
         try:
             json_obj = jsonpickle.encode({
-                'project': self.project_handler.project().to_dict(),
+                'project': self.project().to_dict(),
                 'version': CURRENT_PROJECT_FILE_VERSION
             })
             with open(file_path, 'w', encoding="utf-8") as f:

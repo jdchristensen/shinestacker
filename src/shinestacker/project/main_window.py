@@ -8,7 +8,7 @@ from PySide6.QtWidgets import (
 from .. config.constants import constants
 from .. config.app_config import AppConfig
 from .. gui.project_model import Project
-from .. gui.project_handler import ProjectHandler
+from .. gui.project_holder import ProjectHandler, ProjectHolder
 from .. gui.project_controller import ProjectController
 from .. gui.project_editor import ProjectEditor
 from .. gui.sys_mon import StatusBarSystemMonitor
@@ -17,18 +17,19 @@ from .. modern_project.modern_project_view import ModernProjectView
 from .menu_manager import MenuManager
 
 
-class MainWindow(QMainWindow):
+class MainWindow(ProjectHandler, QMainWindow):
     def __init__(self):
         QMainWindow.__init__(self)
+        project_holder = ProjectHolder()
+        ProjectHandler.__init__(self, project_holder)
         self.setObjectName("mainWindow")
-        self.project_handler = ProjectHandler()
-        self.project_editor = ProjectEditor(self.project_handler, self)
-        self.project_controller = ProjectController(self.project_handler, self.project_editor, self)
+        self.project_editor = ProjectEditor(self.project_holder, self)
+        self.project_controller = ProjectController(self.project_holder, self.project_editor, self)
         self.project_controller.status_message_requested.connect(
             lambda msg: self.show_status_message(msg, 4000))
         dark_theme = self.is_dark_theme()
         self.classic_view = ClassicProjectView(
-            self.project_editor, self.project_controller, dark_theme, self)
+            self.project_holder, self.project_editor, self.project_controller, dark_theme, self)
         self.modern_view = ModernProjectView(dark_theme, self)
         actions = {
             "&New...": self.project_controller.new_project,
@@ -103,7 +104,7 @@ class MainWindow(QMainWindow):
             self.refresh_ui)
         self.project_editor.enable_delete_action_signal.connect(
             self.menu_manager.delete_element_action.setEnabled)
-        self.project_handler.undo_manager.set_enabled_undo_action_requested.connect(
+        self.undo_manager().set_enabled_undo_action_requested.connect(
             self.menu_manager.set_enabled_undo_action)
         self.project_controller.update_title_requested.connect(
             self.update_title)
@@ -129,21 +130,6 @@ class MainWindow(QMainWindow):
 
     def mark_as_modified(self, modified=True, description=''):
         self.project_editor.mark_as_modified(modified, description)
-
-    def set_project(self, project):
-        self.project_handler.set_project(project)
-
-    def project_jobs(self):
-        return self.project_handler.project_jobs()
-
-    def project_job(self, i):
-        return self.project_handler .project_job(i)
-
-    def add_job_to_project(self, job):
-        self.project_handler.add_job_to_project(job)
-
-    def num_project_jobs(self):
-        return self.project_handler.num_project_jobs()
 
     def current_file_path(self):
         return self.project_editor.current_file_path()

@@ -1,7 +1,7 @@
 # pylint: disable=C0114, C0115, C0116, E0611, R0915, R0902, R0914, R0911, R0912, R0904
 import os
 import numpy as np
-from PySide6.QtWidgets import (QHBoxLayout, QPushButton, QLabel, QCheckBox, QSpinBox,
+from PySide6.QtWidgets import (QHBoxLayout, QPushButton, QLabel, QCheckBox, QSpinBox, QDialog,
                                QMessageBox, QGroupBox, QVBoxLayout, QFormLayout, QSizePolicy)
 from PySide6.QtGui import QIcon
 from PySide6.QtCore import Qt
@@ -13,6 +13,7 @@ from .. algorithms.utils import read_img, extension_supported
 from .. algorithms.stack import get_bunches
 from .folder_file_selection import FolderFileSelectionWidget
 from .base_form_dialog import BaseFormDialog
+from .project_model import ActionConfig
 
 DEFAULT_NO_COUNT_LABEL = " - "
 
@@ -366,3 +367,102 @@ class NewProjectDialog(BaseFormDialog):
 
     def get_multi_layer(self):
         return self.multi_layer.isChecked()
+
+
+def fill_new_project(project, parent):
+    jobs = project.jobs
+    dialog = NewProjectDialog(parent)
+    if dialog.exec() == QDialog.Accepted:
+        input_folder = dialog.get_input_folder()
+        working_path = os.path.dirname(input_folder)
+        input_path = os.path.basename(input_folder)
+        selected_filenames = dialog.get_selected_filenames()
+        if dialog.get_noise_detection():
+            job_noise = ActionConfig(
+                constants.ACTION_JOB,
+                {'name': 'noise-job', 'working_path': working_path,
+                 'input_path': input_path})
+            noise_detection_name = 'detect-noise'
+            noise_detection = ActionConfig(constants.ACTION_NOISEDETECTION,
+                                           {'name': noise_detection_name})
+            job_noise.add_sub_action(noise_detection)
+            jobs.append(job_noise)
+        job_params = {
+            'name': f'{input_path}-stack-job',
+            'working_path': working_path,
+            'input_path': input_path
+        }
+        if len(selected_filenames) > 0:
+            job_params['input_filepaths'] = selected_filenames
+        job = ActionConfig(constants.ACTION_JOB, job_params)
+        preprocess_name = ''
+        if dialog.get_noise_detection() or dialog.get_vignetting_correction() or \
+           dialog.get_align_frames() or dialog.get_balance_frames():
+            preprocess_name = f'{input_path}-preprocess'
+            combo_action = ActionConfig(
+                constants.ACTION_COMBO, {'name': preprocess_name})
+            if dialog.get_noise_detection():
+                mask_noise = ActionConfig(
+                    constants.ACTION_MASKNOISE,
+                    {'name': 'mask-noise',
+                     'noise_mask':
+                        os.path.join(noise_detection_name,
+                                     DEFAULTS['noise_detection_params']['noise_map_filename'])})
+                combo_action.add_sub_action(mask_noise)
+            if dialog.get_vignetting_correction():
+                vignetting = ActionConfig(
+                    constants.ACTION_VIGNETTING, {'name': 'vignetting'})
+                combo_action.add_sub_action(vignetting)
+            if dialog.get_align_frames():
+                align = ActionConfig(
+                    constants.ACTION_ALIGNFRAMES, {'name': 'align'})
+                combo_action.add_sub_action(align)
+            if dialog.get_balance_frames():
+                balance = ActionConfig(
+                    constants.ACTION_BALANCEFRAMES, {'name': 'balance'})
+                combo_action.add_sub_action(balance)
+            job.add_sub_action(combo_action)
+        if dialog.get_bunch_stack():
+            bunch_stack_name = f'{input_path}-bunches'
+            bunch_stack = ActionConfig(
+                constants.ACTION_FOCUSSTACKBUNCH,
+                {'name': bunch_stack_name, 'frames': dialog.get_bunch_frames(),
+                 'overlap': dialog.get_bunch_overlap()})
+            job.add_sub_action(bunch_stack)
+        stack_input_path = bunch_stack_name if dialog.get_bunch_stack() else preprocess_name
+        if dialog.get_focus_stack_pyramid():
+            focus_pyramid_name = f'{input_path}-focus-stack-pyramid'
+            focus_pyramid_params = {'name': focus_pyramid_name,
+                                    'stacker': constants.STACK_ALGO_PYRAMID,
+                                    'exif_path': input_path}
+            if dialog.get_focus_stack_depth_map():
+                focus_pyramid_params['input_path'] = stack_input_path
+            focus_pyramid = ActionConfig(constants.ACTION_FOCUSSTACK, focus_pyramid_params)
+            job.add_sub_action(focus_pyramid)
+        if dialog.get_focus_stack_depth_map():
+            focus_depth_map_name = f'{input_path}-focus-stack-depth-map'
+            focus_depth_map_params = {'name': focus_depth_map_name,
+                                      'stacker': constants.STACK_ALGO_DEPTH_MAP,
+                                      'exif_path': input_path}
+            if dialog.get_focus_stack_pyramid():
+                focus_depth_map_params['input_path'] = stack_input_path
+            focus_depth_map = ActionConfig(constants.ACTION_FOCUSSTACK, focus_depth_map_params)
+            job.add_sub_action(focus_depth_map)
+        if dialog.get_multi_layer():
+            multi_input_path = []
+            if dialog.get_focus_stack_pyramid():
+                multi_input_path.append(focus_pyramid_name)
+            if dialog.get_focus_stack_depth_map():
+                multi_input_path.append(focus_depth_map_name)
+            if dialog.get_bunch_stack():
+                multi_input_path.append(bunch_stack_name)
+            elif preprocess_name:
+                multi_input_path.append(preprocess_name)
+            multi_layer = ActionConfig(
+                constants.ACTION_MULTILAYER,
+                {'name': f'{input_path}-multi-layer',
+                 'input_path': constants.PATH_SEPARATOR.join(multi_input_path)})
+            job.add_sub_action(multi_layer)
+        jobs.append(job)
+        return True
+    return False
