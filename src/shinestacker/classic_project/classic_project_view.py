@@ -12,7 +12,7 @@ from .. gui.project_model import (
 from .. gui.project_converter import ProjectConverter
 from .. gui.base_project_view import BaseProjectView
 from .. gui.colors import ColorPalette
-from .. gui.project_holder import ProjectHandler
+from .. gui.project_handler import ProjectHandler
 from .tab_widget import TabWidgetWithPlaceholder
 from .gui_run import RunWindow, RunWorker
 
@@ -173,6 +173,9 @@ class ClassicProjectView(ProjectHandler, BaseProjectView):
         if action_row >= 0:
             self.project_editor.set_current_action(action_row)
         BaseProjectView.refresh_ui(self)
+
+    def select_first_job(self):
+        self.project_editor.set_current_job(0)
 
     def create_new_window(self, title, labels, retouch_paths):
         new_window = RunWindow(labels,

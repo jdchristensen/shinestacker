@@ -7,7 +7,7 @@ from PySide6.QtWidgets import (QListWidget, QMessageBox, QDialog, QListWidgetIte
 from .. config.constants import constants
 from .action_config_dialog import ActionConfigDialog
 from .project_model import ActionConfig, get_action_input_path, get_action_output_path
-from .project_holder import ProjectHandler
+from .project_handler import ProjectHandler
 
 
 @dataclass
@@ -99,7 +99,7 @@ class ProjectEditor(ProjectHandler, QObject):
     INDENT_SPACE = "&nbsp;&nbsp;&nbsp;↪&nbsp;&nbsp;&nbsp;"
     CLONE_POSTFIX = " (clone)"
 
-    modified_signal = Signal(int)
+    mark_as_modified_signal = Signal(bool, str)
     select_signal = Signal()
     refresh_ui_signal = Signal(int, int)
     enable_delete_action_signal = Signal(bool)
@@ -113,8 +113,7 @@ class ProjectEditor(ProjectHandler, QObject):
         self.dialog = None
 
     def mark_as_modified(self, modified=True, description=''):
-        ProjectHandler.mark_as_modified(self, modified, description)
-        self.modified_signal.emit(modified)
+        self.mark_as_modified_signal.emit(modified, description)
 
     def job_list(self):
         return self._job_list
@@ -196,11 +195,8 @@ class ProjectEditor(ProjectHandler, QObject):
                (f" - 📁 <i>{in_path}</i> → 📂 <i>{out_path}</i>"
                 if long_name and not is_sub_action else "")
 
-    def get_job_at(self, index):
-        return None if index < 0 else self.project_job(index)
-
     def get_current_job(self):
-        return self.get_job_at(self.current_job_index())
+        return self.project_job(self.current_job_index())
 
     def get_current_action(self):
         return self.get_action_at(self.current_action_index())

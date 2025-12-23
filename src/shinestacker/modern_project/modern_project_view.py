@@ -53,3 +53,6 @@ class ModernProjectView(BaseProjectView):
 
     def refresh_ui(self):
         BaseProjectView.refresh_ui(self)
+
+    def select_first_job(self):
+        pass

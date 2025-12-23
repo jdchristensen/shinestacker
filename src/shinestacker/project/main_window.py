@@ -11,7 +11,7 @@ from .. config.constants import constants
 from .. config.app_config import AppConfig
 from .. core.exceptions import InvalidProjectError
 from .. gui.project_model import Project
-from .. gui.project_holder import ProjectHolder, ProjectIOHandler
+from .. gui.project_handler import ProjectHolder, ProjectIOHandler
 from .. gui.project_editor import ProjectEditor
 from .. gui.sys_mon import StatusBarSystemMonitor
 from .. gui.new_project import fill_new_project
@@ -93,12 +93,7 @@ class MainWindow(ProjectIOHandler, QMainWindow):
         self.update_title()
         self.statusBar().addPermanentWidget(StatusBarSystemMonitor(self))
         QApplication.instance().paletteChanged.connect(self.on_theme_changed)
-
-        def handle_modified(modified):
-            self.menu_manager.save_actions_set_enabled(modified)
-            self.update_title()
-
-        self.project_editor.modified_signal.connect(handle_modified)
+        self.project_editor.mark_as_modified_signal.connect(self.mark_as_modified)
         self.project_editor.select_signal.connect(
             self.update_delete_action_state)
         self.project_editor.refresh_ui_signal.connect(self.classic_view.refresh_ui)
@@ -116,6 +111,11 @@ class MainWindow(ProjectIOHandler, QMainWindow):
 
     def show_status_message(self, message, timeout=4000):
         self.statusBar().showMessage(message, timeout)
+
+    def mark_as_modified(self, modified=True, description=''):
+        ProjectIOHandler.mark_as_modified(self, modified, description)
+        self.menu_manager.save_actions_set_enabled(modified)
+        self.update_title()
 
     def clear_action_list(self):
         self.project_editor.clear_action_list()
@@ -165,6 +165,11 @@ class MainWindow(ProjectIOHandler, QMainWindow):
             return q
         return False
 
+    def refresh_ui_and_select_first_job(self):
+        for _k, v in self.views.items():
+            v.refresh_ui()
+            v.select_first_job()
+
     def check_unsaved_changes(self):
         if self.modified():
             reply = QMessageBox.question(
@@ -201,7 +206,7 @@ class MainWindow(ProjectIOHandler, QMainWindow):
     def open_project(self, file_path=False):
         opened, file_path, msg = self.open_project_base(file_path)
         if opened:
-            self.classic_view.refresh_ui(0, -1)
+            self.refresh_ui_and_select_first_job()
             self.menu_manager.save_actions_set_enabled(True)
             self.show_status_message(f"Project file {os.path.basename(file_path)} loaded.")
             self.menu_manager.add_recent_file(os.path.abspath(file_path))
@@ -233,7 +238,7 @@ class MainWindow(ProjectIOHandler, QMainWindow):
                                 was not found.\n
                                 Please, select a valid working path.''')
                             self.project_editor.edit_action(action)
-                self.classic_view.refresh_ui(0, -1)
+                self.refresh_ui_and_select_first_job()
         elif msg != '':
             self.show_status_message(msg)
 
@@ -246,7 +251,7 @@ class MainWindow(ProjectIOHandler, QMainWindow):
                 self.set_modified(True)
                 self.project_editor.clear_job_list()
                 self.project_editor.clear_action_list()
-            self.classic_view.refresh_ui(0, -1)  # ---> set selected job = 0
+            self.refresh_ui_and_select_first_job()
             self.menu_manager.save_actions_set_enabled(False)
             self.set_enabled_file_open_close_actions(True)
             self.show_status_message("New project created.")
