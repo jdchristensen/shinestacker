@@ -60,6 +60,9 @@ class ClassicProjectEditor(ProjectEditor, ListContainer):
     def get_current_job(self):
         return self.project_job(self.current_job_index())
 
+    def get_current_status(self):
+        return self.get_current_action()
+
     def get_current_action(self):
         return self.get_action_at(self.current_action_index())
 
@@ -321,20 +324,9 @@ class ClassicProjectEditor(ProjectEditor, ListContainer):
     def cut_element(self):
         self.set_copy_buffer(self.delete_element(False))
 
-    def undo(self):
-        job_row = self.current_job_index()
-        action_row = self.current_action_index()
-        undo_done = ProjectEditor.undo(self)
-        if undo_done:
-            self.refresh_ui_signal.emit(-1, -1)
-            len_jobs = self.num_project_jobs()
-            if len_jobs > 0:
-                job_row = min(job_row, len_jobs - 1)
-                self.set_current_job(job_row)
-                len_actions = self.action_list_count()
-                if len_actions > 0:
-                    action_row = min(action_row, len_actions)
-                    self.set_current_action(action_row)
+    def refresh_and_set_status(self, status):
+        job_row, action_row, _pos = status
+        self.refresh_ui_signal.emit(job_row, action_row)
 
     def set_enabled(self, enabled):
         current_action = None

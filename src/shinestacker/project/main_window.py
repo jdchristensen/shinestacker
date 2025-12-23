@@ -6,18 +6,19 @@ from PySide6.QtCore import Qt
 from PySide6.QtGui import QGuiApplication, QAction, QPalette
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QToolBar, QMainWindow, QApplication, QStackedWidget, QMessageBox,
-    QFileDialog)
+    QFileDialog, QDialog)
 from .. config.constants import constants
 from .. config.app_config import AppConfig
 from .. core.exceptions import InvalidProjectError
+from .. core.core_utils import get_app_base_path
 from .. gui.project_model import Project
 from .. gui.project_handler import ProjectHolder, ProjectIOHandler
 from .. gui.sys_mon import StatusBarSystemMonitor
 from .. gui.new_project import fill_new_project
+from .. gui.project_model import ActionConfig
 from .. classic_project.classic_project_view import ClassicProjectView
 from .. classic_project.classic_project_editor import ClassicProjectEditor
 from .. modern_project.modern_project_view import ModernProjectView
-from .. core.core_utils import get_app_base_path
 from .menu_manager import MenuManager
 
 
@@ -32,15 +33,24 @@ class MainWindow(ProjectIOHandler, QMainWindow):
         self.classic_view = ClassicProjectView(self.project_holder, dark_theme, self)
         self.classic_project_editor.set_lists(*self.classic_view.get_lists())
         self.modern_view = ModernProjectView(dark_theme, self)
-        self.views = {'classic': self.classic_view, 'modern': self.modern_view}
-        self.editors = {'classic': self.classic_project_editor}
+        self.views = {
+            'classic': self.classic_view,
+            'modern': self.modern_view
+        }
+        self.editors = {
+            'classic': self.classic_project_editor,
+            'modern': self.classic_project_editor
+        }
+        self.current_editor = self.classic_project_editor
+        self.current_view = self.classic_view
+        self.view_idx = {'classic': 0, 'modern': 1}
         actions = {
             "&New...": self.new_project,
             "&Open...": self.open_project,
             "&Close": self.close_project,
             "&Save": self.save_project,
             "Save &As...": self.save_project_as,
-            "&Undo": self.undo,
+            "&Undo": self.perform_undo,
             "&Cut": self.classic_project_editor.cut_element,
             "Cop&y": self.classic_project_editor.copy_element,
             "&Paste": self.classic_project_editor.paste_element,
@@ -53,12 +63,12 @@ class MainWindow(ProjectIOHandler, QMainWindow):
             "Enable All": self.classic_project_editor.enable_all,
             "Disable All": self.classic_project_editor.disable_all,
             "Expert Options": self.toggle_expert_options,
-            "Add Job": self.classic_project_editor.add_job,
+            "Add Job": self.perform_add_job,
             "Run Job": lambda: self.view_stack.currentWidget().run_job(),
             "Run All Jobs": lambda: self.view_stack.currentWidget().run_all_jobs(),
             "Stop": lambda: self.view_stack.currentWidget().stop(),
-            "Classic View": lambda: self.set_view(0),
-            "Modern View": lambda: self.set_view(1)
+            "Classic View": lambda: self.set_view('classic'),
+            "Modern View": lambda: self.set_view('modern')
         }
         self.menu_manager = MenuManager(
             self.menuBar(), actions, self.classic_project_editor, dark_theme, self)
@@ -75,22 +85,17 @@ class MainWindow(ProjectIOHandler, QMainWindow):
         self.move(QGuiApplication.primaryScreen().geometry().center() -
                   self.rect().center())
         self.set_project(Project())
-
         self.central_widget = QWidget()
         self.setCentralWidget(self.central_widget)
         layout = QVBoxLayout()
         layout.setContentsMargins(0, 0, 0, 0)
-
         self.view_stack = QStackedWidget()
         for _k, v in self.views.items():
             self.view_stack.addWidget(v)
         self.view_stack.setCurrentIndex(0)
         layout.addWidget(self.view_stack)
-
         self.classic_project_editor.connect_signals()
-
         self.central_widget.setLayout(layout)
-
         self.update_title()
         self.statusBar().addPermanentWidget(StatusBarSystemMonitor(self))
         QApplication.instance().paletteChanged.connect(self.on_theme_changed)
@@ -109,6 +114,7 @@ class MainWindow(ProjectIOHandler, QMainWindow):
         self.menu_manager.open_file_requested.connect(self.open_project)
         self.set_enabled_file_open_close_actions(False)
         self.show_status_message("Shine Stacker ready.", 4000)
+        self.set_view('classic')
 
     def show_status_message(self, message, timeout=4000):
         self.statusBar().showMessage(message, timeout)
@@ -152,11 +158,15 @@ class MainWindow(ProjectIOHandler, QMainWindow):
             self.menu_manager.run_job_action.setEnabled(True)
         self.menu_manager.set_enabled_run_all_jobs(self.num_project_jobs() > 1)
 
-    def set_view(self, idx):
+    def set_view(self, mode):
+        idx = self.view_idx[mode]
         if self.view_stack.currentIndex() == idx:
             return
         self.view_stack.currentWidget().stop()
         self.view_stack.setCurrentIndex(idx)
+        self.current_editor = self.editors[mode]
+        self.current_view = self.view_stack.currentWidget()
+        self.current_view.refresh_ui()
 
     def quit(self):
         if self.check_unsaved_changes():
@@ -305,9 +315,21 @@ class MainWindow(ProjectIOHandler, QMainWindow):
         self.menu_manager.run_job_action.setEnabled(False)
         self.menu_manager.run_all_jobs_action.setEnabled(False)
 
-    def undo(self):
-        # ProjectIOHandler.undo(self)
-        self.classic_project_editor.undo()
+    def perform_undo(self):
+        status = self.current_editor.get_current_status()
+        if self.undo():
+            self.current_view.refresh_and_set_status(status)
+
+    def perform_add_job(self):
+        # self.classic_project_editor.add_job()
+        job_action = ActionConfig("Job")
+        dialog = self.action_config_dialog(job_action)
+        if dialog.exec() == QDialog.Accepted:
+            self.mark_as_modified(True, "Add Job")
+            new_job_index = 0 if self.num_project_jobs() == 0 \
+                else self.current_view.current_job_index() + 1
+            self.project_jobs().insert(new_job_index, job_action)
+            self.current_view.refresh_and_select_job(new_job_index)
 
     def delete_element(self):
         self.classic_project_editor.delete_element()

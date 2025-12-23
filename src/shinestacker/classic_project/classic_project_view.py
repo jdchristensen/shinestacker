@@ -136,6 +136,13 @@ class ClassicProjectView(ProjectView, ListContainer):
         self.job_list().setStyleSheet(list_style_sheet)
         self.action_list().setStyleSheet(list_style_sheet)
 
+    def refresh_and_set_status(self, status):
+        job_row, action_row, _pos = status
+        self.refresh_ui(job_row, action_row)
+
+    def refresh_and_select_job(self, job_idx):
+        self.refresh_ui(job_idx)
+
     def refresh_ui(self, job_row=-1, action_row=-1):
         self.clear_job_list()
         for job in self.project_jobs():

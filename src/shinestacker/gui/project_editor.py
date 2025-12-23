@@ -19,3 +19,6 @@ class ProjectEditor(ProjectHandler, QObject):
     def action_config_dialog(self, action):
         self._dialog = ActionConfigDialog(action, self.current_file_directory(), self.parent())
         return self._dialog
+
+    def post_undo(self, status):
+        pass
