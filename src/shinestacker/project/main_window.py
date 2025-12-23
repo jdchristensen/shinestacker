@@ -84,7 +84,7 @@ class MainWindow(ProjectHandler, QMainWindow):
         self.view_stack.setCurrentIndex(0)
         layout.addWidget(self.view_stack)
 
-        self.project_controller.connect_signals()
+        self.project_editor.connect_signals()
 
         self.central_widget.setLayout(layout)
 
@@ -113,7 +113,7 @@ class MainWindow(ProjectHandler, QMainWindow):
             self.activateWindow)
         self.project_controller.enable_save_actions_requested.connect(
             self.menu_manager.save_actions_set_enabled)
-        self.project_controller.enable_sub_actions_requested.connect(
+        self.project_editor.enable_sub_actions_requested.connect(
             self.menu_manager.set_enabled_sub_actions_gui)
         self.project_controller.add_recent_file_requested.connect(
             self.menu_manager.add_recent_file)
@@ -135,9 +135,6 @@ class MainWindow(ProjectHandler, QMainWindow):
 
     def action_config_dialog(self, action):
         return self.project_editor.action_config_dialog(action)
-
-    def edit_action(self, action):
-        self.project_controller.edit_action(action)
 
     def set_retouch_callback(self, callback):
         self.retouch_callback = callback

@@ -127,9 +127,6 @@ class ClassicProjectView(ProjectHandler, BaseProjectView):
     def get_action_at(self, action_row):
         return self.project_editor.get_action_at(action_row)
 
-    def edit_current_action(self):
-        self.project_controller.edit_current_action()
-
     def set_current_job(self, index):
         return self.project_editor.set_current_job(index)
 
@@ -277,6 +274,20 @@ class ClassicProjectView(ProjectHandler, BaseProjectView):
         tab.stop_button.setEnabled(False)
         if hasattr(tab, 'retouch_widget') and tab.retouch_widget is not None:
             tab.retouch_widget.setEnabled(True)
+
+    def edit_current_action(self):
+        current_action = None
+        job_row = self.current_job_index()
+        if 0 <= job_row < self.num_project_jobs():
+            job = self.project_job(job_row)
+            if self.job_list_has_focus():
+                current_action = job
+            elif self.action_list_has_focus():
+                job_row, _action_row, pos = self.get_current_action()
+                if pos.actions is not None:
+                    current_action = pos.action if not pos.is_sub_action else pos.sub_action
+        if current_action is not None:
+            self.edit_action(current_action)
 
     # pylint: disable=C0103
     def contextMenuEvent(self, event):

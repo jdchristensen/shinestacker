@@ -103,6 +103,7 @@ class ProjectEditor(ProjectHandler, QObject):
     select_signal = Signal()
     refresh_ui_signal = Signal(int, int)
     enable_delete_action_signal = Signal(bool)
+    enable_sub_actions_requested = Signal(bool)
 
     def __init__(self, project_holder, parent=None):
         QObject.__init__(self, parent)
@@ -386,8 +387,45 @@ class ProjectEditor(ProjectHandler, QObject):
             element = None
         return element
 
+    def edit_action(self, action):
+        dialog = self.action_config_dialog(action)
+        if dialog.exec() == QDialog.Accepted:
+            self.on_job_selected(self.current_job_index())
+
     def action_config_dialog(self, action):
         return ActionConfigDialog(action, self.current_file_directory(), self.parent())
+
+    def connect_signals(self):
+        self._job_list.itemDoubleClicked.connect(self.on_job_edit)
+        self._action_list.itemDoubleClicked.connect(self.on_action_edit)
+
+    def on_job_edit(self, item):
+        index = self.job_list().row(item)
+        if 0 <= index < self.num_project_jobs():
+            job = self.project_job(index)
+            dialog = self.action_config_dialog(job)
+            if dialog.exec() == QDialog.Accepted:
+                current_row = self.current_job_index()
+                if current_row >= 0:
+                    self.job_list_item(current_row).setText(job.params['name'])
+                self.refresh_ui()
+
+    def on_action_edit(self, item):
+        job_index = self.current_job_index()
+        if 0 <= job_index < self.num_project_jobs():
+            job = self.project_job(job_index)
+            action_index = self.action_list().row(item)
+            current_action, is_sub_action = self.get_current_action_at(job, action_index)
+            if current_action:
+                if not is_sub_action:
+                    self.enable_sub_actions_requested.emit(
+                        current_action.type_name == constants.ACTION_COMBO)
+                dialog = self.action_config_dialog(current_action)
+                if dialog.exec() == QDialog.Accepted:
+                    self.on_job_selected(job_index)
+                    self.refresh_ui_signal.emit(-1, -1)
+                    self.set_current_job(job_index)
+                    self.set_current_action(action_index)
 
     def add_job(self):
         job_action = ActionConfig("Job")

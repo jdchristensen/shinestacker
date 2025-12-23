@@ -3,8 +3,7 @@ import os
 import os.path
 import traceback
 from PySide6.QtCore import Signal, QObject
-from PySide6.QtWidgets import QMessageBox, QFileDialog, QDialog
-from .. config.constants import constants
+from PySide6.QtWidgets import QMessageBox, QFileDialog
 from .. core.core_utils import get_app_base_path
 from .. core.exceptions import InvalidProjectError
 from .project_holder import ProjectIOHandler
@@ -19,7 +18,6 @@ class ProjectController(ProjectIOHandler, QObject):
     refresh_ui_requested = Signal(int, int)
     activate_window_requested = Signal()
     enable_save_actions_requested = Signal(bool)
-    enable_sub_actions_requested = Signal(bool)
     add_recent_file_requested = Signal(str)
     set_enabled_file_open_close_actions_requested = Signal(bool)
     status_message_requested = Signal(str)
@@ -102,10 +100,6 @@ class ProjectController(ProjectIOHandler, QObject):
     def update_title(self):
         self.update_title_requested.emit()
 
-    def connect_signals(self):
-        self.job_list().itemDoubleClicked.connect(self.on_job_edit)
-        self.action_list().itemDoubleClicked.connect(self.on_action_edit)
-
     def close_project(self):
         if self.check_unsaved_changes():
             ProjectIOHandler.reset_project(self)
@@ -171,7 +165,7 @@ class ProjectController(ProjectIOHandler, QObject):
                                 "{job.params['name']}"
                                 was not found.\n
                                 Please, select a valid working path.''')
-                        self.edit_action(job)
+                        self.project_editor.edit_action(job)
                 for action in job.sub_actions:
                     if 'working_path' in job.params.keys():
                         working_path = job.params['working_path']
@@ -183,7 +177,7 @@ class ProjectController(ProjectIOHandler, QObject):
                                 "{job.params['name']}"
                                 was not found.\n
                                 Please, select a valid working path.''')
-                            self.edit_action(action)
+                            self.project_editor.edit_action(action)
 
     def save_project(self):
         path = self.current_file_path()
@@ -226,50 +220,3 @@ class ProjectController(ProjectIOHandler, QObject):
                 return True
             return reply == QMessageBox.Discard
         return True
-
-    def on_job_edit(self, item):
-        index = self.job_list().row(item)
-        if 0 <= index < self.num_project_jobs():
-            job = self.project_job(index)
-            dialog = self.action_config_dialog(job)
-            if dialog.exec() == QDialog.Accepted:
-                current_row = self.current_job_index()
-                if current_row >= 0:
-                    self.job_list_item(current_row).setText(job.params['name'])
-                self.refresh_ui()
-
-    def on_action_edit(self, item):
-        job_index = self.current_job_index()
-        if 0 <= job_index < self.num_project_jobs():
-            job = self.project_job(job_index)
-            action_index = self.action_list().row(item)
-            current_action, is_sub_action = self.get_current_action_at(job, action_index)
-            if current_action:
-                if not is_sub_action:
-                    self.enable_sub_actions_requested.emit(
-                        current_action.type_name == constants.ACTION_COMBO)
-                dialog = self.action_config_dialog(current_action)
-                if dialog.exec() == QDialog.Accepted:
-                    self.on_job_selected(job_index)
-                    self.refresh_ui()
-                    self.set_current_job(job_index)
-                    self.set_current_action(action_index)
-
-    def edit_current_action(self):
-        current_action = None
-        job_row = self.current_job_index()
-        if 0 <= job_row < self.num_project_jobs():
-            job = self.project_job(job_row)
-            if self.job_list_has_focus():
-                current_action = job
-            elif self.action_list_has_focus():
-                job_row, _action_row, pos = self.get_current_action()
-                if pos.actions is not None:
-                    current_action = pos.action if not pos.is_sub_action else pos.sub_action
-        if current_action is not None:
-            self.edit_action(current_action)
-
-    def edit_action(self, action):
-        dialog = self.action_config_dialog(action)
-        if dialog.exec() == QDialog.Accepted:
-            self.on_job_selected(self.current_job_index())
