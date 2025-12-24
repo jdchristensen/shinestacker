@@ -175,23 +175,6 @@ class ClassicProjectEditor(ProjectEditor, ListContainer):
                     self.set_current_job(job_index)
                     self.set_current_action(action_index)
 
-    def copy_job(self):
-        current_index = self.current_job_index()
-        if 0 <= current_index < self.num_project_jobs():
-            self.set_copy_buffer(self.project_job(current_index).clone())
-
-    def copy_action(self):
-        _job_row, _action_row, pos = self.get_current_action()
-        if pos.actions is not None:
-            self.set_copy_buffer(pos.sub_action.clone()
-                                 if pos.is_sub_action else pos.action.clone())
-
-    def copy_element(self):
-        if self.job_list_has_focus():
-            self.copy_job()
-        elif self.action_list_has_focus():
-            self.copy_action()
-
     def paste_job(self):
         if self.copy_buffer().type_name != constants.ACTION_JOB:
             return

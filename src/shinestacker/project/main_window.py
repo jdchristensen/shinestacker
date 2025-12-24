@@ -55,7 +55,7 @@ class MainWindow(ProjectIOHandler, QMainWindow):
             "Save &As...": self.save_project_as,
             "&Undo": self.perform_undo,
             "&Cut": self.classic_project_editor.cut_element,
-            "Cop&y": self.classic_project_editor.copy_element,
+            "Cop&y": self.copy_element,
             "&Paste": self.classic_project_editor.paste_element,
             "Duplicate": self.classic_project_editor.clone_element,
             "Delete": self.delete_element,
@@ -336,6 +336,9 @@ class MainWindow(ProjectIOHandler, QMainWindow):
         self.current_view.delete_element()
         if self.num_project_jobs() > 0:
             self.menu_manager.delete_element_action.setEnabled(True)
+
+    def copy_element(self):
+        self.current_view.copy_element()
 
     def update_delete_action_state(self):
         self.menu_manager.delete_element_action.setEnabled(

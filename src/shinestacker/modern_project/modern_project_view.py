@@ -1,4 +1,5 @@
-# pylint: disable=C0114, C0115, C0116, E0611, R0902, R0904, R0913, R0914, R0917, R0912, R0915, E1101, R1716
+# pylint: disable=C0114, C0115, C0116, E0611, R0902, R0904, R0913, R0914, R0917, R0912, R0915, E1101
+# pylint: disable=R1716
 import os
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QSplitter, QScrollArea, QDialog, QMessageBox
 from PySide6.QtCore import Qt
@@ -252,6 +253,13 @@ class ModernProjectView(ProjectView):
             self._select_job(new_index)
             self._ensure_job_visible(new_index)
 
+    def _reset_selection(self):
+        self.selected_widget = None
+        self.selected_widget_type = None
+        self.selected_job_index = -1
+        self.selected_action_index = -1
+        self.selected_subaction_index = -1
+
     def _ensure_job_visible(self, job_index):
         if not self.job_widgets or job_index < 0 or job_index >= len(self.job_widgets):
             return
@@ -482,12 +490,36 @@ class ModernProjectView(ProjectView):
                         return deleted_subaction
         return None
 
-    def _reset_selection(self):
-        self.selected_widget = None
-        self.selected_widget_type = None
-        self.selected_job_index = -1
-        self.selected_action_index = -1
-        self.selected_subaction_index = -1
+    def copy_job(self):
+        if 0 <= self.selected_job_index < len(self.project().jobs):
+            job = self.project().jobs[self.selected_job_index]
+            self.set_copy_buffer(job.clone())
+
+    def copy_action(self):
+        if (0 <= self.selected_job_index < len(self.project().jobs) and
+                self.selected_action_index >= 0):
+            job = self.project().jobs[self.selected_job_index]
+            if 0 <= self.selected_action_index < len(job.sub_actions):
+                action = job.sub_actions[self.selected_action_index]
+                self.set_copy_buffer(action.clone())
+
+    def copy_subaction(self):
+        if (0 <= self.selected_job_index < len(self.project().jobs) and
+                self.selected_action_index >= 0 and self.selected_subaction_index >= 0):
+            job = self.project().jobs[self.selected_job_index]
+            if 0 <= self.selected_action_index < len(job.sub_actions):
+                action = job.sub_actions[self.selected_action_index]
+                if 0 <= self.selected_subaction_index < len(action.sub_actions):
+                    subaction = action.sub_actions[self.selected_subaction_index]
+                    self.set_copy_buffer(subaction.clone())
+
+    def copy_element(self):
+        if self.selected_widget_type == 'job':
+            self.copy_job()
+        elif self.selected_widget_type == 'action':
+            self.copy_action()
+        elif self.selected_widget_type == 'subaction':
+            self.copy_subaction()
 
     def refresh_ui(self):
         self.clear_job_list()
