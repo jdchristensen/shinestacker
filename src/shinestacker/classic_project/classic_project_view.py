@@ -17,6 +17,12 @@ from .gui_run import RunWindow, RunWorker
 from .list_container import ListContainer, ActionPosition
 
 
+def new_row_after_clone(job, action_row, is_sub_action, cloned):
+    return action_row + 1 if is_sub_action else \
+        sum(1 + len(action.sub_actions)
+            for action in job.sub_actions[:job.sub_actions.index(cloned)])
+
+
 def new_row_after_delete(action_row, pos: ActionPosition):
     if pos.is_sub_action:
         new_row = action_row if pos.sub_action_index < len(pos.sub_actions) else action_row - 1
@@ -442,6 +448,38 @@ class ClassicProjectView(ProjectView, ListContainer):
 
     def cut_element(self):
         self.set_copy_buffer(self.delete_element(False))
+
+    def clone_job(self):
+        job_index = self.current_job_index()
+        if 0 <= job_index < self.num_project_jobs():
+            job_clone = self.project_job(job_index).clone(self.CLONE_POSTFIX)
+            new_job_index = job_index + 1
+            self.mark_as_modified(True, "Duplicate Job")
+            self.project_jobs().insert(new_job_index, job_clone)
+            self.set_current_job(new_job_index)
+            self.set_current_action(new_job_index)
+            self.refresh_ui_signal.emit(new_job_index, -1)
+
+    def clone_action(self):
+        job_row, action_row, pos = self.get_current_action()
+        if not pos.actions:
+            return
+        self.mark_as_modified(True, "Duplicate Action")
+        job = self.project_job(job_row)
+        if pos.is_sub_action:
+            cloned = pos.sub_action.clone(self.CLONE_POSTFIX)
+            pos.sub_actions.insert(pos.sub_action_index + 1, cloned)
+        else:
+            cloned = pos.action.clone(self.CLONE_POSTFIX)
+            job.sub_actions.insert(pos.action_index + 1, cloned)
+        new_row = new_row_after_clone(job, action_row, pos.is_sub_action, cloned)
+        self.refresh_ui_signal.emit(job_row, new_row)
+
+    def clone_element(self):
+        if self.job_list_has_focus():
+            self.clone_job()
+        elif self.action_list_has_focus():
+            self.clone_action()
 
     # pylint: disable=C0103
     def contextMenuEvent(self, event):

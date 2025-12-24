@@ -56,7 +56,7 @@ class MainWindow(ProjectIOHandler, QMainWindow):
             "&Cut": self.cut_element,
             "Cop&y": self.copy_element,
             "&Paste": self.paste_element,
-            "Duplicate": self.classic_project_editor.clone_element,
+            "Duplicate": self.clone_element,
             "Delete": self.delete_element,
             "Move &Up": self.classic_project_editor.move_element_up,
             "Move &Down": self.classic_project_editor.move_element_down,
@@ -344,6 +344,9 @@ class MainWindow(ProjectIOHandler, QMainWindow):
 
     def cut_element(self):
         self.current_view.cut_element()
+
+    def clone_element(self):
+        self.current_view.clone_element()
 
     def update_delete_action_state(self):
         self.menu_manager.delete_element_action.setEnabled(

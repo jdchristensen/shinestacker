@@ -11,6 +11,8 @@ from .job_widget import JobWidget
 
 
 class ModernProjectView(ProjectView):
+    CLONE_POSTFIX = " (clone)"
+
     def __init__(self, project_holder, dark_theme, parent=None):
         ProjectView.__init__(self, project_holder, dark_theme, parent)
         self.job_widgets = []
@@ -600,6 +602,63 @@ class ModernProjectView(ProjectView):
     def cut_element(self):
         element = self.delete_element(False)
         self.set_copy_buffer(element)
+
+    def clone_job(self):
+        job_index = self.selected_job_index
+        if 0 <= job_index < len(self.project().jobs):
+            job = self.project().jobs[job_index]
+            job_clone = job.clone(name_postfix=self.CLONE_POSTFIX)
+            new_job_index = job_index + 1
+            self.mark_as_modified(True, "Duplicate Job")
+            self.project().jobs.insert(new_job_index, job_clone)
+            self.selected_job_index = new_job_index
+            self.selected_action_index = -1
+            self.selected_subaction_index = -1
+            self.selected_widget_type = 'job'
+            self.refresh_ui()
+
+    def clone_action(self):
+        if self.selected_widget_type == 'action':
+            job_index = self.selected_job_index
+            action_index = self.selected_action_index
+            if (0 <= job_index < len(self.project().jobs) and
+                    0 <= action_index < len(self.project().jobs[job_index].sub_actions)):
+                job = self.project().jobs[job_index]
+                action = job.sub_actions[action_index]
+                action_clone = action.clone(name_postfix=self.CLONE_POSTFIX)
+                new_action_index = action_index + 1
+                self.mark_as_modified(True, "Duplicate Action")
+                job.sub_actions.insert(new_action_index, action_clone)
+                self.selected_action_index = new_action_index
+                self.selected_subaction_index = -1
+                self.selected_widget_type = 'action'
+                self.refresh_ui()
+        elif self.selected_widget_type == 'subaction':
+            job_index = self.selected_job_index
+            action_index = self.selected_action_index
+            subaction_index = self.selected_subaction_index
+            if (0 <= job_index < len(self.project().jobs) and
+                    0 <= action_index < len(self.project().jobs[job_index].sub_actions)):
+                job = self.project().jobs[job_index]
+                action = job.sub_actions[action_index]
+                if (action.type_name == constants.ACTION_COMBO and
+                        0 <= subaction_index < len(action.sub_actions)):
+                    subaction = action.sub_actions[subaction_index]
+                    subaction_clone = subaction.clone(name_postfix=self.CLONE_POSTFIX)
+                    new_subaction_index = subaction_index + 1
+                    self.mark_as_modified(True, "Duplicate Sub-action")
+                    action.sub_actions.insert(new_subaction_index, subaction_clone)
+                    self.selected_subaction_index = new_subaction_index
+                    self.selected_widget_type = 'subaction'
+                    self.refresh_ui()
+
+    def clone_element(self):
+        if self.selected_widget_type == 'job':
+            self.clone_job()
+        elif self.selected_widget_type == 'action':
+            self.clone_action()
+        elif self.selected_widget_type == 'subaction':
+            self.clone_action()
 
     def _ensure_selected_visible(self):
         if not self.selected_widget or not self.scroll_area:
