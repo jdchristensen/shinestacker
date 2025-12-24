@@ -502,7 +502,7 @@ class ClassicProjectView(ProjectView, ListContainer):
             self.project_jobs().insert(new_job_index, job_clone)
             self.set_current_job(new_job_index)
             self.set_current_action(new_job_index)
-            self.refresh_ui_signal.emit(new_job_index, -1)
+            self.refresh_ui(new_job_index, -1)
 
     def clone_action(self):
         job_row, action_row, pos = self.get_current_action()
@@ -517,7 +517,7 @@ class ClassicProjectView(ProjectView, ListContainer):
             cloned = pos.action.clone(self.CLONE_POSTFIX)
             job.sub_actions.insert(pos.action_index + 1, cloned)
         new_row = new_row_after_clone(job, action_row, pos.is_sub_action, cloned)
-        self.refresh_ui_signal.emit(job_row, new_row)
+        self.refresh_ui(job_row, new_row)
 
     def clone_element(self):
         if self.job_list_has_focus():
@@ -544,7 +544,7 @@ class ClassicProjectView(ProjectView, ListContainer):
                 else:
                     self.mark_as_modified(True, "Disable")
                 current_action.set_enabled(enabled)
-                self.refresh_ui_signal.emit(job_row, action_row)
+                self.refresh_ui(job_row, action_row)
 
     def enable(self):
         self.set_enabled(True)
@@ -558,7 +558,7 @@ class ClassicProjectView(ProjectView, ListContainer):
         action_row = self.current_action_index()
         for j in self.project_jobs():
             j.set_enabled_all(enable)
-        self.refresh_ui_signal.emit(job_row, action_row)
+        self.refresh_ui(job_row, action_row)
 
     def enable_all(self):
         self.set_enabled_all(True)
@@ -575,7 +575,7 @@ class ClassicProjectView(ProjectView, ListContainer):
             jobs = self.project_jobs()
             self.mark_as_modified(True, "Shift Job")
             jobs.insert(new_index, jobs.pop(job_index))
-            self.refresh_ui_signal.emit(new_index, -1)
+            self.refresh_ui(new_index, -1)
 
     def shift_action(self, delta):
         job_row, action_row, pos = self.get_current_action()
@@ -591,7 +591,7 @@ class ClassicProjectView(ProjectView, ListContainer):
                     self.mark_as_modified(True, "Shift Sub-action")
                     pos.sub_actions.insert(new_index, pos.sub_actions.pop(pos.sub_action_index))
             new_row = new_row_after_insert(action_row, pos, delta)
-            self.refresh_ui_signal.emit(job_row, new_row)
+            self.refresh_ui(job_row, new_row)
 
     def move_element_up(self):
         if self.job_list_has_focus():

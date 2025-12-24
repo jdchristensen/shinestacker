@@ -19,7 +19,6 @@ from .. gui.project_model import ActionConfig
 from .. gui.action_config_dialog import ActionConfigDialog
 from .. gui.project_undo_manager import ProjectUndoManager
 from .. classic_project.classic_project_view import ClassicProjectView
-from .. classic_project.classic_project_editor import ClassicProjectEditor
 from .. modern_project.modern_project_view import ModernProjectView
 from .menu_manager import MenuManager
 
@@ -30,22 +29,15 @@ class MainWindow(ProjectIOHandler, QMainWindow):
         self._undo_manager = ProjectUndoManager()
         ProjectIOHandler.__init__(self, ProjectHolder(self._undo_manager))
         self.setObjectName("mainWindow")
-        self.classic_project_editor = ClassicProjectEditor(self.project_holder, self)
         dark_theme = self.is_dark_theme()
         self.classic_view = ClassicProjectView(self.project_holder, dark_theme, self)
         self.classic_view.connect_signals(self.update_delete_action_state)
-        self.classic_project_editor.set_lists(*self.classic_view.get_lists())
         self.modern_view = ModernProjectView(self.project_holder, dark_theme, self)
         self.modern_view.connect_signals(self.update_delete_action_state)
         self.views = {
             'classic': self.classic_view,
             'modern': self.modern_view
         }
-        self.editors = {
-            'classic': self.classic_project_editor,
-            'modern': self.classic_project_editor
-        }
-        self.current_editor = self.classic_project_editor
         self.current_view = self.classic_view
         self.view_idx = {'classic': 0, 'modern': 1}
         actions = {
@@ -98,21 +90,14 @@ class MainWindow(ProjectIOHandler, QMainWindow):
             self.view_stack.addWidget(v)
         self.view_stack.setCurrentIndex(0)
         layout.addWidget(self.view_stack)
-        self.classic_project_editor.connect_signals()
         self.central_widget.setLayout(layout)
         self.update_title()
         self.statusBar().addPermanentWidget(StatusBarSystemMonitor(self))
         QApplication.instance().paletteChanged.connect(self.on_theme_changed)
-        self.classic_project_editor.mark_as_modified_signal.connect(self.mark_as_modified)
-        self.classic_project_editor.select_signal.connect(
-            self.update_delete_action_state)
-        self.classic_project_editor.refresh_ui_signal.connect(self.classic_view.refresh_ui)
         self.classic_view.refresh_ui_signal.connect(self.refresh_ui)
         self.modern_view.refresh_ui_signal.connect(self.refresh_ui)
         self._undo_manager.set_enabled_undo_action_requested.connect(
             self.menu_manager.set_enabled_undo_action)
-        self.classic_project_editor.enable_sub_actions_requested.connect(
-            self.menu_manager.set_enabled_sub_actions_gui)
         self.menu_manager.open_file_requested.connect(self.open_project)
         self.set_enabled_file_open_close_actions(False)
         self.show_status_message("Shine Stacker ready.", 4000)
@@ -126,12 +111,6 @@ class MainWindow(ProjectIOHandler, QMainWindow):
         ProjectIOHandler.mark_as_modified(self, modified, description)
         self.menu_manager.save_actions_set_enabled(modified)
         self.update_title()
-
-    def clear_action_list(self):
-        self.classic_project_editor.clear_action_list()
-
-    def get_current_action_at(self, job, action_index):
-        return self.classic_project_editor.get_current_action_at(job, action_index)
 
     def set_retouch_callback(self, callback):
         self.retouch_callback = callback
@@ -164,7 +143,6 @@ class MainWindow(ProjectIOHandler, QMainWindow):
             return
         self.view_stack.currentWidget().stop()
         self.view_stack.setCurrentIndex(idx)
-        self.current_editor = self.editors[mode]
         self.current_view = self.view_stack.currentWidget()
         self.current_view.refresh_ui()
 
@@ -223,7 +201,7 @@ class MainWindow(ProjectIOHandler, QMainWindow):
             self.menu_manager.add_recent_file(os.path.abspath(file_path))
             self.set_enabled_file_open_close_actions(True)
             if self.num_project_jobs() > 0:
-                self.classic_project_editor.set_current_job(0)
+                self.current_view.select_first_job()
                 self.activateWindow()
             for job in self.project_jobs():
                 if 'working_path' in job.params.keys():
@@ -236,7 +214,9 @@ class MainWindow(ProjectIOHandler, QMainWindow):
                                 "{job.params['name']}"
                                 was not found.\n
                                 Please, select a valid working path.''')
-                        self.classic_project_editor.edit_action(job)
+                        self.action_dialog = ActionConfigDialog(
+                            job, self.current_file_directory(), self)
+                        self.action_dialog.exec()
                 for action in job.sub_actions:
                     if 'working_path' in job.params.keys():
                         working_path = job.params['working_path']
@@ -248,7 +228,9 @@ class MainWindow(ProjectIOHandler, QMainWindow):
                                 "{job.params['name']}"
                                 was not found.\n
                                 Please, select a valid working path.''')
-                            self.classic_project_editor.edit_action(action)
+                            self.action_dialog = ActionConfigDialog(
+                                action, self.current_file_directory(), self)
+                            self.action_dialog.exec()
                 self.refresh_ui_and_select_first_job()
         elif msg != '':
             self.show_status_message(msg)
@@ -260,8 +242,8 @@ class MainWindow(ProjectIOHandler, QMainWindow):
             self.update_title()
             if fill_new_project(self.project(), self):
                 self.set_modified(True)
-                self.classic_project_editor.clear_job_list()
-                self.classic_project_editor.clear_action_list()
+                for _k, v in self.views.items():
+                    v.clear_project()
             self.refresh_ui_and_select_first_job()
             self.menu_manager.save_actions_set_enabled(False)
             self.set_enabled_file_open_close_actions(True)
@@ -271,8 +253,8 @@ class MainWindow(ProjectIOHandler, QMainWindow):
         if self.check_unsaved_changes():
             self.reset_project()
             self.update_title()
-            self.classic_project_editor.clear_job_list()
-            self.classic_project_editor.clear_action_list()
+            for _k, v in self.views.items():
+                v.clear_project()
             self.set_enabled_file_open_close_actions(False)
             self.show_status_message("Project closed.")
 
@@ -316,12 +298,10 @@ class MainWindow(ProjectIOHandler, QMainWindow):
         self.menu_manager.run_all_jobs_action.setEnabled(False)
 
     def perform_undo(self):
-        status = self.current_editor.get_current_status()
         if self.undo():
-            self.current_view.refresh_and_set_status(status)
+            self.current_view.refresh_ui()
 
     def perform_add_job(self):
-        # self.classic_project_editor.add_job()
         job_action = ActionConfig("Job")
         self.action_dialog = ActionConfigDialog(job_action, self.current_file_directory(), self)
         if self.action_dialog.exec() == QDialog.Accepted:

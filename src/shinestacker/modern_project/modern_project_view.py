@@ -293,6 +293,11 @@ class ModernProjectView(ProjectView):
                     item.widget().deleteLater()
         self.selected_job_index = 0
 
+    def clear_project(self):
+        self.clear_job_list()
+        self._reset_selection()
+        self.update_delete_action_state_requested.emit()
+
     def add_job_widget(self, job):
         job_widget = JobWidget(job, self.dark_theme)
         job_widget.setFocusPolicy(Qt.NoFocus)
