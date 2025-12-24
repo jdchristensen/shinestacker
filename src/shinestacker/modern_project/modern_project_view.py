@@ -1,6 +1,6 @@
-# pylint: disable=C0114, C0115, C0116, E0611, R0902, R0904, R0913, R0914, R0917, R0912, R0915, E1101
+# pylint: disable=C0114, C0115, C0116, E0611, R0902, R0904, R0913, R0914, R0917, R0912, R0915, E1101, R1716
 import os
-from PySide6.QtWidgets import QWidget, QVBoxLayout, QSplitter, QScrollArea, QDialog
+from PySide6.QtWidgets import QWidget, QVBoxLayout, QSplitter, QScrollArea, QDialog, QMessageBox
 from PySide6.QtCore import Qt
 from .. gui.project_view import ProjectView
 from .. gui.gui_logging import QTextEditLogger
@@ -16,10 +16,10 @@ class ModernProjectView(ProjectView):
         self.scroll_content = None
         self.project_layout = None
         self.selected_widget = None
-        self.selected_widget_type = None  # ??
-        self.selected_job_index = 0
-        self.selected_action_index = 0
-        self.selected_subaction_index = 0
+        self.selected_widget_type = None
+        self.selected_job_index = -1
+        self.selected_action_index = -1
+        self.selected_subaction_index = -1
         self._setup_ui()
         self.change_theme(dark_theme)
         self.setFocusPolicy(Qt.StrongFocus)
@@ -403,11 +403,101 @@ class ModernProjectView(ProjectView):
             else:
                 job_widget.set_selected(False)
 
+    def delete_element(self, confirm=True):
+        job_index = self.selected_job_index
+        action_index = self.selected_action_index
+        subaction_index = self.selected_subaction_index
+        if job_index < 0:
+            return None
+        if action_index < 0 and subaction_index < 0:
+            return self._delete_job(job_index, confirm)
+        if action_index >= 0 and subaction_index < 0:
+            return self._delete_action(job_index, action_index, confirm)
+        if subaction_index >= 0:
+            return self._delete_subaction(job_index, action_index, subaction_index, confirm)
+        return None
+
+    def _delete_job(self, job_index, confirm=True):
+        if 0 <= job_index < len(self.project().jobs):
+            job = self.project().jobs[job_index]
+            if confirm:
+                reply = QMessageBox.question(
+                    self.parent(), "Confirm Delete",
+                    f"Are you sure you want to delete job '{job.params.get('name', '')}'?",
+                    QMessageBox.Yes | QMessageBox.No
+                )
+            else:
+                reply = None
+            if not confirm or reply == QMessageBox.Yes:
+                self.mark_as_modified(True, "Delete Job")
+                deleted_job = self.project().jobs.pop(job_index)
+                self.refresh_ui()
+                self._reset_selection()
+                return deleted_job
+        return None
+
+    def _delete_action(self, job_index, action_index, confirm=True):
+        if 0 <= job_index < len(self.project().jobs):
+            job = self.project().jobs[job_index]
+            if 0 <= action_index < len(job.sub_actions):
+                action = job.sub_actions[action_index]
+                if confirm:
+                    reply = QMessageBox.question(
+                        self.parent(), "Confirm Delete",
+                        f"Are you sure you want to delete action "
+                        f"'{action.params.get('name', '')}'?",
+                        QMessageBox.Yes | QMessageBox.No
+                    )
+                else:
+                    reply = None
+                if not confirm or reply == QMessageBox.Yes:
+                    self.mark_as_modified(True, "Delete Action")
+                    deleted_action = job.pop_sub_action(action_index)
+                    self.refresh_ui()
+                    self._reset_selection()
+                    return deleted_action
+        return None
+
+    def _delete_subaction(self, job_index, action_index, subaction_index, confirm=True):
+        if 0 <= job_index < len(self.project().jobs):
+            job = self.project().jobs[job_index]
+            if 0 <= action_index < len(job.sub_actions):
+                action = job.sub_actions[action_index]
+                if 0 <= subaction_index < len(action.sub_actions):
+                    subaction = action.sub_actions[subaction_index]
+                    if confirm:
+                        reply = QMessageBox.question(
+                            self.parent(), "Confirm Delete",
+                            f"Are you sure you want to delete sub-action "
+                            f"'{subaction.params.get('name', '')}'?",
+                            QMessageBox.Yes | QMessageBox.No
+                        )
+                    else:
+                        reply = None
+                    if not confirm or reply == QMessageBox.Yes:
+                        self.mark_as_modified(True, "Delete Sub-action")
+                        deleted_subaction = action.pop_sub_action(subaction_index)
+                        self.refresh_ui()
+                        self._reset_selection()
+                        return deleted_subaction
+        return None
+
+    def _reset_selection(self):
+        self.selected_widget = None
+        self.selected_widget_type = None
+        self.selected_job_index = -1
+        self.selected_action_index = -1
+        self.selected_subaction_index = -1
+
     def refresh_ui(self):
         self.clear_job_list()
         for job in self.project_jobs():
             self.add_job_widget(job)
         ProjectView.refresh_ui(self)
+        if len(self.job_widgets) > 0:
+            self._select_job(0)
+        else:
+            self._reset_selection()
 
     def get_console_area(self):
         return self.console_area

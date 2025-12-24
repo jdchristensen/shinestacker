@@ -4,12 +4,11 @@ import json
 import jsonpickle
 from .. core.exceptions import InvalidProjectError
 from .project_model import Project
-from .project_undo_manager import ProjectUndoManager
 
 
 class ProjectHolder:
-    def __init__(self):
-        self.undo_manager = ProjectUndoManager()
+    def __init__(self, undo_manager):
+        self.undo_manager = undo_manager
         self.project = None
         self.modified = False
         self.copy_buffer = None

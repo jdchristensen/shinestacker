@@ -17,6 +17,7 @@ from .. gui.sys_mon import StatusBarSystemMonitor
 from .. gui.new_project import fill_new_project
 from .. gui.project_model import ActionConfig
 from .. gui.action_config_dialog import ActionConfigDialog
+from .. gui.project_undo_manager import ProjectUndoManager
 from .. classic_project.classic_project_view import ClassicProjectView
 from .. classic_project.classic_project_editor import ClassicProjectEditor
 from .. modern_project.modern_project_view import ModernProjectView
@@ -26,7 +27,8 @@ from .menu_manager import MenuManager
 class MainWindow(ProjectIOHandler, QMainWindow):
     def __init__(self):
         QMainWindow.__init__(self)
-        project_holder = ProjectHolder()
+        self._undo_manager = ProjectUndoManager()
+        project_holder = ProjectHolder(self._undo_manager)
         ProjectIOHandler.__init__(self, project_holder)
         self.setObjectName("mainWindow")
         self.classic_project_editor = ClassicProjectEditor(self.project_holder, self)
@@ -108,7 +110,7 @@ class MainWindow(ProjectIOHandler, QMainWindow):
         self.modern_view.refresh_ui_signal.connect(self.refresh_ui)
         self.classic_project_editor.enable_delete_action_signal.connect(
             self.menu_manager.delete_element_action.setEnabled)
-        self.undo_manager().set_enabled_undo_action_requested.connect(
+        self._undo_manager.set_enabled_undo_action_requested.connect(
             self.menu_manager.set_enabled_undo_action)
         self.classic_project_editor.enable_sub_actions_requested.connect(
             self.menu_manager.set_enabled_sub_actions_gui)
@@ -331,7 +333,7 @@ class MainWindow(ProjectIOHandler, QMainWindow):
             self.current_view.refresh_and_select_job(new_job_index)
 
     def delete_element(self):
-        self.classic_project_editor.delete_element()
+        self.current_view.delete_element()
         if self.num_project_jobs() > 0:
             self.menu_manager.delete_element_action.setEnabled(True)
 

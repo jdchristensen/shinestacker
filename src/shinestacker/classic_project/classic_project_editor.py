@@ -1,24 +1,9 @@
 # pylint: disable=C0114, C0115, C0116, R0903, R0904, R1702, R0917, R0913, R0902, E0611, E1131, E1121
 from PySide6.QtCore import Signal
-from PySide6.QtWidgets import QMessageBox, QDialog
+from PySide6.QtWidgets import QDialog
 from .. config.constants import constants
 from .. gui.project_editor import ProjectEditor
 from .list_container import ListContainer, ActionPosition
-
-
-def new_row_after_delete(action_row, pos: ActionPosition):
-    if pos.is_sub_action:
-        new_row = action_row if pos.sub_action_index < len(pos.sub_actions) else action_row - 1
-    else:
-        if pos.action_index == 0:
-            new_row = 0 if len(pos.actions) > 0 else -1
-        elif pos.action_index < len(pos.actions):
-            new_row = action_row
-        elif pos.action_index == len(pos.actions):
-            new_row = action_row - len(pos.actions[pos.action_index - 1].sub_actions) - 1
-        else:
-            new_row = None
-    return new_row
 
 
 def new_row_after_insert(action_row, pos: ActionPosition, delta):
@@ -57,15 +42,6 @@ class ClassicProjectEditor(ProjectEditor, ListContainer):
         ProjectEditor.__init__(self, project_holder, parent)
         ListContainer.__init__(self, None, None)
 
-    def get_current_job(self):
-        return self.project_job(self.current_job_index())
-
-    def get_current_status(self):
-        return self.get_current_action()
-
-    def get_current_action(self):
-        return self.get_action_at(self.current_action_index())
-
     def has_selected_jobs(self):
         return self.num_selected_jobs() > 0
 
@@ -90,21 +66,6 @@ class ClassicProjectEditor(ProjectEditor, ListContainer):
                     not is_sub_action and current_action.type_name == constants.ACTION_COMBO
                 return selected_sub_action
         return False
-
-    def find_action_position(self, job_index, ui_index):
-        if not 0 <= job_index < self.num_project_jobs():
-            return (None, None, -1)
-        actions = self.project_job(job_index).sub_actions
-        counter = -1
-        for action in actions:
-            counter += 1
-            if counter == ui_index:
-                return (action, None, -1)
-            for sub_action_index, sub_action in enumerate(action.sub_actions):
-                counter += 1
-                if counter == ui_index:
-                    return (action, sub_action, sub_action_index)
-        return (None, None, -1)
 
     def shift_job(self, delta):
         job_index = self.current_job_index()
@@ -176,62 +137,6 @@ class ClassicProjectEditor(ProjectEditor, ListContainer):
             self.clone_job()
         elif self.action_list_has_focus():
             self.clone_action()
-
-    def delete_job(self, confirm=True):
-        current_index = self.current_job_index()
-        if 0 <= current_index < self.num_project_jobs():
-            if confirm:
-                reply = QMessageBox.question(
-                    self.parent(), "Confirm Delete",
-                    "Are you sure you want to delete job "
-                    f"'{self.project_job(current_index).params.get('name', '')}'?",
-                    QMessageBox.Yes | QMessageBox.No
-                )
-            else:
-                reply = None
-            if not confirm or reply == QMessageBox.Yes:
-                self.take_job(current_index)
-                self.mark_as_modified(True, "Delete Job")
-                current_job = self.project_jobs().pop(current_index)
-                self.clear_action_list()
-                self.refresh_ui_signal.emit(-1, -1)
-                return current_job
-        return None
-
-    def delete_action(self, confirm=True):
-        job_row, action_row, pos = self.get_current_action()
-        if pos is not None:
-            current_action = pos.action if not pos.is_sub_action else pos.sub_action
-            if confirm:
-                reply = QMessageBox.question(
-                    self.parent(),
-                    "Confirm Delete",
-                    "Are you sure you want to delete action "
-                    f"'{self.action_text(current_action, pos.is_sub_action, indent=False)}'?",
-                    QMessageBox.Yes | QMessageBox.No
-                )
-            else:
-                reply = None
-            if not confirm or reply == QMessageBox.Yes:
-                if pos.is_sub_action:
-                    self.mark_as_modified(True, "Delete Action")
-                    pos.action.pop_sub_action(pos.sub_action_index)
-                else:
-                    self.mark_as_modified(True, "Delete Sub-action")
-                    self.project_job(job_row).pop_sub_action(pos.action_index)
-                new_row = new_row_after_delete(action_row, pos)
-                self.refresh_ui_signal.emit(job_row, new_row)
-            return current_action
-        return None
-
-    def delete_element(self, confirm=True):
-        if self.job_list_has_focus():
-            element = self.delete_job(confirm)
-        elif self.action_list_has_focus():
-            element = self.delete_action(confirm)
-        else:
-            element = None
-        return element
 
     def edit_action(self, action):
         dialog = self.action_config_dialog(action)

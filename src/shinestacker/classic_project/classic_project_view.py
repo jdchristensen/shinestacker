@@ -14,7 +14,22 @@ from .. gui.project_view import ProjectView
 from .. gui.colors import ColorPalette
 from .tab_widget import TabWidgetWithPlaceholder
 from .gui_run import RunWindow, RunWorker
-from .list_container import ListContainer
+from .list_container import ListContainer, ActionPosition
+
+
+def new_row_after_delete(action_row, pos: ActionPosition):
+    if pos.is_sub_action:
+        new_row = action_row if pos.sub_action_index < len(pos.sub_actions) else action_row - 1
+    else:
+        if pos.action_index == 0:
+            new_row = 0 if len(pos.actions) > 0 else -1
+        elif pos.action_index < len(pos.actions):
+            new_row = action_row
+        elif pos.action_index == len(pos.actions):
+            new_row = action_row - len(pos.actions[pos.action_index - 1].sub_actions) - 1
+        else:
+            new_row = None
+    return new_row
 
 
 class JobLogWorker(RunWorker):
@@ -272,6 +287,62 @@ class ClassicProjectView(ProjectView, ListContainer):
                     current_action = pos.action if not pos.is_sub_action else pos.sub_action
         if current_action is not None:
             self.edit_action(current_action)
+
+    def delete_job(self, confirm=True):
+        current_index = self.current_job_index()
+        if 0 <= current_index < self.num_project_jobs():
+            if confirm:
+                reply = QMessageBox.question(
+                    self.parent(), "Confirm Delete",
+                    "Are you sure you want to delete job "
+                    f"'{self.project_job(current_index).params.get('name', '')}'?",
+                    QMessageBox.Yes | QMessageBox.No
+                )
+            else:
+                reply = None
+            if not confirm or reply == QMessageBox.Yes:
+                self.take_job(current_index)
+                self.mark_as_modified(True, "Delete Job")
+                current_job = self.project_jobs().pop(current_index)
+                self.clear_action_list()
+                self.refresh_ui(-1, -1)
+                return current_job
+        return None
+
+    def delete_action(self, confirm=True):
+        job_row, action_row, pos = self.get_current_action()
+        if pos is not None:
+            current_action = pos.action if not pos.is_sub_action else pos.sub_action
+            if confirm:
+                reply = QMessageBox.question(
+                    self.parent(),
+                    "Confirm Delete",
+                    "Are you sure you want to delete action "
+                    f"'{self.action_text(current_action, pos.is_sub_action, indent=False)}'?",
+                    QMessageBox.Yes | QMessageBox.No
+                )
+            else:
+                reply = None
+            if not confirm or reply == QMessageBox.Yes:
+                if pos.is_sub_action:
+                    self.mark_as_modified(True, "Delete Action")
+                    pos.action.pop_sub_action(pos.sub_action_index)
+                else:
+                    self.mark_as_modified(True, "Delete Sub-action")
+                    self.project_job(job_row).pop_sub_action(pos.action_index)
+                new_row = new_row_after_delete(action_row, pos)
+                self.refresh_ui(job_row, new_row)
+            return current_action
+        return None
+
+    def delete_element(self, confirm=True):
+        if self.job_list_has_focus():
+            element = self.delete_job(confirm)
+        elif self.action_list_has_focus():
+            element = self.delete_action(confirm)
+        else:
+            element = None
+        return element
 
     # pylint: disable=C0103
     def contextMenuEvent(self, event):
