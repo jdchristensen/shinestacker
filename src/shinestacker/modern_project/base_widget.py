@@ -135,6 +135,15 @@ class BaseWidget(QFrame):
     def mouseDoubleClickEvent(self, event):
         self.double_clicked.emit()
         event.accept()
+
+    def contextMenuEvent(self, event):
+        widget = self
+        while widget:
+            if type(widget).__name__ == 'ModernProjectView':
+                widget.contextMenuEvent(event)
+                break
+            widget = widget.parent()
+        event.accept()
     # pylint: enable=C0103
 
     def set_selected(self, selected):

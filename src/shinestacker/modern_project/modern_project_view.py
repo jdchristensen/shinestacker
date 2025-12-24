@@ -1,9 +1,9 @@
 # pylint: disable=C0114, C0115, C0116, E0611, R0902, R0904, R0913, R0914, R0917, R0912, R0915, E1101
 # pylint: disable=R1716
 import os
-from PySide6.QtCore import Signal
+from PySide6.QtCore import Qt, QTimer, Signal
+from PySide6.QtGui import QCursor
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QSplitter, QScrollArea, QDialog, QMessageBox
-from PySide6.QtCore import Qt, QTimer
 from .. config.constants import constants
 from .. gui.project_model import ActionConfig
 from .. gui.project_view import ProjectView
@@ -13,8 +13,6 @@ from .job_widget import JobWidget
 
 
 class ModernProjectView(ProjectView):
-    CLONE_POSTFIX = " (clone)"
-
     update_delete_action_state_requested = Signal()
 
     def __init__(self, project_holder, dark_theme, parent=None):
@@ -32,7 +30,6 @@ class ModernProjectView(ProjectView):
         self.change_theme(dark_theme)
         self.setFocusPolicy(Qt.StrongFocus)
         self.setFocus()
-        self.action_dialog = None
 
     def _setup_ui(self):
         main_splitter = QSplitter(Qt.Orientation.Vertical)
@@ -121,7 +118,45 @@ class ModernProjectView(ProjectView):
             super().keyPressEvent(event)
         else:
             super().keyPressEvent(event)
+
+    def contextMenuEvent(self, event):
+        pos = self.mapFromGlobal(QCursor.pos())
+        widget = self.childAt(pos)
+        current_action = None
+        if widget:
+            while widget and widget != self:
+                if hasattr(widget, 'data_object'):
+                    current_action = widget.data_object
+                    break
+                widget = widget.parentWidget()
+        if not current_action and self.selected_widget:
+            if hasattr(self.selected_widget, 'data_object'):
+                current_action = self.selected_widget.data_object
+        if current_action:
+            menu = self.create_common_context_menu(current_action)
+            menu.exec(event.globalPos())
     # pylint: enable=C0103
+
+    def get_current_selected_action(self):
+        if self.selected_widget_type == 'job':
+            if 0 <= self.selected_job_index < len(self.project().jobs):
+                return self.project().jobs[self.selected_job_index]
+        elif self.selected_widget_type == 'action':
+            if (0 <= self.selected_job_index < len(self.project().jobs) and
+                0 <= self.selected_action_index < len(self.project().jobs[
+                    self.selected_job_index].sub_actions)):
+                return self.project().jobs[
+                    self.selected_job_index].sub_actions[self.selected_action_index]
+        elif self.selected_widget_type == 'subaction':
+            if (0 <= self.selected_job_index < len(self.project().jobs) and
+                0 <= self.selected_action_index < len(self.project().jobs[
+                    self.selected_job_index].sub_actions)):
+                action = self.project().jobs[
+                    self.selected_job_index].sub_actions[self.selected_action_index]
+                if (hasattr(action, 'sub_actions') and
+                        0 <= self.selected_subaction_index < len(action.sub_actions)):
+                    return action.sub_actions[self.selected_subaction_index]
+        return None
 
     def has_selection(self):
         return self.selected_job_index >= 0
@@ -130,7 +165,7 @@ class ModernProjectView(ProjectView):
         if self.selected_widget_type == 'subaction':
             return True
         if self.selected_widget_type == 'action' and self.selected_widget is not None:
-            return self.selected_widget.is_combo_action()
+            return self.selected_widget.data_object.type_name == constants.ACTION_COMBO
         return False
 
     def _select_next_widget(self):

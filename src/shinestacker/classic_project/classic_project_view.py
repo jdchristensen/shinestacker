@@ -1,14 +1,8 @@
 # pylint: disable=C0114, C0115, C0116, E0611, R0902, R0904, R0913, R0914, R0917, R0912, R0915, E1101
-import os
-import subprocess
-from PySide6.QtGui import QAction
 from PySide6.QtWidgets import (
-    QWidget, QVBoxLayout, QHBoxLayout, QLabel, QSplitter, QMessageBox, QMenu, QApplication, QDialog)
+    QWidget, QVBoxLayout, QHBoxLayout, QLabel, QSplitter, QMessageBox, QApplication, QDialog)
 from PySide6.QtCore import Qt
 from .. config.constants import constants
-from .. core.core_utils import running_under_windows, running_under_macos
-from .. gui.project_model import (
-    get_action_working_path, get_action_input_path, get_action_output_path)
 from .. gui.project_converter import ProjectConverter
 from .. gui.project_view import ProjectView
 from .. gui.colors import ColorPalette
@@ -670,118 +664,42 @@ class ClassicProjectView(ProjectView, ListContainer):
             _job_row, _action_row, pos = self.get_action_at(index)
             current_action = pos.action if not pos.is_sub_action else pos.sub_action
         if current_action:
-            menu = QMenu(self)
-            if current_action.enabled():
-                menu.addAction(self.menu_manager.disable_action)
-            else:
-                menu.addAction(self.menu_manager.enable_action)
-            edit_config_action = QAction("Edit configuration")
-            edit_config_action.triggered.connect(self.edit_current_action)
-            menu.addAction(edit_config_action)
-            menu.addSeparator()
-            menu.addAction(self.menu_manager.cut_action)
-            menu.addAction(self.menu_manager.copy_action)
-            menu.addAction(self.menu_manager.paste_action)
-            menu.addAction(self.menu_manager.duplicate_action)
-            menu.addAction(self.menu_manager.delete_element_action)
-            menu.addSeparator()
-            menu.addAction(self.menu_manager.run_job_action)
-            menu.addAction(self.menu_manager.run_all_jobs_action)
-            menu.addSeparator()
-            self.current_action_working_path, name = get_action_working_path(current_action)
-            if self.current_action_working_path != '' and \
-                    os.path.exists(self.current_action_working_path):
-                action_name = "Browse Working Path" + (f" > {name}" if name != '' else '')
-                self.browse_working_path_action = QAction(action_name)
-                self.browse_working_path_action.triggered.connect(self.browse_working_path)
-                menu.addAction(self.browse_working_path_action)
-            ip, name = get_action_input_path(current_action)
-            if ip != '':
-                ips = ip.split(constants.PATH_SEPARATOR)
-                self.current_action_input_path = constants.PATH_SEPARATOR.join(
-                    [f"{self.current_action_working_path}/{ip}" for ip in ips])
-                p_exists = False
-                for p in self.current_action_input_path.split(constants.PATH_SEPARATOR):
-                    if os.path.exists(p):
-                        p_exists = True
-                        break
-                if p_exists:
-                    action_name = "Browse Input Path" + (f" > {name}" if name != '' else '')
-                    n_files = [f"{len(next(os.walk(p))[2])}"
-                               for p in
-                               self.current_action_input_path.split(constants.PATH_SEPARATOR)]
-                    s = "" if len(n_files) == 1 and n_files[0] == 1 else "s"
-                    action_name += " (" + ", ".join(n_files) + f" file{s})"
-                    self.browse_input_path_action = QAction(action_name)
-                    self.browse_input_path_action.triggered.connect(self.browse_input_path)
-                    menu.addAction(self.browse_input_path_action)
-            op, name = get_action_output_path(current_action)
-            if op != '':
-                self.current_action_output_path = f"{self.current_action_working_path}/{op}"
-                if os.path.exists(self.current_action_output_path):
-                    action_name = "Browse Output Path" + (f" > {name}" if name != '' else '')
-                    n_files = len(next(os.walk(self.current_action_output_path))[2])
-                    s = "" if n_files == 1 else "s"
-                    action_name += f" ({n_files} file{s})"
-                    self.browse_output_path_action = QAction(action_name)
-                    self.browse_output_path_action.triggered.connect(self.browse_output_path)
-                    menu.addAction(self.browse_output_path_action)
-            if current_action.type_name == constants.ACTION_JOB:
-                retouch_path = self.get_retouch_path(current_action)
-                if len(retouch_path) > 0:
-                    menu.addSeparator()
-                    self.job_retouch_path_action = QAction("Retouch path")
-                    self.job_retouch_path_action.triggered.connect(
-                        lambda job: self.run_retouch_path(current_action, retouch_path))
-                    menu.addAction(self.job_retouch_path_action)
+            menu = self.create_common_context_menu(current_action)
             menu.exec(event.globalPos())
     # pylint: enable=C0103
 
-    def run_retouch_path(self, _job, retouch_path):
-        self.retouch_callback(retouch_path)
+    def get_current_selected_action(self):
+        if self.job_list_has_focus():
+            job_row = self.current_job_index()
+            if 0 <= job_row < self.num_project_jobs():
+                return self.project_job(job_row)
+        elif self.action_list_has_focus():
+            _job_row, _action_row, pos = self.get_current_action()
+            if pos.actions is not None:
+                return pos.action if not pos.is_sub_action else pos.sub_action
+        return None
 
-    def get_retouch_path(self, job):
-        frames_path = [get_action_output_path(action)[0]
-                       for action in job.sub_actions
-                       if action.type_name == constants.ACTION_COMBO]
-        bunches_path = [get_action_output_path(action)[0]
-                        for action in job.sub_actions
-                        if action.type_name == constants.ACTION_FOCUSSTACKBUNCH]
-        stack_path = [get_action_output_path(action)[0]
-                      for action in job.sub_actions
-                      if action.type_name == constants.ACTION_FOCUSSTACK]
-        if len(bunches_path) > 0:
-            stack_path += [bunches_path[0]]
-        elif len(frames_path) > 0:
-            stack_path += [frames_path[0]]
-        wp = get_action_working_path(job)[0]
-        if wp == '':
-            raise ValueError("Job has no working path specified.")
-        stack_path = [f"{wp}/{s}" for s in stack_path]
-        return stack_path
+    def get_job_at(self, index):
+        return None if index < 0 else self.project_job(index)
+
+    def get_action_at(self, action_row):
+        job_row = self.current_job_index()
+        if job_row < 0 or action_row < 0:
+            return (job_row, action_row, None)
+        action, sub_action, sub_action_index = self.find_action_position(job_row, action_row)
+        if not action:
+            return (job_row, action_row, None)
+        job = self.project_job(job_row)
+        if sub_action:
+            return (job_row, action_row,
+                    ActionPosition(job.sub_actions, action.sub_actions,
+                                   job.sub_actions.index(action), sub_action_index))
+        return (job_row, action_row,
+                ActionPosition(job.sub_actions, None, job.sub_actions.index(action)))
 
     def handle_run_completed(self, window, run_id):
         window.handle_run_completed(run_id)
         self.menu_manager.stop_action.setEnabled(False)
-
-    def browse_path(self, path):
-        ps = path.split(constants.PATH_SEPARATOR)
-        for p in ps:
-            if os.path.exists(p):
-                if running_under_windows():
-                    os.startfile(os.path.normpath(p))
-                else:
-                    cmd = 'open' if running_under_macos() else 'xdg-open'
-                    subprocess.run([cmd, p], check=True)
-
-    def browse_working_path(self):
-        self.browse_path(self.current_action_working_path)
-
-    def browse_input_path(self):
-        self.browse_path(self.current_action_input_path)
-
-    def browse_output_path(self):
-        self.browse_path(self.current_action_output_path)
 
     def quit(self):
         for worker in self._workers:
