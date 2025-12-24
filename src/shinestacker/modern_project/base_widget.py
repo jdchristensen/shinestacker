@@ -1,7 +1,7 @@
 # pylint: disable=C0114, C0115, C0116, E0611, R0903, R0913, R0917, R0902
 import os
 from PySide6.QtCore import Qt, Signal
-from PySide6.QtWidgets import QFrame, QLabel, QVBoxLayout, QHBoxLayout
+from PySide6.QtWidgets import QFrame, QLabel, QVBoxLayout, QHBoxLayout, QSizePolicy, QLayout
 from ..gui.colors import ColorPalette
 
 
@@ -10,17 +10,15 @@ class BaseWidget(QFrame):
     double_clicked = Signal()
     enabled_toggled = Signal(bool)
 
-    def __init__(self, data_object, min_height=40, dark_theme=False, parent=None,
-                 layout_horizontal=False):
+    def __init__(self, data_object, min_height=40, dark_theme=False, parent=None):
         super().__init__(parent)
         self.data_object = data_object
         self._selected = False
         self._enabled = True
         self._dark_theme = dark_theme
         self.min_height = min_height
-        self.path_label = ''
+        self.path_label = None
         self.child_widgets = []
-        self._layout_horizontal = layout_horizontal
         self.setFocusPolicy(Qt.NoFocus)
         self._init_widget(data_object)
         self.setAttribute(Qt.WA_Hover, True)
@@ -32,20 +30,22 @@ class BaseWidget(QFrame):
 
     def _init_widget(self, data_object):
         self.setMinimumHeight(self.min_height)
+        self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
         main_layout = QVBoxLayout(self)
         main_layout.setContentsMargins(8, 8, 8, 8)
         main_layout.setSpacing(2)
+        main_layout.setSizeConstraint(QLayout.SetMinAndMaxSize)
         header_layout = QHBoxLayout()
         header_layout.setContentsMargins(0, 0, 0, 0)
         self.name_label = QLabel()
         self.name_label.setAlignment(Qt.AlignLeft | Qt.AlignTop)
-        header_layout.addWidget(self.name_label)
+        header_layout.addWidget(self.name_label, 1)
         self.enabled_icon = QLabel()
         self.enabled_icon.setAlignment(Qt.AlignRight | Qt.AlignTop)
+        self.enabled_icon.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Minimum)
         self.enabled_icon.mousePressEvent = self._on_enabled_icon_clicked
-        header_layout.addWidget(self.enabled_icon)
+        header_layout.addWidget(self.enabled_icon, 0)
         main_layout.addLayout(header_layout)
-        self.path_label = None
         self.setLayout(main_layout)
         self.update(data_object)
 
@@ -115,8 +115,6 @@ class BaseWidget(QFrame):
         self._enabled = not self._enabled
         self._update_enabled_icon()
         self._update_stylesheet()
-        self.style().unpolish(self)
-        self.style().polish(self)
         self.enabled_toggled.emit(self._enabled)
         event.accept()
 
@@ -143,15 +141,11 @@ class BaseWidget(QFrame):
         self._selected = selected
         self.setProperty("selected", "true" if selected else "false")
         self._update_stylesheet()
-        self.style().unpolish(self)
-        self.style().polish(self)
 
     def set_dark_theme(self, dark_theme):
         self._dark_theme = dark_theme
         self.setProperty("dark_theme", dark_theme)
         self._update_stylesheet()
-        self.style().unpolish(self)
-        self.style().polish(self)
         for child in self.child_widgets:
             child.set_dark_theme(dark_theme)
 
