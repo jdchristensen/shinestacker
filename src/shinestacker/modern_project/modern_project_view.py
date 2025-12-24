@@ -168,31 +168,21 @@ class ModernProjectView(ProjectView):
                         subaction_widget, 'subaction', job_index, action_index, subaction_index)
 
     def _select_first_action_in_job(self, job_index):
-        if 0 <= job_index < len(self.job_widgets):
-            job_widget = self.job_widgets[job_index]
-            if job_widget.child_widgets:
-                self._select_action(job_index, 0)
+        self._select_action(job_index, 0)
 
     def _select_first_subaction_in_action(self, job_index, action_index):
-        if 0 <= job_index < len(self.job_widgets):
-            job_widget = self.job_widgets[job_index]
-            if 0 <= action_index < job_widget.num_child_widgets():
-                action_widget = job_widget.child_widgets[action_index]
-                if action_widget.child_widgets:
-                    self._select_subaction(job_index, action_index, 0)
+        self._select_subaction(job_index, action_index, 0)
 
     def _has_actions_in_job(self, job_index):
         if 0 <= job_index < len(self.job_widgets):
-            job_widget = self.job_widgets[job_index]
-            return bool(job_widget.child_widgets)
+            return self.job_widgets[job_index].num_child_widgets() > 0
         return False
 
     def _has_subactions_in_action(self, job_index, action_index):
         if 0 <= job_index < len(self.job_widgets):
             job_widget = self.job_widgets[job_index]
             if 0 <= action_index < job_widget.num_child_widgets():
-                action_widget = job_widget.child_widgets[action_index]
-                return bool(action_widget.child_widgets)
+                return job_widget.child_widgets[action_index].num_child_widgets() > 0
         return False
 
     def _select_next_action_or_job(self):
@@ -224,10 +214,10 @@ class ModernProjectView(ProjectView):
         prev_job_index = self.selected_job_index - 1
         if prev_job_index >= 0:
             prev_job_widget = self.job_widgets[prev_job_index]
-            if prev_job_widget.child_widgets:
+            if prev_job_widget.num_child_widgets() > 0:
                 last_action_index = prev_job_widget.num_child_widgets() - 1
                 last_action_widget = prev_job_widget.child_widgets[last_action_index]
-                if last_action_widget.child_widgets:
+                if last_action_widget.num_child_widgets() > 0:
                     last_subaction_index = last_action_widget.num_child_widgets() - 1
                     self._select_subaction(prev_job_index, last_action_index, last_subaction_index)
                 else:
