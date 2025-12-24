@@ -2,7 +2,7 @@
 # pylint: disable=R1716
 import os
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QSplitter, QScrollArea, QDialog, QMessageBox
-from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt, QTimer
 from .. config.constants import constants
 from .. gui.project_view import ProjectView
 from .. gui.gui_logging import QTextEditLogger
@@ -158,6 +158,7 @@ class ModernProjectView(ProjectView):
         if 0 <= job_index < len(self.job_widgets):
             job_widget = self.job_widgets[job_index]
             self._on_widget_clicked(job_widget, 'job', job_index)
+            self._ensure_selected_visible()
 
     def _select_action(self, job_index, action_index):
         if 0 <= job_index < len(self.job_widgets):
@@ -165,6 +166,7 @@ class ModernProjectView(ProjectView):
             if 0 <= action_index < job_widget.num_child_widgets():
                 action_widget = job_widget.child_widgets[action_index]
                 self._on_widget_clicked(action_widget, 'action', job_index, action_index)
+                self._ensure_selected_visible()
 
     def _select_subaction(self, job_index, action_index, subaction_index):
         if 0 <= job_index < len(self.job_widgets):
@@ -175,6 +177,7 @@ class ModernProjectView(ProjectView):
                     subaction_widget = action_widget.child_widgets[subaction_index]
                     self._on_widget_clicked(
                         subaction_widget, 'subaction', job_index, action_index, subaction_index)
+                    self._ensure_selected_visible()
 
     def _select_first_job(self):
         if self.job_widgets:
@@ -244,7 +247,6 @@ class ModernProjectView(ProjectView):
         new_index = self.selected_job_index + 1
         if new_index < len(self.job_widgets):
             self._select_job(new_index)
-            self._ensure_job_visible(new_index)
 
     def _select_previous_job(self):
         if not self.job_widgets:
@@ -252,7 +254,6 @@ class ModernProjectView(ProjectView):
         new_index = self.selected_job_index - 1
         if new_index >= 0:
             self._select_job(new_index)
-            self._ensure_job_visible(new_index)
 
     def _reset_selection(self):
         self.selected_widget = None
@@ -260,24 +261,6 @@ class ModernProjectView(ProjectView):
         self.selected_job_index = -1
         self.selected_action_index = -1
         self.selected_subaction_index = -1
-
-    def _ensure_job_visible(self, job_index):
-        if not self.job_widgets or job_index < 0 or job_index >= len(self.job_widgets):
-            return
-        job_widget = self.job_widgets[job_index]
-        widget_rect = job_widget.geometry()
-        widget_top = widget_rect.top()
-        widget_bottom = widget_rect.bottom()
-        viewport = self.scroll_area.viewport()
-        viewport_height = viewport.height()
-        scroll_bar = self.scroll_area.verticalScrollBar()
-        current_scroll = scroll_bar.value()
-        visible_top = current_scroll
-        visible_bottom = current_scroll + viewport_height
-        if widget_top < visible_top:
-            scroll_bar.setValue(widget_top)
-        elif widget_bottom > visible_bottom:
-            scroll_bar.setValue(widget_bottom - viewport_height)
 
     def clear_job_list(self):
         for widget in self.job_widgets:
@@ -538,6 +521,7 @@ class ModernProjectView(ProjectView):
             self.selected_action_index = new_action_index
             self.selected_subaction_index = -1
             self.refresh_ui()
+            self._ensure_selected_visible()
             return
         if len(self.project().jobs) == 0:
             new_job_index = 0
@@ -549,6 +533,7 @@ class ModernProjectView(ProjectView):
         self.selected_action_index = -1
         self.selected_subaction_index = -1
         self.refresh_ui()
+        self._ensure_selected_visible()
 
     def paste_action(self):
         if not self.has_copy_buffer():
@@ -568,6 +553,7 @@ class ModernProjectView(ProjectView):
         self.selected_action_index = new_action_index
         self.selected_subaction_index = -1
         self.refresh_ui()
+        self._ensure_selected_visible()
 
     def paste_subaction(self):
         if not self.has_copy_buffer():
@@ -591,6 +577,7 @@ class ModernProjectView(ProjectView):
         self.mark_as_modified(True, "Paste Sub-action")
         self.selected_subaction_index = new_subaction_index
         self.refresh_ui()
+        self._ensure_selected_visible()
 
     def paste_element(self):
         if not self.has_copy_buffer():
@@ -601,6 +588,20 @@ class ModernProjectView(ProjectView):
             self.paste_action()
         elif self.selected_widget_type == 'subaction':
             self.paste_subaction()
+
+    def _ensure_selected_visible(self):
+        if not self.selected_widget or not self.scroll_area:
+            return
+        if not self.selected_widget.isVisible() or self.selected_widget.height() == 0:
+            QTimer.singleShot(10, self._ensure_selected_visible)
+            return
+        viewport_height = self.scroll_area.viewport().height()
+        widget_height = self.selected_widget.height()
+        if widget_height <= viewport_height:
+            y_margin = (viewport_height - widget_height) // 2
+        else:
+            y_margin = 0
+        self.scroll_area.ensureWidgetVisible(self.selected_widget, 0, y_margin)
 
     def refresh_ui(self):
         old_job_index = self.selected_job_index
