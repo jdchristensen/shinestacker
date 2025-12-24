@@ -1,9 +1,11 @@
 # pylint: disable=C0114, C0115, C0116, E0611, R0902, R0904, R0913, R0914, R0917, R0912, R0915, E1101
 # pylint: disable=R1716
 import os
+from PySide6.QtCore import Signal
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QSplitter, QScrollArea, QDialog, QMessageBox
 from PySide6.QtCore import Qt, QTimer
 from .. config.constants import constants
+from .. gui.project_model import ActionConfig
 from .. gui.project_view import ProjectView
 from .. gui.gui_logging import QTextEditLogger
 from .. gui.action_config_dialog import ActionConfigDialog
@@ -12,6 +14,8 @@ from .job_widget import JobWidget
 
 class ModernProjectView(ProjectView):
     CLONE_POSTFIX = " (clone)"
+
+    update_delete_action_state_requested = Signal()
 
     def __init__(self, project_holder, dark_theme, parent=None):
         ProjectView.__init__(self, project_holder, dark_theme, parent)
@@ -62,6 +66,9 @@ class ModernProjectView(ProjectView):
             "<h3>ShineStacker console</h3>"
             f"<p><img width=100 src='{ico_path}'></p>"
             "<hr>")
+
+    def connect_signals(self, update_delete_action_state):
+        self.update_delete_action_state_requested.connect(update_delete_action_state)
 
     # pylint: disable=C0103
     def showEvent(self, event):
@@ -115,6 +122,16 @@ class ModernProjectView(ProjectView):
         else:
             super().keyPressEvent(event)
     # pylint: enable=C0103
+
+    def has_selection(self):
+        return self.selected_job_index >= 0
+
+    def has_selected_sub_action(self):
+        if self.selected_widget_type == 'subaction':
+            return True
+        if self.selected_widget_type == 'action' and self.selected_widget is not None:
+            return self.selected_widget.is_combo_action()
+        return False
 
     def _select_next_widget(self):
         if self.selected_widget_type == 'job':
@@ -333,6 +350,7 @@ class ModernProjectView(ProjectView):
         elif widget_type == 'subaction':
             self.selected_action_index = action_index if action_index is not None else -1
             self.selected_subaction_index = subaction_index if subaction_index is not None else -1
+        self.update_delete_action_state_requested.emit()
         self.setFocus()
 
     def _on_job_double_clicked(self, job_index):
@@ -716,6 +734,113 @@ class ModernProjectView(ProjectView):
         else:
             y_margin = 0
         self.scroll_area.ensureWidgetVisible(self.selected_widget, 0, y_margin)
+
+    def move_element_up(self):
+        if self.selected_widget_type == 'job':
+            self._shift_job(-1)
+        elif self.selected_widget_type == 'action':
+            self._shift_action(-1)
+        elif self.selected_widget_type == 'subaction':
+            self._shift_subaction(-1)
+
+    def move_element_down(self):
+        if self.selected_widget_type == 'job':
+            self._shift_job(+1)
+        elif self.selected_widget_type == 'action':
+            self._shift_action(+1)
+        elif self.selected_widget_type == 'subaction':
+            self._shift_subaction(+1)
+
+    def _shift_job(self, delta):
+        job_index = self.selected_job_index
+        if job_index < 0:
+            return
+        new_index = job_index + delta
+        if 0 <= new_index < len(self.project().jobs):
+            self.mark_as_modified(True, "Shift Job")
+            jobs = self.project().jobs
+            jobs.insert(new_index, jobs.pop(job_index))
+            self.selected_job_index = new_index
+            self.selected_action_index = -1
+            self.selected_subaction_index = -1
+            self.refresh_ui()
+
+    def _shift_action(self, delta):
+        job_index = self.selected_job_index
+        action_index = self.selected_action_index
+        if job_index < 0 or action_index < 0:
+            return
+        if 0 <= job_index < len(self.project().jobs):
+            job = self.project().jobs[job_index]
+            new_index = action_index + delta
+            if 0 <= new_index < len(job.sub_actions):
+                self.mark_as_modified(True, "Shift Action")
+                job.sub_actions.insert(new_index, job.sub_actions.pop(action_index))
+                self.selected_action_index = new_index
+                self.selected_subaction_index = -1
+                self.refresh_ui()
+
+    def _shift_subaction(self, delta):
+        job_index = self.selected_job_index
+        action_index = self.selected_action_index
+        subaction_index = self.selected_subaction_index
+        if job_index < 0 or action_index < 0 or subaction_index < 0:
+            return
+        if 0 <= job_index < len(self.project().jobs):
+            job = self.project().jobs[job_index]
+            if 0 <= action_index < len(job.sub_actions):
+                action = job.sub_actions[action_index]
+                if action.type_name == constants.ACTION_COMBO:
+                    new_index = subaction_index + delta
+                    if 0 <= new_index < len(action.sub_actions):
+                        self.mark_as_modified(True, "Shift Sub-action")
+                        action.sub_actions.insert(
+                            new_index, action.sub_actions.pop(subaction_index))
+                        self.selected_subaction_index = new_index
+                        self.refresh_ui()
+
+    def add_action(self, type_name):
+        job_index = self.selected_job_index
+        if job_index < 0:
+            if len(self.project().jobs) > 0:
+                QMessageBox.warning(self.parent(),
+                                    "No Job Selected", "Please select a job first.")
+            else:
+                QMessageBox.warning(self.parent(),
+                                    "No Job Added", "Please add a job first.")
+            return
+        action = ActionConfig(type_name)
+        action.parent = self.project().jobs[job_index]
+        self.action_dialog = ActionConfigDialog(
+            action, self.current_file_directory(), self.parent())
+        if self.action_dialog.exec() == QDialog.Accepted:
+            self.mark_as_modified(True, "Add Action")
+            self.project().jobs[job_index].add_sub_action(action)
+            self.selected_action_index = len(self.project().jobs[job_index].sub_actions) - 1
+            self.selected_subaction_index = -1
+            self.selected_widget_type = 'action'
+            self.refresh_ui()
+
+    def add_sub_action(self, type_name):
+        job_index = self.selected_job_index
+        action_index = self.selected_action_index
+        if job_index < 0 or action_index < 0:
+            return
+        if 0 <= job_index < len(self.project().jobs):
+            job = self.project().jobs[job_index]
+            if 0 <= action_index < len(job.sub_actions):
+                action = job.sub_actions[action_index]
+                if action.type_name != constants.ACTION_COMBO:
+                    return
+                sub_action = ActionConfig(type_name)
+                self.action_dialog = ActionConfigDialog(
+                    sub_action, self.current_file_directory(), self.parent())
+                if self.action_dialog.exec() == QDialog.Accepted:
+                    self.mark_as_modified(True, "Add Sub-action")
+                    action.add_sub_action(sub_action)
+                    self.selected_subaction_index = len(action.sub_actions) - 1
+                    self.selected_widget_type = 'subaction'
+                    self.refresh_ui()
 
     def refresh_ui(self):
         old_job_index = self.selected_job_index

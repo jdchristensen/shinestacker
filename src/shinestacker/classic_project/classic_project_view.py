@@ -3,7 +3,7 @@ import os
 import subprocess
 from PySide6.QtGui import QAction
 from PySide6.QtWidgets import (
-    QWidget, QVBoxLayout, QHBoxLayout, QLabel, QSplitter, QMessageBox, QMenu, QApplication)
+    QWidget, QVBoxLayout, QHBoxLayout, QLabel, QSplitter, QMessageBox, QMenu, QApplication, QDialog)
 from PySide6.QtCore import Qt
 from .. config.constants import constants
 from .. core.core_utils import running_under_windows, running_under_macos
@@ -12,6 +12,8 @@ from .. gui.project_model import (
 from .. gui.project_converter import ProjectConverter
 from .. gui.project_view import ProjectView
 from .. gui.colors import ColorPalette
+from .. gui.action_config_dialog import ActionConfigDialog
+from .. gui.project_model import ActionConfig
 from .tab_widget import TabWidgetWithPlaceholder
 from .gui_run import RunWindow, RunWorker
 from .list_container import ListContainer, ActionPosition
@@ -123,7 +125,6 @@ class ClassicProjectView(ProjectView, ListContainer):
         QApplication.instance().setStyleSheet(
             self.style_dark if dark_theme else self.style_light)
         self._setup_ui()
-        self._connect_signals()
 
     def _setup_ui(self):
         layout = QVBoxLayout(self)
@@ -147,12 +148,10 @@ class ClassicProjectView(ProjectView, ListContainer):
         self.setLayout(layout)
         layout.addWidget(h_splitter)
 
-    def _connect_signals(self):
+    def connect_signals(self, update_delete_action_state):
         self.job_list().currentRowChanged.connect(self.on_job_selected)
-        self.job_list().itemSelectionChanged.connect(
-            self.parent().update_delete_action_state)
-        self.action_list().itemSelectionChanged.connect(
-            self.parent().update_delete_action_state)
+        self.job_list().itemSelectionChanged.connect(update_delete_action_state)
+        self.action_list().itemSelectionChanged.connect(update_delete_action_state)
 
     def get_tab_widget(self):
         return self.tab_widget
@@ -199,6 +198,51 @@ class ClassicProjectView(ProjectView, ListContainer):
 
     def select_first_job(self):
         self.set_current_job(0)
+
+    def has_selected_jobs(self):
+        return self.num_selected_jobs() > 0
+
+    def has_selected_actions(self):
+        return self.num_selected_actions() > 0
+
+    def has_selection(self):
+        return self.has_selected_jobs() or self.has_selected_actions()
+
+    def has_selected_jobs_and_actions(self):
+        return self.has_selected_jobs() and self.has_selected_actions()
+
+    def has_selected_sub_action(self):
+        if self.has_selected_jobs_and_actions():
+            job_index = min(self.current_job_index(), self.num_project_jobs() - 1)
+            action_index = self.current_action_index()
+            if job_index >= 0:
+                job = self.project_job(job_index)
+                current_action, is_sub_action = \
+                    self.get_current_action_at(job, action_index)
+                selected_sub_action = current_action is not None and \
+                    not is_sub_action and current_action.type_name == constants.ACTION_COMBO
+                return selected_sub_action
+        return False
+
+    def get_current_action_at(self, job, action_index):
+        action_counter = -1
+        current_action = None
+        is_sub_action = False
+        for action in job.sub_actions:
+            action_counter += 1
+            if action_counter == action_index:
+                current_action = action
+                break
+            if len(action.sub_actions) > 0:
+                for sub_action in action.sub_actions:
+                    action_counter += 1
+                    if action_counter == action_index:
+                        current_action = sub_action
+                        is_sub_action = True
+                        break
+                if current_action:
+                    break
+        return current_action, is_sub_action
 
     def create_new_window(self, title, labels, retouch_paths):
         new_window = RunWindow(labels,
@@ -521,6 +565,95 @@ class ClassicProjectView(ProjectView, ListContainer):
 
     def disable_all(self):
         self.set_enabled_all(False)
+
+    def shift_job(self, delta):
+        job_index = self.current_job_index()
+        if job_index < 0:
+            return
+        new_index = job_index + delta
+        if 0 <= new_index < self.num_project_jobs():
+            jobs = self.project_jobs()
+            self.mark_as_modified(True, "Shift Job")
+            jobs.insert(new_index, jobs.pop(job_index))
+            self.refresh_ui_signal.emit(new_index, -1)
+
+    def shift_action(self, delta):
+        job_row, action_row, pos = self.get_current_action()
+        if pos is not None:
+            if not pos.is_sub_action:
+                new_index = pos.action_index + delta
+                if 0 <= new_index < len(pos.actions):
+                    self.mark_as_modified(True, "Shift Action")
+                    pos.actions.insert(new_index, pos.actions.pop(pos.action_index))
+            else:
+                new_index = pos.sub_action_index + delta
+                if 0 <= new_index < len(pos.sub_actions):
+                    self.mark_as_modified(True, "Shift Sub-action")
+                    pos.sub_actions.insert(new_index, pos.sub_actions.pop(pos.sub_action_index))
+            new_row = new_row_after_insert(action_row, pos, delta)
+            self.refresh_ui_signal.emit(job_row, new_row)
+
+    def move_element_up(self):
+        if self.job_list_has_focus():
+            self.shift_job(-1)
+        elif self.action_list_has_focus():
+            self.shift_action(-1)
+
+    def move_element_down(self):
+        if self.job_list_has_focus():
+            self.shift_job(+1)
+        elif self.action_list_has_focus():
+            self.shift_action(+1)
+
+    def add_action(self, type_name):
+        current_index = self.current_job_index()
+        if current_index < 0:
+            if self.num_project_jobs() > 0:
+                QMessageBox.warning(self.parent(),
+                                    "No Job Selected", "Please select a job first.")
+            else:
+                QMessageBox.warning(self.parent(),
+                                    "No Job Added", "Please add a job first.")
+            return False
+        action = ActionConfig(type_name)
+        action.parent = self.get_current_job()
+        self.action_dialog = ActionConfigDialog(
+            action, self.current_file_directory(), self.parent())
+        if self.action_dialog.exec() == QDialog.Accepted:
+            self.mark_as_modified("Add Action")
+            self.project_job(current_index).add_sub_action(action)
+            self.add_list_item(self.action_list(), action, False)
+            return True
+        return False
+
+    def add_sub_action(self, type_name):
+        current_job_index = self.current_job_index()
+        current_action_index = self.current_action_index()
+        if current_job_index < 0 or current_action_index < 0 or \
+           current_job_index >= self.num_project_jobs():
+            return False
+        job = self.project_job(current_job_index)
+        action = None
+        action_counter = -1
+        for act in job.sub_actions:
+            action_counter += 1
+            if action_counter == current_action_index:
+                action = act
+                break
+            action_counter += len(act.sub_actions)
+        if not action or action.type_name != constants.ACTION_COMBO:
+            return False
+        sub_action = ActionConfig(type_name)
+        self.action_dialog = ActionConfigDialog(
+            sub_action, self.current_file_directory(), self.parent())
+        if self.action_dialog.exec() == QDialog.Accepted:
+            self.mark_as_modified("Add Sub-action")
+            action.add_sub_action(sub_action)
+            self.on_job_selected(current_job_index)
+            self.set_current_action(current_action_index)
+            self.action_list_item(current_action_index).setSelected(True)
+            return True
+        return False
 
     # pylint: disable=C0103
     def contextMenuEvent(self, event):

@@ -12,11 +12,12 @@ from .. gui.recent_file_manager import RecentFileManager
 class MenuManager(QObject):
     open_file_requested = Signal(str)
 
-    def __init__(self, menubar, actions, project_editor, dark_theme, parent):
+    def __init__(self, menubar, actions, add_action, add_sub_action, dark_theme, parent):
         super().__init__(parent)
         self.script_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "gui")
         self._recent_file_manager = RecentFileManager("shinestacker-recent-project-files.txt")
-        self.project_editor = project_editor
+        self.add_action = add_action
+        self.add_sub_action = add_sub_action
         self.dark_theme = dark_theme
         self.parent = parent
         self.menubar = menubar
@@ -238,15 +239,14 @@ class MenuManager(QObject):
         self.add_actions_menu()
         self.add_help_menu()
 
-    def add_action(self, type_name=False):
-        if type_name is False:
-            type_name = self.action_selector.currentText()
-        self.project_editor.add_action(type_name)
+    def perform_add_action(self):
+        type_name = self.action_selector.currentText()
+        if self.add_action(type_name):
+            self.delete_element_action.setEnabled(False)
 
-    def add_sub_action(self, type_name=False):
-        if type_name is False:
-            type_name = self.sub_action_selector.currentText()
-        self.project_editor.add_sub_action(type_name)
+    def perform_add_sub_action(self):
+        type_name = self.sub_action_selector.currentText()
+        self.add_sub_action(type_name)
 
     def save_actions_set_enabled(self, enabled):
         self.save_action.setEnabled(enabled)
@@ -290,7 +290,7 @@ class MenuManager(QObject):
         self.add_action_entry_action.setIcon(
             self.get_icon("plus-round-line-icon"))
         self.add_action_entry_action.setToolTip("Add action")
-        self.add_action_entry_action.triggered.connect(self.add_action)
+        self.add_action_entry_action.triggered.connect(self.perform_add_action)
         self.add_action_entry_action.setEnabled(False)
         toolbar.addAction(self.add_action_entry_action)
         self.sub_action_selector = QComboBox()
@@ -301,7 +301,7 @@ class MenuManager(QObject):
         self.add_sub_action_entry_action.setIcon(
             self.get_icon("plus-round-line-icon"))
         self.add_sub_action_entry_action.setToolTip("Add sub action")
-        self.add_sub_action_entry_action.triggered.connect(self.add_sub_action)
+        self.add_sub_action_entry_action.triggered.connect(self.perform_add_sub_action)
         self.add_sub_action_entry_action.setEnabled(False)
         toolbar.addAction(self.add_sub_action_entry_action)
         toolbar.addSeparator()

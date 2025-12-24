@@ -33,8 +33,10 @@ class MainWindow(ProjectIOHandler, QMainWindow):
         self.classic_project_editor = ClassicProjectEditor(self.project_holder, self)
         dark_theme = self.is_dark_theme()
         self.classic_view = ClassicProjectView(self.project_holder, dark_theme, self)
+        self.classic_view.connect_signals(self.update_delete_action_state)
         self.classic_project_editor.set_lists(*self.classic_view.get_lists())
         self.modern_view = ModernProjectView(self.project_holder, dark_theme, self)
+        self.modern_view.connect_signals(self.update_delete_action_state)
         self.views = {
             'classic': self.classic_view,
             'modern': self.modern_view
@@ -58,8 +60,8 @@ class MainWindow(ProjectIOHandler, QMainWindow):
             "&Paste": self.paste_element,
             "Duplicate": self.clone_element,
             "Delete": self.delete_element,
-            "Move &Up": self.classic_project_editor.move_element_up,
-            "Move &Down": self.classic_project_editor.move_element_down,
+            "Move &Up": self.move_element_up,
+            "Move &Down": self.move_element_down,
             "E&nable": self.enable,
             "Di&sable": self.disable,
             "Enable All": self.enable_all,
@@ -73,7 +75,7 @@ class MainWindow(ProjectIOHandler, QMainWindow):
             "Modern View": lambda: self.set_view('modern')
         }
         self.menu_manager = MenuManager(
-            self.menuBar(), actions, self.classic_project_editor, dark_theme, self)
+            self.menuBar(), actions, self.add_action, self.add_sub_action, dark_theme, self)
         for _k, v in self.views.items():
             v.set_menu_manager(self.menu_manager)
         self.script_dir = os.path.dirname(__file__)
@@ -107,8 +109,6 @@ class MainWindow(ProjectIOHandler, QMainWindow):
         self.classic_project_editor.refresh_ui_signal.connect(self.classic_view.refresh_ui)
         self.classic_view.refresh_ui_signal.connect(self.refresh_ui)
         self.modern_view.refresh_ui_signal.connect(self.refresh_ui)
-        self.classic_project_editor.enable_delete_action_signal.connect(
-            self.menu_manager.delete_element_action.setEnabled)
         self._undo_manager.set_enabled_undo_action_requested.connect(
             self.menu_manager.set_enabled_undo_action)
         self.classic_project_editor.enable_sub_actions_requested.connect(
@@ -360,11 +360,23 @@ class MainWindow(ProjectIOHandler, QMainWindow):
     def disable_all(self):
         self.current_view.disable_all()
 
+    def move_element_up(self):
+        self.current_view.move_element_up()
+
+    def move_element_down(self):
+        self.current_view.move_element_down()
+
+    def add_action(self, type_name):
+        return self.current_view.add_action(type_name)
+
+    def add_sub_action(self, type_name):
+        return self.current_view.add_sub_action(type_name)
+
     def update_delete_action_state(self):
         self.menu_manager.delete_element_action.setEnabled(
-            self.classic_project_editor.has_selection())
+            self.current_view.has_selection())
         self.menu_manager.set_enabled_sub_actions_gui(
-            self.classic_project_editor.has_selected_sub_action())
+            self.current_view.has_selected_sub_action())
 
     def set_enabled_file_open_close_actions(self, enabled):
         for action in self.findChildren(QAction):
