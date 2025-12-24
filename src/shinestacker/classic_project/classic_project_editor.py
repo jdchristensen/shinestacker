@@ -6,6 +6,12 @@ from .. gui.project_editor import ProjectEditor
 from .list_container import ListContainer, ActionPosition
 
 
+def new_row_after_clone(job, action_row, is_sub_action, cloned):
+    return action_row + 1 if is_sub_action else \
+        sum(1 + len(action.sub_actions)
+            for action in job.sub_actions[:job.sub_actions.index(cloned)])
+
+
 def new_row_after_insert(action_row, pos: ActionPosition, delta):
     new_row = action_row
     if not pos.is_sub_action:
@@ -21,16 +27,6 @@ def new_row_after_insert(action_row, pos: ActionPosition, delta):
             for action in pos.actions[:pos.action_index]:
                 new_row += 1 + len(action.sub_actions)
     return new_row
-
-
-def new_row_after_paste(action_row, pos: ActionPosition):
-    return new_row_after_insert(action_row, pos, 0)
-
-
-def new_row_after_clone(job, action_row, is_sub_action, cloned):
-    return action_row + 1 if is_sub_action else \
-        sum(1 + len(action.sub_actions)
-            for action in job.sub_actions[:job.sub_actions.index(cloned)])
 
 
 class ClassicProjectEditor(ProjectEditor, ListContainer):
@@ -174,40 +170,6 @@ class ClassicProjectEditor(ProjectEditor, ListContainer):
                     self.refresh_ui_signal.emit(-1, -1)
                     self.set_current_job(job_index)
                     self.set_current_action(action_index)
-
-    def paste_job(self):
-        if self.copy_buffer().type_name != constants.ACTION_JOB:
-            return
-        new_job_index = min(max(self.current_job_index(), 0), self.num_project_jobs() - 1)
-        self.mark_as_modified(True, "Paste Job")
-        self.project_jobs().insert(new_job_index, self.copy_buffer())
-        self.set_current_job(new_job_index)
-        self.set_current_action(new_job_index)
-        self.refresh_ui_signal.emit(new_job_index, -1)
-
-    def paste_action(self):
-        job_row, action_row, pos = self.get_current_action()
-        if pos is not None and pos.actions is not None:
-            if not pos.is_sub_action:
-                if self.copy_buffer().type_name not in constants.ACTION_TYPES:
-                    return
-                self.mark_as_modified(True, "Paste Action")
-                pos.actions.insert(pos.action_index, self.copy_buffer())
-            else:
-                if pos.action.type_name != constants.ACTION_COMBO or \
-                   self.copy_buffer().type_name not in constants.SUB_ACTION_TYPES:
-                    return
-                self.mark_as_modified(True, "Paste Sub-action")
-                pos.sub_actions.insert(pos.sub_action_index, self.copy_buffer())
-            new_row = new_row_after_paste(action_row, pos)
-            self.refresh_ui_signal.emit(job_row, new_row)
-
-    def paste_element(self):
-        if self.has_copy_buffer():
-            if self.job_list_has_focus():
-                self.paste_job()
-            elif self.action_list_has_focus():
-                self.paste_action()
 
     def cut_element(self):
         self.set_copy_buffer(self.delete_element(False))

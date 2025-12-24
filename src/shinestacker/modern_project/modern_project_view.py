@@ -3,6 +3,7 @@
 import os
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QSplitter, QScrollArea, QDialog, QMessageBox
 from PySide6.QtCore import Qt
+from .. config.constants import constants
 from .. gui.project_view import ProjectView
 from .. gui.gui_logging import QTextEditLogger
 from .. gui.action_config_dialog import ActionConfigDialog
@@ -521,12 +522,120 @@ class ModernProjectView(ProjectView):
         elif self.selected_widget_type == 'subaction':
             self.copy_subaction()
 
+    def paste_job(self):
+        if not self.has_copy_buffer():
+            return
+        copy_buffer = self.copy_buffer()
+        if copy_buffer.type_name != constants.ACTION_JOB:
+            if len(self.project().jobs) == 0:
+                return
+            if copy_buffer.type_name not in constants.ACTION_TYPES:
+                return
+            current_job = self.project().jobs[self.selected_job_index]
+            new_action_index = len(current_job.sub_actions)
+            current_job.sub_actions.insert(new_action_index, copy_buffer.clone())
+            self.mark_as_modified(True, "Paste Action")
+            self.selected_action_index = new_action_index
+            self.selected_subaction_index = -1
+            self.refresh_ui()
+            return
+        if len(self.project().jobs) == 0:
+            new_job_index = 0
+        else:
+            new_job_index = min(max(self.selected_job_index + 1, 0), len(self.project().jobs))
+        self.mark_as_modified(True, "Paste Job")
+        self.project().jobs.insert(new_job_index, copy_buffer.clone())
+        self.selected_job_index = new_job_index
+        self.selected_action_index = -1
+        self.selected_subaction_index = -1
+        self.refresh_ui()
+
+    def paste_action(self):
+        if not self.has_copy_buffer():
+            return
+        if self.selected_job_index < 0:
+            return
+        copy_buffer = self.copy_buffer()
+        if copy_buffer.type_name not in constants.ACTION_TYPES:
+            return
+        job = self.project().jobs[self.selected_job_index]
+        if self.selected_action_index >= 0:
+            new_action_index = self.selected_action_index + 1
+        else:
+            new_action_index = len(job.sub_actions)
+        job.sub_actions.insert(new_action_index, copy_buffer.clone())
+        self.mark_as_modified(True, "Paste Action")
+        self.selected_action_index = new_action_index
+        self.selected_subaction_index = -1
+        self.refresh_ui()
+
+    def paste_subaction(self):
+        if not self.has_copy_buffer():
+            return
+        if self.selected_job_index < 0 or self.selected_action_index < 0:
+            return
+        copy_buffer = self.copy_buffer()
+        job = self.project().jobs[self.selected_job_index]
+        if self.selected_action_index >= len(job.sub_actions):
+            return
+        action = job.sub_actions[self.selected_action_index]
+        if action.type_name != constants.ACTION_COMBO:
+            return
+        if copy_buffer.type_name not in constants.SUB_ACTION_TYPES:
+            return
+        if self.selected_subaction_index >= 0:
+            new_subaction_index = self.selected_subaction_index + 1
+        else:
+            new_subaction_index = len(action.sub_actions)
+        action.sub_actions.insert(new_subaction_index, copy_buffer.clone())
+        self.mark_as_modified(True, "Paste Sub-action")
+        self.selected_subaction_index = new_subaction_index
+        self.refresh_ui()
+
+    def paste_element(self):
+        if not self.has_copy_buffer():
+            return
+        if self.selected_widget_type == 'job':
+            self.paste_job()
+        elif self.selected_widget_type == 'action':
+            self.paste_action()
+        elif self.selected_widget_type == 'subaction':
+            self.paste_subaction()
+
     def refresh_ui(self):
+        old_job_index = self.selected_job_index
+        old_action_index = self.selected_action_index
+        old_subaction_index = self.selected_subaction_index
+        old_widget_type = self.selected_widget_type
         self.clear_job_list()
         for job in self.project_jobs():
             self.add_job_widget(job)
         ProjectView.refresh_ui(self)
-        if len(self.job_widgets) > 0:
+        if old_widget_type == 'job' and 0 <= old_job_index < len(self.job_widgets):
+            self._select_job(old_job_index)
+        elif old_widget_type == 'action' and 0 <= old_job_index < len(self.job_widgets):
+            job_widget = self.job_widgets[old_job_index]
+            if 0 <= old_action_index < job_widget.num_child_widgets():
+                self._select_action(old_job_index, old_action_index)
+            elif job_widget.num_child_widgets() > 0:
+                self._select_action(old_job_index, 0)
+            else:
+                self._select_job(old_job_index)
+        elif old_widget_type == 'subaction' and 0 <= old_job_index < len(self.job_widgets):
+            job_widget = self.job_widgets[old_job_index]
+            if 0 <= old_action_index < job_widget.num_child_widgets():
+                action_widget = job_widget.child_widgets[old_action_index]
+                if 0 <= old_subaction_index < action_widget.num_child_widgets():
+                    self._select_subaction(old_job_index, old_action_index, old_subaction_index)
+                elif action_widget.num_child_widgets() > 0:
+                    self._select_subaction(old_job_index, old_action_index, 0)
+                else:
+                    self._select_action(old_job_index, old_action_index)
+            elif job_widget.num_child_widgets() > 0:
+                self._select_action(old_job_index, 0)
+            else:
+                self._select_job(old_job_index)
+        elif len(self.job_widgets) > 0:
             self._select_job(0)
         else:
             self._reset_selection()

@@ -32,6 +32,27 @@ def new_row_after_delete(action_row, pos: ActionPosition):
     return new_row
 
 
+def new_row_after_paste(action_row, pos: ActionPosition):
+    return new_row_after_insert(action_row, pos, 0)
+
+
+def new_row_after_insert(action_row, pos: ActionPosition, delta):
+    new_row = action_row
+    if not pos.is_sub_action:
+        new_index = pos.action_index + delta
+        if 0 <= new_index < len(pos.actions):
+            new_row = 0
+            for action in pos.actions[:new_index]:
+                new_row += 1 + len(action.sub_actions)
+    else:
+        new_index = pos.sub_action_index + delta
+        if 0 <= new_index < len(pos.sub_actions):
+            new_row = 1 + new_index
+            for action in pos.actions[:pos.action_index]:
+                new_row += 1 + len(action.sub_actions)
+    return new_row
+
+
 class JobLogWorker(RunWorker):
     def __init__(self, job, id_str):
         super().__init__(id_str)
@@ -360,6 +381,55 @@ class ClassicProjectView(ProjectView, ListContainer):
             self.copy_job()
         elif self.action_list_has_focus():
             self.copy_action()
+
+    def paste_job(self):
+        if self.copy_buffer().type_name != constants.ACTION_JOB:
+            if self.num_project_jobs() == 0:
+                return
+            if self.copy_buffer().type_name not in constants.ACTION_TYPES:
+                return
+            current_job = self.project_job(self.current_job_index())
+            new_action_index = len(current_job.sub_actions)
+            current_job.sub_actions.insert(new_action_index, self.copy_buffer())
+            self.set_current_action(new_action_index)
+            self.refresh_ui(self.current_job_index(), -1)
+            return
+        if self.num_project_jobs() == 0:
+            new_job_index = 0
+        else:
+            new_job_index = min(max(self.current_job_index() + 1, 0), self.num_project_jobs() - 1)
+        self.mark_as_modified(True, "Paste Job")
+        self.project_jobs().insert(new_job_index, self.copy_buffer())
+        self.set_current_job(new_job_index)
+        self.set_current_action(new_job_index)
+        self.refresh_ui(new_job_index, -1)
+
+    def paste_action(self):
+        job_row, action_row, pos = self.get_current_action()
+        print("paste: ", pos)
+        if pos is not None and pos.actions is not None:
+            if not pos.is_sub_action:
+                if self.copy_buffer().type_name not in constants.ACTION_TYPES:
+                    return
+                new_action_index = 0 if len(pos.actions) == 0 else pos.action_index + 1
+                self.mark_as_modified(True, "Paste Action")
+                pos.actions.insert(new_action_index, self.copy_buffer())
+            else:
+                if pos.action.type_name != constants.ACTION_COMBO or \
+                   self.copy_buffer().type_name not in constants.SUB_ACTION_TYPES:
+                    return
+                self.mark_as_modified(True, "Paste Sub-action")
+                new_sub_action_index = 0 if len(pos.sub_actions) == 0 else pos.sub_actions + 1
+                pos.sub_actions.insert(new_sub_action_index, self.copy_buffer())
+            new_row = new_row_after_paste(action_row, pos)
+            self.refresh_ui(job_row, new_row)
+
+    def paste_element(self):
+        if self.has_copy_buffer():
+            if self.job_list_has_focus():
+                self.paste_job()
+            elif self.action_list_has_focus():
+                self.paste_action()
 
     # pylint: disable=C0103
     def contextMenuEvent(self, event):
