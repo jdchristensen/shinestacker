@@ -26,17 +26,17 @@ class BaseWidget(QFrame):
     def num_child_widgets(self):
         return len(self.child_widgets)
 
-        def _init_widget(self, data_object):
-            self.setMinimumHeight(self.min_height)
-            layout = QVBoxLayout(self)
-            layout.setContentsMargins(8, 8, 8, 8)
-            layout.setSpacing(2)
-            self.name_label = QLabel()
-            self.name_label.setAlignment(Qt.AlignLeft | Qt.AlignTop)
-            layout.addWidget(self.name_label)
-            self.path_label = None
-            self.setLayout(layout)
-            self.update(data_object)
+    def _init_widget(self, data_object):
+        self.setMinimumHeight(self.min_height)
+        layout = QVBoxLayout(self)
+        layout.setContentsMargins(8, 8, 8, 8)
+        layout.setSpacing(2)
+        self.name_label = QLabel()
+        self.name_label.setAlignment(Qt.AlignLeft | Qt.AlignTop)
+        layout.addWidget(self.name_label)
+        self.path_label = None
+        self.setLayout(layout)
+        self.update(data_object)
 
     def widget_type(self):
         return ''

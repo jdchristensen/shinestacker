@@ -127,11 +127,23 @@ class ModernProjectView(ProjectView):
 
     def _select_previous_widget(self):
         if self.selected_widget_type == 'subaction':
-            self._select_action(self.selected_job_index, self.selected_action_index)
+            if self.selected_subaction_index > 0:
+                self._select_subaction(
+                    self.selected_job_index, self.selected_action_index,
+                    self.selected_subaction_index - 1
+                )
+            else:
+                self._select_action(self.selected_job_index, self.selected_action_index)
         elif self.selected_widget_type == 'action':
-            self._select_job(self.selected_job_index)
+            if self.selected_action_index > 0:
+                self._select_action(
+                    self.selected_job_index, self.selected_action_index - 1
+                )
+            else:
+                self._select_job(self.selected_job_index)
         elif self.selected_widget_type == 'job':
-            self._select_previous_job_last_widget()
+            if self.selected_job_index > 0:
+                self._select_job(self.selected_job_index - 1)
 
     def _select_job(self, job_index):
         if 0 <= job_index < len(self.job_widgets):
