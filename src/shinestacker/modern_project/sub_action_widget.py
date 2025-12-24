@@ -3,12 +3,12 @@ from .base_widget import BaseWidget
 
 
 class SubActionWidget(BaseWidget):
-    def __init__(self, sub_action, dark_theme=False, parent=None):
-        super().__init__(sub_action, 35, dark_theme, parent)
+    def __init__(self, data_object, dark_theme=False, parent=None):
+        super().__init__(data_object, 35, dark_theme, parent)
 
     def widget_type(self):
         return 'SubActionWidget'
 
-    def update(self, sub_action):
-        name = f"<b>{sub_action.params['name']}</b> [{sub_action.type_name}]"
+    def update(self, data_object):
+        name = f"<b>{data_object.params['name']}</b> [{data_object.type_name}]"
         self.set_name(name)
