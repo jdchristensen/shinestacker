@@ -28,8 +28,7 @@ class MainWindow(ProjectIOHandler, QMainWindow):
     def __init__(self):
         QMainWindow.__init__(self)
         self._undo_manager = ProjectUndoManager()
-        project_holder = ProjectHolder(self._undo_manager)
-        ProjectIOHandler.__init__(self, project_holder)
+        ProjectIOHandler.__init__(self, ProjectHolder(self._undo_manager))
         self.setObjectName("mainWindow")
         self.classic_project_editor = ClassicProjectEditor(self.project_holder, self)
         dark_theme = self.is_dark_theme()
@@ -54,7 +53,7 @@ class MainWindow(ProjectIOHandler, QMainWindow):
             "&Save": self.save_project,
             "Save &As...": self.save_project_as,
             "&Undo": self.perform_undo,
-            "&Cut": self.classic_project_editor.cut_element,
+            "&Cut": self.cut_element,
             "Cop&y": self.copy_element,
             "&Paste": self.paste_element,
             "Duplicate": self.classic_project_editor.clone_element,
@@ -342,6 +341,9 @@ class MainWindow(ProjectIOHandler, QMainWindow):
 
     def paste_element(self):
         self.current_view.paste_element()
+
+    def cut_element(self):
+        self.current_view.cut_element()
 
     def update_delete_action_state(self):
         self.menu_manager.delete_element_action.setEnabled(

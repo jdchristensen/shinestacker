@@ -171,9 +171,6 @@ class ClassicProjectEditor(ProjectEditor, ListContainer):
                     self.set_current_job(job_index)
                     self.set_current_action(action_index)
 
-    def cut_element(self):
-        self.set_copy_buffer(self.delete_element(False))
-
     def refresh_and_set_status(self, status):
         job_row, action_row, _pos = status
         self.refresh_ui_signal.emit(job_row, action_row)

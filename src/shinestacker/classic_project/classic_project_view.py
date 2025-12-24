@@ -406,7 +406,6 @@ class ClassicProjectView(ProjectView, ListContainer):
 
     def paste_action(self):
         job_row, action_row, pos = self.get_current_action()
-        print("paste: ", pos)
         if pos is not None and pos.actions is not None:
             if not pos.is_sub_action:
                 if self.copy_buffer().type_name not in constants.ACTION_TYPES:
@@ -419,7 +418,7 @@ class ClassicProjectView(ProjectView, ListContainer):
                    self.copy_buffer().type_name not in constants.SUB_ACTION_TYPES:
                     return
                 self.mark_as_modified(True, "Paste Sub-action")
-                new_sub_action_index = 0 if len(pos.sub_actions) == 0 else pos.sub_actions + 1
+                new_sub_action_index = 0 if len(pos.sub_actions) == 0 else len(pos.sub_actions) + 1
                 pos.sub_actions.insert(new_sub_action_index, self.copy_buffer())
             new_row = new_row_after_paste(action_row, pos)
             self.refresh_ui(job_row, new_row)
@@ -430,6 +429,9 @@ class ClassicProjectView(ProjectView, ListContainer):
                 self.paste_job()
             elif self.action_list_has_focus():
                 self.paste_action()
+
+    def cut_element(self):
+        self.set_copy_buffer(self.delete_element(False))
 
     # pylint: disable=C0103
     def contextMenuEvent(self, event):

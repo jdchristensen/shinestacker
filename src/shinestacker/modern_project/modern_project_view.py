@@ -322,10 +322,15 @@ class ModernProjectView(ProjectView):
         self.selected_widget = widget
         self.selected_widget_type = widget_type
         self.selected_job_index = job_index
-        if action_index is not None:
-            self.selected_action_index = action_index
-        if subaction_index is not None:
-            self.selected_subaction_index = subaction_index
+        if widget_type == 'job':
+            self.selected_action_index = -1
+            self.selected_subaction_index = -1
+        elif widget_type == 'action':
+            self.selected_action_index = action_index if action_index is not None else -1
+            self.selected_subaction_index = -1
+        elif widget_type == 'subaction':
+            self.selected_action_index = action_index if action_index is not None else -1
+            self.selected_subaction_index = subaction_index if subaction_index is not None else -1
         self.setFocus()
 
     def _on_job_double_clicked(self, job_index):
@@ -423,8 +428,8 @@ class ModernProjectView(ProjectView):
             if not confirm or reply == QMessageBox.Yes:
                 self.mark_as_modified(True, "Delete Job")
                 deleted_job = self.project().jobs.pop(job_index)
+                self._select_previous_widget()
                 self.refresh_ui()
-                self._reset_selection()
                 return deleted_job
         return None
 
@@ -436,7 +441,7 @@ class ModernProjectView(ProjectView):
                 if confirm:
                     reply = QMessageBox.question(
                         self.parent(), "Confirm Delete",
-                        f"Are you sure you want to delete action "
+                        "Are you sure you want to delete action "
                         f"'{action.params.get('name', '')}'?",
                         QMessageBox.Yes | QMessageBox.No
                     )
@@ -445,8 +450,8 @@ class ModernProjectView(ProjectView):
                 if not confirm or reply == QMessageBox.Yes:
                     self.mark_as_modified(True, "Delete Action")
                     deleted_action = job.pop_sub_action(action_index)
+                    self._select_previous_widget()
                     self.refresh_ui()
-                    self._reset_selection()
                     return deleted_action
         return None
 
@@ -460,7 +465,7 @@ class ModernProjectView(ProjectView):
                     if confirm:
                         reply = QMessageBox.question(
                             self.parent(), "Confirm Delete",
-                            f"Are you sure you want to delete sub-action "
+                            "Are you sure you want to delete sub-action "
                             f"'{subaction.params.get('name', '')}'?",
                             QMessageBox.Yes | QMessageBox.No
                         )
@@ -469,8 +474,8 @@ class ModernProjectView(ProjectView):
                     if not confirm or reply == QMessageBox.Yes:
                         self.mark_as_modified(True, "Delete Sub-action")
                         deleted_subaction = action.pop_sub_action(subaction_index)
+                        self._select_previous_widget()
                         self.refresh_ui()
-                        self._reset_selection()
                         return deleted_subaction
         return None
 
@@ -572,7 +577,7 @@ class ModernProjectView(ProjectView):
         if self.selected_subaction_index >= 0:
             new_subaction_index = self.selected_subaction_index + 1
         else:
-            new_subaction_index = len(action.sub_actions)
+            new_subaction_index = 0
         action.sub_actions.insert(new_subaction_index, copy_buffer.clone())
         self.mark_as_modified(True, "Paste Sub-action")
         self.selected_subaction_index = new_subaction_index
@@ -582,12 +587,19 @@ class ModernProjectView(ProjectView):
     def paste_element(self):
         if not self.has_copy_buffer():
             return
-        if self.selected_widget_type == 'job':
+        copy_buffer = self.copy_buffer()
+        if copy_buffer.type_name in constants.SUB_ACTION_TYPES:
+            self.paste_subaction()
+        elif self.selected_widget_type == 'job':
             self.paste_job()
         elif self.selected_widget_type == 'action':
             self.paste_action()
         elif self.selected_widget_type == 'subaction':
-            self.paste_subaction()
+            self.paste_action()
+
+    def cut_element(self):
+        element = self.delete_element(False)
+        self.set_copy_buffer(element)
 
     def _ensure_selected_visible(self):
         if not self.selected_widget or not self.scroll_area:
