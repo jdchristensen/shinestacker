@@ -660,6 +660,49 @@ class ModernProjectView(ProjectView):
         elif self.selected_widget_type == 'subaction':
             self.clone_action()
 
+    def disable(self):
+        self.set_enabled(False)
+
+    def enable(self):
+        self.set_enabled(True)
+
+    def disable_all(self):
+        self.set_enabled_all(False)
+
+    def enable_all(self):
+        self.set_enabled_all(True)
+
+    def set_enabled(self, enabled):
+        self._set_enabled(self.selected_job_index, self.selected_action_index,
+                          self.selected_subaction_index, enabled)
+
+    def set_enabled_all(self, enabled):
+        for job in self.project().jobs:
+            job.set_enabled_all(enabled)
+        self.mark_as_modified(True, f"{'Enable' if enabled else 'Disable'} All")
+        self.refresh_ui()
+
+    def _set_enabled(self, job_idx, action_idx, subaction_idx, enabled):
+        if job_idx < 0:
+            return
+        if subaction_idx >= 0:
+            if (0 <= job_idx < len(self.project().jobs) and
+                    0 <= action_idx < len(self.project().jobs[job_idx].sub_actions)):
+                action = self.project().jobs[job_idx].sub_actions[action_idx]
+                if 0 <= subaction_idx < len(action.sub_actions):
+                    action.sub_actions[subaction_idx].set_enabled(enabled)
+                    self.mark_as_modified(True, f"{'Enable' if enabled else 'Disable'} Sub-action")
+        elif action_idx >= 0:
+            if 0 <= job_idx < len(self.project().jobs) and \
+                    0 <= action_idx < len(self.project().jobs[job_idx].sub_actions):
+                self.project().jobs[job_idx].sub_actions[action_idx].set_enabled(enabled)
+                self.mark_as_modified(True, f"{'Enable' if enabled else 'Disable'} Action")
+        else:
+            if 0 <= job_idx < len(self.project().jobs):
+                self.project().jobs[job_idx].set_enabled(enabled)
+                self.mark_as_modified(True, f"{'Enable' if enabled else 'Disable'} Job")
+        self.refresh_ui()
+
     def _ensure_selected_visible(self):
         if not self.selected_widget or not self.scroll_area:
             return

@@ -60,10 +60,10 @@ class MainWindow(ProjectIOHandler, QMainWindow):
             "Delete": self.delete_element,
             "Move &Up": self.classic_project_editor.move_element_up,
             "Move &Down": self.classic_project_editor.move_element_down,
-            "E&nable": self.classic_project_editor.enable,
-            "Di&sable": self.classic_project_editor.disable,
-            "Enable All": self.classic_project_editor.enable_all,
-            "Disable All": self.classic_project_editor.disable_all,
+            "E&nable": self.enable,
+            "Di&sable": self.disable,
+            "Enable All": self.enable_all,
+            "Disable All": self.disable_all,
             "Expert Options": self.toggle_expert_options,
             "Add Job": self.perform_add_job,
             "Run Job": lambda: self.view_stack.currentWidget().run_job(),
@@ -347,6 +347,18 @@ class MainWindow(ProjectIOHandler, QMainWindow):
 
     def clone_element(self):
         self.current_view.clone_element()
+
+    def enable(self):
+        self.current_view.enable()
+
+    def disable(self):
+        self.current_view.disable()
+
+    def enable_all(self):
+        self.current_view.enable_all()
+
+    def disable_all(self):
+        self.current_view.disable_all()
 
     def update_delete_action_state(self):
         self.menu_manager.delete_element_action.setEnabled(

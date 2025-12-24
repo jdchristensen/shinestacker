@@ -481,6 +481,47 @@ class ClassicProjectView(ProjectView, ListContainer):
         elif self.action_list_has_focus():
             self.clone_action()
 
+    def set_enabled(self, enabled):
+        current_action = None
+        if self.job_list_has_focus():
+            job_row = self.current_job_index()
+            if 0 <= job_row < self.num_project_jobs():
+                current_action = self.project_job(job_row)
+            action_row = -1
+        elif self.action_list_has_focus():
+            job_row, action_row, pos = self.get_current_action()
+            current_action = pos.sub_action if pos.is_sub_action else pos.action
+        else:
+            action_row = -1
+        if current_action:
+            if current_action.enabled() != enabled:
+                if enabled:
+                    self.mark_as_modified(True, "Enable")
+                else:
+                    self.mark_as_modified(True, "Disable")
+                current_action.set_enabled(enabled)
+                self.refresh_ui_signal.emit(job_row, action_row)
+
+    def enable(self):
+        self.set_enabled(True)
+
+    def disable(self):
+        self.set_enabled(False)
+
+    def set_enabled_all(self, enable=True):
+        self.mark_as_modified(True, "Enable All")
+        job_row = self.current_job_index()
+        action_row = self.current_action_index()
+        for j in self.project_jobs():
+            j.set_enabled_all(enable)
+        self.refresh_ui_signal.emit(job_row, action_row)
+
+    def enable_all(self):
+        self.set_enabled_all(True)
+
+    def disable_all(self):
+        self.set_enabled_all(False)
+
     # pylint: disable=C0103
     def contextMenuEvent(self, event):
         item = self.job_list().itemAt(self.job_list().viewport().mapFrom(self, event.pos()))
