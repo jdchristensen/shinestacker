@@ -1,8 +1,7 @@
 # pylint: disable=C0114, C0115, C0116, E0611, R0903, R0913, R0917
 import os
-from PySide6.QtWidgets import QFrame, QLabel, QVBoxLayout
 from PySide6.QtCore import Qt, Signal
-from PySide6.QtGui import QFont
+from PySide6.QtWidgets import QFrame, QLabel, QVBoxLayout
 from ..gui.colors import ColorPalette
 
 
@@ -10,7 +9,7 @@ class BaseWidget(QFrame):
     clicked = Signal()
     double_clicked = Signal()
 
-    def __init__(self, name, min_height=40, dark_theme=False, parent=None,
+    def __init__(self, data_object, min_height=40, dark_theme=False, parent=None,
                  layout_horizontal=False):
         super().__init__(parent)
         self._selected = False
@@ -20,26 +19,24 @@ class BaseWidget(QFrame):
         self.child_widgets = []
         self._layout_horizontal = layout_horizontal
         self.setFocusPolicy(Qt.NoFocus)
-        self._init_widget(name)
+        self._init_widget(data_object)
         self.setAttribute(Qt.WA_Hover, True)
         self._update_stylesheet()
 
     def num_child_widgets(self):
         return len(self.child_widgets)
 
-    def _init_widget(self, name):
-        self.setMinimumHeight(self.min_height)
-        layout = QVBoxLayout(self)
-        layout.setContentsMargins(8, 8, 8, 8)
-        layout.setSpacing(2)
-        self.name_label = QLabel(name)
-        self.name_label.setAlignment(Qt.AlignLeft | Qt.AlignTop)
-        font = QFont()
-        font.setBold(True)
-        self.name_label.setFont(font)
-        layout.addWidget(self.name_label)
-        self.path_label = None
-        self.setLayout(layout)
+        def _init_widget(self, data_object):
+            self.setMinimumHeight(self.min_height)
+            layout = QVBoxLayout(self)
+            layout.setContentsMargins(8, 8, 8, 8)
+            layout.setSpacing(2)
+            self.name_label = QLabel()
+            self.name_label.setAlignment(Qt.AlignLeft | Qt.AlignTop)
+            layout.addWidget(self.name_label)
+            self.path_label = None
+            self.setLayout(layout)
+            self.update(data_object)
 
     def widget_type(self):
         return ''
@@ -115,3 +112,7 @@ class BaseWidget(QFrame):
 
     def set_name(self, name):
         self.name_label.setText(name)
+
+    def update(self, data_object):
+        name = f"<b>{data_object.params['name']}</b> [{data_object.type_name}]"
+        self.set_name(name)

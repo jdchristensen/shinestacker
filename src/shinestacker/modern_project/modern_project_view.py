@@ -364,14 +364,14 @@ class ModernProjectView(ProjectView):
     def _update_job_widget(self, job_index, job):
         if 0 <= job_index < len(self.job_widgets):
             job_widget = self.job_widgets[job_index]
-            job_widget.set_job_name(job.params['name'])
+            job_widget.update(job)
 
     def _update_action_widget(self, job_index, action_index, action):
         if 0 <= job_index < len(self.job_widgets):
             job_widget = self.job_widgets[job_index]
-            if 0 <= action_index < job_widget.nom_child_widgets():
+            if 0 <= action_index < job_widget.num_child_widgets():
                 action_widget = job_widget.child_widgets[action_index]
-                action_widget.set_name(action.params['name'])
+                action_widget.update(action)
 
     def _update_subaction_widget(self, job_index, action_index, subaction_index, subaction):
         if 0 <= job_index < len(self.job_widgets):
@@ -380,7 +380,7 @@ class ModernProjectView(ProjectView):
                 action_widget = job_widget.child_widgets[action_index]
                 if 0 <= subaction_index < action_widget.num_child_widgets():
                     subaction_widget = action_widget.child_widgets[subaction_index]
-                    subaction_widget.set_name(subaction.params['name'])
+                    subaction_widget.update(subaction)
 
     def _select_job_widget(self, widget):
         for i, job_widget in enumerate(self.job_widgets):

@@ -6,8 +6,7 @@ from ..gui.project_model import get_action_input_path
 
 class JobWidget(BaseWidget):
     def __init__(self, job, dark_theme=False, parent=None):
-        job_name = job.params['name']
-        super().__init__(job_name, 50, dark_theme, parent)
+        super().__init__(job, 50, dark_theme, parent)
         in_path = get_action_input_path(job)[0]
         self._add_path_label(f"📁 {self._format_path(in_path)}")
         if hasattr(job, 'sub_actions') and job.sub_actions:
@@ -17,3 +16,10 @@ class JobWidget(BaseWidget):
 
     def widget_type(self):
         return 'JobWidget'
+
+    def update(self, action):
+        name = f"<b>{action.params['name']}</b> [{action.type_name}]"
+        self.set_name(name)
+        in_path = get_action_input_path(action)[0]
+        path_text = f"📁 <i>{self._format_path(in_path)}</i></i>"
+        self._add_path_label(path_text)
