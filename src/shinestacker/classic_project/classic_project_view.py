@@ -407,21 +407,31 @@ class ClassicProjectView(ProjectView, ListContainer):
     def paste_action(self):
         job_row, action_row, pos = self.get_current_action()
         if pos is not None and pos.actions is not None:
-            if not pos.is_sub_action:
-                if self.copy_buffer().type_name not in constants.ACTION_TYPES:
+            copy_buffer = self.copy_buffer()
+            if copy_buffer.type_name in constants.SUB_ACTION_TYPES:
+                target_action = None
+                insertion_index = 0
+                if pos.is_sub_action:
+                    if pos.action.type_name == constants.ACTION_COMBO:
+                        target_action = pos.action
+                        insertion_index = len(pos.sub_actions)
+                else:
+                    if pos.action is not None and pos.action.type_name == constants.ACTION_COMBO:
+                        target_action = pos.action
+                        insertion_index = len(pos.action.sub_actions)
+                if target_action is not None:
+                    self.mark_as_modified(True, "Paste Sub-action")
+                    target_action.sub_actions.insert(insertion_index, copy_buffer)
+                    new_row = new_row_after_paste(action_row, pos)
+                    self.refresh_ui(job_row, new_row)
                     return
-                new_action_index = 0 if len(pos.actions) == 0 else pos.action_index + 1
-                self.mark_as_modified(True, "Paste Action")
-                pos.actions.insert(new_action_index, self.copy_buffer())
-            else:
-                if pos.action.type_name != constants.ACTION_COMBO or \
-                   self.copy_buffer().type_name not in constants.SUB_ACTION_TYPES:
-                    return
-                self.mark_as_modified(True, "Paste Sub-action")
-                new_sub_action_index = 0 if len(pos.sub_actions) == 0 else len(pos.sub_actions) + 1
-                pos.sub_actions.insert(new_sub_action_index, self.copy_buffer())
-            new_row = new_row_after_paste(action_row, pos)
-            self.refresh_ui(job_row, new_row)
+            if copy_buffer.type_name in constants.ACTION_TYPES:
+                if not pos.is_sub_action:
+                    new_action_index = 0 if len(pos.actions) == 0 else pos.action_index + 1
+                    self.mark_as_modified(True, "Paste Action")
+                    pos.actions.insert(new_action_index, copy_buffer)
+                    new_row = new_row_after_paste(action_row, pos)
+                    self.refresh_ui(job_row, new_row)
 
     def paste_element(self):
         if self.has_copy_buffer():
