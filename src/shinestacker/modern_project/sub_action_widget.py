@@ -8,7 +8,3 @@ class SubActionWidget(BaseWidget):
 
     def widget_type(self):
         return 'SubActionWidget'
-
-    def update(self, data_object):
-        name = f"<b>{data_object.params['name']}</b> [{data_object.type_name}]"
-        self.set_name(name)

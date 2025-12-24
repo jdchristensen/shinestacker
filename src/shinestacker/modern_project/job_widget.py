@@ -18,8 +18,7 @@ class JobWidget(BaseWidget):
         return 'JobWidget'
 
     def update(self, data_object):
-        name = f"<b>{data_object.params['name']}</b> [{data_object.type_name}]"
-        self.set_name(name)
+        super().update(data_object)
         in_path = get_action_input_path(data_object)[0]
         path_text = f"📁 <i>{self._format_path(in_path)}</i></i>"
         self._add_path_label(path_text)
