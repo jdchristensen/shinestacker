@@ -15,7 +15,11 @@ class ModernProjectView(ProjectView):
         self.scroll_area = None
         self.scroll_content = None
         self.project_layout = None
+        self.selected_widget = None
+        self.selected_widget_type = None  # ??
         self.selected_job_index = 0
+        self.selected_action_index = 0
+        self.selected_subaction_index = 0
         self._setup_ui()
         self.change_theme(dark_theme)
         self.setFocusPolicy(Qt.StrongFocus)
@@ -73,10 +77,16 @@ class ModernProjectView(ProjectView):
             return
         key = event.key()
         if key == Qt.Key_Up:
-            self._select_previous_job()
+            self._select_previous_widget()
             event.accept()
         elif key == Qt.Key_Down:
-            self._select_next_job()
+            self._select_next_widget()
+            event.accept()
+        elif key == Qt.Key_Left:
+            self._select_previous_widget()
+            event.accept()
+        elif key == Qt.Key_Right:
+            self._select_next_widget()
             event.accept()
         elif key == Qt.Key_Home:
             self._select_first_job()
@@ -84,40 +94,150 @@ class ModernProjectView(ProjectView):
         elif key == Qt.Key_End:
             self._select_last_job()
             event.accept()
+        elif key in [Qt.Key_Return, Qt.Key_Enter]:
+            if self.selected_widget_type == 'job':
+                self._on_job_double_clicked(self.selected_job_index)
+            elif self.selected_widget_type == 'action':
+                self._on_action_double_clicked(self.selected_job_index, self.selected_action_index)
+            elif self.selected_widget_type == 'subaction':
+                self._on_subaction_double_clicked(
+                    self.selected_job_index, self.selected_action_index,
+                    self.selected_subaction_index)
+            event.accept()
         elif key == Qt.Key_Tab:
             super().keyPressEvent(event)
-        elif key == Qt.Key_Backtab:  # Shift+Tab
+        elif key == Qt.Key_Backtab:
             super().keyPressEvent(event)
         else:
             super().keyPressEvent(event)
     # pylint: enable=C0103
 
-    def _select_previous_job(self):
-        if not self.job_widgets:
-            return
-        new_index = self.selected_job_index - 1
-        if new_index >= 0:
-            self._select_job_widget(self.job_widgets[new_index])
-            self._ensure_job_visible(new_index)
+    def _select_next_widget(self):
+        if self.selected_widget_type == 'job':
+            if self._has_actions_in_job(self.selected_job_index):
+                self._select_first_action_in_job(self.selected_job_index)
+        elif self.selected_widget_type == 'action':
+            if self._has_subactions_in_action(self.selected_job_index, self.selected_action_index):
+                self._select_first_subaction_in_action(
+                    self.selected_job_index, self.selected_action_index)
+            else:
+                self._select_next_action_or_job()
+        elif self.selected_widget_type == 'subaction':
+            self._select_next_subaction_or_action_or_job()
+
+    def _select_previous_widget(self):
+        if self.selected_widget_type == 'subaction':
+            self._select_action(self.selected_job_index, self.selected_action_index)
+        elif self.selected_widget_type == 'action':
+            self._select_job(self.selected_job_index)
+        elif self.selected_widget_type == 'job':
+            self._select_previous_job_last_widget()
+
+    def _select_job(self, job_index):
+        if 0 <= job_index < len(self.job_widgets):
+            job_widget = self.job_widgets[job_index]
+            self._on_widget_clicked(job_widget, 'job', job_index)
+
+    def _select_action(self, job_index, action_index):
+        if 0 <= job_index < len(self.job_widgets):
+            job_widget = self.job_widgets[job_index]
+            if 0 <= action_index < job_widget.num_child_widgets():
+                action_widget = job_widget.child_widgets[action_index]
+                self._on_widget_clicked(action_widget, 'action', job_index, action_index)
+
+    def _select_subaction(self, job_index, action_index, subaction_index):
+        if 0 <= job_index < len(self.job_widgets):
+            job_widget = self.job_widgets[job_index]
+            if 0 <= action_index < job_widget.num_child_widgets():
+                action_widget = job_widget.child_widgets[action_index]
+                if 0 <= subaction_index < action_widget.num_child_widgets():
+                    subaction_widget = action_widget.child_widgets[subaction_index]
+                    self._on_widget_clicked(
+                        subaction_widget, 'subaction', job_index, action_index, subaction_index)
+
+    def _select_first_action_in_job(self, job_index):
+        if 0 <= job_index < len(self.job_widgets):
+            job_widget = self.job_widgets[job_index]
+            if job_widget.child_widgets:
+                self._select_action(job_index, 0)
+
+    def _select_first_subaction_in_action(self, job_index, action_index):
+        if 0 <= job_index < len(self.job_widgets):
+            job_widget = self.job_widgets[job_index]
+            if 0 <= action_index < job_widget.num_child_widgets():
+                action_widget = job_widget.child_widgets[action_index]
+                if action_widget.child_widgets:
+                    self._select_subaction(job_index, action_index, 0)
+
+    def _has_actions_in_job(self, job_index):
+        if 0 <= job_index < len(self.job_widgets):
+            job_widget = self.job_widgets[job_index]
+            return bool(job_widget.child_widgets)
+        return False
+
+    def _has_subactions_in_action(self, job_index, action_index):
+        if 0 <= job_index < len(self.job_widgets):
+            job_widget = self.job_widgets[job_index]
+            if 0 <= action_index < job_widget.num_child_widgets():
+                action_widget = job_widget.child_widgets[action_index]
+                return bool(action_widget.child_widgets)
+        return False
+
+    def _select_next_action_or_job(self):
+        job_index = self.selected_job_index
+        action_index = self.selected_action_index
+        if 0 <= job_index < len(self.job_widgets):
+            job_widget = self.job_widgets[job_index]
+            next_action_index = action_index + 1
+            if next_action_index < job_widget.num_child_widgets():
+                self._select_action(job_index, next_action_index)
+            else:
+                self._select_next_job()
+
+    def _select_next_subaction_or_action_or_job(self):
+        job_index = self.selected_job_index
+        action_index = self.selected_action_index
+        subaction_index = self.selected_subaction_index
+        if 0 <= job_index < len(self.job_widgets):
+            job_widget = self.job_widgets[job_index]
+            if 0 <= action_index < job_widget.num_child_widgets():
+                action_widget = job_widget.child_widgets[action_index]
+                next_subaction_index = subaction_index + 1
+                if next_subaction_index < action_widget.num_child_widgets():
+                    self._select_subaction(job_index, action_index, next_subaction_index)
+                else:
+                    self._select_next_action_or_job()
+
+    def _select_previous_job_last_widget(self):
+        prev_job_index = self.selected_job_index - 1
+        if prev_job_index >= 0:
+            prev_job_widget = self.job_widgets[prev_job_index]
+            if prev_job_widget.child_widgets:
+                last_action_index = prev_job_widget.num_child_widgets() - 1
+                last_action_widget = prev_job_widget.child_widgets[last_action_index]
+                if last_action_widget.child_widgets:
+                    last_subaction_index = last_action_widget.num_child_widgets() - 1
+                    self._select_subaction(prev_job_index, last_action_index, last_subaction_index)
+                else:
+                    self._select_action(prev_job_index, last_action_index)
+            else:
+                self._select_job(prev_job_index)
 
     def _select_next_job(self):
         if not self.job_widgets:
             return
         new_index = self.selected_job_index + 1
         if new_index < len(self.job_widgets):
-            self._select_job_widget(self.job_widgets[new_index])
+            self._select_job(new_index)
             self._ensure_job_visible(new_index)
 
-    def _select_first_job(self):
-        if self.job_widgets:
-            self._select_job_widget(self.job_widgets[0])
-            self._ensure_job_visible(0)
-
-    def _select_last_job(self):
-        if self.job_widgets:
-            last_index = len(self.job_widgets) - 1
-            self._select_job_widget(self.job_widgets[last_index])
-            self._ensure_job_visible(last_index)
+    def _select_previous_job(self):
+        if not self.job_widgets:
+            return
+        new_index = self.selected_job_index - 1
+        if new_index >= 0:
+            self._select_job(new_index)
+            self._ensure_job_visible(new_index)
 
     def _ensure_job_visible(self, job_index):
         if not self.job_widgets or job_index < 0 or job_index >= len(self.job_widgets):
@@ -151,32 +271,116 @@ class ModernProjectView(ProjectView):
 
     def add_job_widget(self, job):
         job_widget = JobWidget(job, self.dark_theme)
-        job_widget.setFocusPolicy(Qt.StrongFocus)
-        job_widget.clicked.connect(lambda w=job_widget: self._on_job_clicked(w))
+        job_widget.setFocusPolicy(Qt.NoFocus)
         job_index = len(self.job_widgets)
+        job_widget.clicked.connect(
+            lambda checked=False, w=job_widget, idx=job_index:
+                self._on_widget_clicked(w, 'job', idx)
+        )
         job_widget.double_clicked.connect(
-            lambda idx=job_index: self._on_job_double_clicked(idx)
+            lambda checked=False, idx=job_index: self._on_job_double_clicked(idx)
         )
         self.job_widgets.append(job_widget)
         self.project_layout.addWidget(job_widget)
+        for action_idx, action_widget in enumerate(job_widget.child_widgets):
+            def make_action_click_handler(j_idx, a_idx, widget):
+                def handler():
+                    self._on_widget_clicked(widget, 'action', j_idx, a_idx)
+                return handler
+            action_widget.clicked.connect(
+                make_action_click_handler(job_index, action_idx, action_widget))
+            action_widget.double_clicked.connect(
+                lambda checked=False, j_idx=job_index, a_idx=action_idx:
+                self._on_action_double_clicked(j_idx, a_idx)
+            )
+            for subaction_idx, subaction_widget in enumerate(action_widget.child_widgets):
+                def make_subaction_click_handler(j_idx, a_idx, s_idx, widget):
+                    def handler():
+                        self._on_widget_clicked(widget, 'subaction', j_idx, a_idx, s_idx)
+                    return handler
+                subaction_widget.clicked.connect(
+                    make_subaction_click_handler(
+                        job_index, action_idx, subaction_idx, subaction_widget)
+                )
+                subaction_widget.double_clicked.connect(
+                    lambda checked=False, j_idx=job_index, a_idx=action_idx, s_idx=subaction_idx:
+                    self._on_subaction_double_clicked(j_idx, a_idx, s_idx)
+                )
         if len(self.job_widgets) == 1:
-            self._select_job_widget(job_widget)
+            self._on_widget_clicked(job_widget, 'job', 0)
 
-    def _on_job_clicked(self, clicked_widget):
-        self._select_job_widget(clicked_widget)
+    def _on_widget_clicked(self, widget, widget_type,
+                           job_index, action_index=None, subaction_index=None):
+        if self.selected_widget:
+            self.selected_widget.set_selected(False)
+        widget.set_selected(True)
+        self.selected_widget = widget
+        self.selected_widget_type = widget_type
+        self.selected_job_index = job_index
+        if action_index is not None:
+            self.selected_action_index = action_index
+        if subaction_index is not None:
+            self.selected_subaction_index = subaction_index
         self.setFocus()
 
     def _on_job_double_clicked(self, job_index):
+        job_widget = self.job_widgets[job_index]
+        self._on_widget_clicked(job_widget, 'job', job_index)
         job = self.project_job(job_index)
-        self.action_dialog = ActionConfigDialog(job, self.current_file_directory(), self)
-        if self.action_dialog.exec() == QDialog.Accepted:
-            self._update_job_widget(job_index, job)
-        self.setFocus()
+        if job:
+            self.action_dialog = ActionConfigDialog(
+                job, self.current_file_directory(), self.parent())
+            if self.action_dialog.exec() == QDialog.Accepted:
+                self._update_job_widget(job_index, job)
+
+    def _on_action_double_clicked(self, job_index, action_index):
+        job_widget = self.job_widgets[job_index]
+        action_widget = job_widget.child_widgets[action_index]
+        self._on_widget_clicked(action_widget, 'action', job_index, action_index)
+        job = self.project_job(job_index)
+        action = job.sub_actions[action_index] if hasattr(job, 'sub_actions') else None
+        if action:
+            self.action_dialog = ActionConfigDialog(
+                action, self.current_file_directory(), self.parent())
+            if self.action_dialog.exec() == QDialog.Accepted:
+                self._update_action_widget(job_index, action_index, action)
+
+    def _on_subaction_double_clicked(self, job_index, action_index, subaction_index):
+        job_widget = self.job_widgets[job_index]
+        action_widget = job_widget.child_widgets[action_index]
+        subaction_widget = action_widget.child_widgets[subaction_index]
+        self._on_widget_clicked(
+            subaction_widget, 'subaction', job_index, action_index, subaction_index)
+        job = self.project_job(job_index)
+        action = job.sub_actions[action_index] if hasattr(job, 'sub_actions') else None
+        subaction = action.sub_actions[subaction_index] \
+            if action and hasattr(action, 'sub_actions') else None
+        if subaction:
+            self.action_dialog = ActionConfigDialog(
+                subaction, self.current_file_directory(), self.parent())
+            if self.action_dialog.exec() == QDialog.Accepted:
+                self._update_subaction_widget(job_index, action_index, subaction_index, subaction)
 
     def _update_job_widget(self, job_index, job):
         if 0 <= job_index < len(self.job_widgets):
             job_widget = self.job_widgets[job_index]
             job_widget.set_job_name(job.params['name'])
+
+    def _update_action_widget(self, job_index, action_index, action):
+        if 0 <= job_index < len(self.job_widgets):
+            job_widget = self.job_widgets[job_index]
+            if 0 <= action_index < job_widget.nom_child_widgets():
+                action_widget = job_widget.child_widgets[action_index]
+                action_widget.set_name(action.params['name'])
+
+    def _update_subaction_widget(self, job_index, action_index, subaction_index, subaction):
+        if 0 <= job_index < len(self.job_widgets):
+            job_widget = self.job_widgets[job_index]
+            if 0 <= action_index < job_widget.num_child_widgets():
+                action_widget = job_widget.child_widgets[action_index]
+                if 0 <= subaction_index < action_widget.num_child_widgets():
+                    subaction_widget = action_widget.child_widgets[subaction_index]
+                    subaction_widget.set_name(subaction.params['name'])
 
     def _select_job_widget(self, widget):
         for i, job_widget in enumerate(self.job_widgets):

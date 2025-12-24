@@ -19,9 +19,10 @@ class ActionWidget(BaseWidget):
             horizontal_layout = QHBoxLayout(subactions_container)
             horizontal_layout.setContentsMargins(0, 4, 0, 0)
             horizontal_layout.setSpacing(2)
-            for sub_action in action.sub_actions:
-                sub_action_widget = SubActionWidget(sub_action, dark_theme)
-                horizontal_layout.addWidget(sub_action_widget)
+        for sub_action in action.sub_actions:
+            sub_action_widget = SubActionWidget(sub_action, dark_theme)
+            horizontal_layout.addWidget(sub_action_widget)
+            self.add_child_widget(sub_action_widget, add_to_layout=False)
             self.layout().addWidget(subactions_container)
 
     def widget_type(self):

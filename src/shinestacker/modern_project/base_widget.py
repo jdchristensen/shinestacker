@@ -17,16 +17,19 @@ class BaseWidget(QFrame):
         self._dark_theme = dark_theme
         self.min_height = min_height
         self.path_label = ''
-        self._child_widgets = []
+        self.child_widgets = []
         self._layout_horizontal = layout_horizontal
         self.setFocusPolicy(Qt.NoFocus)
         self._init_widget(name)
         self.setAttribute(Qt.WA_Hover, True)
         self._update_stylesheet()
 
+    def num_child_widgets(self):
+        return len(self.child_widgets)
+
     def _init_widget(self, name):
         self.setMinimumHeight(self.min_height)
-        layout = QVBoxLayout(self)  # Always use QVBoxLayout
+        layout = QVBoxLayout(self)
         layout.setContentsMargins(8, 8, 8, 8)
         layout.setSpacing(2)
         self.name_label = QLabel(name)
@@ -53,10 +56,10 @@ class BaseWidget(QFrame):
         else:
             self.path_label.setText(text)
 
-    def add_child_widget(self, child_widget):
-        """Add a child widget (for composite pattern)"""
-        self._child_widgets.append(child_widget)
-        self.layout().addWidget(child_widget)
+    def add_child_widget(self, child_widget, add_to_layout=True):
+        self.child_widgets.append(child_widget)
+        if add_to_layout:
+            self.layout().addWidget(child_widget)
 
     def _update_stylesheet(self):
         if self._dark_theme:
@@ -107,7 +110,7 @@ class BaseWidget(QFrame):
         self._update_stylesheet()
         self.style().unpolish(self)
         self.style().polish(self)
-        for child in self._child_widgets:
+        for child in self.child_widgets:
             child.set_dark_theme(dark_theme)
 
     def set_name(self, name):

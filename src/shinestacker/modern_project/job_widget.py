@@ -13,7 +13,7 @@ class JobWidget(BaseWidget):
         if hasattr(job, 'sub_actions') and job.sub_actions:
             for action in job.sub_actions:
                 action_widget = ActionWidget(action, dark_theme)
-                self.add_child_widget(action_widget)
+                self.add_child_widget(action_widget, add_to_layout=True)
 
     def widget_type(self):
         return 'JobWidget'
