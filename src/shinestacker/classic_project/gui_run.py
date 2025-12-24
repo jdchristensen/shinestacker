@@ -31,6 +31,7 @@ class ColorButton(QPushButton):
         super().__init__(text.replace(gui_constants.DISABLED_TAG, ''), parent)
         self.setMinimumHeight(1)
         self.setMaximumHeight(70)
+        self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
         color = ColorPalette.LIGHT_BLUE if enabled else ColorPalette.LIGHT_RED
         self.set_color(*color.tuple())
 
@@ -45,6 +46,7 @@ class ColorButton(QPushButton):
                 min-height: 1px;
                 padding: 4px;
                 margin: 0px;
+                min-width: 60px;
             }}
         """)
 
@@ -57,13 +59,17 @@ class RunWindow(QTextEditLogger):
         self.close_window_callback = close_window_callback
         self.row_widget_id = 0
         layout = QVBoxLayout()
+        layout.setContentsMargins(0, 0, 0, 0)
         self.color_widgets = []
         self.image_views = []
         if len(labels) > 0:
             for label_row in labels:
                 self.color_widgets.append([])
                 row = QWidget(self)
-                h_layout = FlowLayout(row)
+                if len(label_row) > 1:
+                    h_layout = FlowLayout(row)
+                else:
+                    h_layout = QHBoxLayout(row)
                 h_layout.setContentsMargins(0, 0, 0, 0)
                 h_layout.setSpacing(2)
                 for label, enabled in label_row:
