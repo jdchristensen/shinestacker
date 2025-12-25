@@ -218,6 +218,6 @@ class LogManager:
     @Slot(int, str, str)
     def handle_end_message(self, status, id_str, message):
         self.do_handle_end_message(status, id_str, message)
-    
+
     def do_handle_end_message(self, status, id_str, message):
         pass

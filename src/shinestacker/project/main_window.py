@@ -257,6 +257,7 @@ class MainWindow(ProjectIOHandler, QMainWindow):
             for _k, v in self.views.items():
                 v.clear_project()
             self.set_enabled_file_open_close_actions(False)
+            self.refresh_ui()
             self.show_status_message("Project closed.")
 
     def do_save(self, file_path):
@@ -310,6 +311,7 @@ class MainWindow(ProjectIOHandler, QMainWindow):
             new_job_index = 0 if self.num_project_jobs() == 0 \
                 else self.current_view.current_job_index() + 1
             self.project_jobs().insert(new_job_index, job_action)
+            self.set_enabled_file_open_close_actions(True)
             self.current_view.refresh_and_select_job(new_job_index)
 
     def delete_element(self):
@@ -369,9 +371,10 @@ class MainWindow(ProjectIOHandler, QMainWindow):
             self.current_view.has_selected_sub_action())
 
     def set_enabled_file_open_close_actions(self, enabled):
+        should_enable = enabled or self.num_project_jobs() > 0
         for action in self.findChildren(QAction):
             if action.property("requires_file"):
-                action.setEnabled(enabled)
+                action.setEnabled(should_enable)
         self.menu_manager.stop_action.setEnabled(False)
 
     def is_dark_theme(self):

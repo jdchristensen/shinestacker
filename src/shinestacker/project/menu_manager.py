@@ -182,7 +182,7 @@ class MenuManager(QObject):
 
     def add_job_menu(self):
         menu = self.menubar.addMenu("&Jobs")
-        self.add_job_action = self.action("Add Job", requires_file=True)
+        self.add_job_action = self.action("Add Job")
         menu.addAction(self.add_job_action)
         menu.addSeparator()
 

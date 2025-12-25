@@ -2,7 +2,7 @@
 
 This page reports the main releases only and the main changes therein.
 
-## [v1.x.x] - 2025-12-24
+## [v1.x.x] - 2025-12-25
 
 ### Added
 - statusbar basic messaging
@@ -10,6 +10,7 @@ This page reports the main releases only and the main changes therein.
 
 ### Fixed
 - missing features and small bugs in the project classic editing view
+- gui misbehaviors in the project edit window
 
 ### Changed
 - moved system monitor to main window

@@ -119,6 +119,8 @@ class ClassicProjectView(ProjectView, ListContainer):
         h_splitter.addWidget(self.tab_widget)
         self.setLayout(layout)
         layout.addWidget(h_splitter)
+        self.job_list().itemDoubleClicked.connect(self.on_job_edit)
+        self.action_list().itemDoubleClicked.connect(self.on_action_edit)
 
     def connect_signals(self, update_delete_action_state):
         self.job_list().currentRowChanged.connect(self.on_job_selected)
@@ -674,6 +676,37 @@ class ClassicProjectView(ProjectView, ListContainer):
                                    job.sub_actions.index(action), sub_action_index))
         return (job_row, action_row,
                 ActionPosition(job.sub_actions, None, job.sub_actions.index(action)))
+
+    def action_config_dialog(self, action):
+        return ActionConfigDialog(action, self.current_file_directory(), self.parent())
+
+    def on_job_edit(self, item):
+        index = self.job_list().row(item)
+        if 0 <= index < self.num_project_jobs():
+            job = self.project_job(index)
+            dialog = self.action_config_dialog(job)
+            if dialog.exec() == QDialog.Accepted:
+                current_row = self.current_job_index()
+                if current_row >= 0:
+                    self.job_list_item(current_row).setText(job.params['name'])
+                self.refresh_ui()
+
+    def on_action_edit(self, item):
+        job_index = self.current_job_index()
+        if 0 <= job_index < self.num_project_jobs():
+            job = self.project_job(job_index)
+            action_index = self.action_list().row(item)
+            current_action, is_sub_action = self.get_current_action_at(job, action_index)
+            if current_action:
+                if not is_sub_action:
+                    self.enable_sub_actions_requested.emit(
+                        current_action.type_name == constants.ACTION_COMBO)
+                dialog = self.action_config_dialog(current_action)
+                if dialog.exec() == QDialog.Accepted:
+                    self.on_job_selected(job_index)
+                    self.refresh_ui()
+                    self.set_current_job(job_index)
+                    self.set_current_action(action_index)
 
     def handle_run_completed(self, window, run_id):
         window.handle_run_completed(run_id)
