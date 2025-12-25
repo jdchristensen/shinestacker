@@ -149,7 +149,6 @@ class MainWindow(ProjectIOHandler, QMainWindow):
         self.view_stack.currentWidget().stop()
         self.view_stack.setCurrentIndex(idx)
         self.current_view = self.view_stack.currentWidget()
-        self.current_view.refresh_ui()
 
     def quit(self):
         if self.check_unsaved_changes():

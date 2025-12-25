@@ -5,8 +5,8 @@ from PySide6.QtCore import Qt, Signal, QTimer
 from PySide6.QtGui import QColor, QPainter, QPen
 from PySide6.QtWidgets import (QWidget, QGridLayout, QScrollArea, QLabel,
                                QSizePolicy, QVBoxLayout)
-from .. gui.colors import ColorPalette
-from .. gui.gui_images import open_file
+from .colors import ColorPalette
+from .gui_images import open_file
 
 
 class MultiModuleStatusContainer(QWidget):

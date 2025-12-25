@@ -997,6 +997,7 @@ class ModernProjectView(ProjectView):
             proceed = self.show_validation_warning(validation_result, is_single_job=True)
             if not proceed:
                 return
+        self.refresh_ui()
         self._build_progress_mapping([current_index])
         if not job.enabled():
             QMessageBox.warning(
@@ -1013,6 +1014,7 @@ class ModernProjectView(ProjectView):
             proceed = self.show_validation_warning(validation_result, is_single_job=False)
             if not proceed:
                 return
+        self.refresh_ui()
         self._build_progress_mapping()
         self._worker = ProjectLogWorker(self.project(), self.last_id_str())
         self._connect_worker_signals(self._worker)
