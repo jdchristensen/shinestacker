@@ -121,8 +121,10 @@ class BaseWidget(QFrame):
     def _update_enabled_icon(self):
         if self._enabled:
             self.enabled_icon.setText("✅")
+            self.enabled_icon.setToolTip("Disable")
         else:
             self.enabled_icon.setText("🚫")
+            self.enabled_icon.setToolTip("Enable")
 
     def _on_enabled_toggled(self, enabled):
         self.data_object.params['enabled'] = enabled

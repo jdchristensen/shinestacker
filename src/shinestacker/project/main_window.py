@@ -177,18 +177,18 @@ class MainWindow(ProjectIOHandler, QMainWindow):
             return False, '', ''
         if file_path is False:
             file_path, _ = QFileDialog.getOpenFileName(
-                self.parent, "Open Project", "", "Project Files (*.fsp);;All Files (*)")
+                self, "Open Project", "", "Project Files (*.fsp);;All Files (*)")
         if file_path:
             try:
                 ProjectIOHandler.open_project(self, file_path)
                 return True, file_path, ''
             except InvalidProjectError as e:
-                QMessageBox.critical(self.parent, "Error", str(e))
+                QMessageBox.critical(self, "Error", str(e))
                 return False, file_path, str(e)
             except Exception as e:
                 traceback.print_tb(e.__traceback__)
                 msg = f"Cannot open file {file_path}:\n{str(e)}"
-                QMessageBox.critical(self.parent, "Error", msg)
+                QMessageBox.critical(self, "Error", msg)
                 return False, file_path, msg
         return False, '', ''
 
