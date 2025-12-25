@@ -60,9 +60,9 @@ class MainWindow(ProjectIOHandler, QMainWindow):
             "Disable All": self.disable_all,
             "Expert Options": self.toggle_expert_options,
             "Add Job": self.perform_add_job,
-            "Run Job": lambda: self.view_stack.currentWidget().run_job(),
-            "Run All Jobs": lambda: self.view_stack.currentWidget().run_all_jobs(),
-            "Stop": lambda: self.view_stack.currentWidget().stop(),
+            "Run Job": self.run_job,
+            "Run All Jobs": self.run_all_jobs,
+            "Stop": self.stop,
             "Classic View": lambda: self.set_view('classic'),
             "Modern View": lambda: self.set_view('modern')
         }
@@ -351,6 +351,15 @@ class MainWindow(ProjectIOHandler, QMainWindow):
 
     def add_sub_action(self, type_name):
         return self.current_view.add_sub_action(type_name)
+
+    def run_job(self):
+        self.current_view.run_job()
+
+    def run_all_jobs(self):
+        self.current_view.run_all_jobs()
+
+    def stop(self):
+        self.current_view.stop()
 
     def update_delete_action_state(self):
         self.menu_manager.delete_element_action.setEnabled(

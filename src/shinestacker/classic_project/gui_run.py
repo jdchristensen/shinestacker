@@ -5,12 +5,11 @@ from PySide6.QtWidgets import (QWidget, QPushButton, QVBoxLayout, QHBoxLayout, Q
                                QMessageBox, QScrollArea, QSizePolicy, QFrame, QLabel, QComboBox)
 from PySide6.QtGui import QColor
 from PySide6.QtCore import Qt, QTimer
-from PySide6.QtCore import Signal, Slot
-from .. config.constants import constants
+from PySide6.QtCore import Slot
 from .. config.gui_constants import gui_constants
 from .. algorithms.utils import extension_supported, extension_pdf
 from .. algorithms.plot_manager import DirectPlotManager
-from .. gui.gui_logging import LogWorker, QTextEditLogger
+from .. gui.gui_logging import QTextEditLogger
 from .. gui.gui_images import GuiPdfView, GuiImageView, GuiOpenApp
 from .. gui.colors import (
     ColorPalette,
@@ -19,11 +18,7 @@ from .. gui.colors import (
     ACTION_STOPPED_COLOR, ACTION_FAILED_COLOR)
 from .. gui.time_progress_bar import TimerProgressBar
 from .. gui.flow_layout import FlowLayout
-from .. gui.qt_plot_manager import QtPlotManager
 from .processing_widget import MultiModuleStatusContainer
-
-COLOR_RED = "FF5050"
-COLOR_BLUE = "5050FF"
 
 
 class ColorButton(QPushButton):
@@ -325,120 +320,3 @@ class RunWindow(QTextEditLogger):
     @Slot(str, object)
     def handle_save_plot_via_manager(self, filename, fig):
         self.plot_manager.save_plot(filename, fig)
-
-
-class RunWorker(LogWorker):
-    before_action_signal = Signal(int, str)
-    after_action_signal = Signal(int, str)
-    step_counts_signal = Signal(int, str, int)
-    begin_steps_signal = Signal(int, str)
-    end_steps_signal = Signal(int, str)
-    after_step_signal = Signal(int, str, int)
-    save_plot_signal = Signal(int, str, str)
-    open_app_signal = Signal(int, str, str, str)
-    run_completed_signal = Signal(int)
-    run_stopped_signal = Signal(int)
-    run_failed_signal = Signal(int)
-    add_status_box_signal = Signal(str)
-    add_frame_signal = Signal(str, str, int)
-    set_total_actions_signal = Signal(str, str, int)
-    update_frame_status_signal = Signal(str, str, int)
-
-    def __init__(self, id_str):
-        LogWorker.__init__(self)
-        self.id_str = id_str
-        self.status = constants.STATUS_RUNNING
-        self.callbacks = {
-            constants.CALLBACK_BEFORE_ACTION: self.before_action,
-            constants.CALLBACK_AFTER_ACTION: self.after_action,
-            constants.CALLBACK_STEP_COUNTS: self.step_counts,
-            constants.CALLBACK_BEGIN_STEPS: self.begin_steps,
-            constants.CALLBACK_END_STEPS: self.end_steps,
-            constants.CALLBACK_AFTER_STEP: self.after_step,
-            constants.CALLBACK_CHECK_RUNNING: self.check_running,
-            constants.CALLBACK_SAVE_PLOT: self.save_plot,
-            constants.CALLBACK_OPEN_APP: self.open_app,
-            constants.CALLBACK_ADD_STATUS_BOX: self.add_status_box,
-            constants.CALLBACK_ADD_FRAME: self.add_frame,
-            constants.CALLBACKS_SET_TOTAL_ACTIONS: self.set_total_actions,
-            constants.CALLBACK_UPDATE_FRAME_STATUS: self.update_frame_status
-        }
-        self.tag = ""
-        self.plot_manager = QtPlotManager(self)
-
-    def before_action(self, run_id, name):
-        self.before_action_signal.emit(run_id, name)
-
-    def after_action(self, run_id, name):
-        self.after_action_signal.emit(run_id, name)
-
-    def step_counts(self, run_id, name, steps):
-        self.step_counts_signal.emit(run_id, name, steps)
-
-    def begin_steps(self, run_id, name):
-        self.begin_steps_signal.emit(run_id, name)
-
-    def end_steps(self, run_id, name):
-        self.end_steps_signal.emit(run_id, name)
-
-    def after_step(self, run_id, name, step):
-        self.after_step_signal.emit(run_id, name, step)
-
-    def save_plot(self, run_id, name, path):
-        self.save_plot_signal.emit(run_id, name, path)
-
-    def open_app(self, run_id, name, app, path):
-        self.open_app_signal.emit(run_id, name, app, path)
-
-    def add_status_box(self, module_name):
-        self.add_status_box_signal.emit(module_name)
-
-    def add_frame(self, module_name, filename, total_actions):
-        self.add_frame_signal.emit(module_name, filename, total_actions)
-
-    def update_frame_status(self, module_name, filename, status_id):
-        self.update_frame_status_signal.emit(module_name, filename, status_id)
-
-    def set_total_actions(self, module_name, filename, status_id):
-        self.set_total_actions_signal.emit(module_name, filename, status_id)
-
-    def check_running(self, _run_id, _name):
-        return self.status == constants.STATUS_RUNNING
-
-    def run(self):
-        # pylint: disable=line-too-long
-        self.status_signal.emit(f"{self.tag} running...", constants.RUN_ONGOING, "", 0)
-        self.html_signal.emit(f'''
-        <div style="margin: 2px 0; font-family: {constants.LOG_FONTS_STR};">
-        <span style="color: #{COLOR_BLUE}; font-style: italic; font-weight: bold;">{self.tag} begins</span>
-        </div>
-        ''') # noqa
-        status, error_message = self.do_run()
-        run_id = int(self.id_str.split('_')[-1])
-        if status == constants.RUN_COMPLETED:
-            message = f"{self.tag} ended successfully"
-            self.run_completed_signal.emit(run_id)
-            color = COLOR_BLUE
-        elif status == constants.RUN_STOPPED:
-            message = f"{self.tag} stopped"
-            color = COLOR_RED
-            self.run_stopped_signal.emit(run_id)
-        elif status == constants.RUN_FAILED:
-            message = f"{self.tag} failed"
-            color = COLOR_RED
-            self.run_failed_signal.emit(run_id)
-        else:
-            message = ''
-            color = "#000000"
-        self.html_signal.emit(f'''
-        <div style="margin: 2px 0; font-family: {constants.LOG_FONTS_STR};">
-        <span style="color: #{color}; font-style: italic; font-weight: bold;">{message}</span>
-        </div>
-        ''')
-        # pylint: enable=line-too-long
-        self.end_signal.emit(status, self.id_str, message)
-        self.status_signal.emit(message, status, error_message, 0)
-
-    def stop(self):
-        self.status = constants.STATUS_STOPPED
-        self.wait()

@@ -8,8 +8,9 @@ from .. gui.project_view import ProjectView
 from .. gui.colors import ColorPalette
 from .. gui.action_config_dialog import ActionConfigDialog
 from .. gui.project_model import ActionConfig
+from .. gui.run_worker import RunWorker
 from .tab_widget import TabWidgetWithPlaceholder
-from .gui_run import RunWindow, RunWorker
+from .gui_run import RunWindow
 from .list_container import ListContainer, ActionPosition
 
 
