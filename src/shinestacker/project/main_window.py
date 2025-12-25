@@ -31,10 +31,7 @@ class MainWindow(ProjectIOHandler, QMainWindow):
         self.setObjectName("mainWindow")
         dark_theme = self.is_dark_theme()
         self.classic_view = ClassicProjectView(self.project_holder, dark_theme, self)
-        self.classic_view.connect_signals(self.update_delete_action_state)
         self.modern_view = ModernProjectView(self.project_holder, dark_theme, self)
-        self.modern_view.connect_signals(
-            self.update_delete_action_state, self.show_status_message)
         self.views = {
             'classic': self.classic_view,
             'modern': self.modern_view
@@ -69,6 +66,11 @@ class MainWindow(ProjectIOHandler, QMainWindow):
         }
         self.menu_manager = MenuManager(
             self.menuBar(), actions, self.add_action, self.add_sub_action, dark_theme, self)
+        self.classic_view.connect_signals(
+            self.update_delete_action_state,
+            self.menu_manager.set_enabled_sub_actions_gui)
+        self.modern_view.connect_signals(
+            self.update_delete_action_state, self.show_status_message)
         for _k, v in self.views.items():
             v.set_menu_manager(self.menu_manager)
         self.script_dir = os.path.dirname(__file__)

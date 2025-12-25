@@ -1,5 +1,5 @@
 # pylint: disable=C0114, C0115, C0116, E0611, R0913, R0917, R0915, R0912
-# pylint: disable=E0606, W0718, R1702, W0102, W0221, R0914, E1121
+# pylint: disable=E0606, W0718, R1702, W0102, W0221, R0914, E1121, R0911
 import traceback
 from abc import ABC, abstractmethod
 import os.path
@@ -147,6 +147,16 @@ class FieldBuilder:
         return ''
 
     def update_params(self, params):
+        has_relative_paths = any(field['type'] == FIELD_REL_PATH for field in self.fields.values())
+        if has_relative_paths:
+            working_path = self.get_working_path()
+            if not working_path:
+                QMessageBox.warning(
+                    None, "Error",
+                    "This job contains relative paths but no working path is set. "
+                    "Please set a working path first."
+                )
+                return False
         for tag, field in self.fields.items():
             if field['type'] == FIELD_TEXT:
                 params[tag] = field['widget'].text()
@@ -189,6 +199,12 @@ class FieldBuilder:
             if field['type'] == FIELD_REL_PATH and 'working_path' in params:
                 try:
                     working_path = self.get_working_path()
+                    if not working_path:
+                        QMessageBox.warning(
+                            None, "Error",
+                            f"{field['label']} requires a valid working path to be set"
+                        )
+                        return False
                     working_path_abs = os.path.isabs(working_path)
                     if not working_path_abs:
                         working_path = os.path.join(self.current_wd, working_path)
@@ -234,37 +250,31 @@ class FieldBuilder:
         button = QPushButton("Browse...")
         path_type = kwargs.get('path_type', 'directory')
         label = kwargs.get('label', tag).replace('_', ' ')
-
         if kwargs.get('multiple_entries', False):
             def browse():
                 working_path = self.get_working_path()
                 if not working_path:
                     QMessageBox.warning(None, "Error", "Please set working path first")
                     return
-
+                if not os.path.exists(working_path):
+                    QMessageBox.warning(None, "Error",
+                                        f"Working path '{working_path}' does not exist.")
+                    return
                 if path_type == 'directory':
                     dialog = QFileDialog()
                     dialog.setWindowTitle(f"Select {label} (multiple selection allowed)")
                     dialog.setDirectory(working_path)
-
-                    # Configurazione per la selezione di directory multiple
                     dialog.setFileMode(QFileDialog.Directory)
                     dialog.setOption(QFileDialog.DontUseNativeDialog, True)
                     dialog.setOption(QFileDialog.ShowDirsOnly, True)
-
-                    # Abilita esplicitamente la selezione multipla
                     if hasattr(dialog, 'setSupportedSchemes'):
                         dialog.setSupportedSchemes(['file'])
-
-                    # Modifica la vista per permettere selezione multipla
                     tree_view = dialog.findChild(QTreeView)
                     if tree_view:
                         tree_view.setSelectionMode(QAbstractItemView.ExtendedSelection)
-
                     list_view = dialog.findChild(QListView)
                     if list_view:
                         list_view.setSelectionMode(QAbstractItemView.ExtendedSelection)
-
                     if dialog.exec_():
                         paths = dialog.selectedFiles()
                         rel_paths = []
@@ -282,10 +292,8 @@ class FieldBuilder:
                                 QMessageBox.warning(None, "Error",
                                                     "Could not compute relative path")
                                 return
-
                         if rel_paths:
                             edit.setText(constants.PATH_SEPARATOR.join(rel_paths))
-
                 elif path_type == 'file':
                     paths, _ = QFileDialog.getOpenFileNames(None, f"Select {label}", working_path)
                     if paths:
@@ -311,6 +319,10 @@ class FieldBuilder:
                 working_path = self.get_working_path()
                 if not working_path:
                     QMessageBox.warning(None, "Error", "Please set working path first")
+                    return
+                if not os.path.exists(working_path):
+                    QMessageBox.warning(None, "Error",
+                                        f"Working path '{working_path}' does not exist.")
                     return
                 if path_type == 'directory':
                     dialog = QFileDialog()

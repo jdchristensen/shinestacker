@@ -1,7 +1,7 @@
 # pylint: disable=C0114, C0115, C0116, E0611, R0902, R0904, R0913, R0914, R0917, R0912, R0915, E1101
+from PySide6.QtCore import Qt, Signal
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel, QSplitter, QMessageBox, QApplication, QDialog)
-from PySide6.QtCore import Qt
 from .. config.constants import constants
 from .. gui.project_view import ProjectView
 from .. gui.colors import ColorPalette
@@ -56,6 +56,8 @@ def new_row_after_insert(action_row, pos: ActionPosition, delta):
 
 
 class ClassicProjectView(ProjectView, ListContainer):
+    enable_sub_actions_requested = Signal(bool)
+
     def __init__(self, project_holder, dark_theme, parent=None):
         ProjectView.__init__(self, project_holder, dark_theme, parent)
         ListContainer.__init__(self)
@@ -122,10 +124,12 @@ class ClassicProjectView(ProjectView, ListContainer):
         self.job_list().itemDoubleClicked.connect(self.on_job_edit)
         self.action_list().itemDoubleClicked.connect(self.on_action_edit)
 
-    def connect_signals(self, update_delete_action_state):
+    def connect_signals(
+            self, update_delete_action_state, set_enabled_sub_actions_gui):
         self.job_list().currentRowChanged.connect(self.on_job_selected)
         self.job_list().itemSelectionChanged.connect(update_delete_action_state)
         self.action_list().itemSelectionChanged.connect(update_delete_action_state)
+        self.enable_sub_actions_requested.connect(set_enabled_sub_actions_gui)
 
     def get_tab_widget(self):
         return self.tab_widget

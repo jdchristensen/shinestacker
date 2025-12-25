@@ -1,9 +1,10 @@
-# pylint: disable=C0114, C0115, C0116, E0611, R0902, E1101
+# pylint: disable=C0114, C0115, C0116, E0611, R0902, E1101, W0718
 import os
 import subprocess
+import traceback
 from PySide6.QtCore import Signal
 from PySide6.QtGui import QAction
-from PySide6.QtWidgets import QWidget, QDialog, QMenu
+from PySide6.QtWidgets import QWidget, QDialog, QMenu, QMessageBox
 from .. core.core_utils import running_under_windows, running_under_macos
 from .. config.constants import constants
 from .. gui.gui_logging import LogManager
@@ -107,7 +108,16 @@ class ProjectView(QWidget, LogManager, ProjectHandler):
         menu.addSeparator()
         menu.addAction(self.menu_manager.run_job_action)
         menu.addAction(self.menu_manager.run_all_jobs_action)
-        self._add_path_browsing_actions(menu, current_action)
+        try:
+            self._add_path_browsing_actions(menu, current_action)
+        except Exception:
+            traceback.print_exc()
+            QMessageBox.warning(
+                self, "Missing Configuration",
+                f"Job '{current_action.params.get('name', 'Unnamed')}' "
+                "has no working path specified.\n"
+                "Please edit the job configuration to set a working path."
+            )
         return menu
 
     def _add_path_browsing_actions(self, menu, current_action):

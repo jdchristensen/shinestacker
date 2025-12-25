@@ -140,6 +140,29 @@ class JobConfigurator(DefaultActionConfigurator):
             params['input_filepaths'] = []
         input_path = os.path.basename(os.path.normpath(input_full_path)) if input_full_path else ""
         working_path = os.path.dirname(input_full_path) if input_full_path else ""
+        if not working_path:
+            QMessageBox.warning(
+                None, "Error",
+                "Please select a working directory. "
+                "The working directory is the parent folder of your input selection."
+            )
+            return False
+        if not os.path.exists(working_path):
+            QMessageBox.warning(
+                None, "Error",
+                f"Working directory '{working_path}' does not exist. "
+                "Please select a valid directory."
+            )
+            return False
+        if selection_mode == 'folder':
+            full_input_path = os.path.join(working_path, input_path)
+            if not os.path.exists(full_input_path):
+                QMessageBox.warning(
+                    None, "Error",
+                    f"Input directory '{full_input_path}' does not exist. "
+                    "Please select a valid directory."
+                )
+                return False
         params['input_path'] = input_path
         params['working_path'] = working_path
         return True
