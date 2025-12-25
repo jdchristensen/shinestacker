@@ -10,6 +10,7 @@ from .. gui.project_view import ProjectView
 from .. gui.gui_logging import QTextEditLogger
 from .. gui.action_config_dialog import ActionConfigDialog
 from .. gui.run_worker import JobLogWorker, ProjectLogWorker
+from .. gui.project_model import get_action_output_path
 from .job_widget import JobWidget
 
 
@@ -35,6 +36,7 @@ class ModernProjectView(ProjectView):
         self.change_theme(dark_theme)
         self.setFocusPolicy(Qt.StrongFocus)
         self.setFocus()
+        self.progress_mapping = {}
 
     def _setup_ui(self):
         main_splitter = QSplitter(Qt.Orientation.Vertical)
@@ -141,6 +143,60 @@ class ModernProjectView(ProjectView):
             menu = self.create_common_context_menu(current_action)
             menu.exec(event.globalPos())
     # pylint: enable=C0103
+
+    def _build_progress_mapping(self, job_indices=None):
+        self.progress_mapping = {}
+        if job_indices is None:
+            jobs_to_check = enumerate(self.project().jobs)
+        else:
+            jobs_to_check = [(idx, self.project().jobs[idx]) for idx in job_indices]
+        for job_idx, job in jobs_to_check:
+            for action_idx, action in enumerate(job.sub_actions):
+                output_path = get_action_output_path(action)[0]
+                if output_path:
+                    norm_path = os.path.normpath(output_path)
+                    self.progress_mapping[norm_path] = (job_idx, action_idx)
+
+    def _find_action_widget(self, job_idx, action_idx):
+        if 0 <= job_idx < len(self.job_widgets):
+            job_widget = self.job_widgets[job_idx]
+            if 0 <= action_idx < job_widget.num_child_widgets():
+                return job_widget.child_widgets[action_idx]
+        return None
+
+    def handle_step_counts(self, run_id, module_name, total_steps):
+        norm_path = os.path.normpath(module_name)
+        if norm_path in self.progress_mapping:
+            job_idx, action_idx = self.progress_mapping[norm_path]
+            action_widget = self._find_action_widget(job_idx, action_idx)
+            if action_widget:
+                action_widget.show_progress(total_steps, os.path.basename(module_name))
+
+    def handle_after_step(self, run_id, module_name, current_step):
+        norm_path = os.path.normpath(module_name)
+        if norm_path in self.progress_mapping:
+            job_idx, action_idx = self.progress_mapping[norm_path]
+            action_widget = self._find_action_widget(job_idx, action_idx)
+            if action_widget:
+                action_widget.update_progress(current_step)
+
+    def handle_end_steps(self, run_id, module_name):
+        norm_path = os.path.normpath(module_name)
+        if norm_path in self.progress_mapping:
+            job_idx, action_idx = self.progress_mapping[norm_path]
+            action_widget = self._find_action_widget(job_idx, action_idx)
+            if action_widget:
+                action_widget.complete_progress()
+
+    def handle_begin_steps(self, run_id, module_name):
+        norm_path = os.path.normpath(module_name)
+        if norm_path in self.progress_mapping:
+            job_idx, action_idx = self.progress_mapping[norm_path]
+            action_widget = self._find_action_widget(job_idx, action_idx)
+            if action_widget:
+                if not action_widget.progress_bar.isVisible():
+                    action_widget.progress_bar.start(1)
+                    action_widget.progress_bar.setVisible(True)
 
     def get_current_selected_action(self):
         if self.selected_widget_type == 'job':
@@ -941,6 +997,7 @@ class ModernProjectView(ProjectView):
             proceed = self.show_validation_warning(validation_result, is_single_job=True)
             if not proceed:
                 return
+        self._build_progress_mapping([current_index])
         if not job.enabled():
             QMessageBox.warning(
                 self.parent(), "Can't run Job", f"Job {job.params['name']} is disabled.")
@@ -948,6 +1005,7 @@ class ModernProjectView(ProjectView):
         self._worker = JobLogWorker(job, self.last_id_str())
         self._connect_worker_signals(self._worker)
         self.start_thread(self._worker)
+        self.menu_manager.stop_action.setEnabled(True)
 
     def run_all_jobs(self):
         validation_result = self.validate_output_paths_for_project()
@@ -955,17 +1013,29 @@ class ModernProjectView(ProjectView):
             proceed = self.show_validation_warning(validation_result, is_single_job=False)
             if not proceed:
                 return
+        self._build_progress_mapping()
         self._worker = ProjectLogWorker(self.project(), self.last_id_str())
         self._connect_worker_signals(self._worker)
         self.start_thread(self._worker)
+        self.menu_manager.stop_action.setEnabled(True)
 
     def stop(self):
         if self._worker:
             self._worker.stop()
 
     def _connect_worker_signals(self, worker):
-        worker.status_signal.connect(self._handle_status_signal, Qt.ConnectionType.UniqueConnection)
-        worker.end_signal.connect(self._handle_worker_end, Qt.ConnectionType.UniqueConnection)
+        worker.status_signal.connect(
+            self._handle_status_signal, Qt.ConnectionType.UniqueConnection)
+        worker.end_signal.connect(
+            self._handle_worker_end, Qt.ConnectionType.UniqueConnection)
+        worker.step_counts_signal.connect(
+            self.handle_step_counts, Qt.ConnectionType.UniqueConnection)
+        worker.begin_steps_signal.connect(
+            self.handle_begin_steps, Qt.ConnectionType.UniqueConnection)
+        worker.end_steps_signal.connect(
+            self.handle_end_steps, Qt.ConnectionType.UniqueConnection)
+        worker.after_step_signal.connect(
+            self.handle_after_step, Qt.ConnectionType.UniqueConnection)
 
     def _handle_status_signal(self, message, _status, _error_message, timeout):
         self.show_status_message_requested.emit(message, timeout)

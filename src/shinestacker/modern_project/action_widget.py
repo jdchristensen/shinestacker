@@ -1,8 +1,10 @@
 # pylint: disable=C0114, C0115, C0116, E0611, R0903
+from PySide6.QtCore import QTimer
 from PySide6.QtWidgets import QWidget, QHBoxLayout
 from .base_widget import BaseWidget
 from .sub_action_widget import SubActionWidget
-from ..gui.project_model import get_action_input_path, get_action_output_path
+from .. gui.project_model import get_action_input_path, get_action_output_path
+from .. gui.time_progress_bar import TimerProgressBar
 
 
 class ActionWidget(BaseWidget):
@@ -23,6 +25,9 @@ class ActionWidget(BaseWidget):
             horizontal_layout.addWidget(sub_action_widget)
             self.add_child_widget(sub_action_widget, add_to_layout=False)
             self.layout().addWidget(subactions_container)
+        self.progress_bar = TimerProgressBar()
+        self.progress_bar.setVisible(False)
+        self.layout().addWidget(self.progress_bar)
 
     def widget_type(self):
         return 'ActionWidget'
@@ -34,3 +39,20 @@ class ActionWidget(BaseWidget):
         path_text = f"📁 <i>{self._format_path(in_path)}</i> → " \
             f"📂 <i>{self._format_path(out_path)}</i>"
         self._add_path_label(path_text)
+
+    def show_progress(self, total_steps, label=""):
+        self.progress_bar.setVisible(True)
+        self.progress_bar.start(total_steps)
+        if label:
+            self.progress_bar.setFormat(f"{label} - %p%")
+
+    def update_progress(self, current_step):
+        self.progress_bar.setValue(current_step)
+
+    def complete_progress(self):
+        self.progress_bar.stop()
+        self.progress_bar.setFormat("✓ " + self.progress_bar.format())
+        QTimer.singleShot(2000, self.hide_progress)
+
+    def hide_progress(self):
+        self.progress_bar.setVisible(False)
