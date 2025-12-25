@@ -171,6 +171,14 @@ class LogManager:
         self.log_worker = None
         self.id = -1
 
+    def cleanup_logging(self):
+        if self.last_gui_logger:
+            logger_name = self.last_gui_logger.id_str()
+            logger = logging.getLogger(logger_name)
+            for handler in logger.handlers[:]:
+                logger.removeHandler(handler)
+            self.handler = None
+
     def last_id(self):
         return self.last_gui_logger.id if self.last_gui_logger else -1
 
@@ -188,6 +196,8 @@ class LogManager:
         self.id = self.last_id()
         logger = logging.getLogger(self.last_id_str())
         logger.setLevel(logging.DEBUG)
+        for handler in logger.handlers[:]:
+            logger.removeHandler(handler)
         gui_logger = self.gui_loggers[self.id]
         self.handler = SimpleHtmlHandler()
         self.handler.setLevel(logging.DEBUG)
@@ -205,9 +215,9 @@ class LogManager:
     def before_thread_begins(self):
         pass
 
-    def do_handle_end_message(self, status, id_str, message):
-        pass
-
     @Slot(int, str, str)
     def handle_end_message(self, status, id_str, message):
         self.do_handle_end_message(status, id_str, message)
+    
+    def do_handle_end_message(self, status, id_str, message):
+        pass

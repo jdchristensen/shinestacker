@@ -9,11 +9,13 @@ from .. gui.project_model import ActionConfig
 from .. gui.project_view import ProjectView
 from .. gui.gui_logging import QTextEditLogger
 from .. gui.action_config_dialog import ActionConfigDialog
+from .. gui.run_worker import JobLogWorker, ProjectLogWorker
 from .job_widget import JobWidget
 
 
 class ModernProjectView(ProjectView):
     update_delete_action_state_requested = Signal()
+    show_status_message_requested = Signal(str, int)
 
     def __init__(self, project_holder, dark_theme, parent=None):
         ProjectView.__init__(self, project_holder, dark_theme, parent)
@@ -26,6 +28,8 @@ class ModernProjectView(ProjectView):
         self.selected_job_index = -1
         self.selected_action_index = -1
         self.selected_subaction_index = -1
+        self.show_status_message = None
+        self._worker = None
         self._setup_ui()
         self.change_theme(dark_theme)
         self.setFocusPolicy(Qt.StrongFocus)
@@ -60,12 +64,11 @@ class ModernProjectView(ProjectView):
         ico_path = os.path.join(os.path.dirname(os.path.dirname(__file__)),
                                 "gui", "ico", "shinestacker.png")
         self.console_area.handle_html_message(
-            "<h3>ShineStacker console</h3>"
-            f"<p><img width=100 src='{ico_path}'></p>"
-            "<hr>")
+            f"<img width=100 src='{ico_path}'><hr><br>")
 
-    def connect_signals(self, update_delete_action_state):
+    def connect_signals(self, update_delete_action_state, show_status_message):
         self.update_delete_action_state_requested.connect(update_delete_action_state)
+        self.show_status_message_requested.connect(show_status_message)
 
     # pylint: disable=C0103
     def showEvent(self, event):
@@ -924,13 +927,52 @@ class ModernProjectView(ProjectView):
         return self.console_area
 
     def run_job(self):
-        pass
+        current_index = self.selected_job_index
+        if current_index < 0:
+            QMessageBox.warning(
+                self.parent(), "No Job Selected", "Please select a job first.")
+            return
+        job = self.project_job(current_index)
+        if not job.enabled():
+            QMessageBox.warning(
+                self.parent(), "Can't run Job", f"Job {job.params['name']} is disabled.")
+            return
+        self._worker = JobLogWorker(job, self.last_id_str())
+        self._connect_worker_signals(self._worker)
+        self.start_thread(self._worker)
 
     def run_all_jobs(self):
-        pass
+        project = self.project()
+        self._worker = ProjectLogWorker(project, self.last_id_str())
+        self._connect_worker_signals(self._worker)
+        self.start_thread(self._worker)
 
     def stop(self):
-        pass
+        if self._worker:
+            self._worker.stop()
+
+    def _connect_worker_signals(self, worker):
+        worker.status_signal.connect(self._handle_status_signal, Qt.ConnectionType.UniqueConnection)
+        worker.end_signal.connect(self._handle_worker_end, Qt.ConnectionType.UniqueConnection)
+
+    def _handle_status_signal(self, message, _status, _error_message, timeout):
+        self.show_status_message_requested.emit(message, timeout)
+
+    def _handle_status_update(self, message, _status, _error_message, _progress):
+        self.console_area.handle_html_message(f"<b>{message}</b>")
+
+    def _handle_worker_end(self, _status, _id_str, _message):
+        self.console_area.handle_html_message("-" * 80)
+        # if status == constants.RUN_COMPLETED:
+        #     self.console_area.handle_html_message(
+        #         f"<b style='color:green'>✓ Completed: {message}</b>")
+        # elif status == constants.RUN_STOPPED:
+        #     self.console_area.handle_html_message(
+        #         f"<b style='color:orange'>⏹ Stopped: {message}</b>")
+        # elif status == constants.RUN_FAILED:
+        #     self.console_area.handle_html_message(
+        #         f"<b style='color:red'>✗ Failed: {message}</b>")
+        self._worker = None
 
     def quit(self):
         return True

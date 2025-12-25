@@ -33,7 +33,8 @@ class MainWindow(ProjectIOHandler, QMainWindow):
         self.classic_view = ClassicProjectView(self.project_holder, dark_theme, self)
         self.classic_view.connect_signals(self.update_delete_action_state)
         self.modern_view = ModernProjectView(self.project_holder, dark_theme, self)
-        self.modern_view.connect_signals(self.update_delete_action_state)
+        self.modern_view.connect_signals(
+            self.update_delete_action_state, self.show_status_message)
         self.views = {
             'classic': self.classic_view,
             'modern': self.modern_view
