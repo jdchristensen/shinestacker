@@ -3,12 +3,11 @@ from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel, QSplitter, QMessageBox, QApplication, QDialog)
 from PySide6.QtCore import Qt
 from .. config.constants import constants
-from .. gui.project_converter import ProjectConverter
 from .. gui.project_view import ProjectView
 from .. gui.colors import ColorPalette
 from .. gui.action_config_dialog import ActionConfigDialog
 from .. gui.project_model import ActionConfig
-from .. gui.run_worker import RunWorker
+from .. gui.run_worker import JobLogWorker, ProjectLogWorker
 from .tab_widget import TabWidgetWithPlaceholder
 from .gui_run import RunWindow
 from .list_container import ListContainer, ActionPosition
@@ -54,28 +53,6 @@ def new_row_after_insert(action_row, pos: ActionPosition, delta):
             for action in pos.actions[:pos.action_index]:
                 new_row += 1 + len(action.sub_actions)
     return new_row
-
-
-class JobLogWorker(RunWorker):
-    def __init__(self, job, id_str):
-        super().__init__(id_str)
-        self.job = job
-        self.tag = "Job"
-
-    def do_run(self):
-        converter = ProjectConverter(self.plot_manager)
-        return converter.run_job(self.job, self.id_str, self.callbacks)
-
-
-class ProjectLogWorker(RunWorker):
-    def __init__(self, project, id_str):
-        super().__init__(id_str)
-        self.project = project
-        self.tag = "Project"
-
-    def do_run(self):
-        converter = ProjectConverter(self.plot_manager)
-        return converter.run_project(self.project, self.id_str, self.callbacks)
 
 
 class ClassicProjectView(ProjectView, ListContainer):

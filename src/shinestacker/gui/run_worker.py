@@ -3,6 +3,7 @@ from PySide6.QtCore import Signal
 from .. config.constants import constants
 from .. gui.qt_plot_manager import QtPlotManager
 from .. gui.gui_logging import LogWorker
+from .. gui.project_converter import ProjectConverter
 
 COLOR_RED = "FF5050"
 COLOR_BLUE = "5050FF"
@@ -123,3 +124,25 @@ class RunWorker(LogWorker):
     def stop(self):
         self.status = constants.STATUS_STOPPED
         self.wait()
+
+
+class JobLogWorker(RunWorker):
+    def __init__(self, job, id_str):
+        super().__init__(id_str)
+        self.job = job
+        self.tag = "Job"
+
+    def do_run(self):
+        converter = ProjectConverter(self.plot_manager)
+        return converter.run_job(self.job, self.id_str, self.callbacks)
+
+
+class ProjectLogWorker(RunWorker):
+    def __init__(self, project, id_str):
+        super().__init__(id_str)
+        self.project = project
+        self.tag = "Project"
+
+    def do_run(self):
+        converter = ProjectConverter(self.plot_manager)
+        return converter.run_project(self.project, self.id_str, self.callbacks)
