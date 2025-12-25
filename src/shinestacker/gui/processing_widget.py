@@ -3,19 +3,20 @@ import os
 import math
 from PySide6.QtCore import Qt, Signal, QTimer
 from PySide6.QtGui import QColor, QPainter, QPen
-from PySide6.QtWidgets import (QWidget, QGridLayout, QScrollArea, QLabel,
-                               QSizePolicy, QVBoxLayout)
+from PySide6.QtWidgets import (
+    QWidget, QGridLayout, QScrollArea, QLabel, QSizePolicy, QVBoxLayout)
 from .colors import ColorPalette
 from .gui_images import open_file
 
 
 class MultiModuleStatusContainer(QWidget):
     MAX_HEIGHT = 400
-
     content_size_changed = Signal()
 
-    def __init__(self):
+    def __init__(self, show_title=True, max_height=True):
         super().__init__()
+        self.show_title = show_title
+        self.max_height = max_height
         main_layout = QVBoxLayout(self)
         main_layout.setContentsMargins(0, 0, 0, 0)
         main_layout.setSpacing(0)
@@ -32,7 +33,8 @@ class MultiModuleStatusContainer(QWidget):
         main_layout.addWidget(self.scroll_area)
         self.status_widgets = {}
         self.setMinimumHeight(0)
-        self.setMaximumHeight(self.MAX_HEIGHT)
+        if self.max_height:
+            self.setMaximumHeight(self.MAX_HEIGHT)
         self._resize_timer = QTimer()
         self._resize_timer.setSingleShot(True)
         self._resize_timer.timeout.connect(self.content_size_changed.emit)
@@ -47,11 +49,12 @@ class MultiModuleStatusContainer(QWidget):
         scrollbar.setValue(scrollbar.maximum())
 
     def add_module(self, module_name):
-        label = QLabel(module_name)
-        label.setStyleSheet("QLabel { font-weight: bold; margin: 0px; padding: 0px; }")
-        label.setContentsMargins(0, 0, 0, 0)
-        label.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Minimum)
-        self.layout.addWidget(label)
+        if self.show_title:
+            label = QLabel(module_name)
+            label.setStyleSheet("QLabel { font-weight: bold; margin: 0px; padding: 0px; }")
+            label.setContentsMargins(0, 0, 0, 0)
+            label.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Minimum)
+            self.layout.addWidget(label)
         status_widget = PreprocessingStatusWidget()
         self.layout.addWidget(status_widget)
         if module_name in self.status_widgets:

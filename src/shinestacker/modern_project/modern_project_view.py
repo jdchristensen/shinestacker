@@ -1,7 +1,7 @@
 # pylint: disable=C0114, C0115, C0116, E0611, R0902, R0904, R0913, R0914, R0917, R0912, R0915, E1101
 # pylint: disable=R1716, C0302
 import os
-from PySide6.QtCore import Qt, QTimer, Signal
+from PySide6.QtCore import Qt, QTimer, Signal, Slot
 from PySide6.QtGui import QCursor
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QSplitter, QScrollArea, QDialog, QMessageBox
 from .. config.constants import constants
@@ -1038,6 +1038,50 @@ class ModernProjectView(ProjectView):
             self.handle_end_steps, Qt.ConnectionType.UniqueConnection)
         worker.after_step_signal.connect(
             self.handle_after_step, Qt.ConnectionType.UniqueConnection)
+        worker.add_status_box_signal.connect(
+            self.handle_add_status_box, Qt.ConnectionType.UniqueConnection)
+        worker.add_frame_signal.connect(
+            self.handle_add_frame, Qt.ConnectionType.UniqueConnection)
+        worker.update_frame_status_signal.connect(
+            self.handle_update_frame_status, Qt.ConnectionType.UniqueConnection)
+        worker.set_total_actions_signal.connect(
+            self.handle_set_total_actions, Qt.ConnectionType.UniqueConnection)
+
+    @Slot(str)
+    def handle_add_status_box(self, module_name):
+        norm_path = os.path.normpath(module_name)
+        if norm_path in self.progress_mapping:
+            job_idx, action_idx = self.progress_mapping[norm_path]
+            action_widget = self._find_action_widget(job_idx, action_idx)
+            if action_widget:
+                action_widget.add_status_box(module_name)
+
+    @Slot(str, str, int)
+    def handle_add_frame(self, module_name, filename, total_actions):
+        norm_path = os.path.normpath(module_name)
+        if norm_path in self.progress_mapping:
+            job_idx, action_idx = self.progress_mapping[norm_path]
+            action_widget = self._find_action_widget(job_idx, action_idx)
+            if action_widget:
+                action_widget.add_frame(module_name, filename, total_actions)
+
+    @Slot(str, str, int)
+    def handle_update_frame_status(self, module_name, filename, status_id):
+        norm_path = os.path.normpath(module_name)
+        if norm_path in self.progress_mapping:
+            job_idx, action_idx = self.progress_mapping[norm_path]
+            action_widget = self._find_action_widget(job_idx, action_idx)
+            if action_widget:
+                action_widget.update_frame_status(module_name, filename, status_id)
+
+    @Slot(str, str, int)
+    def handle_set_total_actions(self, module_name, filename, total_actions):
+        norm_path = os.path.normpath(module_name)
+        if norm_path in self.progress_mapping:
+            job_idx, action_idx = self.progress_mapping[norm_path]
+            action_widget = self._find_action_widget(job_idx, action_idx)
+            if action_widget:
+                action_widget.set_frame_total_actions(module_name, filename, total_actions)
 
     def _handle_status_signal(self, message, _status, _error_message, timeout):
         self.show_status_message_requested.emit(message, timeout)

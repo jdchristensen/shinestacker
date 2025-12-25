@@ -1,10 +1,11 @@
 # pylint: disable=C0114, C0115, C0116, E0611, R0903
 from PySide6.QtCore import QTimer
-from PySide6.QtWidgets import QWidget, QHBoxLayout
+from PySide6.QtWidgets import QWidget, QHBoxLayout, QVBoxLayout
 from .base_widget import BaseWidget
 from .sub_action_widget import SubActionWidget
 from .. gui.project_model import get_action_input_path, get_action_output_path
 from .. gui.time_progress_bar import TimerProgressBar
+from .. gui.processing_widget import MultiModuleStatusContainer
 
 
 class ActionWidget(BaseWidget):
@@ -25,9 +26,18 @@ class ActionWidget(BaseWidget):
             horizontal_layout.addWidget(sub_action_widget)
             self.add_child_widget(sub_action_widget, add_to_layout=False)
             self.layout().addWidget(subactions_container)
+        self.progress_container = QWidget()
+        self.progress_layout = QVBoxLayout(self.progress_container)
+        self.progress_layout.setContentsMargins(0, 4, 0, 0)
+        self.progress_layout.setSpacing(2)
         self.progress_bar = TimerProgressBar()
         self.progress_bar.setVisible(False)
-        self.layout().addWidget(self.progress_bar)
+        self.progress_layout.addWidget(self.progress_bar)
+        self.frames_status_box = MultiModuleStatusContainer(show_title=False, max_height=False)
+        self.frames_status_box.setVisible(False)
+        self.progress_layout.addWidget(self.frames_status_box)
+        self.layout().addWidget(self.progress_container)
+        self._has_frames_content = False
 
     def widget_type(self):
         return 'ActionWidget'
@@ -45,6 +55,8 @@ class ActionWidget(BaseWidget):
         self.progress_bar.start(total_steps)
         if label:
             self.progress_bar.setFormat(f"{label} - %p%")
+        if self._has_frames_content:
+            self.frames_status_box.setVisible(True)
 
     def update_progress(self, current_step):
         self.progress_bar.setValue(current_step)
@@ -56,3 +68,26 @@ class ActionWidget(BaseWidget):
 
     def hide_progress(self):
         self.progress_bar.setVisible(False)
+        if not self._has_frames_content:
+            self.frames_status_box.setVisible(False)
+
+    def add_status_box(self, module_name):
+        self.frames_status_box.setVisible(True)
+        self.frames_status_box.add_module(module_name)
+        self._has_frames_content = True
+
+    def add_frame(self, module_name, filename, total_actions):
+        self.frames_status_box.setVisible(True)
+        self.frames_status_box.add_frame(module_name, filename, total_actions)
+        self._has_frames_content = True
+
+    def update_frame_status(self, module_name, filename, status_id):
+        self.frames_status_box.update_frame_status(module_name, filename, status_id)
+
+    def set_frame_total_actions(self, module_name, filename, total_actions):
+        self.frames_status_box.set_frame_total_actions(module_name, filename, total_actions)
+
+    def clear_frames_status(self):
+        self.frames_status_box.clear()
+        self.frames_status_box.setVisible(False)
+        self._has_frames_content = False
