@@ -272,6 +272,11 @@ class ClassicProjectView(ProjectView, ListContainer):
             return
         if current_index >= 0:
             job = self.project_job(current_index)
+            validation_result = self.validate_output_paths_for_job(job)
+            if not validation_result['valid']:
+                proceed = self.show_validation_warning(validation_result, is_single_job=True)
+                if not proceed:
+                    return
             if job.enabled():
                 job_name = job.params["name"]
                 labels = [[(self.action_text(a), a.enabled()) for a in job.sub_actions]]
@@ -290,6 +295,11 @@ class ClassicProjectView(ProjectView, ListContainer):
         self.menu_manager.stop_action.setEnabled(True)
 
     def run_all_jobs(self):
+        validation_result = self.validate_output_paths_for_project()
+        if not validation_result['valid']:
+            proceed = self.show_validation_warning(validation_result, is_single_job=False)
+            if not proceed:
+                return
         labels = [[(self.action_text(a), a.enabled() and
                     job.enabled()) for a in job.sub_actions] for job in self.project_jobs()]
         project_name = ".".join(self.current_file_name().split(".")[:-1])

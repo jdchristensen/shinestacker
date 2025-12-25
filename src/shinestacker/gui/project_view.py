@@ -180,3 +180,71 @@ class ProjectView(QWidget, LogManager, ProjectHandler):
 
     def refresh_ui(self):
         self.refresh_ui_signal.emit()
+
+    def validate_output_paths_for_job(self, job):
+        path_counter = {}
+        duplicates = []
+        for action_idx, action in enumerate(job.sub_actions):
+            output_path = get_action_output_path(action)[0]
+            if output_path:
+                norm_path = os.path.normpath(output_path)
+                if norm_path in path_counter:
+                    path_counter[norm_path].append(action_idx)
+                else:
+                    path_counter[norm_path] = [action_idx]
+        for path, indices in path_counter.items():
+            if len(indices) > 1:
+                action_names = [job.sub_actions[idx].params.get(
+                    'name', f'Action {idx}') for idx in indices]
+                duplicates.append({
+                    'path': path,
+                    'indices': indices,
+                    'action_names': action_names
+                })
+        return {
+            'valid': len(duplicates) == 0,
+            'job_name': job.params.get('name', 'Unnamed Job'),
+            'duplicates': duplicates
+        }
+
+    def validate_output_paths_for_project(self):
+        all_duplicates = []
+        for job_idx, job in enumerate(self.project().jobs):
+            job_result = self.validate_output_paths_for_job(job)
+            for dup in job_result['duplicates']:
+                dup['job_idx'] = job_idx
+                dup['job_name'] = job_result['job_name']
+                all_duplicates.append(dup)
+        return {'valid': len(all_duplicates) == 0, 'duplicates': all_duplicates}
+
+    def show_validation_warning(self, validation_result, is_single_job=True):
+        msg_box = QMessageBox(self.parent() if self.parent() else self)
+        msg_box.setIcon(QMessageBox.Warning)
+        if is_single_job:
+            msg_box.setWindowTitle(
+                f"Duplicate Output Paths in '{validation_result['job_name']}'")
+            msg_text = f"Job '{validation_result['job_name']}' has " \
+                       f"{len(validation_result['duplicates'])} duplicate output path(s)."
+        else:
+            msg_box.setWindowTitle("Duplicate Output Paths in Project")
+            msg_text = f"Project has {len(validation_result['duplicates'])} " \
+                       "duplicate output path(s)."
+        msg_box.setText(msg_text + "\n\nThis may cause data overwrites "
+                        "and progress tracking issues.\n\nDo you want to continue anyway?")
+        details = "Duplicate output paths:\n"
+        for dup in validation_result['duplicates']:
+            if is_single_job:
+                details += f"\n• Path: {dup['path']}\n"
+                for idx, name in zip(dup['indices'], dup['action_names']):
+                    details += f"  - Action {idx + 1}: {name}\n"
+            else:
+                details += f"\n• Path: {dup['path']}\n"
+                details += f"  - {dup['job_name']} > "
+                for idx, name in zip(dup['indices'], dup['action_names']):
+                    details += f"{name} (Action {idx}), "
+                details = details.rstrip(", ") + "\n"
+        msg_box.setDetailedText(details)
+        msg_box.setStandardButtons(QMessageBox.Yes | QMessageBox.No)
+        msg_box.setDefaultButton(QMessageBox.No)
+        result = msg_box.exec()
+        return result == QMessageBox.Yes

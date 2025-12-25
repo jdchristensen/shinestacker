@@ -11,6 +11,7 @@ This page reports the main releases only and the main changes therein.
 ### Fixed
 - missing features and small bugs in the project classic editing view
 - gui misbehaviors in the project edit window
+- output clash prevented by checking preliminarly the possible presence of multiple modules with the same output path
 
 ### Changed
 - moved system monitor to main window

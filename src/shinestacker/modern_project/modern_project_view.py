@@ -1,5 +1,5 @@
 # pylint: disable=C0114, C0115, C0116, E0611, R0902, R0904, R0913, R0914, R0917, R0912, R0915, E1101
-# pylint: disable=R1716
+# pylint: disable=R1716, C0302
 import os
 from PySide6.QtCore import Qt, QTimer, Signal
 from PySide6.QtGui import QCursor
@@ -936,6 +936,11 @@ class ModernProjectView(ProjectView):
                 self.parent(), "No Job Selected", "Please select a job first.")
             return
         job = self.project_job(current_index)
+        validation_result = self.validate_output_paths_for_job(job)
+        if not validation_result['valid']:
+            proceed = self.show_validation_warning(validation_result, is_single_job=True)
+            if not proceed:
+                return
         if not job.enabled():
             QMessageBox.warning(
                 self.parent(), "Can't run Job", f"Job {job.params['name']} is disabled.")
@@ -945,8 +950,12 @@ class ModernProjectView(ProjectView):
         self.start_thread(self._worker)
 
     def run_all_jobs(self):
-        project = self.project()
-        self._worker = ProjectLogWorker(project, self.last_id_str())
+        validation_result = self.validate_output_paths_for_project()
+        if not validation_result['valid']:
+            proceed = self.show_validation_warning(validation_result, is_single_job=False)
+            if not proceed:
+                return
+        self._worker = ProjectLogWorker(self.project(), self.last_id_str())
         self._connect_worker_signals(self._worker)
         self.start_thread(self._worker)
 
