@@ -70,7 +70,9 @@ class MainWindow(ProjectIOHandler, QMainWindow):
             self.update_delete_action_state,
             self.menu_manager.set_enabled_sub_actions_gui)
         self.modern_view.connect_signals(
-            self.update_delete_action_state, self.show_status_message)
+            self.update_delete_action_state,
+            self.show_status_message,
+            self.menu_manager.set_enabled_sub_actions_gui)
         for _k, v in self.views.items():
             v.set_menu_manager(self.menu_manager)
         self.script_dir = os.path.dirname(__file__)

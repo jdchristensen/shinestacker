@@ -16,6 +16,7 @@ from .job_widget import JobWidget
 class ModernProjectView(ProjectView):
     update_delete_action_state_requested = Signal()
     show_status_message_requested = Signal(str, int)
+    enable_sub_actions_requested = Signal(bool)
 
     def __init__(self, project_holder, dark_theme, parent=None):
         ProjectView.__init__(self, project_holder, dark_theme, parent)
@@ -66,9 +67,10 @@ class ModernProjectView(ProjectView):
         self.console_area.handle_html_message(
             f"<img width=100 src='{ico_path}'><hr><br>")
 
-    def connect_signals(self, update_delete_action_state, show_status_message):
+    def connect_signals(self, update_delete_action_state, show_status_message, enable_sub_actions):
         self.update_delete_action_state_requested.connect(update_delete_action_state)
         self.show_status_message_requested.connect(show_status_message)
+        self.enable_sub_actions_requested.connect(enable_sub_actions)
 
     # pylint: disable=C0103
     def showEvent(self, event):
@@ -413,6 +415,7 @@ class ModernProjectView(ProjectView):
         job = self.project_job(job_index)
         action = job.sub_actions[action_index] if hasattr(job, 'sub_actions') else None
         if action:
+            self.enable_sub_actions_requested.emit(action.type_name == constants.ACTION_COMBO)
             self.action_dialog = ActionConfigDialog(
                 action, self.current_file_directory(), self.parent())
             if self.action_dialog.exec() == QDialog.Accepted:
