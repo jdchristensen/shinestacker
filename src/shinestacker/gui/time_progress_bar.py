@@ -1,7 +1,15 @@
 # pylint: disable=C0114, C0115, C0116, E0611
 import time
 from PySide6.QtWidgets import QProgressBar
-from .colors import ColorPalette, ACTION_RUNNING_COLOR, ACTION_COMPLETED_COLOR
+from .colors import (
+    ColorPalette,
+    ACTION_RUNNING_COLOR, ACTION_COMPLETED_COLOR,
+    ACTION_STOPPED_COLOR, ACTION_FAILED_COLOR,
+    ACTION_RUNNING_BKG_COLOR, ACTION_COMPLETED_BKG_COLOR,
+    ACTION_STOPPED_BKG_COLOR, ACTION_FAILED_BKG_COLOR,
+    ACTION_RUNNING_TXT_COLOR, ACTION_COMPLETED_TXT_COLOR,
+    ACTION_STOPPED_TXT_COLOR, ACTION_FAILED_TXT_COLOR
+)
 
 
 class TimerProgressBar(QProgressBar):
@@ -18,18 +26,22 @@ class TimerProgressBar(QProgressBar):
         self._current_time = -1
         self.elapsed_str = ''
 
-    def set_style(self, bar_color=None):
+    def set_style(self, bar_color=None, bar_bkg_color=None, bar_txt_color=None):
         if bar_color is None:
             bar_color = ColorPalette.MEDIUM_BLUE
+        if bar_bkg_color is None:
+            bar_bkg_color = ColorPalette.LIGHT_BLUE
+        if bar_txt_color is None:
+            bar_txt_color = ColorPalette.DARK_BLUE
         self.setStyleSheet(f"""
         QProgressBar {{
-          border: 2px solid #{self.border_color.hex()};
+          border: 2px solid #{bar_txt_color.hex()};
           border-radius: 8px;
           text-align: center;
           font-weight: bold;
           font-size: 12px;
-          background-color: #{self.light_background_color.hex()};
-          color: #{self.text_color.hex()};
+          background-color: #{bar_bkg_color.hex()};
+          color: #{bar_txt_color.hex()};
         }}
         QProgressBar::chunk {{
           border-radius: 6px;
@@ -89,7 +101,17 @@ class TimerProgressBar(QProgressBar):
     # pylint: enable=C0103
 
     def set_running_style(self):
-        self.set_style(ACTION_RUNNING_COLOR)
+        self.set_style(
+            ACTION_RUNNING_COLOR, ACTION_RUNNING_BKG_COLOR, ACTION_RUNNING_TXT_COLOR)
 
     def set_done_style(self):
-        self.set_style(ACTION_COMPLETED_COLOR)
+        self.set_style(
+            ACTION_COMPLETED_COLOR, ACTION_COMPLETED_BKG_COLOR, ACTION_COMPLETED_TXT_COLOR)
+
+    def set_stopped_style(self):
+        self.set_style(
+            ACTION_STOPPED_COLOR, ACTION_STOPPED_BKG_COLOR, ACTION_STOPPED_TXT_COLOR)
+
+    def set_failed_style(self):
+        self.set_style(
+            ACTION_FAILED_COLOR, ACTION_FAILED_BKG_COLOR, ACTION_FAILED_TXT_COLOR)

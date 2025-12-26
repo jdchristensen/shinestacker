@@ -18,9 +18,9 @@ class RunWorker(LogWorker):
     after_step_signal = Signal(int, str, int)
     save_plot_signal = Signal(int, str, str)
     open_app_signal = Signal(int, str, str, str)
-    run_completed_signal = Signal(int)
-    run_stopped_signal = Signal(int)
-    run_failed_signal = Signal(int)
+    run_completed_signal = Signal(int, str)
+    run_stopped_signal = Signal(int, str)
+    run_failed_signal = Signal(int, str)
     add_status_box_signal = Signal(str)
     add_frame_signal = Signal(str, str, int)
     set_total_actions_signal = Signal(str, str, int)
@@ -47,8 +47,10 @@ class RunWorker(LogWorker):
         }
         self.tag = ""
         self.plot_manager = QtPlotManager(self)
+        self.name = ''
 
     def before_action(self, run_id, name):
+        self.name = name
         self.before_action_signal.emit(run_id, name)
 
     def after_action(self, run_id, name):
@@ -99,16 +101,16 @@ class RunWorker(LogWorker):
         run_id = int(self.id_str.split('_')[-1])
         if status == constants.RUN_COMPLETED:
             message = f"{self.tag} ended successfully"
-            self.run_completed_signal.emit(run_id)
+            self.run_completed_signal.emit(run_id, self.name)
             color = COLOR_BLUE
         elif status == constants.RUN_STOPPED:
             message = f"{self.tag} stopped"
             color = COLOR_RED
-            self.run_stopped_signal.emit(run_id)
+            self.run_stopped_signal.emit(run_id, self.name)
         elif status == constants.RUN_FAILED:
             message = f"{self.tag} failed"
             color = COLOR_RED
-            self.run_failed_signal.emit(run_id)
+            self.run_failed_signal.emit(run_id, self.name)
         else:
             message = ''
             color = "#000000"

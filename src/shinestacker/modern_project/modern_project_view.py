@@ -1046,6 +1046,51 @@ class ModernProjectView(ProjectView):
             self.handle_update_frame_status, Qt.ConnectionType.UniqueConnection)
         worker.set_total_actions_signal.connect(
             self.handle_set_total_actions, Qt.ConnectionType.UniqueConnection)
+        worker.before_action_signal.connect(
+            self.handle_before_action, Qt.ConnectionType.UniqueConnection)
+        worker.after_action_signal.connect(
+            self.handle_after_action, Qt.ConnectionType.UniqueConnection)
+        worker.run_completed_signal.connect(
+            self._handle_run_completed, Qt.ConnectionType.UniqueConnection)
+        worker.run_stopped_signal.connect(
+            self.handle_run_stopped, Qt.ConnectionType.UniqueConnection)
+        worker.run_failed_signal.connect(
+            self.handle_run_failed, Qt.ConnectionType.UniqueConnection)
+
+    @Slot(int, str)
+    def handle_before_action(self, _run_id, name):
+        norm_path = os.path.normpath(name)
+        if norm_path in self.progress_mapping:
+            job_idx, action_idx = self.progress_mapping[norm_path]
+            action_widget = self._find_action_widget(job_idx, action_idx)
+            action_widget.progress_bar.set_running_style()
+
+    @Slot(int, str)
+    def handle_after_action(self, _run_id, name):
+        norm_path = os.path.normpath(name)
+        if norm_path in self.progress_mapping:
+            job_idx, action_idx = self.progress_mapping[norm_path]
+            action_widget = self._find_action_widget(job_idx, action_idx)
+            action_widget.progress_bar.set_done_style()
+
+    @Slot(int)
+    def handle_run_stopped(self, _run_id, name):
+        norm_path = os.path.normpath(name)
+        if norm_path in self.progress_mapping:
+            job_idx, action_idx = self.progress_mapping[norm_path]
+            action_widget = self._find_action_widget(job_idx, action_idx)
+            action_widget.progress_bar.set_stopped_style()
+
+    @Slot(int)
+    def handle_run_failed(self, _run_id, name):
+        norm_path = os.path.normpath(name)
+        if norm_path in self.progress_mapping:
+            job_idx, action_idx = self.progress_mapping[norm_path]
+            action_widget = self._find_action_widget(job_idx, action_idx)
+            action_widget.progress_bar.set_failed_style()
+
+    def _handle_run_completed(self, run_id, name):
+        pass
 
     @Slot(str)
     def handle_add_status_box(self, module_name):

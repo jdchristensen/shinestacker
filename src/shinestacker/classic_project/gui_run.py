@@ -280,7 +280,7 @@ class RunWindow(QTextEditLogger):
                 self.right_area.verticalScrollBar().maximum()))
 
     @Slot(int)
-    def handle_run_completed(self, _run_id):
+    def handle_run_completed(self, _run_id, _name):
         self.progress_bar.setFormat(self.progress_bar.format() + " - completed")
 
     def handle_run_interrupt(self, run_id, color, postfix):
@@ -292,13 +292,15 @@ class RunWindow(QTextEditLogger):
                 widget.setText(widget.text().replace(" - running", "") + postfix)
 
     @Slot(int)
-    def handle_run_stopped(self, run_id):
+    def handle_run_stopped(self, run_id, _name):
         postfix = f" - stopped after {self.progress_bar.elapsed_str}"
+        self.progress_bar.set_stopped_style()
         self.handle_run_interrupt(run_id, ACTION_STOPPED_COLOR.tuple(), postfix)
 
     @Slot(int)
-    def handle_run_failed(self, run_id):
+    def handle_run_failed(self, run_id, _name):
         postfix = f" - failed after {self.progress_bar.elapsed_str}"
+        self.progress_bar.set_failed_style()
         self.handle_run_interrupt(run_id, ACTION_FAILED_COLOR.tuple(), postfix)
 
     @Slot(str)
