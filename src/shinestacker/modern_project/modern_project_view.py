@@ -1137,6 +1137,8 @@ class ModernProjectView(ProjectView):
         self._handle_end_of_run()
 
     def quit(self):
+        self._worker.stop()
+        self.close()
         return True
 
     def change_theme(self, dark_theme):
