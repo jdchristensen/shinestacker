@@ -258,6 +258,7 @@ class ModernProjectView(ProjectView):
             widget = self._find_action_widget(*indices)
             if widget and hasattr(widget, 'add_status_box'):
                 widget.add_status_box(module_name)
+                self._ensure_selected_visible()
 
     @Slot(int, str, str, int)
     def handle_add_frame(self, module_name, filename, total_actions):
@@ -266,6 +267,7 @@ class ModernProjectView(ProjectView):
             widget = self._find_action_widget(*indices)
             if widget and hasattr(widget, 'add_frame'):
                 widget.add_frame(module_name, filename, total_actions)
+                self._ensure_selected_visible()
 
     @Slot(int, str, str, int)
     def handle_update_frame_status(self, module_name, filename, status_id):
@@ -274,6 +276,7 @@ class ModernProjectView(ProjectView):
             widget = self._find_action_widget(*indices)
             if widget and hasattr(widget, 'update_frame_status'):
                 widget.update_frame_status(module_name, filename, status_id)
+                self._ensure_selected_visible()
 
     @Slot(int, str, str, int)
     def handle_set_total_actions(self, module_name, filename, total_actions):
