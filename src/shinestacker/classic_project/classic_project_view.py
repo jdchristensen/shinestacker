@@ -282,7 +282,7 @@ class ClassicProjectView(ProjectView, ListContainer):
                 labels = [[(self.action_text(a), a.enabled()) for a in job.sub_actions]]
                 r = self.get_retouch_path(job)
                 retouch_paths = [] if len(r) == 0 else [(job_name, r)]
-                new_window, id_str = self.create_new_window(f"{job_name} [⚙️ Job]",
+                new_window, id_str = self.create_new_window(f"{job_name} [Job]",
                                                             labels, retouch_paths)
                 worker = JobLogWorker(job, id_str)
                 self.connect_worker_signals(worker, new_window)

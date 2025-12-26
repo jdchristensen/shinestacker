@@ -321,7 +321,7 @@ class MenuManager(QObject):
         tooltip = self.tooltips["Run All Jobs"]
         self.run_all_jobs_action.setEnabled(enabled)
         if not enabled:
-            tooltip += " (requires more tha one job)"
+            tooltip += " (requires more than one job)"
         self.run_all_jobs_action.setToolTip(tooltip)
 
     def set_enabled_undo_action(self, enabled, description):
