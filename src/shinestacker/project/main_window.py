@@ -249,7 +249,7 @@ class MainWindow(ProjectIOHandler, QMainWindow):
                 for _k, v in self.views.items():
                     v.clear_project()
             self.refresh_ui_and_select_first_job()
-            self.menu_manager.save_actions_set_enabled(False)
+            self.menu_manager.save_actions_set_enabled(True)
             self.set_enabled_file_open_close_actions(True)
             self.show_status_message("New project created.")
 

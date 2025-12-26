@@ -18,16 +18,17 @@ class ProgressMapper:
                 output_path = get_action_output_path(action)[0]
                 if output_path:
                     norm_path = os.path.normpath(output_path)
-                    self.mapping[norm_path] = (job_idx, action_idx, -1)
-                if hasattr(action, 'sub_actions') and action.sub_actions:
-                    for subaction_idx, subaction in enumerate(action.sub_actions):
-                        sub_output_path = get_action_output_path(subaction)[0]
-                        if sub_output_path:
-                            sub_norm_path = os.path.normpath(sub_output_path)
+                    if norm_path not in self.mapping:
+                        self.mapping[norm_path] = (job_idx, action_idx, -1)
+                for subaction_idx, subaction in enumerate(action.sub_actions):
+                    sub_output_path = get_action_output_path(subaction)[0]
+                    if sub_output_path:
+                        sub_norm_path = os.path.normpath(sub_output_path)
+                        if sub_norm_path not in self.mapping:
                             self.mapping[sub_norm_path] = (job_idx, action_idx, subaction_idx)
-                        sub_name = subaction.params.get('name', '')
-                        if sub_name:
-                            self.mapping[sub_name] = (job_idx, action_idx, subaction_idx)
+                    sub_name = subaction.params.get('name', '')
+                    if sub_name and sub_name not in self.mapping:
+                        self.mapping[sub_name] = (job_idx, action_idx, subaction_idx)
         return self.mapping
 
     def has_module(self, module_name):

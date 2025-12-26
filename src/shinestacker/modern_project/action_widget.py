@@ -16,11 +16,10 @@ class ActionWidget(ImgBaseWidget):
         path_text = f"📁 <i>{self._format_path(in_path)}</i> → " \
             f"📂 <i>{self._format_path(out_path)}</i>"
         self._add_path_label(path_text)
-        if hasattr(action, 'sub_actions') and action.sub_actions:
-            subactions_container = QWidget()
-            horizontal_layout = QHBoxLayout(subactions_container)
-            horizontal_layout.setContentsMargins(0, 0, 0, 0)
-            horizontal_layout.setSpacing(2)
+        subactions_container = QWidget()
+        horizontal_layout = QHBoxLayout(subactions_container)
+        horizontal_layout.setContentsMargins(0, 0, 0, 0)
+        horizontal_layout.setSpacing(2)
         for sub_action in action.sub_actions:
             sub_action_widget = SubActionWidget(sub_action, dark_theme)
             horizontal_layout.addWidget(sub_action_widget)
