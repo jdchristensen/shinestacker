@@ -1,5 +1,5 @@
 # pylint: disable=C0114, C0115, C0116, E0611, R0902, R0904, R0913, R0914, R0917, R0912, R0915, E1101
-# pylint: disable=R1716, C0302, R0911
+# pylint: disable=R1716, C0302, R0911, R0903
 import os
 from PySide6.QtCore import Qt, QTimer, Signal, Slot
 from PySide6.QtGui import QCursor
@@ -16,6 +16,18 @@ from .job_widget import JobWidget
 from .selection_state import SelectionState
 from .progress_mapper import ProgressMapper
 from .element_operations import ElementOperations
+
+
+class SignalConnector:
+    @staticmethod
+    def connect_worker_signals(worker, view):
+        for attr_name in dir(worker):
+            if attr_name.endswith('_signal'):
+                signal = getattr(worker, attr_name)
+                handler_name = f'handle_{attr_name[:-7]}'  # Remove '_signal'
+                handler = getattr(view, handler_name, None)
+                if handler and callable(handler):
+                    signal.connect(handler, Qt.ConnectionType.UniqueConnection)
 
 
 class ModernProjectView(ProjectView):
@@ -1093,40 +1105,7 @@ class ModernProjectView(ProjectView):
             self._worker.stop()
 
     def _connect_worker_signals(self, worker):
-        worker.status_signal.connect(
-            self.handle_status_signal, Qt.ConnectionType.UniqueConnection)
-        worker.end_signal.connect(
-            self.handle_worker_end, Qt.ConnectionType.UniqueConnection)
-        worker.step_counts_signal.connect(
-            self.handle_step_counts, Qt.ConnectionType.UniqueConnection)
-        worker.begin_steps_signal.connect(
-            self.handle_begin_steps, Qt.ConnectionType.UniqueConnection)
-        worker.end_steps_signal.connect(
-            self.handle_end_steps, Qt.ConnectionType.UniqueConnection)
-        worker.after_step_signal.connect(
-            self.handle_after_step, Qt.ConnectionType.UniqueConnection)
-        worker.add_status_box_signal.connect(
-            self.handle_add_status_box, Qt.ConnectionType.UniqueConnection)
-        worker.add_frame_signal.connect(
-            self.handle_add_frame, Qt.ConnectionType.UniqueConnection)
-        worker.update_frame_status_signal.connect(
-            self.handle_update_frame_status, Qt.ConnectionType.UniqueConnection)
-        worker.set_total_actions_signal.connect(
-            self.handle_set_total_actions, Qt.ConnectionType.UniqueConnection)
-        worker.before_action_signal.connect(
-            self.handle_before_action, Qt.ConnectionType.UniqueConnection)
-        worker.after_action_signal.connect(
-            self.handle_after_action, Qt.ConnectionType.UniqueConnection)
-        worker.run_completed_signal.connect(
-            self.handle_run_completed, Qt.ConnectionType.UniqueConnection)
-        worker.run_stopped_signal.connect(
-            self.handle_run_stopped, Qt.ConnectionType.UniqueConnection)
-        worker.run_failed_signal.connect(
-            self.handle_run_failed, Qt.ConnectionType.UniqueConnection)
-        worker.save_plot_signal.connect(
-            self.handle_save_plot, Qt.ConnectionType.UniqueConnection)
-        worker.open_app_signal.connect(
-            self.handle_open_app, Qt.ConnectionType.UniqueConnection)
+        SignalConnector.connect_worker_signals(worker, self)
 
     @Slot(str, int, str, int)
     def handle_status_signal(self, message, _status, _error_message, timeout):
@@ -1139,15 +1118,6 @@ class ModernProjectView(ProjectView):
     @Slot(int, str, str)
     def handle_worker_end(self, _status, _id_str, _message):
         self.console_area.handle_html_message("-" * 80)
-        # if status == constants.RUN_COMPLETED:
-        #     self.console_area.handle_html_message(
-        #         f"<b style='color:green'>✓ Completed: {message}</b>")
-        # elif status == constants.RUN_STOPPED:
-        #     self.console_area.handle_html_message(
-        #         f"<b style='color:orange'>⏹ Stopped: {message}</b>")
-        # elif status == constants.RUN_FAILED:
-        #     self.console_area.handle_html_message(
-        #         f"<b style='color:red'>✗ Failed: {message}</b>")
         self._worker = None
 
     @Slot(int, str)
