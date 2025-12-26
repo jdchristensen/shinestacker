@@ -164,7 +164,7 @@ class ModernProjectView(ProjectView):
                 return job_widget.child_widgets[action_idx]
         return None
 
-    def handle_step_counts(self, run_id, module_name, total_steps):
+    def handle_step_counts(self, _run_id, module_name, total_steps):
         norm_path = os.path.normpath(module_name)
         if norm_path in self.progress_mapping:
             job_idx, action_idx = self.progress_mapping[norm_path]
@@ -172,7 +172,7 @@ class ModernProjectView(ProjectView):
             if action_widget:
                 action_widget.show_progress(total_steps, os.path.basename(module_name))
 
-    def handle_after_step(self, run_id, module_name, current_step):
+    def handle_after_step(self, _run_id, module_name, current_step):
         norm_path = os.path.normpath(module_name)
         if norm_path in self.progress_mapping:
             job_idx, action_idx = self.progress_mapping[norm_path]
@@ -180,7 +180,7 @@ class ModernProjectView(ProjectView):
             if action_widget:
                 action_widget.update_progress(current_step)
 
-    def handle_end_steps(self, run_id, module_name):
+    def handle_end_steps(self, _run_id, module_name):
         norm_path = os.path.normpath(module_name)
         if norm_path in self.progress_mapping:
             job_idx, action_idx = self.progress_mapping[norm_path]
@@ -188,7 +188,7 @@ class ModernProjectView(ProjectView):
             if action_widget:
                 action_widget.complete_progress()
 
-    def handle_begin_steps(self, run_id, module_name):
+    def handle_begin_steps(self, _run_id, module_name):
         norm_path = os.path.normpath(module_name)
         if norm_path in self.progress_mapping:
             job_idx, action_idx = self.progress_mapping[norm_path]

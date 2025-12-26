@@ -13,27 +13,35 @@ class MultiModuleStatusContainer(QWidget):
     MAX_HEIGHT = 400
     content_size_changed = Signal()
 
-    def __init__(self, show_title=True, max_height=True):
+    def __init__(self, classic_view=True):
         super().__init__()
-        self.show_title = show_title
-        self.max_height = max_height
+        self.classic_view = classic_view
         main_layout = QVBoxLayout(self)
         main_layout.setContentsMargins(0, 0, 0, 0)
         main_layout.setSpacing(0)
-        self.scroll_area = QScrollArea()
-        self.scroll_area.setWidgetResizable(True)
-        self.scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
-        self.scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
-        self.scroll_area.setFrameShape(QScrollArea.NoFrame)
-        self.container_widget = QWidget()
-        self.layout = QVBoxLayout(self.container_widget)
-        self.layout.setContentsMargins(0, 0, 0, 0)
-        self.layout.setSpacing(0)
-        self.scroll_area.setWidget(self.container_widget)
-        main_layout.addWidget(self.scroll_area)
+        if self.classic_view:
+            self.scroll_area = QScrollArea()
+            self.scroll_area.setWidgetResizable(True)
+            self.scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+            self.scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+            self.scroll_area.setFrameShape(QScrollArea.NoFrame)
+            self.container_widget = QWidget()
+            self.layout = QVBoxLayout(self.container_widget)
+            self.layout.setContentsMargins(0, 0, 0, 0)
+            self.layout.setSpacing(0)
+            self.layout.setAlignment(Qt.AlignTop)
+            self.scroll_area.setWidget(self.container_widget)
+            main_layout.addWidget(self.scroll_area)
+        else:
+            self.container_widget = QWidget()
+            self.layout = QVBoxLayout(self.container_widget)
+            self.layout.setContentsMargins(0, 0, 0, 0)
+            self.layout.setSpacing(0)
+            self.layout.setAlignment(Qt.AlignTop)
+            main_layout.addWidget(self.container_widget)
         self.status_widgets = {}
         self.setMinimumHeight(0)
-        if self.max_height:
+        if self.classic_view:
             self.setMaximumHeight(self.MAX_HEIGHT)
         self._resize_timer = QTimer()
         self._resize_timer.setSingleShot(True)
@@ -45,11 +53,12 @@ class MultiModuleStatusContainer(QWidget):
         QTimer.singleShot(10, lambda: [self.content_size_changed.emit(), self._scroll_to_bottom()])
 
     def _scroll_to_bottom(self):
-        scrollbar = self.scroll_area.verticalScrollBar()
-        scrollbar.setValue(scrollbar.maximum())
+        if self.classic_view:
+            scrollbar = self.scroll_area.verticalScrollBar()
+            scrollbar.setValue(scrollbar.maximum())
 
     def add_module(self, module_name):
-        if self.show_title:
+        if self.classic_view:
             label = QLabel(module_name)
             label.setStyleSheet("QLabel { font-weight: bold; margin: 0px; padding: 0px; }")
             label.setContentsMargins(0, 0, 0, 0)
@@ -291,7 +300,7 @@ class PreprocessingStatusWidget(QWidget):
             self.grid_layout.addWidget(widget, row, col)
         num_rows = math.ceil(len(self.frame_widgets) / num_cols) if num_cols > 0 else 0
         total_height = num_rows * (self.current_box_height + spacing)
-        new_min_height = total_height + 10
+        new_min_height = total_height  # + 10
         if new_min_height != self.minimumHeight():
             self.blockSignals(True)
             self.setMinimumHeight(new_min_height)

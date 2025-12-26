@@ -19,7 +19,7 @@ class ActionWidget(BaseWidget):
         if hasattr(action, 'sub_actions') and action.sub_actions:
             subactions_container = QWidget()
             horizontal_layout = QHBoxLayout(subactions_container)
-            horizontal_layout.setContentsMargins(0, 4, 0, 0)
+            horizontal_layout.setContentsMargins(0, 0, 0, 0)
             horizontal_layout.setSpacing(2)
         for sub_action in action.sub_actions:
             sub_action_widget = SubActionWidget(sub_action, dark_theme)
@@ -28,16 +28,20 @@ class ActionWidget(BaseWidget):
             self.layout().addWidget(subactions_container)
         self.progress_container = QWidget()
         self.progress_layout = QVBoxLayout(self.progress_container)
-        self.progress_layout.setContentsMargins(0, 4, 0, 0)
+        self.progress_layout.setContentsMargins(0, 0, 0, 0)
         self.progress_layout.setSpacing(2)
         self.progress_bar = TimerProgressBar()
         self.progress_bar.setVisible(False)
         self.progress_layout.addWidget(self.progress_bar)
-        self.frames_status_box = MultiModuleStatusContainer(show_title=False, max_height=False)
+        self.frames_status_box = MultiModuleStatusContainer(classic_view=False)
         self.frames_status_box.setVisible(False)
+        self.frames_status_box.content_size_changed.connect(self._update_container_size)
         self.progress_layout.addWidget(self.frames_status_box)
         self.layout().addWidget(self.progress_container)
         self._has_frames_content = False
+
+    def _update_container_size(self):
+        pass
 
     def widget_type(self):
         return 'ActionWidget'
