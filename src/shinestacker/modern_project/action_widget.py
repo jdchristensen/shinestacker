@@ -45,11 +45,13 @@ class ActionWidget(BaseWidget):
         self.image_scroll_area.setFrameShape(QFrame.NoFrame)
         self.image_scroll_area.setStyleSheet("background: transparent;")
         self.image_scroll_area.verticalScrollBar().setEnabled(False)
-
         self.image_scroll_area.setStyleSheet("""
             QScrollArea {
                 background: transparent;
                 border: none;
+            }
+            QScrollArea > QWidget > QWidget {
+                background: transparent;
             }
             QScrollBar:horizontal {
                 height: 6px;
@@ -69,6 +71,7 @@ class ActionWidget(BaseWidget):
                 height: 0px;
             }
         """)
+        self.image_scroll_area.viewport().installEventFilter(self)
         self.image_area_widget = QWidget()
         self.image_layout = QHBoxLayout(self.image_area_widget)
         self.image_layout.setSpacing(5)
@@ -80,6 +83,17 @@ class ActionWidget(BaseWidget):
         self.layout().addWidget(self.progress_container)
         self._has_frames_content = False
         self.image_views = []
+
+    def eventFilter(self, watched, event):
+        if watched == self.image_scroll_area.viewport() and event.type() == event.Type.Wheel:
+            if event.angleDelta().y() != 0:
+                parent = self.parent()
+                while parent:
+                    if isinstance(parent, QScrollArea):
+                        parent.wheelEvent(event)
+                        return True
+                    parent = parent.parent()
+        return super().eventFilter(watched, event)
 
     def _update_container_size(self):
         pass
@@ -161,8 +175,8 @@ class ActionWidget(BaseWidget):
         self.image_area_widget.setFixedWidth(total_width)
         self.image_area_widget.setFixedHeight(max_height)
         scrollbar = self.image_scroll_area.horizontalScrollBar()
-        scrollbar_height = scrollbar.sizeHint().height()
-        self.image_scroll_area.setMinimumHeight(max_height + scrollbar_height + 5)
+        scrollbar_height = scrollbar.sizeHint().height() if scrollbar.maximum() > 0 else 0
+        self.image_scroll_area.setMinimumHeight(max_height + scrollbar_height)
 
     def clear_images(self):
         for view in self.image_views:

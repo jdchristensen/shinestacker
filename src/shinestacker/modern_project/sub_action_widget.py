@@ -25,6 +25,9 @@ class SubActionWidget(BaseWidget):
                 background: transparent;
                 border: none;
             }
+            QScrollArea > QWidget > QWidget {
+                background: transparent;
+            }
             QScrollBar:vertical {
                 width: 6px;
                 border: none;
