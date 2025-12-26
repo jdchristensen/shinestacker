@@ -106,6 +106,9 @@ class ProjectHandler:
     def add_job_to_project(self, job):
         self.project_holder.add_job_to_project(job)
 
+    def is_valid_job_index(self, index):
+        return 0 <= index < len(self.project().jobs)
+
     def modified(self):
         return self.project_holder.modified
 

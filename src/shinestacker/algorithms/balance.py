@@ -17,8 +17,9 @@ setup_matplotlib_mode()
 
 
 class BaseHistogrammer:
-    def __init__(self, dtype, num_pixel_values, max_pixel_value, channels,
+    def __init__(self, name, dtype, num_pixel_values, max_pixel_value, channels,
                  plot_histograms, plot_summary, process=None):
+        self.name = name
         self.dtype = dtype
         self.num_pixel_values = num_pixel_values
         self.max_pixel_value = max_pixel_value
@@ -48,8 +49,9 @@ class BaseHistogrammer:
         plot_path = f"{self.process.working_path}/{self.process.plot_path}/" \
                     f"{self.process.name}-hist-{idx_str}.pdf"
         self.process.plot_manager.save_plot(plot_path, fig)
+        save_plot_name = self.process.output_path if self.name == '' else self.name
         self.process.callback(
-            'save_plot', self.process.id, self.process.name,
+            'save_plot', self.process.id, save_plot_name,
             f"{self.process.name}: balance\nframe {idx_str}",
             plot_path
         )
@@ -58,8 +60,9 @@ class BaseHistogrammer:
         plot_path = f"{self.process.working_path}/{self.process.plot_path}/" \
                     f"{self.process.name}-{name}.pdf"
         self.process.plot_manager.save_plot(plot_path, fig)
+        save_plot_name = self.process.output_path if self.name == '' else self.name
         self.process.callback(
-            'save_plot', self.process.id, self.process.name,
+            'save_plot', self.process.id, save_plot_name,
             f"{self.process.name}: {name}", plot_path
         )
 
@@ -305,11 +308,12 @@ class LinearMap(CorrectionMap):
 
 
 class Correction:
-    def __init__(self, channels, mask_size=0, intensity_interval=None,
+    def __init__(self, name, channels, mask_size=0, intensity_interval=None,
                  subsample=DEFAULTS['balance_frames_params']['subsample'],
                  fast_subsampling=DEFAULTS['balance_frames_params']['fast_subsampling'],
                  corr_map=DEFAULTS['balance_frames_params']['corr_map'],
                  plot_histograms=False, plot_summary=False):
+        self.name = name
         self.mask_size = mask_size
         self.intensity_interval = intensity_interval
         self.subsample = subsample
@@ -399,11 +403,12 @@ class Correction:
 
 
 class LumiCorrection(Correction):
-    def __init__(self, **kwargs):
-        super().__init__(1, **kwargs)
+    def __init__(self, name, **kwargs):
+        super().__init__(name, 1, **kwargs)
 
     def _create_histogrammer(self):
         self.histogrammer = LumiHistogrammer(
+            name=self.name,
             dtype=self.dtype,
             num_pixel_values=self.num_pixel_values,
             max_pixel_value=self.max_pixel_value,
@@ -425,11 +430,12 @@ class LumiCorrection(Correction):
 
 
 class RGBCorrection(Correction):
-    def __init__(self, **kwargs):
-        super().__init__(3, **kwargs)
+    def __init__(self, name, **kwargs):
+        super().__init__(name, 3, **kwargs)
 
     def _create_histogrammer(self):
         self.histogrammer = RGBHistogrammer(
+            name=self.name,
             dtype=self.dtype,
             num_pixel_values=self.num_pixel_values,
             max_pixel_value=self.max_pixel_value,
@@ -450,8 +456,8 @@ class RGBCorrection(Correction):
 
 
 class Ch1Correction(Correction):
-    def __init__(self, **kwargs):
-        super().__init__(1, **kwargs)
+    def __init__(self, name, **kwargs):
+        super().__init__(name, 1, **kwargs)
         self.labels = None
         self.colors = None
 
@@ -470,8 +476,8 @@ class Ch1Correction(Correction):
 
 
 class Ch2Correction(Correction):
-    def __init__(self, **kwargs):
-        super().__init__(2, **kwargs)
+    def __init__(self, name, **kwargs):
+        super().__init__(name, 2, **kwargs)
         self.labels = None
         self.colors = None
 
@@ -497,6 +503,7 @@ class SVCorrection(Ch2Correction):
 
     def _create_histogrammer(self):
         self.histogrammer = Ch2Histogrammer(
+            name=self.name,
             dtype=self.dtype,
             num_pixel_values=self.num_pixel_values,
             max_pixel_value=self.max_pixel_value,
@@ -522,6 +529,7 @@ class LSCorrection(Ch2Correction):
 
     def _create_histogrammer(self):
         self.histogrammer = Ch2Histogrammer(
+            name=self.name,
             dtype=self.dtype,
             num_pixel_values=self.num_pixel_values,
             max_pixel_value=self.max_pixel_value,
@@ -547,6 +555,7 @@ class LABCorrection(Ch1Correction):
 
     def _create_histogrammer(self):
         self.histogrammer = Ch1Histogrammer(
+            name=self.name,
             dtype=self.dtype,
             num_pixel_values=self.num_pixel_values,
             max_pixel_value=self.max_pixel_value,
@@ -565,8 +574,8 @@ class LABCorrection(Ch1Correction):
 
 
 class BalanceFrames(SubAction):
-    def __init__(self, enabled=True, **kwargs):
-        super().__init__(enabled=enabled)
+    def __init__(self, name='', enabled=True, **kwargs):
+        super().__init__(name, enabled)
         self.process = None
         self.shape = None
         default_params = DEFAULTS['balance_frames_params']
@@ -590,6 +599,7 @@ class BalanceFrames(SubAction):
         if correction_class is None:
             raise InvalidOptionError("channel", self.channel)
         self.correction = correction_class(
+            name=self.name,
             mask_size=self.mask_size,
             subsample=self.subsample,
             fast_subsampling=self.fast_subsampling,

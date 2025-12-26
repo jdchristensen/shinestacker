@@ -270,7 +270,8 @@ class ReferenceFrameTask(SequentialTask, ImageSequenceManager):
 
 
 class SubAction:
-    def __init__(self, enabled=True):
+    def __init__(self, name='', enabled=True):
+        self.name = name
         self.enabled = enabled
 
     def begin(self, process):

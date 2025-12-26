@@ -93,20 +93,23 @@ class ProjectConverter:
                     sub_actions.append(a)
             a = CombinedActions(**action_config.params, actions=sub_actions)
             return a
+        params = action_config.params
         if action_config.type_name == constants.ACTION_MASKNOISE:
-            params = {k: v for k, v in action_config.params.items() if k != 'name'}
             return MaskNoise(**params)
         if action_config.type_name == constants.ACTION_VIGNETTING:
-            params = {k: v for k, v in action_config.params.items() if k != 'name'}
             return Vignetting(**params)
         if action_config.type_name == constants.ACTION_ALIGNFRAMES:
-            params = {k: v for k, v in action_config.params.items() if k != 'name'}
             return AlignFramesAuto(**params)
         if action_config.type_name == constants.ACTION_BALANCEFRAMES:
-            params = {k: v for k, v in action_config.params.items() if k != 'name'}
             if 'intensity_interval' in params.keys():
                 i = params['intensity_interval']
-                params['intensity_interval'] = {'min': i[0], 'max': i[1]}
+                if isinstance(i, dict):
+                    i_converted = i
+                elif isinstance(i, (list, tuple)) and len(i) == 2:
+                    i_converted = {'min': i[0], 'max': i[1]}
+                else:
+                    raise ValueError(f"Unsupported intensity_interval value: {i}")
+                params['intensity_interval'] = i_converted
             return BalanceFrames(**params)
         if action_config.type_name in (constants.ACTION_FOCUSSTACK,
                                        constants.ACTION_FOCUSSTACKBUNCH):

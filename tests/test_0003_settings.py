@@ -104,7 +104,7 @@ def test_settings_extra_keys_filtered():
             mock_gui_constants.DEFAULT_MIN_MOUSE_STEP_BRUSH_FRACTION = 0.1
             extra_settings = {
                 'expert_options': False,
-                'view_strategy': 'new_strategy',
+                'retouch_view_strategy': 'new_strategy',
                 'extra_top_level_key': 'should_be_removed',
                 'combined_actions_params': {
                     'max_threads': 10,
@@ -119,7 +119,7 @@ def test_settings_extra_keys_filtered():
             assert 'extra_top_level_key' not in settings.settings
             assert 'extra_nested_key' not in settings.settings['combined_actions_params']
             assert not settings.get('expert_options')
-            assert settings.get('view_strategy') == 'new_strategy'
+            assert settings.get('retouch_view_strategy') == 'new_strategy'
             assert settings.get('combined_actions_params')['max_threads'] == 10
 
 

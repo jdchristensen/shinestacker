@@ -1,4 +1,5 @@
 # pylint: disable=C0114, C0115, C0116, W0718, R0912, R0915, E1101, R0914, R0911, E0606, R0801, R0902
+# pylint: disable=R0913, R0917
 import gc
 import os
 import copy
@@ -30,9 +31,9 @@ def compose_transforms(t1, t2, transform_type):
 
 
 class AlignFramesParallel(AlignFramesBase):
-    def __init__(self, enabled=True, feature_config=None, matching_config=None,
+    def __init__(self, name='', enabled=True, feature_config=None, matching_config=None,
                  alignment_config=None, **kwargs):
-        super().__init__(enabled, feature_config, matching_config,
+        super().__init__(name, enabled, feature_config, matching_config,
                          alignment_config, use_large_thresholds=False, **kwargs)
         self.max_threads = kwargs.get(
             'max_threads', DEFAULTS['align_frames_params']['max_threads'])

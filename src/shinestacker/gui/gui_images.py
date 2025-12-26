@@ -27,7 +27,7 @@ def open_file(file_path):
 
 
 class GuiPdfView(QPdfView):
-    def __init__(self, file_path, parent=None):
+    def __init__(self, file_path, parent=None, fixed_height=False):
         super().__init__(parent)
         self.file_path = file_path
         self.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
@@ -35,16 +35,22 @@ class GuiPdfView(QPdfView):
         self.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.setPageSpacing(0)
         self.setDocumentMargins(QMargins(0, 0, 0, 0))
+        self.setFocusPolicy(Qt.NoFocus)
         self.pdf_document = QPdfDocument()
         err = self.pdf_document.load(file_path)
         if err == QPdfDocument.Error.None_:
             self.setDocument(self.pdf_document)
             first_page_size = self.pdf_document.pagePointSize(0)
-            zoom_factor = gui_constants.GUI_IMG_WIDTH / first_page_size.width()
             extra_zoom = 0.75 if running_under_windows() else 1.0
+            if fixed_height:
+                zoom_factor = gui_constants.GUI_IMG_HEIGHT / first_page_size.height()
+                width = int(first_page_size.width() * zoom_factor)
+                self.setFixedSize(width, gui_constants.GUI_IMG_HEIGHT)
+            else:
+                zoom_factor = gui_constants.GUI_IMG_WIDTH / first_page_size.width()
+                height = int(first_page_size.height() * zoom_factor)
+                self.setFixedSize(gui_constants.GUI_IMG_WIDTH, height)
             self.setZoomFactor(zoom_factor * extra_zoom)
-            self.setFixedSize(gui_constants.GUI_IMG_WIDTH,
-                              int(first_page_size.height() * zoom_factor))
         else:
             raise RuntimeError(f"Can't load file: {file_path}. Error code: {err}.")
         self.setStyleSheet('''
@@ -62,20 +68,21 @@ class GuiPdfView(QPdfView):
     def mouseDoubleClickEvent(self, event):
         if event.button() == Qt.LeftButton:
             open_file(self.file_path)
+            return
         super().mouseDoubleClickEvent(event)
 
 
 class GuiImageView(QWidget):
-    def __init__(self, file_path, parent=None):
+    def __init__(self, file_path, parent=None, fixed_height=False):
         super().__init__(parent)
         self.file_path = file_path
-        self.setFixedWidth(gui_constants.GUI_IMG_WIDTH)
         self.main_layout = QVBoxLayout()
         self.main_layout.setContentsMargins(0, 0, 0, 0)
         self.main_layout.setSpacing(0)
         self.image_label = QLabel()
         self.image_label.setAlignment(Qt.AlignCenter)
         self.main_layout.addWidget(self.image_label)
+        self.setFocusPolicy(Qt.NoFocus)
         self.setLayout(self.main_layout)
         try:
             img = read_img(file_path)
@@ -84,8 +91,16 @@ class GuiImageView(QWidget):
             if img.dtype == np.uint16:
                 img = (img // 256).astype(np.uint8)
             height, width = img.shape[:2]
-            scale_factor = gui_constants.GUI_IMG_WIDTH / width
-            new_height = int(height * scale_factor)
+            if fixed_height:
+                scale_factor = gui_constants.GUI_IMG_HEIGHT / height
+                new_width = int(width * scale_factor)
+                target_width = new_width
+                target_height = gui_constants.GUI_IMG_HEIGHT
+            else:
+                scale_factor = gui_constants.GUI_IMG_WIDTH / width
+                new_height = int(height * scale_factor)
+                target_width = gui_constants.GUI_IMG_WIDTH
+                target_height = new_height
 
             def resize_high_quality(image, target_width, target_height):
                 current_height, current_width = image.shape[:2]
@@ -103,7 +118,7 @@ class GuiImageView(QWidget):
                 return cv2.resize(result, (target_width, target_height),
                                   interpolation=cv2.INTER_AREA)
 
-            img = resize_high_quality(img, gui_constants.GUI_IMG_WIDTH, new_height)
+            img = resize_high_quality(img, target_width, target_height)
             if len(img.shape) == 3:
                 h, w, ch = img.shape
                 if ch == 4:
@@ -142,26 +157,33 @@ class GuiImageView(QWidget):
     def mouseDoubleClickEvent(self, event):
         if event.button() == Qt.LeftButton:
             open_file(self.file_path)
+            return
         super().mouseDoubleClickEvent(event)
 
 
 class GuiOpenApp(QWidget):
-    def __init__(self, app, file_path, parent=None):
+    def __init__(self, app, file_path, parent=None, fixed_height=False):
         super().__init__(parent)
         self.file_path = file_path
         self.app = app
-        self.setFixedWidth(gui_constants.GUI_IMG_WIDTH)
         self.main_layout = QVBoxLayout()
         self.main_layout.setContentsMargins(0, 0, 0, 0)
         self.main_layout.setSpacing(0)
         self.image_label = QLabel()
         self.image_label.setAlignment(Qt.AlignCenter)
         self.main_layout.addWidget(self.image_label)
+        self.setFocusPolicy(Qt.NoFocus)
         self.setLayout(self.main_layout)
         pixmap = QPixmap(file_path)
         if pixmap:
-            scaled_pixmap = pixmap.scaledToWidth(
-                gui_constants.GUI_IMG_WIDTH, Qt.SmoothTransformation)
+            if fixed_height:
+                scaled_pixmap = pixmap.scaledToHeight(
+                    gui_constants.GUI_IMG_HEIGHT, Qt.SmoothTransformation)
+                self.setFixedSize(scaled_pixmap.size())
+            else:
+                scaled_pixmap = pixmap.scaledToWidth(
+                    gui_constants.GUI_IMG_WIDTH, Qt.SmoothTransformation)
+                self.setFixedSize(scaled_pixmap.size())
             self.image_label.setPixmap(scaled_pixmap)
         else:
             raise RuntimeError(f"Can't load file: {file_path}.")
@@ -199,4 +221,5 @@ class GuiOpenApp(QWidget):
                     app.retouch_callback(self.file_path)
                 else:
                     raise RuntimeError("MainWindow object not found")
+            return
         super().mouseDoubleClickEvent(event)

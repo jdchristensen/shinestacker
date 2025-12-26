@@ -1,4 +1,5 @@
 # pylint: disable=C0114, C0115, C0116, W0718, R0912, R0915, E1101, R0914, R0911, E0606, R0801, R0902
+# pylint: disable=R0913, R0917
 import os
 import numpy as np
 from ..config.constants import constants
@@ -9,7 +10,7 @@ from .utils import get_first_image_file, get_img_metadata, read_img
 
 
 class AlignFramesAuto(AlignFramesBase):
-    def __init__(self, enabled=True, feature_config=None, matching_config=None,
+    def __init__(self, name='', enabled=True, feature_config=None, matching_config=None,
                  alignment_config=None, **kwargs):
         self.mode = kwargs.pop(
             'mode', DEFAULTS['align_frames_params']['align_mode'])
@@ -22,7 +23,7 @@ class AlignFramesAuto(AlignFramesBase):
         self.bw_matching = kwargs.pop(
             'bw_matching', DEFAULTS['align_frames_params']['bw_matching'])
         self.kwargs = kwargs
-        super().__init__(enabled=enabled, feature_config=None, matching_config=None,
+        super().__init__(name=name, enabled=enabled, feature_config=None, matching_config=None,
                          alignment_config=None, **kwargs)
         available_cores = os.cpu_count() or 1
         self.num_threads = min(self.max_threads, available_cores)
@@ -63,14 +64,13 @@ class AlignFramesAuto(AlignFramesBase):
                     chunk_submit = self.chunk_submit
         if num_threads > 1:
             self._implementation = AlignFramesParallel(
-                self.enabled, self.feature_config, self.matching_config, self.alignment_config,
-                max_threads=num_threads, chunk_submit=chunk_submit,
-                bw_matching=self.bw_matching,
-                **self.kwargs)
+                self.name, self.enabled, self.feature_config, self.matching_config,
+                self.alignment_config, max_threads=num_threads, chunk_submit=chunk_submit,
+                bw_matching=self.bw_matching, **self.kwargs)
         else:
             self._implementation = AlignFrames(
-                self.enabled, self.feature_config, self.matching_config, self.alignment_config,
-                **self.kwargs)
+                self.name, self.enabled, self.feature_config, self.matching_config,
+                self.alignment_config, **self.kwargs)
         self._implementation.begin(process)
 
     def align_images(self, idx, img_ref, img_0):

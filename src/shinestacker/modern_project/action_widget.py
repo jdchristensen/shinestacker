@@ -1,4 +1,4 @@
-# pylint: disable=C0114, C0115, C0116, E0611, R0903
+# pylint: disable=C0114, C0115, C0116, E0611, R0903, R0902
 from PySide6.QtCore import Qt, QTimer
 from PySide6.QtWidgets import QWidget, QHBoxLayout, QVBoxLayout, QScrollArea, QFrame, QSizePolicy
 from .base_widget import BaseWidget
@@ -43,6 +43,32 @@ class ActionWidget(BaseWidget):
         self.image_scroll_area.setWidgetResizable(True)
         self.image_scroll_area.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
         self.image_scroll_area.setFrameShape(QFrame.NoFrame)
+        self.image_scroll_area.setStyleSheet("background: transparent;")
+        self.image_scroll_area.verticalScrollBar().setEnabled(False)
+
+        self.image_scroll_area.setStyleSheet("""
+            QScrollArea {
+                background: transparent;
+                border: none;
+            }
+            QScrollBar:horizontal {
+                height: 6px;
+                border: none;
+                background: transparent;
+            }
+            QScrollBar::handle:horizontal {
+                background: #a0a0a0;
+                border-radius: 6px;
+                min-width: 20px;
+            }
+            QScrollBar::handle:horizontal:hover {
+                background: #808080;
+            }
+            QScrollBar::add-line:horizontal, QScrollBar::sub-line:horizontal {
+                width: 0px;
+                height: 0px;
+            }
+        """)
         self.image_area_widget = QWidget()
         self.image_layout = QHBoxLayout(self.image_area_widget)
         self.image_layout.setSpacing(5)
@@ -116,8 +142,27 @@ class ActionWidget(BaseWidget):
         self.image_layout.addWidget(image_view)
         self.image_scroll_area.setVisible(True)
         self._adjust_image_area_height()
-        QTimer.singleShot(0, lambda: self.image_scroll_area.horizontalScrollBar().setValue(
-            self.image_scroll_area.horizontalScrollBar().maximum()))
+        QTimer.singleShot(0, self._adjust_scroll_after_layout)
+
+    def _adjust_scroll_after_layout(self):
+        self.image_area_widget.adjustSize()
+        scrollbar = self.image_scroll_area.horizontalScrollBar()
+        if scrollbar.maximum() > 0:
+            scrollbar.setValue(scrollbar.maximum())
+
+    def _adjust_image_area_height(self):
+        if not self.image_views:
+            return
+        max_height = max(view.sizeHint().height() for view in self.image_views)
+        total_width = 0
+        for view in self.image_views:
+            total_width += view.sizeHint().width()
+        total_width += self.image_layout.spacing() * (len(self.image_views) - 1)
+        self.image_area_widget.setFixedWidth(total_width)
+        self.image_area_widget.setFixedHeight(max_height)
+        scrollbar = self.image_scroll_area.horizontalScrollBar()
+        scrollbar_height = scrollbar.sizeHint().height()
+        self.image_scroll_area.setMinimumHeight(max_height + scrollbar_height + 5)
 
     def clear_images(self):
         for view in self.image_views:
@@ -126,9 +171,3 @@ class ActionWidget(BaseWidget):
         self.image_views.clear()
         self.image_scroll_area.setVisible(False)
         self.image_scroll_area.setMinimumHeight(0)
-
-    def _adjust_image_area_height(self):
-        if not self.image_views:
-            return
-        max_height = max(view.sizeHint().height() for view in self.image_views)
-        self.image_scroll_area.setMinimumHeight(max_height + 10)

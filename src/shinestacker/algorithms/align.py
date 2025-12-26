@@ -64,9 +64,9 @@ def align_images(img_ref, img_0, feature_config=None, matching_config=None, alig
 
 
 class AlignFramesBase(SubAction):
-    def __init__(self, enabled=True, feature_config=None, matching_config=None,
+    def __init__(self, name='', enabled=True, feature_config=None, matching_config=None,
                  alignment_config=None, use_large_thresholds=False, **kwargs):
-        super().__init__(enabled)
+        super().__init__(name, enabled)
         self.process = None
         self._n_good_matches = None
         self.feature_config = {**DEFAULT_FEATURE_CONFIG, **(feature_config or {})}
@@ -160,6 +160,7 @@ class AlignFramesBase(SubAction):
             return x, y, y_ref
 
         if self.plot_summary:
+            save_plot_name = self.process.output_path if self.name == '' else self.name
             fig = plt.figure(figsize=constants.PLT_FIG_SIZE)
             x, y, y_ref = get_coordinates(self._n_good_matches)
             plt.plot([self.process.ref_idx + 1, self.process.ref_idx + 1],
@@ -177,7 +178,7 @@ class AlignFramesBase(SubAction):
                         f"{self.process.name}-matches.pdf"
             self.process.plot_manager.save_plot(plot_path, fig)
             self.process.callback(constants.CALLBACK_SAVE_PLOT, self.process.id,
-                                  self.process.output_path,
+                                  save_plot_name,
                                   f"{self.process.name}: matches", plot_path)
             transform = self.alignment_config['transform']
             title = "Transformation parameters rel. to reference frame"
@@ -200,7 +201,7 @@ class AlignFramesBase(SubAction):
                             f"{self.process.name}-rotation.pdf"
                 self.process.plot_manager.save_plot(plot_path, fig)
                 self.process.callback(constants.CALLBACK_SAVE_PLOT, self.process.id,
-                                      self.process.output_path,
+                                      save_plot_name,
                                       f"{self.process.name}: rotation", plot_path)
                 fig = plt.figure(figsize=constants.PLT_FIG_SIZE)
                 x, y_x, y_x_ref = get_coordinates(self._translation_x)
@@ -222,7 +223,7 @@ class AlignFramesBase(SubAction):
                             f"{self.process.name}-translation.pdf"
                 self.process.plot_manager.save_plot(plot_path, fig)
                 self.process.callback(constants.CALLBACK_SAVE_PLOT, self.process.id,
-                                      self.process.output_path,
+                                      save_plot_name,
                                       f"{self.process.name}: translation", plot_path)
 
                 fig = plt.figure(figsize=constants.PLT_FIG_SIZE)
@@ -243,7 +244,7 @@ class AlignFramesBase(SubAction):
                             f"{self.process.name}-scale.pdf"
                 self.process.plot_manager.save_plot(plot_path, fig)
                 self.process.callback(constants.CALLBACK_SAVE_PLOT, self.process.id,
-                                      self.process.output_path,
+                                      save_plot_name,
                                       f"{self.process.name}: scale", plot_path)
             elif transform == constants.ALIGN_HOMOGRAPHY:
                 fig = plt.figure(figsize=constants.PLT_FIG_SIZE)
@@ -264,7 +265,7 @@ class AlignFramesBase(SubAction):
                             f"{self.process.name}-area-ratio.pdf"
                 self.process.plot_manager.save_plot(plot_path, fig)
                 self.process.callback(constants.CALLBACK_SAVE_PLOT, self.process.id,
-                                      self.process.output_path,
+                                      save_plot_name,
                                       f"{self.process.name}: area ratio", plot_path)
                 fig = plt.figure(figsize=constants.PLT_FIG_SIZE)
                 x, y, y_ref = get_coordinates(self._aspect_ratio)
@@ -285,7 +286,7 @@ class AlignFramesBase(SubAction):
                             f"{self.process.name}-aspect-ratio.pdf"
                 self.process.plot_manager.save_plot(plot_path, fig)
                 self.process.callback(constants.CALLBACK_SAVE_PLOT, self.process.id,
-                                      self.process.output_path,
+                                      save_plot_name,
                                       f"{self.process.name}: aspect ratio", plot_path)
                 fig = plt.figure(figsize=constants.PLT_FIG_SIZE)
                 x, y, y_ref = get_coordinates(self._max_angle_dev)
@@ -305,7 +306,7 @@ class AlignFramesBase(SubAction):
                             f"{self.process.name}-rotation.pdf"
                 self.process.plot_manager.save_plot(plot_path, fig)
                 self.process.callback(constants.CALLBACK_SAVE_PLOT, self.process.id,
-                                      self.process.output_path,
+                                      save_plot_name,
                                       f"{self.process.name}: rotation", plot_path)
 
     def save_transform_result(self, idx, result):
@@ -333,9 +334,9 @@ class AlignFramesBase(SubAction):
 
 
 class AlignFrames(AlignFramesBase):
-    def __init__(self, enabled=True, feature_config=None, matching_config=None,
+    def __init__(self, name='', enabled=True, feature_config=None, matching_config=None,
                  alignment_config=None, **kwargs):
-        super().__init__(enabled, feature_config, matching_config,
+        super().__init__(name, enabled, feature_config, matching_config,
                          alignment_config, use_large_thresholds=True, **kwargs)
 
     def align_images(self, idx, img_ref, img_0):
@@ -350,7 +351,8 @@ class AlignFrames(AlignFramesBase):
             'warning': lambda msg: self.print_message(color_str(
                 f'{msg}', constants.LOG_COLOR_WARNING), level=logging.WARNING),
             'save_plot': lambda plot_path: self.process.callback(
-                constants.CALLBACK_SAVE_PLOT, self.process.id, self.process.output_path,
+                constants.CALLBACK_SAVE_PLOT, self.process.id,
+                self.process.output_path if self.name == '' else self.name,
                 f"{self.process.name}: matches\nframe {idx_str}", plot_path),
             'save_transform_result': lambda result: self.save_transform_result(idx, result)
         }

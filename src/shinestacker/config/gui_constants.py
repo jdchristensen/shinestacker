@@ -4,6 +4,7 @@ import math
 
 class _GuiConstants:
     GUI_IMG_WIDTH = 250  # px
+    GUI_IMG_HEIGHT = 140  # px
     DISABLED_TAG = ""  # " <disabled>"
 
     MIN_ZOOMED_IMG_WIDTH = 600

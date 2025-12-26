@@ -123,8 +123,9 @@ def correct_vignetting(
 
 
 class Vignetting(SubAction):
-    def __init__(self, enabled=True, percentiles=(0.05, 0.1, 0.25, 0.5, 0.75, 0.9, 0.95), **kwargs):
-        super().__init__(enabled)
+    def __init__(self, name='', enabled=True,
+                 percentiles=(0.05, 0.1, 0.25, 0.5, 0.75, 0.9, 0.95), **kwargs):
+        super().__init__(name, enabled)
         self.r_steps = kwargs.get(
             'r_steps', DEFAULTS['vignetting_params']['r_steps'])
         self.black_threshold = kwargs.get(
@@ -190,8 +191,9 @@ class Vignetting(SubAction):
                 f"radial-intensity-{idx_str}.pdf"
             self.process.plot_manager.save_plot(plot_path, fig)
             plt.close('all')
+            save_plot_name = self.process.output_path if self.name == '' else self.name
             self.process.callback(
-                constants.CALLBACK_SAVE_PLOT, self.process.id, self.process.output_path,
+                constants.CALLBACK_SAVE_PLOT, self.process.id, save_plot_name,
                 f"{self.process.name}: intensity\nframe {idx_str}", plot_path)
 
         for i, p in enumerate(self.percentiles):
@@ -254,5 +256,6 @@ class Vignetting(SubAction):
                         f"{self.process.name}-r0.pdf"
             self.process.plot_manager.save_plot(plot_path, fig)
             plt.close('all')
-            self.process.callback(constants.CALLBACK_SAVE_PLOT, self.process.id, self.process.name,
+            save_plot_name = self.process.output_path if self.name == '' else self.name
+            self.process.callback(constants.CALLBACK_SAVE_PLOT, self.process.id, save_plot_name,
                                   f"{self.process.name}: vignetting", plot_path)

@@ -128,7 +128,7 @@ class NoiseDetectionRGB:
         plots_ext = AppConfig.get('plots_format')
         plot_path = f"{working_path}/{plot_path}/{name}-hot-pixels.{plots_ext}"
         self.plot_manager.save_plot(plot_path, fig)
-        callback(constants.CALLBACK_SAVE_PLOT, idx, self.name, f"{name}: noise", plot_path)
+        callback(constants.CALLBACK_SAVE_PLOT, idx, name, f"{name}: noise", plot_path)
 
 
 class NoiseDetectionLAB:
@@ -317,18 +317,18 @@ class NoiseDetection(TaskBase, ImageSequenceManager):
 
 
 class MaskNoise(SubAction):
-    def __init__(self, **kwargs):
-        self.noise_mask = kwargs.pop(
+    def __init__(self, name='', enabled=True, **kwargs):
+        self.noise_mask = kwargs.get(
             'noise_mask', DEFAULTS['noise_detection_params']['noise_map_filename'])
-        self.max_noisy_pxls = kwargs.pop(
+        self.max_noisy_pxls = kwargs.get(
             'max_noisy_pxls', DEFAULTS['mask_noise_params']['max_noisy_pxls'])
-        self.kernel_size = kwargs.pop(
+        self.kernel_size = kwargs.get(
             'kernel_size', DEFAULTS['mask_noise_params']['kernel_size'])
         self.ks2 = self.kernel_size // 2
         self.ks2_1 = self.ks2 + 1
-        self.method = kwargs.pop(
+        self.method = kwargs.get(
             'method', DEFAULTS['mask_noise_params']['method'])
-        super().__init__(**kwargs)
+        super().__init__(name, enabled)
         self.process = None
         self.noise_mask_img = None
         self.expected_shape = None

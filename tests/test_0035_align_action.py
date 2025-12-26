@@ -620,14 +620,15 @@ def test_align_frames_end_with_plot_summary_rigid():
     class MockProcess:
         ref_idx = 2
         working_path = "/tmp"
+        output_path = "output"
         plot_path = "plots"
         name = "test"
         id = 1
         callback_calls = []
         plot_manager = MagicMock()
 
-        def callback(self, callback_type, process_id, description, plot_path):
-            self.callback_calls.append((callback_type, description, plot_path))
+        def callback(self, callback_type, process_id, name, description, plot_path):
+            self.callback_calls.append((callback_type, name, description, plot_path))
 
     process = MockProcess()
     align_frames.process = process
@@ -650,14 +651,15 @@ def test_align_frames_end_with_plot_summary_homography():
     class MockProcess:
         ref_idx = 1
         working_path = "/tmp"
+        output_path ="output"
         plot_path = "plots"
         name = "test"
         id = 1
         callback_calls = []
         plot_manager = MagicMock()
 
-        def callback(self, callback_type, process_id, description, plot_path):
-            self.callback_calls.append((callback_type, description, plot_path))
+        def callback(self, callback_type, process_id, name, description, plot_path):
+            self.callback_calls.append((callback_type, name, description, plot_path))
 
     process = MockProcess()
     align_frames.process = process
