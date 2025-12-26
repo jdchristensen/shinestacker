@@ -302,6 +302,13 @@ class MainWindow(ProjectIOHandler, QMainWindow):
         self.menu_manager.run_job_action.setEnabled(False)
         self.menu_manager.run_all_jobs_action.setEnabled(False)
 
+    def on_job_count_changed(self):
+        job_count = self.num_project_jobs()
+        self.menu_manager.set_enabled_run_all_jobs(job_count > 1)
+        self.menu_manager.run_job_action.setEnabled(job_count > 0)
+        self.menu_manager.action_selector.setEnabled(job_count > 0)
+        self.menu_manager.add_action_entry_action.setEnabled(job_count > 0)
+
     def perform_undo(self):
         if self.undo():
             self.current_view.refresh_ui()
@@ -316,11 +323,7 @@ class MainWindow(ProjectIOHandler, QMainWindow):
             self.project_jobs().insert(new_job_index, job_action)
             self.set_enabled_file_open_close_actions(True)
             self.current_view.refresh_and_select_job(new_job_index)
-            job_count = self.num_project_jobs()
-            self.menu_manager.run_job_action.setEnabled(job_count > 0)
-            self.menu_manager.action_selector.setEnabled(job_count > 0)
-            self.menu_manager.add_action_entry_action.setEnabled(job_count > 0)
-            self.menu_manager.set_enabled_run_all_jobs(job_count > 1)
+            self.on_job_count_changed()
 
     def delete_element(self):
         self.current_view.delete_element()
@@ -384,6 +387,7 @@ class MainWindow(ProjectIOHandler, QMainWindow):
             if action.property("requires_file"):
                 action.setEnabled(should_enable)
         self.menu_manager.stop_action.setEnabled(False)
+        self.on_job_count_changed()
 
     def is_dark_theme(self):
         palette = QApplication.palette()
