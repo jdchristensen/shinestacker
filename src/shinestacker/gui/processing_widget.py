@@ -216,6 +216,8 @@ class FrameStatusBox(QWidget):
     def mouseDoubleClickEvent(self, event):
         if self.enable_doubleclick and self.filename:
             open_file(self.filename)
+            event.accept()
+            return
         super().mouseDoubleClickEvent(event)
 
 
