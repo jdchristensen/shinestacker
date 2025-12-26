@@ -1,6 +1,6 @@
 # pylint: disable=C0114, C0115, C0116, E0611, R0903
-from PySide6.QtCore import QTimer
-from PySide6.QtWidgets import QWidget, QHBoxLayout, QVBoxLayout
+from PySide6.QtCore import Qt, QTimer
+from PySide6.QtWidgets import QWidget, QHBoxLayout, QVBoxLayout, QScrollArea, QFrame, QSizePolicy
 from .base_widget import BaseWidget
 from .sub_action_widget import SubActionWidget
 from .. gui.project_model import get_action_input_path, get_action_output_path
@@ -37,8 +37,23 @@ class ActionWidget(BaseWidget):
         self.frames_status_box.setVisible(False)
         self.frames_status_box.content_size_changed.connect(self._update_container_size)
         self.progress_layout.addWidget(self.frames_status_box)
+        self.image_scroll_area = QScrollArea()
+        self.image_scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+        self.image_scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self.image_scroll_area.setWidgetResizable(True)
+        self.image_scroll_area.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
+        self.image_scroll_area.setFrameShape(QFrame.NoFrame)
+        self.image_area_widget = QWidget()
+        self.image_layout = QHBoxLayout(self.image_area_widget)
+        self.image_layout.setSpacing(5)
+        self.image_layout.setContentsMargins(0, 0, 0, 0)
+        self.image_layout.setAlignment(Qt.AlignLeft)
+        self.image_scroll_area.setWidget(self.image_area_widget)
+        self.image_scroll_area.setVisible(False)
+        self.progress_layout.addWidget(self.image_scroll_area)
         self.layout().addWidget(self.progress_container)
         self._has_frames_content = False
+        self.image_views = []
 
     def _update_container_size(self):
         pass
@@ -95,3 +110,25 @@ class ActionWidget(BaseWidget):
         self.frames_status_box.clear()
         self.frames_status_box.setVisible(False)
         self._has_frames_content = False
+
+    def add_image_view(self, image_view):
+        self.image_views.append(image_view)
+        self.image_layout.addWidget(image_view)
+        self.image_scroll_area.setVisible(True)
+        self._adjust_image_area_height()
+        QTimer.singleShot(0, lambda: self.image_scroll_area.horizontalScrollBar().setValue(
+            self.image_scroll_area.horizontalScrollBar().maximum()))
+
+    def clear_images(self):
+        for view in self.image_views:
+            self.image_layout.removeWidget(view)
+            view.deleteLater()
+        self.image_views.clear()
+        self.image_scroll_area.setVisible(False)
+        self.image_scroll_area.setMinimumHeight(0)
+
+    def _adjust_image_area_height(self):
+        if not self.image_views:
+            return
+        max_height = max(view.sizeHint().height() for view in self.image_views)
+        self.image_scroll_area.setMinimumHeight(max_height + 10)

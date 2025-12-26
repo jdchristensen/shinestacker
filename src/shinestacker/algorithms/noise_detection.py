@@ -128,7 +128,7 @@ class NoiseDetectionRGB:
         plots_ext = AppConfig.get('plots_format')
         plot_path = f"{working_path}/{plot_path}/{name}-hot-pixels.{plots_ext}"
         self.plot_manager.save_plot(plot_path, fig)
-        callback(constants.CALLBACK_SAVE_PLOT, idx, f"{name}: noise", plot_path)
+        callback(constants.CALLBACK_SAVE_PLOT, idx, self.name, f"{name}: noise", plot_path)
 
 
 class NoiseDetectionLAB:
@@ -214,7 +214,8 @@ class NoiseDetectionLAB:
         plots_ext = AppConfig.get('plots_format')
         plot_path = f"{working_path}/{plot_path}/{name}-distance-histogram.{plots_ext}"
         self.plot_manager.save_plot(plot_path, fig)
-        callback(constants.CALLBACK_SAVE_PLOT, id, f"{name}: distance histogram", plot_path)
+        callback(constants.CALLBACK_SAVE_PLOT, idx, name,
+                 f"{name}: distance histogram", plot_path)
         plt.close('all')
 
 

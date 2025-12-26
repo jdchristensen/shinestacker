@@ -5,12 +5,14 @@ from PySide6.QtCore import Qt, QTimer, Signal, Slot
 from PySide6.QtGui import QCursor
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QSplitter, QScrollArea, QDialog, QMessageBox
 from .. config.constants import constants
+from .. algorithms.utils import extension_supported, extension_pdf
 from .. gui.project_model import ActionConfig
 from .. gui.project_view import ProjectView
 from .. gui.gui_logging import QTextEditLogger
 from .. gui.action_config_dialog import ActionConfigDialog
 from .. gui.run_worker import JobLogWorker, ProjectLogWorker
 from .. gui.project_model import get_action_output_path
+from .. gui.gui_images import GuiPdfView, GuiImageView, GuiOpenApp
 from .job_widget import JobWidget
 
 
@@ -218,6 +220,29 @@ class ModernProjectView(ProjectView):
                         0 <= self.selected_subaction_index < len(action.sub_actions)):
                     return action.sub_actions[self.selected_subaction_index]
         return None
+
+    def handle_save_plot(self, _run_id, module_name, caption, path):
+        norm_path = os.path.normpath(module_name)
+        if norm_path in self.progress_mapping:
+            job_idx, action_idx = self.progress_mapping[norm_path]
+            action_widget = self._find_action_widget(job_idx, action_idx)
+            if action_widget:
+                if extension_pdf(path):
+                    image_view = GuiPdfView(path, action_widget)
+                elif extension_supported(path):
+                    image_view = GuiImageView(path, action_widget)
+                else:
+                    raise RuntimeError(f"Can't visualize file type {os.path.splitext(path)[1]}.")
+                action_widget.add_image_view(image_view)
+
+    def handle_open_app(self, _run_id, name, app, path):
+        norm_path = os.path.normpath(name)
+        if norm_path in self.progress_mapping:
+            job_idx, action_idx = self.progress_mapping[norm_path]
+            action_widget = self._find_action_widget(job_idx, action_idx)
+            if action_widget:
+                image_view = GuiOpenApp(app, path, action_widget)
+                action_widget.add_image_view(image_view)
 
     def has_selection(self):
         return self.selected_job_index >= 0
@@ -1056,6 +1081,10 @@ class ModernProjectView(ProjectView):
             self.handle_run_stopped, Qt.ConnectionType.UniqueConnection)
         worker.run_failed_signal.connect(
             self.handle_run_failed, Qt.ConnectionType.UniqueConnection)
+        worker.save_plot_signal.connect(
+            self.handle_save_plot, Qt.ConnectionType.UniqueConnection)
+        worker.open_app_signal.connect(
+            self.handle_open_app, Qt.ConnectionType.UniqueConnection)
 
     @Slot(int, str)
     def handle_before_action(self, _run_id, name):

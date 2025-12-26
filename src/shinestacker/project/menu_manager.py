@@ -170,7 +170,7 @@ class MenuManager(QObject):
         self.modern_view_action.setCheckable(True)
         self.classic_view_action.triggered.connect(lambda: self.set_view('Classic'))
         self.modern_view_action.triggered.connect(lambda: self.set_view('Modern'))
-        self.set_view('Classic', False)
+        self.set_view(AppConfig.get('project_view_strategy').title(), False)
         menu.addMenu(self.view_strategy_menu)
 
     def set_view(self, view, do_switch=True):

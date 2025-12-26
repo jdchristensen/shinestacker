@@ -49,8 +49,8 @@ class BaseHistogrammer:
                     f"{self.process.name}-hist-{idx_str}.pdf"
         self.process.plot_manager.save_plot(plot_path, fig)
         self.process.callback(
-            'save_plot',
-            self.process.id, f"{self.process.name}: balance\nframe {idx_str}",
+            'save_plot', self.process.id, self.process.name,
+            f"{self.process.name}: balance\nframe {idx_str}",
             plot_path
         )
 
@@ -59,7 +59,7 @@ class BaseHistogrammer:
                     f"{self.process.name}-{name}.pdf"
         self.process.plot_manager.save_plot(plot_path, fig)
         self.process.callback(
-            'save_plot', self.process.id,
+            'save_plot', self.process.id, self.process.name,
             f"{self.process.name}: {name}", plot_path
         )
 

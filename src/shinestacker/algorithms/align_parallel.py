@@ -273,7 +273,7 @@ class AlignFramesParallel(AlignFramesBase):
             plot_path = None
         callbacks = {
             'save_plot': lambda plot_path: self.process.callback(
-                constants.CALLBACK_SAVE_PLOT, self.process.id,
+                constants.CALLBACK_SAVE_PLOT, self.process.id, self.process.output_path,
                 f"{self.process.name}: matches\nframe {idx_str}", plot_path),
         }
         m, phase_corr_called, _ = \

@@ -236,9 +236,9 @@ class RunWindow(QTextEditLogger):
     def handle_after_step(self, _run_id, _name, step):
         self.progress_bar.setValue(step)
 
-    @Slot(int, str, str)
-    def handle_save_plot(self, _run_id, name, path):
-        label = QLabel(name, self)
+    @Slot(int, str, str, str)
+    def handle_save_plot(self, _run_id, _module_name, caption, path):
+        label = QLabel(caption, self)
         label.setStyleSheet("QLabel {margin-top: 5px; font-weight: bold;}")
         self.image_layout.addWidget(label)
         try:
@@ -247,6 +247,7 @@ class RunWindow(QTextEditLogger):
             elif extension_supported(path):
                 image_view = GuiImageView(path, self)
             else:
+                traceback.print_exc()
                 raise RuntimeError(f"Can't visualize file type {os.path.splitext(path)[1]}.")
             self.image_views.append(image_view)
             self.image_layout.addWidget(image_view)
@@ -258,8 +259,8 @@ class RunWindow(QTextEditLogger):
             QTimer.singleShot(
                 0, lambda: self.right_area.verticalScrollBar().setValue(
                     self.right_area.verticalScrollBar().maximum()))
-        except RuntimeError as e:
-            traceback.print_tb(e.__traceback__)
+        except RuntimeError:
+            traceback.print_exc()
 
     @Slot(int, str, str, str)
     def handle_open_app(self, _run_id, name, app, path):
@@ -280,7 +281,7 @@ class RunWindow(QTextEditLogger):
                 self.right_area.verticalScrollBar().maximum()))
 
     @Slot(int)
-    def handle_run_completed(self, _run_id, _name):
+    def handle_run_completed(self, _run_id):
         self.progress_bar.setFormat(self.progress_bar.format() + " - completed")
 
     def handle_run_interrupt(self, run_id, color, postfix):
