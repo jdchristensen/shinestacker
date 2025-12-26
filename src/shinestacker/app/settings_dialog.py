@@ -247,6 +247,13 @@ class SettingsDialog(ConfigDialog, AlignFramesConfigBase):
                     CheckBoxParameter(
                         'check_for_updates', 'Check for updates:',
                         DEFAULTS['check_for_updates']),
+                    ComboBoxParameter(
+                        'project_view_strategy', 'View strategy:',
+                        DEFAULTS['project_view_strategy'],
+                        [
+                            ("Modern", "modern"),
+                            ("Classic", "classic"),
+                        ]),
                     CheckBoxParameter(
                         'expert_options', 'Expert options:',
                         DEFAULTS['expert_options']),
@@ -318,8 +325,8 @@ class SettingsDialog(ConfigDialog, AlignFramesConfigBase):
             self.retouch_parameters = [
                 ("General Appearance", [
                     ComboBoxParameter(
-                        'view_strategy', 'View strategy:',
-                        DEFAULTS['view_strategy'],
+                        'retouch_view_strategy', 'View strategy:',
+                        DEFAULTS['retouch_view_strategy'],
                         [
                             ("Overlaid", "overlaid"),
                             ("Side by side", "sidebyside"),

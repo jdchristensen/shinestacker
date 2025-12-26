@@ -106,7 +106,7 @@ class MainWindow(ProjectIOHandler, QMainWindow):
         self.menu_manager.open_file_requested.connect(self.open_project)
         self.set_enabled_file_open_close_actions(False)
         self.show_status_message("Shine Stacker ready.", 4000)
-        self.set_view('classic')
+        self.set_view(AppConfig.get('project_view_strategy'))
         self.action_dialog = None
 
     def show_status_message(self, message, timeout=4000):

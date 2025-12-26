@@ -5,7 +5,8 @@ DEFAULTS = {
     'check_for_updates': True,
     'expert_options': False,
     'plots_format': 'png',
-    'view_strategy': 'overlaid',
+    'project_view_strategy': 'modern',
+    'retouch_view_strategy': 'overlaid',
     'paint_refresh_time': 50,  # ms
     'display_refresh_time': 50,  # ms
     'cursor_update_time': 16,  # ms
