@@ -1137,7 +1137,8 @@ class ModernProjectView(ProjectView):
         self._handle_end_of_run()
 
     def quit(self):
-        self._worker.stop()
+        if self._worker:
+            self._worker.stop()
         self.close()
         return True
 

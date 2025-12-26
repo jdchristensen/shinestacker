@@ -68,7 +68,28 @@ class ProjectView(QWidget, LogManager, ProjectHandler):
             self.browse_path(self.current_action_output_path)
 
     def run_retouch_path(self, _job, retouch_path):
-        self.retouch_callback(retouch_path)
+        def find_parent(widget, class_name):
+            current = widget
+            while current is not None:
+                if current.objectName() == class_name:
+                    return current
+                current = current.parent()
+            return None
+        parent = find_parent(self, "mainWindow")
+        if parent:
+            if hasattr(parent, 'retouch_callback'):
+                parent.retouch_callback(retouch_path)
+            else:
+                self._show_retouch_error(
+                    "Main window found but has no retouch_callback")
+        else:
+            self._show_retouch_error(
+                "Cannot find main window. "
+                "Ensure MainWindow has objectName='mainWindow'")
+
+    def _show_retouch_error(self, message):
+        QMessageBox.warning(self, "Retouch Error",
+                            f"{message}\n\nRetouch functionality may not be available.")
 
     def get_retouch_path(self, job):
         frames_path = [get_action_output_path(action)[0]
