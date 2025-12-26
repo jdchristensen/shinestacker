@@ -15,6 +15,7 @@ from .. gui.gui_images import GuiPdfView, GuiImageView, GuiOpenApp
 from .job_widget import JobWidget
 from .selection_state import SelectionState
 from .progress_mapper import ProgressMapper
+from .element_operations import ElementOperations
 
 
 class ModernProjectView(ProjectView):
@@ -32,11 +33,12 @@ class ModernProjectView(ProjectView):
         self.selection_state = SelectionState()
         self.show_status_message = None
         self._worker = None
+        self.progress_mapper = ProgressMapper()
+        self.element_ops = ElementOperations(project_holder)
         self._setup_ui()
         self.change_theme(dark_theme)
         self.setFocusPolicy(Qt.StrongFocus)
         self.setFocus()
-        self.progress_mapper = ProgressMapper()
 
     def _setup_ui(self):
         main_splitter = QSplitter(Qt.Orientation.Vertical)
@@ -610,102 +612,94 @@ class ModernProjectView(ProjectView):
         return None
 
     def _delete_job(self, job_index, confirm=True):
-        if 0 <= job_index < len(self.project().jobs):
-            job = self.project().jobs[job_index]
-            if confirm:
+        if confirm:
+            if 0 <= job_index < len(self.project().jobs):
+                job = self.project().jobs[job_index]
                 reply = QMessageBox.question(
                     self.parent(), "Confirm Delete",
                     f"Are you sure you want to delete job '{job.params.get('name', '')}'?",
                     QMessageBox.Yes | QMessageBox.No
                 )
+                if reply != QMessageBox.Yes:
+                    return None
             else:
-                reply = None
-            if not confirm or reply == QMessageBox.Yes:
-                self.mark_as_modified(True, "Delete Job")
-                deleted_job = self.project().jobs.pop(job_index)
-                self._select_previous_widget()
-                self.refresh_ui()
-                return deleted_job
-        return None
+                return None
+        deleted_job = self.element_ops.delete_job(job_index)
+        if deleted_job:
+            self.mark_as_modified(True, "Delete Job")
+            self._select_previous_widget()
+            self.refresh_ui()
+        return deleted_job
 
     def _delete_action(self, job_index, action_index, confirm=True):
-        if 0 <= job_index < len(self.project().jobs):
-            job = self.project().jobs[job_index]
-            if 0 <= action_index < len(job.sub_actions):
-                action = job.sub_actions[action_index]
-                if confirm:
+        if confirm:
+            if 0 <= job_index < len(self.project().jobs):
+                job = self.project().jobs[job_index]
+                if 0 <= action_index < len(job.sub_actions):
+                    action = job.sub_actions[action_index]
                     reply = QMessageBox.question(
                         self.parent(), "Confirm Delete",
-                        "Are you sure you want to delete action "
-                        f"'{action.params.get('name', '')}'?",
+                        "Are you sure you want to delete "
+                        f"action '{action.params.get('name', '')}'?",
                         QMessageBox.Yes | QMessageBox.No
                     )
-                else:
-                    reply = None
-                if not confirm or reply == QMessageBox.Yes:
-                    self.mark_as_modified(True, "Delete Action")
-                    deleted_action = job.pop_sub_action(action_index)
-                    self._select_previous_widget()
-                    self.refresh_ui()
-                    return deleted_action
-        return None
+                    if reply != QMessageBox.Yes:
+                        return None
+            else:
+                return None
+        deleted_action = self.element_ops.delete_action(job_index, action_index)
+        if deleted_action:
+            self.mark_as_modified(True, "Delete Action")
+            self._select_previous_widget()
+            self.refresh_ui()
+        return deleted_action
 
     def _delete_subaction(self, job_index, action_index, subaction_index, confirm=True):
-        if 0 <= job_index < len(self.project().jobs):
-            job = self.project().jobs[job_index]
-            if 0 <= action_index < len(job.sub_actions):
-                action = job.sub_actions[action_index]
-                if 0 <= subaction_index < len(action.sub_actions):
-                    subaction = action.sub_actions[subaction_index]
-                    if confirm:
+        if confirm:
+            if 0 <= job_index < len(self.project().jobs):
+                job = self.project().jobs[job_index]
+                if 0 <= action_index < len(job.sub_actions):
+                    action = job.sub_actions[action_index]
+                    if 0 <= subaction_index < len(action.sub_actions):
+                        subaction = action.sub_actions[subaction_index]
                         reply = QMessageBox.question(
                             self.parent(), "Confirm Delete",
-                            "Are you sure you want to delete sub-action "
-                            f"'{subaction.params.get('name', '')}'?",
+                            "Are you sure you want to delete "
+                            f"sub-action '{subaction.params.get('name', '')}'?",
                             QMessageBox.Yes | QMessageBox.No
                         )
-                    else:
-                        reply = None
-                    if not confirm or reply == QMessageBox.Yes:
-                        self.mark_as_modified(True, "Delete Sub-action")
-                        deleted_subaction = action.pop_sub_action(subaction_index)
-                        self._select_previous_widget()
-                        self.refresh_ui()
-                        return deleted_subaction
-        return None
+                        if reply != QMessageBox.Yes:
+                            return None
+            else:
+                return None
+        deleted_subaction = self.element_ops.delete_subaction(
+            job_index, action_index, subaction_index)
+        if deleted_subaction:
+            self.mark_as_modified(True, "Delete Sub-action")
+            self._select_previous_widget()
+            self.refresh_ui()
+        return deleted_subaction
 
     def copy_job(self):
-        if not self.selection_state.is_job_selected():
-            return
-        if not self.is_valid_job_index(self.selection_state.job_index):
-            return
-        job = self.project().jobs[self.selection_state.job_index]
-        self.set_copy_buffer(job.clone())
+        job_clone = self.element_ops.copy_job(self.selection_state.job_index)
+        if job_clone:
+            self.set_copy_buffer(job_clone)
 
     def copy_action(self):
         if not self.selection_state.is_action_selected():
             return
-        if not self.is_valid_job_index(self.selection_state.job_index):
-            return
-        job = self.project().jobs[self.selection_state.job_index]
-        if not 0 <= self.selection_state.action_index < len(job.sub_actions):
-            return
-        action = job.sub_actions[self.selection_state.action_index]
-        self.set_copy_buffer(action.clone())
+        job_idx, action_idx, _ = self.selection_state.to_tuple()
+        job_clone = self.element_ops.copy_action(job_idx, action_idx)
+        if job_clone:
+            self.set_copy_buffer(job_clone)
 
     def copy_subaction(self):
         if not self.selection_state.is_subaction_selected():
             return
-        if not self.is_valid_job_index(self.selection_state.job_index):
-            return
-        job = self.project().jobs[self.selection_state.job_index]
-        if not 0 <= self.selection_state.action_index < len(job.sub_actions):
-            return
-        action = job.sub_actions[self.selection_state.action_index]
-        if not 0 <= self.selection_state.subaction_index < len(action.sub_actions):
-            return
-        subaction = action.sub_actions[self.selection_state.subaction_index]
-        self.set_copy_buffer(subaction.clone())
+        job_idx, action_idx, subaction_idx = self.selection_state.to_tuple()
+        job_clone = self.element_ops.copy_subaction(job_idx, action_idx, subaction_idx)
+        if job_clone:
+            self.set_copy_buffer(job_clone)
 
     def copy_element(self):
         if self.selection_state.is_job_selected():
@@ -933,52 +927,34 @@ class ModernProjectView(ProjectView):
             self._shift_subaction(+1)
 
     def _shift_job(self, delta):
-        job_index = self.selection_state.job_index
-        if job_index < 0:
+        if not self.selection_state.is_job_selected():
             return
-        new_index = job_index + delta
-        if 0 <= new_index < len(self.project().jobs):
+        job_idx, _, _ = self.selection_state.to_tuple()
+        new_index = self.element_ops.shift_job(job_idx, delta)
+        if new_index != job_idx:
             self.mark_as_modified(True, "Shift Job")
-            jobs = self.project().jobs
-            jobs.insert(new_index, jobs.pop(job_index))
-            self.selection_state.job_index = new_index
-            self.selection_state.action_index = -1
-            self.selection_state.subaction_index = -1
+            self.selection_state.set_job(new_index)
             self.refresh_ui()
 
     def _shift_action(self, delta):
-        job_index = self.selection_state.job_index
-        action_index = self.selection_state.action_index
-        if job_index < 0 or action_index < 0:
+        if not self.selection_state.is_action_selected():
             return
-        if 0 <= job_index < len(self.project().jobs):
-            job = self.project().jobs[job_index]
-            new_index = action_index + delta
-            if 0 <= new_index < len(job.sub_actions):
-                self.mark_as_modified(True, "Shift Action")
-                job.sub_actions.insert(new_index, job.sub_actions.pop(action_index))
-                self.selection_state.action_index = new_index
-                self.selection_state.subaction_index = -1
-                self.refresh_ui()
+        job_idx, action_idx, _ = self.selection_state.to_tuple()
+        new_index = self.element_ops.shift_action(job_idx, action_idx, delta)
+        if new_index != action_idx:
+            self.mark_as_modified(True, "Shift Action")
+            self.selection_state.set_action(job_idx, new_index)
+            self.refresh_ui()
 
     def _shift_subaction(self, delta):
-        job_index = self.selection_state.job_index
-        action_index = self.selection_state.action_index
-        subaction_index = self.selection_state.subaction_index
-        if job_index < 0 or action_index < 0 or subaction_index < 0:
+        if not self.selection_state.is_subaction_selected():
             return
-        if 0 <= job_index < len(self.project().jobs):
-            job = self.project().jobs[job_index]
-            if 0 <= action_index < len(job.sub_actions):
-                action = job.sub_actions[action_index]
-                if action.type_name == constants.ACTION_COMBO:
-                    new_index = subaction_index + delta
-                    if 0 <= new_index < len(action.sub_actions):
-                        self.mark_as_modified(True, "Shift Sub-action")
-                        action.sub_actions.insert(
-                            new_index, action.sub_actions.pop(subaction_index))
-                        self.selection_state.subaction_index = new_index
-                        self.refresh_ui()
+        job_idx, action_idx, subaction_idx = self.selection_state.to_tuple()
+        new_index = self.element_ops.shift_subaction(job_idx, action_idx, subaction_idx, delta)
+        if new_index != subaction_idx:
+            self.mark_as_modified(True, "Shift Sub-action")
+            self.selection_state.set_subaction(job_idx, action_idx, new_index)
+            self.refresh_ui()
 
     def add_action(self, type_name):
         job_index = self.selection_state.job_index
