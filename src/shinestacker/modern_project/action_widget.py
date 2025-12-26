@@ -1,14 +1,14 @@
 # pylint: disable=C0114, C0115, C0116, E0611, R0903, R0902
 from PySide6.QtCore import Qt, QTimer
-from PySide6.QtWidgets import QWidget, QHBoxLayout, QVBoxLayout, QScrollArea, QFrame, QSizePolicy
-from .base_widget import BaseWidget
+from PySide6.QtWidgets import QWidget, QHBoxLayout, QVBoxLayout, QScrollArea, QSizePolicy
+from .base_widget import ImgBaseWidget
 from .sub_action_widget import SubActionWidget
 from .. gui.project_model import get_action_input_path, get_action_output_path
 from .. gui.time_progress_bar import TimerProgressBar
 from .. gui.processing_widget import MultiModuleStatusContainer
 
 
-class ActionWidget(BaseWidget):
+class ActionWidget(ImgBaseWidget):
     def __init__(self, action, dark_theme=False, parent=None):
         super().__init__(action, 50, dark_theme, parent)
         in_path = get_action_input_path(action)[0]
@@ -37,41 +37,14 @@ class ActionWidget(BaseWidget):
         self.frames_status_box.setVisible(False)
         self.frames_status_box.content_size_changed.connect(self._update_container_size)
         self.progress_layout.addWidget(self.frames_status_box)
-        self.image_scroll_area = QScrollArea()
+
         self.image_scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
         self.image_scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-        self.image_scroll_area.setWidgetResizable(True)
         self.image_scroll_area.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
-        self.image_scroll_area.setFrameShape(QFrame.NoFrame)
-        self.image_scroll_area.setStyleSheet("background: transparent;")
         self.image_scroll_area.verticalScrollBar().setEnabled(False)
-        self.image_scroll_area.setStyleSheet("""
-            QScrollArea {
-                background: transparent;
-                border: none;
-            }
-            QScrollArea > QWidget > QWidget {
-                background: transparent;
-            }
-            QScrollBar:horizontal {
-                height: 6px;
-                border: none;
-                background: transparent;
-            }
-            QScrollBar::handle:horizontal {
-                background: #a0a0a0;
-                border-radius: 6px;
-                min-width: 20px;
-            }
-            QScrollBar::handle:horizontal:hover {
-                background: #808080;
-            }
-            QScrollBar::add-line:horizontal, QScrollBar::sub-line:horizontal {
-                width: 0px;
-                height: 0px;
-            }
-        """)
+        self.image_scroll_area.setStyleSheet(self.scroll_area_css('horizontal'))
         self.image_scroll_area.viewport().installEventFilter(self)
+
         self.image_area_widget = QWidget()
         self.image_layout = QHBoxLayout(self.image_area_widget)
         self.image_layout.setSpacing(5)
@@ -84,6 +57,7 @@ class ActionWidget(BaseWidget):
         self._has_frames_content = False
         self.image_views = []
 
+    # pylint: disable=C0103
     def eventFilter(self, watched, event):
         if watched == self.image_scroll_area.viewport() and event.type() == event.Type.Wheel:
             if event.angleDelta().y() != 0:
@@ -94,6 +68,7 @@ class ActionWidget(BaseWidget):
                         return True
                     parent = parent.parent()
         return super().eventFilter(watched, event)
+    # pylint: enable=C0103
 
     def _update_container_size(self):
         pass
@@ -177,11 +152,3 @@ class ActionWidget(BaseWidget):
         scrollbar = self.image_scroll_area.horizontalScrollBar()
         scrollbar_height = scrollbar.sizeHint().height() if scrollbar.maximum() > 0 else 0
         self.image_scroll_area.setMinimumHeight(max_height + scrollbar_height)
-
-    def clear_images(self):
-        for view in self.image_views:
-            self.image_layout.removeWidget(view)
-            view.deleteLater()
-        self.image_views.clear()
-        self.image_scroll_area.setVisible(False)
-        self.image_scroll_area.setMinimumHeight(0)

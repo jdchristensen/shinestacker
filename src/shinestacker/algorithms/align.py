@@ -8,6 +8,7 @@ import cv2
 import matplotlib.pyplot as plt
 from .. config.constants import constants
 from .. config.defaults import DEFAULTS
+from .. config.app_config import AppConfig
 from .. core.exceptions import InvalidOptionError
 from .. core.colors import color_str
 from .stack_framework import SubAction
@@ -161,6 +162,7 @@ class AlignFramesBase(SubAction):
 
         if self.plot_summary:
             save_plot_name = self.process.output_path if self.name == '' else self.name
+            plots_ext = AppConfig.get('plots_format')
             fig = plt.figure(figsize=constants.PLT_FIG_SIZE)
             x, y, y_ref = get_coordinates(self._n_good_matches)
             plt.plot([self.process.ref_idx + 1, self.process.ref_idx + 1],
@@ -175,7 +177,7 @@ class AlignFramesBase(SubAction):
             plt.ylim(0)
             plt.xlim(x[0], x[-1])
             plot_path = f"{self.process.working_path}/{self.process.plot_path}/" \
-                        f"{self.process.name}-matches.pdf"
+                        f"{self.process.name}-matches.{plots_ext}"
             self.process.plot_manager.save_plot(plot_path, fig)
             self.process.callback(constants.CALLBACK_SAVE_PLOT, self.process.id,
                                   save_plot_name,
@@ -198,7 +200,7 @@ class AlignFramesBase(SubAction):
                 plt.legend()
                 plt.xlim(x[0], x[-1])
                 plot_path = f"{self.process.working_path}/{self.process.plot_path}/" \
-                            f"{self.process.name}-rotation.pdf"
+                            f"{self.process.name}-rotation.{plots_ext}"
                 self.process.plot_manager.save_plot(plot_path, fig)
                 self.process.callback(constants.CALLBACK_SAVE_PLOT, self.process.id,
                                       save_plot_name,
@@ -219,8 +221,9 @@ class AlignFramesBase(SubAction):
                 plt.ylabel('translation (pixels)')
                 plt.legend()
                 plt.xlim(x[0], x[-1])
+                plots_ext = AppConfig.get('plots_format')
                 plot_path = f"{self.process.working_path}/{self.process.plot_path}/" \
-                            f"{self.process.name}-translation.pdf"
+                            f"{self.process.name}-translation.{plots_ext}"
                 self.process.plot_manager.save_plot(plot_path, fig)
                 self.process.callback(constants.CALLBACK_SAVE_PLOT, self.process.id,
                                       save_plot_name,
@@ -241,7 +244,7 @@ class AlignFramesBase(SubAction):
                 plt.legend()
                 plt.xlim(x[0], x[-1])
                 plot_path = f"{self.process.working_path}/{self.process.plot_path}/" \
-                            f"{self.process.name}-scale.pdf"
+                            f"{self.process.name}-scale.{plots_ext}"
                 self.process.plot_manager.save_plot(plot_path, fig)
                 self.process.callback(constants.CALLBACK_SAVE_PLOT, self.process.id,
                                       save_plot_name,
@@ -262,7 +265,7 @@ class AlignFramesBase(SubAction):
                 plt.legend()
                 plt.xlim(x[0], x[-1])
                 plot_path = f"{self.process.working_path}/{self.process.plot_path}/" \
-                            f"{self.process.name}-area-ratio.pdf"
+                            f"{self.process.name}-area-ratio.{plots_ext}"
                 self.process.plot_manager.save_plot(plot_path, fig)
                 self.process.callback(constants.CALLBACK_SAVE_PLOT, self.process.id,
                                       save_plot_name,
@@ -283,7 +286,7 @@ class AlignFramesBase(SubAction):
                 plt.legend()
                 plt.xlim(x[0], x[-1])
                 plot_path = f"{self.process.working_path}/{self.process.plot_path}/" \
-                            f"{self.process.name}-aspect-ratio.pdf"
+                            f"{self.process.name}-aspect-ratio.{plots_ext}"
                 self.process.plot_manager.save_plot(plot_path, fig)
                 self.process.callback(constants.CALLBACK_SAVE_PLOT, self.process.id,
                                       save_plot_name,
@@ -303,7 +306,7 @@ class AlignFramesBase(SubAction):
                 plt.legend()
                 plt.xlim(x[0], x[-1])
                 plot_path = f"{self.process.working_path}/{self.process.plot_path}/" \
-                            f"{self.process.name}-rotation.pdf"
+                            f"{self.process.name}-rotation.{plots_ext}"
                 self.process.plot_manager.save_plot(plot_path, fig)
                 self.process.callback(constants.CALLBACK_SAVE_PLOT, self.process.id,
                                       save_plot_name,
@@ -357,10 +360,11 @@ class AlignFrames(AlignFramesBase):
             'save_transform_result': lambda result: self.save_transform_result(idx, result)
         }
         if self.plot_matches:
+            plots_ext = AppConfig.get('plots_format')
             plot_path = os.path.join(
                 self.process.working_path,
                 self.process.plot_path,
-                f"{self.process.name}-matches-{idx_str}.pdf")
+                f"{self.process.name}-matches-{idx_str}.{plots_ext}")
         else:
             plot_path = None
         if callbacks and 'message' in callbacks:

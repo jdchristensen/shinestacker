@@ -6,10 +6,11 @@ import numpy as np
 import matplotlib.pyplot as plt
 from scipy.optimize import curve_fit, bisect
 import cv2
-from .. core.colors import color_str
-from .. core.core_utils import setup_matplotlib_mode
 from .. config.constants import constants
 from .. config.defaults import DEFAULTS
+from .. config.app_config import AppConfig
+from .. core.colors import color_str
+from .. core.core_utils import setup_matplotlib_mode
 from .utils import img_8bit, img_subsample
 from .stack_framework import SubAction
 setup_matplotlib_mode()
@@ -186,9 +187,10 @@ class Vignetting(SubAction):
             plt.xlim(radii[0], radii[-1])
             plt.ylim(0)
             idx_str = f"{idx:04d}"
+            plots_ext = AppConfig.get('plots_format')
             plot_path = f"{self.process.working_path}/" \
                 f"{self.process.plot_path}/{self.process.name}-" \
-                f"radial-intensity-{idx_str}.pdf"
+                f"radial-intensity-{idx_str}.{plots_ext}"
             self.process.plot_manager.save_plot(plot_path, fig)
             plt.close('all')
             save_plot_name = self.process.output_path if self.name == '' else self.name
@@ -252,8 +254,9 @@ class Vignetting(SubAction):
             plt.legend(ncols=2)
             plt.xlim(xs[0], xs[-1])
             plt.ylim(0, self.r_max * 1.05)
+            plots_ext = AppConfig.get('plots_format')
             plot_path = f"{self.process.working_path}/{self.process.plot_path}/" \
-                        f"{self.process.name}-r0.pdf"
+                        f"{self.process.name}-r0.{plots_ext}"
             self.process.plot_manager.save_plot(plot_path, fig)
             plt.close('all')
             save_plot_name = self.process.output_path if self.name == '' else self.name

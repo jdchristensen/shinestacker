@@ -7,6 +7,7 @@ from scipy.optimize import bisect
 from scipy.interpolate import interp1d
 from .. config.constants import constants
 from .. config.defaults import DEFAULTS
+from .. config.app_config import AppConfig
 from .. core.exceptions import InvalidOptionError
 from .. core.colors import color_str
 from .. core.core_utils import setup_matplotlib_mode
@@ -46,8 +47,9 @@ class BaseHistogrammer:
 
     def save_plot(self, fig, idx):
         idx_str = f"{idx:04d}"
+        plots_ext = AppConfig.get('plots_format')
         plot_path = f"{self.process.working_path}/{self.process.plot_path}/" \
-                    f"{self.process.name}-hist-{idx_str}.pdf"
+                    f"{self.process.name}-hist-{idx_str}.{plots_ext}"
         self.process.plot_manager.save_plot(plot_path, fig)
         save_plot_name = self.process.output_path if self.name == '' else self.name
         self.process.callback(
@@ -57,8 +59,9 @@ class BaseHistogrammer:
         )
 
     def save_summary_plot(self, fig, name='balance'):
+        plots_ext = AppConfig.get('plots_format')
         plot_path = f"{self.process.working_path}/{self.process.plot_path}/" \
-                    f"{self.process.name}-{name}.pdf"
+                    f"{self.process.name}-{name}.{plots_ext}"
         self.process.plot_manager.save_plot(plot_path, fig)
         save_plot_name = self.process.output_path if self.name == '' else self.name
         self.process.callback(

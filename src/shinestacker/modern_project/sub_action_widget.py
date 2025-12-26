@@ -1,10 +1,10 @@
 # pylint: disable=C0114, C0115, C0116, E0611, R0903
 from PySide6.QtCore import Qt, QTimer
-from PySide6.QtWidgets import QWidget, QVBoxLayout, QScrollArea, QFrame, QSizePolicy
-from .base_widget import BaseWidget
+from PySide6.QtWidgets import QWidget, QVBoxLayout, QSizePolicy
+from .base_widget import ImgBaseWidget
 
 
-class SubActionWidget(BaseWidget):
+class SubActionWidget(ImgBaseWidget):
     MAX_SCROLL_HEIGHT = 200
 
     def __init__(self, data_object, dark_theme=False, parent=None):
@@ -13,39 +13,13 @@ class SubActionWidget(BaseWidget):
         self.progress_layout = QVBoxLayout(self.progress_container)
         self.progress_layout.setContentsMargins(0, 0, 0, 0)
         self.progress_layout.setSpacing(2)
-        self.image_scroll_area = QScrollArea()
+
         self.image_scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.image_scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
-        self.image_scroll_area.setWidgetResizable(True)
         self.image_scroll_area.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
         self.image_scroll_area.setMaximumHeight(self.MAX_SCROLL_HEIGHT)
-        self.image_scroll_area.setFrameShape(QFrame.NoFrame)
-        self.image_scroll_area.setStyleSheet("""
-            QScrollArea {
-                background: transparent;
-                border: none;
-            }
-            QScrollArea > QWidget > QWidget {
-                background: transparent;
-            }
-            QScrollBar:vertical {
-                width: 6px;
-                border: none;
-                background: transparent;
-            }
-            QScrollBar::handle:vertical {
-                background: #a0a0a0;
-                border-radius: 6px;
-                min-height: 20px;
-            }
-            QScrollBar::handle:vertical:hover {
-                background: #808080;
-            }
-            QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {
-                width: 0px;
-                height: 0px;
-            }
-        """)
+        self.image_scroll_area.setStyleSheet(self.scroll_area_css('vertical'))
+
         self.image_area_widget = QWidget()
         self.image_layout = QVBoxLayout(self.image_area_widget)
         self.image_layout.setSpacing(5)
@@ -66,13 +40,6 @@ class SubActionWidget(BaseWidget):
         self.image_scroll_area.setVisible(True)
         self._adjust_image_area_height()
         QTimer.singleShot(0, self.image_area_widget.adjustSize)
-
-    def clear_images(self):
-        for view in self.image_views:
-            self.image_layout.removeWidget(view)
-            view.deleteLater()
-        self.image_views.clear()
-        self.image_scroll_area.setVisible(False)
 
     def _adjust_image_area_height(self):
         if not self.image_views:

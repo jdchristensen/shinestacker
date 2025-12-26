@@ -9,8 +9,9 @@ import threading
 import logging
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import numpy as np
-from ..config.constants import constants
-from ..config.defaults import DEFAULTS
+from .. config.constants import constants
+from .. config.defaults import DEFAULTS
+from .. config.app_config import AppConfig
 from .. core.exceptions import RunStopException
 from .. core.colors import color_str
 from .. core.core_utils import make_chunks
@@ -266,10 +267,11 @@ class AlignFramesParallel(AlignFramesBase):
         img_ref_sub, img_0_sub = self.feature_matcher.get_last_subsampled_images()
         idx_str = f"{idx:04d}"
         if self.plot_matches:
+            plots_ext = AppConfig.get('plots_format')
             plot_path = os.path.join(
                 self.process.working_path,
                 self.process.plot_path,
-                f"{self.process.name}-matches-{idx_str}.pdf")
+                f"{self.process.name}-matches-{idx_str}.{plots_ext}")
         else:
             plot_path = None
         callbacks = {

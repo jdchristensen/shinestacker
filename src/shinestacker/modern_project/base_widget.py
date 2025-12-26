@@ -1,7 +1,8 @@
 # pylint: disable=C0114, C0115, C0116, E0611, R0903, R0913, R0917, R0902
 import os
 from PySide6.QtCore import Qt, Signal
-from PySide6.QtWidgets import QFrame, QLabel, QVBoxLayout, QHBoxLayout, QSizePolicy, QLayout
+from PySide6.QtWidgets import (
+    QFrame, QLabel, QVBoxLayout, QHBoxLayout, QSizePolicy, QLayout, QScrollArea)
 from ..gui.colors import ColorPalette
 
 
@@ -169,3 +170,48 @@ class BaseWidget(QFrame):
         self.set_name(name)
         self._enabled = data_object.params.get('enabled', True)
         self._update_enabled_icon()
+
+    def scroll_area_css(self, orientation):
+        size = 'width' if orientation == 'vertical' else 'height'
+        return f"""
+            QScrollArea {{
+                background: transparent;
+                border: none;
+            }}
+            QScrollArea > QWidget > QWidget {{
+                background: transparent;
+            }}
+            QScrollBar:{orientation} {{
+                height: 6px;
+                border: none;
+                background: transparent;
+            }}
+            QScrollBar::handle:{orientation} {{
+                background: #808080;
+                border-radius: 6px;
+                min-{size}: 20px;
+            }}
+            QScrollBar::handle:{orientation}:hover {{
+                background: #404040;
+            }}
+            QScrollBar::add-line:{orientation}, QScrollBar::sub-line:{orientation} {{
+                width: 0px;
+                height: 0px;
+            }}
+        """
+
+
+class ImgBaseWidget(BaseWidget):
+    def __init__(self, data_object, min_height=40, dark_theme=False, parent=None):
+        super().__init__(data_object, min_height, dark_theme, parent)
+        self.image_scroll_area = QScrollArea()
+        self.image_scroll_area.setWidgetResizable(True)
+        self.image_scroll_area.setFrameShape(QFrame.NoFrame)
+
+    def clear_images(self):
+        for view in self.image_views:
+            self.image_layout.removeWidget(view)
+            view.deleteLater()
+        self.image_views.clear()
+        self.image_scroll_area.setVisible(False)
+        self.image_scroll_area.setMinimumHeight(0)

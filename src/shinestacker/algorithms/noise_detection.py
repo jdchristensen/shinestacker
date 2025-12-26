@@ -66,6 +66,7 @@ class NoiseDetectionRGB:
 
     def set_plot_manager(self, plot_manager):
         self.plot_manager = plot_manager
+        print("set plot manager: ", self.plot_manager)
 
     def hot_map(self, ch, th):
         return cv2.threshold(ch, th, 255, cv2.THRESH_BINARY)[1]
@@ -127,6 +128,7 @@ class NoiseDetectionRGB:
         plt.yscale("log", nonpositive='clip')
         plots_ext = AppConfig.get('plots_format')
         plot_path = f"{working_path}/{plot_path}/{name}-hot-pixels.{plots_ext}"
+        print("save plot: ", plot_path)
         self.plot_manager.save_plot(plot_path, fig)
         callback(constants.CALLBACK_SAVE_PLOT, idx, name, f"{name}: noise", plot_path)
 

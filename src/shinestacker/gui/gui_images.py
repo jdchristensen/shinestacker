@@ -71,6 +71,9 @@ class GuiPdfView(QPdfView):
             return
         super().mouseDoubleClickEvent(event)
 
+    def wheelEvent(self, event):
+        event.ignore()
+
 
 class GuiImageView(QWidget):
     def __init__(self, file_path, parent=None, fixed_height=False):
@@ -160,6 +163,9 @@ class GuiImageView(QWidget):
             return
         super().mouseDoubleClickEvent(event)
 
+    def wheelEvent(self, event):
+        event.ignore()
+
 
 class GuiOpenApp(QWidget):
     def __init__(self, app, file_path, parent=None, fixed_height=False):
@@ -223,3 +229,6 @@ class GuiOpenApp(QWidget):
                     raise RuntimeError("MainWindow object not found")
             return
         super().mouseDoubleClickEvent(event)
+
+    def wheelEvent(self, event):
+        event.ignore()

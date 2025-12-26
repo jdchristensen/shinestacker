@@ -2,6 +2,7 @@
 import os
 import gc
 import logging
+import traceback
 import threading
 from abc import ABC, abstractmethod
 import matplotlib.pyplot as plt
@@ -38,6 +39,7 @@ class DirectPlotManager(PlotManager):
                     try:
                         plt.show()
                     except Exception as e:
+                        traceback.print_exc()
                         logger.warning(msg=f"Could not display plot in Jupyter: {e}")
                 plt.close(fig)
         except Exception as e:
@@ -45,7 +47,7 @@ class DirectPlotManager(PlotManager):
             try:
                 plt.close(fig)
             except Exception:
-                pass
+                traceback.print_exc()
             raise
         finally:
             gc.collect()

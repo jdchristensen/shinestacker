@@ -286,6 +286,8 @@ class ClassicProjectView(ProjectView, ListContainer):
                                                             labels, retouch_paths)
                 worker = JobLogWorker(job, id_str)
                 self.connect_worker_signals(worker, new_window)
+                self.menu_manager.run_job_action.setEnabled(False)
+                self.menu_manager.run_all_jobs_action.setEnabled(False)
                 self.start_thread(worker)
                 self._workers.append(worker)
             else:
@@ -314,6 +316,8 @@ class ClassicProjectView(ProjectView, ListContainer):
                                                     labels, retouch_paths)
         worker = ProjectLogWorker(self.project(), id_str)
         self.connect_worker_signals(worker, new_window)
+        self.menu_manager.run_job_action.setEnabled(False)
+        self.menu_manager.run_all_jobs_action.setEnabled(False)
         self.start_thread(worker)
         self._workers.append(worker)
         self.menu_manager.stop_action.setEnabled(True)
@@ -725,6 +729,8 @@ class ClassicProjectView(ProjectView, ListContainer):
     def handle_run_completed(self, window, run_id):
         window.handle_run_completed(run_id)
         self.menu_manager.stop_action.setEnabled(False)
+        self.menu_manager.run_job_action.setEnabled(True)
+        self.menu_manager.run_all_jobs_action.setEnabled(True)
 
     def quit(self):
         for worker in self._workers:

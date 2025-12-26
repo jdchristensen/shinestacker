@@ -240,6 +240,7 @@ class ModernProjectView(ProjectView):
             widget = self._find_action_widget(*indices)
             if widget and hasattr(widget, 'progress_bar'):
                 widget.progress_bar.set_stopped_style()
+        self._handle_end_of_run()
 
     @Slot(int, str)
     def handle_run_failed(self, _run_id, name):
@@ -248,6 +249,7 @@ class ModernProjectView(ProjectView):
             widget = self._find_action_widget(*indices)
             if widget and hasattr(widget, 'progress_bar'):
                 widget.progress_bar.set_failed_style()
+        self._handle_end_of_run()
 
     @Slot(str)
     def handle_add_status_box(self, module_name):
@@ -288,9 +290,9 @@ class ModernProjectView(ProjectView):
             widget = self._find_action_widget(*indices)
             if widget:
                 if extension_pdf(path):
-                    image_view = GuiPdfView(path, widget, fixed_height=True)
+                    image_view = GuiPdfView(path, widget, fixed_height=indices[2] == -1)
                 elif extension_supported(path):
-                    image_view = GuiImageView(path, widget, fixed_height=True)
+                    image_view = GuiImageView(path, widget, fixed_height=indices[2] == -1)
                 else:
                     raise RuntimeError(f"Can't visualize file type {os.path.splitext(path)[1]}.")
                 widget.add_image_view(image_view)
@@ -301,8 +303,14 @@ class ModernProjectView(ProjectView):
         if indices:
             widget = self._find_action_widget(*indices)
             if widget:
-                image_view = GuiOpenApp(app, path, widget, fixed_height=True)
+                image_view = GuiOpenApp(app, path, widget, fixed_height=indices[2] == -1)
                 widget.add_image_view(image_view)
+
+    def _handle_end_of_run(self):
+        self.menu_manager.stop_action.setEnabled(False)
+        self.menu_manager.run_job_action.setEnabled(True)
+        if self.num_project_jobs() > 1:
+            self.menu_manager.run_all_jobs_action.setEnabled(True)
 
     def get_current_selected_action(self):
         if not self.selection_state.is_valid():
@@ -1084,6 +1092,8 @@ class ModernProjectView(ProjectView):
             return
         self._worker = JobLogWorker(job, self.last_id_str())
         self._connect_worker_signals(self._worker)
+        self.menu_manager.run_job_action.setEnabled(False)
+        self.menu_manager.run_all_jobs_action.setEnabled(False)
         self.start_thread(self._worker)
         self.menu_manager.stop_action.setEnabled(True)
 
@@ -1097,6 +1107,8 @@ class ModernProjectView(ProjectView):
         self._build_progress_mapping()
         self._worker = ProjectLogWorker(self.project(), self.last_id_str())
         self._connect_worker_signals(self._worker)
+        self.menu_manager.run_job_action.setEnabled(False)
+        self.menu_manager.run_all_jobs_action.setEnabled(False)
         self.start_thread(self._worker)
         self.menu_manager.stop_action.setEnabled(True)
 
@@ -1121,8 +1133,8 @@ class ModernProjectView(ProjectView):
         self._worker = None
 
     @Slot(int, str)
-    def handle_run_completed(self, run_id, name):
-        pass
+    def handle_run_completed(self, _run_id, _name):
+        self._handle_end_of_run()
 
     def quit(self):
         return True
