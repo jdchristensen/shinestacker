@@ -1,0 +1,37 @@
+# pylint: disable=C0114, C0115, C0116
+import os
+from .. gui.project_model import get_action_output_path
+
+
+class ProgressMapper:
+    def __init__(self):
+        self.mapping = {}
+
+    def build_mapping(self, project, job_indices=None):
+        self.mapping = {}
+        if job_indices is None:
+            jobs_to_check = enumerate(project.jobs)
+        else:
+            jobs_to_check = [(idx, project.jobs[idx]) for idx in job_indices]
+        for job_idx, job in jobs_to_check:
+            for action_idx, action in enumerate(job.sub_actions):
+                output_path = get_action_output_path(action)[0]
+                if output_path:
+                    norm_path = os.path.normpath(output_path)
+                    self.mapping[norm_path] = (job_idx, action_idx, -1)
+                if hasattr(action, 'sub_actions') and action.sub_actions:
+                    for subaction_idx, subaction in enumerate(action.sub_actions):
+                        sub_output_path = get_action_output_path(subaction)[0]
+                        if sub_output_path:
+                            sub_norm_path = os.path.normpath(sub_output_path)
+                            self.mapping[sub_norm_path] = (job_idx, action_idx, subaction_idx)
+                        sub_name = subaction.params.get('name', '')
+                        if sub_name:
+                            self.mapping[sub_name] = (job_idx, action_idx, subaction_idx)
+        return self.mapping
+
+    def has_module(self, module_name):
+        return module_name in self.mapping
+
+    def get_indices(self, module_name):
+        return self.mapping.get(module_name)

@@ -11,10 +11,10 @@ from .. gui.project_view import ProjectView
 from .. gui.gui_logging import QTextEditLogger
 from .. gui.action_config_dialog import ActionConfigDialog
 from .. gui.run_worker import JobLogWorker, ProjectLogWorker
-from .. gui.project_model import get_action_output_path
 from .. gui.gui_images import GuiPdfView, GuiImageView, GuiOpenApp
 from .job_widget import JobWidget
 from .selection_state import SelectionState
+from .progress_mapper import ProgressMapper
 
 
 class ModernProjectView(ProjectView):
@@ -36,7 +36,7 @@ class ModernProjectView(ProjectView):
         self.change_theme(dark_theme)
         self.setFocusPolicy(Qt.StrongFocus)
         self.setFocus()
-        self.progress_mapping = {}
+        self.progress_mapper = ProgressMapper()
 
     def _setup_ui(self):
         main_splitter = QSplitter(Qt.Orientation.Vertical)
@@ -156,27 +156,7 @@ class ModernProjectView(ProjectView):
         return False
 
     def _build_progress_mapping(self, job_indices=None):
-        self.progress_mapping = {}
-        if job_indices is None:
-            jobs_to_check = enumerate(self.project().jobs)
-        else:
-            jobs_to_check = [(idx, self.project().jobs[idx]) for idx in job_indices]
-        for job_idx, job in jobs_to_check:
-            for action_idx, action in enumerate(job.sub_actions):
-                output_path = get_action_output_path(action)[0]
-                if output_path:
-                    norm_path = os.path.normpath(output_path)
-                    self.progress_mapping[norm_path] = (job_idx, action_idx, -1)
-                if hasattr(action, 'sub_actions') and action.sub_actions:
-                    for subaction_idx, subaction in enumerate(action.sub_actions):
-                        sub_output_path = get_action_output_path(subaction)[0]
-                        if sub_output_path:
-                            sub_norm_path = os.path.normpath(sub_output_path)
-                            self.progress_mapping[sub_norm_path] = (
-                                job_idx, action_idx, subaction_idx)
-                        sub_name = subaction.params.get('name', '')
-                        if sub_name:
-                            self.progress_mapping[sub_name] = (job_idx, action_idx, subaction_idx)
+        self.progress_mapper.build_mapping(self.project(), job_indices)
 
     def _find_action_widget(self, job_idx, action_idx, subaction_idx=-1):
         if self.is_valid_job_index(job_idx):
@@ -191,36 +171,32 @@ class ModernProjectView(ProjectView):
 
     @Slot(int, str, str)
     def handle_step_counts(self, _run_id, module_name, total_steps):
-        norm_path = os.path.normpath(module_name)
-        if norm_path in self.progress_mapping:
-            indices = self.progress_mapping[norm_path]
+        indices = self.progress_mapper.get_indices(module_name)
+        if indices:
             widget = self._find_action_widget(*indices)
             if widget and hasattr(widget, 'show_progress'):
                 widget.show_progress(total_steps, os.path.basename(module_name))
 
     @Slot(int, str, str)
     def handle_after_step(self, _run_id, module_name, current_step):
-        norm_path = os.path.normpath(module_name)
-        if norm_path in self.progress_mapping:
-            indices = self.progress_mapping[norm_path]
+        indices = self.progress_mapper.get_indices(module_name)
+        if indices:
             widget = self._find_action_widget(*indices)
             if widget and hasattr(widget, 'update_progress'):
                 widget.update_progress(current_step)
 
     @Slot(int, str)
     def handle_end_steps(self, _run_id, module_name):
-        norm_path = os.path.normpath(module_name)
-        if norm_path in self.progress_mapping:
-            indices = self.progress_mapping[norm_path]
+        indices = self.progress_mapper.get_indices(module_name)
+        if indices:
             widget = self._find_action_widget(*indices)
             if widget and hasattr(widget, 'complete_progress'):
                 widget.complete_progress()
 
     @Slot(int, str)
     def handle_begin_steps(self, _run_id, module_name):
-        norm_path = os.path.normpath(module_name)
-        if norm_path in self.progress_mapping:
-            indices = self.progress_mapping[norm_path]
+        indices = self.progress_mapper.get_indices(module_name)
+        if indices:
             widget = self._find_action_widget(*indices)
             if widget and hasattr(widget, 'progress_bar'):
                 if not widget.progress_bar.isVisible():
@@ -229,81 +205,72 @@ class ModernProjectView(ProjectView):
 
     @Slot(int, str)
     def handle_before_action(self, _run_id, name):
-        norm_path = os.path.normpath(name)
-        if norm_path in self.progress_mapping:
-            indices = self.progress_mapping[norm_path]
+        indices = self.progress_mapper.get_indices(name)
+        if indices:
             widget = self._find_action_widget(*indices)
             if widget and hasattr(widget, 'progress_bar'):
                 widget.progress_bar.set_running_style()
 
     @Slot(int, str)
     def handle_after_action(self, _run_id, name):
-        norm_path = os.path.normpath(name)
-        if norm_path in self.progress_mapping:
-            indices = self.progress_mapping[norm_path]
+        indices = self.progress_mapper.get_indices(name)
+        if indices:
             widget = self._find_action_widget(*indices)
             if widget and hasattr(widget, 'progress_bar'):
                 widget.progress_bar.set_done_style()
 
     @Slot(int, str)
     def handle_run_stopped(self, _run_id, name):
-        norm_path = os.path.normpath(name)
-        if norm_path in self.progress_mapping:
-            indices = self.progress_mapping[norm_path]
+        indices = self.progress_mapper.get_indices(name)
+        if indices:
             widget = self._find_action_widget(*indices)
             if widget and hasattr(widget, 'progress_bar'):
                 widget.progress_bar.set_stopped_style()
 
     @Slot(int, str)
     def handle_run_failed(self, _run_id, name):
-        norm_path = os.path.normpath(name)
-        if norm_path in self.progress_mapping:
-            indices = self.progress_mapping[norm_path]
+        indices = self.progress_mapper.get_indices(name)
+        if indices:
             widget = self._find_action_widget(*indices)
             if widget and hasattr(widget, 'progress_bar'):
                 widget.progress_bar.set_failed_style()
 
     @Slot(str)
     def handle_add_status_box(self, module_name):
-        norm_path = os.path.normpath(module_name)
-        if norm_path in self.progress_mapping:
-            indices = self.progress_mapping[norm_path]
+        indices = self.progress_mapper.get_indices(module_name)
+        if indices:
             widget = self._find_action_widget(*indices)
             if widget and hasattr(widget, 'add_status_box'):
                 widget.add_status_box(module_name)
 
     @Slot(int, str, str, int)
     def handle_add_frame(self, module_name, filename, total_actions):
-        norm_path = os.path.normpath(module_name)
-        if norm_path in self.progress_mapping:
-            indices = self.progress_mapping[norm_path]
+        indices = self.progress_mapper.get_indices(module_name)
+        if indices:
             widget = self._find_action_widget(*indices)
             if widget and hasattr(widget, 'add_frame'):
                 widget.add_frame(module_name, filename, total_actions)
 
     @Slot(int, str, str, int)
     def handle_update_frame_status(self, module_name, filename, status_id):
-        norm_path = os.path.normpath(module_name)
-        if norm_path in self.progress_mapping:
-            indices = self.progress_mapping[norm_path]
+        indices = self.progress_mapper.get_indices(module_name)
+        if indices:
             widget = self._find_action_widget(*indices)
             if widget and hasattr(widget, 'update_frame_status'):
                 widget.update_frame_status(module_name, filename, status_id)
 
     @Slot(int, str, str, int)
     def handle_set_total_actions(self, module_name, filename, total_actions):
-        norm_path = os.path.normpath(module_name)
-        if norm_path in self.progress_mapping:
-            indices = self.progress_mapping[norm_path]
+        indices = self.progress_mapper.get_indices(module_name)
+        if indices:
             widget = self._find_action_widget(*indices)
             if widget and hasattr(widget, 'set_frame_total_actions'):
                 widget.set_frame_total_actions(module_name, filename, total_actions)
 
     @Slot(int, str, str, str)
     def handle_save_plot(self, _run_id, module_name, _caption, path):
-        norm_path = os.path.normpath(module_name)
-        if norm_path in self.progress_mapping:
-            indices = self.progress_mapping[norm_path]
+        indices = self.progress_mapper.get_indices(module_name)
+        if indices:
             widget = self._find_action_widget(*indices)
             if widget:
                 if extension_pdf(path):
@@ -316,9 +283,8 @@ class ModernProjectView(ProjectView):
 
     @Slot(int, str, str, str)
     def handle_open_app(self, _run_id, name, app, path):
-        norm_path = os.path.normpath(name)
-        if norm_path in self.progress_mapping:
-            indices = self.progress_mapping[norm_path]
+        indices = self.progress_mapper.get_indices(name)
+        if indices:
             widget = self._find_action_widget(*indices)
             if widget:
                 image_view = GuiOpenApp(app, path, widget, fixed_height=True)
