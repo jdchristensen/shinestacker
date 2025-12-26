@@ -216,6 +216,7 @@ class ModernProjectView(ProjectView):
                 if not widget.progress_bar.isVisible():
                     widget.progress_bar.start(1)
                     widget.progress_bar.setVisible(True)
+                    self._scroll_to_widget(widget)
 
     @Slot(int, str)
     def handle_before_action(self, _run_id, name):
@@ -258,7 +259,7 @@ class ModernProjectView(ProjectView):
             widget = self._find_action_widget(*indices)
             if widget and hasattr(widget, 'add_status_box'):
                 widget.add_status_box(module_name)
-                self._ensure_selected_visible()
+                self._scroll_to_widget(widget)
 
     @Slot(int, str, str, int)
     def handle_add_frame(self, module_name, filename, total_actions):
@@ -267,7 +268,7 @@ class ModernProjectView(ProjectView):
             widget = self._find_action_widget(*indices)
             if widget and hasattr(widget, 'add_frame'):
                 widget.add_frame(module_name, filename, total_actions)
-                self._ensure_selected_visible()
+                self._scroll_to_widget(widget)
 
     @Slot(int, str, str, int)
     def handle_update_frame_status(self, module_name, filename, status_id):
@@ -276,7 +277,7 @@ class ModernProjectView(ProjectView):
             widget = self._find_action_widget(*indices)
             if widget and hasattr(widget, 'update_frame_status'):
                 widget.update_frame_status(module_name, filename, status_id)
-                self._ensure_selected_visible()
+                self._scroll_to_widget(widget)
 
     @Slot(int, str, str, int)
     def handle_set_total_actions(self, module_name, filename, total_actions):
