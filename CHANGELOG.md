@@ -5,18 +5,19 @@ This page reports the main releases only and the main changes therein.
 ## [v1.x.x] - 2025-12-27
 
 ### Added
-- statusbar basic messaging
-- modern project editing view
+- new integrated project editing view with a redesigned interactive GUI; the classic view is still available via *View > View Mode > Classic*
+- extended status bar messaging
+- stop button added to the top toolbar, alongside run controls
 
 ### Fixed
-- missing features and small bugs in the project classic editing view
-- gui misbehaviors in the project edit window
-- output clash prevented by checking preliminarly the possible presence of multiple modules with the same output path
+- various GUI issues in the project editing view
+- missing features restored in the classic project editing view
+- prevented output conflicts by checking for multiple modules sharing the same output path
 
 ### Changed
-- moved system monitor to main window
-- minor improvements to status messages
-- code refactoring
+- system monitor widgets moved from the run window to the main window toolbar
+- improved clarity and consistency of status messages
+- significant refactoring of GUI-related code
 
 ---
 
