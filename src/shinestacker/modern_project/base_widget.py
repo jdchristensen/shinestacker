@@ -1,8 +1,8 @@
 # pylint: disable=C0114, C0115, C0116, E0611, R0903, R0913, R0917, R0902
 import os
-from PySide6.QtCore import Qt, Signal
+from PySide6.QtCore import Qt, Signal, QTimer
 from PySide6.QtWidgets import (
-    QFrame, QLabel, QVBoxLayout, QHBoxLayout, QSizePolicy, QLayout, QScrollArea)
+    QWidget, QFrame, QLabel, QVBoxLayout, QHBoxLayout, QSizePolicy, QLayout, QScrollArea)
 from ..gui.colors import ColorPalette
 
 
@@ -21,13 +21,17 @@ class BaseWidget(QFrame):
         self.path_label = None
         self.child_widgets = []
         self.setFocusPolicy(Qt.NoFocus)
-        self._init_widget(data_object)
         self.setAttribute(Qt.WA_Hover, True)
+        self.name_label = None
+        self.enabled_icon = None
+        self.top_row_widget = None
+        self.fallback_widget = None
+        self.right_icons_container = None
+        self.right_icons_layout = None
+        self.path_label_in_top_row = None
+        self._init_widget(data_object)
         self._update_stylesheet()
         self.enabled_toggled.connect(self._on_enabled_toggled)
-
-    def num_child_widgets(self):
-        return len(self.child_widgets)
 
     def _init_widget(self, data_object):
         self.setMinimumHeight(self.min_height)
@@ -36,19 +40,101 @@ class BaseWidget(QFrame):
         main_layout.setContentsMargins(8, 8, 8, 8)
         main_layout.setSpacing(2)
         main_layout.setSizeConstraint(QLayout.SetMinAndMaxSize)
-        header_layout = QHBoxLayout()
-        header_layout.setContentsMargins(0, 0, 0, 0)
+        self.top_container = QWidget()
+        self.top_layout = QHBoxLayout(self.top_container)
+        self.top_layout.setContentsMargins(0, 0, 0, 0)
+        self.top_layout.setSpacing(4)
         self.name_label = QLabel()
-        self.name_label.setAlignment(Qt.AlignLeft | Qt.AlignTop)
-        header_layout.addWidget(self.name_label, 1)
+        self.name_label.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
+        self.top_layout.addWidget(self.name_label)
+        self.path_label = QLabel()
+        self.path_label.setAlignment(Qt.AlignCenter | Qt.AlignVCenter)
+        self.path_label_in_top_row = True
+        self.top_layout.addWidget(self.path_label, 1)
+        self.icons_container = QWidget()
+        self.icons_layout = QHBoxLayout(self.icons_container)
+        self.icons_layout.setContentsMargins(0, 0, 0, 0)
+        self.icons_layout.setSpacing(2)
         self.enabled_icon = QLabel()
-        self.enabled_icon.setAlignment(Qt.AlignRight | Qt.AlignTop)
+        self.enabled_icon.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
         self.enabled_icon.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Minimum)
         self.enabled_icon.mousePressEvent = self._on_enabled_icon_clicked
-        header_layout.addWidget(self.enabled_icon, 0)
-        main_layout.addLayout(header_layout)
+        self.icons_layout.addWidget(self.enabled_icon)
+        self.top_layout.addWidget(self.icons_container)
+        main_layout.addWidget(self.top_container)
         self.setLayout(main_layout)
         self.update(data_object)
+
+    def _add_path_label(self, text):
+        self.path_label.setText(text)
+        QTimer.singleShot(0, self._check_and_adjust_layout)
+
+    def _check_and_adjust_layout(self):
+        if not self.path_label.text():
+            return
+        available_width = self.top_container.width() - 20
+        name_width = self.name_label.sizeHint().width()
+        path_width = self.path_label.sizeHint().width()
+        icons_width = self.icons_container.sizeHint().width()
+        total_needed = name_width + path_width + icons_width + 20
+        if total_needed > available_width and self.path_label_in_top_row:
+            self.top_layout.removeWidget(self.path_label)
+            self.layout().insertWidget(1, self.path_label)
+            self.path_label.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
+            self.path_label_in_top_row = False
+        elif total_needed <= available_width and not self.path_label_in_top_row:
+            self.layout().removeWidget(self.path_label)
+            self.top_layout.insertWidget(1, self.path_label)
+            self.top_layout.setStretch(1, 1)
+            self.path_label.setAlignment(Qt.AlignCenter | Qt.AlignVCenter)
+            self.path_label_in_top_row = True
+
+    # pylint: disable=C0103
+    def resizeEvent(self, event):
+        super().resizeEvent(event)
+        if self.path_label and self.path_label.text():
+            self._check_and_adjust_layout()
+    # pylint: enable=C0103
+
+    def _setup_layouts(self):
+        if self.top_row_widget:
+            self.top_row_widget.deleteLater()
+        if self.fallback_widget:
+            self.fallback_widget.deleteLater()
+        self.top_row_widget = QWidget()
+        top_row_layout = QHBoxLayout(self.top_row_widget)
+        top_row_layout.setContentsMargins(0, 0, 0, 0)
+        top_row_layout.setSpacing(4)
+        top_row_layout.addWidget(self.name_label)
+        top_row_layout.addWidget(self.path_label, 1)
+        self.right_icons_container = QWidget()
+        self.right_icons_layout = QHBoxLayout(self.right_icons_container)
+        self.right_icons_layout.setContentsMargins(0, 0, 0, 0)
+        self.right_icons_layout.setSpacing(2)
+        self.right_icons_layout.addWidget(self.enabled_icon)
+        top_row_layout.addWidget(self.right_icons_container)
+        self.fallback_widget = QWidget()
+        fallback_layout = QVBoxLayout(self.fallback_widget)
+        fallback_layout.setContentsMargins(0, 0, 0, 0)
+        fallback_layout.setSpacing(2)
+        fallback_top = QHBoxLayout()
+        fallback_top.setContentsMargins(0, 0, 0, 0)
+        fallback_top.addWidget(self.name_label, 1)
+        fallback_icons = QHBoxLayout()
+        fallback_icons.setContentsMargins(0, 0, 0, 0)
+        fallback_icons.setSpacing(2)
+        fallback_icons.addWidget(self.enabled_icon)
+        fallback_top.addLayout(fallback_icons)
+        fallback_layout.addLayout(fallback_top)
+        fallback_layout.addWidget(self.path_label)
+        self._check_and_adjust_layout()
+
+    def _on_enabled_icon_clicked(self, event):
+        self._enabled = not self._enabled
+        self._update_enabled_icon()
+        self._update_stylesheet()
+        self.enabled_toggled.emit(self._enabled)
+        event.accept()
 
     def widget_type(self):
         return ''
@@ -58,12 +144,8 @@ class BaseWidget(QFrame):
             return ".../" + os.path.basename(path)
         return path
 
-    def _add_path_label(self, text):
-        if self.path_label is None:
-            self.path_label = QLabel(text)
-            self.layout().addWidget(self.path_label)
-        else:
-            self.path_label.setText(text)
+    def num_child_widgets(self):
+        return len(self.child_widgets)
 
     def add_child_widget(self, child_widget, add_to_layout=True):
         self.child_widgets.append(child_widget)
@@ -111,13 +193,6 @@ class BaseWidget(QFrame):
         self.setStyleSheet(stylesheet)
         self.style().unpolish(self)
         self.style().polish(self)
-
-    def _on_enabled_icon_clicked(self, event):
-        self._enabled = not self._enabled
-        self._update_enabled_icon()
-        self._update_stylesheet()
-        self.enabled_toggled.emit(self._enabled)
-        event.accept()
 
     def _update_enabled_icon(self):
         if self._enabled:

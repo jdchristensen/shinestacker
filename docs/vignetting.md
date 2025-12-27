@@ -11,6 +11,8 @@ $\displaystyle i(r) = \frac{i_0}{1 + \exp(\exp(k(r - r_0)))}\,$
 where the parameters $i_0$, $k$ and $r_0$ are estimated from the image luminosity data.
                
 Arguments for the constructor of ```Vignetting``` are:
+* ```name``` (optional, default: empty): only used in the GUI as identifier
+* ```enabled``` (optiona, default: ```True```): enable/disable sub-action
 * ```r_steps``` (optional, default: 100): number of radial steps to determine mean pixel luminosity.
 * ```black_threshold``` (optional, default: 1): apply correction only on pixels with luminosity greater than.
 * ```max_correction``` (optional, default: 1): if less than one, the correction is rescaled in order to be at most the specified valye.

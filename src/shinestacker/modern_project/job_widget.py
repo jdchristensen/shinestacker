@@ -19,14 +19,9 @@ class JobWidget(BaseWidget):
         self.retouch_button = QPushButton("🖌️")
         self.retouch_button.setToolTip("Retouch outputs")
         self.retouch_button.clicked.connect(self._on_retouch_clicked)
-        header_layout = self.layout().itemAt(0).layout()
-        header_layout.insertWidget(1, self.retouch_button)
-        header_layout.insertSpacing(2, 4)
+        self.icons_layout.insertWidget(0, self.retouch_button)
         self._update_button_style()
         self.retouch_button.setVisible(self._should_show_retouch_button())
-
-    def widget_type(self):
-        return 'JobWidget'
 
     def update(self, data_object):
         super().update(data_object)
@@ -36,6 +31,27 @@ class JobWidget(BaseWidget):
         if hasattr(self, 'retouch_button'):
             self.retouch_button.setVisible(self._should_show_retouch_button())
             self._update_button_style()
+
+    def _setup_job_layouts(self):
+        self._setup_layouts()
+        if self.right_icons_layout:
+            self.right_icons_layout.insertWidget(0, self.retouch_button)
+        if hasattr(self, 'fallback_widget') and self.fallback_widget:
+            fallback_layout = self.fallback_widget.layout()
+            if fallback_layout and fallback_layout.itemAt(0):
+                top_layout = fallback_layout.itemAt(0).layout()
+                if top_layout and top_layout.itemAt(1):
+                    icons_layout = top_layout.itemAt(1).layout()
+                    if icons_layout:
+                        icons_layout.insertWidget(0, self.retouch_button)
+
+    def set_dark_theme(self, dark_theme):
+        super().set_dark_theme(dark_theme)
+        if hasattr(self, 'retouch_button'):
+            self._update_button_style()
+
+    def widget_type(self):
+        return 'JobWidget'
 
     def _update_button_style(self):
         if self._dark_theme:
@@ -76,8 +92,3 @@ class JobWidget(BaseWidget):
             retouch_paths = parent.get_retouch_path(self.data_object)
             if retouch_paths:
                 parent.run_retouch_path(self.data_object, retouch_paths)
-
-    def set_dark_theme(self, dark_theme):
-        super().set_dark_theme(dark_theme)
-        if hasattr(self, 'retouch_button'):
-            self._update_button_style()

@@ -5,6 +5,8 @@ job.add_action(Actions("balance", [BalanceFrames(*options)])
 ```
   
 Arguments for the constructor of ```BalanceFrames``` are:
+* ```name``` (optional, default: empty): only used in the GUI as identifier
+* ```enabled``` (optiona, default: ```True```): enable/disable sub-action
 * ```channel``` (optional, default: BALANCE_LUMI): channels to be balanced. Possible values are: 
    - ```BALANCE_LUMI``` (default): balance equally for R, G and B channels, should be reasonably fine for most of the cases;
    - ```BALANCE_RGB```: balance luminosity separately for R, G and B channels, it may be needed if some but not all of the images have a undesired color dominance;

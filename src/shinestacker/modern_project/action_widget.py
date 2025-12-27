@@ -24,7 +24,7 @@ class ActionWidget(ImgBaseWidget):
             sub_action_widget = SubActionWidget(sub_action, dark_theme)
             horizontal_layout.addWidget(sub_action_widget)
             self.add_child_widget(sub_action_widget, add_to_layout=False)
-            self.layout().addWidget(subactions_container)
+        self.layout().addWidget(subactions_container)
         self.progress_container = QWidget()
         self.progress_layout = QVBoxLayout(self.progress_container)
         self.progress_layout.setContentsMargins(0, 0, 0, 0)
@@ -36,14 +36,12 @@ class ActionWidget(ImgBaseWidget):
         self.frames_status_box.setVisible(False)
         self.frames_status_box.content_size_changed.connect(self._update_container_size)
         self.progress_layout.addWidget(self.frames_status_box)
-
         self.image_scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
         self.image_scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.image_scroll_area.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
         self.image_scroll_area.verticalScrollBar().setEnabled(False)
         self.image_scroll_area.setStyleSheet(self.scroll_area_css('horizontal'))
         self.image_scroll_area.viewport().installEventFilter(self)
-
         self.image_area_widget = QWidget()
         self.image_layout = QHBoxLayout(self.image_area_widget)
         self.image_layout.setSpacing(5)
@@ -55,6 +53,7 @@ class ActionWidget(ImgBaseWidget):
         self.layout().addWidget(self.progress_container)
         self._has_frames_content = False
         self.image_views = []
+        QTimer.singleShot(0, self._check_and_adjust_layout)
 
     # pylint: disable=C0103
     def eventFilter(self, watched, event):

@@ -2,7 +2,7 @@
 
 This page reports the main releases only and the main changes therein.
 
-## [v1.x.x] - 2025-12-26
+## [v1.x.x] - 2025-12-27
 
 ### Added
 - statusbar basic messaging

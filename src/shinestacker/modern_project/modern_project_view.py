@@ -183,6 +183,20 @@ class ModernProjectView(ProjectView):
                     return action_widget.child_widgets[subaction_idx]
         return None
 
+    def _scroll_to_widget(self, widget):
+        if not widget or not self.scroll_area:
+            return
+        if not widget.isVisible() or widget.height() == 0:
+            QTimer.singleShot(10, lambda: self._scroll_to_widget(widget))
+            return
+        viewport_height = self.scroll_area.viewport().height()
+        widget_height = widget.height()
+        if widget_height <= viewport_height:
+            y_margin = (viewport_height - widget_height) // 2
+        else:
+            y_margin = 0
+        self.scroll_area.ensureWidgetVisible(widget, 0, y_margin)
+
     @Slot(int, str, str)
     def handle_step_counts(self, _run_id, module_name, total_steps):
         indices = self.progress_mapper.get_indices(module_name)

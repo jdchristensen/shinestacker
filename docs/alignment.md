@@ -21,6 +21,8 @@ feature_config = {
     'descriptor': constants.DESCRIPTOR_SIFT
 }
 ```
+* ```name``` (optional, default: empty): only used in the GUI as identifier
+* ```enabled``` (optiona, default: ```True```): enable/disable sub-action
 * ```detector``` (optional, default: ```DETECTOR_SIFT```): the feature detector is used to find matches. See [Feature Detection and Description](https://docs.opencv.org/4.x/db/d27/tutorial_py_table_of_contents_feature2d.html) for more details. Possible values are:
   * ```DETECTOR_SIFT``` (default): [Scale-Invariant Feature Transform](https://docs.opencv.org/4.x/da/df5/tutorial_py_sift_intro.html)]
   * ```DETECTOR_ORB```: [Oriented FAST and Rotated BRIEF](https://docs.opencv.org/4.x/d1/d89/tutorial_py_orb.html)

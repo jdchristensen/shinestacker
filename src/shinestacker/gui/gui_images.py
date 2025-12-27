@@ -106,20 +106,8 @@ class GuiImageView(QWidget):
                 target_height = new_height
 
             def resize_high_quality(image, target_width, target_height):
-                current_height, current_width = image.shape[:2]
-                if target_width > current_width * 0.5:
-                    return cv2.resize(image, (target_width, target_height),
-                                      interpolation=cv2.INTER_AREA)
-                result = image.copy()
-                steps = []
-                while current_width > target_width * 2:
-                    current_width = max(current_width // 2, target_width)
-                    current_height = max(current_height // 2, target_height)
-                    steps.append((current_width, current_height))
-                for w, h in steps:
-                    result = cv2.resize(result, (w, h), interpolation=cv2.INTER_AREA)
-                return cv2.resize(result, (target_width, target_height),
-                                  interpolation=cv2.INTER_AREA)
+                return cv2.resize(image, (target_width, target_height),
+                                  interpolation=cv2.INTER_LANCZOS4)
 
             img = resize_high_quality(img, target_width, target_height)
             if len(img.shape) == 3:
