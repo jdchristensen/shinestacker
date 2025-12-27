@@ -15,6 +15,8 @@ from .selection_state import SelectionState
 from .progress_mapper import ProgressMapper
 from .element_operations import ElementOperations
 from .progress_signal_handler import ProgressSignalHandler, SignalConnector
+from .selection_navigation_manager import SelectionNavigationManager
+from .element_action_manager import ElementActionManager
 
 
 class ModernProjectView(ProjectView):
@@ -39,6 +41,26 @@ class ModernProjectView(ProjectView):
             self._find_action_widget,
             self._scroll_to_widget
         )
+        self.selection_nav = SelectionNavigationManager(
+            project_holder,
+            self.selection_state,
+            self._selection_callback
+        )
+        self.element_action = ElementActionManager(
+            project_holder,
+            self.selection_state,
+            {
+                'mark_modified': self.mark_as_modified,
+                'refresh_ui': self.refresh_ui,
+                'set_copy_buffer': self.set_copy_buffer,
+                'has_copy_buffer': self.has_copy_buffer,
+                'get_copy_buffer': self.copy_buffer,
+                'ensure_selected_visible': self._ensure_selected_visible,
+                'get_parent_widget': self.parent,
+                'get_clone_postfix': lambda: self.CLONE_POSTFIX
+            }
+        )
+        self.element_action.set_selection_navigation(self.selection_nav)
         self._setup_ui()
         self.change_theme(dark_theme)
         self.setFocusPolicy(Qt.StrongFocus)
@@ -75,6 +97,14 @@ class ModernProjectView(ProjectView):
         self.console_area.handle_html_message(
             f"<img width=100 src='{ico_path}'><hr><br>")
 
+    def _selection_callback(self, widget_type, job_index, action_index=None, subaction_index=None):
+        if widget_type == 'job':
+            self._select_job(job_index)
+        elif widget_type == 'action':
+            self._select_action(job_index, action_index)
+        elif widget_type == 'subaction':
+            self._select_subaction(job_index, action_index, subaction_index)
+
     def connect_signals(self, update_delete_action_state, show_status_message, enable_sub_actions):
         self.update_delete_action_state_requested.connect(update_delete_action_state)
         self.show_status_message_requested.connect(show_status_message)
@@ -97,25 +127,19 @@ class ModernProjectView(ProjectView):
         if not self.job_widgets:
             return
         key = event.key()
-        if key == Qt.Key_Up:
-            self._select_previous_widget()
-            event.accept()
-        elif key == Qt.Key_Down:
-            self._select_next_widget()
-            event.accept()
-        elif key == Qt.Key_Left:
-            self._select_previous_widget()
-            event.accept()
-        elif key == Qt.Key_Right:
-            self._select_next_widget()
-            event.accept()
-        elif key == Qt.Key_Home:
-            self._select_first_job()
-            event.accept()
-        elif key == Qt.Key_End:
-            self._select_last_job()
-            event.accept()
-        elif key in [Qt.Key_Return, Qt.Key_Enter]:
+        key_map = {
+            Qt.Key_Up: "up",
+            Qt.Key_Down: "down",
+            Qt.Key_Left: "left",
+            Qt.Key_Right: "right",
+            Qt.Key_Home: "home",
+            Qt.Key_End: "end"
+        }
+        if key in key_map:
+            if self.selection_nav.handle_key_navigation(key_map[key]):
+                event.accept()
+                return
+        if key in [Qt.Key_Return, Qt.Key_Enter]:
             if self.selection_state.is_job_selected():
                 self._on_job_double_clicked(self.selection_state.job_index)
             elif self.selection_state.is_action_selected():
@@ -215,48 +239,6 @@ class ModernProjectView(ProjectView):
             return action.sub_actions[subaction_idx]
         return None
 
-    def _select_next_widget(self):
-        if self.selection_state.widget_type == 'job':
-            if self._has_actions_in_job(self.selection_state.job_index):
-                self._select_first_action_in_job(self.selection_state.job_index)
-        elif self.selection_state.widget_type == 'action':
-            if self._has_subactions_in_action(
-                    self.selection_state.job_index, self.selection_state.action_index):
-                self._select_first_subaction_in_action(
-                    self.selection_state.job_index, self.selection_state.action_index)
-            else:
-                self._select_next_action_or_job()
-        elif self.selection_state.widget_type == 'subaction':
-            self._select_next_subaction_or_action_or_job()
-
-    def _select_previous_widget(self):
-        if self.selection_state.widget_type == 'subaction':
-            if self.selection_state.subaction_index > 0:
-                self._select_subaction(
-                    self.selection_state.job_index, self.selection_state.action_index,
-                    self.selection_state.subaction_index - 1
-                )
-            else:
-                self._select_action(
-                    self.selection_state.job_index, self.selection_state.action_index)
-        elif self.selection_state.widget_type == 'action':
-            if self.selection_state.action_index > 0:
-                prev_action_index = self.selection_state.action_index - 1
-                job_widget = self.job_widgets[self.selection_state.job_index]
-                prev_action_widget = job_widget.child_widgets[prev_action_index]
-                if prev_action_widget.num_child_widgets() > 0:
-                    last_subaction_index = prev_action_widget.num_child_widgets() - 1
-                    self._select_subaction(
-                        self.selection_state.job_index, prev_action_index, last_subaction_index
-                    )
-                else:
-                    self._select_action(self.selection_state.job_index, prev_action_index)
-            else:
-                self._select_job(self.selection_state.job_index)
-        elif self.selection_state.widget_type == 'job':
-            if self.selection_state.job_index > 0:
-                self._select_job(self.selection_state.job_index - 1)
-
     def _select_job(self, job_index):
         if self.is_valid_job_index(job_index):
             job_widget = self.job_widgets[job_index]
@@ -282,82 +264,6 @@ class ModernProjectView(ProjectView):
                         subaction_widget, 'subaction', job_index, action_index, subaction_index)
                     self._ensure_selected_visible()
 
-    def _select_first_job(self):
-        if self.job_widgets:
-            self._select_job(0)
-
-    def _select_last_job(self):
-        if self.job_widgets:
-            self._select_job(len(self.job_widgets) - 1)
-
-    def _select_first_action_in_job(self, job_index):
-        self._select_action(job_index, 0)
-
-    def _select_first_subaction_in_action(self, job_index, action_index):
-        self._select_subaction(job_index, action_index, 0)
-
-    def _has_actions_in_job(self, job_index):
-        return self.job_widgets[job_index].num_child_widgets() > 0
-
-    def _has_subactions_in_action(self, job_index, action_index):
-        job_widget = self.job_widgets[job_index]
-        action_widget = job_widget.child_widgets[action_index]
-        return action_widget.num_child_widgets() > 0
-
-    def _select_next_action_or_job(self):
-        job_index = self.selection_state.job_index
-        action_index = self.selection_state.action_index
-        if self.is_valid_job_index(job_index):
-            job_widget = self.job_widgets[job_index]
-            next_action_index = action_index + 1
-            if next_action_index < job_widget.num_child_widgets():
-                self._select_action(job_index, next_action_index)
-            else:
-                self._select_next_job()
-
-    def _select_next_subaction_or_action_or_job(self):
-        job_index = self.selection_state.job_index
-        action_index = self.selection_state.action_index
-        subaction_index = self.selection_state.subaction_index
-        if self.is_valid_job_index(job_index):
-            job_widget = self.job_widgets[job_index]
-            if 0 <= action_index < job_widget.num_child_widgets():
-                action_widget = job_widget.child_widgets[action_index]
-                next_subaction_index = subaction_index + 1
-                if next_subaction_index < action_widget.num_child_widgets():
-                    self._select_subaction(job_index, action_index, next_subaction_index)
-                else:
-                    self._select_next_action_or_job()
-
-    def _select_previous_job_last_widget(self):
-        prev_job_index = self.selection_state.job_index - 1
-        if prev_job_index >= 0:
-            prev_job_widget = self.job_widgets[prev_job_index]
-            if prev_job_widget.num_child_widgets() > 0:
-                last_action_index = prev_job_widget.num_child_widgets() - 1
-                last_action_widget = prev_job_widget.child_widgets[last_action_index]
-                if last_action_widget.num_child_widgets() > 0:
-                    last_subaction_index = last_action_widget.num_child_widgets() - 1
-                    self._select_subaction(prev_job_index, last_action_index, last_subaction_index)
-                else:
-                    self._select_action(prev_job_index, last_action_index)
-            else:
-                self._select_job(prev_job_index)
-
-    def _select_next_job(self):
-        if not self.job_widgets:
-            return
-        new_index = self.selection_state.job_index + 1
-        if new_index < len(self.job_widgets):
-            self._select_job(new_index)
-
-    def _select_previous_job(self):
-        if not self.job_widgets:
-            return
-        new_index = self.selection_state.job_index - 1
-        if new_index >= 0:
-            self._select_job(new_index)
-
     def _reset_selection(self):
         self.selected_widget = None
         self.selection_state.reset()
@@ -373,6 +279,7 @@ class ModernProjectView(ProjectView):
                 if item.widget():
                     item.widget().deleteLater()
         self.selection_state.job_index = 0
+        self.selected_widget = None
 
     def clear_project(self):
         self.clear_job_list()
@@ -502,277 +409,44 @@ class ModernProjectView(ProjectView):
             else:
                 job_widget.set_selected(False)
 
-    def delete_element(self, confirm=True):
-        if self.selection_state.is_job_selected():
-            return self._delete_job(self.selection_state.job_index, confirm)
-        if self.selection_state.is_action_selected():
-            return self._delete_action(
-                self.selection_state.job_index, self.selection_state.action_index, confirm)
-        if self.selection_state.is_subaction_selected():
-            return self._delete_subaction(
-                self.selection_state.job_index, self.selection_state.action_index,
-                self.selection_state.subaction_index, confirm)
-        return None
-
-    def _delete_job(self, job_index, confirm=True):
-        if confirm:
-            if 0 <= job_index < len(self.project().jobs):
-                job = self.project().jobs[job_index]
-                reply = QMessageBox.question(
-                    self.parent(), "Confirm Delete",
-                    f"Are you sure you want to delete job '{job.params.get('name', '')}'?",
-                    QMessageBox.Yes | QMessageBox.No
-                )
-                if reply != QMessageBox.Yes:
-                    return None
-            else:
-                return None
-        deleted_job = self.element_ops.delete_job(job_index)
-        if deleted_job:
-            self.mark_as_modified(True, "Delete Job")
-            self._select_previous_widget()
-            self.refresh_ui()
-        return deleted_job
-
-    def _delete_action(self, job_index, action_index, confirm=True):
-        if confirm:
-            if 0 <= job_index < len(self.project().jobs):
-                job = self.project().jobs[job_index]
-                if 0 <= action_index < len(job.sub_actions):
-                    action = job.sub_actions[action_index]
-                    reply = QMessageBox.question(
-                        self.parent(), "Confirm Delete",
-                        "Are you sure you want to delete "
-                        f"action '{action.params.get('name', '')}'?",
-                        QMessageBox.Yes | QMessageBox.No
-                    )
-                    if reply != QMessageBox.Yes:
-                        return None
-            else:
-                return None
-        deleted_action = self.element_ops.delete_action(job_index, action_index)
-        if deleted_action:
-            self.mark_as_modified(True, "Delete Action")
-            self._select_previous_widget()
-            self.refresh_ui()
-        return deleted_action
-
-    def _delete_subaction(self, job_index, action_index, subaction_index, confirm=True):
-        if confirm:
-            if 0 <= job_index < len(self.project().jobs):
-                job = self.project().jobs[job_index]
-                if 0 <= action_index < len(job.sub_actions):
-                    action = job.sub_actions[action_index]
-                    if 0 <= subaction_index < len(action.sub_actions):
-                        subaction = action.sub_actions[subaction_index]
-                        reply = QMessageBox.question(
-                            self.parent(), "Confirm Delete",
-                            "Are you sure you want to delete "
-                            f"sub-action '{subaction.params.get('name', '')}'?",
-                            QMessageBox.Yes | QMessageBox.No
-                        )
-                        if reply != QMessageBox.Yes:
-                            return None
-            else:
-                return None
-        deleted_subaction = self.element_ops.delete_subaction(
-            job_index, action_index, subaction_index)
-        if deleted_subaction:
-            self.mark_as_modified(True, "Delete Sub-action")
-            self._select_previous_widget()
-            self.refresh_ui()
-        return deleted_subaction
-
-    def copy_job(self):
-        job_clone = self.element_ops.copy_job(self.selection_state.job_index)
-        if job_clone:
-            self.set_copy_buffer(job_clone)
-
-    def copy_action(self):
-        if not self.selection_state.is_action_selected():
-            return
-        job_idx, action_idx, _ = self.selection_state.to_tuple()
-        job_clone = self.element_ops.copy_action(job_idx, action_idx)
-        if job_clone:
-            self.set_copy_buffer(job_clone)
-
-    def copy_subaction(self):
-        if not self.selection_state.is_subaction_selected():
-            return
-        job_idx, action_idx, subaction_idx = self.selection_state.to_tuple()
-        job_clone = self.element_ops.copy_subaction(job_idx, action_idx, subaction_idx)
-        if job_clone:
-            self.set_copy_buffer(job_clone)
+    def delete_element(self):
+        return self.element_action.delete_element(self.parent(), True)
 
     def copy_element(self):
-        if self.selection_state.is_job_selected():
-            self.copy_job()
-        elif self.selection_state.is_action_selected():
-            self.copy_action()
-        elif self.selection_state.is_subaction_selected():
-            self.copy_subaction()
-
-    def paste_job(self):
-        if not self.has_copy_buffer():
-            return
-        copy_buffer = self.copy_buffer()
-        if copy_buffer.type_name != constants.ACTION_JOB:
-            if len(self.project().jobs) == 0:
-                return
-            if copy_buffer.type_name not in constants.ACTION_TYPES:
-                return
-            current_job = self.project().jobs[self.selection_state.job_index]
-            new_action_index = len(current_job.sub_actions)
-            current_job.sub_actions.insert(new_action_index, copy_buffer.clone())
-            self.mark_as_modified(True, "Paste Action")
-            self.selection_state.set_action(self.selection_state.job_index, new_action_index)
-            self.refresh_ui()
-            self._ensure_selected_visible()
-            return
-        if len(self.project().jobs) == 0:
-            new_job_index = 0
-        else:
-            new_job_index = min(
-                max(self.selection_state.job_index + 1, 0), len(self.project().jobs))
-        self.mark_as_modified(True, "Paste Job")
-        self.project().jobs.insert(new_job_index, copy_buffer.clone())
-        self.selection_state.set_job(new_job_index)
-        self.refresh_ui()
-        self._ensure_selected_visible()
-
-    def paste_action(self):
-        if not self.has_copy_buffer():
-            return
-        if self.selection_state.job_index < 0:
-            return
-        copy_buffer = self.copy_buffer()
-        if copy_buffer.type_name not in constants.ACTION_TYPES:
-            return
-        job = self.project().jobs[self.selection_state.job_index]
-        if self.selection_state.action_index >= 0:
-            new_action_index = self.selection_state.action_index + 1
-        else:
-            new_action_index = len(job.sub_actions)
-        job.sub_actions.insert(new_action_index, copy_buffer.clone())
-        self.mark_as_modified(True, "Paste Action")
-        self.selection_state.set_action(self.selection_state.job_index, new_action_index)
-        self.refresh_ui()
-        self._ensure_selected_visible()
-
-    def paste_subaction(self):
-        if not self.has_copy_buffer():
-            return
-        if self.selection_state.job_index < 0 or self.selection_state.action_index < 0:
-            return
-        copy_buffer = self.copy_buffer()
-        job = self.project().jobs[self.selection_state.job_index]
-        if self.selection_state.action_index >= len(job.sub_actions):
-            return
-        action = job.sub_actions[self.selection_state.action_index]
-        if action.type_name != constants.ACTION_COMBO:
-            return
-        if copy_buffer.type_name not in constants.SUB_ACTION_TYPES:
-            return
-        if self.selection_state.subaction_index >= 0:
-            new_subaction_index = self.selection_state.subaction_index + 1
-        else:
-            new_subaction_index = 0
-        action.sub_actions.insert(new_subaction_index, copy_buffer.clone())
-        self.mark_as_modified(True, "Paste Sub-action")
-        self.selection_state.set_subaction(
-            self.selection_state.job_index,
-            self.selection_state.action_index,
-            new_subaction_index)
-        self.refresh_ui()
-        self._ensure_selected_visible()
+        self.element_action.copy_element()
 
     def paste_element(self):
-        if not self.has_copy_buffer():
-            return
-        copy_buffer = self.copy_buffer()
-        if copy_buffer.type_name in constants.SUB_ACTION_TYPES:
-            self.paste_subaction()
-        elif self.selection_state.is_job_selected():
-            self.paste_job()
-        elif self.selection_state.is_action_selected():
-            self.paste_action()
-        elif self.selection_state.is_subaction_selected():
-            self.paste_subaction()
+        self.element_action.paste_element()
 
     def cut_element(self):
-        element = self.delete_element(False)
-        self.set_copy_buffer(element)
-
-    def clone_job(self):
-        if not self.selection_state.is_job_selected():
-            return
-        if not self.is_valid_job_index(self.selection_state.job_index):
-            return
-        job = self.project().jobs[self.selection_state.job_index]
-        job_clone = job.clone(name_postfix=self.CLONE_POSTFIX)
-        new_job_index = self.selection_state.job_index + 1
-        self.mark_as_modified(True, "Duplicate Job")
-        self.project().jobs.insert(new_job_index, job_clone)
-        self.selection_state.set_job(new_job_index)
-        self.refresh_ui()
-
-    def clone_action(self):
-        if self.selection_state.widget_type == 'action':
-            job_index = self.selection_state.job_index
-            action_index = self.selection_state.action_index
-            if (0 <= job_index < len(self.project().jobs) and
-                    0 <= action_index < len(self.project().jobs[job_index].sub_actions)):
-                job = self.project().jobs[job_index]
-                action = job.sub_actions[action_index]
-                action_clone = action.clone(name_postfix=self.CLONE_POSTFIX)
-                new_action_index = action_index + 1
-                self.mark_as_modified(True, "Duplicate Action")
-                job.sub_actions.insert(new_action_index, action_clone)
-                self.selection_state.action_index = new_action_index
-                self.selection_state.subaction_index = -1
-                self.selection_state.widget_type = 'action'
-                self.refresh_ui()
-        elif self.selection_state.widget_type == 'subaction':
-            job_index = self.selection_state.job_index
-            action_index = self.selection_state.action_index
-            subaction_index = self.selection_state.subaction_index
-            if (0 <= job_index < len(self.project().jobs) and
-                    0 <= action_index < len(self.project().jobs[job_index].sub_actions)):
-                job = self.project().jobs[job_index]
-                action = job.sub_actions[action_index]
-                if (action.type_name == constants.ACTION_COMBO and
-                        0 <= subaction_index < len(action.sub_actions)):
-                    subaction = action.sub_actions[subaction_index]
-                    subaction_clone = subaction.clone(name_postfix=self.CLONE_POSTFIX)
-                    new_subaction_index = subaction_index + 1
-                    self.mark_as_modified(True, "Duplicate Sub-action")
-                    action.sub_actions.insert(new_subaction_index, subaction_clone)
-                    self.selection_state.subaction_index = new_subaction_index
-                    self.selection_state.widget_type = 'subaction'
-                    self.refresh_ui()
+        self.element_action.cut_element()
 
     def clone_element(self):
-        if self.selection_state.is_job_selected():
-            self.clone_job()
-        elif self.selection_state.is_action_selected():
-            self.clone_action()
-        elif self.selection_state.is_subaction_selected():
-            self.clone_subaction()
-
-    def disable(self):
-        self.set_enabled(False)
+        self.element_action.clone_element()
 
     def enable(self):
-        self.set_enabled(True)
+        self.element_action.enable()
 
-    def disable_all(self):
-        self.set_enabled_all(False)
+    def disable(self):
+        self.element_action.disable()
 
     def enable_all(self):
-        self.set_enabled_all(True)
+        self.element_action.enable_all()
+
+    def disable_all(self):
+        self.element_action.disable_all()
+
+    def move_element_up(self):
+        self.element_action.move_element_up()
+
+    def move_element_down(self):
+        self.element_action.move_element_down()
 
     def set_enabled(self, enabled):
         self._set_enabled(*self.selection_state.to_tuple(), enabled)
+
+    def set_style_sheet(self, dark_theme):
+        pass
 
     def set_enabled_all(self, enabled):
         for job in self.project().jobs:
@@ -812,52 +486,6 @@ class ModernProjectView(ProjectView):
         else:
             y_margin = 0
         self.scroll_area.ensureWidgetVisible(self.selected_widget, 0, y_margin)
-
-    def move_element_up(self):
-        if self.selection_state.is_job_selected():
-            self._shift_job(-1)
-        elif self.selection_state.is_action_selected():
-            self._shift_action(-1)
-        elif self.selection_state.is_subaction_selected():
-            self._shift_subaction(-1)
-
-    def move_element_down(self):
-        if self.selection_state.is_job_selected():
-            self._shift_job(+1)
-        elif self.selection_state.is_action_selected():
-            self._shift_action(+1)
-        elif self.selection_state.is_subaction_selected():
-            self._shift_subaction(+1)
-
-    def _shift_job(self, delta):
-        if not self.selection_state.is_job_selected():
-            return
-        job_idx, _, _ = self.selection_state.to_tuple()
-        new_index = self.element_ops.shift_job(job_idx, delta)
-        if new_index != job_idx:
-            self.mark_as_modified(True, "Shift Job")
-            self.selection_state.set_job(new_index)
-            self.refresh_ui()
-
-    def _shift_action(self, delta):
-        if not self.selection_state.is_action_selected():
-            return
-        job_idx, action_idx, _ = self.selection_state.to_tuple()
-        new_index = self.element_ops.shift_action(job_idx, action_idx, delta)
-        if new_index != action_idx:
-            self.mark_as_modified(True, "Shift Action")
-            self.selection_state.set_action(job_idx, new_index)
-            self.refresh_ui()
-
-    def _shift_subaction(self, delta):
-        if not self.selection_state.is_subaction_selected():
-            return
-        job_idx, action_idx, subaction_idx = self.selection_state.to_tuple()
-        new_index = self.element_ops.shift_subaction(job_idx, action_idx, subaction_idx, delta)
-        if new_index != subaction_idx:
-            self.mark_as_modified(True, "Shift Sub-action")
-            self.selection_state.set_subaction(job_idx, action_idx, new_index)
-            self.refresh_ui()
 
     def add_action(self, type_name):
         job_index = self.selection_state.job_index
@@ -908,49 +536,7 @@ class ModernProjectView(ProjectView):
         for job in self.project_jobs():
             self.add_job_widget(job)
         ProjectView.refresh_ui(self)
-        self._restore_selection_from_state(old_state)
-
-    def _restore_selection_from_state(self, old_state):
-        if not old_state.is_valid():
-            if self.job_widgets:
-                self._select_job(0)
-            else:
-                self._reset_selection()
-            return
-        job_idx = old_state.job_index
-        if not 0 <= job_idx < len(self.job_widgets):
-            if self.job_widgets:
-                self._select_job(0)
-            else:
-                self._reset_selection()
-            return
-        if old_state.is_job_selected():
-            self._select_job(job_idx)
-        elif old_state.is_action_selected():
-            action_idx = old_state.action_index
-            job_widget = self.job_widgets[job_idx]
-            if 0 <= action_idx < job_widget.num_child_widgets():
-                self._select_action(job_idx, action_idx)
-            elif job_widget.num_child_widgets() > 0:
-                self._select_action(job_idx, 0)
-            else:
-                self._select_job(job_idx)
-        elif old_state.is_subaction_selected():
-            action_idx = old_state.action_index
-            subaction_idx = old_state.subaction_index
-            job_widget = self.job_widgets[job_idx]
-            if 0 <= action_idx < job_widget.num_child_widgets():
-                action_widget = job_widget.child_widgets[action_idx]
-                if 0 <= subaction_idx < action_widget.num_child_widgets():
-                    self._select_subaction(job_idx, action_idx, subaction_idx)
-                elif action_widget.num_child_widgets() > 0:
-                    self._select_subaction(job_idx, action_idx, 0)
-                else:
-                    self._select_action(job_idx, action_idx)
-            elif job_widget.num_child_widgets() > 0:
-                self._select_action(job_idx, 0)
-            else:
-                self._select_job(job_idx)
+        self.selection_nav.restore_selection(old_state)
 
     def get_console_area(self):
         return self.console_area
@@ -1036,8 +622,10 @@ class ModernProjectView(ProjectView):
     def refresh_and_set_status(self, _status):
         self.refresh_ui()
 
-    def refresh_and_select_job(self, _job_idx):
+    def refresh_and_select_job(self, job_idx):
         self.refresh_ui()
+        if 0 <= job_idx < len(self.job_widgets):
+            self._select_job(job_idx)
 
     def select_first_job(self):
         if self.job_widgets:
