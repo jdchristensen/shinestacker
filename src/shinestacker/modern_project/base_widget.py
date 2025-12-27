@@ -20,11 +20,16 @@ class BaseWidget(QFrame):
         self.min_height = min_height
         self.path_label = None
         self.child_widgets = []
+        self.top_container = None
+        self.top_layout = None
+        self.icons_container = None
+        self.icons_layout = None
+        self.path_label_in_top_row = None
         self.setFocusPolicy(Qt.NoFocus)
         self.setAttribute(Qt.WA_Hover, True)
         self.name_label = None
         self.enabled_icon = None
-        self.path_label_in_top_row = None
+        self.path_label_in_top_row = True
         self._init_widget(data_object)
         self._update_stylesheet()
         self.enabled_toggled.connect(self._on_enabled_toggled)
@@ -45,7 +50,6 @@ class BaseWidget(QFrame):
         self.top_layout.addWidget(self.name_label)
         self.path_label = QLabel()
         self.path_label.setAlignment(Qt.AlignCenter | Qt.AlignVCenter)
-        self.path_label_in_top_row = True
         self.top_layout.addWidget(self.path_label, 1)
         self.icons_container = QWidget()
         self.icons_layout = QHBoxLayout(self.icons_container)
@@ -246,10 +250,13 @@ class ImgBaseWidget(BaseWidget):
         self.image_scroll_area.setWidgetResizable(True)
         self.image_scroll_area.setFrameShape(QFrame.NoFrame)
         self.image_views = []
+        self.image_layout = None
+        self.image_area_widget = None
 
     def clear_images(self):
         for view in self.image_views:
-            self.image_layout.removeWidget(view)
+            if self.image_layout:
+                self.image_layout.removeWidget(view)
             view.deleteLater()
         self.image_views.clear()
         self.image_scroll_area.setVisible(False)
