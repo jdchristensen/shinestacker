@@ -456,19 +456,19 @@ class ModernProjectView(ProjectView):
 
     def _set_enabled(self, job_idx, action_idx, subaction_idx, enabled):
         if self.selection_state.is_subaction_selected():
-            if (0 <= job_idx < len(self.project().jobs) and
+            if (0 <= job_idx < self.num_project_jobs() and
                     0 <= action_idx < len(self.project().jobs[job_idx].sub_actions)):
                 action = self.project().jobs[job_idx].sub_actions[action_idx]
                 if 0 <= subaction_idx < len(action.sub_actions):
                     action.sub_actions[subaction_idx].set_enabled(enabled)
                     self.mark_as_modified(True, f"{'Enable' if enabled else 'Disable'} Sub-action")
         elif self.selection_state.is_action_selected():
-            if 0 <= job_idx < len(self.project().jobs) and \
+            if 0 <= job_idx < self.num_project_jobs() and \
                     0 <= action_idx < len(self.project().jobs[job_idx].sub_actions):
                 self.project().jobs[job_idx].sub_actions[action_idx].set_enabled(enabled)
                 self.mark_as_modified(True, f"{'Enable' if enabled else 'Disable'} Action")
         elif self.selection_state.is_job_selected():
-            if 0 <= job_idx < len(self.project().jobs):
+            if 0 <= job_idx < self.num_project_jobs():
                 self.project().jobs[job_idx].set_enabled(enabled)
                 self.mark_as_modified(True, f"{'Enable' if enabled else 'Disable'} Job")
         self.refresh_ui()
@@ -490,7 +490,7 @@ class ModernProjectView(ProjectView):
     def add_action(self, type_name):
         job_index = self.selection_state.job_index
         if job_index < 0:
-            if len(self.project().jobs) > 0:
+            if self.num_project_jobs() > 0:
                 QMessageBox.warning(self.parent(),
                                     "No Job Selected", "Please select a job first.")
             else:
@@ -514,7 +514,7 @@ class ModernProjectView(ProjectView):
         action_index = self.selection_state.action_index
         if job_index < 0 or action_index < 0:
             return
-        if 0 <= job_index < len(self.project().jobs):
+        if 0 <= job_index < self.num_project_jobs():
             job = self.project().jobs[job_index]
             if 0 <= action_index < len(job.sub_actions):
                 action = job.sub_actions[action_index]

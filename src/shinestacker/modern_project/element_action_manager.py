@@ -33,7 +33,7 @@ class ElementActionManager(ProjectHandler, QObject):
 
     def _delete_job(self, job_index, parent_widget, confirm=True):
         if confirm:
-            if 0 <= job_index < len(self.project().jobs):
+            if 0 <= job_index < self.num_project_jobs():
                 job = self.project().jobs[job_index]
                 reply = QMessageBox.question(
                     parent_widget, "Confirm Delete",
@@ -54,7 +54,7 @@ class ElementActionManager(ProjectHandler, QObject):
 
     def _delete_action(self, job_index, action_index, parent_widget, confirm=True):
         if confirm:
-            if 0 <= job_index < len(self.project().jobs):
+            if 0 <= job_index < self.num_project_jobs():
                 job = self.project().jobs[job_index]
                 if 0 <= action_index < len(job.sub_actions):
                     action = job.sub_actions[action_index]
@@ -79,7 +79,7 @@ class ElementActionManager(ProjectHandler, QObject):
     def _delete_subaction(self, job_index, action_index, subaction_index,
                           parent_widget, confirm=True):
         if confirm:
-            if 0 <= job_index < len(self.project().jobs):
+            if 0 <= job_index < self.num_project_jobs():
                 job = self.project().jobs[job_index]
                 if 0 <= action_index < len(job.sub_actions):
                     action = job.sub_actions[action_index]
@@ -151,7 +151,7 @@ class ElementActionManager(ProjectHandler, QObject):
             return
         copy_buffer = self.callbacks['get_copy_buffer']()
         if copy_buffer.type_name != constants.ACTION_JOB:
-            if len(self.project().jobs) == 0:
+            if self.num_project_jobs() == 0:
                 return
             if copy_buffer.type_name not in constants.ACTION_TYPES:
                 return
@@ -163,11 +163,11 @@ class ElementActionManager(ProjectHandler, QObject):
             self.callbacks['refresh_ui']()
             self.callbacks['ensure_selected_visible']()
             return
-        if len(self.project().jobs) == 0:
+        if self.num_project_jobs() == 0:
             new_job_index = 0
         else:
             new_job_index = min(
-                max(self.selection_state.job_index + 1, 0), len(self.project().jobs))
+                max(self.selection_state.job_index + 1, 0), self.num_project_jobs())
         self.callbacks['mark_modified'](True, "Paste Job")
         self.project().jobs.insert(new_job_index, copy_buffer.clone())
         self.selection_state.set_job(new_job_index)
@@ -236,7 +236,7 @@ class ElementActionManager(ProjectHandler, QObject):
     def clone_job(self):
         if not self.selection_state.is_job_selected():
             return
-        if not 0 <= self.selection_state.job_index < len(self.project().jobs):
+        if not 0 <= self.selection_state.job_index < self.num_project_jobs():
             return
         job = self.project().jobs[self.selection_state.job_index]
         job_clone = job.clone(name_postfix=self.callbacks['get_clone_postfix']())
@@ -250,7 +250,7 @@ class ElementActionManager(ProjectHandler, QObject):
         if self.selection_state.widget_type == 'action':
             job_index = self.selection_state.job_index
             action_index = self.selection_state.action_index
-            if (0 <= job_index < len(self.project().jobs) and
+            if (0 <= job_index < self.num_project_jobs() and
                     0 <= action_index < len(self.project().jobs[job_index].sub_actions)):
                 job = self.project().jobs[job_index]
                 action = job.sub_actions[action_index]
@@ -266,7 +266,7 @@ class ElementActionManager(ProjectHandler, QObject):
             job_index = self.selection_state.job_index
             action_index = self.selection_state.action_index
             subaction_index = self.selection_state.subaction_index
-            if (0 <= job_index < len(self.project().jobs) and
+            if (0 <= job_index < self.num_project_jobs() and
                     0 <= action_index < len(self.project().jobs[job_index].sub_actions)):
                 job = self.project().jobs[job_index]
                 action = job.sub_actions[action_index]
