@@ -584,6 +584,12 @@ class ModernProjectView(ProjectView):
     def stop(self):
         if self._worker:
             self._worker.stop()
+        self.menu_manager.run_job_action.setEnabled(True)
+        self.menu_manager.run_all_jobs_action.setEnabled(True)
+        self.menu_manager.stop_action.setEnabled(False)
+
+    def is_running(self):
+        return self._worker is not None and self._worker.isRunning()
 
     def _connect_worker_signals(self, worker):
         SignalConnector.connect_worker_signals(worker, self, self.progress_handler)

@@ -244,6 +244,12 @@ class ClassicProjectView(ProjectView, ListContainer):
     def stop_worker(self, tab_position):
         worker = self._workers[tab_position]
         worker.stop()
+        self.menu_manager.run_job_action.setEnabled(True)
+        self.menu_manager.run_all_jobs_action.setEnabled(True)
+        self.menu_manager.stop_action.setEnabled(False)
+
+    def is_running(self):
+        return any(worker.isRunning() for worker in self._workers if worker is not None)
 
     def connect_worker_signals(self, worker, window):
         worker.before_action_signal.connect(window.handle_before_action)
