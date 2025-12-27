@@ -245,6 +245,7 @@ class ImgBaseWidget(BaseWidget):
         self.image_scroll_area = QScrollArea()
         self.image_scroll_area.setWidgetResizable(True)
         self.image_scroll_area.setFrameShape(QFrame.NoFrame)
+        self.image_views = []
 
     def clear_images(self):
         for view in self.image_views:
