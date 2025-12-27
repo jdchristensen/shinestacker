@@ -32,19 +32,6 @@ class JobWidget(BaseWidget):
             self.retouch_button.setVisible(self._should_show_retouch_button())
             self._update_button_style()
 
-    def _setup_job_layouts(self):
-        self._setup_layouts()
-        if self.right_icons_layout:
-            self.right_icons_layout.insertWidget(0, self.retouch_button)
-        if hasattr(self, 'fallback_widget') and self.fallback_widget:
-            fallback_layout = self.fallback_widget.layout()
-            if fallback_layout and fallback_layout.itemAt(0):
-                top_layout = fallback_layout.itemAt(0).layout()
-                if top_layout and top_layout.itemAt(1):
-                    icons_layout = top_layout.itemAt(1).layout()
-                    if icons_layout:
-                        icons_layout.insertWidget(0, self.retouch_button)
-
     def set_dark_theme(self, dark_theme):
         super().set_dark_theme(dark_theme)
         if hasattr(self, 'retouch_button'):

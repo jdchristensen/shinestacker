@@ -24,10 +24,6 @@ class BaseWidget(QFrame):
         self.setAttribute(Qt.WA_Hover, True)
         self.name_label = None
         self.enabled_icon = None
-        self.top_row_widget = None
-        self.fallback_widget = None
-        self.right_icons_container = None
-        self.right_icons_layout = None
         self.path_label_in_top_row = None
         self._init_widget(data_object)
         self._update_stylesheet()
@@ -95,39 +91,6 @@ class BaseWidget(QFrame):
         if self.path_label and self.path_label.text():
             self._check_and_adjust_layout()
     # pylint: enable=C0103
-
-    def _setup_layouts(self):
-        if self.top_row_widget:
-            self.top_row_widget.deleteLater()
-        if self.fallback_widget:
-            self.fallback_widget.deleteLater()
-        self.top_row_widget = QWidget()
-        top_row_layout = QHBoxLayout(self.top_row_widget)
-        top_row_layout.setContentsMargins(0, 0, 0, 0)
-        top_row_layout.setSpacing(4)
-        top_row_layout.addWidget(self.name_label)
-        top_row_layout.addWidget(self.path_label, 1)
-        self.right_icons_container = QWidget()
-        self.right_icons_layout = QHBoxLayout(self.right_icons_container)
-        self.right_icons_layout.setContentsMargins(0, 0, 0, 0)
-        self.right_icons_layout.setSpacing(2)
-        self.right_icons_layout.addWidget(self.enabled_icon)
-        top_row_layout.addWidget(self.right_icons_container)
-        self.fallback_widget = QWidget()
-        fallback_layout = QVBoxLayout(self.fallback_widget)
-        fallback_layout.setContentsMargins(0, 0, 0, 0)
-        fallback_layout.setSpacing(2)
-        fallback_top = QHBoxLayout()
-        fallback_top.setContentsMargins(0, 0, 0, 0)
-        fallback_top.addWidget(self.name_label, 1)
-        fallback_icons = QHBoxLayout()
-        fallback_icons.setContentsMargins(0, 0, 0, 0)
-        fallback_icons.setSpacing(2)
-        fallback_icons.addWidget(self.enabled_icon)
-        fallback_top.addLayout(fallback_icons)
-        fallback_layout.addLayout(fallback_top)
-        fallback_layout.addWidget(self.path_label)
-        self._check_and_adjust_layout()
 
     def _on_enabled_icon_clicked(self, event):
         self._enabled = not self._enabled
