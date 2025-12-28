@@ -28,7 +28,7 @@ class SubActionWidget(ImgBaseWidget):
         self.image_scroll_area.setWidget(self.image_area_widget)
         self.image_scroll_area.setVisible(False)
         self.progress_layout.addWidget(self.image_scroll_area)
-        self.layout().addWidget(self.progress_container)
+        self.main_layout.addWidget(self.progress_container)
         self.image_views = []
 
     def widget_type(self):

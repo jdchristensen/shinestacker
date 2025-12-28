@@ -47,7 +47,7 @@ class ActionWidget(ImgBaseWidget):
         self.image_scroll_area.setWidget(self.image_area_widget)
         self.image_scroll_area.setVisible(False)
         self.progress_layout.addWidget(self.image_scroll_area)
-        self.layout().addWidget(self.progress_container)
+        self.main_layout.addWidget(self.progress_container)
         self._has_frames_content = False
         self.image_views = []
         QTimer.singleShot(0, self._check_and_adjust_layout)
@@ -79,8 +79,6 @@ class ActionWidget(ImgBaseWidget):
 
     def complete_progress(self):
         self.progress_bar.stop()
-        self.progress_bar.setFormat("✓ " + self.progress_bar.format())
-        QTimer.singleShot(2000, self.hide_progress)
 
     def hide_progress(self):
         self.progress_bar.setVisible(False)

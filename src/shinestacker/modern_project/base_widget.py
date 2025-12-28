@@ -40,28 +40,28 @@ class BaseWidget(QFrame):
 
     def _init_widget(self, data_object):
         self.setMinimumHeight(self.min_height)
-        self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Maximum)  # Changed to Maximum
-        main_layout = QVBoxLayout(self)
-        main_layout.setContentsMargins(8, 8, 8, 8)
-        main_layout.setSpacing(2)
-        main_layout.setSizeConstraint(QLayout.SetMinAndMaxSize)
-        main_layout.setAlignment(Qt.AlignTop)  # Align everything to top
+        self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Maximum)
+        self.main_layout = QVBoxLayout(self)
+        self.main_layout.setContentsMargins(8, 8, 8, 8)
+        self.main_layout.setSpacing(2)
+        self.main_layout.setSizeConstraint(QLayout.SetMinAndMaxSize)
+        self.main_layout.setAlignment(Qt.AlignTop)
         self.top_container = QWidget()
-        self.top_container.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Maximum)  # Maximum
+        self.top_container.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Maximum)
         self.top_layout = QHBoxLayout(self.top_container)
         self.top_layout.setContentsMargins(0, 0, 0, 0)
         self.top_layout.setSpacing(4)
-        self.top_layout.setAlignment(Qt.AlignTop)  # Align to top
+        self.top_layout.setAlignment(Qt.AlignTop)
         self.name_label = QLabel()
         self.name_label.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
-        self.name_label.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Maximum)  # Maximum
+        self.name_label.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Maximum)
         self.top_layout.addWidget(self.name_label)
         self.path_label = QLabel()
         self.path_label.setAlignment(Qt.AlignCenter | Qt.AlignVCenter)
-        self.path_label.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Maximum)  # Maximum
+        self.path_label.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Maximum)
         self.top_layout.addWidget(self.path_label, 1)
         self.icons_container = QWidget()
-        self.icons_container.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Maximum)  # Maximum
+        self.icons_container.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Maximum)
         self.icons_layout = QHBoxLayout(self.icons_container)
         self.icons_layout.setContentsMargins(0, 0, 0, 0)
         self.icons_layout.setSpacing(2)
@@ -72,9 +72,9 @@ class BaseWidget(QFrame):
         self.enabled_icon.mousePressEvent = self._on_enabled_icon_clicked
         self.icons_layout.addWidget(self.enabled_icon)
         self.top_layout.addWidget(self.icons_container)
-        main_layout.addWidget(self.top_container)
+        self.main_layout.addWidget(self.top_container)
         self.child_container = QWidget()
-        self.child_container.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Maximum)  # Maximum
+        self.child_container.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Maximum)
         if self.horizontal_layout:
             self.child_container_layout = QHBoxLayout()
         else:
@@ -83,8 +83,8 @@ class BaseWidget(QFrame):
         self.child_container_layout.setSpacing(5)
         self.child_container_layout.setAlignment(Qt.AlignTop)
         self.child_container.setLayout(self.child_container_layout)
-        main_layout.addWidget(self.child_container)
-        self.setLayout(main_layout)
+        self.main_layout.addWidget(self.child_container)
+        self.setLayout(self.main_layout)
         self.update(data_object)
 
     def add_child_widget(self, child_widget, add_to_layout=True):
@@ -95,7 +95,6 @@ class BaseWidget(QFrame):
     def set_horizontal_layout(self, horizontal):
         if self.horizontal_layout != horizontal:
             self.horizontal_layout = horizontal
-            main_layout = self.layout()
             old_container = self.child_container
             self.child_container = QWidget()
             if horizontal:
@@ -107,7 +106,7 @@ class BaseWidget(QFrame):
             for widget in self.child_widgets:
                 self.child_container_layout.addWidget(widget)
             self.child_container.setLayout(self.child_container_layout)
-            main_layout.replaceWidget(old_container, self.child_container)
+            self.main_layout.replaceWidget(old_container, self.child_container)
             old_container.deleteLater()
 
     def _add_path_label(self, text):
@@ -124,11 +123,11 @@ class BaseWidget(QFrame):
         total_needed = name_width + path_width + icons_width + 20
         if total_needed > available_width and self.path_label_in_top_row:
             self.top_layout.removeWidget(self.path_label)
-            self.layout().insertWidget(1, self.path_label)
+            self.main_layout.insertWidget(1, self.path_label)
             self.path_label.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
             self.path_label_in_top_row = False
         elif total_needed <= available_width and not self.path_label_in_top_row:
-            self.layout().removeWidget(self.path_label)
+            self.main_layout.removeWidget(self.path_label)
             self.top_layout.insertWidget(1, self.path_label)
             self.top_layout.setStretch(1, 1)
             self.path_label.setAlignment(Qt.AlignCenter | Qt.AlignVCenter)
