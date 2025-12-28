@@ -256,12 +256,12 @@ class NewProjectDialog(BaseFormDialog):
         if file_path is None:
             QMessageBox.warning(
                 self, "Invalid input", "Could not find images in the selected path")
-            return
+            return 0, 0, 0, 0
         img = read_img(file_path)
         if img is None:
             QMessageBox.warning(
                 self, "Invalid input", f"Could not read images file {file_path}")
-            return
+            return 0, 0, 0, 0
         height, width = img.shape[:2]
         n_bytes = 1 if img.dtype == np.uint8 else 2
         n_bits = 8 if img.dtype == np.uint8 else 16
