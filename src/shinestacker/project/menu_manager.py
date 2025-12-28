@@ -173,11 +173,54 @@ class MenuManager(QObject):
         self.set_view(AppConfig.get('project_view_strategy').title(), False)
         menu.addMenu(self.view_strategy_menu)
         modern_view_menu = QMenu("Modern View Options", menu)
-        modern_view_menu.addAction(self.action("Horizontal Actions Layout", requires_file=True))
-        modern_view_menu.addAction(self.action("Vertical Actions Layout", requires_file=True))
-        modern_view_menu.addAction(self.action("Horizontal Sub Actions Layout", requires_file=True))
-        modern_view_menu.addAction(self.action("Vertical Sub Actions Layout", requires_file=True))
+        self.horizontal_actions_action = self.action("Horizontal Actions Layout")
+        self.horizontal_actions_action.setCheckable(True)
+        self.vertical_actions_action = self.action("Vertical Actions Layout")
+        self.vertical_actions_action.setCheckable(True)
+        self.horizontal_actions_action.triggered.connect(
+            lambda: self.set_modern_layout('Horizontal Actions Layout'))
+        self.vertical_actions_action.triggered.connect(
+            lambda: self.set_modern_layout('Vertical Actions Layout'))
+        self.horizontal_sub_actions_action = self.action("Horizontal Sub Actions Layout")
+        self.horizontal_sub_actions_action.setCheckable(True)
+        self.vertical_sub_actions_action = self.action("Vertical Sub Actions Layout")
+        self.vertical_sub_actions_action.setCheckable(True)
+        self.horizontal_sub_actions_action.triggered.connect(
+            lambda: self.set_modern_layout('Horizontal Sub Actions Layout'))
+        self.vertical_sub_actions_action.triggered.connect(
+            lambda: self.set_modern_layout('Vertical Sub Actions Layout'))
+        modern_view_menu.addAction(self.horizontal_actions_action)
+        modern_view_menu.addAction(self.vertical_actions_action)
+        modern_view_menu.addAction(self.horizontal_sub_actions_action)
+        modern_view_menu.addAction(self.vertical_sub_actions_action)
         menu.addMenu(modern_view_menu)
+        self.set_modern_layout('Vertical Actions Layout')
+        self.set_modern_layout('Horizontal Sub Actions Layout')
+
+    def set_modern_layout(self, action_name):
+        if action_name == 'Horizontal Actions Layout':
+            self.horizontal_actions_action.setChecked(True)
+            self.horizontal_actions_action.setEnabled(False)
+            self.vertical_actions_action.setChecked(False)
+            self.vertical_actions_action.setEnabled(True)
+        elif action_name == 'Vertical Actions Layout':
+            self.vertical_actions_action.setChecked(True)
+            self.vertical_actions_action.setEnabled(False)
+            self.horizontal_actions_action.setChecked(False)
+            self.horizontal_actions_action.setEnabled(True)
+        elif action_name == 'Horizontal Sub Actions Layout':
+            self.horizontal_sub_actions_action.setChecked(True)
+            self.horizontal_sub_actions_action.setEnabled(False)
+            self.vertical_sub_actions_action.setChecked(False)
+            self.vertical_sub_actions_action.setEnabled(True)
+        elif action_name == 'Vertical Sub Actions Layout':
+            self.vertical_sub_actions_action.setChecked(True)
+            self.vertical_sub_actions_action.setEnabled(False)
+            self.horizontal_sub_actions_action.setChecked(False)
+            self.horizontal_sub_actions_action.setEnabled(True)
+        action_func = self.actions.get(action_name)
+        if action_func:
+            action_func()
 
     def set_view(self, view, do_switch=True):
         for label, mode in self.view_mode_actions.items():
