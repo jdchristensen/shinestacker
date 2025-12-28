@@ -40,25 +40,32 @@ class BaseWidget(QFrame):
 
     def _init_widget(self, data_object):
         self.setMinimumHeight(self.min_height)
-        self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
+        self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Maximum)  # Changed to Maximum
         main_layout = QVBoxLayout(self)
         main_layout.setContentsMargins(8, 8, 8, 8)
         main_layout.setSpacing(2)
         main_layout.setSizeConstraint(QLayout.SetMinAndMaxSize)
+        main_layout.setAlignment(Qt.AlignTop)  # Align everything to top
         self.top_container = QWidget()
+        self.top_container.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Maximum)  # Maximum
         self.top_layout = QHBoxLayout(self.top_container)
         self.top_layout.setContentsMargins(0, 0, 0, 0)
         self.top_layout.setSpacing(4)
+        self.top_layout.setAlignment(Qt.AlignTop)  # Align to top
         self.name_label = QLabel()
         self.name_label.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
+        self.name_label.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Maximum)  # Maximum
         self.top_layout.addWidget(self.name_label)
         self.path_label = QLabel()
         self.path_label.setAlignment(Qt.AlignCenter | Qt.AlignVCenter)
+        self.path_label.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Maximum)  # Maximum
         self.top_layout.addWidget(self.path_label, 1)
         self.icons_container = QWidget()
+        self.icons_container.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Maximum)  # Maximum
         self.icons_layout = QHBoxLayout(self.icons_container)
         self.icons_layout.setContentsMargins(0, 0, 0, 0)
         self.icons_layout.setSpacing(2)
+        self.icons_layout.setAlignment(Qt.AlignTop)
         self.enabled_icon = QLabel()
         self.enabled_icon.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
         self.enabled_icon.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Minimum)
@@ -67,12 +74,14 @@ class BaseWidget(QFrame):
         self.top_layout.addWidget(self.icons_container)
         main_layout.addWidget(self.top_container)
         self.child_container = QWidget()
+        self.child_container.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Maximum)  # Maximum
         if self.horizontal_layout:
             self.child_container_layout = QHBoxLayout()
         else:
             self.child_container_layout = QVBoxLayout()
         self.child_container_layout.setContentsMargins(0, 5, 0, 0)
         self.child_container_layout.setSpacing(5)
+        self.child_container_layout.setAlignment(Qt.AlignTop)
         self.child_container.setLayout(self.child_container_layout)
         main_layout.addWidget(self.child_container)
         self.setLayout(main_layout)
