@@ -62,7 +62,11 @@ class MainWindow(ProjectIOHandler, QMainWindow):
             "Run All Jobs": self.run_all_jobs,
             "Stop": self.stop,
             "Classic View": lambda: self.set_view('classic'),
-            "Modern View": lambda: self.set_view('modern')
+            "Modern View": lambda: self.set_view('modern'),
+            "Horizontal Actions Layout": self.horizontal_actions_layout,
+            "Vertical Actions Layout": self.vertical_actions_layout,
+            "Horizontal Sub Actions Layout": self.horizontal_subactions_layout,
+            "Vertical Sub Actions Layout": self.vertical_subactions_layout
         }
         self.menu_manager = MenuManager(
             self.menuBar(), actions, self.add_action, self.add_sub_action, dark_theme, self)
@@ -159,6 +163,18 @@ class MainWindow(ProjectIOHandler, QMainWindow):
         self.view_stack.currentWidget().stop()
         self.view_stack.setCurrentIndex(idx)
         self.current_view = self.view_stack.currentWidget()
+
+    def horizontal_actions_layout(self):
+        self.modern_view.horizontal_actions_layout(True)
+
+    def vertical_actions_layout(self):
+        self.modern_view.horizontal_actions_layout(False)
+
+    def horizontal_subactions_layout(self):
+        self.modern_view.vertical_subactions_layout(False)
+
+    def vertical_subactions_layout(self):
+        self.modern_view.vertical_subactions_layout(True)
 
     def quit(self):
         if self.check_unsaved_changes():

@@ -36,6 +36,8 @@ class ModernProjectView(ProjectView):
         self._worker = None
         self.progress_mapper = ProgressMapper()
         self.element_ops = ElementOperations(project_holder)
+        self.actions_layout_horizontal = False
+        self.subactions_layout_vertical = False
         self.progress_handler = ProgressSignalHandler(
             self.progress_mapper,
             self._find_action_widget,
@@ -287,7 +289,9 @@ class ModernProjectView(ProjectView):
         self.update_delete_action_state_requested.emit()
 
     def add_job_widget(self, job):
-        job_widget = JobWidget(job, self.dark_theme)
+        job_widget = JobWidget(job, self.dark_theme,
+                               self.actions_layout_horizontal,
+                               self.subactions_layout_vertical)
         job_widget.setFocusPolicy(Qt.NoFocus)
         job_index = len(self.job_widgets)
         job_widget.clicked.connect(
@@ -529,6 +533,27 @@ class ModernProjectView(ProjectView):
                     self.selection_state.subaction_index = len(action.sub_actions) - 1
                     self.selection_state.widget_type = 'subaction'
                     self.refresh_ui()
+
+    def horizontal_actions_layout(self, horizontal=True):
+        if self.actions_layout_horizontal != horizontal:
+            self.actions_layout_horizontal = horizontal
+            for job_widget in self.job_widgets:
+                job_widget.set_horizontal_layout(horizontal)
+            txt = "horizontal" if horizontal else "vertical"
+            self.show_status_message_requested.emit(f"Actions layout set to {txt}", 2000)
+
+    def vertical_subactions_layout(self, vertical=True):
+        if self.subactions_layout_vertical != vertical:
+            self.subactions_layout_vertical = vertical
+            for job_widget in self.job_widgets:
+                for action_widget in job_widget.child_widgets:
+                    action_widget.set_horizontal_layout(not vertical)
+                    if vertical:
+                        action_widget.child_container_layout.setSpacing(5)
+                    else:
+                        action_widget.child_container_layout.setSpacing(2)
+            txt = "vertical" if vertical else "horizontal"
+            self.show_status_message_requested.emit(f"Subactions layout set to {txt}", 2000)
 
     def refresh_ui(self):
         old_state = self.selection_state.copy()

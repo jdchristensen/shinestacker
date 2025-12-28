@@ -69,12 +69,10 @@ class BaseWidget(QFrame):
         self.child_container = QWidget()
         if self.horizontal_layout:
             self.child_container_layout = QHBoxLayout()
-            self.child_container_layout.setContentsMargins(0, 5, 0, 0)
-            self.child_container_layout.setSpacing(10)
         else:
             self.child_container_layout = QVBoxLayout()
-            self.child_container_layout.setContentsMargins(0, 5, 0, 0)
-            self.child_container_layout.setSpacing(5)
+        self.child_container_layout.setContentsMargins(0, 5, 0, 0)
+        self.child_container_layout.setSpacing(5)
         self.child_container.setLayout(self.child_container_layout)
         main_layout.addWidget(self.child_container)
         self.setLayout(main_layout)
@@ -88,23 +86,20 @@ class BaseWidget(QFrame):
     def set_horizontal_layout(self, horizontal):
         if self.horizontal_layout != horizontal:
             self.horizontal_layout = horizontal
-            for child in self.child_widgets:
-                self.child_container_layout.removeWidget(child)
+            main_layout = self.layout()
+            old_container = self.child_container
+            self.child_container = QWidget()
             if horizontal:
-                new_layout = QHBoxLayout()
-                new_layout.setContentsMargins(0, 5, 0, 0)
-                new_layout.setSpacing(10)
+                self.child_container_layout = QHBoxLayout()
             else:
-                new_layout = QVBoxLayout()
-                new_layout.setContentsMargins(0, 5, 0, 0)
-                new_layout.setSpacing(5)
-            old_layout = self.child_container_layout
-            self.child_container.setLayout(new_layout)
-            self.child_container_layout = new_layout
-            for child in self.child_widgets:
-                self.child_container_layout.addWidget(child)
-            if old_layout:
-                old_layout.deleteLater()
+                self.child_container_layout = QVBoxLayout()
+            self.child_container_layout.setContentsMargins(0, 5, 0, 0)
+            self.child_container_layout.setSpacing(5)
+            for widget in self.child_widgets:
+                self.child_container_layout.addWidget(widget)
+            self.child_container.setLayout(self.child_container_layout)
+            main_layout.replaceWidget(old_container, self.child_container)
+            old_container.deleteLater()
 
     def _add_path_label(self, text):
         self.path_label.setText(text)
