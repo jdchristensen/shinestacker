@@ -191,10 +191,11 @@ class MenuManager(QObject):
             lambda: self.set_modern_layout('Vertical Sub Actions Layout'))
         modern_view_menu.addAction(self.horizontal_actions_action)
         modern_view_menu.addAction(self.vertical_actions_action)
+        modern_view_menu.addSeparator()
         modern_view_menu.addAction(self.horizontal_sub_actions_action)
         modern_view_menu.addAction(self.vertical_sub_actions_action)
         menu.addMenu(modern_view_menu)
-        self.set_modern_layout('Vertical Actions Layout')
+        self.set_modern_layout('Horizontal Actions Layout')
         self.set_modern_layout('Horizontal Sub Actions Layout')
 
     def set_modern_layout(self, action_name):
