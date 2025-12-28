@@ -1,6 +1,6 @@
 # pylint: disable=C0114, C0115, C0116, E0611, R0903, R0902
 from PySide6.QtCore import Qt, QTimer
-from PySide6.QtWidgets import QWidget, QHBoxLayout, QVBoxLayout, QSizePolicy
+from PySide6.QtWidgets import QWidget, QHBoxLayout, QVBoxLayout, QSizePolicy, QSpacerItem
 from .base_widget import ImgBaseWidget
 from .sub_action_widget import SubActionWidget
 from .. gui.project_model import get_action_input_path, get_action_output_path
@@ -48,6 +48,15 @@ class ActionWidget(ImgBaseWidget):
         self.image_scroll_area.setVisible(False)
         self.progress_layout.addWidget(self.image_scroll_area)
         self.main_layout.addWidget(self.progress_container)
+        spacer = QSpacerItem(0, 0, QSizePolicy.Minimum, QSizePolicy.Expanding)
+        self.main_layout.addSpacerItem(spacer)
+        self.progress_bar_container = QWidget()
+        self.progress_bar_layout = QHBoxLayout(self.progress_bar_container)
+        self.progress_bar_layout.setContentsMargins(0, 0, 0, 0)
+        self.progress_bar = TimerProgressBar()
+        self.progress_bar.setVisible(False)
+        self.progress_bar_layout.addWidget(self.progress_bar)
+        self.main_layout.addWidget(self.progress_bar_container)
         self._has_frames_content = False
         self.image_views = []
         QTimer.singleShot(0, self._check_and_adjust_layout)
