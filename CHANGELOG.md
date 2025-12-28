@@ -2,7 +2,7 @@
 
 This page reports the main releases only and the main changes therein.
 
-## [v1.x.x] - 2025-12-27
+## [v1.x.x] - 2025-12-28
 
 This release introduces a redesigned project GUI with an integrated editing and run workflow.
 Project modules now display their outputs directly inside their corresponding boxes, making complex pipelines easier to understand and manage.
@@ -17,6 +17,7 @@ The classic project view is still available and can be enabled at any time from 
 - various GUI issues in the project editing view
 - missing features restored in the classic project editing view
 - prevented output conflicts by checking for multiple modules sharing the same output path
+- in new project dialog, bunch stack is automatically checked by default if the estimated memory requirement exceeds 4 GBytes
 
 ### Changed
 - system monitor widgets moved from the run window to the main window toolbar

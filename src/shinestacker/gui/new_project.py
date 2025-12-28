@@ -19,6 +19,8 @@ DEFAULT_NO_COUNT_LABEL = " - "
 
 
 class NewProjectDialog(BaseFormDialog):
+    ram_threshold = 4
+
     def __init__(self, parent=None):
         super().__init__("New Project", 600, parent)
         self.create_form()
@@ -199,9 +201,9 @@ class NewProjectDialog(BaseFormDialog):
     def update_bunch_options(self, checked):
         self.bunch_frames.setEnabled(checked)
         self.bunch_overlap.setEnabled(checked)
-        self.update_bunches_label()
+        self.update_bunches_label(check_ram=False)
 
-    def update_bunches_label(self):
+    def update_bunches_label(self, check_ram=True):
         if not self.input_widget.get_path():
             return
 
@@ -232,6 +234,39 @@ class NewProjectDialog(BaseFormDialog):
             self.bunches_label.setText(f"{max(1, len(bunches))}")
         else:
             self.bunches_label.setText(DEFAULT_NO_COUNT_LABEL)
+        if check_ram and self.n_image_files > 0 and not self.bunch_stack.isChecked():
+            n_gbytes, _width, _height, _n_bits = self.compute_required_ram()
+            if n_gbytes > self.ram_threshold:
+                self.bunch_stack.setChecked(True)
+
+    def compute_required_ram(self):
+        selection_mode = self.input_widget.get_selection_mode()
+        selected_files = self.input_widget.get_selected_files()
+        if selection_mode == 'files' and selected_files:
+            file_path = selected_files[0]
+        else:
+            path = self.input_widget.get_path()
+            files = os.listdir(path)
+            file_path = None
+            for filename in files:
+                full_path = os.path.join(path, filename)
+                if extension_supported(full_path):
+                    file_path = full_path
+                    break
+        if file_path is None:
+            QMessageBox.warning(
+                self, "Invalid input", "Could not find images in the selected path")
+            return
+        img = read_img(file_path)
+        if img is None:
+            QMessageBox.warning(
+                self, "Invalid input", f"Could not read images file {file_path}")
+            return
+        height, width = img.shape[:2]
+        n_bytes = 1 if img.dtype == np.uint8 else 2
+        n_bits = 8 if img.dtype == np.uint8 else 16
+        n_gbytes = 3.0 * n_bytes * height * width * self.n_image_files / constants.ONE_GIGA
+        return n_gbytes, width, height, n_bits
 
     def input_submitted(self):
         self.update_bunches_label()
@@ -267,31 +302,8 @@ class NewProjectDialog(BaseFormDialog):
             QMessageBox.warning(self, "Invalid Path", "The path must have a parent folder")
             return
         if self.n_image_files > 0 and not self.bunch_stack.isChecked():
-            if selection_mode == 'files' and selected_files:
-                file_path = selected_files[0]
-            else:
-                path = self.input_widget.get_path()
-                files = os.listdir(path)
-                file_path = None
-                for filename in files:
-                    full_path = os.path.join(path, filename)
-                    if extension_supported(full_path):
-                        file_path = full_path
-                        break
-            if file_path is None:
-                QMessageBox.warning(
-                    self, "Invalid input", "Could not find images in the selected path")
-                return
-            img = read_img(file_path)
-            if img is None:
-                QMessageBox.warning(
-                    self, "Invalid input", f"Could not read images file {file_path}")
-                return
-            height, width = img.shape[:2]
-            n_bytes = 1 if img.dtype == np.uint8 else 2
-            n_bits = 8 if img.dtype == np.uint8 else 16
-            n_gbytes = 3.0 * n_bytes * height * width * self.n_image_files / constants.ONE_GIGA
-            if n_gbytes > 4 and not self.bunch_stack.isChecked():
+            n_gbytes, width, height, n_bits = self.compute_required_ram()
+            if n_gbytes > self.ram_threshold and not self.bunch_stack.isChecked():
                 msg = QMessageBox()
                 msg.setStyleSheet("""
                     QMessageBox {
