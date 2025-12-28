@@ -9,20 +9,24 @@ from .. gui.processing_widget import MultiModuleStatusContainer
 
 
 class ActionWidget(ImgBaseWidget):
-    def __init__(self, action, dark_theme=False, parent=None):
-        super().__init__(action, 50, dark_theme, parent)
+    def __init__(self, action, dark_theme=False, vertical_subactions=False, parent=None):
+        super().__init__(action, 50, dark_theme, not vertical_subactions, parent)
+        self.vertical_subactions = vertical_subactions
         in_path = get_action_input_path(action)[0]
         out_path = get_action_output_path(action)[0]
         path_text = f"📁 <i>{self._format_path(in_path)}</i> → " \
             f"📂 <i>{self._format_path(out_path)}</i>"
         self._add_path_label(path_text)
         subactions_container = QWidget()
-        horizontal_layout = QHBoxLayout(subactions_container)
-        horizontal_layout.setContentsMargins(0, 0, 0, 0)
-        horizontal_layout.setSpacing(2)
+        if vertical_subactions:
+            subactions_layout = QVBoxLayout(subactions_container)
+        else:
+            subactions_layout = QHBoxLayout(subactions_container)
+        subactions_layout.setContentsMargins(0, 0, 0, 0)
+        subactions_layout.setSpacing(2)
         for sub_action in action.sub_actions:
             sub_action_widget = SubActionWidget(sub_action, dark_theme)
-            horizontal_layout.addWidget(sub_action_widget)
+            subactions_layout.addWidget(sub_action_widget)
             self.add_child_widget(sub_action_widget, add_to_layout=False)
         self.layout().addWidget(subactions_container)
         self.progress_container = QWidget()

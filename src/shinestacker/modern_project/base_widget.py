@@ -11,12 +11,14 @@ class BaseWidget(QFrame):
     double_clicked = Signal()
     enabled_toggled = Signal(bool)
 
-    def __init__(self, data_object, min_height=40, dark_theme=False, parent=None):
+    def __init__(self, data_object, min_height=40, dark_theme=False,
+                 horizontal_layout=False, parent=None):
         super().__init__(parent)
         self.data_object = data_object
         self._selected = False
         self._enabled = True
         self._dark_theme = dark_theme
+        self.horizontal_layout = horizontal_layout
         self.min_height = min_height
         self.path_label = None
         self.child_widgets = []
@@ -25,6 +27,8 @@ class BaseWidget(QFrame):
         self.icons_container = None
         self.icons_layout = None
         self.path_label_in_top_row = None
+        self.child_container = None
+        self.child_container_layout = None
         self.setFocusPolicy(Qt.NoFocus)
         self.setAttribute(Qt.WA_Hover, True)
         self.name_label = None
@@ -62,8 +66,45 @@ class BaseWidget(QFrame):
         self.icons_layout.addWidget(self.enabled_icon)
         self.top_layout.addWidget(self.icons_container)
         main_layout.addWidget(self.top_container)
+        self.child_container = QWidget()
+        if self.horizontal_layout:
+            self.child_container_layout = QHBoxLayout()
+            self.child_container_layout.setContentsMargins(0, 5, 0, 0)
+            self.child_container_layout.setSpacing(10)
+        else:
+            self.child_container_layout = QVBoxLayout()
+            self.child_container_layout.setContentsMargins(0, 5, 0, 0)
+            self.child_container_layout.setSpacing(5)
+        self.child_container.setLayout(self.child_container_layout)
+        main_layout.addWidget(self.child_container)
         self.setLayout(main_layout)
         self.update(data_object)
+
+    def add_child_widget(self, child_widget, add_to_layout=True):
+        self.child_widgets.append(child_widget)
+        if add_to_layout:
+            self.child_container_layout.addWidget(child_widget)
+
+    def set_horizontal_layout(self, horizontal):
+        if self.horizontal_layout != horizontal:
+            self.horizontal_layout = horizontal
+            for child in self.child_widgets:
+                self.child_container_layout.removeWidget(child)
+            if horizontal:
+                new_layout = QHBoxLayout()
+                new_layout.setContentsMargins(0, 5, 0, 0)
+                new_layout.setSpacing(10)
+            else:
+                new_layout = QVBoxLayout()
+                new_layout.setContentsMargins(0, 5, 0, 0)
+                new_layout.setSpacing(5)
+            old_layout = self.child_container_layout
+            self.child_container.setLayout(new_layout)
+            self.child_container_layout = new_layout
+            for child in self.child_widgets:
+                self.child_container_layout.addWidget(child)
+            if old_layout:
+                old_layout.deleteLater()
 
     def _add_path_label(self, text):
         self.path_label.setText(text)
@@ -89,13 +130,6 @@ class BaseWidget(QFrame):
             self.path_label.setAlignment(Qt.AlignCenter | Qt.AlignVCenter)
             self.path_label_in_top_row = True
 
-    # pylint: disable=C0103
-    def resizeEvent(self, event):
-        super().resizeEvent(event)
-        if self.path_label and self.path_label.text():
-            self._check_and_adjust_layout()
-    # pylint: enable=C0103
-
     def _on_enabled_icon_clicked(self, event):
         self._enabled = not self._enabled
         self._update_enabled_icon()
@@ -113,11 +147,6 @@ class BaseWidget(QFrame):
 
     def num_child_widgets(self):
         return len(self.child_widgets)
-
-    def add_child_widget(self, child_widget, add_to_layout=True):
-        self.child_widgets.append(child_widget)
-        if add_to_layout:
-            self.layout().addWidget(child_widget)
 
     def _update_stylesheet(self):
         if self._dark_theme:
@@ -173,6 +202,11 @@ class BaseWidget(QFrame):
         self.data_object.params['enabled'] = enabled
 
     # pylint: disable=C0103
+    def resizeEvent(self, event):
+        super().resizeEvent(event)
+        if self.path_label and self.path_label.text():
+            self._check_and_adjust_layout()
+
     def mousePressEvent(self, event):
         self.clicked.emit()
         event.accept()
@@ -244,8 +278,9 @@ class BaseWidget(QFrame):
 
 
 class ImgBaseWidget(BaseWidget):
-    def __init__(self, data_object, min_height=40, dark_theme=False, parent=None):
-        super().__init__(data_object, min_height, dark_theme, parent)
+    def __init__(self, data_object, min_height=40, dark_theme=False,
+                 horizontal_layout=False, parent=None):
+        super().__init__(data_object, min_height, dark_theme, horizontal_layout, parent)
         self.image_scroll_area = QScrollArea()
         self.image_scroll_area.setWidgetResizable(True)
         self.image_scroll_area.setFrameShape(QFrame.NoFrame)

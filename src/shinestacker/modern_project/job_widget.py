@@ -1,4 +1,4 @@
-# pylint: disable=C0114, C0115, C0116, E0611, R0903
+# pylint: disable=C0114, C0115, C0116, E0611, R0903, R0913, R0917
 from PySide6.QtWidgets import QPushButton
 from ..gui.project_model import get_action_input_path
 from ..config.constants import constants
@@ -8,13 +8,14 @@ from .action_widget import ActionWidget
 
 
 class JobWidget(BaseWidget):
-    def __init__(self, job, dark_theme=False, parent=None):
-        super().__init__(job, 50, dark_theme, parent)
+    def __init__(self, job, dark_theme=False, horizontal_layout=False,
+                 vertical_subactions=False, parent=None):
+        super().__init__(job, 50, dark_theme, horizontal_layout, parent)
         in_path = get_action_input_path(job)[0]
         self._add_path_label(f"📁 {self._format_path(in_path)}")
         if hasattr(job, 'sub_actions') and job.sub_actions:
             for action in job.sub_actions:
-                action_widget = ActionWidget(action, dark_theme)
+                action_widget = ActionWidget(action, dark_theme, vertical_subactions)
                 self.add_child_widget(action_widget, add_to_layout=True)
         self.retouch_button = QPushButton("🖌️")
         self.retouch_button.setToolTip("Retouch outputs")
@@ -26,7 +27,7 @@ class JobWidget(BaseWidget):
     def update(self, data_object):
         super().update(data_object)
         in_path = get_action_input_path(data_object)[0]
-        path_text = f"📁 <i>{self._format_path(in_path)}</i></i>"
+        path_text = f"📁 <i>{self._format_path(in_path)}</i>"
         self._add_path_label(path_text)
         if hasattr(self, 'retouch_button'):
             self.retouch_button.setVisible(self._should_show_retouch_button())
