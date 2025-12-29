@@ -39,6 +39,12 @@ Ideal for users who want the power of scripting and the comfort of a modern UI.
 - 🧠 [Reference](https://shinestacker.readthedocs.io/en/)
 - 🐛 [Report an issue](https://github.com/lucalista/shinestacker/issues)
 
+## Demo video
+
+[![Shine Stacker demo video](https://img.youtube.com/vi/Ut5tJw63_HU/0.jpg)](https://www.youtube.com/watch?v=Ut5tJw63_HU)
+
+Short demo of the new user interface introduced in Shine Stacker, release 1.13.0.
+
 ## Resources
 
  🌍 [Website on WordPress](https://shinestacker.wordpress.com) • 📖 [Main documentation](https://shinestacker.readthedocs.io) • 📝 [Changelog](https://github.com/lucalista/shinestacker/blob/main/CHANGELOG.md) 
