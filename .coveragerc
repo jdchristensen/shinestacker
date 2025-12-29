@@ -1,5 +1,8 @@
 [run]
 omit =
-    src/shinestacker/gui/*
     src/shinestacker/app/*
+    src/shinestacker/classic_project/*
+    src/shinestacker/gui/*
+    src/shinestacker/modern_project/*
+    src/shinestacker/project/*
     src/shinestacker/retouch/*

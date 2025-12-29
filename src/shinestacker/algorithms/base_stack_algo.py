@@ -90,5 +90,5 @@ class TempDirBase:
             self.temp_dir_manager = None
             os.makedirs(self.temp_dir_path, exist_ok=True)
         else:
-            self.temp_dir_manager = tempfile.TemporaryDirectory(ignore_cleanup_errors=True)
+            self.temp_dir_manager = tempfile.TemporaryDirectory()
             self.temp_dir_path = self.temp_dir_manager.name

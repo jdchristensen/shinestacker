@@ -2,12 +2,11 @@
 
 This page reports the main releases only and the main changes therein.
 
-## [v1.x.x] - 2025-12-29
+## [v1.13.0] - 2025-12-29
 
 This release introduces a redesigned project GUI with an integrated editing and run workflow.
 Project modules now display their outputs directly inside their corresponding boxes, making complex pipelines easier to understand and manage.
 The classic project view is still available and can be enabled at any time from the View menu.
-
 
 ### Added
 - new integrated project editing view with a redesigned interactive GUI; the classic view is still available via *View > View Mode > Classic*
