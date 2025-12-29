@@ -2,11 +2,12 @@
 
 This page reports the main releases only and the main changes therein.
 
-## [v1.x.x] - 2025-12-28
+## [v1.x.x] - 2025-12-29
 
 This release introduces a redesigned project GUI with an integrated editing and run workflow.
 Project modules now display their outputs directly inside their corresponding boxes, making complex pipelines easier to understand and manage.
 The classic project view is still available and can be enabled at any time from the View menu.
+
 
 ### Added
 - new integrated project editing view with a redesigned interactive GUI; the classic view is still available via *View > View Mode > Classic*
@@ -23,6 +24,7 @@ The classic project view is still available and can be enabled at any time from 
 - system monitor widgets moved from the run window to the main window toolbar
 - improved clarity and consistency of status messages
 - significant refactoring of GUI-related code
+- the new project dialog enables focus bunches by default if the estimated memory requirements are above 4GBytes.
 
 ---
 
