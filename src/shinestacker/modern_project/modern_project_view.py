@@ -289,6 +289,8 @@ class ModernProjectView(ProjectView):
         self.update_delete_action_state_requested.emit()
 
     def add_job_widget(self, job):
+        if not self.enforce_stop_run():
+            return
         job_widget = JobWidget(job, self.dark_theme,
                                self.actions_layout_horizontal,
                                self.subactions_layout_vertical)
@@ -413,20 +415,43 @@ class ModernProjectView(ProjectView):
             else:
                 job_widget.set_selected(False)
 
+    def enforce_stop_run(self):
+        if self.is_running():
+            reply = QMessageBox.question(
+                self,
+                "Stop Run Warning",
+                "Modifying the project requrires to stop the run. "
+                "Are you sure you want to stop the run?",
+                QMessageBox.Yes | QMessageBox.No,
+                QMessageBox.No
+            )
+            if reply == QMessageBox.Yes:
+                self.stop()
+                return True
+            else:
+                return False
+        return True
+
     def delete_element(self):
-        return self.element_action.delete_element(self.parent(), True)
+        if self.enforce_stop_run():
+            return self.element_action.delete_element(self.parent(), True)
+        else:
+            return None
 
     def copy_element(self):
         self.element_action.copy_element()
 
     def paste_element(self):
-        self.element_action.paste_element()
+        if self.enforce_stop_run():
+            self.element_action.paste_element()
 
     def cut_element(self):
-        self.element_action.cut_element()
+        if self.enforce_stop_run():
+            self.element_action.cut_element()
 
     def clone_element(self):
-        self.element_action.clone_element()
+        if self.enforce_stop_run():
+            self.element_action.clone_element()
 
     def enable(self):
         self.element_action.enable()
@@ -441,10 +466,12 @@ class ModernProjectView(ProjectView):
         self.element_action.disable_all()
 
     def move_element_up(self):
-        self.element_action.move_element_up()
+        if self.enforce_stop_run():
+            self.element_action.move_element_up()
 
     def move_element_down(self):
-        self.element_action.move_element_down()
+        if self.enforce_stop_run():
+            self.element_action.move_element_down()
 
     def set_enabled(self, enabled):
         self._set_enabled(*self.selection_state.to_tuple(), enabled)
@@ -453,12 +480,16 @@ class ModernProjectView(ProjectView):
         pass
 
     def set_enabled_all(self, enabled):
+        if not self.enforce_stop_run():
+            return
         for job in self.project().jobs:
             job.set_enabled_all(enabled)
         self.mark_as_modified(True, f"{'Enable' if enabled else 'Disable'} All")
         self.refresh_ui()
 
     def _set_enabled(self, job_idx, action_idx, subaction_idx, enabled):
+        if not self.enforce_stop_run():
+            return
         if self.selection_state.is_subaction_selected():
             if (0 <= job_idx < self.num_project_jobs() and
                     0 <= action_idx < len(self.project().jobs[job_idx].sub_actions)):
@@ -492,6 +523,8 @@ class ModernProjectView(ProjectView):
         self.scroll_area.ensureWidgetVisible(self.selected_widget, 0, y_margin)
 
     def add_action(self, type_name):
+        if not self.enforce_stop_run():
+            return
         job_index = self.selection_state.job_index
         if job_index < 0:
             if self.num_project_jobs() > 0:
@@ -514,6 +547,8 @@ class ModernProjectView(ProjectView):
             self.refresh_ui()
 
     def add_sub_action(self, type_name):
+        if not self.enforce_stop_run():
+            return
         job_index = self.selection_state.job_index
         action_index = self.selection_state.action_index
         if job_index < 0 or action_index < 0:

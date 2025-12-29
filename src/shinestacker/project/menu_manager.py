@@ -196,7 +196,7 @@ class MenuManager(QObject):
         modern_view_menu.addAction(self.vertical_sub_actions_action)
         menu.addMenu(modern_view_menu)
         self.set_modern_layout('Horizontal Actions Layout')
-        self.set_modern_layout('Horizontal Sub Actions Layout')
+        self.set_modern_layout('Vertical Sub Actions Layout')
 
     def set_modern_layout(self, action_name):
         if action_name == 'Horizontal Actions Layout':
