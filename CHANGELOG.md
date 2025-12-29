@@ -2,6 +2,8 @@
 
 This page reports the main releases only and the main changes therein.
 
+---
+
 ## [v1.13.0] - 2025-12-29
 
 This release introduces a redesigned project GUI with an integrated editing and run workflow.
@@ -17,13 +19,12 @@ The classic project view is still available and can be enabled at any time from 
 - various GUI issues in the project editing view
 - missing features restored in the classic project editing view
 - prevented output conflicts by checking for multiple modules sharing the same output path
-- in new project dialog, bunch stack is automatically checked by default if the estimated memory requirement exceeds 4 GBytes
 
 ### Changed
 - system monitor widgets moved from the run window to the main window toolbar
 - improved clarity and consistency of status messages
 - significant refactoring of GUI-related code
-- the new project dialog enables focus bunches by default if the estimated memory requirements are above 4GBytes.
+- the new project dialog enables focus bunches by default if the estimated memory requirements exceeds a predefined threshold
 
 ---
 
