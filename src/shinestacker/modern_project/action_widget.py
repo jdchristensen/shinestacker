@@ -1,5 +1,5 @@
 # pylint: disable=C0114, C0115, C0116, E0611, R0903, R0902
-from PySide6.QtCore import Qt, QTimer
+from PySide6.QtCore import QTimer
 from PySide6.QtWidgets import QWidget, QHBoxLayout, QVBoxLayout, QSizePolicy, QSpacerItem
 from .base_widget import ImgBaseWidget
 from .sub_action_widget import SubActionWidget
@@ -10,7 +10,8 @@ from .. gui.processing_widget import MultiModuleStatusContainer
 
 class ActionWidget(ImgBaseWidget):
     def __init__(self, action, dark_theme=False, vertical_subactions=False, parent=None):
-        super().__init__(action, 50, dark_theme, not vertical_subactions, parent)
+        super().__init__(action, 50, dark_theme, not vertical_subactions,
+                         parent=parent, horizontal_images=True)
         self.vertical_subactions = vertical_subactions
         in_path = get_action_input_path(action)[0]
         out_path = get_action_output_path(action)[0]
@@ -20,7 +21,8 @@ class ActionWidget(ImgBaseWidget):
         while self.child_container_layout.count():
             self.child_container_layout.takeAt(0)
         for sub_action in action.sub_actions:
-            sub_action_widget = SubActionWidget(sub_action, dark_theme)
+            sub_action_widget = SubActionWidget(
+                sub_action, dark_theme, horizontal_images=vertical_subactions)
             self.add_child_widget(sub_action_widget, add_to_layout=True)
         self.progress_container = QWidget()
         self.progress_layout = QVBoxLayout(self.progress_container)
@@ -33,19 +35,8 @@ class ActionWidget(ImgBaseWidget):
         self.frames_status_box.setVisible(False)
         self.frames_status_box.content_size_changed.connect(self._update_container_size)
         self.progress_layout.addWidget(self.frames_status_box)
-        self.image_scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
-        self.image_scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.image_scroll_area.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
         self.image_scroll_area.verticalScrollBar().setEnabled(False)
-        self.image_scroll_area.setStyleSheet(self.scroll_area_css('horizontal'))
-        self.image_scroll_area.viewport().installEventFilter(self)
-        self.image_area_widget = QWidget()
-        self.image_layout = QHBoxLayout(self.image_area_widget)
-        self.image_layout.setSpacing(5)
-        self.image_layout.setContentsMargins(0, 0, 0, 0)
-        self.image_layout.setAlignment(Qt.AlignLeft)
-        self.image_scroll_area.setWidget(self.image_area_widget)
-        self.image_scroll_area.setVisible(False)
         self.progress_layout.addWidget(self.image_scroll_area)
         self.main_layout.addWidget(self.progress_container)
         spacer = QSpacerItem(0, 0, QSizePolicy.Minimum, QSizePolicy.Expanding)
@@ -58,8 +49,17 @@ class ActionWidget(ImgBaseWidget):
         self.progress_bar_layout.addWidget(self.progress_bar)
         self.main_layout.addWidget(self.progress_bar_container)
         self._has_frames_content = False
-        self.image_views = []
         QTimer.singleShot(0, self._check_and_adjust_layout)
+
+    def _adjust_scroll_after_layout(self):
+        self.image_area_widget.adjustSize()
+        scrollbar = self.image_scroll_area.horizontalScrollBar()
+        if scrollbar.maximum() > 0:
+            scrollbar.setValue(scrollbar.maximum())
+
+    def add_image_view(self, image_view):
+        super().add_image_view(image_view)
+        QTimer.singleShot(0, self._adjust_scroll_after_layout)
 
     def _update_container_size(self):
         pass
@@ -114,19 +114,6 @@ class ActionWidget(ImgBaseWidget):
         self.frames_status_box.clear()
         self.frames_status_box.setVisible(False)
         self._has_frames_content = False
-
-    def add_image_view(self, image_view):
-        self.image_views.append(image_view)
-        self.image_layout.addWidget(image_view)
-        self.image_scroll_area.setVisible(True)
-        self._adjust_image_area_height()
-        QTimer.singleShot(0, self._adjust_scroll_after_layout)
-
-    def _adjust_scroll_after_layout(self):
-        self.image_area_widget.adjustSize()
-        scrollbar = self.image_scroll_area.horizontalScrollBar()
-        if scrollbar.maximum() > 0:
-            scrollbar.setValue(scrollbar.maximum())
 
     def _adjust_image_area_height(self):
         if not self.image_views:

@@ -282,14 +282,69 @@ class BaseWidget(QFrame):
 
 class ImgBaseWidget(BaseWidget):
     def __init__(self, data_object, min_height=40, dark_theme=False,
-                 horizontal_layout=False, parent=None):
+                 horizontal_layout=False, parent=None, horizontal_images=True):
         super().__init__(data_object, min_height, dark_theme, horizontal_layout, parent)
+        self.horizontal_images = horizontal_images
         self.image_scroll_area = QScrollArea()
         self.image_scroll_area.setWidgetResizable(True)
         self.image_scroll_area.setFrameShape(QFrame.NoFrame)
         self.image_views = []
         self.image_layout = None
         self.image_area_widget = None
+        self._setup_image_area()
+
+    def _setup_image_area(self):
+        if self.horizontal_images:
+            self.image_scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+            self.image_scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+            self.image_scroll_area.setStyleSheet(self.scroll_area_css('horizontal'))
+            self.image_layout = QHBoxLayout()
+        else:
+            self.image_scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+            self.image_scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+            self.image_scroll_area.setStyleSheet(self.scroll_area_css('vertical'))
+            self.image_layout = QVBoxLayout()
+        self.image_area_widget = QWidget()
+        self.image_layout.setSpacing(5)
+        self.image_layout.setContentsMargins(0, 0, 0, 0)
+        self.image_layout.setAlignment(Qt.AlignTop)
+        self.image_area_widget.setLayout(self.image_layout)
+        self.image_scroll_area.setWidget(self.image_area_widget)
+        self.image_scroll_area.setVisible(False)
+
+    def set_image_orientation(self, horizontal):
+        if self.horizontal_images == horizontal:
+            return
+        self.horizontal_images = horizontal
+        current_views = list(self.image_views)
+        self.image_views.clear()
+        self.image_area_widget = QWidget()
+        if horizontal:
+            self.image_layout = QHBoxLayout()
+        else:
+            self.image_layout = QVBoxLayout()
+        self.image_layout.setSpacing(5)
+        self.image_layout.setContentsMargins(0, 0, 0, 0)
+        self.image_layout.setAlignment(Qt.AlignTop)
+        for view in current_views:
+            self.image_views.append(view)
+            self.image_layout.addWidget(view)
+        self.image_area_widget.setLayout(self.image_layout)
+        if horizontal:
+            self.image_scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+            self.image_scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+            self.image_scroll_area.setStyleSheet(self.scroll_area_css('horizontal'))
+        else:
+            self.image_scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+            self.image_scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+            self.image_scroll_area.setStyleSheet(self.scroll_area_css('vertical'))
+        self.image_scroll_area.setWidget(self.image_area_widget)
+        if current_views:
+            self.image_scroll_area.setVisible(True)
+            self._adjust_image_area()
+        else:
+            self.image_scroll_area.setVisible(False)
+            self.image_scroll_area.setMinimumHeight(0)
 
     def clear_images(self):
         for view in self.image_views:
@@ -299,3 +354,39 @@ class ImgBaseWidget(BaseWidget):
         self.image_views.clear()
         self.image_scroll_area.setVisible(False)
         self.image_scroll_area.setMinimumHeight(0)
+
+    def add_image_view(self, image_view):
+        self.image_views.append(image_view)
+        self.image_layout.addWidget(image_view)
+        self.image_scroll_area.setVisible(True)
+        self._adjust_image_area()
+        QTimer.singleShot(0, self.image_area_widget.adjustSize)
+
+    def _adjust_image_area(self):
+        if not self.image_views:
+            return
+        if self.horizontal_images:
+            self._adjust_horizontal_area()
+        else:
+            self._adjust_vertical_area()
+
+    def _adjust_horizontal_area(self):
+        max_height = max(view.sizeHint().height() for view in self.image_views)
+        total_width = 0
+        for view in self.image_views:
+            total_width += view.sizeHint().width()
+        total_width += self.image_layout.spacing() * (len(self.image_views) - 1)
+        self.image_area_widget.setFixedWidth(total_width)
+        self.image_area_widget.setFixedHeight(max_height)
+        scrollbar = self.image_scroll_area.horizontalScrollBar()
+        scrollbar_height = scrollbar.sizeHint().height() if scrollbar.maximum() > 0 else 0
+        self.image_scroll_area.setMinimumHeight(max_height + scrollbar_height)
+
+    def _adjust_vertical_area(self):
+        total_height = sum(view.sizeHint().height() for view in self.image_views)
+        total_height += self.image_layout.spacing() * (len(self.image_views) - 1)
+        total_height += 10
+        max_width = max(view.sizeHint().width() for view in self.image_views)
+        self.image_area_widget.setFixedHeight(total_height)
+        self.image_area_widget.setFixedWidth(max_width)
+        self.image_scroll_area.setMinimumHeight(min(total_height, 200))

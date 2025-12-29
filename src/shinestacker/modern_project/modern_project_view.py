@@ -428,15 +428,13 @@ class ModernProjectView(ProjectView):
             if reply == QMessageBox.Yes:
                 self.stop()
                 return True
-            else:
-                return False
+            return False
         return True
 
     def delete_element(self):
         if self.enforce_stop_run():
             return self.element_action.delete_element(self.parent(), True)
-        else:
-            return None
+        return None
 
     def copy_element(self):
         self.element_action.copy_element()
@@ -574,7 +572,10 @@ class ModernProjectView(ProjectView):
             self.actions_layout_horizontal = horizontal
             for job_widget in self.job_widgets:
                 job_widget.set_horizontal_layout(horizontal)
+            self.progress_handler.set_horizontal_layout(
+                self.menu_manager.horizontal_layout_action.isChecked())
             txt = "horizontal" if horizontal else "vertical"
+            self.vertical_subactions_layout(vertical=horizontal)
             self.show_status_message_requested.emit(f"Actions layout set to {txt}", 2000)
 
     def vertical_subactions_layout(self, vertical=True):
@@ -583,12 +584,13 @@ class ModernProjectView(ProjectView):
             for job_widget in self.job_widgets:
                 for action_widget in job_widget.child_widgets:
                     action_widget.set_horizontal_layout(not vertical)
+                    image_horizontal = vertical
+                    for subaction_widget in action_widget.child_widgets:
+                        subaction_widget.set_image_orientation(image_horizontal)
                     if vertical:
                         action_widget.child_container_layout.setSpacing(5)
                     else:
                         action_widget.child_container_layout.setSpacing(2)
-            txt = "vertical" if vertical else "horizontal"
-            self.show_status_message_requested.emit(f"Subactions layout set to {txt}", 2000)
 
     def refresh_ui(self):
         old_state = self.selection_state.copy()

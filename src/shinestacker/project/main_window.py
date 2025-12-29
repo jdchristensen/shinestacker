@@ -18,9 +18,9 @@ from .. gui.new_project import fill_new_project
 from .. gui.project_model import ActionConfig
 from .. gui.action_config_dialog import ActionConfigDialog
 from .. gui.project_undo_manager import ProjectUndoManager
+from .. gui.menu_manager import MenuManager
 from .. classic_project.classic_project_view import ClassicProjectView
 from .. modern_project.modern_project_view import ModernProjectView
-from .menu_manager import MenuManager
 
 
 class MainWindow(ProjectIOHandler, QMainWindow):
@@ -63,10 +63,8 @@ class MainWindow(ProjectIOHandler, QMainWindow):
             "Stop": self.stop,
             "Classic View": lambda: self.set_view('classic'),
             "Modern View": lambda: self.set_view('modern'),
-            "Horizontal Actions Layout": self.horizontal_actions_layout,
-            "Vertical Actions Layout": self.vertical_actions_layout,
-            "Horizontal Sub Actions Layout": self.horizontal_subactions_layout,
-            "Vertical Sub Actions Layout": self.vertical_subactions_layout
+            "Horizontal Layout": self.horizontal_actions_layout,
+            "Vertical Layout": self.vertical_actions_layout,
         }
         self.menu_manager = MenuManager(
             self.menuBar(), actions, self.add_action, self.add_sub_action, dark_theme, self)
@@ -77,12 +75,14 @@ class MainWindow(ProjectIOHandler, QMainWindow):
             self.update_delete_action_state,
             self.show_status_message,
             self.menu_manager.set_enabled_sub_actions_gui)
-        for _k, v in self.views.items():
-            v.set_menu_manager(self.menu_manager)
         self.script_dir = os.path.dirname(__file__)
         self.retouch_callback = None
-        self.classic_view.set_style_sheet(dark_theme)
+        for _k, v in self.views.items():
+            v.set_menu_manager(self.menu_manager)
+            v.set_style_sheet(dark_theme)
         self.menu_manager.add_menus()
+        self.modern_view.progress_handler.set_horizontal_layout(
+            self.menu_manager.horizontal_layout_action.isChecked())
         toolbar = QToolBar(self)
         self.addToolBar(Qt.TopToolBarArea, toolbar)
         self.menu_manager.fill_toolbar(toolbar)
@@ -169,12 +169,6 @@ class MainWindow(ProjectIOHandler, QMainWindow):
 
     def vertical_actions_layout(self):
         self.modern_view.horizontal_actions_layout(False)
-
-    def horizontal_subactions_layout(self):
-        self.modern_view.vertical_subactions_layout(False)
-
-    def vertical_subactions_layout(self):
-        self.modern_view.vertical_subactions_layout(True)
 
     def quit(self):
         if self.check_unsaved_changes():

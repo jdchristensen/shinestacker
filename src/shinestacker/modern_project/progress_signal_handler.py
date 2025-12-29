@@ -2,6 +2,7 @@
 import os
 from PySide6.QtCore import Qt, QObject, Slot
 from .. algorithms.utils import extension_supported, extension_pdf
+from .. algorithms.plot_manager import DirectPlotManager
 from .. gui.gui_images import GuiPdfView, GuiImageView, GuiOpenApp
 
 
@@ -19,6 +20,7 @@ class SignalConnector(QObject):
                     handler = getattr(view, handler_name)
                 if handler and callable(handler):
                     signal.connect(handler, Qt.ConnectionType.UniqueConnection)
+        worker.plot_manager.save_plot_signal.connect(progress_handler.plot_manager.save_plot)
 
 
 class ProgressSignalHandler(QObject):
@@ -27,6 +29,11 @@ class ProgressSignalHandler(QObject):
         self.progress_mapper = progress_mapper
         self.find_widget = find_widget_callback
         self.scroll_to_widget = scroll_to_callback
+        self.horizontal_layout = True
+        self.plot_manager = DirectPlotManager()
+
+    def set_horizontal_layout(self, horizontal=True):
+        self.horizontal_layout = horizontal
 
     @Slot(int, str, str)
     def handle_step_counts(self, _run_id, module_name, total_steps):
@@ -136,10 +143,11 @@ class ProgressSignalHandler(QObject):
         if indices:
             widget = self.find_widget(*indices)
             if widget:
+                fixed_height = indices[2] == -1 and self.horizontal_layout is False
                 if extension_pdf(path):
-                    image_view = GuiPdfView(path, widget, fixed_height=indices[2] == -1)
+                    image_view = GuiPdfView(path, widget, fixed_height=fixed_height)
                 elif extension_supported(path):
-                    image_view = GuiImageView(path, widget, fixed_height=indices[2] == -1)
+                    image_view = GuiImageView(path, widget, fixed_height=fixed_height)
                 else:
                     raise RuntimeError(f"Can't visualize file type {os.path.splitext(path)[1]}.")
                 widget.add_image_view(image_view)
