@@ -11,7 +11,7 @@ from .. gui.gui_logging import QTextEditLogger
 from .. gui.action_config_dialog import ActionConfigDialog
 from .. gui.run_worker import JobLogWorker, ProjectLogWorker
 from .job_widget import JobWidget
-from .selection_state import SelectionState
+from .modern_selection_state import ModernSelectionState
 from .progress_mapper import ProgressMapper
 from .element_operations import ElementOperations
 from .progress_signal_handler import ProgressSignalHandler, SignalConnector
@@ -31,7 +31,7 @@ class ModernProjectView(ProjectView):
         self.scroll_content = None
         self.project_layout = None
         self.selected_widget = None
-        self.selection_state = SelectionState()
+        self.selection_state = ModernSelectionState()
         self.show_status_message = None
         self._worker = None
         self.progress_mapper = ProgressMapper()

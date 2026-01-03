@@ -2,7 +2,7 @@
 from .. config.constants import constants
 from .. gui.element_action_manager import ElementActionManager
 from .element_operations import ElementOperations
-from .selection_state import indices_to_state
+from .modern_selection_state import indices_to_state
 
 
 class ModernElementActionManager(ElementActionManager):

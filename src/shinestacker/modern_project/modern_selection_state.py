@@ -1,7 +1,7 @@
 # pylint: disable=C0114, C0115, C0116, R1716
 
 
-class SelectionState:
+class ModernSelectionState:
     def __init__(self):
         self.job_index = -1
         self.action_index = -1
@@ -84,7 +84,7 @@ class SelectionState:
         return True
 
     def copy(self):
-        new_state = SelectionState()
+        new_state = ModernSelectionState()
         new_state.job_index = self.job_index
         new_state.action_index = self.action_index
         new_state.subaction_index = self.subaction_index
@@ -101,7 +101,7 @@ class SelectionState:
 def indices_to_state(job_index, action_index, subaction_index):
     if job_index < 0:
         return None
-    state = SelectionState()
+    state = ModernSelectionState()
     if subaction_index >= 0:
         state.set_subaction(job_index, action_index, subaction_index)
     elif action_index >= 0:
