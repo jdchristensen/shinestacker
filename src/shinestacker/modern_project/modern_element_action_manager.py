@@ -1,8 +1,8 @@
-# pylint: disable=C0114, C0115, C0116, W0246, E0611, R0917, R0913
-from PySide6.QtWidgets import QMessageBox
+# pylint: disable=C0114, C0115, C0116, W0246, E0611, R0917, R0913, R0912, R0911
 from .. config.constants import constants
 from .. gui.element_action_manager import ElementActionManager
 from .element_operations import ElementOperations
+from .selection_state import indices_to_state
 
 
 class ModernElementActionManager(ElementActionManager):
@@ -12,6 +12,42 @@ class ModernElementActionManager(ElementActionManager):
         self.selection_state = selection_state
         self.callbacks = view_callbacks
         self.selection_nav = None
+
+    def new_indices_after_delete(self, state):
+        job_idx, act_idx, sub_idx = state.to_tuple()
+        if job_idx < 0:
+            return (-1, -1, -1)
+        if sub_idx >= 0:
+            if job_idx >= self.num_project_jobs():
+                return (-1, -1, -1)
+            job = self.project_job(job_idx)
+            if act_idx >= len(job.sub_actions):
+                return (job_idx, -1, -1)
+            action = job.sub_actions[act_idx]
+            num_sub = len(action.sub_actions) + 1
+            if sub_idx < num_sub - 1:
+                return (job_idx, act_idx, sub_idx)
+            return (job_idx, act_idx, sub_idx - 1)
+        if act_idx >= 0:
+            if job_idx >= self.num_project_jobs():
+                return (-1, -1, -1)
+            job = self.project_job(job_idx)
+            num_act = len(job.sub_actions) + 1
+            if act_idx >= num_act:
+                return (job_idx, -1, -1)
+            if act_idx < num_act - 1:
+                return (job_idx, act_idx, -1)
+            if act_idx == 0:
+                return (job_idx, -1, -1)
+            return (job_idx, act_idx - 1, -1)
+        num_jobs = self.num_project_jobs() + 1
+        if job_idx >= num_jobs:
+            return (-1, -1, -1)
+        if job_idx < num_jobs - 1:
+            return (job_idx, -1, -1)
+        if job_idx == 0:
+            return (-1, -1, -1)
+        return (job_idx - 1, -1, -1)
 
     def set_selection_navigation(self, selection_nav):
         self.selection_nav = selection_nav
@@ -41,63 +77,48 @@ class ModernElementActionManager(ElementActionManager):
         return None
 
     def _delete_job(self, job_index, confirm=True):
-        if confirm:
-            if 0 <= job_index < self.num_project_jobs():
-                job = self.project().jobs[job_index]
-                reply = self.confirm_delete_message(
-                    'job', job.params.get('name', ''))
-                if reply != QMessageBox.Yes:
-                    return None
-            else:
-                return None
+        if not 0 <= job_index < self.num_project_jobs():
+            return None
+        job = self.project().jobs[job_index]
+        if confirm and self.confirm_delete_message('job', job.params.get('name', '')):
+            return None
         self.mark_as_modified(True, "Delete Job")
-        deleted_job = self.element_ops.delete_job(job_index)
-        if deleted_job:
-            if self.selection_nav:
-                self.selection_nav.select_previous_widget()
-            self.callbacks['refresh_ui']()
+        deleted_job = self.project().jobs.pop(job_index)
+        new_indices = self.new_indices_after_delete(self.selection_state)
+        self.callbacks['refresh_ui'](indices_to_state(*new_indices))
         return deleted_job
 
     def _delete_action(self, job_index, action_index, confirm=True):
-        if confirm:
-            if 0 <= job_index < self.num_project_jobs():
-                job = self.project().jobs[job_index]
-                if 0 <= action_index < len(job.sub_actions):
-                    action = job.sub_actions[action_index]
-                    reply = self.confirm_delete_message('action', action.params.get('name', ''))
-                    if reply != QMessageBox.Yes:
-                        return None
-            else:
-                return None
+        if not 0 <= job_index < self.num_project_jobs():
+            return None
+        job = self.project().jobs[job_index]
+        if not 0 <= action_index < len(job.sub_actions):
+            return None
+        action = job.sub_actions[action_index]
+        if confirm and self.confirm_delete_message('action', action.params.get('name', '')):
+            return None
         self.mark_as_modified(True, "Delete Action")
-        deleted_action = self.element_ops.delete_action(job_index, action_index)
-        if deleted_action:
-            if self.selection_nav:
-                self.selection_nav.select_previous_widget()
-            self.callbacks['refresh_ui']()
+        deleted_action = job.sub_actions.pop(action_index)
+        new_indices = self.new_indices_after_delete(self.selection_state)
+        self.callbacks['refresh_ui'](indices_to_state(*new_indices))
         return deleted_action
 
     def _delete_subaction(self, job_index, action_index, subaction_index, confirm=True):
-        if confirm:
-            if 0 <= job_index < self.num_project_jobs():
-                job = self.project().jobs[job_index]
-                if 0 <= action_index < len(job.sub_actions):
-                    action = job.sub_actions[action_index]
-                    if 0 <= subaction_index < len(action.sub_actions):
-                        subaction = action.sub_actions[subaction_index]
-                        reply = self.confirm_delete_message(
-                            'sub-action', subaction.params.get('name', ''))
-                        if reply != QMessageBox.Yes:
-                            return None
-            else:
-                return None
-        self.mark_as_modified(True, "Delete Sub-Action")
-        deleted_subaction = self.element_ops.delete_subaction(
-            job_index, action_index, subaction_index)
-        if deleted_subaction:
-            if self.selection_nav:
-                self.selection_nav.select_previous_widget()
-            self.callbacks['refresh_ui']()
+        if not 0 <= job_index < self.num_project_jobs():
+            return None
+        job = self.project().jobs[job_index]
+        if not 0 <= action_index < len(job.sub_actions):
+            return None
+        action = job.sub_actions[action_index]
+        if not 0 <= subaction_index < len(action.sub_actions):
+            return None
+        subaction = action.sub_actions[subaction_index]
+        if confirm and self.confirm_delete_message('sub-action', subaction.params.get('name', '')):
+            return None
+        self.mark_as_modified(True, "Delete Sub-action")
+        deleted_subaction = action.sub_actions.pop(subaction_index)
+        new_indices = self.new_indices_after_delete(self.selection_state)
+        self.callbacks['refresh_ui'](indices_to_state(*new_indices))
         return deleted_subaction
 
     def set_enabled(self, enabled):

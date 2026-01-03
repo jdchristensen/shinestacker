@@ -1,5 +1,4 @@
 # pylint: disable=C0114, C0115, C0116, E0611, R0903, R0904, R0913, R0917, E1101, R0911
-from PySide6.QtWidgets import QMessageBox
 from .. config.constants import constants
 from .. gui.element_action_manager import ElementActionManager
 from .classic_selection_state import rows_to_state
@@ -74,10 +73,8 @@ class ClassicElementActionManager(ElementActionManager):
             if not 0 <= selection.job_index < self.num_project_jobs():
                 return None
             job = self.project().jobs[selection.job_index]
-            if confirm:
-                reply = self.confirm_delete_message('job', job.params.get('name', ''))
-                if reply != QMessageBox.Yes:
-                    return None
+            if confirm and self.confirm_delete_message('job', job.params.get('name', '')):
+                return None
             self.mark_as_modified(True, "Delete Job")
             deleted_job = self.project().jobs.pop(selection.job_index)
             self.callbacks['refresh_ui'](rows_to_state(self.project(), -1, -1))
@@ -92,10 +89,9 @@ class ClassicElementActionManager(ElementActionManager):
             if not element or not container or index < 0 or index >= len(container):
                 return None
             element_type = "sub-action" if selection.is_subaction_selected() else "action"
-            if confirm:
-                reply = self.confirm_delete_message(element_type, element.params.get('name', ''))
-                if reply != QMessageBox.Yes:
-                    return None
+            if confirm and self.confirm_delete_message(
+                    element_type, element.params.get('name', '')):
+                return None
             self.mark_as_modified(True, f"Delete {element_type}")
             deleted_element = container.pop(index)
             current_action_row = selection.get_action_row()

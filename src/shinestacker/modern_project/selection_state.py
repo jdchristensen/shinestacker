@@ -96,3 +96,16 @@ class SelectionState:
         self.action_index = other_state.action_index
         self.subaction_index = other_state.subaction_index
         self.widget_type = other_state.widget_type
+
+
+def indices_to_state(job_index, action_index, subaction_index):
+    if job_index < 0:
+        return None
+    state = SelectionState()
+    if subaction_index >= 0:
+        state.set_subaction(job_index, action_index, subaction_index)
+    elif action_index >= 0:
+        state.set_action(job_index, action_index)
+    else:
+        state.set_job(job_index)
+    return state

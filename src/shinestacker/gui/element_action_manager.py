@@ -29,7 +29,7 @@ class ElementActionManager(ProjectHandler, QObject):
             self.parent(), "Confirm Delete",
             f"Are you sure you want to delete {type_name} '{element_name}'?",
             QMessageBox.Yes | QMessageBox.No
-        )
+        ) == QMessageBox.Yes
 
     def paste_job_logic(self, copy_buffer, job_index, clone_buffer):
         if copy_buffer.type_name != constants.ACTION_JOB:
