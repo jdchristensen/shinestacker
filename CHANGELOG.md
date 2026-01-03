@@ -8,7 +8,7 @@ This page reports the main releases only and the main changes therein.
 - undo implementation
 
 ### Changed
-- code refactoring
+- code refactoring and cleanup
 
 ---
 

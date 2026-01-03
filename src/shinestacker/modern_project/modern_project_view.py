@@ -52,15 +52,10 @@ class ModernProjectView(ProjectView):
             project_holder,
             self.selection_state,
             {
-                'mark_modified': self.mark_as_modified,
                 'refresh_ui': self.refresh_ui,
-                'set_copy_buffer': self.set_copy_buffer,
-                'has_copy_buffer': self.has_copy_buffer,
-                'get_copy_buffer': self.copy_buffer,
                 'ensure_selected_visible': self._ensure_selected_visible,
-                'get_parent_widget': self.parent,
-                'get_clone_postfix': lambda: self.CLONE_POSTFIX
-            }
+            },
+            self.parent()
         )
         self._saved_selection = None
         self.element_action.set_selection_navigation(self.selection_nav)

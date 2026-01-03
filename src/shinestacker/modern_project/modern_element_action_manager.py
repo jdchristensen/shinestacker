@@ -6,8 +6,8 @@ from .element_operations import ElementOperations
 
 
 class ModernElementActionManager(ElementActionManager):
-    def __init__(self, project_holder, selection_state, view_callbacks):
-        super().__init__(project_holder)
+    def __init__(self, project_holder, selection_state, view_callbacks, parent=None):
+        super().__init__(project_holder, parent)
         self.element_ops = ElementOperations(project_holder)
         self.selection_state = selection_state
         self.callbacks = view_callbacks
@@ -39,7 +39,7 @@ class ModernElementActionManager(ElementActionManager):
                     return None
             else:
                 return None
-        self.callbacks['mark_modified'](True, "Delete Job")
+        self.mark_as_modified(True, "Delete Job")
         deleted_job = self.element_ops.delete_job(job_index)
         if deleted_job:
             if self.selection_nav:
@@ -59,7 +59,7 @@ class ModernElementActionManager(ElementActionManager):
                         return None
             else:
                 return None
-        self.callbacks['mark_modified'](True, "Delete Action")
+        self.mark_as_modified(True, "Delete Action")
         deleted_action = self.element_ops.delete_action(job_index, action_index)
         if deleted_action:
             if self.selection_nav:
@@ -82,7 +82,7 @@ class ModernElementActionManager(ElementActionManager):
                             return None
             else:
                 return None
-        self.callbacks['mark_modified'](True, "Delete Sub-action")
+        self.mark_as_modified(True, "Delete Sub-Action")
         deleted_subaction = self.element_ops.delete_subaction(
             job_index, action_index, subaction_index)
         if deleted_subaction:
@@ -102,7 +102,7 @@ class ModernElementActionManager(ElementActionManager):
     def copy_job(self):
         job_clone = self.element_ops.copy_job(self.selection_state.job_index)
         if job_clone:
-            self.callbacks['set_copy_buffer'](job_clone)
+            self.set_copy_buffer(job_clone)
 
     def copy_action(self):
         if not self.selection_state.is_action_selected():
@@ -110,7 +110,7 @@ class ModernElementActionManager(ElementActionManager):
         job_idx, action_idx, _ = self.selection_state.to_tuple()
         job_clone = self.element_ops.copy_action(job_idx, action_idx)
         if job_clone:
-            self.callbacks['set_copy_buffer'](job_clone)
+            self.set_copy_buffer(job_clone)
 
     def copy_subaction(self):
         if not self.selection_state.is_subaction_selected():
@@ -118,12 +118,12 @@ class ModernElementActionManager(ElementActionManager):
         job_idx, action_idx, subaction_idx = self.selection_state.to_tuple()
         job_clone = self.element_ops.copy_subaction(job_idx, action_idx, subaction_idx)
         if job_clone:
-            self.callbacks['set_copy_buffer'](job_clone)
+            self.set_copy_buffer(job_clone)
 
     def paste_element(self):
-        if not self.callbacks['has_copy_buffer']():
+        if not self.has_copy_buffer():
             return
-        copy_buffer = self.callbacks['get_copy_buffer']()
+        copy_buffer = self.copy_buffer()
         if copy_buffer.type_name in constants.SUB_ACTION_TYPES:
             self.paste_subaction()
         elif self.selection_state.is_job_selected():
@@ -134,31 +134,31 @@ class ModernElementActionManager(ElementActionManager):
             self.paste_subaction()
 
     def paste_job(self):
-        if not self.callbacks['has_copy_buffer']():
+        if not self.has_copy_buffer():
             return
-        copy_buffer = self.callbacks['get_copy_buffer']()
+        copy_buffer = self.copy_buffer()
         success, element_type, index = self.paste_job_logic(
             copy_buffer, self.selection_state.job_index, True)
         if not success:
             return
         if element_type == 'action':
-            self.callbacks['mark_modified'](True, "Paste Action")
+            self.mark_as_modified(True, "Paste Action")
             self.selection_state.set_action(self.selection_state.job_index, index)
         else:
-            self.callbacks['mark_modified'](True, "Paste Job")
+            self.mark_as_modified(True, "Paste Job")
             self.selection_state.set_job(index)
         self.callbacks['refresh_ui']()
         self.callbacks['ensure_selected_visible']()
 
     def paste_action(self):
-        if not self.callbacks['has_copy_buffer']():
+        if not self.has_copy_buffer():
             return
         if self.selection_state.job_index < 0:
             return
-        copy_buffer = self.callbacks['get_copy_buffer']()
+        copy_buffer = self.copy_buffer()
         if copy_buffer.type_name not in constants.ACTION_TYPES:
             return
-        self.callbacks['mark_modified'](True, "Paste Action")
+        self.mark_as_modified(True, "Paste Action")
         job = self.project().jobs[self.selection_state.job_index]
         if self.selection_state.action_index >= 0:
             new_action_index = self.selection_state.action_index + 1
@@ -170,11 +170,11 @@ class ModernElementActionManager(ElementActionManager):
         self.callbacks['ensure_selected_visible']()
 
     def paste_subaction(self):
-        if not self.callbacks['has_copy_buffer']():
+        if not self.has_copy_buffer():
             return
         if self.selection_state.job_index < 0 or self.selection_state.action_index < 0:
             return
-        copy_buffer = self.callbacks['get_copy_buffer']()
+        copy_buffer = self.copy_buffer()
         job = self.project().jobs[self.selection_state.job_index]
         if self.selection_state.action_index >= len(job.sub_actions):
             return
@@ -183,7 +183,7 @@ class ModernElementActionManager(ElementActionManager):
             return
         if copy_buffer.type_name not in constants.SUB_ACTION_TYPES:
             return
-        self.callbacks['mark_modified'](True, "Paste Sub-action")
+        self.mark_as_modified(True, "Paste Sub-action")
         if self.selection_state.subaction_index >= 0:
             new_subaction_index = self.selection_state.subaction_index + 1
         else:
@@ -199,7 +199,7 @@ class ModernElementActionManager(ElementActionManager):
     def cut_element(self):
         element = self.delete_element(self.callbacks['get_parent_widget'](), False)
         if element:
-            self.callbacks['set_copy_buffer'](element)
+            self.set_copy_buffer(element)
 
     def clone_element(self):
         if self.selection_state.is_job_selected():
@@ -214,9 +214,9 @@ class ModernElementActionManager(ElementActionManager):
             return
         if not 0 <= self.selection_state.job_index < self.num_project_jobs():
             return
-        self.callbacks['mark_modified'](True, "Duplicate Job")
+        self.mark_as_modified(True, "Duplicate Job")
         job = self.project().jobs[self.selection_state.job_index]
-        job_clone = job.clone(name_postfix=self.callbacks['get_clone_postfix']())
+        job_clone = job.clone(name_postfix=self.CLONE_POSTFIX)
         new_job_index = self.selection_state.job_index + 1
         self.project().jobs.insert(new_job_index, job_clone)
         self.selection_state.set_job(new_job_index)
@@ -228,10 +228,10 @@ class ModernElementActionManager(ElementActionManager):
             action_index = self.selection_state.action_index
             if (0 <= job_index < self.num_project_jobs() and
                     0 <= action_index < len(self.project().jobs[job_index].sub_actions)):
-                self.callbacks['mark_modified'](True, "Duplicate Action")
+                self.mark_as_modified(True, "Duplicate Action")
                 job = self.project().jobs[job_index]
                 action = job.sub_actions[action_index]
-                action_clone = action.clone(name_postfix=self.callbacks['get_clone_postfix']())
+                action_clone = action.clone(name_postfix=self.CLONE_POSTFIX)
                 new_action_index = action_index + 1
                 job.sub_actions.insert(new_action_index, action_clone)
                 self.selection_state.action_index = new_action_index
@@ -248,10 +248,9 @@ class ModernElementActionManager(ElementActionManager):
                 action = job.sub_actions[action_index]
                 if (action.type_name == constants.ACTION_COMBO and
                         0 <= subaction_index < len(action.sub_actions)):
-                    self.callbacks['mark_modified'](True, "Duplicate Sub-action")
+                    self.mark_as_modified(True, "Duplicate Sub-action")
                     subaction = action.sub_actions[subaction_index]
-                    subaction_clone = subaction.clone(
-                        name_postfix=self.callbacks['get_clone_postfix']())
+                    subaction_clone = subaction.clone(name_postfix=self.CLONE_POSTFIX)
                     new_subaction_index = subaction_index + 1
                     action.sub_actions.insert(new_subaction_index, subaction_clone)
                     self.selection_state.subaction_index = new_subaction_index
@@ -280,7 +279,7 @@ class ModernElementActionManager(ElementActionManager):
         job_idx, _, _ = self.selection_state.to_tuple()
         new_index = self.element_ops.shift_job(job_idx, delta)
         if new_index != job_idx:
-            self.callbacks['mark_modified'](True, "Shift Job")
+            self.mark_as_modified(True, "Shift Job")
             self.selection_state.set_job(new_index)
             self.callbacks['refresh_ui']()
 
@@ -290,7 +289,7 @@ class ModernElementActionManager(ElementActionManager):
         job_idx, action_idx, _ = self.selection_state.to_tuple()
         new_index = self.element_ops.shift_action(job_idx, action_idx, delta)
         if new_index != action_idx:
-            self.callbacks['mark_modified'](True, "Shift Action")
+            self.mark_as_modified(True, "Shift Action")
             self.selection_state.set_action(job_idx, new_index)
             self.callbacks['refresh_ui']()
 
@@ -300,6 +299,6 @@ class ModernElementActionManager(ElementActionManager):
         job_idx, action_idx, subaction_idx = self.selection_state.to_tuple()
         new_index = self.element_ops.shift_subaction(job_idx, action_idx, subaction_idx, delta)
         if new_index != subaction_idx:
-            self.callbacks['mark_modified'](True, "Shift Sub-action")
+            self.mark_as_modified(True, "Shift Sub-action")
             self.selection_state.set_subaction(job_idx, action_idx, new_index)
             self.callbacks['refresh_ui']()

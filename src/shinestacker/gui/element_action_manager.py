@@ -6,9 +6,9 @@ from .. gui.project_handler import ProjectHandler
 
 
 class ElementActionManager(ProjectHandler, QObject):
-    def __init__(self, project_holder):
+    def __init__(self, project_holder, parent=None):
         ProjectHandler.__init__(self, project_holder)
-        QObject.__init__(self)
+        QObject.__init__(self, parent)
 
     def confirm_delete_message(self, type_name, element_name, parent_widget):
         return QMessageBox.question(
