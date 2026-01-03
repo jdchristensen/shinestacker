@@ -12,48 +12,7 @@ from .tab_widget import TabWidgetWithPlaceholder
 from .gui_run import RunWindow
 from .list_container import ListContainer
 from .classic_selection_state import ClassicSelectionState
-
-
-def new_row_after_clone(job, action_row, is_sub_action, cloned):
-    return action_row + 1 if is_sub_action else \
-        sum(1 + len(action.sub_actions)
-            for action in job.sub_actions[:job.sub_actions.index(cloned)])
-
-
-def new_row_after_delete(action_row, pos: ClassicSelectionState):
-    if pos.is_sub_action:
-        new_row = action_row if pos.sub_action_index < len(pos.sub_actions) else action_row - 1
-    else:
-        if pos.action_index == 0:
-            new_row = 0 if len(pos.actions) > 0 else -1
-        elif pos.action_index < len(pos.actions):
-            new_row = action_row
-        elif pos.action_index == len(pos.actions):
-            new_row = action_row - len(pos.actions[pos.action_index - 1].sub_actions) - 1
-        else:
-            new_row = None
-    return new_row
-
-
-def new_row_after_paste(action_row, pos: ClassicSelectionState):
-    return new_row_after_insert(action_row, pos, 0)
-
-
-def new_row_after_insert(action_row, pos: ClassicSelectionState, delta):
-    new_row = action_row
-    if not pos.is_sub_action:
-        new_index = pos.action_index + delta
-        if 0 <= new_index < len(pos.actions):
-            new_row = 0
-            for action in pos.actions[:new_index]:
-                new_row += 1 + len(action.sub_actions)
-    else:
-        new_index = pos.sub_action_index + delta
-        if 0 <= new_index < len(pos.sub_actions):
-            new_row = 1 + new_index
-            for action in pos.actions[:pos.action_index]:
-                new_row += 1 + len(action.sub_actions)
-    return new_row
+from .classic_element_action_manager import ClassicElementActionManager
 
 
 class ClassicProjectView(ProjectView, ListContainer):
@@ -99,6 +58,20 @@ class ClassicProjectView(ProjectView, ListContainer):
         """
         QApplication.instance().setStyleSheet(
             self.style_dark if dark_theme else self.style_light)
+        self.element_action = ClassicElementActionManager(
+            project_holder,
+            {
+                'get_selection_state': self._get_selection_state,
+                'mark_modified': self.mark_as_modified,
+                'refresh_ui': self.refresh_ui,
+                'set_copy_buffer': self.set_copy_buffer,
+                'has_copy_buffer': self.has_copy_buffer,
+                'get_copy_buffer': self.copy_buffer,
+                'ensure_selected_visible': self._ensure_selected_visible,
+                'get_parent_widget': self.parent,
+                'get_clone_postfix': lambda: self.CLONE_POSTFIX
+            }
+        )
         self._setup_ui()
 
     def _setup_ui(self):
@@ -358,251 +331,38 @@ class ClassicProjectView(ProjectView, ListContainer):
         if current_action is not None:
             self.edit_action(current_action)
 
-    def delete_job(self, confirm=True):
-        current_index = self.current_job_index()
-        if 0 <= current_index < self.num_project_jobs():
-            if confirm:
-                reply = QMessageBox.question(
-                    self.parent(), "Confirm Delete",
-                    "Are you sure you want to delete job "
-                    f"'{self.project_job(current_index).params.get('name', '')}'?",
-                    QMessageBox.Yes | QMessageBox.No
-                )
-            else:
-                reply = None
-            if not confirm or reply == QMessageBox.Yes:
-                self.take_job(current_index)
-                self.mark_as_modified(True, "Delete Job")
-                current_job = self.project_jobs().pop(current_index)
-                self.clear_action_list()
-                self.refresh_ui(-1, -1)
-                return current_job
-        return None
-
-    def delete_action(self, confirm=True):
-        job_row, action_row, pos = self.get_current_action()
-        if pos is not None:
-            current_action = pos.action if not pos.is_sub_action else pos.sub_action
-            if confirm:
-                reply = QMessageBox.question(
-                    self.parent(),
-                    "Confirm Delete",
-                    "Are you sure you want to delete action "
-                    f"'{self.action_text(current_action, pos.is_sub_action, indent=False)}'?",
-                    QMessageBox.Yes | QMessageBox.No
-                )
-            else:
-                reply = None
-            if not confirm or reply == QMessageBox.Yes:
-                if pos.is_sub_action:
-                    self.mark_as_modified(True, "Delete Action")
-                    pos.action.pop_sub_action(pos.sub_action_index)
-                else:
-                    self.mark_as_modified(True, "Delete Sub-action")
-                    self.project_job(job_row).pop_sub_action(pos.action_index)
-                new_row = new_row_after_delete(action_row, pos)
-                self.refresh_ui(job_row, new_row)
-            return current_action
-        return None
-
     def delete_element(self, confirm=True):
-        if self.job_list_has_focus():
-            element = self.delete_job(confirm)
-        elif self.action_list_has_focus():
-            element = self.delete_action(confirm)
-        else:
-            element = None
-        return element
-
-    def copy_job(self):
-        current_index = self.current_job_index()
-        if 0 <= current_index < self.num_project_jobs():
-            self.set_copy_buffer(self.project_job(current_index).clone())
-
-    def copy_action(self):
-        _job_row, _action_row, pos = self.get_current_action()
-        if pos.actions is not None:
-            self.set_copy_buffer(pos.sub_action.clone()
-                                 if pos.is_sub_action else pos.action.clone())
+        return self.element_action.delete_element(self.parent(), confirm)
 
     def copy_element(self):
-        if self.job_list_has_focus():
-            self.copy_job()
-        elif self.action_list_has_focus():
-            self.copy_action()
-
-    def paste_job(self):
-        if self.copy_buffer().type_name != constants.ACTION_JOB:
-            if self.num_project_jobs() == 0:
-                return
-            if self.copy_buffer().type_name not in constants.ACTION_TYPES:
-                return
-            current_job = self.project_job(self.current_job_index())
-            new_action_index = len(current_job.sub_actions)
-            current_job.sub_actions.insert(new_action_index, self.copy_buffer())
-            self.set_current_action(new_action_index)
-            self.refresh_ui(self.current_job_index(), -1)
-            return
-        if self.num_project_jobs() == 0:
-            new_job_index = 0
-        else:
-            new_job_index = min(max(self.current_job_index() + 1, 0), self.num_project_jobs() - 1)
-        self.mark_as_modified(True, "Paste Job")
-        self.project_jobs().insert(new_job_index, self.copy_buffer())
-        self.set_current_job(new_job_index)
-        self.set_current_action(new_job_index)
-        self.refresh_ui(new_job_index, -1)
-
-    def paste_action(self):
-        job_row, action_row, pos = self.get_current_action()
-        if pos is not None and pos.actions is not None:
-            copy_buffer = self.copy_buffer()
-            if copy_buffer.type_name in constants.SUB_ACTION_TYPES:
-                target_action = None
-                insertion_index = 0
-                if pos.is_sub_action:
-                    if pos.action.type_name == constants.ACTION_COMBO:
-                        target_action = pos.action
-                        insertion_index = len(pos.sub_actions)
-                else:
-                    if pos.action is not None and pos.action.type_name == constants.ACTION_COMBO:
-                        target_action = pos.action
-                        insertion_index = len(pos.action.sub_actions)
-                if target_action is not None:
-                    self.mark_as_modified(True, "Paste Sub-action")
-                    target_action.sub_actions.insert(insertion_index, copy_buffer)
-                    new_row = new_row_after_paste(action_row, pos)
-                    self.refresh_ui(job_row, new_row)
-                    return
-            if copy_buffer.type_name in constants.ACTION_TYPES:
-                if not pos.is_sub_action:
-                    new_action_index = 0 if len(pos.actions) == 0 else pos.action_index + 1
-                    self.mark_as_modified(True, "Paste Action")
-                    pos.actions.insert(new_action_index, copy_buffer)
-                    new_row = new_row_after_paste(action_row, pos)
-                    self.refresh_ui(job_row, new_row)
+        self.element_action.copy_element()
 
     def paste_element(self):
-        if self.has_copy_buffer():
-            if self.job_list_has_focus():
-                self.paste_job()
-            elif self.action_list_has_focus():
-                self.paste_action()
+        self.element_action.paste_element()
 
     def cut_element(self):
-        self.set_copy_buffer(self.delete_element(False))
-
-    def clone_job(self):
-        job_index = self.current_job_index()
-        if 0 <= job_index < self.num_project_jobs():
-            job_clone = self.project_job(job_index).clone(self.CLONE_POSTFIX)
-            new_job_index = job_index + 1
-            self.mark_as_modified(True, "Duplicate Job")
-            self.project_jobs().insert(new_job_index, job_clone)
-            self.set_current_job(new_job_index)
-            self.set_current_action(new_job_index)
-            self.refresh_ui(new_job_index, -1)
-
-    def clone_action(self):
-        job_row, action_row, pos = self.get_current_action()
-        if not pos.actions:
-            return
-        self.mark_as_modified(True, "Duplicate Action")
-        job = self.project_job(job_row)
-        if pos.is_sub_action:
-            cloned = pos.sub_action.clone(self.CLONE_POSTFIX)
-            pos.sub_actions.insert(pos.sub_action_index + 1, cloned)
-        else:
-            cloned = pos.action.clone(self.CLONE_POSTFIX)
-            job.sub_actions.insert(pos.action_index + 1, cloned)
-        new_row = new_row_after_clone(job, action_row, pos.is_sub_action, cloned)
-        self.refresh_ui(job_row, new_row)
+        self.element_action.cut_element()
 
     def clone_element(self):
-        if self.job_list_has_focus():
-            self.clone_job()
-        elif self.action_list_has_focus():
-            self.clone_action()
-
-    def set_enabled(self, enabled):
-        current_action = None
-        if self.job_list_has_focus():
-            job_row = self.current_job_index()
-            if 0 <= job_row < self.num_project_jobs():
-                current_action = self.project_job(job_row)
-            action_row = -1
-        elif self.action_list_has_focus():
-            job_row, action_row, pos = self.get_current_action()
-            current_action = pos.sub_action if pos.is_sub_action else pos.action
-        else:
-            action_row = -1
-        if current_action:
-            if current_action.enabled() != enabled:
-                if enabled:
-                    self.mark_as_modified(True, "Enable")
-                else:
-                    self.mark_as_modified(True, "Disable")
-                current_action.set_enabled(enabled)
-                self.refresh_ui(job_row, action_row)
+        self.element_action.clone_element()
 
     def enable(self):
-        self.set_enabled(True)
+        self.element_action.enable()
 
     def disable(self):
-        self.set_enabled(False)
-
-    def set_enabled_all(self, enable=True):
-        self.mark_as_modified(True, "Enable All")
-        job_row = self.current_job_index()
-        action_row = self.current_action_index()
-        for j in self.project_jobs():
-            j.set_enabled_all(enable)
-        self.refresh_ui(job_row, action_row)
+        self.element_action.disable()
 
     def enable_all(self):
-        self.set_enabled_all(True)
+        self.element_action.enable_all()
 
     def disable_all(self):
-        self.set_enabled_all(False)
-
-    def shift_job(self, delta):
-        job_index = self.current_job_index()
-        if job_index < 0:
-            return
-        new_index = job_index + delta
-        if 0 <= new_index < self.num_project_jobs():
-            jobs = self.project_jobs()
-            self.mark_as_modified(True, "Shift Job")
-            jobs.insert(new_index, jobs.pop(job_index))
-            self.refresh_ui(new_index, -1)
-
-    def shift_action(self, delta):
-        job_row, action_row, pos = self.get_current_action()
-        if pos is not None:
-            if not pos.is_sub_action:
-                new_index = pos.action_index + delta
-                if 0 <= new_index < len(pos.actions):
-                    self.mark_as_modified(True, "Shift Action")
-                    pos.actions.insert(new_index, pos.actions.pop(pos.action_index))
-            else:
-                new_index = pos.sub_action_index + delta
-                if 0 <= new_index < len(pos.sub_actions):
-                    self.mark_as_modified(True, "Shift Sub-action")
-                    pos.sub_actions.insert(new_index, pos.sub_actions.pop(pos.sub_action_index))
-            new_row = new_row_after_insert(action_row, pos, delta)
-            self.refresh_ui(job_row, new_row)
+        self.element_action.disable_all()
 
     def move_element_up(self):
-        if self.job_list_has_focus():
-            self.shift_job(-1)
-        elif self.action_list_has_focus():
-            self.shift_action(-1)
+        self.element_action.move_element_up()
 
     def move_element_down(self):
-        if self.job_list_has_focus():
-            self.shift_job(+1)
-        elif self.action_list_has_focus():
-            self.shift_action(+1)
+        self.element_action.move_element_down()
 
     def add_action(self, type_name):
         current_index = self.current_job_index()
@@ -687,21 +447,6 @@ class ClassicProjectView(ProjectView, ListContainer):
     def get_job_at(self, index):
         return None if index < 0 else self.project_job(index)
 
-    def get_action_at(self, action_row):
-        job_row = self.current_job_index()
-        if job_row < 0 or action_row < 0:
-            return (job_row, action_row, None)
-        action, sub_action, sub_action_index = self.find_action_position(job_row, action_row)
-        if not action:
-            return (job_row, action_row, None)
-        job = self.project_job(job_row)
-        if sub_action:
-            return (job_row, action_row,
-                    ClassicSelectionState(job.sub_actions, action.sub_actions,
-                                          job.sub_actions.index(action), sub_action_index))
-        return (job_row, action_row,
-                ClassicSelectionState(job.sub_actions, None, job.sub_actions.index(action)))
-
     def action_config_dialog(self, action):
         return ActionConfigDialog(action, self.current_file_directory(), self.parent())
 
@@ -732,6 +477,30 @@ class ClassicProjectView(ProjectView, ListContainer):
                     self.refresh_ui()
                     self.set_current_job(job_index)
                     self.set_current_action(action_index)
+
+    def _get_selection_state(self):
+        if self.job_list_has_focus():
+            job_idx = self.current_job_index()
+            if 0 <= job_idx < self.num_project_jobs():
+                state = ClassicSelectionState(None, None, -1, -1, job_idx, 'job')
+                return state
+        elif self.action_list_has_focus():
+            _job_row, _action_row, pos = self.get_current_action()
+            if pos is not None:
+                return pos
+        return ClassicSelectionState(None, None, -1, -1, -1, None)
+
+    def _ensure_selected_visible(self):
+        pass
+
+    def _selection_callback(self, widget_type, job_index, _action_index=None,
+                            _subaction_index=None):
+        if widget_type == 'job':
+            self.set_current_job(job_index)
+        elif widget_type == 'action':
+            self.set_current_job(job_index)
+        elif widget_type == 'subaction':
+            self.set_current_job(job_index)
 
     def handle_run_completed(self, window, run_id):
         window.handle_run_completed(run_id)

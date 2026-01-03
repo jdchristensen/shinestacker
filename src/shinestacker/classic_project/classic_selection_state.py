@@ -75,3 +75,16 @@ class ClassicSelectionState:
         self.action_index = action_index
         self.sub_action_index = subaction_index
         self.widget_type = 'subaction'
+
+    def get_action_row(self):
+        if not (self.is_action_selected() or self.is_subaction_selected()):
+            return -1
+        row = -1
+        for i, action in enumerate(self.actions):
+            row += 1
+            if i == self.action_index:
+                if self.is_subaction_selected():
+                    row += self.sub_action_index + 1
+                return row
+            row += len(action.sub_actions)
+        return -1

@@ -202,7 +202,19 @@ class ListContainer:  # subclasses must inherit from QObject and ListContainer
         job = self.project_job(job_row)
         if sub_action:
             return (job_row, action_row,
-                    ClassicSelectionState(job.sub_actions, action.sub_actions,
-                                          job.sub_actions.index(action), sub_action_index))
+                    ClassicSelectionState(
+                        job.sub_actions,
+                        action.sub_actions,
+                        job.sub_actions.index(action),
+                        sub_action_index,
+                        job_index=job_row,
+                        widget_type='subaction'
+                    ))
         return (job_row, action_row,
-                ClassicSelectionState(job.sub_actions, None, job.sub_actions.index(action)))
+                ClassicSelectionState(
+                    job.sub_actions,
+                    None,
+                    job.sub_actions.index(action),
+                    job_index=job_row,
+                    widget_type='action'
+                ))
