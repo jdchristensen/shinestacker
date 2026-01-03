@@ -6,6 +6,8 @@ from .. gui.project_handler import ProjectHandler
 
 
 class ElementActionManager(ProjectHandler, QObject):
+    CLONE_POSTFIX = ' (clone)'
+
     def __init__(self, project_holder, parent=None):
         ProjectHandler.__init__(self, project_holder)
         QObject.__init__(self, parent)
@@ -35,3 +37,18 @@ class ElementActionManager(ProjectHandler, QObject):
         element = copy_buffer.clone() if clone_buffer else copy_buffer
         self.project().jobs.insert(new_job_index, element)
         return True, 'job', new_job_index
+
+    def clone_element(self):
+        if self.is_job_selected():
+            self.clone_job()
+        elif self.is_action_selected() or self.is_subaction_selected():
+            self.clone_action()
+
+    def is_job_selected(self):
+        raise NotImplementedError
+
+    def is_action_selected(self):
+        raise NotImplementedError
+
+    def is_subaction_selected(self):
+        raise NotImplementedError

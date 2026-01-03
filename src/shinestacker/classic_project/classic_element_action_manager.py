@@ -174,12 +174,17 @@ class ClassicElementActionManager(ElementActionManager):
         if element:
             self.set_copy_buffer(element)
 
-    def clone_element(self):
+    def is_job_selected(self):
         selection = self.callbacks['get_selection_state']()
-        if selection.is_job_selected():
-            self.clone_job()
-        elif selection.is_action_selected() or selection.is_subaction_selected():
-            self.clone_action()
+        return selection.is_job_selected()
+
+    def is_action_selected(self):
+        selection = self.callbacks['get_selection_state']()
+        return selection.is_action_selected()
+
+    def is_subaction_selected(self):
+        selection = self.callbacks['get_selection_state']()
+        return selection.is_subaction_selected()
 
     def clone_job(self):
         selection = self.callbacks['get_selection_state']()

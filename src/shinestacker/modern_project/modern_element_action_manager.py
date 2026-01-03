@@ -201,13 +201,14 @@ class ModernElementActionManager(ElementActionManager):
         if element:
             self.set_copy_buffer(element)
 
-    def clone_element(self):
-        if self.selection_state.is_job_selected():
-            self.clone_job()
-        elif self.selection_state.is_action_selected():
-            self.clone_action()
-        elif self.selection_state.is_subaction_selected():
-            self.clone_action()
+    def is_job_selected(self):
+        return self.selection_state.is_job_selected()
+
+    def is_action_selected(self):
+        return self.selection_state.is_action_selected()
+
+    def is_subaction_selected(self):
+        return self.selection_state.is_subaction_selected()
 
     def clone_job(self):
         if not self.selection_state.is_job_selected():

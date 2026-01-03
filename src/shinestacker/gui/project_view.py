@@ -15,7 +15,6 @@ from .. gui.project_model import (
 
 
 class ProjectView(QWidget, LogManager, ProjectHandler):
-    CLONE_POSTFIX = " (clone)"
     refresh_ui_signal = Signal()
     current_action_working_path = None
     current_action_input_path = None
