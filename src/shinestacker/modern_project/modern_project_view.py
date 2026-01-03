@@ -588,13 +588,15 @@ class ModernProjectView(ProjectView):
                     else:
                         action_widget.child_container_layout.setSpacing(2)
 
-    def refresh_ui(self):
-        old_state = self.selection_state.copy()
+    def refresh_ui(self, restore_state=None):
+        old_state = restore_state if restore_state else self.selection_state.copy()
         self.clear_job_list()
         for job in self.project_jobs():
             self.add_job_widget(job)
         ProjectView.refresh_ui(self)
-        self.selection_nav.restore_selection(old_state)
+        if old_state:
+            self.selection_nav.restore_selection(old_state)
+            self._ensure_selected_visible()
 
     def get_console_area(self):
         return self.console_area
@@ -701,7 +703,15 @@ class ModernProjectView(ProjectView):
     def restore_saved_selection(self):
         if self._saved_selection is None:
             return
-        if self._saved_selection:
-            self.selection_nav.restore_selection(self._saved_selection)
-            self._ensure_selected_visible()
+        self.selection_nav.restore_selection(self._saved_selection)
         self._saved_selection = None
+
+    def refresh_and_restore_selection(self):
+        if self._saved_selection:
+            old_state = self._saved_selection
+            self.clear_job_list()
+            for job in self.project_jobs():
+                self.add_job_widget(job)
+            ProjectView.refresh_ui(self)
+            self.selection_nav.restore_selection(old_state)
+            self._saved_selection = None

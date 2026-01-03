@@ -1,4 +1,4 @@
-# pylint: disable=C0114, C0115, C0116
+# pylint: disable=C0114, C0115, C0116, R1716
 
 
 class SelectionState:
@@ -35,6 +35,16 @@ class SelectionState:
     def from_tuple(self, indices_tuple):
         if len(indices_tuple) >= 3:
             self.job_index, self.action_index, self.subaction_index = indices_tuple[:3]
+        self.widget_type = self._determine_widget_type()
+
+    def _determine_widget_type(self):
+        if self.job_index >= 0 and self.action_index < 0:
+            return 'job'
+        if self.job_index >= 0 and self.action_index >= 0 and self.subaction_index < 0:
+            return 'action'
+        if self.job_index >= 0 and self.action_index >= 0 and self.subaction_index >= 0:
+            return 'subaction'
+        return None
 
     def set_job(self, job_index):
         self.job_index = job_index

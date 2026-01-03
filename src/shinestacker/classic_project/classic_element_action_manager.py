@@ -2,6 +2,7 @@
 from PySide6.QtWidgets import QMessageBox
 from .. config.constants import constants
 from .. gui.element_action_manager import ElementActionManager
+from .classic_selection_state import rows_to_state
 
 
 class ClassicElementActionManager(ElementActionManager):
@@ -79,7 +80,7 @@ class ClassicElementActionManager(ElementActionManager):
                     return None
             self.mark_as_modified(True, "Delete Job")
             deleted_job = self.project().jobs.pop(selection.job_index)
-            self.callbacks['refresh_ui']()
+            self.callbacks['refresh_ui'](rows_to_state(self.project(), -1, -1))
             return deleted_job
         if selection.is_action_selected() or selection.is_subaction_selected():
             element = selection.sub_action if selection.is_subaction_selected() \
@@ -99,7 +100,8 @@ class ClassicElementActionManager(ElementActionManager):
             deleted_element = container.pop(index)
             current_action_row = selection.get_action_row()
             new_row = self.new_row_after_delete(current_action_row, selection)
-            self.callbacks['refresh_ui'](selection.job_index, new_row)
+            self.callbacks['refresh_ui'](
+                rows_to_state(self.project(), selection.job_index, new_row))
             return deleted_element
         return None
 
@@ -142,10 +144,10 @@ class ClassicElementActionManager(ElementActionManager):
             return
         if element_type == 'action':
             self.mark_as_modified(True, "Paste Action")
-            self.callbacks['refresh_ui'](selection.job_index, -1)
+            self.callbacks['refresh_ui'](rows_to_state(self.project(), selection.job_index, -1))
         else:
             self.mark_as_modified(True, "Paste Job")
-            self.callbacks['refresh_ui'](index, -1)
+            self.callbacks['refresh_ui'](rows_to_state(self.project(), index, -1))
 
     def _paste_action(self, copy_buffer, selection):
         if copy_buffer.type_name in constants.SUB_ACTION_TYPES:
@@ -164,7 +166,8 @@ class ClassicElementActionManager(ElementActionManager):
                 target_action.sub_actions.insert(insertion_index, copy_buffer)
                 current_action_row = selection.get_action_row()
                 new_row = self.new_row_after_paste(current_action_row, selection)
-                self.callbacks['refresh_ui'](selection.job_index, new_row)
+                self.callbacks['refresh_ui'](
+                    rows_to_state(self.project(), selection.job_index, new_row))
                 return
         if copy_buffer.type_name in constants.ACTION_TYPES:
             if not selection.is_subaction_selected():
@@ -175,7 +178,8 @@ class ClassicElementActionManager(ElementActionManager):
                 selection.actions.insert(new_action_index, copy_buffer)
                 current_action_row = selection.get_action_row()
                 new_row = self.new_row_after_paste(current_action_row, selection)
-                self.callbacks['refresh_ui'](selection.job_index, new_row)
+                self.callbacks['refresh_ui'](
+                    rows_to_state(self.project(), selection.job_index, new_row))
 
     def cut_element(self):
         element = self.delete_element(False)
@@ -192,7 +196,7 @@ class ClassicElementActionManager(ElementActionManager):
             job_clone = job.clone(name_postfix=self.CLONE_POSTFIX)
             new_job_index = selection.job_index + 1
             self.project().jobs.insert(new_job_index, job_clone)
-            self.callbacks['refresh_ui'](new_job_index, -1)
+            self.callbacks['refresh_ui'](rows_to_state(self.project(), new_job_index, -1))
 
     def clone_action(self):
         selection = self.selection_state
@@ -211,7 +215,7 @@ class ClassicElementActionManager(ElementActionManager):
         current_action_row = selection.get_action_row()
         new_row = self.new_row_after_clone(
             job, current_action_row, selection.is_subaction_selected(), cloned)
-        self.callbacks['refresh_ui'](selection.job_index, new_row)
+        self.callbacks['refresh_ui'](rows_to_state(self.project(), selection.job_index, new_row))
 
     def _shift_job(self, delta):
         selection = self.selection_state
@@ -223,7 +227,7 @@ class ClassicElementActionManager(ElementActionManager):
             self.mark_as_modified(True, "Shift Job")
             jobs = self.project().jobs
             jobs.insert(new_index, jobs.pop(job_index))
-            self.callbacks['refresh_ui'](new_index, -1)
+            self.callbacks['refresh_ui'](rows_to_state(self.project(), new_index, -1))
 
     def _shift_action(self, delta):
         selection = self.selection_state
@@ -246,7 +250,7 @@ class ClassicElementActionManager(ElementActionManager):
                 selection.actions.insert(new_index, selection.actions.pop(selection.action_index))
         current_action_row = selection.get_action_row()
         new_row = self.new_row_after_insert(current_action_row, selection, delta)
-        self.callbacks['refresh_ui'](selection.job_index, new_row)
+        self.callbacks['refresh_ui'](rows_to_state(self.project(), selection.job_index, new_row))
 
     def _shift_subaction(self, delta):
         self._shift_action(delta)
@@ -260,17 +264,19 @@ class ClassicElementActionManager(ElementActionManager):
                 job = self.project().jobs[selection.job_index]
                 if job.enabled() != enabled:
                     self._set_element_enabled(job, enabled, "Job")
-                    self.callbacks['refresh_ui'](selection.job_index, -1)
+                    self.callbacks['refresh_ui'](
+                        rows_to_state(self.project(), selection.job_index, -1))
         elif selection.is_action_selected() or selection.is_subaction_selected():
             element = selection.sub_action if selection.is_subaction_selected() \
                 else selection.action
             if element and element.enabled() != enabled:
                 element_type = "Sub-action" if selection.is_subaction_selected() else "Action"
                 self._set_element_enabled(element, enabled, element_type)
-                self.callbacks['refresh_ui'](selection.job_index, selection.get_action_row())
+                self.callbacks['refresh_ui'](
+                    rows_to_state(self.project(), selection.job_index, selection.get_action_row()))
 
     def _refresh_after_enable_all(self):
         selection = self.selection_state
         job_row = selection.job_index if selection.is_valid() else -1
         action_row = selection.get_action_row() if selection.is_valid() else -1
-        self.callbacks['refresh_ui'](job_row, action_row)
+        self.callbacks['refresh_ui'](rows_to_state(self.project(), job_row, action_row))

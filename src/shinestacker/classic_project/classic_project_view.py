@@ -11,7 +11,7 @@ from .. gui.run_worker import JobLogWorker, ProjectLogWorker
 from .tab_widget import TabWidgetWithPlaceholder
 from .gui_run import RunWindow
 from .list_container import ListContainer
-from .classic_selection_state import ClassicSelectionState
+from .classic_selection_state import ClassicSelectionState, rows_to_state
 from .classic_element_action_manager import ClassicElementActionManager
 
 
@@ -130,12 +130,21 @@ class ClassicProjectView(ProjectView, ListContainer):
 
     def refresh_and_set_status(self, status):
         job_row, action_row, _pos = status
-        self.refresh_ui(job_row, action_row)
+        self.refresh_ui(rows_to_state(self.project(), job_row, action_row))
 
     def refresh_and_select_job(self, job_idx):
-        self.refresh_ui(job_idx)
+        self.refresh_ui(rows_to_state(self.project(), job_idx, -1))
 
-    def refresh_ui(self, job_row=-1, action_row=-1):
+    def refresh_ui(self, restore_state=None):
+        job_row = -1
+        action_row = -1
+        if restore_state is not None:
+            if restore_state.is_job_selected():
+                job_row = restore_state.job_index
+                action_row = -1
+            elif restore_state.is_action_selected() or restore_state.is_subaction_selected():
+                job_row = restore_state.job_index
+                action_row = restore_state.get_action_row()
         self.clear_job_list()
         for job in self.project_jobs():
             self.add_list_item(self.job_list(), job, False)
@@ -490,16 +499,7 @@ class ClassicProjectView(ProjectView, ListContainer):
         self._get_selection_state()
 
     def _get_selection_state(self):
-        if self.num_selected_jobs() > 0:
-            job_idx = self.current_job_index()
-            if 0 <= job_idx < self.num_project_jobs():
-                self.selection_state.actions = None
-                self.selection_state.sub_actions = None
-                self.selection_state.action_index = -1
-                self.selection_state.sub_action_index = -1
-                self.selection_state.job_index = job_idx
-                self.selection_state.widget_type = 'job'
-        elif self.num_selected_actions() > 0:
+        if self.action_list_has_focus() and self.num_selected_actions() > 0:
             _job_row, _action_row, pos = self.get_current_action()
             if pos is not None:
                 self.selection_state.actions = pos.actions
@@ -508,14 +508,18 @@ class ClassicProjectView(ProjectView, ListContainer):
                 self.selection_state.sub_action_index = pos.sub_action_index
                 self.selection_state.job_index = pos.job_index
                 self.selection_state.widget_type = pos.widget_type
+        elif self.job_list_has_focus() and self.num_selected_jobs() > 0:
+            job_idx = self.current_job_index()
+            if 0 <= job_idx < self.num_project_jobs():
+                self.selection_state.actions = None
+                self.selection_state.sub_actions = None
+                self.selection_state.action_index = -1
+                self.selection_state.sub_action_index = -1
+                self.selection_state.job_index = job_idx
+                self.selection_state.widget_type = 'job'
         else:
-            self.selection_state.actions = None
-            self.selection_state.sub_actions = None
-            self.selection_state.action_index = -1
-            self.selection_state.sub_action_index = -1
-            self.selection_state.job_index = -1
-            self.selection_state.widget_type = None
-        return self.selection_state
+            self.selection_state.reset()
+        return self.selection_state.copy()
 
     def _ensure_selected_visible(self):
         pass
@@ -549,38 +553,13 @@ class ClassicProjectView(ProjectView, ListContainer):
         self.set_style_sheet(dark_theme)
 
     def save_current_selection(self):
-        selection_state = self._get_selection_state()
-        self._saved_selection = {
-            'state': selection_state,
-            'job_idx': self.current_job_index(),
-            'action_row': selection_state.get_action_row() if selection_state.is_valid() else -1
-        }
+        self._saved_selection = self._get_selection_state()
 
     def restore_saved_selection(self):
         if self._saved_selection is None:
             return
-        num_jobs = self.num_project_jobs()
-        if num_jobs == 0:
-            return
-        job_idx = self._saved_selection['job_idx']
-        if job_idx >= num_jobs:
-            job_idx = num_jobs - 1
-        elif job_idx < 0:
-            job_idx = 0
-        self.refresh_ui(job_idx, self._saved_selection['action_row'])
+        self.refresh_ui(restore_state=self._saved_selection)
         self._saved_selection = None
 
     def refresh_and_restore_selection(self):
-        if self._saved_selection is None:
-            self.refresh_ui()
-            return
-        num_jobs = self.num_project_jobs()
-        if num_jobs == 0:
-            self.refresh_ui()
-            return
-        job_idx = self._saved_selection['job_idx']
-        if job_idx >= num_jobs:
-            job_idx = num_jobs - 1
-        elif job_idx < 0:
-            job_idx = 0
-        self.refresh_ui(job_idx, self._saved_selection['action_row'])
+        self.restore_saved_selection()

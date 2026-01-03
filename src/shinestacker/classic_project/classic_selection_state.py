@@ -40,6 +40,10 @@ class ClassicSelectionState:
     def to_tuple(self):
         return (self.job_index, self.action_index, self.sub_action_index)
 
+    def from_tuple(self, indices_tuple):
+        if len(indices_tuple) >= 3:
+            self.job_index, self.action_index, self.sub_action_index = indices_tuple[:3]
+
     def copy(self):
         return ClassicSelectionState(
             actions=self.actions,
@@ -88,3 +92,36 @@ class ClassicSelectionState:
                 return row
             row += len(action.sub_actions)
         return -1
+
+
+def rows_to_state(project, job_row, action_row):
+    if job_row < 0:
+        return None
+    if action_row < 0:
+        return ClassicSelectionState(None, None, -1, -1, job_row, 'job')
+    job = project.jobs[job_row]
+    current_row = -1
+    for i, action in enumerate(job.sub_actions):
+        current_row += 1
+        if current_row == action_row:
+            return ClassicSelectionState(
+                job.sub_actions,
+                None,
+                i,
+                -1,
+                job_row,
+                'action'
+            )
+        if action.sub_actions:
+            for sub_idx, _ in enumerate(action.sub_actions):
+                current_row += 1
+                if current_row == action_row:
+                    return ClassicSelectionState(
+                        job.sub_actions,
+                        action.sub_actions,
+                        i,
+                        sub_idx,
+                        job_row,
+                        'subaction'
+                    )
+    return ClassicSelectionState(None, None, -1, -1, job_row, 'job')

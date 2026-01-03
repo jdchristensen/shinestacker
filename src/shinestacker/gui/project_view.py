@@ -270,11 +270,10 @@ class ProjectView(QWidget, LogManager, ProjectHandler):
         return result == QMessageBox.Yes
 
     def save_current_selection(self):
-        pass
+        raise NotImplementedError
 
     def restore_saved_selection(self):
-        pass
+        raise NotImplementedError
 
     def refresh_and_restore_selection(self):
-        self.refresh_ui()
-        self.restore_saved_selection()
+        raise NotImplementedError
