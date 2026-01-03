@@ -168,7 +168,8 @@ class ModernElementActionManager(ElementActionManager):
                 job = self.project().jobs[job_index]
                 if job.enabled() != enabled:
                     self._set_element_enabled(job, enabled, "Job")
-                    self.callbacks['refresh_ui']()
+                    current_indices = self.selection_state.to_tuple()
+                    self.callbacks['refresh_ui'](indices_to_state(*current_indices))
         elif self.selection_state.is_action_selected() \
                 or self.selection_state.is_subaction_selected():
             element = self._get_selected_action()
@@ -176,7 +177,8 @@ class ModernElementActionManager(ElementActionManager):
                 element_type = "Sub-action" \
                     if self.selection_state.is_subaction_selected() else "Action"
                 self._set_element_enabled(element, enabled, element_type)
-                self.callbacks['refresh_ui']()
+                current_indices = self.selection_state.to_tuple()
+                self.callbacks['refresh_ui'](indices_to_state(*current_indices))
 
     def _get_selected_action(self):
         if self.selection_state.is_action_selected():
@@ -201,7 +203,8 @@ class ModernElementActionManager(ElementActionManager):
         self.mark_as_modified(True, f"{action} All")
         for job in self.project().jobs:
             job.set_enabled_all(enabled)
-        self.callbacks['refresh_ui']()
+        current_indices = self.selection_state.to_tuple()
+        self.callbacks['refresh_ui'](indices_to_state(*current_indices))
 
     def copy_job(self):
         job_clone = self.element_ops.copy_job(self.selection_state.job_index)
@@ -365,8 +368,9 @@ class ModernElementActionManager(ElementActionManager):
         new_index = self.element_ops.shift_job(job_idx, delta)
         if new_index != job_idx:
             self.mark_as_modified(True, "Shift Job")
+            new_indices = (new_index, -1, -1)
             self.selection_state.set_job(new_index)
-            self.callbacks['refresh_ui']()
+            self.callbacks['refresh_ui'](indices_to_state(*new_indices))
 
     def _shift_action(self, delta):
         if not self.selection_state.is_action_selected():
@@ -375,8 +379,9 @@ class ModernElementActionManager(ElementActionManager):
         new_index = self.element_ops.shift_action(job_idx, action_idx, delta)
         if new_index != action_idx:
             self.mark_as_modified(True, "Shift Action")
+            new_indices = (job_idx, new_index, -1)
             self.selection_state.set_action(job_idx, new_index)
-            self.callbacks['refresh_ui']()
+            self.callbacks['refresh_ui'](indices_to_state(*new_indices))
 
     def _shift_subaction(self, delta):
         if not self.selection_state.is_subaction_selected():
@@ -385,8 +390,9 @@ class ModernElementActionManager(ElementActionManager):
         new_index = self.element_ops.shift_subaction(job_idx, action_idx, subaction_idx, delta)
         if new_index != subaction_idx:
             self.mark_as_modified(True, "Shift Sub-action")
+            new_indices = (job_idx, action_idx, new_index)
             self.selection_state.set_subaction(job_idx, action_idx, new_index)
-            self.callbacks['refresh_ui']()
+            self.callbacks['refresh_ui'](indices_to_state(*new_indices))
 
     def _refresh_after_enable_all(self):
         self.callbacks['refresh_ui']()
