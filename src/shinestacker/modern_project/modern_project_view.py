@@ -427,9 +427,9 @@ class ModernProjectView(ProjectView):
             return False
         return True
 
-    def delete_element(self):
+    def delete_element(self, confirm=True):
         if self.enforce_stop_run():
-            return self.element_action.delete_element(self.parent(), True)
+            return self.element_action.delete_element(confirm)
         return None
 
     def copy_element(self):

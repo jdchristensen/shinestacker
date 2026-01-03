@@ -12,9 +12,21 @@ class ElementActionManager(ProjectHandler, QObject):
         ProjectHandler.__init__(self, project_holder)
         QObject.__init__(self, parent)
 
-    def confirm_delete_message(self, type_name, element_name, parent_widget):
+    def is_job_selected(self):
+        raise NotImplementedError
+
+    def is_action_selected(self):
+        raise NotImplementedError
+
+    def is_subaction_selected(self):
+        raise NotImplementedError
+
+    def get_selected_job_index(self):
+        raise NotImplementedError
+
+    def confirm_delete_message(self, type_name, element_name):
         return QMessageBox.question(
-            parent_widget, "Confirm Delete",
+            self.parent(), "Confirm Delete",
             f"Are you sure you want to delete {type_name} '{element_name}'?",
             QMessageBox.Yes | QMessageBox.No
         )
@@ -44,11 +56,62 @@ class ElementActionManager(ProjectHandler, QObject):
         elif self.is_action_selected() or self.is_subaction_selected():
             self.clone_action()
 
-    def is_job_selected(self):
-        raise NotImplementedError
+    def copy_element(self):
+        if self.is_job_selected():
+            self.copy_job()
+        elif self.is_action_selected():
+            self.copy_action()
+        elif self.is_subaction_selected():
+            self.copy_subaction()
 
-    def is_action_selected(self):
-        raise NotImplementedError
+    def copy_job(self):
+        if not self.is_job_selected():
+            return
+        job_index = self.get_selected_job_index()
+        if not 0 <= job_index < self.num_project_jobs():
+            return
+        job_clone = self.project().jobs[job_index].clone()
+        self.set_copy_buffer(job_clone)
 
-    def is_subaction_selected(self):
+    def move_element_up(self):
+        self._shift_element(-1)
+
+    def move_element_down(self):
+        self._shift_element(+1)
+
+    def _shift_element(self, delta):
+        if self.is_job_selected():
+            self._shift_job(delta)
+        elif self.is_action_selected():
+            self._shift_action(delta)
+        elif self.is_subaction_selected():
+            self._shift_subaction(delta)
+
+    def enable(self):
+        self.set_enabled(True)
+
+    def disable(self):
+        self.set_enabled(False)
+
+    def enable_all(self):
+        self.set_enabled_all(True)
+
+    def disable_all(self):
+        self.set_enabled_all(False)
+
+    def _set_element_enabled(self, element, enabled, element_type):
+        if enabled:
+            self.mark_as_modified(True, f"Enable {element_type}")
+        else:
+            self.mark_as_modified(True, f"Disable {element_type}")
+        element.set_enabled(enabled)
+
+    def set_enabled_all(self, enabled):
+        action = "Enable" if enabled else "Disable"
+        self.mark_as_modified(True, f"{action} All")
+        for job in self.project().jobs:
+            job.set_enabled_all(enabled)
+        self._refresh_after_enable_all()
+
+    def _refresh_after_enable_all(self):
         raise NotImplementedError

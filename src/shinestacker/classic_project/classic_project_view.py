@@ -58,10 +58,11 @@ class ClassicProjectView(ProjectView, ListContainer):
         """
         QApplication.instance().setStyleSheet(
             self.style_dark if dark_theme else self.style_light)
+        self.selection_state = ClassicSelectionState(None, None, -1, -1, -1, None)
         self.element_action = ClassicElementActionManager(
             project_holder,
+            self.selection_state,
             {
-                'get_selection_state': self._get_selection_state,
                 'refresh_ui': self.refresh_ui,
                 'ensure_selected_visible': self._ensure_selected_visible,
             },
@@ -98,7 +99,9 @@ class ClassicProjectView(ProjectView, ListContainer):
             self, update_delete_action_state, set_enabled_sub_actions_gui):
         self.job_list().currentRowChanged.connect(self.on_job_selected)
         self.job_list().itemSelectionChanged.connect(update_delete_action_state)
+        self.job_list().itemSelectionChanged.connect(self._get_selection_state)
         self.action_list().itemSelectionChanged.connect(update_delete_action_state)
+        self.action_list().itemSelectionChanged.connect(self._get_selection_state)
         self.enable_sub_actions_requested.connect(set_enabled_sub_actions_gui)
 
     def get_tab_widget(self):
@@ -328,7 +331,7 @@ class ClassicProjectView(ProjectView, ListContainer):
             self.edit_action(current_action)
 
     def delete_element(self, confirm=True):
-        return self.element_action.delete_element(self.parent(), confirm)
+        return self.element_action.delete_element(confirm)
 
     def copy_element(self):
         self.element_action.copy_element()
@@ -474,17 +477,45 @@ class ClassicProjectView(ProjectView, ListContainer):
                     self.set_current_job(job_index)
                     self.set_current_action(action_index)
 
+    def on_job_selected(self, index):
+        self.clear_action_list()
+        if 0 <= index < self.num_project_jobs():
+            job = self.project_job(index)
+            for action in job.sub_actions:
+                self.add_list_item(self.action_list(), action, False)
+                if len(action.sub_actions) > 0:
+                    for sub_action in action.sub_actions:
+                        self.add_list_item(self.action_list(), sub_action, True)
+            self.select_signal.emit()
+        self._get_selection_state()
+
     def _get_selection_state(self):
-        if self.job_list_has_focus():
+        if self.num_selected_jobs() > 0:
             job_idx = self.current_job_index()
             if 0 <= job_idx < self.num_project_jobs():
-                state = ClassicSelectionState(None, None, -1, -1, job_idx, 'job')
-                return state
-        elif self.action_list_has_focus():
+                self.selection_state.actions = None
+                self.selection_state.sub_actions = None
+                self.selection_state.action_index = -1
+                self.selection_state.sub_action_index = -1
+                self.selection_state.job_index = job_idx
+                self.selection_state.widget_type = 'job'
+        elif self.num_selected_actions() > 0:
             _job_row, _action_row, pos = self.get_current_action()
             if pos is not None:
-                return pos
-        return ClassicSelectionState(None, None, -1, -1, -1, None)
+                self.selection_state.actions = pos.actions
+                self.selection_state.sub_actions = pos.sub_actions
+                self.selection_state.action_index = pos.action_index
+                self.selection_state.sub_action_index = pos.sub_action_index
+                self.selection_state.job_index = pos.job_index
+                self.selection_state.widget_type = pos.widget_type
+        else:
+            self.selection_state.actions = None
+            self.selection_state.sub_actions = None
+            self.selection_state.action_index = -1
+            self.selection_state.sub_action_index = -1
+            self.selection_state.job_index = -1
+            self.selection_state.widget_type = None
+        return self.selection_state
 
     def _ensure_selected_visible(self):
         pass
