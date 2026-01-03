@@ -10,7 +10,8 @@ from .. gui.project_model import ActionConfig
 from .. gui.run_worker import JobLogWorker, ProjectLogWorker
 from .tab_widget import TabWidgetWithPlaceholder
 from .gui_run import RunWindow
-from .list_container import ListContainer, ActionPosition
+from .list_container import ListContainer
+from .classic_selection_state import ClassicSelectionState
 
 
 def new_row_after_clone(job, action_row, is_sub_action, cloned):
@@ -19,7 +20,7 @@ def new_row_after_clone(job, action_row, is_sub_action, cloned):
             for action in job.sub_actions[:job.sub_actions.index(cloned)])
 
 
-def new_row_after_delete(action_row, pos: ActionPosition):
+def new_row_after_delete(action_row, pos: ClassicSelectionState):
     if pos.is_sub_action:
         new_row = action_row if pos.sub_action_index < len(pos.sub_actions) else action_row - 1
     else:
@@ -34,11 +35,11 @@ def new_row_after_delete(action_row, pos: ActionPosition):
     return new_row
 
 
-def new_row_after_paste(action_row, pos: ActionPosition):
+def new_row_after_paste(action_row, pos: ClassicSelectionState):
     return new_row_after_insert(action_row, pos, 0)
 
 
-def new_row_after_insert(action_row, pos: ActionPosition, delta):
+def new_row_after_insert(action_row, pos: ClassicSelectionState, delta):
     new_row = action_row
     if not pos.is_sub_action:
         new_index = pos.action_index + delta
@@ -696,10 +697,10 @@ class ClassicProjectView(ProjectView, ListContainer):
         job = self.project_job(job_row)
         if sub_action:
             return (job_row, action_row,
-                    ActionPosition(job.sub_actions, action.sub_actions,
-                                   job.sub_actions.index(action), sub_action_index))
+                    ClassicSelectionState(job.sub_actions, action.sub_actions,
+                                          job.sub_actions.index(action), sub_action_index))
         return (job_row, action_row,
-                ActionPosition(job.sub_actions, None, job.sub_actions.index(action)))
+                ClassicSelectionState(job.sub_actions, None, job.sub_actions.index(action)))
 
     def action_config_dialog(self, action):
         return ActionConfigDialog(action, self.current_file_directory(), self.parent())

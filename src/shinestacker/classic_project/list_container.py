@@ -1,32 +1,10 @@
 # pylint: disable=C0114, C0115, C0116, E0611, R0903, R0904, R0913, R0917, E1101
 import os
-from dataclasses import dataclass
 from PySide6.QtCore import Qt, QEvent, QSize, Signal
 from PySide6.QtWidgets import QListWidget, QListWidgetItem, QLabel, QSizePolicy
 from .. config.constants import constants
 from .. gui.project_model import get_action_input_path, get_action_output_path
-
-
-@dataclass
-class ActionPosition:
-    actions: list
-    sub_actions: list
-    action_index: int
-    sub_action_index: int = -1
-
-    @property
-    def is_sub_action(self) -> bool:
-        return self.sub_action_index != -1
-
-    @property
-    def action(self):
-        return None if self.actions is None else self.actions[self.action_index]
-
-    @property
-    def sub_action(self):
-        return None if self.sub_actions is None or \
-                       self.sub_action_index == -1 \
-                       else self.sub_actions[self.sub_action_index]
+from .classic_selection_state import ClassicSelectionState
 
 
 class HandCursorListWidget(QListWidget):
@@ -224,7 +202,7 @@ class ListContainer:  # subclasses must inherit from QObject and ListContainer
         job = self.project_job(job_row)
         if sub_action:
             return (job_row, action_row,
-                    ActionPosition(job.sub_actions, action.sub_actions,
-                                   job.sub_actions.index(action), sub_action_index))
+                    ClassicSelectionState(job.sub_actions, action.sub_actions,
+                                          job.sub_actions.index(action), sub_action_index))
         return (job_row, action_row,
-                ActionPosition(job.sub_actions, None, job.sub_actions.index(action)))
+                ClassicSelectionState(job.sub_actions, None, job.sub_actions.index(action)))
