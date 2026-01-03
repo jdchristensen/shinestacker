@@ -330,8 +330,13 @@ class MainWindow(ProjectIOHandler, QMainWindow):
         self.menu_manager.add_action_entry_action.setEnabled(job_count > 0)
 
     def perform_undo(self):
+        for view in self.views.values():
+            view.save_current_selection()
         if self.undo():
-            self.current_view.refresh_ui()
+            self.current_view.refresh_and_restore_selection()
+            self.update_title()
+            self.refresh_ui()
+            self.show_status_message("Undo performed")
 
     def perform_add_job(self):
         job_action = ActionConfig("Job")

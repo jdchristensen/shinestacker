@@ -269,3 +269,13 @@ class ProjectView(QWidget, LogManager, ProjectHandler):
         msg_box.setDefaultButton(QMessageBox.No)
         result = msg_box.exec()
         return result == QMessageBox.Yes
+
+    def save_current_selection(self):
+        pass
+    
+    def restore_saved_selection(self):
+        pass
+    
+    def refresh_and_restore_selection(self):
+        self.refresh_ui()
+        self.restore_saved_selection()

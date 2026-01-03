@@ -62,6 +62,7 @@ class ModernProjectView(ProjectView):
                 'get_clone_postfix': lambda: self.CLONE_POSTFIX
             }
         )
+        self._saved_selection = None
         self.element_action.set_selection_navigation(self.selection_nav)
         self._setup_ui()
         self.change_theme(dark_theme)
@@ -698,3 +699,14 @@ class ModernProjectView(ProjectView):
     def select_first_job(self):
         if self.job_widgets:
             self._select_job_widget(self.job_widgets[0])
+
+    def save_current_selection(self):
+        self._saved_selection = self.selection_state.copy() if self.selection_state else None
+
+    def restore_saved_selection(self):
+        if self._saved_selection is None:
+            return
+        if self._saved_selection:
+            self.selection_nav.restore_selection(self._saved_selection)
+            self._ensure_selected_visible()        
+        self._saved_selection = None

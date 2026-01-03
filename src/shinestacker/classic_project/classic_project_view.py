@@ -72,6 +72,7 @@ class ClassicProjectView(ProjectView, ListContainer):
                 'get_clone_postfix': lambda: self.CLONE_POSTFIX
             }
         )
+        self._saved_selection = None
         self._setup_ui()
 
     def _setup_ui(self):
@@ -520,3 +521,40 @@ class ClassicProjectView(ProjectView, ListContainer):
         QApplication.instance().setStyleSheet(
             self.style_dark if dark_theme else self.style_light)
         self.set_style_sheet(dark_theme)
+
+    def save_current_selection(self):
+        selection_state = self._get_selection_state()
+        self._saved_selection = {
+            'state': selection_state,
+            'job_idx': self.current_job_index(),
+            'action_row': selection_state.get_action_row() if selection_state.is_valid() else -1
+        }
+
+    def restore_saved_selection(self):
+        if self._saved_selection is None:
+            return
+        num_jobs = self.num_project_jobs()
+        if num_jobs == 0:
+            return        
+        job_idx = self._saved_selection['job_idx']
+        if job_idx >= num_jobs:
+            job_idx = num_jobs - 1
+        elif job_idx < 0:
+            job_idx = 0        
+        self.refresh_ui(job_idx, self._saved_selection['action_row'])        
+        self._saved_selection = None
+
+    def refresh_and_restore_selection(self):
+        if self._saved_selection is None:
+            self.refresh_ui()
+            return
+        num_jobs = self.num_project_jobs()
+        if num_jobs == 0:
+            self.refresh_ui()
+            return        
+        job_idx = self._saved_selection['job_idx']
+        if job_idx >= num_jobs:
+            job_idx = num_jobs - 1
+        elif job_idx < 0:
+            job_idx = 0        
+        self.refresh_ui(job_idx, self._saved_selection['action_row'])
