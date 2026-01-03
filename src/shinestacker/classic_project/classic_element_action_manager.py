@@ -1,14 +1,12 @@
 # pylint: disable=C0114, C0115, C0116, E0611, R0903, R0904, R0913, R0917, E1101, R0911
-from PySide6.QtCore import QObject
 from PySide6.QtWidgets import QMessageBox
 from .. config.constants import constants
-from .. gui.project_handler import ProjectHandler
+from .. gui.element_action_manager import ElementActionManager
 
 
-class ClassicElementActionManager(ProjectHandler, QObject):
+class ClassicElementActionManager(ElementActionManager):
     def __init__(self, project_holder, callbacks):
-        ProjectHandler.__init__(self, project_holder)
-        QObject.__init__(self)
+        super().__init__(project_holder)
         self.callbacks = callbacks
 
     @staticmethod
@@ -60,11 +58,8 @@ class ClassicElementActionManager(ProjectHandler, QObject):
                 return None
             job = self.project().jobs[selection.job_index]
             if confirm:
-                reply = QMessageBox.question(
-                    parent_widget, "Confirm Delete",
-                    f"Are you sure you want to delete job '{job.params.get('name', '')}'?",
-                    QMessageBox.Yes | QMessageBox.No
-                )
+                reply = self.confirm_delete_message(
+                    'job', job.params.get('name', ''), parent_widget)
                 if reply != QMessageBox.Yes:
                     return None
             self.callbacks['mark_modified'](True, "Delete Job")
@@ -80,14 +75,10 @@ class ClassicElementActionManager(ProjectHandler, QObject):
                 else selection.action_index
             if not element or not container or index < 0 or index >= len(container):
                 return None
+            element_type = "sub-action" if selection.is_subaction_selected() else "action"
             if confirm:
-                element_type = "sub-action" if selection.is_subaction_selected() else "action"
-                reply = QMessageBox.question(
-                    parent_widget, "Confirm Delete",
-                    f"Are you sure you want to delete {element_type} "
-                    f"'{element.params.get('name', '')}'?",
-                    QMessageBox.Yes | QMessageBox.No
-                )
+                reply = self.confirm_delete_message(
+                    element_type, element.params.get('name', ''), parent_widget)
                 if reply != QMessageBox.Yes:
                     return None
             self.callbacks['mark_modified'](True, f"Delete {element_type}")
@@ -137,24 +128,16 @@ class ClassicElementActionManager(ProjectHandler, QObject):
             self._paste_action(copy_buffer, selection)
 
     def _paste_job(self, copy_buffer, selection):
-        if copy_buffer.type_name != constants.ACTION_JOB:
-            if self.num_project_jobs() == 0:
-                return
-            if copy_buffer.type_name not in constants.ACTION_TYPES:
-                return
-            self.callbacks['mark_modified'](True, "Paste Action")
-            current_job = self.project().jobs[selection.job_index]
-            new_action_index = len(current_job.sub_actions)
-            current_job.sub_actions.insert(new_action_index, copy_buffer)
-            self.callbacks['refresh_ui'](selection.job_index, -1)
+        success, element_type, index = self.paste_job_logic(
+            copy_buffer, selection.job_index, False)
+        if not success:
             return
-        self.callbacks['mark_modified'](True, "Paste Job")
-        if self.num_project_jobs() == 0:
-            new_job_index = 0
+        if element_type == 'action':
+            self.callbacks['mark_modified'](True, "Paste Action")
+            self.callbacks['refresh_ui'](selection.job_index, -1)
         else:
-            new_job_index = min(max(selection.job_index + 1, 0), self.num_project_jobs() - 1)
-        self.project().jobs.insert(new_job_index, copy_buffer)
-        self.callbacks['refresh_ui'](new_job_index, -1)
+            self.callbacks['mark_modified'](True, "Paste Job")
+            self.callbacks['refresh_ui'](index, -1)
 
     def _paste_action(self, copy_buffer, selection):
         if copy_buffer.type_name in constants.SUB_ACTION_TYPES:
@@ -314,11 +297,11 @@ class ClassicElementActionManager(ProjectHandler, QObject):
         self.set_enabled_all(False)
 
     def set_enabled_all(self, enable=True):
+        action = "Enable" if enable else "Disable"
         self.callbacks['mark_modified'](True, f"{action} All")
         selection = self.callbacks['get_selection_state']()
         job_row = selection.job_index if selection.is_valid() else -1
         action_row = selection.get_action_row() if selection.is_valid() else -1
         for job in self.project().jobs:
             job.set_enabled_all(enable)
-        action = "Enable" if enable else "Disable"
         self.callbacks['refresh_ui'](job_row, action_row)

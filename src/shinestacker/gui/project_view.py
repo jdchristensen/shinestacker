@@ -272,10 +272,10 @@ class ProjectView(QWidget, LogManager, ProjectHandler):
 
     def save_current_selection(self):
         pass
-    
+
     def restore_saved_selection(self):
         pass
-    
+
     def refresh_and_restore_selection(self):
         self.refresh_ui()
         self.restore_saved_selection()

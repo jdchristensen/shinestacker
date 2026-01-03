@@ -16,7 +16,7 @@ from .progress_mapper import ProgressMapper
 from .element_operations import ElementOperations
 from .progress_signal_handler import ProgressSignalHandler, SignalConnector
 from .selection_navigation_manager import SelectionNavigationManager
-from .element_action_manager import ElementActionManager
+from .modern_element_action_manager import ModernElementActionManager
 
 
 class ModernProjectView(ProjectView):
@@ -48,7 +48,7 @@ class ModernProjectView(ProjectView):
             self.selection_state,
             self._selection_callback
         )
-        self.element_action = ElementActionManager(
+        self.element_action = ModernElementActionManager(
             project_holder,
             self.selection_state,
             {
@@ -708,5 +708,5 @@ class ModernProjectView(ProjectView):
             return
         if self._saved_selection:
             self.selection_nav.restore_selection(self._saved_selection)
-            self._ensure_selected_visible()        
+            self._ensure_selected_visible()
         self._saved_selection = None

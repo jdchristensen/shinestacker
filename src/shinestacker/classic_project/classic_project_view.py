@@ -535,13 +535,13 @@ class ClassicProjectView(ProjectView, ListContainer):
             return
         num_jobs = self.num_project_jobs()
         if num_jobs == 0:
-            return        
+            return
         job_idx = self._saved_selection['job_idx']
         if job_idx >= num_jobs:
             job_idx = num_jobs - 1
         elif job_idx < 0:
-            job_idx = 0        
-        self.refresh_ui(job_idx, self._saved_selection['action_row'])        
+            job_idx = 0
+        self.refresh_ui(job_idx, self._saved_selection['action_row'])
         self._saved_selection = None
 
     def refresh_and_restore_selection(self):
@@ -551,10 +551,10 @@ class ClassicProjectView(ProjectView, ListContainer):
         num_jobs = self.num_project_jobs()
         if num_jobs == 0:
             self.refresh_ui()
-            return        
+            return
         job_idx = self._saved_selection['job_idx']
         if job_idx >= num_jobs:
             job_idx = num_jobs - 1
         elif job_idx < 0:
-            job_idx = 0        
+            job_idx = 0
         self.refresh_ui(job_idx, self._saved_selection['action_row'])

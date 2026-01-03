@@ -1,15 +1,13 @@
 # pylint: disable=C0114, C0115, C0116, W0246, E0611, R0917, R0913
-from PySide6.QtCore import QObject
 from PySide6.QtWidgets import QMessageBox
 from .. config.constants import constants
-from .. gui.project_handler import ProjectHandler
+from .. gui.element_action_manager import ElementActionManager
 from .element_operations import ElementOperations
 
 
-class ElementActionManager(ProjectHandler, QObject):
+class ModernElementActionManager(ElementActionManager):
     def __init__(self, project_holder, selection_state, view_callbacks):
-        ProjectHandler.__init__(self, project_holder)
-        QObject.__init__(self)
+        super().__init__(project_holder)
         self.element_ops = ElementOperations(project_holder)
         self.selection_state = selection_state
         self.callbacks = view_callbacks
@@ -35,11 +33,8 @@ class ElementActionManager(ProjectHandler, QObject):
         if confirm:
             if 0 <= job_index < self.num_project_jobs():
                 job = self.project().jobs[job_index]
-                reply = QMessageBox.question(
-                    parent_widget, "Confirm Delete",
-                    f"Are you sure you want to delete job '{job.params.get('name', '')}'?",
-                    QMessageBox.Yes | QMessageBox.No
-                )
+                reply = self.confirm_delete_message(
+                    'job', job.params.get('name', ''), parent_widget)
                 if reply != QMessageBox.Yes:
                     return None
             else:
@@ -58,12 +53,8 @@ class ElementActionManager(ProjectHandler, QObject):
                 job = self.project().jobs[job_index]
                 if 0 <= action_index < len(job.sub_actions):
                     action = job.sub_actions[action_index]
-                    reply = QMessageBox.question(
-                        parent_widget, "Confirm Delete",
-                        "Are you sure you want to delete "
-                        f"action '{action.params.get('name', '')}'?",
-                        QMessageBox.Yes | QMessageBox.No
-                    )
+                    reply = self.confirm_delete_message(
+                        'action', action.params.get('name', ''), parent_widget)
                     if reply != QMessageBox.Yes:
                         return None
             else:
@@ -85,12 +76,8 @@ class ElementActionManager(ProjectHandler, QObject):
                     action = job.sub_actions[action_index]
                     if 0 <= subaction_index < len(action.sub_actions):
                         subaction = action.sub_actions[subaction_index]
-                        reply = QMessageBox.question(
-                            parent_widget, "Confirm Delete",
-                            "Are you sure you want to delete "
-                            f"sub-action '{subaction.params.get('name', '')}'?",
-                            QMessageBox.Yes | QMessageBox.No
-                        )
+                        reply = self.confirm_delete_message(
+                            'sub-action', subaction.params.get('name', ''), parent_widget)
                         if reply != QMessageBox.Yes:
                             return None
             else:
@@ -150,27 +137,16 @@ class ElementActionManager(ProjectHandler, QObject):
         if not self.callbacks['has_copy_buffer']():
             return
         copy_buffer = self.callbacks['get_copy_buffer']()
-        if copy_buffer.type_name != constants.ACTION_JOB:
-            if self.num_project_jobs() == 0:
-                return
-            if copy_buffer.type_name not in constants.ACTION_TYPES:
-                return
-            current_job = self.project().jobs[self.selection_state.job_index]
-            new_action_index = len(current_job.sub_actions)
-            current_job.sub_actions.insert(new_action_index, copy_buffer.clone())
-            self.callbacks['mark_modified'](True, "Paste Action")
-            self.selection_state.set_action(self.selection_state.job_index, new_action_index)
-            self.callbacks['refresh_ui']()
-            self.callbacks['ensure_selected_visible']()
+        success, element_type, index = self.paste_job_logic(
+            copy_buffer, self.selection_state.job_index, True)
+        if not success:
             return
-        if self.num_project_jobs() == 0:
-            new_job_index = 0
+        if element_type == 'action':
+            self.callbacks['mark_modified'](True, "Paste Action")
+            self.selection_state.set_action(self.selection_state.job_index, index)
         else:
-            new_job_index = min(
-                max(self.selection_state.job_index + 1, 0), self.num_project_jobs())
-        self.callbacks['mark_modified'](True, "Paste Job")
-        self.project().jobs.insert(new_job_index, copy_buffer.clone())
-        self.selection_state.set_job(new_job_index)
+            self.callbacks['mark_modified'](True, "Paste Job")
+            self.selection_state.set_job(index)
         self.callbacks['refresh_ui']()
         self.callbacks['ensure_selected_visible']()
 
