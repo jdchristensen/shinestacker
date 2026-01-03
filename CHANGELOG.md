@@ -2,6 +2,14 @@
 
 This page reports the main releases only and the main changes therein.
 
+## [v1.13.x] - 2026-01-03
+
+### Fixed
+- undo management
+
+### Changed
+- code refactoring
+
 ---
 
 ## [v1.13.0] - 2025-12-29

@@ -44,9 +44,9 @@ class ElementActionManager(ProjectHandler, QObject):
                     return None
             else:
                 return None
+        self.callbacks['mark_modified'](True, "Delete Job")
         deleted_job = self.element_ops.delete_job(job_index)
         if deleted_job:
-            self.callbacks['mark_modified'](True, "Delete Job")
             if self.selection_nav:
                 self.selection_nav.select_previous_widget()
             self.callbacks['refresh_ui']()
@@ -68,9 +68,9 @@ class ElementActionManager(ProjectHandler, QObject):
                         return None
             else:
                 return None
+        self.callbacks['mark_modified'](True, "Delete Action")
         deleted_action = self.element_ops.delete_action(job_index, action_index)
         if deleted_action:
-            self.callbacks['mark_modified'](True, "Delete Action")
             if self.selection_nav:
                 self.selection_nav.select_previous_widget()
             self.callbacks['refresh_ui']()
@@ -95,10 +95,10 @@ class ElementActionManager(ProjectHandler, QObject):
                             return None
             else:
                 return None
+        self.callbacks['mark_modified'](True, "Delete Sub-action")
         deleted_subaction = self.element_ops.delete_subaction(
             job_index, action_index, subaction_index)
         if deleted_subaction:
-            self.callbacks['mark_modified'](True, "Delete Sub-action")
             if self.selection_nav:
                 self.selection_nav.select_previous_widget()
             self.callbacks['refresh_ui']()
@@ -182,13 +182,13 @@ class ElementActionManager(ProjectHandler, QObject):
         copy_buffer = self.callbacks['get_copy_buffer']()
         if copy_buffer.type_name not in constants.ACTION_TYPES:
             return
+        self.callbacks['mark_modified'](True, "Paste Action")
         job = self.project().jobs[self.selection_state.job_index]
         if self.selection_state.action_index >= 0:
             new_action_index = self.selection_state.action_index + 1
         else:
             new_action_index = len(job.sub_actions)
         job.sub_actions.insert(new_action_index, copy_buffer.clone())
-        self.callbacks['mark_modified'](True, "Paste Action")
         self.selection_state.set_action(self.selection_state.job_index, new_action_index)
         self.callbacks['refresh_ui']()
         self.callbacks['ensure_selected_visible']()
@@ -207,12 +207,12 @@ class ElementActionManager(ProjectHandler, QObject):
             return
         if copy_buffer.type_name not in constants.SUB_ACTION_TYPES:
             return
+        self.callbacks['mark_modified'](True, "Paste Sub-action")
         if self.selection_state.subaction_index >= 0:
             new_subaction_index = self.selection_state.subaction_index + 1
         else:
             new_subaction_index = 0
         action.sub_actions.insert(new_subaction_index, copy_buffer.clone())
-        self.callbacks['mark_modified'](True, "Paste Sub-action")
         self.selection_state.set_subaction(
             self.selection_state.job_index,
             self.selection_state.action_index,
@@ -238,10 +238,10 @@ class ElementActionManager(ProjectHandler, QObject):
             return
         if not 0 <= self.selection_state.job_index < self.num_project_jobs():
             return
+        self.callbacks['mark_modified'](True, "Duplicate Job")
         job = self.project().jobs[self.selection_state.job_index]
         job_clone = job.clone(name_postfix=self.callbacks['get_clone_postfix']())
         new_job_index = self.selection_state.job_index + 1
-        self.callbacks['mark_modified'](True, "Duplicate Job")
         self.project().jobs.insert(new_job_index, job_clone)
         self.selection_state.set_job(new_job_index)
         self.callbacks['refresh_ui']()
@@ -252,11 +252,11 @@ class ElementActionManager(ProjectHandler, QObject):
             action_index = self.selection_state.action_index
             if (0 <= job_index < self.num_project_jobs() and
                     0 <= action_index < len(self.project().jobs[job_index].sub_actions)):
+                self.callbacks['mark_modified'](True, "Duplicate Action")
                 job = self.project().jobs[job_index]
                 action = job.sub_actions[action_index]
                 action_clone = action.clone(name_postfix=self.callbacks['get_clone_postfix']())
                 new_action_index = action_index + 1
-                self.callbacks['mark_modified'](True, "Duplicate Action")
                 job.sub_actions.insert(new_action_index, action_clone)
                 self.selection_state.action_index = new_action_index
                 self.selection_state.subaction_index = -1
@@ -272,11 +272,11 @@ class ElementActionManager(ProjectHandler, QObject):
                 action = job.sub_actions[action_index]
                 if (action.type_name == constants.ACTION_COMBO and
                         0 <= subaction_index < len(action.sub_actions)):
+                    self.callbacks['mark_modified'](True, "Duplicate Sub-action")
                     subaction = action.sub_actions[subaction_index]
                     subaction_clone = subaction.clone(
                         name_postfix=self.callbacks['get_clone_postfix']())
                     new_subaction_index = subaction_index + 1
-                    self.callbacks['mark_modified'](True, "Duplicate Sub-action")
                     action.sub_actions.insert(new_subaction_index, subaction_clone)
                     self.selection_state.subaction_index = new_subaction_index
                     self.selection_state.widget_type = 'subaction'

@@ -67,8 +67,8 @@ class ClassicElementActionManager(ProjectHandler, QObject):
                 )
                 if reply != QMessageBox.Yes:
                     return None
-            deleted_job = self.project().jobs.pop(selection.job_index)
             self.callbacks['mark_modified'](True, "Delete Job")
+            deleted_job = self.project().jobs.pop(selection.job_index)
             self.callbacks['refresh_ui']()
             return deleted_job
         if selection.is_action_selected() or selection.is_subaction_selected():
@@ -90,9 +90,9 @@ class ClassicElementActionManager(ProjectHandler, QObject):
                 )
                 if reply != QMessageBox.Yes:
                     return None
+            self.callbacks['mark_modified'](True, f"Delete {element_type}")
             deleted_element = container.pop(index)
             element_type = "Sub-action" if selection.is_subaction_selected() else "Action"
-            self.callbacks['mark_modified'](True, f"Delete {element_type}")
             current_action_row = selection.get_action_row()
             new_row = self.new_row_after_delete(current_action_row, selection)
             self.callbacks['refresh_ui'](selection.job_index, new_row)
@@ -142,17 +142,17 @@ class ClassicElementActionManager(ProjectHandler, QObject):
                 return
             if copy_buffer.type_name not in constants.ACTION_TYPES:
                 return
+            self.callbacks['mark_modified'](True, "Paste Action")
             current_job = self.project().jobs[selection.job_index]
             new_action_index = len(current_job.sub_actions)
             current_job.sub_actions.insert(new_action_index, copy_buffer)
-            self.callbacks['mark_modified'](True, "Paste Action")
             self.callbacks['refresh_ui'](selection.job_index, -1)
             return
+        self.callbacks['mark_modified'](True, "Paste Job")
         if self.num_project_jobs() == 0:
             new_job_index = 0
         else:
             new_job_index = min(max(selection.job_index + 1, 0), self.num_project_jobs() - 1)
-        self.callbacks['mark_modified'](True, "Paste Job")
         self.project().jobs.insert(new_job_index, copy_buffer)
         self.callbacks['refresh_ui'](new_job_index, -1)
 
@@ -203,10 +203,10 @@ class ClassicElementActionManager(ProjectHandler, QObject):
         if not selection.is_job_selected():
             return
         if 0 <= selection.job_index < self.num_project_jobs():
+            self.callbacks['mark_modified'](True, "Duplicate Job")
             job = self.project().jobs[selection.job_index]
             job_clone = job.clone(name_postfix=self.callbacks['get_clone_postfix']())
             new_job_index = selection.job_index + 1
-            self.callbacks['mark_modified'](True, "Duplicate Job")
             self.project().jobs.insert(new_job_index, job_clone)
             self.callbacks['refresh_ui'](new_job_index, -1)
 
@@ -249,8 +249,8 @@ class ClassicElementActionManager(ProjectHandler, QObject):
         job_index = selection.job_index
         new_index = job_index + delta
         if 0 <= new_index < self.num_project_jobs():
-            jobs = self.project().jobs
             self.callbacks['mark_modified'](True, "Shift Job")
+            jobs = self.project().jobs
             jobs.insert(new_index, jobs.pop(job_index))
             self.callbacks['refresh_ui'](new_index, -1)
 
@@ -314,11 +314,11 @@ class ClassicElementActionManager(ProjectHandler, QObject):
         self.set_enabled_all(False)
 
     def set_enabled_all(self, enable=True):
+        self.callbacks['mark_modified'](True, f"{action} All")
         selection = self.callbacks['get_selection_state']()
         job_row = selection.job_index if selection.is_valid() else -1
         action_row = selection.get_action_row() if selection.is_valid() else -1
         for job in self.project().jobs:
             job.set_enabled_all(enable)
         action = "Enable" if enable else "Disable"
-        self.callbacks['mark_modified'](True, f"{action} All")
         self.callbacks['refresh_ui'](job_row, action_row)
