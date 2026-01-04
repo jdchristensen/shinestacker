@@ -328,6 +328,11 @@ class ClassicProjectView(ProjectView, ListContainer):
         if hasattr(tab, 'retouch_widget') and tab.retouch_widget is not None:
             tab.retouch_widget.setEnabled(True)
 
+    def _sync_selection_to_action_manager(self):
+        current_selection = self._get_selection_state()
+        if current_selection:
+            self.element_action.selection_state = current_selection
+
     def edit_current_action(self):
         current_action = None
         job_row = self.current_job_index()
@@ -372,6 +377,7 @@ class ClassicProjectView(ProjectView, ListContainer):
         self.element_action.paste_element()
 
     def cut_element(self):
+        self._sync_selection_to_action_manager()
         self.element_action.cut_element()
 
     def clone_element(self, selection=None, update_project=True, confirm=True):
