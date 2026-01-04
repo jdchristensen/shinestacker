@@ -82,6 +82,10 @@ class MainWindow(ProjectIOHandler, QMainWindow):
         self.classic_view.widget_cloned_signal.connect(self.handle_widget_cloned)
         self.modern_view.widget_pasted_signal.connect(self.handle_widget_pasted)
         self.classic_view.widget_pasted_signal.connect(self.handle_widget_pasted)
+        self.modern_view.widget_moved_up_signal.connect(self.handle_widget_moved_up)
+        self.classic_view.widget_moved_up_signal.connect(self.handle_widget_moved_up)
+        self.modern_view.widget_moved_down_signal.connect(self.handle_widget_moved_down)
+        self.classic_view.widget_moved_down_signal.connect(self.handle_widget_moved_down)
         self.script_dir = os.path.dirname(__file__)
         self.retouch_callback = None
         for _k, v in self.views.items():
@@ -400,6 +404,32 @@ class MainWindow(ProjectIOHandler, QMainWindow):
                 elif widget_type == 'subaction':
                     state.set_subaction(job_idx, action_idx, subaction_idx)
                 view.paste_element(selection=state, update_project=False)
+
+    def handle_widget_moved_up(self, indices_tuple):
+        job_idx, action_idx, subaction_idx, widget_type = indices_tuple
+        for _view_name, view in self.views.items():
+            if view != self.sender():
+                state = ModernSelectionState()
+                if widget_type == 'job':
+                    state.set_job(job_idx)
+                elif widget_type == 'action':
+                    state.set_action(job_idx, action_idx)
+                elif widget_type == 'subaction':
+                    state.set_subaction(job_idx, action_idx, subaction_idx)
+                view.move_element_up(selection=state, update_project=False)
+
+    def handle_widget_moved_down(self, indices_tuple):
+        job_idx, action_idx, subaction_idx, widget_type = indices_tuple
+        for _view_name, view in self.views.items():
+            if view != self.sender():
+                state = ModernSelectionState()
+                if widget_type == 'job':
+                    state.set_job(job_idx)
+                elif widget_type == 'action':
+                    state.set_action(job_idx, action_idx)
+                elif widget_type == 'subaction':
+                    state.set_subaction(job_idx, action_idx, subaction_idx)
+                view.move_element_down(selection=state, update_project=False)
 
     def copy_element(self):
         self.current_view.copy_element()

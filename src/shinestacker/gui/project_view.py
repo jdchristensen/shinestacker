@@ -20,6 +20,8 @@ class ProjectView(QWidget, LogManager, ProjectHandler):
     widget_deleted_signal = Signal(tuple)
     widget_cloned_signal = Signal(tuple)
     widget_pasted_signal = Signal(tuple)
+    widget_moved_up_signal = Signal(tuple)
+    widget_moved_down_signal = Signal(tuple)
     current_action_working_path = None
     current_action_input_path = None
     current_action_output_path = None

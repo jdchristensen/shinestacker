@@ -655,13 +655,43 @@ class ModernProjectView(ProjectView):
     def disable_all(self):
         self.element_action.disable_all()
 
-    def move_element_up(self):
-        if self.enforce_stop_run():
-            self.element_action.move_element_up()
+    def move_element_up(self, selection=None, update_project=True):
+        if selection is None:
+            old_selection = self.selection_state.copy()
+            if update_project and self.enforce_stop_run():
+                result = self.element_action.move_element_up()
+            else:
+                result = False
+            if result and old_selection and old_selection.is_valid():
+                self.widget_moved_up_signal.emit((
+                    old_selection.job_index,
+                    old_selection.action_index,
+                    old_selection.subaction_index,
+                    old_selection.widget_type
+                ))
+            return result
+        if selection and selection.is_valid():
+            self.refresh_ui()
+        return False
 
-    def move_element_down(self):
-        if self.enforce_stop_run():
-            self.element_action.move_element_down()
+    def move_element_down(self, selection=None, update_project=True):
+        if selection is None:
+            old_selection = self.selection_state.copy()
+            if update_project and self.enforce_stop_run():
+                result = self.element_action.move_element_down()
+            else:
+                result = False
+            if result and old_selection and old_selection.is_valid():
+                self.widget_moved_down_signal.emit((
+                    old_selection.job_index,
+                    old_selection.action_index,
+                    old_selection.subaction_index,
+                    old_selection.widget_type
+                ))
+            return result
+        if selection and selection.is_valid():
+            self.refresh_ui()
+        return False
 
     def set_enabled(self, enabled):
         self._set_enabled(*self.selection_state.to_tuple(), enabled)

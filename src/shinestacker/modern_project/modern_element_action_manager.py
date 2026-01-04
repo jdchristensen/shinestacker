@@ -390,7 +390,7 @@ class ModernElementActionManager(ElementActionManager):
 
     def _shift_job(self, delta):
         if not self.selection_state.is_job_selected():
-            return
+            return False
         job_idx, _, _ = self.selection_state.to_tuple()
         new_index = self.element_ops.shift_job(job_idx, delta)
         if new_index != job_idx:
@@ -398,10 +398,12 @@ class ModernElementActionManager(ElementActionManager):
             new_indices = (new_index, -1, -1)
             self.selection_state.set_job(new_index)
             self.callbacks['refresh_ui'](indices_to_state(*new_indices))
+            return True
+        return False
 
     def _shift_action(self, delta):
         if not self.selection_state.is_action_selected():
-            return
+            return False
         job_idx, action_idx, _ = self.selection_state.to_tuple()
         new_index = self.element_ops.shift_action(job_idx, action_idx, delta)
         if new_index != action_idx:
@@ -409,10 +411,12 @@ class ModernElementActionManager(ElementActionManager):
             new_indices = (job_idx, new_index, -1)
             self.selection_state.set_action(job_idx, new_index)
             self.callbacks['refresh_ui'](indices_to_state(*new_indices))
+            return True
+        return False
 
     def _shift_subaction(self, delta):
         if not self.selection_state.is_subaction_selected():
-            return
+            return False
         job_idx, action_idx, subaction_idx = self.selection_state.to_tuple()
         new_index = self.element_ops.shift_subaction(job_idx, action_idx, subaction_idx, delta)
         if new_index != subaction_idx:
@@ -420,6 +424,8 @@ class ModernElementActionManager(ElementActionManager):
             new_indices = (job_idx, action_idx, new_index)
             self.selection_state.set_subaction(job_idx, action_idx, new_index)
             self.callbacks['refresh_ui'](indices_to_state(*new_indices))
+            return True
+        return False
 
     def _refresh_after_enable_all(self):
         self.callbacks['refresh_ui']()

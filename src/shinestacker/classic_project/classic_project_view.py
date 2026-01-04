@@ -439,11 +439,35 @@ class ClassicProjectView(ProjectView, ListContainer):
     def disable_all(self):
         self.element_action.disable_all()
 
-    def move_element_up(self):
-        self.element_action.move_element_up()
+    def move_element_up(self, selection=None, update_project=True):
+        if selection is None:
+            self._sync_selection_to_action_manager()
+            old_state = self._get_selection_state()
+            if old_state and old_state.is_valid():
+                self.element_action.move_element_up()
+                self.widget_moved_up_signal.emit((
+                    old_state.job_index,
+                    old_state.action_index,
+                    old_state.sub_action_index,
+                    old_state.widget_type
+                ))
+        elif selection and selection.is_valid():
+            self.refresh_ui()
 
-    def move_element_down(self):
-        self.element_action.move_element_down()
+    def move_element_down(self, selection=None, update_project=True):
+        if selection is None:
+            self._sync_selection_to_action_manager()
+            old_state = self._get_selection_state()
+            if old_state and old_state.is_valid():
+                self.element_action.move_element_down()
+                self.widget_moved_down_signal.emit((
+                    old_state.job_index,
+                    old_state.action_index,
+                    old_state.sub_action_index,
+                    old_state.widget_type
+                ))
+        elif selection and selection.is_valid():
+            self.refresh_ui()
 
     def add_action(self, type_name):
         current_index = self.current_job_index()

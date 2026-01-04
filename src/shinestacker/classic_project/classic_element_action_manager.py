@@ -219,7 +219,7 @@ class ClassicElementActionManager(ElementActionManager):
     def _shift_job(self, delta):
         selection = self.selection_state
         if not selection.is_job_selected():
-            return
+            return False
         job_index = selection.job_index
         new_index = job_index + delta
         if 0 <= new_index < self.num_project_jobs():
@@ -227,14 +227,16 @@ class ClassicElementActionManager(ElementActionManager):
             jobs = self.project().jobs
             jobs.insert(new_index, jobs.pop(job_index))
             self.callbacks['refresh_ui'](rows_to_state(self.project(), new_index, -1))
+            return True
+        return False
 
     def _shift_action(self, delta):
         selection = self.selection_state
         if not (selection.is_action_selected() or selection.is_subaction_selected()):
-            return
+            return False
         if selection.is_subaction_selected():
             if not selection.sub_actions:
-                return
+                return False
             new_index = selection.sub_action_index + delta
             if 0 <= new_index < len(selection.sub_actions):
                 self.mark_as_modified(True, "Shift Sub-action")
@@ -242,7 +244,7 @@ class ClassicElementActionManager(ElementActionManager):
                     new_index, selection.sub_actions.pop(selection.sub_action_index))
         else:
             if not selection.actions:
-                return
+                return False
             new_index = selection.action_index + delta
             if 0 <= new_index < len(selection.actions):
                 self.mark_as_modified(True, "Shift Action")
@@ -250,9 +252,10 @@ class ClassicElementActionManager(ElementActionManager):
         current_action_row = selection.get_action_row()
         new_row = self.new_row_after_insert(current_action_row, selection, delta)
         self.callbacks['refresh_ui'](rows_to_state(self.project(), selection.job_index, new_row))
+        return True
 
     def _shift_subaction(self, delta):
-        self._shift_action(delta)
+        return self._shift_action(delta)
 
     def set_enabled(self, enabled):
         selection = self.selection_state
