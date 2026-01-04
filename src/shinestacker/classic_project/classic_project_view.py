@@ -179,7 +179,7 @@ class ClassicProjectView(ProjectView, ListContainer):
                 current_action, is_sub_action = \
                     self.get_current_action_at(job, action_index)
                 selected_sub_action = current_action is not None and \
-                    not is_sub_action and current_action.type_name == constants.ACTION_COMBO
+                    (is_sub_action or current_action.type_name == constants.ACTION_COMBO)
                 return selected_sub_action
         return False
 
