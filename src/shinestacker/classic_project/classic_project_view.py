@@ -377,8 +377,18 @@ class ClassicProjectView(ProjectView, ListContainer):
         self.element_action.paste_element()
 
     def cut_element(self):
-        self._sync_selection_to_action_manager()
+        old_state = self._get_selection_state()
+        if old_state:
+            self.element_action.selection_state = old_state
         self.element_action.cut_element()
+        self.refresh_ui()
+        if old_state and old_state.is_valid():
+            self.widget_deleted_signal.emit((
+                old_state.job_index,
+                old_state.action_index,
+                old_state.sub_action_index,
+                old_state.widget_type
+            ))
 
     def clone_element(self, selection=None, update_project=True, confirm=True):
         if selection is None:

@@ -490,7 +490,15 @@ class ModernProjectView(ProjectView):
 
     def cut_element(self):
         if self.enforce_stop_run():
+            old_state = self.selection_state.copy() if self.selection_state else None
             self.element_action.cut_element()
+            if old_state and old_state.is_valid():
+                self.widget_deleted_signal.emit((
+                    old_state.job_index,
+                    old_state.action_index,
+                    old_state.subaction_index,
+                    old_state.widget_type
+                ))
 
     def clone_element(self, selection=None, update_project=True, confirm=True):
         if selection is None:
