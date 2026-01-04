@@ -1,5 +1,5 @@
 # pylint: disable=C0114, C0115, C0116, E0611, R0902, R0904, R0913, R0914, R0917, R0912, R0915, E1101
-# pylint: disable=R1716, C0302, R0911, R0903, W0718
+# pylint: disable=R1716, C0302, R0911, R0903, W0718, W0613
 import os
 from PySide6.QtCore import Qt, QTimer, Signal, Slot
 from PySide6.QtGui import QCursor
@@ -17,6 +17,8 @@ from .element_operations import ElementOperations
 from .progress_signal_handler import ProgressSignalHandler, SignalConnector
 from .selection_navigation_manager import SelectionNavigationManager
 from .modern_element_action_manager import ModernElementActionManager
+from .action_widget import ActionWidget
+from .sub_action_widget import SubActionWidget
 
 
 class ModernProjectView(ProjectView):
@@ -24,6 +26,7 @@ class ModernProjectView(ProjectView):
     show_status_message_requested = Signal(str, int)
     enable_sub_actions_requested = Signal(bool)
     widget_deleted_signal = Signal(tuple)
+    widget_cloned_signal = Signal(tuple)
 
     def __init__(self, project_holder, dark_theme, parent=None):
         ProjectView.__init__(self, project_holder, dark_theme, parent)
@@ -333,28 +336,30 @@ class ModernProjectView(ProjectView):
 
     def _refresh_job_widget_signals(self):
         for i, job_widget in enumerate(self.job_widgets):
-            job_widget.clicked.disconnect()
-
-            def make_job_handler(w, idx):
-                return lambda checked=False: self._on_widget_clicked(w, 'job', idx)
-
-            job_widget.clicked.connect(make_job_handler(job_widget, i))
+            try:
+                job_widget.clicked.disconnect()
+            except Exception:
+                pass
+            job_widget.clicked.connect(
+                lambda checked=False, w=job_widget, idx=i:
+                self._on_widget_clicked(w, 'job', idx))
             for action_idx, action_widget in enumerate(job_widget.child_widgets):
-                action_widget.clicked.disconnect()
-
-                def make_action_handler(w, j_idx, a_idx):
-                    return lambda checked=False: self._on_widget_clicked(w, 'action', j_idx, a_idx)
-
-                action_widget.clicked.connect(make_action_handler(action_widget, i, action_idx))
+                try:
+                    action_widget.clicked.disconnect()
+                except Exception:
+                    pass
+                action_widget.clicked.connect(
+                    lambda checked=False, w=action_widget, j_idx=i, a_idx=action_idx:
+                    self._on_widget_clicked(w, 'action', j_idx, a_idx))
                 for subaction_idx, subaction_widget in enumerate(action_widget.child_widgets):
-                    subaction_widget.clicked.disconnect()
-
-                    def make_subaction_handler(w, j_idx, a_idx, s_idx):
-                        return lambda checked=False: self._on_widget_clicked(
-                            w, 'subaction', j_idx, a_idx, s_idx)
-
+                    try:
+                        subaction_widget.clicked.disconnect()
+                    except Exception:
+                        pass
                     subaction_widget.clicked.connect(
-                        make_subaction_handler(subaction_widget, i, action_idx, subaction_idx))
+                        lambda checked=False, w=subaction_widget,
+                        j_idx=i, a_idx=action_idx, s_idx=subaction_idx:
+                        self._on_widget_clicked(w, 'subaction', j_idx, a_idx, s_idx))
 
     def _refresh_after_structure_change(self):
         self._refresh_job_widget_signals()
@@ -487,9 +492,80 @@ class ModernProjectView(ProjectView):
         if self.enforce_stop_run():
             self.element_action.cut_element()
 
-    def clone_element(self):
-        if self.enforce_stop_run():
-            self.element_action.clone_element()
+    def clone_element(self, selection=None, update_project=True, confirm=True):
+        if selection is None:
+            old_selection = self.selection_state.copy()
+            if update_project:
+                result = self.element_action.clone_element()
+                if result:
+                    self._clone_element_ui_only(old_selection)
+            else:
+                result = self._clone_element_ui_only(old_selection)
+            if result:
+                self.widget_cloned_signal.emit((
+                    old_selection.job_index,
+                    old_selection.action_index,
+                    old_selection.subaction_index,
+                    old_selection.widget_type
+                ))
+            return result
+        self._clone_element_ui_only(selection)
+        return None
+
+    def _clone_element_ui_only(self, selection):
+        if not selection or not selection.is_valid():
+            return False
+        try:
+            job_idx = selection.job_index
+            if not 0 <= job_idx < self.num_project_jobs():
+                return False
+            job = self.project().jobs[job_idx]
+            if selection.is_job_selected():
+                element = self.project_job(job_idx)
+                new_job_idx = job_idx + 1
+                self._insert_job_widget(new_job_idx, element.clone(
+                    name_postfix=self.element_action.CLONE_POSTFIX))
+                new_widget = self.job_widgets[new_job_idx]
+                self.selection_state.set_job(new_job_idx)
+            elif selection.is_action_selected():
+                action_idx = selection.action_index
+                if not 0 <= action_idx < len(job.sub_actions):
+                    return False
+                element = job.sub_actions[action_idx]
+                new_action_idx = action_idx + 1
+                self._insert_action_widget(
+                    job_idx, new_action_idx, element.clone(
+                        name_postfix=self.element_action.CLONE_POSTFIX))
+                new_widget = self.job_widgets[job_idx].child_widgets[new_action_idx]
+                self.selection_state.set_action(job_idx, new_action_idx)
+            elif selection.is_subaction_selected():
+                action_idx = selection.action_index
+                subaction_idx = selection.subaction_index
+                if not 0 <= action_idx < len(job.sub_actions):
+                    return False
+                action = job.sub_actions[action_idx]
+                if not 0 <= subaction_idx < len(action.sub_actions):
+                    return False
+                element = action.sub_actions[subaction_idx]
+                new_subaction_idx = subaction_idx + 1
+                self._insert_subaction_widget(
+                    job_idx, action_idx, new_subaction_idx, element.clone(
+                        name_postfix=self.element_action.CLONE_POSTFIX))
+                new_widget = self.job_widgets[
+                    job_idx].child_widgets[action_idx].child_widgets[new_subaction_idx]
+                self.selection_state.set_subaction(job_idx, action_idx, new_subaction_idx)
+            else:
+                return False
+            if self.selected_widget:
+                self.selected_widget.set_selected(False)
+            new_widget.set_selected(True)
+            self.selected_widget = new_widget
+            self.update_delete_action_state_requested.emit()
+            return True
+        except Exception:
+            pass
+        self.refresh_ui()
+        return False
 
     def enable(self):
         self.element_action.enable()
@@ -764,6 +840,53 @@ class ModernProjectView(ProjectView):
         subaction_widget.deleteLater()
         self._refresh_job_widget_signals()
         return True
+
+    def _insert_job_widget(self, job_index, job):
+        if not 0 <= job_index <= len(self.job_widgets):
+            return None
+        job_widget = JobWidget(job, self.dark_theme,
+                               self.actions_layout_horizontal,
+                               self.subactions_layout_vertical)
+        job_widget.setFocusPolicy(Qt.NoFocus)
+        job_widget.clicked.connect(lambda: self._on_widget_clicked(job_widget, 'job', job_index))
+        job_widget.double_clicked.connect(lambda: self._on_job_double_clicked(job_index))
+        self.job_widgets.insert(job_index, job_widget)
+        self.project_layout.insertWidget(job_index, job_widget)
+        return job_widget
+
+    def _insert_action_widget(self, job_index, action_index, action):
+        if not 0 <= job_index < len(self.job_widgets):
+            return None
+        job_widget = self.job_widgets[job_index]
+        if not 0 <= action_index <= len(job_widget.child_widgets):
+            return None
+        action_widget = ActionWidget(action, self.dark_theme, self.subactions_layout_vertical)
+        action_widget.clicked.connect(
+            lambda: self._on_widget_clicked(action_widget, 'action', job_index, action_index))
+        action_widget.double_clicked.connect(
+            lambda: self._on_action_double_clicked(job_index, action_index))
+        job_widget.child_widgets.insert(action_index, action_widget)
+        job_widget.child_container_layout.insertWidget(action_index, action_widget)
+        return action_widget
+
+    def _insert_subaction_widget(self, job_index, action_index, subaction_index, subaction):
+        if not 0 <= job_index < len(self.job_widgets):
+            return None
+        job_widget = self.job_widgets[job_index]
+        if not 0 <= action_index < len(job_widget.child_widgets):
+            return None
+        action_widget = job_widget.child_widgets[action_index]
+        if not 0 <= subaction_index <= len(action_widget.child_widgets):
+            return None
+        subaction_widget = SubActionWidget(subaction, self.dark_theme,
+                                           horizontal_images=not self.subactions_layout_vertical)
+        subaction_widget.clicked.connect(lambda: self._on_widget_clicked(
+            subaction_widget, 'subaction', job_index, action_index, subaction_index))
+        subaction_widget.double_clicked.connect(lambda: self._on_subaction_double_clicked(
+            job_index, action_index, subaction_index))
+        action_widget.child_widgets.insert(subaction_index, subaction_widget)
+        action_widget.child_container_layout.insertWidget(subaction_index, subaction_widget)
+        return subaction_widget
 
     def get_console_area(self):
         return self.console_area

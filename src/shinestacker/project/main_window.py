@@ -78,6 +78,8 @@ class MainWindow(ProjectIOHandler, QMainWindow):
             self.menu_manager.set_enabled_sub_actions_gui)
         self.modern_view.widget_deleted_signal.connect(self.handle_widget_deleted)
         self.classic_view.widget_deleted_signal.connect(self.handle_widget_deleted)
+        self.modern_view.widget_cloned_signal.connect(self.handle_widget_cloned)
+        self.classic_view.widget_cloned_signal.connect(self.handle_widget_cloned)
         self.script_dir = os.path.dirname(__file__)
         self.retouch_callback = None
         for _k, v in self.views.items():
@@ -370,6 +372,19 @@ class MainWindow(ProjectIOHandler, QMainWindow):
                 elif widget_type == 'subaction':
                     state.set_subaction(job_idx, action_idx, subaction_idx)
                 view.delete_element(selection=state, update_project=False, confirm=False)
+
+    def handle_widget_cloned(self, indices_tuple):
+        job_idx, action_idx, subaction_idx, widget_type = indices_tuple
+        for _view_name, view in self.views.items():
+            if view != self.sender():
+                state = ModernSelectionState()
+                if widget_type == 'job':
+                    state.set_job(job_idx)
+                elif widget_type == 'action':
+                    state.set_action(job_idx, action_idx)
+                elif widget_type == 'subaction':
+                    state.set_subaction(job_idx, action_idx, subaction_idx)
+                view.clone_element(selection=state, update_project=False, confirm=False)
 
     def copy_element(self):
         self.current_view.copy_element()

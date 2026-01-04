@@ -339,19 +339,25 @@ class ModernElementActionManager(ElementActionManager):
         if element:
             self.set_copy_buffer(element)
 
+    def clone_element(self):
+        if self.selection_state.is_job_selected():
+            return self.clone_job()
+        if self.selection_state.is_action_selected() or \
+                self.selection_state.is_subaction_selected():
+            return self.clone_action()
+        return False
+
     def clone_job(self):
         if not self.selection_state.is_job_selected():
-            return
+            return False
         if not 0 <= self.selection_state.job_index < self.num_project_jobs():
-            return
+            return False
         self.mark_as_modified(True, "Duplicate Job")
         job = self.project().jobs[self.selection_state.job_index]
         job_clone = job.clone(name_postfix=self.CLONE_POSTFIX)
         new_job_index = self.selection_state.job_index + 1
         self.project().jobs.insert(new_job_index, job_clone)
-        new_indices = self.new_indices_after_clone(self.selection_state)
-        self.selection_state.set_job(new_job_index)
-        self.callbacks['refresh_ui'](indices_to_state(*new_indices))
+        return True
 
     def clone_action(self):
         if self.selection_state.widget_type == 'action':
@@ -365,9 +371,7 @@ class ModernElementActionManager(ElementActionManager):
                 action_clone = action.clone(name_postfix=self.CLONE_POSTFIX)
                 new_action_index = action_index + 1
                 job.sub_actions.insert(new_action_index, action_clone)
-                new_indices = self.new_indices_after_clone(self.selection_state)
-                self.selection_state.set_action(new_indices[0], new_indices[1])
-                self.callbacks['refresh_ui'](indices_to_state(*new_indices))
+                return True
         elif self.selection_state.widget_type == 'subaction':
             job_index = self.selection_state.job_index
             action_index = self.selection_state.action_index
@@ -383,10 +387,8 @@ class ModernElementActionManager(ElementActionManager):
                     subaction_clone = subaction.clone(name_postfix=self.CLONE_POSTFIX)
                     new_subaction_index = subaction_index + 1
                     action.sub_actions.insert(new_subaction_index, subaction_clone)
-                    new_indices = self.new_indices_after_clone(self.selection_state)
-                    self.selection_state.set_subaction(
-                        new_indices[0], new_indices[1], new_indices[2])
-                    self.callbacks['refresh_ui'](indices_to_state(*new_indices))
+                    return True
+        return False
 
     def _shift_job(self, delta):
         if not self.selection_state.is_job_selected():

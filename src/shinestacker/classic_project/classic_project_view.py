@@ -19,6 +19,7 @@ from .classic_element_action_manager import ClassicElementActionManager
 class ClassicProjectView(ProjectView, ListContainer):
     enable_sub_actions_requested = Signal(bool)
     widget_deleted_signal = Signal(tuple)
+    widget_cloned_signal = Signal(tuple)
 
     def __init__(self, project_holder, dark_theme, parent=None):
         ProjectView.__init__(self, project_holder, dark_theme, parent)
@@ -373,8 +374,23 @@ class ClassicProjectView(ProjectView, ListContainer):
     def cut_element(self):
         self.element_action.cut_element()
 
-    def clone_element(self):
-        self.element_action.clone_element()
+    def clone_element(self, selection=None, update_project=True, confirm=True):
+        if selection is None:
+            old_state = self._get_selection_state()
+            if update_project:
+                self.element_action.clone_element()
+            if old_state and old_state.is_valid():
+                self.widget_cloned_signal.emit((
+                    old_state.job_index,
+                    old_state.action_index,
+                    old_state.sub_action_index,
+                    old_state.widget_type
+                ))
+        elif selection and selection.is_valid():
+            job_idx = selection.job_index
+            if job_idx >= 0:
+                new_job_idx = max(0, min(job_idx, self.num_project_jobs() - 1))
+                self.refresh_ui(rows_to_state(self.project(), new_job_idx, -1))
 
     def enable(self):
         self.element_action.enable()
