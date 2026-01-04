@@ -16,6 +16,10 @@ from .. gui.project_model import (
 
 class ProjectView(QWidget, LogManager, ProjectHandler):
     refresh_ui_signal = Signal()
+    enable_sub_actions_requested = Signal(bool)
+    widget_deleted_signal = Signal(tuple)
+    widget_cloned_signal = Signal(tuple)
+    widget_pasted_signal = Signal(tuple)
     current_action_working_path = None
     current_action_input_path = None
     current_action_output_path = None

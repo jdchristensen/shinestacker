@@ -256,25 +256,26 @@ class ModernElementActionManager(ElementActionManager):
 
     def paste_element(self):
         if not self.has_copy_buffer():
-            return
+            return False
         copy_buffer = self.copy_buffer()
         if copy_buffer.type_name in constants.SUB_ACTION_TYPES:
-            self.paste_subaction()
-        elif self.selection_state.is_job_selected():
-            self.paste_job()
-        elif self.selection_state.is_action_selected():
-            self.paste_action()
-        elif self.selection_state.is_subaction_selected():
-            self.paste_subaction()
+            return self.paste_subaction()
+        if self.selection_state.is_job_selected():
+            return self.paste_job()
+        if self.selection_state.is_action_selected():
+            return self.paste_action()
+        if self.selection_state.is_subaction_selected():
+            return self.paste_subaction()
+        return False
 
     def paste_job(self):
         if not self.has_copy_buffer():
-            return
+            return False
         copy_buffer = self.copy_buffer()
         success, element_type, _index = self.paste_job_logic(
             copy_buffer, self.selection_state.job_index, True)
         if not success:
-            return
+            return False
         if element_type == 'action':
             self.mark_as_modified(True, "Paste Action")
             new_indices = self.new_indices_after_insert(self.selection_state, 0)
@@ -283,17 +284,16 @@ class ModernElementActionManager(ElementActionManager):
             self.mark_as_modified(True, "Paste Job")
             new_indices = self.new_indices_after_insert(self.selection_state, 1)
             self.selection_state.set_job(new_indices[0])
-        self.callbacks['refresh_ui'](indices_to_state(*new_indices))
-        self.callbacks['ensure_selected_visible']()
+        return True
 
     def paste_action(self):
         if not self.has_copy_buffer():
-            return
+            return False
         if self.selection_state.job_index < 0:
-            return
+            return False
         copy_buffer = self.copy_buffer()
         if copy_buffer.type_name not in constants.ACTION_TYPES:
-            return
+            return False
         self.mark_as_modified(True, "Paste Action")
         job = self.project().jobs[self.selection_state.job_index]
         if self.selection_state.action_index >= 0:
@@ -304,23 +304,22 @@ class ModernElementActionManager(ElementActionManager):
             new_action_index = new_indices[1]
         job.sub_actions.insert(new_action_index, copy_buffer.clone())
         self.selection_state.set_action(new_indices[0], new_indices[1])
-        self.callbacks['refresh_ui'](indices_to_state(*new_indices))
-        self.callbacks['ensure_selected_visible']()
+        return True
 
     def paste_subaction(self):
         if not self.has_copy_buffer():
-            return
+            return False
         if self.selection_state.job_index < 0 or self.selection_state.action_index < 0:
-            return
+            return False
         copy_buffer = self.copy_buffer()
         job = self.project().jobs[self.selection_state.job_index]
         if self.selection_state.action_index >= len(job.sub_actions):
-            return
+            return False
         action = job.sub_actions[self.selection_state.action_index]
         if action.type_name != constants.ACTION_COMBO:
-            return
+            return False
         if copy_buffer.type_name not in constants.SUB_ACTION_TYPES:
-            return
+            return False
         self.mark_as_modified(True, "Paste Sub-action")
         if self.selection_state.subaction_index >= 0:
             new_indices = self.new_indices_after_insert(self.selection_state, 1)
@@ -331,8 +330,7 @@ class ModernElementActionManager(ElementActionManager):
             new_subaction_index = 0
         action.sub_actions.insert(new_subaction_index, copy_buffer.clone())
         self.selection_state.set_subaction(new_indices[0], new_indices[1], new_indices[2])
-        self.callbacks['refresh_ui'](indices_to_state(*new_indices))
-        self.callbacks['ensure_selected_visible']()
+        return True
 
     def cut_element(self):
         element = self.delete_element(False)

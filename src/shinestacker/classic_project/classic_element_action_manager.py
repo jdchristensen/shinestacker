@@ -127,25 +127,27 @@ class ClassicElementActionManager(ElementActionManager):
 
     def paste_element(self):
         if not self.has_copy_buffer():
-            return
+            return False
         copy_buffer = self.copy_buffer()
         selection = self.selection_state
         if selection.is_job_selected():
-            self._paste_job(copy_buffer, selection)
-        elif selection.is_action_selected() or selection.is_subaction_selected():
-            self._paste_action(copy_buffer, selection)
+            return self._paste_job(copy_buffer, selection)
+        if selection.is_action_selected() or selection.is_subaction_selected():
+            return self._paste_action(copy_buffer, selection)
+        return False
 
     def _paste_job(self, copy_buffer, selection):
         success, element_type, index = self.paste_job_logic(
             copy_buffer, selection.job_index, False)
         if not success:
-            return
+            return False
         if element_type == 'action':
             self.mark_as_modified(True, "Paste Action")
-            self.callbacks['refresh_ui'](rows_to_state(self.project(), selection.job_index, -1))
+            self.selection_state.set_action(selection.job_index, index)
         else:
             self.mark_as_modified(True, "Paste Job")
-            self.callbacks['refresh_ui'](rows_to_state(self.project(), index, -1))
+            self.selection_state.set_job(index)
+        return True
 
     def _paste_action(self, copy_buffer, selection):
         if copy_buffer.type_name in constants.SUB_ACTION_TYPES:
@@ -155,29 +157,28 @@ class ClassicElementActionManager(ElementActionManager):
                 if selection.action and selection.action.type_name == constants.ACTION_COMBO:
                     target_action = selection.action
                     insertion_index = len(selection.sub_actions)
+                    self.selection_state.set_subaction(
+                        selection.job_index, selection.action_index, insertion_index)
             else:
                 if selection.action and selection.action.type_name == constants.ACTION_COMBO:
                     target_action = selection.action
                     insertion_index = len(selection.action.sub_actions)
+                    self.selection_state.set_subaction(
+                        selection.job_index, selection.action_index, insertion_index)
             if target_action is not None:
                 self.mark_as_modified(True, "Paste Sub-action")
                 target_action.sub_actions.insert(insertion_index, copy_buffer)
-                current_action_row = selection.get_action_row()
-                new_row = self.new_row_after_paste(current_action_row, selection)
-                self.callbacks['refresh_ui'](
-                    rows_to_state(self.project(), selection.job_index, new_row))
-                return
+                return True
         if copy_buffer.type_name in constants.ACTION_TYPES:
             if not selection.is_subaction_selected():
                 if not selection.actions:
-                    return
+                    return False
                 new_action_index = 0 if len(selection.actions) == 0 else selection.action_index + 1
                 self.mark_as_modified(True, "Paste Action")
                 selection.actions.insert(new_action_index, copy_buffer)
-                current_action_row = selection.get_action_row()
-                new_row = self.new_row_after_paste(current_action_row, selection)
-                self.callbacks['refresh_ui'](
-                    rows_to_state(self.project(), selection.job_index, new_row))
+                self.selection_state.set_action(selection.job_index, new_action_index)
+                return True
+        return False
 
     def cut_element(self):
         element = self.delete_element(False)

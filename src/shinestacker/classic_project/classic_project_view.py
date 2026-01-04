@@ -1,6 +1,6 @@
 # pylint: disable=C0114, C0115, C0116, E0611, R0902, R0904, R0913, R0914, R0917, R0912, R0915, E1101
 # pylint: disable=W0613
-from PySide6.QtCore import Qt, Signal
+from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel, QSplitter, QMessageBox, QApplication, QDialog)
 from .. config.constants import constants
@@ -17,10 +17,6 @@ from .classic_element_action_manager import ClassicElementActionManager
 
 
 class ClassicProjectView(ProjectView, ListContainer):
-    enable_sub_actions_requested = Signal(bool)
-    widget_deleted_signal = Signal(tuple)
-    widget_cloned_signal = Signal(tuple)
-
     def __init__(self, project_holder, dark_theme, parent=None):
         ProjectView.__init__(self, project_holder, dark_theme, parent)
         ListContainer.__init__(self)
@@ -371,15 +367,38 @@ class ClassicProjectView(ProjectView, ListContainer):
         return None
 
     def copy_element(self):
+        self._sync_selection_to_action_manager()
         self.element_action.copy_element()
 
-    def paste_element(self):
-        self.element_action.paste_element()
+    def paste_element(self, selection=None, update_project=True):
+        if selection is None:
+            self._sync_selection_to_action_manager()
+            old_state = self._get_selection_state()
+            if update_project:
+                result = self.element_action.paste_element()
+                if result:
+                    current_state = self._get_selection_state()
+                    self.refresh_ui(rows_to_state(
+                        self.project(),
+                        current_state.job_index,
+                        current_state.get_action_row()))
+            if old_state and old_state.is_valid():
+                self.widget_pasted_signal.emit((
+                    old_state.job_index,
+                    old_state.action_index,
+                    old_state.sub_action_index,
+                    old_state.widget_type
+                ))
+            return result
+        if selection and selection.is_valid():
+            self.refresh_ui(
+                rows_to_state(
+                    self.project(), selection.job_index, -1))
+        return None
 
     def cut_element(self):
+        self._sync_selection_to_action_manager()
         old_state = self._get_selection_state()
-        if old_state:
-            self.element_action.selection_state = old_state
         self.element_action.cut_element()
         self.refresh_ui()
         if old_state and old_state.is_valid():

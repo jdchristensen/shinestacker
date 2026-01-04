@@ -17,7 +17,7 @@ class SelectionNavigationManager(ProjectHandler, QObject):
             self.select_previous_widget()
             return True
         if key in ("down", "right"):
-            self._elect_next_widget()
+            self.select_next_widget()
             return True
         if key == "home":
             self._select_first_job()
