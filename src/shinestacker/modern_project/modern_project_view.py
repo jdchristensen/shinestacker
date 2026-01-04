@@ -744,7 +744,7 @@ class ModernProjectView(ProjectView):
 
     def add_action(self, type_name):
         if not self.enforce_stop_run():
-            return
+            return False
         job_index = self.selection_state.job_index
         if job_index < 0:
             if self.num_project_jobs() > 0:
@@ -753,7 +753,7 @@ class ModernProjectView(ProjectView):
             else:
                 QMessageBox.warning(self.parent(),
                                     "No Job Added", "Please add a job first.")
-            return
+            return False
         action = ActionConfig(type_name)
         action.parent = self.project().jobs[job_index]
         self.action_dialog = ActionConfigDialog(
@@ -761,33 +761,67 @@ class ModernProjectView(ProjectView):
         if self.action_dialog.exec() == QDialog.Accepted:
             self.mark_as_modified(True, "Add Action")
             self.project().jobs[job_index].add_sub_action(action)
-            self.selection_state.action_index = len(self.project().jobs[job_index].sub_actions) - 1
+            new_action_index = len(self.project().jobs[job_index].sub_actions) - 1
+            self.selection_state.set_action(job_index, new_action_index)
             self.selection_state.subaction_index = -1
             self.selection_state.widget_type = 'action'
             self.refresh_ui()
+            self.widget_added_signal.emit((job_index, new_action_index, -1))
+            return True
+        return False
 
     def add_sub_action(self, type_name):
         if not self.enforce_stop_run():
-            return
+            return False
         job_index = self.selection_state.job_index
         action_index = self.selection_state.action_index
         if job_index < 0 or action_index < 0:
-            return
+            return False
         if 0 <= job_index < self.num_project_jobs():
             job = self.project().jobs[job_index]
             if 0 <= action_index < len(job.sub_actions):
                 action = job.sub_actions[action_index]
                 if action.type_name != constants.ACTION_COMBO:
-                    return
+                    return False
                 sub_action = ActionConfig(type_name)
                 self.action_dialog = ActionConfigDialog(
                     sub_action, self.current_file_directory(), self.parent())
                 if self.action_dialog.exec() == QDialog.Accepted:
                     self.mark_as_modified(True, "Add Sub-action")
                     action.add_sub_action(sub_action)
-                    self.selection_state.subaction_index = len(action.sub_actions) - 1
+                    new_subaction_index = len(action.sub_actions) - 1
+                    self.selection_state.subaction_index = new_subaction_index
                     self.selection_state.widget_type = 'subaction'
                     self.refresh_ui()
+                    self.widget_added_signal.emit((job_index, action_index, new_subaction_index))
+                    return True
+        return False
+
+    def update_added_element(self, indices_tuple):
+        job_idx, action_idx, subaction_idx = indices_tuple
+        try:
+            if not 0 <= job_idx < self.num_project_jobs():
+                return False
+            job = self.project().jobs[job_idx]
+            if subaction_idx != -1:
+                if not 0 <= action_idx < len(job.sub_actions):
+                    return False
+                action = job.sub_actions[action_idx]
+                if not 0 <= subaction_idx < len(action.sub_actions):
+                    return False
+                subaction = action.sub_actions[subaction_idx]
+                self._insert_subaction_widget(job_idx, action_idx, subaction_idx, subaction)
+            elif action_idx != -1:
+                if not 0 <= action_idx < len(job.sub_actions):
+                    return False
+                action = job.sub_actions[action_idx]
+                self._insert_action_widget(job_idx, action_idx, action)
+            else:
+                self._insert_job_widget(job_idx, job)
+            return True
+        except Exception:
+            pass
+        return False
 
     def horizontal_actions_layout(self, horizontal=True):
         if self.actions_layout_horizontal != horizontal:

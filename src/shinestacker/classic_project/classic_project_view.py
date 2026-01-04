@@ -487,6 +487,8 @@ class ClassicProjectView(ProjectView, ListContainer):
             self.mark_as_modified("Add Action")
             self.project_job(current_index).add_sub_action(action)
             self.add_list_item(self.action_list(), action, False)
+            new_action_index = len(self.project_job(current_index).sub_actions) - 1
+            self.widget_added_signal.emit((current_index, new_action_index, -1))
             return True
         return False
 
@@ -513,11 +515,17 @@ class ClassicProjectView(ProjectView, ListContainer):
         if self.action_dialog.exec() == QDialog.Accepted:
             self.mark_as_modified("Add Sub-action")
             action.add_sub_action(sub_action)
+            new_subaction_index = len(action.sub_actions) - 1
+            self.widget_added_signal.emit(
+                (current_job_index, current_action_index, new_subaction_index))
             self.on_job_selected(current_job_index)
             self.set_current_action(current_action_index)
             self.action_list_item(current_action_index).setSelected(True)
             return True
         return False
+
+    def update_added_element(self, _indices_tuple):
+        self.refresh_ui()
 
     # pylint: disable=C0103
     def contextMenuEvent(self, event):

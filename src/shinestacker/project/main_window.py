@@ -86,6 +86,8 @@ class MainWindow(ProjectIOHandler, QMainWindow):
         self.classic_view.widget_moved_up_signal.connect(self.handle_widget_moved_up)
         self.modern_view.widget_moved_down_signal.connect(self.handle_widget_moved_down)
         self.classic_view.widget_moved_down_signal.connect(self.handle_widget_moved_down)
+        self.modern_view.widget_added_signal.connect(self.handle_widget_added)
+        self.classic_view.widget_added_signal.connect(self.handle_widget_added)
         self.script_dir = os.path.dirname(__file__)
         self.retouch_callback = None
         for _k, v in self.views.items():
@@ -360,6 +362,7 @@ class MainWindow(ProjectIOHandler, QMainWindow):
             self.set_enabled_file_open_close_actions(True)
             self.current_view.refresh_and_select_job(new_job_index)
             self.on_job_count_changed()
+            self.handle_widget_added((new_job_index, -1, -1))
 
     def delete_element(self):
         self.current_view.delete_element()
@@ -430,6 +433,11 @@ class MainWindow(ProjectIOHandler, QMainWindow):
                 elif widget_type == 'subaction':
                     state.set_subaction(job_idx, action_idx, subaction_idx)
                 view.move_element_down(selection=state, update_project=False)
+
+    def handle_widget_added(self, indices_tuple):
+        for _view_name, view in self.views.items():
+            if view != self.sender():
+                view.update_added_element(indices_tuple)
 
     def copy_element(self):
         self.current_view.copy_element()
