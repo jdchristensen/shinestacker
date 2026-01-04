@@ -28,7 +28,7 @@ class HandCursorListWidget(QListWidget):
         return super().event(event)
 
 
-class ListContainer:  # subclasses must inherit from QObject and ListContainer
+class ListContainer:
     INDENT_SPACE = "&nbsp;&nbsp;&nbsp;↪&nbsp;&nbsp;&nbsp;"
 
     select_signal = Signal()
@@ -158,17 +158,44 @@ class ListContainer:  # subclasses must inherit from QObject and ListContainer
                (f" - 📁 <i>{in_path}</i> → 📂 <i>{out_path}</i>"
                 if long_name and not is_sub_action else "")
 
-    def add_list_item(self, widget_list, action, is_sub_action):
+    def get_insertion_position(self, selection_state):
+        if not selection_state or not selection_state.is_valid():
+            return self.action_list_count(), False
+        if selection_state.is_job_selected():
+            return 0, False
+        current_row = selection_state.get_action_row()
+        if current_row < 0:
+            return self.action_list_count(), False
+        if selection_state.is_action_selected():
+            selected_action = selection_state.action
+            if selected_action and selected_action.sub_actions:
+                return current_row + len(selected_action.sub_actions) + 1, False
+            else:
+                return current_row + 1, False
+        if selection_state.is_subaction_selected():
+            parent_action = selection_state.action
+            sub_action_idx = selection_state.sub_action_index
+            if sub_action_idx == len(parent_action.sub_actions) - 1:
+                return current_row + 1, False
+            else:
+                return current_row + 1, True
+        return self.action_list_count(), False
+
+    def add_list_item(self, widget_list, action, is_sub_action, position=None):
         if action.type_name == constants.ACTION_JOB:
             text = self.job_text(action, long_name=True, html=True)
         else:
             text = self.action_text(action, long_name=True, html=True, is_sub_action=is_sub_action)
         item = QListWidgetItem()
         item.setText('')
-        item.setToolTip("<b>Double-click:</b> configure parameters<br>"
-                        "<b>Right-click:</b> show menu")
+        item.setToolTip(
+            "<b>Double-click:</b> configure parameters<br>"
+            "<b>Right-click:</b> show menu")
         item.setData(Qt.ItemDataRole.UserRole, True)
-        widget_list.addItem(item)
+        if position is None:
+            widget_list.addItem(item)
+        else:
+            widget_list.insertItem(position, item)
         html_text = ("✅ " if action.enabled() else "🚫 ") + text
         label = QLabel(html_text)
         label.setProperty("color-type", "enabled" if action.enabled() else "disabled")
@@ -185,11 +212,14 @@ class ListContainer:  # subclasses must inherit from QObject and ListContainer
         self.clear_action_list()
         if 0 <= index < self.num_project_jobs():
             job = self.project_job(index)
+            position = 0
             for action in job.sub_actions:
-                self.add_list_item(self.action_list(), action, False)
+                self.add_list_item(self.action_list(), action, False, position)
+                position += 1
                 if len(action.sub_actions) > 0:
                     for sub_action in action.sub_actions:
-                        self.add_list_item(self.action_list(), sub_action, True)
+                        self.add_list_item(self.action_list(), sub_action, True, position)
+                        position += 1
             self.select_signal.emit()
 
     def get_action_at(self, action_row):

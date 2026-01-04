@@ -436,7 +436,7 @@ class MainWindow(ProjectIOHandler, QMainWindow):
 
     def handle_widget_added(self, indices_tuple):
         for _view_name, view in self.views.items():
-            if view != self.sender():
+            if view != self.current_view:
                 view.update_added_element(indices_tuple)
 
     def copy_element(self):

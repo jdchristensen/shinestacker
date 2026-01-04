@@ -469,58 +469,75 @@ class ClassicProjectView(ProjectView, ListContainer):
         elif selection and selection.is_valid():
             self.refresh_ui()
 
+    def _get_current_subaction_index(self):
+        if not self.selection_state.is_subaction_selected():
+            return -1
+        return self.selection_state.sub_action_index
+
     def add_action(self, type_name):
-        current_index = self.current_job_index()
-        if current_index < 0:
+        self._sync_selection_to_action_manager()
+        current_job_index = self.current_job_index()
+        if current_job_index < 0:
             if self.num_project_jobs() > 0:
-                QMessageBox.warning(self.parent(),
-                                    "No Job Selected", "Please select a job first.")
+                QMessageBox.warning(self.parent(), "No Job Selected", "Please select a job first.")
             else:
-                QMessageBox.warning(self.parent(),
-                                    "No Job Added", "Please add a job first.")
+                QMessageBox.warning(self.parent(), "No Job Added", "Please add a job first.")
             return False
+        job = self.project_job(current_job_index)
+        insert_index = len(job.sub_actions)
+        selection = self.selection_state
+        if selection.is_action_selected():
+            if selection.action_index >= 0:
+                insert_index = selection.action_index + 1
+        elif selection.is_subaction_selected():
+            if selection.action_index >= 0:
+                insert_index = selection.action_index + 1
         action = ActionConfig(type_name)
         action.parent = self.get_current_job()
         self.action_dialog = ActionConfigDialog(
             action, self.current_file_directory(), self.parent())
         if self.action_dialog.exec() == QDialog.Accepted:
             self.mark_as_modified("Add Action")
-            self.project_job(current_index).add_sub_action(action)
-            self.add_list_item(self.action_list(), action, False)
-            new_action_index = len(self.project_job(current_index).sub_actions) - 1
-            self.widget_added_signal.emit((current_index, new_action_index, -1))
+            job.sub_actions.insert(insert_index, action)
+            gui_insert_pos = self.get_insertion_position(selection)[0]
+            self.add_list_item(self.action_list(), action, False, gui_insert_pos)
+            self.widget_added_signal.emit((current_job_index, insert_index, -1))
+            self.set_current_action(gui_insert_pos)
             return True
         return False
 
     def add_sub_action(self, type_name):
+        self._sync_selection_to_action_manager()
         current_job_index = self.current_job_index()
         current_action_index = self.current_action_index()
         if current_job_index < 0 or current_action_index < 0 or \
-           current_job_index >= self.num_project_jobs():
+                current_job_index >= self.num_project_jobs():
             return False
         job = self.project_job(current_job_index)
-        action = None
-        action_counter = -1
-        for act in job.sub_actions:
-            action_counter += 1
-            if action_counter == current_action_index:
-                action = act
-                break
-            action_counter += len(act.sub_actions)
-        if not action or action.type_name != constants.ACTION_COMBO:
+        selection = self.selection_state
+        if not selection.is_action_selected() and not selection.is_subaction_selected():
             return False
+        action_index = selection.action_index
+        if action_index < 0 or action_index >= len(job.sub_actions):
+            return False
+        action = job.sub_actions[action_index]
+        if action.type_name != constants.ACTION_COMBO:
+            return False
+        insert_index = len(action.sub_actions)
+        if selection.is_subaction_selected():
+            if selection.sub_action_index >= 0:
+                insert_index = selection.sub_action_index + 1
         sub_action = ActionConfig(type_name)
         self.action_dialog = ActionConfigDialog(
             sub_action, self.current_file_directory(), self.parent())
         if self.action_dialog.exec() == QDialog.Accepted:
             self.mark_as_modified("Add Sub-action")
-            action.add_sub_action(sub_action)
-            new_subaction_index = len(action.sub_actions) - 1
-            self.widget_added_signal.emit(
-                (current_job_index, current_action_index, new_subaction_index))
-            self.on_job_selected(current_job_index)
-            self.set_current_action(current_action_index)
-            self.action_list_item(current_action_index).setSelected(True)
+            action.sub_actions.insert(insert_index, sub_action)
+            gui_insert_pos = self.get_insertion_position(selection)[0]
+            self.add_list_item(self.action_list(), sub_action, True, gui_insert_pos)
+            self.widget_added_signal.emit((current_job_index, action_index, insert_index))
+            self.set_current_action(gui_insert_pos)
+            self.action_list_item(gui_insert_pos).setSelected(True)
             return True
         return False
 
