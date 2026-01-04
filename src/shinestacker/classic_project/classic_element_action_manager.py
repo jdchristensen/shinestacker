@@ -73,8 +73,10 @@ class ClassicElementActionManager(ElementActionManager):
             if not 0 <= selection.job_index < self.num_project_jobs():
                 return None
             job = self.project().jobs[selection.job_index]
-            if confirm and self.confirm_delete_message('job', job.params.get('name', '')):
-                return None
+            if confirm:
+                confirmed = self.confirm_delete_message('job', job.params.get('name', ''))
+                if not confirmed:
+                    return None
             self.mark_as_modified(True, "Delete Job")
             deleted_job = self.project().jobs.pop(selection.job_index)
             self.callbacks['refresh_ui'](rows_to_state(self.project(), -1, -1))

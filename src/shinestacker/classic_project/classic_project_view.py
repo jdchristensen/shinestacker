@@ -1,4 +1,5 @@
 # pylint: disable=C0114, C0115, C0116, E0611, R0902, R0904, R0913, R0914, R0917, R0912, R0915, E1101
+# pylint: disable=W0613
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel, QSplitter, QMessageBox, QApplication, QDialog)
@@ -17,6 +18,7 @@ from .classic_element_action_manager import ClassicElementActionManager
 
 class ClassicProjectView(ProjectView, ListContainer):
     enable_sub_actions_requested = Signal(bool)
+    widget_deleted_signal = Signal(tuple)
 
     def __init__(self, project_holder, dark_theme, parent=None):
         ProjectView.__init__(self, project_holder, dark_theme, parent)
@@ -339,8 +341,28 @@ class ClassicProjectView(ProjectView, ListContainer):
         if current_action is not None:
             self.edit_action(current_action)
 
-    def delete_element(self, confirm=True):
-        return self.element_action.delete_element(confirm)
+    def delete_element(self, selection=None, update_project=True, confirm=True):
+        if selection is None:
+            old_state = self._get_selection_state()
+            if update_project:
+                result = self.element_action.delete_element(confirm)
+            else:
+                result = None
+            self.refresh_ui()
+            if old_state and old_state.is_valid():
+                self.widget_deleted_signal.emit((
+                    old_state.job_index,
+                    old_state.action_index,
+                    old_state.sub_action_index,
+                    old_state.widget_type
+                ))
+            return result
+        if selection and selection.is_valid():
+            job_idx = selection.job_index
+            if job_idx >= 0:
+                new_job_idx = max(0, min(job_idx, self.num_project_jobs() - 1))
+                self.refresh_ui(rows_to_state(self.project(), new_job_idx, -1))
+        return None
 
     def copy_element(self):
         self.element_action.copy_element()

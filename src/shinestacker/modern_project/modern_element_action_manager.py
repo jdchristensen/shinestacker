@@ -2,7 +2,7 @@
 from .. config.constants import constants
 from .. gui.element_action_manager import ElementActionManager
 from .element_operations import ElementOperations
-from .modern_selection_state import indices_to_state
+from .modern_selection_state import indices_to_state, ModernSelectionState
 
 
 class ModernElementActionManager(ElementActionManager):
@@ -104,59 +104,86 @@ class ModernElementActionManager(ElementActionManager):
 
     def delete_element(self, confirm=True):
         if self.selection_state.is_job_selected():
-            return self._delete_job(self.selection_state.job_index, confirm)
+            return self._delete_job(confirm)
         if self.selection_state.is_action_selected():
-            return self._delete_action(
-                self.selection_state.job_index, self.selection_state.action_index, confirm)
+            return self._delete_action(confirm)
         if self.selection_state.is_subaction_selected():
-            return self._delete_subaction(
-                self.selection_state.job_index, self.selection_state.action_index,
-                self.selection_state.subaction_index, confirm)
+            return self._delete_subaction(confirm)
         return None
 
-    def _delete_job(self, job_index, confirm=True):
+    def _delete_job(self, confirm=True):
+        job_index = self.selection_state.job_index
         if not 0 <= job_index < self.num_project_jobs():
-            return None
+            raise IndexError(f"Job index {job_index} out of range in data model")
         job = self.project().jobs[job_index]
-        if confirm and self.confirm_delete_message('job', job.params.get('name', '')):
+        if confirm and not self.confirm_delete_message('job', job.params.get('name', '')):
             return None
         self.mark_as_modified(True, "Delete Job")
         deleted_job = self.project().jobs.pop(job_index)
-        new_indices = self.new_indices_after_delete(self.selection_state)
-        self.callbacks['refresh_ui'](indices_to_state(*new_indices))
+        old_state = self.selection_state.copy()
+        removal_state = ModernSelectionState()
+        removal_state.set_job(job_index)
+        self.callbacks['remove_widget'](removal_state)
+        new_indices = self.new_indices_after_delete(old_state)
+        new_state = indices_to_state(*new_indices)
+        self.selection_state.copy_from(new_state)
+        self.callbacks['update_selection'](new_state)
+        if new_state:
+            self.callbacks['ensure_selected_visible']()
         return deleted_job
 
-    def _delete_action(self, job_index, action_index, confirm=True):
+    def _delete_action(self, confirm=True):
+        job_index = self.selection_state.job_index
+        action_index = self.selection_state.action_index
         if not 0 <= job_index < self.num_project_jobs():
-            return None
+            raise IndexError(f"Job index {job_index} out of range")
         job = self.project().jobs[job_index]
         if not 0 <= action_index < len(job.sub_actions):
-            return None
+            raise IndexError(f"Action index {action_index} out of range for job {job_index}")
         action = job.sub_actions[action_index]
-        if confirm and self.confirm_delete_message('action', action.params.get('name', '')):
+        if confirm and not self.confirm_delete_message('action', action.params.get('name', '')):
             return None
         self.mark_as_modified(True, "Delete Action")
         deleted_action = job.sub_actions.pop(action_index)
-        new_indices = self.new_indices_after_delete(self.selection_state)
-        self.callbacks['refresh_ui'](indices_to_state(*new_indices))
+        old_state = self.selection_state.copy()
+        removal_state = ModernSelectionState()
+        removal_state.set_action(job_index, action_index)
+        self.callbacks['remove_widget'](removal_state)
+        new_indices = self.new_indices_after_delete(old_state)
+        new_state = indices_to_state(*new_indices)
+        self.callbacks['update_selection'](new_state)
+        if new_state:
+            self.callbacks['ensure_selected_visible']()
         return deleted_action
 
-    def _delete_subaction(self, job_index, action_index, subaction_index, confirm=True):
+    def _delete_subaction(self, confirm=True):
+        job_index = self.selection_state.job_index
+        action_index = self.selection_state.action_index
+        subaction_index = self.selection_state.subaction_index
         if not 0 <= job_index < self.num_project_jobs():
-            return None
+            raise IndexError(f"Job index {job_index} out of range")
         job = self.project().jobs[job_index]
         if not 0 <= action_index < len(job.sub_actions):
-            return None
+            raise IndexError(f"Action index {action_index} out of range for job {job_index}")
         action = job.sub_actions[action_index]
         if not 0 <= subaction_index < len(action.sub_actions):
-            return None
+            raise IndexError(
+                f"Subaction index {subaction_index} out of range for action {action_index}")
         subaction = action.sub_actions[subaction_index]
-        if confirm and self.confirm_delete_message('sub-action', subaction.params.get('name', '')):
+        if confirm and not self.confirm_delete_message(
+                'sub-action', subaction.params.get('name', '')):
             return None
         self.mark_as_modified(True, "Delete Sub-action")
         deleted_subaction = action.sub_actions.pop(subaction_index)
-        new_indices = self.new_indices_after_delete(self.selection_state)
-        self.callbacks['refresh_ui'](indices_to_state(*new_indices))
+        old_state = self.selection_state.copy()
+        removal_state = ModernSelectionState()
+        removal_state.set_subaction(job_index, action_index, subaction_index)
+        self.callbacks['remove_widget'](removal_state)
+        new_indices = self.new_indices_after_delete(old_state)
+        new_state = indices_to_state(*new_indices)
+        self.callbacks['update_selection'](new_state)
+        if new_state:
+            self.callbacks['ensure_selected_visible']()
         return deleted_subaction
 
     def set_enabled(self, enabled):

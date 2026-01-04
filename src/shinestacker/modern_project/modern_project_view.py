@@ -1,5 +1,5 @@
 # pylint: disable=C0114, C0115, C0116, E0611, R0902, R0904, R0913, R0914, R0917, R0912, R0915, E1101
-# pylint: disable=R1716, C0302, R0911, R0903
+# pylint: disable=R1716, C0302, R0911, R0903, W0718
 import os
 from PySide6.QtCore import Qt, QTimer, Signal, Slot
 from PySide6.QtGui import QCursor
@@ -23,6 +23,7 @@ class ModernProjectView(ProjectView):
     update_delete_action_state_requested = Signal()
     show_status_message_requested = Signal(str, int)
     enable_sub_actions_requested = Signal(bool)
+    widget_deleted_signal = Signal(tuple)
 
     def __init__(self, project_holder, dark_theme, parent=None):
         ProjectView.__init__(self, project_holder, dark_theme, parent)
@@ -54,6 +55,8 @@ class ModernProjectView(ProjectView):
             {
                 'refresh_ui': self.refresh_ui,
                 'ensure_selected_visible': self._ensure_selected_visible,
+                'remove_widget': self._remove_widget,
+                'update_selection': self._update_selection,
             },
             self.parent()
         )
@@ -328,6 +331,34 @@ class ModernProjectView(ProjectView):
         if len(self.job_widgets) == 1:
             self._on_widget_clicked(job_widget, 'job', 0)
 
+    def _refresh_job_widget_signals(self):
+        for i, job_widget in enumerate(self.job_widgets):
+            job_widget.clicked.disconnect()
+
+            def make_job_handler(w, idx):
+                return lambda checked=False: self._on_widget_clicked(w, 'job', idx)
+
+            job_widget.clicked.connect(make_job_handler(job_widget, i))
+            for action_idx, action_widget in enumerate(job_widget.child_widgets):
+                action_widget.clicked.disconnect()
+
+                def make_action_handler(w, j_idx, a_idx):
+                    return lambda checked=False: self._on_widget_clicked(w, 'action', j_idx, a_idx)
+
+                action_widget.clicked.connect(make_action_handler(action_widget, i, action_idx))
+                for subaction_idx, subaction_widget in enumerate(action_widget.child_widgets):
+                    subaction_widget.clicked.disconnect()
+
+                    def make_subaction_handler(w, j_idx, a_idx, s_idx):
+                        return lambda checked=False: self._on_widget_clicked(
+                            w, 'subaction', j_idx, a_idx, s_idx)
+
+                    subaction_widget.clicked.connect(
+                        make_subaction_handler(subaction_widget, i, action_idx, subaction_idx))
+
+    def _refresh_after_structure_change(self):
+        self._refresh_job_widget_signals()
+
     def _on_widget_clicked(self, widget, widget_type, job_index, action_index=None,
                            subaction_index=None):
         if self.selected_widget:
@@ -427,9 +458,22 @@ class ModernProjectView(ProjectView):
             return False
         return True
 
-    def delete_element(self, confirm=True):
-        if self.enforce_stop_run():
-            return self.element_action.delete_element(confirm)
+    def delete_element(self, selection=None, update_project=True, confirm=True):
+        if selection is None:
+            old_selection = self.selection_state.copy()
+            if update_project:
+                result = self.element_action.delete_element(confirm)
+            else:
+                result = None
+            if result:
+                self.widget_deleted_signal.emit((
+                    old_selection.job_index,
+                    old_selection.action_index,
+                    old_selection.subaction_index,
+                    old_selection.widget_type
+                ))
+            return result
+        self._remove_widget(selection)
         return None
 
     def copy_element(self):
@@ -597,6 +641,129 @@ class ModernProjectView(ProjectView):
         if old_state:
             self.selection_nav.restore_selection(old_state)
             self._ensure_selected_visible()
+
+    def _update_selection(self, state):
+        if not state or not state.is_valid():
+            if self.selected_widget:
+                self.selected_widget.set_selected(False)
+            self.selected_widget = None
+            self.selection_state.reset()
+            return
+        self.selection_state.copy_from(state)
+        if state.is_job_selected():
+            if 0 <= state.job_index < len(self.job_widgets):
+                widget = self.job_widgets[state.job_index]
+                if self.selected_widget:
+                    self.selected_widget.set_selected(False)
+                widget.set_selected(True)
+                self.selected_widget = widget
+        elif state.is_action_selected():
+            if 0 <= state.job_index < len(self.job_widgets) and \
+                    0 <= state.action_index < self.job_widgets[state.job_index].num_child_widgets():
+                job_widget = self.job_widgets[state.job_index]
+                widget = job_widget.child_widgets[state.action_index]
+                if self.selected_widget:
+                    self.selected_widget.set_selected(False)
+                widget.set_selected(True)
+                self.selected_widget = widget
+        elif state.is_subaction_selected():
+            if 0 <= state.job_index < len(self.job_widgets) and \
+                    0 <= state.action_index < self.job_widgets[state.job_index].num_child_widgets():
+                job_widget = self.job_widgets[state.job_index]
+                action_widget = job_widget.child_widgets[state.action_index]
+                if 0 <= state.subaction_index < action_widget.num_child_widgets():
+                    widget = action_widget.child_widgets[state.subaction_index]
+                    if self.selected_widget:
+                        self.selected_widget.set_selected(False)
+                    widget.set_selected(True)
+                    self.selected_widget = widget
+
+    def _remove_widget(self, state):
+        if not state.is_valid():
+            raise ValueError(f"Invalid removal state: {state.to_tuple()}")
+        if state.is_job_selected():
+            if not 0 <= state.job_index < len(self.job_widgets):
+                raise IndexError(
+                    f"Job index {state.job_index} out of range "
+                    f"(0-{len(self.job_widgets) - 1})")
+            return self._remove_job_widget(state.job_index)
+        if state.is_action_selected():
+            if not 0 <= state.job_index < len(self.job_widgets):
+                raise IndexError(
+                    f"Job index {state.job_index} out of range "
+                    f"(0-{len(self.job_widgets) - 1})")
+            job_widget = self.job_widgets[state.job_index]
+            if not 0 <= state.action_index < len(job_widget.child_widgets):
+                raise IndexError(
+                    f"Action index {state.action_index} out of range "
+                    f"for job {state.job_index} (0-{len(job_widget.child_widgets) - 1})")
+            return self._remove_action_widget(state.job_index, state.action_index)
+        if state.is_subaction_selected():
+            if not 0 <= state.job_index < len(self.job_widgets):
+                raise IndexError(
+                    f"Job index {state.job_index} out of range "
+                    f"(0-{len(self.job_widgets) - 1})")
+            job_widget = self.job_widgets[state.job_index]
+            if not 0 <= state.action_index < len(job_widget.child_widgets):
+                raise IndexError(
+                    f"Action index {state.action_index} out of range "
+                    f"for job {state.job_index} (0-{len(job_widget.child_widgets) - 1})")
+            action_widget = job_widget.child_widgets[state.action_index]
+            if not 0 <= state.subaction_index < len(action_widget.child_widgets):
+                raise IndexError(
+                    f"Subaction index {state.subaction_index} out of range "
+                    f"for action {state.action_index} (0-{len(action_widget.child_widgets) - 1})")
+            return self._remove_subaction_widget(
+                state.job_index, state.action_index, state.subaction_index)
+        raise ValueError(f"Unknown widget type in state: {state.widget_type}")
+
+    def _remove_job_widget(self, job_index):
+        if not 0 <= job_index < len(self.job_widgets):
+            raise IndexError(f"Job index {job_index} out of range (0-{len(self.job_widgets) - 1})")
+        widget = self.job_widgets.pop(job_index)
+        self.project_layout.removeWidget(widget)
+        widget.clicked.disconnect()
+        widget.double_clicked.disconnect()
+        widget.deleteLater()
+        self._refresh_job_widget_signals()
+        return True
+
+    def _remove_action_widget(self, job_index, action_index):
+        if not 0 <= job_index < len(self.job_widgets):
+            return False
+        job_widget = self.job_widgets[job_index]
+        if not 0 <= action_index < len(job_widget.child_widgets):
+            return False
+        action_widget = job_widget.child_widgets.pop(action_index)
+        job_widget.child_container_layout.removeWidget(action_widget)
+        try:
+            action_widget.clicked.disconnect()
+            action_widget.double_clicked.disconnect()
+        except Exception:
+            pass
+        action_widget.deleteLater()
+        self._refresh_job_widget_signals()
+        return True
+
+    def _remove_subaction_widget(self, job_index, action_index, subaction_index):
+        if not 0 <= job_index < len(self.job_widgets):
+            return False
+        job_widget = self.job_widgets[job_index]
+        if not 0 <= action_index < len(job_widget.child_widgets):
+            return False
+        action_widget = job_widget.child_widgets[action_index]
+        if not 0 <= subaction_index < len(action_widget.child_widgets):
+            return False
+        subaction_widget = action_widget.child_widgets.pop(subaction_index)
+        action_widget.child_container_layout.removeWidget(subaction_widget)
+        try:
+            subaction_widget.clicked.disconnect()
+            subaction_widget.double_clicked.disconnect()
+        except Exception:
+            pass
+        subaction_widget.deleteLater()
+        self._refresh_job_widget_signals()
+        return True
 
     def get_console_area(self):
         return self.console_area
