@@ -10,6 +10,9 @@ This page reports the main releases only and the main changes therein.
 ### Changed
 - code refactoring and cleanup
 
+### Issues
+- fix add new mask noise sub-action dialog
+
 ---
 
 ## [v1.13.0] - 2025-12-29

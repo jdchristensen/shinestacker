@@ -38,16 +38,17 @@ class ProjectHolder:
     def set_modified(self, modified):
         self.modified = modified
 
-    def mark_as_modified(self, modified=True, description=''):
+    def mark_as_modified(self, modified=True, description='', action_type=None,
+                         affected_position=(-1, -1, -1)):
         self.modified = modified
         if modified:
-            self.add_undo(self.project.clone(), description)
+            self.add_undo(self.project.clone(), description, action_type, affected_position)
 
     def reset_undo(self):
         self.undo_manager.reset()
 
-    def add_undo(self, item, description=''):
-        self.undo_manager.add(item, description)
+    def add_undo(self, item, description='', action_type=None, affected_position=(-1, -1, -1)):
+        self.undo_manager.add(item, description, action_type, affected_position)
 
     def pop_undo(self):
         return self.undo_manager.pop()
@@ -112,11 +113,9 @@ class ProjectHandler:
     def modified(self):
         return self.project_holder.modified
 
-    def set_modified(self, modified):
-        self.project_holder.set_modified(modified)
-
-    def mark_as_modified(self, modified=True, description=''):
-        self.project_holder.mark_as_modified(modified, description)
+    def mark_as_modified(self, modified=True, description='', action_type=None,
+                         affected_position=(-1, -1, -1)):
+        self.project_holder.mark_as_modified(modified, description, action_type, affected_position)
 
     def undo_manager(self):
         return self.project_holder.undo_manager
@@ -124,8 +123,8 @@ class ProjectHandler:
     def reset_undo(self):
         self.project_holder.reset_undo()
 
-    def add_undo(self, item, description=''):
-        self.project_holder.add_undo(item, description)
+    def add_undo(self, item, description='', action_type=None, affected_position=(-1, -1, -1)):
+        self.project_holder.add_undo(item, description, action_type, affected_position)
 
     def pop_undo(self):
         return self.project_holder.pop_undo()

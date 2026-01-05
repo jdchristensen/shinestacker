@@ -9,17 +9,25 @@ class ProjectUndoManager(QObject):
         super().__init__(parent)
         self._undo_buffer = []
 
-    def add(self, item, description):
-        self._undo_buffer.append((item, description))
+    def add(self, item, description, action_type=None, affected_position=None):
+        entry = {
+            'item': item,
+            'description': description,
+            'action_type': action_type if action_type else '',
+            'affected_position': affected_position if affected_position else (-1, -1, -1)
+        }
+        self._undo_buffer.append(entry)
         self.set_enabled_undo_action_requested.emit(True, description)
 
     def pop(self):
-        last = self._undo_buffer.pop()
+        entry = self._undo_buffer.pop()
         if len(self._undo_buffer) == 0:
             self.set_enabled_undo_action_requested.emit(False, '')
         else:
-            self.set_enabled_undo_action_requested.emit(True, self._undo_buffer[-1][1])
-        return last[0]
+            self.set_enabled_undo_action_requested.emit(True, self._undo_buffer[-1]['description'])
+        print(f"UNDO DEBUG: action={entry['action_type']}, "
+              f"position={entry['affected_position']}, desc={entry['description']}")
+        return entry['item']
 
     def filled(self):
         return len(self._undo_buffer) != 0

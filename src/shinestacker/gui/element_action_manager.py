@@ -31,7 +31,10 @@ class ElementActionManager(ProjectHandler, QObject):
             QMessageBox.Yes | QMessageBox.No
         ) == QMessageBox.Yes
 
-    def paste_job_logic(self, copy_buffer, job_index, clone_buffer):
+    def paste_job_logic(self, copy_buffer, job_index, clone_buffer, description="",
+                        action_type="", affected_position=None):
+        if affected_position:
+            self.mark_as_modified(True, description, action_type, affected_position)
         if copy_buffer.type_name != constants.ACTION_JOB:
             if self.num_project_jobs() == 0:
                 return False, None, None

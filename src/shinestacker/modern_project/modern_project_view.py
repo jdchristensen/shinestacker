@@ -683,35 +683,58 @@ class ModernProjectView(ProjectView):
         self.refresh_ui()
         return False
 
+    def _get_widget_from_selection(self, selection):
+        if not selection or not selection.is_valid():
+            return None
+        if selection.is_job_selected():
+            if 0 <= selection.job_index < len(self.job_widgets):
+                return self.job_widgets[selection.job_index]
+        elif selection.is_action_selected():
+            if 0 <= selection.job_index < len(self.job_widgets):
+                job_widget = self.job_widgets[selection.job_index]
+                if 0 <= selection.action_index < len(job_widget.child_widgets):
+                    return job_widget.child_widgets[selection.action_index]
+        elif selection.is_subaction_selected():
+            if 0 <= selection.job_index < len(self.job_widgets):
+                job_widget = self.job_widgets[selection.job_index]
+                if 0 <= selection.action_index < len(job_widget.child_widgets):
+                    action_widget = job_widget.child_widgets[selection.action_index]
+                    if 0 <= selection.subaction_index < len(action_widget.child_widgets):
+                        return action_widget.child_widgets[selection.subaction_index]
+        return None
+
+    def _update_widget_enable_state(self, selection, enabled):
+        widget = self._get_widget_from_selection(selection)
+        if widget:
+            widget.set_enabled_and_update(enabled)
+
     def enable(self, selection=None, update_project=True):
         if selection is None:
-            self.element_action.set_enabled(True, update_project=update_project)
+            selection = self.selection_state
+        if update_project:
+            self.element_action.set_enabled(True, update_project=True)
             if update_project:
-                print(f"Modern emitting enable signal: {self.selection_state}, enabled=True")
                 self.widget_enable_signal.emit((
                     self.selection_state.job_index,
                     self.selection_state.action_index,
                     self.selection_state.subaction_index,
                     self.selection_state.widget_type
                 ), True)
-        else:
-            self.element_action.set_enabled(
-                True, selection=selection, update_project=update_project)
+        self._update_widget_enable_state(selection, True)
 
     def disable(self, selection=None, update_project=True):
         if selection is None:
-            self.element_action.set_enabled(False, update_project=update_project)
+            selection = self.selection_state
+        if update_project:
+            self.element_action.set_enabled(False, update_project=True)
             if update_project:
-                print(f"Modern emitting enable signal: {self.selection_state}, enabled=False")
                 self.widget_enable_signal.emit((
                     self.selection_state.job_index,
                     self.selection_state.action_index,
                     self.selection_state.subaction_index,
                     self.selection_state.widget_type
                 ), False)
-        else:
-            self.element_action.set_enabled(
-                False, selection=selection, update_project=update_project)
+        self._update_widget_enable_state(selection, False)
 
     def enable_all(self, update_project=True):
         if update_project:
@@ -785,7 +808,8 @@ class ModernProjectView(ProjectView):
             return
         for job in self.project().jobs:
             job.set_enabled_all(enabled)
-        self.mark_as_modified(True, f"{'Enable' if enabled else 'Disable'} All")
+        self.mark_as_modified(
+            True, f"{'Enable' if enabled else 'Disable'} All", "edit_all", (-1, -1, -1))
         self.refresh_ui()
 
     def _set_enabled(self, job_idx, action_idx, subaction_idx, enabled):
@@ -796,17 +820,22 @@ class ModernProjectView(ProjectView):
                     0 <= action_idx < len(self.project().jobs[job_idx].sub_actions)):
                 action = self.project().jobs[job_idx].sub_actions[action_idx]
                 if 0 <= subaction_idx < len(action.sub_actions):
+                    self.mark_as_modified(
+                        True, f"{'Enable' if enabled else 'Disable'} Sub-action", "edit",
+                        (job_idx, action_idx, subaction_idx))
                     action.sub_actions[subaction_idx].set_enabled(enabled)
-                    self.mark_as_modified(True, f"{'Enable' if enabled else 'Disable'} Sub-action")
         elif self.selection_state.is_action_selected():
             if 0 <= job_idx < self.num_project_jobs() and \
                     0 <= action_idx < len(self.project().jobs[job_idx].sub_actions):
+                self.mark_as_modified(
+                    True, f"{'Enable' if enabled else 'Disable'} Action", "edit",
+                    (job_idx, action_idx, -1))
                 self.project().jobs[job_idx].sub_actions[action_idx].set_enabled(enabled)
-                self.mark_as_modified(True, f"{'Enable' if enabled else 'Disable'} Action")
         elif self.selection_state.is_job_selected():
             if 0 <= job_idx < self.num_project_jobs():
+                self.mark_as_modified(
+                    True, f"{'Enable' if enabled else 'Disable'} Job", "edit", (job_idx, -1, -1))
                 self.project().jobs[job_idx].set_enabled(enabled)
-                self.mark_as_modified(True, f"{'Enable' if enabled else 'Disable'} Job")
         self.refresh_ui()
 
     def _ensure_selected_visible(self):
@@ -840,9 +869,9 @@ class ModernProjectView(ProjectView):
         self.action_dialog = ActionConfigDialog(
             action, self.current_file_directory(), self.parent())
         if self.action_dialog.exec() == QDialog.Accepted:
-            self.mark_as_modified(True, "Add Action")
+            new_action_index = len(self.project().jobs[job_index].sub_actions)
+            self.mark_as_modified(True, "Add Action", "add", (job_index, new_action_index, -1))
             self.project().jobs[job_index].add_sub_action(action)
-            new_action_index = len(self.project().jobs[job_index].sub_actions) - 1
             self.selection_state.set_action(job_index, new_action_index)
             self.selection_state.subaction_index = -1
             self.selection_state.widget_type = 'action'
@@ -864,17 +893,21 @@ class ModernProjectView(ProjectView):
                 action = job.sub_actions[action_index]
                 if action.type_name != constants.ACTION_COMBO:
                     return False
+                if self.selection_state.is_subaction_selected():
+                    insert_index = self.selection_state.subaction_index + 1
+                else:
+                    insert_index = len(action.sub_actions)
                 sub_action = ActionConfig(type_name)
                 self.action_dialog = ActionConfigDialog(
                     sub_action, self.current_file_directory(), self.parent())
                 if self.action_dialog.exec() == QDialog.Accepted:
-                    self.mark_as_modified(True, "Add Sub-action")
-                    action.add_sub_action(sub_action)
-                    new_subaction_index = len(action.sub_actions) - 1
-                    self.selection_state.subaction_index = new_subaction_index
+                    self.mark_as_modified(
+                        True, "Add Sub-action", "add", (job_index, action_index, insert_index))
+                    action.sub_actions.insert(insert_index, sub_action)
+                    self.selection_state.subaction_index = insert_index
                     self.selection_state.widget_type = 'subaction'
                     self.refresh_ui()
-                    self.widget_added_signal.emit((job_index, action_index, new_subaction_index))
+                    self.widget_added_signal.emit((job_index, action_index, insert_index))
                     return True
         return False
 

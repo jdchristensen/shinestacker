@@ -135,8 +135,10 @@ class MainWindow(ProjectIOHandler, QMainWindow):
     def show_status_message(self, message, timeout=4000):
         self.statusBar().showMessage(message, timeout)
 
-    def mark_as_modified(self, modified=True, description=''):
-        ProjectIOHandler.mark_as_modified(self, modified, description)
+    def mark_as_modified(self, modified=True, description='', action_type='',
+                         affected_position=(-1, -1, -1)):
+        ProjectIOHandler.mark_as_modified(
+            self, modified, description, action_type, affected_position)
         self.menu_manager.save_actions_set_enabled(modified)
         self.update_title()
 
@@ -361,9 +363,9 @@ class MainWindow(ProjectIOHandler, QMainWindow):
         job_action = ActionConfig("Job")
         self.action_dialog = ActionConfigDialog(job_action, self.current_file_directory(), self)
         if self.action_dialog.exec() == QDialog.Accepted:
-            self.mark_as_modified(True, "Add Job")
             new_job_index = 0 if self.num_project_jobs() == 0 \
                 else self.current_view.current_job_index() + 1
+            self.mark_as_modified(True, "Add Job", "add", (new_job_index, -1, -1))
             self.project_jobs().insert(new_job_index, job_action)
             self.set_enabled_file_open_close_actions(True)
             self.current_view.refresh_and_select_job(new_job_index)

@@ -205,6 +205,11 @@ class BaseWidget(QFrame):
         self.data_object.params['enabled'] = enabled
         self._update_stylesheet()
 
+    def set_enabled_and_update(self, enabled):
+        self._enabled = enabled
+        self._update_enabled_icon()
+        self._update_stylesheet()
+
     # pylint: disable=C0103
     def resizeEvent(self, event):
         super().resizeEvent(event)

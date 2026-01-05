@@ -531,7 +531,7 @@ class ClassicProjectView(ProjectView, ListContainer):
         self.action_dialog = ActionConfigDialog(
             action, self.current_file_directory(), self.parent())
         if self.action_dialog.exec() == QDialog.Accepted:
-            self.mark_as_modified("Add Action")
+            self.mark_as_modified(True, "Add Action", "add", (current_job_index, insert_index, -1))
             job.sub_actions.insert(insert_index, action)
             gui_insert_pos = self.get_insertion_position(selection)[0]
             self.add_list_item(self.action_list(), action, False, gui_insert_pos)
@@ -565,7 +565,8 @@ class ClassicProjectView(ProjectView, ListContainer):
         self.action_dialog = ActionConfigDialog(
             sub_action, self.current_file_directory(), self.parent())
         if self.action_dialog.exec() == QDialog.Accepted:
-            self.mark_as_modified("Add Sub-action")
+            self.mark_as_modified(
+                True, "Add Sub-action", "add", (current_job_index, action_index, insert_index))
             action.sub_actions.insert(insert_index, sub_action)
             gui_insert_pos = self.get_insertion_position(selection)[0]
             self.add_list_item(self.action_list(), sub_action, True, gui_insert_pos)
