@@ -444,7 +444,6 @@ class MainWindow(ProjectIOHandler, QMainWindow):
                 view.update_added_element(indices_tuple)
 
     def handle_widget_enable(self, indices_tuple, enabled):
-        print(f"MainWindow handle_widget_enable: {indices_tuple}, enabled={enabled}")
         job_idx, action_idx, subaction_idx, widget_type = indices_tuple
         for _view_name, view in self.views.items():
             if view != self.sender():

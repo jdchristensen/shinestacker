@@ -302,6 +302,7 @@ class ModernProjectView(ProjectView):
         job_widget.double_clicked.connect(
             lambda checked=False, idx=job_index: self._on_job_double_clicked(idx)
         )
+        job_widget.enabled_toggled.connect(self._on_widget_enabled_toggled)
         self.job_widgets.append(job_widget)
         self.project_layout.addWidget(job_widget)
         for action_idx, action_widget in enumerate(job_widget.child_widgets):
@@ -315,6 +316,7 @@ class ModernProjectView(ProjectView):
                 lambda checked=False, j_idx=job_index, a_idx=action_idx:
                 self._on_action_double_clicked(j_idx, a_idx)
             )
+            action_widget.enabled_toggled.connect(self._on_widget_enabled_toggled)
             for subaction_idx, subaction_widget in enumerate(action_widget.child_widgets):
                 def make_subaction_click_handler(j_idx, a_idx, s_idx, widget):
                     def handler():
@@ -328,6 +330,7 @@ class ModernProjectView(ProjectView):
                     lambda checked=False, j_idx=job_index, a_idx=action_idx, s_idx=subaction_idx:
                     self._on_subaction_double_clicked(j_idx, a_idx, s_idx)
                 )
+                subaction_widget.enabled_toggled.connect(self._on_widget_enabled_toggled)
         if len(self.job_widgets) == 1:
             self._on_widget_clicked(job_widget, 'job', 0)
 
@@ -340,6 +343,11 @@ class ModernProjectView(ProjectView):
             job_widget.clicked.connect(
                 lambda checked=False, w=job_widget, idx=i:
                 self._on_widget_clicked(w, 'job', idx))
+            try:
+                job_widget.enabled_toggled.disconnect()
+            except Exception:
+                pass
+            job_widget.enabled_toggled.connect(self._on_widget_enabled_toggled)
             for action_idx, action_widget in enumerate(job_widget.child_widgets):
                 try:
                     action_widget.clicked.disconnect()
@@ -348,6 +356,11 @@ class ModernProjectView(ProjectView):
                 action_widget.clicked.connect(
                     lambda checked=False, w=action_widget, j_idx=i, a_idx=action_idx:
                     self._on_widget_clicked(w, 'action', j_idx, a_idx))
+                try:
+                    action_widget.enabled_toggled.disconnect()
+                except Exception:
+                    pass
+                action_widget.enabled_toggled.connect(self._on_widget_enabled_toggled)
                 for subaction_idx, subaction_widget in enumerate(action_widget.child_widgets):
                     try:
                         subaction_widget.clicked.disconnect()
@@ -357,6 +370,11 @@ class ModernProjectView(ProjectView):
                         lambda checked=False, w=subaction_widget,
                         j_idx=i, a_idx=action_idx, s_idx=subaction_idx:
                         self._on_widget_clicked(w, 'subaction', j_idx, a_idx, s_idx))
+                    try:
+                        subaction_widget.enabled_toggled.disconnect()
+                    except Exception:
+                        pass
+                    subaction_widget.enabled_toggled.connect(self._on_widget_enabled_toggled)
 
     def _refresh_after_structure_change(self):
         self._refresh_job_widget_signals()
@@ -375,6 +393,24 @@ class ModernProjectView(ProjectView):
             self.selection_state.set_subaction(job_index, action_index, subaction_index)
         self.update_delete_action_state_requested.emit()
         self.setFocus()
+
+    def _on_widget_enabled_toggled(self, enabled):
+        widget = self.sender()
+        if not widget:
+            return
+        for job_idx, job_widget in enumerate(self.job_widgets):
+            if widget == job_widget:
+                self.widget_enable_signal.emit((job_idx, -1, -1, 'job'), enabled)
+                return
+            for action_idx, action_widget in enumerate(job_widget.child_widgets):
+                if widget == action_widget:
+                    self.widget_enable_signal.emit((job_idx, action_idx, -1, 'action'), enabled)
+                    return
+                for subaction_idx, subaction_widget in enumerate(action_widget.child_widgets):
+                    if widget == subaction_widget:
+                        self.widget_enable_signal.emit(
+                            (job_idx, action_idx, subaction_idx, 'subaction'), enabled)
+                        return
 
     def _on_job_double_clicked(self, job_index):
         job_widget = self.job_widgets[job_index]
