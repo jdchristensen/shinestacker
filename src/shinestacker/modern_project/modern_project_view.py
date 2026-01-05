@@ -1,5 +1,5 @@
 # pylint: disable=C0114, C0115, C0116, E0611, R0902, R0904, R0913, R0914, R0917, R0912, R0915, E1101
-# pylint: disable=R1716, C0302, R0911, R0903, W0718, W0613, R0801
+# pylint: disable=R1716, C0302, R0911, R0903, W0718, W0613, R0801, R1702
 import os
 from PySide6.QtCore import Qt, QTimer, Signal, Slot
 from PySide6.QtGui import QCursor
@@ -1427,7 +1427,53 @@ class ModernProjectView(ProjectView):
             self.refresh_ui()
 
     def _undo_delete_action(self, position, description):
-        self.refresh_ui()
+        job_idx, action_idx, subaction_idx = position
+        if job_idx < 0:
+            return
+        if subaction_idx >= 0:
+            if job_idx < len(self.project().jobs) and \
+                    action_idx < len(self.project().jobs[job_idx].sub_actions):
+                action = self.project().jobs[job_idx].sub_actions[action_idx]
+                if subaction_idx < len(action.sub_actions):
+                    subaction = action.sub_actions[subaction_idx]
+                    self._insert_subaction_widget(job_idx, action_idx, subaction_idx, subaction)
+                    if (job_idx < len(self.job_widgets) and
+                        action_idx < len(self.job_widgets[job_idx].child_widgets) and
+                        subaction_idx < len(
+                            self.job_widgets[job_idx].child_widgets[action_idx].child_widgets)):
+                        widget = self.job_widgets[
+                            job_idx].child_widgets[action_idx].child_widgets[subaction_idx]
+                        if self.selected_widget:
+                            self.selected_widget.set_selected(False)
+                        widget.set_selected(True)
+                        self.selected_widget = widget
+                        self.selection_state.set_subaction(job_idx, action_idx, subaction_idx)
+        elif action_idx >= 0:
+            if job_idx < len(self.project().jobs) and \
+                    action_idx < len(self.project().jobs[job_idx].sub_actions):
+                action = self.project().jobs[job_idx].sub_actions[action_idx]
+                self._insert_action_widget(job_idx, action_idx, action)
+                if job_idx < len(self.job_widgets) and \
+                        action_idx < len(self.job_widgets[job_idx].child_widgets):
+                    widget = self.job_widgets[job_idx].child_widgets[action_idx]
+                    if self.selected_widget:
+                        self.selected_widget.set_selected(False)
+                    widget.set_selected(True)
+                    self.selected_widget = widget
+                    self.selection_state.set_action(job_idx, action_idx)
+        elif job_idx >= 0:
+            if job_idx < len(self.project().jobs):
+                job = self.project().jobs[job_idx]
+                self._insert_job_widget(job_idx, job)
+                if job_idx < len(self.job_widgets):
+                    widget = self.job_widgets[job_idx]
+                    if self.selected_widget:
+                        self.selected_widget.set_selected(False)
+                    widget.set_selected(True)
+                    self.selected_widget = widget
+                    self.selection_state.set_job(job_idx)
+        self._refresh_job_widget_signals()
+        self.update_delete_action_state_requested.emit()
 
     def _undo_edit_action(self, position, description):
         job_idx, action_idx, subaction_idx = position
@@ -1542,4 +1588,33 @@ class ModernProjectView(ProjectView):
             insert_second, child_widgets[insert_second])
 
     def _undo_edit_all_action(self, position, description):
-        self.refresh_ui()
+        entry = self.undo_manager().last_entry()
+        if not entry or 'item' not in entry:
+            self.refresh_ui()
+            return
+        saved_project = entry['item']
+        if not saved_project or not saved_project.jobs:
+            self.refresh_ui()
+            return
+        for job_idx, job_widget in enumerate(self.job_widgets):
+            if job_idx < len(saved_project.jobs):
+                saved_job = saved_project.jobs[job_idx]
+                job_enabled = saved_job.params.get('enabled', True)
+                job_widget.data_object.params['enabled'] = job_enabled
+                job_widget.update(job_widget.data_object)
+                job_widget.set_enabled_and_update(job_enabled)
+                for action_idx, action_widget in enumerate(job_widget.child_widgets):
+                    if action_idx < len(saved_job.sub_actions):
+                        saved_action = saved_job.sub_actions[action_idx]
+                        action_enabled = saved_action.params.get('enabled', True)
+                        action_widget.data_object.params['enabled'] = action_enabled
+                        action_widget.update(action_widget.data_object)
+                        action_widget.set_enabled_and_update(action_enabled)
+                        for subaction_idx, subaction_widget \
+                                in enumerate(action_widget.child_widgets):
+                            if subaction_idx < len(saved_action.sub_actions):
+                                saved_subaction = saved_action.sub_actions[subaction_idx]
+                                subaction_enabled = saved_subaction.params.get('enabled', True)
+                                subaction_widget.data_object.params['enabled'] = subaction_enabled
+                                subaction_widget.update(subaction_widget.data_object)
+                                subaction_widget.set_enabled_and_update(subaction_enabled)
