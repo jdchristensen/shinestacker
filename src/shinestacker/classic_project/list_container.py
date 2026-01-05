@@ -1,4 +1,4 @@
-# pylint: disable=C0114, C0115, C0116, E0611, R0903, R0904, R0913, R0917, E1101
+# pylint: disable=C0114, C0115, C0116, E0611, R0903, R0904, R0913, R0917, E1101, R0911
 import os
 from PySide6.QtCore import Qt, QEvent, QSize, Signal
 from PySide6.QtWidgets import QListWidget, QListWidgetItem, QLabel, QSizePolicy
@@ -170,15 +170,13 @@ class ListContainer:
             selected_action = selection_state.action
             if selected_action and selected_action.sub_actions:
                 return current_row + len(selected_action.sub_actions) + 1, False
-            else:
-                return current_row + 1, False
+            return current_row + 1, False
         if selection_state.is_subaction_selected():
             parent_action = selection_state.action
             sub_action_idx = selection_state.sub_action_index
             if sub_action_idx == len(parent_action.sub_actions) - 1:
                 return current_row + 1, False
-            else:
-                return current_row + 1, True
+            return current_row + 1, True
         return self.action_list_count(), False
 
     def add_list_item(self, widget_list, action, is_sub_action, position=None):

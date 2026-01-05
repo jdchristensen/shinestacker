@@ -427,17 +427,51 @@ class ClassicProjectView(ProjectView, ListContainer):
                 new_job_idx = max(0, min(job_idx, self.num_project_jobs() - 1))
                 self.refresh_ui(rows_to_state(self.project(), new_job_idx, -1))
 
-    def enable(self):
-        self.element_action.enable()
+    def enable(self, selection=None, update_project=True):
+        self._sync_selection_to_action_manager()
+        if selection is None:
+            self.element_action.enable()
+            if update_project:
+                self.widget_enable_signal.emit((
+                    self.selection_state.job_index,
+                    self.selection_state.action_index,
+                    self.selection_state.sub_action_index,
+                    self.selection_state.widget_type
+                ), True)
+        else:
+            if update_project:
+                self.element_action.set_enabled(True, selection)
+            self.refresh_ui()
 
-    def disable(self):
-        self.element_action.disable()
+    def disable(self, selection=None, update_project=True):
+        self._sync_selection_to_action_manager()
+        if selection is None:
+            self.element_action.disable()
+            if update_project:
+                self.widget_enable_signal.emit((
+                    self.selection_state.job_index,
+                    self.selection_state.action_index,
+                    self.selection_state.sub_action_index,
+                    self.selection_state.widget_type
+                ), False)
+        else:
+            if update_project:
+                self.element_action.set_enabled(False, selection)
+            self.refresh_ui()
 
-    def enable_all(self):
-        self.element_action.enable_all()
+    def enable_all(self, update_project=True):
+        if update_project:
+            self.element_action.enable_all()
+            self.widget_enable_all_signal.emit(True)
+        else:
+            self.refresh_ui()
 
-    def disable_all(self):
-        self.element_action.disable_all()
+    def disable_all(self, update_project=True):
+        if update_project:
+            self.element_action.disable_all()
+            self.widget_enable_all_signal.emit(False)
+        else:
+            self.refresh_ui()
 
     def move_element_up(self, selection=None, update_project=True):
         if selection is None:

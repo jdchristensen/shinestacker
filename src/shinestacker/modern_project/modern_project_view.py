@@ -643,17 +643,58 @@ class ModernProjectView(ProjectView):
         self.refresh_ui()
         return False
 
-    def enable(self):
-        self.element_action.enable()
+    def enable(self, selection=None, update_project=True):
+        if selection is None:
+            self.element_action.set_enabled(True, update_project=update_project)
+            if update_project:
+                print(f"Modern emitting enable signal: {self.selection_state}, enabled=True")
+                self.widget_enable_signal.emit((
+                    self.selection_state.job_index,
+                    self.selection_state.action_index,
+                    self.selection_state.subaction_index,
+                    self.selection_state.widget_type
+                ), True)
+        else:
+            self.element_action.set_enabled(
+                True, selection=selection, update_project=update_project)
 
-    def disable(self):
-        self.element_action.disable()
+    def disable(self, selection=None, update_project=True):
+        if selection is None:
+            self.element_action.set_enabled(False, update_project=update_project)
+            if update_project:
+                print(f"Modern emitting enable signal: {self.selection_state}, enabled=False")
+                self.widget_enable_signal.emit((
+                    self.selection_state.job_index,
+                    self.selection_state.action_index,
+                    self.selection_state.subaction_index,
+                    self.selection_state.widget_type
+                ), False)
+        else:
+            self.element_action.set_enabled(
+                False, selection=selection, update_project=update_project)
 
-    def enable_all(self):
-        self.element_action.enable_all()
+    def enable_all(self, update_project=True):
+        if update_project:
+            self.element_action.set_enabled_all(True)
+            self.widget_enable_all_signal.emit(True)
+        self._update_all_widgets_enabled(True)
 
-    def disable_all(self):
-        self.element_action.disable_all()
+    def disable_all(self, update_project=True):
+        if update_project:
+            self.element_action.set_enabled_all(False)
+            self.widget_enable_all_signal.emit(False)
+        self._update_all_widgets_enabled(False)
+
+    def _update_all_widgets_enabled(self, enabled):
+        for job_widget in self.job_widgets:
+            job_widget.data_object.params['enabled'] = enabled
+            job_widget.update(job_widget.data_object)
+            for action_widget in job_widget.child_widgets:
+                action_widget.data_object.params['enabled'] = enabled
+                action_widget.update(action_widget.data_object)
+                for subaction_widget in action_widget.child_widgets:
+                    subaction_widget.data_object.params['enabled'] = enabled
+                    subaction_widget.update(subaction_widget.data_object)
 
     def move_element_up(self, selection=None, update_project=True):
         if selection is None:

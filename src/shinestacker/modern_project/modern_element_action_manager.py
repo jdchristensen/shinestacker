@@ -186,38 +186,48 @@ class ModernElementActionManager(ElementActionManager):
             self.callbacks['ensure_selected_visible']()
         return deleted_subaction
 
-    def set_enabled(self, enabled):
-        if not self.selection_state.is_valid():
+    def set_enabled(self, enabled, selection=None, update_project=True):
+        if selection is None:
+            selection = self.selection_state
+        if not selection.is_valid():
             return
-        if self.selection_state.is_job_selected():
-            job_index = self.selection_state.job_index
+        if update_project:
+            self._set_enabled_with_project_update(selection, enabled)
+        else:
+            self._set_enabled_ui_only(selection)
+
+    def _set_enabled_with_project_update(self, selection, enabled):
+        if selection.is_job_selected():
+            job_index = selection.job_index
             if 0 <= job_index < self.num_project_jobs():
                 job = self.project().jobs[job_index]
                 if job.enabled() != enabled:
                     self._set_element_enabled(job, enabled, "Job")
-                    current_indices = self.selection_state.to_tuple()
+                    current_indices = selection.to_tuple()
                     self.callbacks['refresh_ui'](indices_to_state(*current_indices))
-        elif self.selection_state.is_action_selected() \
-                or self.selection_state.is_subaction_selected():
-            element = self._get_selected_action()
+        elif selection.is_action_selected() or selection.is_subaction_selected():
+            element = self._get_element_from_selection(selection)
             if element and element.enabled() != enabled:
-                element_type = "Sub-action" \
-                    if self.selection_state.is_subaction_selected() else "Action"
+                element_type = "Sub-action" if selection.is_subaction_selected() else "Action"
                 self._set_element_enabled(element, enabled, element_type)
-                current_indices = self.selection_state.to_tuple()
+                current_indices = selection.to_tuple()
                 self.callbacks['refresh_ui'](indices_to_state(*current_indices))
 
-    def _get_selected_action(self):
-        if self.selection_state.is_action_selected():
-            job_idx = self.selection_state.job_index
-            action_idx = self.selection_state.action_index
+    def _set_enabled_ui_only(self, selection):
+        current_indices = selection.to_tuple()
+        self.callbacks['refresh_ui'](indices_to_state(*current_indices))
+
+    def _get_element_from_selection(self, selection):
+        if selection.is_action_selected():
+            job_idx = selection.job_index
+            action_idx = selection.action_index
             if (0 <= job_idx < self.num_project_jobs() and
                     0 <= action_idx < len(self.project().jobs[job_idx].sub_actions)):
                 return self.project().jobs[job_idx].sub_actions[action_idx]
-        elif self.selection_state.is_subaction_selected():
-            job_idx = self.selection_state.job_index
-            action_idx = self.selection_state.action_index
-            subaction_idx = self.selection_state.subaction_index
+        elif selection.is_subaction_selected():
+            job_idx = selection.job_index
+            action_idx = selection.action_index
+            subaction_idx = selection.subaction_index
             if (0 <= job_idx < self.num_project_jobs() and
                     0 <= action_idx < len(self.project().jobs[job_idx].sub_actions)):
                 action = self.project().jobs[job_idx].sub_actions[action_idx]
@@ -230,8 +240,6 @@ class ModernElementActionManager(ElementActionManager):
         self.mark_as_modified(True, f"{action} All")
         for job in self.project().jobs:
             job.set_enabled_all(enabled)
-        current_indices = self.selection_state.to_tuple()
-        self.callbacks['refresh_ui'](indices_to_state(*current_indices))
 
     def copy_job(self):
         job_clone = self.element_ops.copy_job(self.selection_state.job_index)

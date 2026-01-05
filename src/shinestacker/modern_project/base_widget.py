@@ -203,6 +203,7 @@ class BaseWidget(QFrame):
 
     def _on_enabled_toggled(self, enabled):
         self.data_object.params['enabled'] = enabled
+        self._update_stylesheet()
 
     # pylint: disable=C0103
     def resizeEvent(self, event):
@@ -249,6 +250,7 @@ class BaseWidget(QFrame):
         self.set_name(name)
         self._enabled = data_object.params.get('enabled', True)
         self._update_enabled_icon()
+        self._update_stylesheet()
 
     def scroll_area_css(self, orientation):
         size = 'width' if orientation == 'vertical' else 'height'

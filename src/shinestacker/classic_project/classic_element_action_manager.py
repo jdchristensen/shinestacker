@@ -257,8 +257,9 @@ class ClassicElementActionManager(ElementActionManager):
     def _shift_subaction(self, delta):
         return self._shift_action(delta)
 
-    def set_enabled(self, enabled):
-        selection = self.selection_state
+    def set_enabled(self, enabled, selection=None):
+        if selection is None:
+            selection = self.selection_state
         if not selection.is_valid():
             return
         if selection.is_job_selected():
