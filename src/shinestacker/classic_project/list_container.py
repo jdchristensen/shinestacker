@@ -123,10 +123,10 @@ class ListContainer:
             counter += 1
             if counter == ui_index:
                 return (action, None, -1)
-            for sub_action_index, sub_action in enumerate(action.sub_actions):
+            for subaction_index, sub_action in enumerate(action.sub_actions):
                 counter += 1
                 if counter == ui_index:
-                    return (action, sub_action, sub_action_index)
+                    return (action, sub_action, subaction_index)
         return (None, None, -1)
 
     def job_text(self, job, long_name=False, html=False):
@@ -173,7 +173,7 @@ class ListContainer:
             return current_row + 1, False
         if selection_state.is_subaction_selected():
             parent_action = selection_state.action
-            sub_action_idx = selection_state.sub_action_index
+            sub_action_idx = selection_state.subaction_index
             if sub_action_idx == len(parent_action.sub_actions) - 1:
                 return current_row + 1, False
             return current_row + 1, True
@@ -224,7 +224,7 @@ class ListContainer:
         job_row = self.current_job_index()
         if job_row < 0 or action_row < 0:
             return (job_row, action_row, None)
-        action, sub_action, sub_action_index = self.find_action_position(job_row, action_row)
+        action, sub_action, subaction_index = self.find_action_position(job_row, action_row)
         if not action:
             return (job_row, action_row, None)
         job = self.project_job(job_row)
@@ -234,7 +234,7 @@ class ListContainer:
                         job.sub_actions,
                         action.sub_actions,
                         job.sub_actions.index(action),
-                        sub_action_index,
+                        subaction_index,
                         job_index=job_row,
                         widget_type='subaction'
                     ))

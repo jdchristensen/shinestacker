@@ -57,6 +57,7 @@ class ModernProjectView(ProjectView):
                 'ensure_selected_visible': self._ensure_selected_visible,
                 'remove_widget': self._remove_widget,
                 'update_selection': self._update_selection,
+                'move_widgets': self._move_widgets,
             },
             self.parent()
         )
@@ -417,9 +418,11 @@ class ModernProjectView(ProjectView):
         self._on_widget_clicked(job_widget, 'job', job_index)
         job = self.project_job(job_index)
         if job:
+            pre_edit_project = self.project().clone()
             self.action_dialog = ActionConfigDialog(
                 job, self.current_file_directory(), self.parent())
             if self.action_dialog.exec() == QDialog.Accepted:
+                self.save_undo_state(pre_edit_project, "Edit Job", "edit", (job_index, -1, -1))
                 self._update_job_widget(job_index, job)
                 self.widget_updated_signal.emit((job_index, -1, -1, 'job'))
 
@@ -431,9 +434,12 @@ class ModernProjectView(ProjectView):
         action = job.sub_actions[action_index] if hasattr(job, 'sub_actions') else None
         if action:
             self.enable_sub_actions_requested.emit(action.type_name == constants.ACTION_COMBO)
+            pre_edit_project = self.project().clone()
             self.action_dialog = ActionConfigDialog(
                 action, self.current_file_directory(), self.parent())
             if self.action_dialog.exec() == QDialog.Accepted:
+                self.save_undo_state(
+                    pre_edit_project, "Edit Action", "edit", (job_index, action_index, -1))
                 self._update_action_widget(job_index, action_index, action)
                 self.widget_updated_signal.emit((job_index, action_index, -1, 'action'))
 
@@ -448,10 +454,15 @@ class ModernProjectView(ProjectView):
         subaction = action.sub_actions[subaction_index] \
             if action and hasattr(action, 'sub_actions') else None
         if subaction:
+            pre_edit_project = self.project().clone()
             self.action_dialog = ActionConfigDialog(
                 subaction, self.current_file_directory(), self.parent())
             if self.action_dialog.exec() == QDialog.Accepted:
-                self._update_subaction_widget(job_index, action_index, subaction_index, subaction)
+                self.save_undo_state(
+                    pre_edit_project, "Edit Sub-action", "edit",
+                    (job_index, action_index, subaction_index))
+                self._update_subaction_widget(
+                    job_index, action_index, subaction_index, subaction)
                 self.widget_updated_signal.emit(
                     (job_index, action_index, subaction_index, 'subaction'))
 
@@ -759,11 +770,95 @@ class ModernProjectView(ProjectView):
                     subaction_widget.data_object.params['enabled'] = enabled
                     subaction_widget.update(subaction_widget.data_object)
 
+    def _move_widgets(self, from_pos, to_pos):
+        from_job, from_action, from_sub = from_pos
+        to_job, to_action, to_sub = to_pos
+        try:
+            if from_sub == -1 and to_sub == -1:
+                if from_action == -1 and to_action == -1:
+                    self._swap_job_widgets(from_job, to_job)
+                elif from_job == to_job:
+                    self._swap_action_widgets(from_job, from_action, to_action)
+                else:
+                    self.refresh_ui()
+            elif from_job == to_job and from_action == to_action:
+                self._swap_subaction_widgets(from_job, from_action, from_sub, to_sub)
+            else:
+                self.refresh_ui()
+        except Exception:
+            self.refresh_ui()
+
+    def _swap_job_widgets(self, from_idx, to_idx):
+        if not (0 <= from_idx < len(self.job_widgets) and
+                0 <= to_idx < len(self.job_widgets)):
+            self.refresh_ui()
+            return
+        job_widgets = self.job_widgets
+        project_layout = self.project_layout
+        project_layout.removeWidget(job_widgets[from_idx])
+        project_layout.removeWidget(job_widgets[to_idx])
+        job_widgets[from_idx], job_widgets[to_idx] = \
+            job_widgets[to_idx], job_widgets[from_idx]
+        insert_first = min(from_idx, to_idx)
+        insert_second = max(from_idx, to_idx)
+        project_layout.insertWidget(insert_first, job_widgets[insert_first])
+        project_layout.insertWidget(insert_second, job_widgets[insert_second])
+
+    def _swap_action_widgets(self, job_idx, from_idx, to_idx):
+        if not 0 <= job_idx < len(self.job_widgets):
+            self.refresh_ui()
+            return
+        job_widget = self.job_widgets[job_idx]
+        child_widgets = job_widget.child_widgets
+        if not (0 <= from_idx < len(child_widgets) and
+                0 <= to_idx < len(child_widgets)):
+            self.refresh_ui()
+            return
+        job_widget.child_container_layout.removeWidget(child_widgets[from_idx])
+        job_widget.child_container_layout.removeWidget(child_widgets[to_idx])
+        child_widgets[from_idx], child_widgets[to_idx] = \
+            child_widgets[to_idx], child_widgets[from_idx]
+        insert_first = min(from_idx, to_idx)
+        insert_second = max(from_idx, to_idx)
+        job_widget.child_container_layout.insertWidget(insert_first, child_widgets[insert_first])
+        job_widget.child_container_layout.insertWidget(insert_second, child_widgets[insert_second])
+
+    def _swap_subaction_widgets(self, job_idx, action_idx, from_idx, to_idx):
+        if not 0 <= job_idx < len(self.job_widgets):
+            self.refresh_ui()
+            return
+        job_widget = self.job_widgets[job_idx]
+        if not 0 <= action_idx < len(job_widget.child_widgets):
+            self.refresh_ui()
+            return
+        action_widget = job_widget.child_widgets[action_idx]
+        child_widgets = action_widget.child_widgets
+        if not (0 <= from_idx < len(child_widgets) and
+                0 <= to_idx < len(child_widgets)):
+            self.refresh_ui()
+            return
+        action_widget.child_container_layout.removeWidget(child_widgets[from_idx])
+        action_widget.child_container_layout.removeWidget(child_widgets[to_idx])
+        child_widgets[from_idx], child_widgets[to_idx] = \
+            child_widgets[to_idx], child_widgets[from_idx]
+        insert_first = min(from_idx, to_idx)
+        insert_second = max(from_idx, to_idx)
+        action_widget.child_container_layout.insertWidget(
+            insert_first, child_widgets[insert_first])
+        action_widget.child_container_layout.insertWidget(
+            insert_second, child_widgets[insert_second])
+
     def move_element_up(self, selection=None, update_project=True):
         if selection is None:
             old_selection = self.selection_state.copy()
             if update_project and self.enforce_stop_run():
+                pre_move_project = self.project().clone()
+                from_position = self._get_current_position_tuple()
                 result = self.element_action.move_element_up()
+                if result:
+                    to_position = self._get_current_position_tuple()
+                    affected_position = from_position + to_position
+                    self.save_undo_state(pre_move_project, "Move Up", "move", affected_position)
             else:
                 result = False
             if result and old_selection and old_selection.is_valid():
@@ -782,7 +877,13 @@ class ModernProjectView(ProjectView):
         if selection is None:
             old_selection = self.selection_state.copy()
             if update_project and self.enforce_stop_run():
+                pre_move_project = self.project().clone()
+                from_position = self._get_current_position_tuple()
                 result = self.element_action.move_element_down()
+                if result:
+                    to_position = self._get_current_position_tuple()
+                    affected_position = from_position + to_position
+                    self.save_undo_state(pre_move_project, "Move Down", "move", affected_position)
             else:
                 result = False
             if result and old_selection and old_selection.is_valid():
@@ -869,14 +970,18 @@ class ModernProjectView(ProjectView):
         self.action_dialog = ActionConfigDialog(
             action, self.current_file_directory(), self.parent())
         if self.action_dialog.exec() == QDialog.Accepted:
-            new_action_index = len(self.project().jobs[job_index].sub_actions)
-            self.mark_as_modified(True, "Add Action", "add", (job_index, new_action_index, -1))
-            self.project().jobs[job_index].add_sub_action(action)
-            self.selection_state.set_action(job_index, new_action_index)
+            insert_index = len(self.project().jobs[job_index].sub_actions)
+            if self.selection_state.is_action_selected():
+                insert_index = self.selection_state.action_index + 1
+            elif self.selection_state.is_subaction_selected():
+                insert_index = self.selection_state.action_index + 1
+            self.mark_as_modified(True, "Add Action", "add", (job_index, insert_index, -1))
+            self.project().jobs[job_index].sub_actions.insert(insert_index, action)
+            self.selection_state.set_action(job_index, insert_index)
             self.selection_state.subaction_index = -1
             self.selection_state.widget_type = 'action'
             self.refresh_ui()
-            self.widget_added_signal.emit((job_index, new_action_index, -1))
+            self.widget_added_signal.emit((job_index, insert_index, -1))
             return True
         return False
 
@@ -1278,12 +1383,163 @@ class ModernProjectView(ProjectView):
         self.selection_nav.restore_selection(self._saved_selection)
         self._saved_selection = None
 
-    def refresh_and_restore_selection(self):
+    def refresh_and_restore_selection(self, entry=None):
+        if entry:
+            self.targeted_undo(entry)
+        else:
+            self.refresh_ui()
         if self._saved_selection:
-            old_state = self._saved_selection
-            self.clear_job_list()
-            for job in self.project_jobs():
-                self.add_job_widget(job)
-            ProjectView.refresh_ui(self)
-            self.selection_nav.restore_selection(old_state)
+            self.selection_nav.restore_selection(self._saved_selection)
             self._saved_selection = None
+
+    def targeted_undo(self, entry):
+        action_type = entry.get('action_type', '')
+        affected_position = entry.get('affected_position', (-1, -1, -1))
+        description = entry.get('description', '')
+        if action_type == 'add':
+            self._undo_add_action(affected_position, description)
+        elif action_type == 'delete':
+            self._undo_delete_action(affected_position, description)
+        elif action_type == 'edit':
+            self._undo_edit_action(affected_position, description)
+        elif action_type == 'move':
+            self._undo_move_action(affected_position, description)
+        elif action_type == 'edit_all':
+            self._undo_edit_all_action(affected_position, description)
+        else:
+            self.refresh_ui()
+
+    def _undo_add_action(self, position, description):
+        job_idx, action_idx, subaction_idx = position
+        try:
+            state = ModernSelectionState()
+            if subaction_idx >= 0:
+                state.set_subaction(job_idx, action_idx, subaction_idx)
+            elif action_idx >= 0:
+                state.set_action(job_idx, action_idx)
+            elif job_idx >= 0:
+                state.set_job(job_idx)
+            else:
+                self.refresh_ui()
+                return
+            self._remove_widget(state)
+        except Exception:
+            self.refresh_ui()
+
+    def _undo_delete_action(self, position, description):
+        self.refresh_ui()
+
+    def _undo_edit_action(self, position, description):
+        job_idx, action_idx, subaction_idx = position
+        try:
+            if subaction_idx >= 0:
+                widget = self._find_action_widget(job_idx, action_idx, subaction_idx)
+                if widget and hasattr(widget, 'data_object'):
+                    job = self.project().jobs[job_idx]
+                    action = job.sub_actions[action_idx]
+                    subaction = action.sub_actions[subaction_idx]
+                    widget.update(subaction)
+                else:
+                    self.refresh_ui()
+            elif action_idx >= 0:
+                widget = self._find_action_widget(job_idx, action_idx)
+                if widget and hasattr(widget, 'data_object'):
+                    job = self.project().jobs[job_idx]
+                    action = job.sub_actions[action_idx]
+                    widget.update(action)
+                else:
+                    self.refresh_ui()
+            elif job_idx >= 0:
+                if 0 <= job_idx < len(self.job_widgets):
+                    job_widget = self.job_widgets[job_idx]
+                    job = self.project().jobs[job_idx]
+                    job_widget.update(job)
+                else:
+                    self.refresh_ui()
+            else:
+                self.refresh_ui()
+        except Exception:
+            self.refresh_ui()
+
+    def _undo_move_action(self, position, description):
+        if len(position) != 6:
+            self.refresh_ui()
+            return
+        from_job, from_action, from_sub, to_job, to_action, to_sub = position
+        try:
+            if from_sub == -1 and to_sub == -1:
+                if from_action == -1 and to_action == -1:
+                    self._undo_move_job(from_job, to_job)
+                elif from_job == to_job:
+                    self._undo_move_action_in_job(from_job, from_action, to_action)
+                else:
+                    self.refresh_ui()
+            elif from_job == to_job and from_action == to_action:
+                self._undo_move_subaction_in_action(from_job, from_action, from_sub, to_sub)
+            else:
+                self.refresh_ui()
+        except Exception:
+            self.refresh_ui()
+
+    def _undo_move_job(self, from_job_idx, to_job_idx):
+        if not (0 <= from_job_idx < len(self.job_widgets) and
+                0 <= to_job_idx < len(self.job_widgets)):
+            self.refresh_ui()
+            return
+        job_widgets = self.job_widgets
+        project_layout = self.project_layout
+        project_layout.removeWidget(job_widgets[from_job_idx])
+        project_layout.removeWidget(job_widgets[to_job_idx])
+        job_widgets[from_job_idx], job_widgets[to_job_idx] = \
+            job_widgets[to_job_idx], job_widgets[from_job_idx]
+        insert_first = min(from_job_idx, to_job_idx)
+        insert_second = max(from_job_idx, to_job_idx)
+        project_layout.insertWidget(insert_first, job_widgets[insert_first])
+        project_layout.insertWidget(insert_second, job_widgets[insert_second])
+
+    def _undo_move_action_in_job(self, job_idx, from_action_idx, to_action_idx):
+        if not 0 <= job_idx < len(self.job_widgets):
+            self.refresh_ui()
+            return
+        job_widget = self.job_widgets[job_idx]
+        child_widgets = job_widget.child_widgets
+        if not (0 <= from_action_idx < len(child_widgets) and
+                0 <= to_action_idx < len(child_widgets)):
+            self.refresh_ui()
+            return
+        job_widget.child_container_layout.removeWidget(child_widgets[from_action_idx])
+        job_widget.child_container_layout.removeWidget(child_widgets[to_action_idx])
+        child_widgets[from_action_idx], child_widgets[to_action_idx] = \
+            child_widgets[to_action_idx], child_widgets[from_action_idx]
+        insert_first = min(from_action_idx, to_action_idx)
+        insert_second = max(from_action_idx, to_action_idx)
+        job_widget.child_container_layout.insertWidget(insert_first, child_widgets[insert_first])
+        job_widget.child_container_layout.insertWidget(insert_second, child_widgets[insert_second])
+
+    def _undo_move_subaction_in_action(self, job_idx, action_idx, from_sub_idx, to_sub_idx):
+        if not 0 <= job_idx < len(self.job_widgets):
+            self.refresh_ui()
+            return
+        job_widget = self.job_widgets[job_idx]
+        if not 0 <= action_idx < len(job_widget.child_widgets):
+            self.refresh_ui()
+            return
+        action_widget = job_widget.child_widgets[action_idx]
+        child_widgets = action_widget.child_widgets
+        if not (0 <= from_sub_idx < len(child_widgets) and
+                0 <= to_sub_idx < len(child_widgets)):
+            self.refresh_ui()
+            return
+        action_widget.child_container_layout.removeWidget(child_widgets[from_sub_idx])
+        action_widget.child_container_layout.removeWidget(child_widgets[to_sub_idx])
+        child_widgets[from_sub_idx], child_widgets[to_sub_idx] = \
+            child_widgets[to_sub_idx], child_widgets[from_sub_idx]
+        insert_first = min(from_sub_idx, to_sub_idx)
+        insert_second = max(from_sub_idx, to_sub_idx)
+        action_widget.child_container_layout.insertWidget(
+            insert_first, child_widgets[insert_first])
+        action_widget.child_container_layout.insertWidget(
+            insert_second, child_widgets[insert_second])
+
+    def _undo_edit_all_action(self, position, description):
+        self.refresh_ui()

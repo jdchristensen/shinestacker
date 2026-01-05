@@ -287,3 +287,13 @@ class ProjectView(QWidget, LogManager, ProjectHandler):
 
     def refresh_and_restore_selection(self):
         raise NotImplementedError
+
+    def _get_current_position_tuple(self):
+        if self.selection_state.is_job_selected():
+            return (self.selection_state.job_index, -1, -1)
+        if self.selection_state.is_action_selected():
+            return (self.selection_state.job_index, self.selection_state.action_index, -1)
+        if self.selection_state.is_subaction_selected():
+            return (self.selection_state.job_index, self.selection_state.action_index,
+                    self.selection_state.subaction_index)
+        return (-1, -1, -1)

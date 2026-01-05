@@ -355,7 +355,7 @@ class ClassicProjectView(ProjectView, ListContainer):
                 self.widget_deleted_signal.emit((
                     old_state.job_index,
                     old_state.action_index,
-                    old_state.sub_action_index,
+                    old_state.subaction_index,
                     old_state.widget_type
                 ))
             return result
@@ -386,7 +386,7 @@ class ClassicProjectView(ProjectView, ListContainer):
                 self.widget_pasted_signal.emit((
                     old_state.job_index,
                     old_state.action_index,
-                    old_state.sub_action_index,
+                    old_state.subaction_index,
                     old_state.widget_type
                 ))
             return result
@@ -405,7 +405,7 @@ class ClassicProjectView(ProjectView, ListContainer):
             self.widget_deleted_signal.emit((
                 old_state.job_index,
                 old_state.action_index,
-                old_state.sub_action_index,
+                old_state.subaction_index,
                 old_state.widget_type
             ))
 
@@ -418,7 +418,7 @@ class ClassicProjectView(ProjectView, ListContainer):
                 self.widget_cloned_signal.emit((
                     old_state.job_index,
                     old_state.action_index,
-                    old_state.sub_action_index,
+                    old_state.subaction_index,
                     old_state.widget_type
                 ))
         elif selection and selection.is_valid():
@@ -435,7 +435,7 @@ class ClassicProjectView(ProjectView, ListContainer):
                 self.widget_enable_signal.emit((
                     self.selection_state.job_index,
                     self.selection_state.action_index,
-                    self.selection_state.sub_action_index,
+                    self.selection_state.subaction_index,
                     self.selection_state.widget_type
                 ), True)
         else:
@@ -451,7 +451,7 @@ class ClassicProjectView(ProjectView, ListContainer):
                 self.widget_enable_signal.emit((
                     self.selection_state.job_index,
                     self.selection_state.action_index,
-                    self.selection_state.sub_action_index,
+                    self.selection_state.subaction_index,
                     self.selection_state.widget_type
                 ), False)
         else:
@@ -473,40 +473,95 @@ class ClassicProjectView(ProjectView, ListContainer):
         else:
             self.refresh_ui()
 
+    def _position_to_action_row(self, position):
+        job_idx, action_idx, sub_idx = position
+        if job_idx < 0:
+            return -1
+        job = self.project_job(job_idx)
+        row = 0
+        for i in range(action_idx):
+            if i < len(job.sub_actions):
+                row += 1
+                action = job.sub_actions[i]
+                row += len(action.sub_actions)
+        if sub_idx >= 0:
+            row += sub_idx + 1
+        return row
+
     def move_element_up(self, selection=None, update_project=True):
+        self._sync_selection_to_action_manager()
         if selection is None:
-            self._sync_selection_to_action_manager()
             old_state = self._get_selection_state()
-            if old_state and old_state.is_valid():
-                self.element_action.move_element_up()
+            if update_project:
+                pre_move_project = self.project().clone()
+                from_position = self._get_current_position_tuple()
+                result = self.element_action.move_element_up()
+                if result:
+                    to_position = self._get_current_position_tuple()
+                    affected_position = from_position + to_position
+                    self.save_undo_state(pre_move_project, "Move Up", "move", affected_position)
+                    restore_state = rows_to_state(
+                        self.project(), to_position[0], self._position_to_action_row(to_position))
+                    self.refresh_ui(restore_state=restore_state)
+                else:
+                    self.refresh_ui()
+            else:
+                result = None
+                self.refresh_ui()
+            if result and old_state and old_state.is_valid():
                 self.widget_moved_up_signal.emit((
                     old_state.job_index,
                     old_state.action_index,
-                    old_state.sub_action_index,
+                    old_state.subaction_index,
                     old_state.widget_type
                 ))
-        elif selection and selection.is_valid():
-            self.refresh_ui()
+            return result
+        if selection and selection.is_valid():
+            job_idx = selection.job_index
+            if job_idx >= 0:
+                new_job_idx = max(0, min(job_idx, self.num_project_jobs() - 1))
+                self.refresh_ui(rows_to_state(self.project(), new_job_idx, -1))
+        return None
 
     def move_element_down(self, selection=None, update_project=True):
+        self._sync_selection_to_action_manager()
         if selection is None:
-            self._sync_selection_to_action_manager()
             old_state = self._get_selection_state()
-            if old_state and old_state.is_valid():
-                self.element_action.move_element_down()
+            if update_project:
+                pre_move_project = self.project().clone()
+                from_position = self._get_current_position_tuple()
+                result = self.element_action.move_element_down()
+                if result:
+                    to_position = self._get_current_position_tuple()
+                    affected_position = from_position + to_position
+                    self.save_undo_state(pre_move_project, "Move Down", "move", affected_position)
+                    restore_state = rows_to_state(
+                        self.project(), to_position[0], self._position_to_action_row(to_position))
+                    self.refresh_ui(restore_state=restore_state)
+                else:
+                    self.refresh_ui()
+            else:
+                result = None
+                self.refresh_ui()
+            if result and old_state and old_state.is_valid():
                 self.widget_moved_down_signal.emit((
                     old_state.job_index,
                     old_state.action_index,
-                    old_state.sub_action_index,
+                    old_state.subaction_index,
                     old_state.widget_type
                 ))
-        elif selection and selection.is_valid():
-            self.refresh_ui()
+            return result
+        if selection and selection.is_valid():
+            job_idx = selection.job_index
+            if job_idx >= 0:
+                new_job_idx = max(0, min(job_idx, self.num_project_jobs() - 1))
+                self.refresh_ui(rows_to_state(self.project(), new_job_idx, -1))
+        return None
 
     def _get_current_subaction_index(self):
         if not self.selection_state.is_subaction_selected():
             return -1
-        return self.selection_state.sub_action_index
+        return self.selection_state.subaction_index
 
     def add_action(self, type_name):
         self._sync_selection_to_action_manager()
@@ -559,8 +614,8 @@ class ClassicProjectView(ProjectView, ListContainer):
             return False
         insert_index = len(action.sub_actions)
         if selection.is_subaction_selected():
-            if selection.sub_action_index >= 0:
-                insert_index = selection.sub_action_index + 1
+            if selection.subaction_index >= 0:
+                insert_index = selection.subaction_index + 1
         sub_action = ActionConfig(type_name)
         self.action_dialog = ActionConfigDialog(
             sub_action, self.current_file_directory(), self.parent())
@@ -622,8 +677,10 @@ class ClassicProjectView(ProjectView, ListContainer):
         index = self.job_list().row(item)
         if 0 <= index < self.num_project_jobs():
             job = self.project_job(index)
+            pre_edit_project = self.project().clone()
             dialog = self.action_config_dialog(job)
             if dialog.exec() == QDialog.Accepted:
+                self.save_undo_state(pre_edit_project, "Edit Job", "edit", (index, -1, -1))
                 current_row = self.current_job_index()
                 if current_row >= 0:
                     self.job_list_item(current_row).setText(job.params['name'])
@@ -640,16 +697,20 @@ class ClassicProjectView(ProjectView, ListContainer):
                 if not is_sub_action:
                     self.enable_sub_actions_requested.emit(
                         current_action.type_name == constants.ACTION_COMBO)
+                pre_edit_project = self.project().clone()
                 dialog = self.action_config_dialog(current_action)
                 if dialog.exec() == QDialog.Accepted:
-                    self.on_job_selected(job_index)
-                    self.refresh_ui()
-                    self.set_current_job(job_index)
-                    self.set_current_action(action_index)
                     widget_type = 'subaction' if is_sub_action else 'action'
                     subaction_index = -1
                     if is_sub_action:
                         subaction_index = self._get_current_subaction_index()
+                    self.save_undo_state(
+                        pre_edit_project, f"Edit {widget_type}", "edit",
+                        (job_index, action_index, subaction_index))
+                    self.on_job_selected(job_index)
+                    self.refresh_ui()
+                    self.set_current_job(job_index)
+                    self.set_current_action(action_index)
                     self.widget_updated_signal.emit(
                         (job_index, action_index, subaction_index, widget_type))
 
@@ -672,7 +733,7 @@ class ClassicProjectView(ProjectView, ListContainer):
                 self.selection_state.actions = pos.actions
                 self.selection_state.sub_actions = pos.sub_actions
                 self.selection_state.action_index = pos.action_index
-                self.selection_state.sub_action_index = pos.sub_action_index
+                self.selection_state.subaction_index = pos.subaction_index
                 self.selection_state.job_index = pos.job_index
                 self.selection_state.widget_type = pos.widget_type
         elif self.job_list_has_focus() and self.num_selected_jobs() > 0:
@@ -681,7 +742,7 @@ class ClassicProjectView(ProjectView, ListContainer):
                 self.selection_state.actions = None
                 self.selection_state.sub_actions = None
                 self.selection_state.action_index = -1
-                self.selection_state.sub_action_index = -1
+                self.selection_state.subaction_index = -1
                 self.selection_state.job_index = job_idx
                 self.selection_state.widget_type = 'job'
         else:
@@ -728,5 +789,8 @@ class ClassicProjectView(ProjectView, ListContainer):
         self.refresh_ui(restore_state=self._saved_selection)
         self._saved_selection = None
 
-    def refresh_and_restore_selection(self):
-        self.restore_saved_selection()
+    def refresh_and_restore_selection(self, entry=None):
+        if entry:
+            self.refresh_ui(restore_state=self._saved_selection)
+        else:
+            self.restore_saved_selection()

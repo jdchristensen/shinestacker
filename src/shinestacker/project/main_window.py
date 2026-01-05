@@ -353,8 +353,10 @@ class MainWindow(ProjectIOHandler, QMainWindow):
     def perform_undo(self):
         for view in self.views.values():
             view.save_current_selection()
-        if self.undo():
-            self.current_view.refresh_and_restore_selection()
+        entry = self.undo()
+        if entry:
+            for view in self.views.values():
+                view.refresh_and_restore_selection(entry)
             self.update_title()
             self.refresh_ui()
             self.show_status_message("Undo performed")

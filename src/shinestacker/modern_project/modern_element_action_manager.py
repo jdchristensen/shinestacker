@@ -420,12 +420,15 @@ class ModernElementActionManager(ElementActionManager):
         if not self.selection_state.is_job_selected():
             return False
         job_idx, _, _ = self.selection_state.to_tuple()
-        self.mark_as_modified(True, "Shift Job", "move", (job_idx, -1, -1))
         new_index = self.element_ops.shift_job(job_idx, delta)
         if new_index != job_idx:
             new_indices = (new_index, -1, -1)
             self.selection_state.set_job(new_index)
-            self.callbacks['refresh_ui'](indices_to_state(*new_indices))
+            if 'move_widgets' in self.callbacks:
+                from_pos = (job_idx, -1, -1)
+                to_pos = (new_index, -1, -1)
+                self.callbacks['move_widgets'](from_pos, to_pos)
+            self.callbacks['update_selection'](indices_to_state(*new_indices))
             return True
         return False
 
@@ -433,12 +436,15 @@ class ModernElementActionManager(ElementActionManager):
         if not self.selection_state.is_action_selected():
             return False
         job_idx, action_idx, _ = self.selection_state.to_tuple()
-        self.mark_as_modified(True, "Shift Action", "move", (job_idx, action_idx, -1))
         new_index = self.element_ops.shift_action(job_idx, action_idx, delta)
         if new_index != action_idx:
             new_indices = (job_idx, new_index, -1)
             self.selection_state.set_action(job_idx, new_index)
-            self.callbacks['refresh_ui'](indices_to_state(*new_indices))
+            if 'move_widgets' in self.callbacks:
+                from_pos = (job_idx, action_idx, -1)
+                to_pos = (job_idx, new_index, -1)
+                self.callbacks['move_widgets'](from_pos, to_pos)
+            self.callbacks['update_selection'](indices_to_state(*new_indices))
             return True
         return False
 
@@ -446,13 +452,15 @@ class ModernElementActionManager(ElementActionManager):
         if not self.selection_state.is_subaction_selected():
             return False
         job_idx, action_idx, subaction_idx = self.selection_state.to_tuple()
-        self.mark_as_modified(
-            True, "Shift Sub-action", "move", (job_idx, action_idx, subaction_idx))
         new_index = self.element_ops.shift_subaction(job_idx, action_idx, subaction_idx, delta)
         if new_index != subaction_idx:
             new_indices = (job_idx, action_idx, new_index)
             self.selection_state.set_subaction(job_idx, action_idx, new_index)
-            self.callbacks['refresh_ui'](indices_to_state(*new_indices))
+            if 'move_widgets' in self.callbacks:
+                from_pos = (job_idx, action_idx, subaction_idx)
+                to_pos = (job_idx, action_idx, new_index)
+                self.callbacks['move_widgets'](from_pos, to_pos)
+            self.callbacks['update_selection'](indices_to_state(*new_indices))
             return True
         return False
 

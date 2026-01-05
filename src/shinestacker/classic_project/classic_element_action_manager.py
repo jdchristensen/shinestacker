@@ -13,7 +13,7 @@ class ClassicElementActionManager(ElementActionManager):
     @staticmethod
     def new_row_after_delete(action_row, pos):
         if pos.is_sub_action:
-            new_row = action_row if pos.sub_action_index < len(pos.sub_actions) else action_row - 1
+            new_row = action_row if pos.subaction_index < len(pos.sub_actions) else action_row - 1
         else:
             if pos.action_index == 0:
                 new_row = 0 if len(pos.actions) > 0 else -1
@@ -41,7 +41,7 @@ class ClassicElementActionManager(ElementActionManager):
                 for action in pos.actions[:new_index]:
                     new_row += 1 + len(action.sub_actions)
         else:
-            new_index = pos.sub_action_index + delta
+            new_index = pos.subaction_index + delta
             if 0 <= new_index < len(pos.sub_actions):
                 new_row = 1 + new_index
                 for action in pos.actions[:pos.action_index]:
@@ -86,7 +86,7 @@ class ClassicElementActionManager(ElementActionManager):
                 else selection.action
             container = selection.sub_actions if selection.is_subaction_selected() \
                 else selection.actions
-            index = selection.sub_action_index if selection.is_subaction_selected() \
+            index = selection.subaction_index if selection.is_subaction_selected() \
                 else selection.action_index
             if not element or not container or index < 0 or index >= len(container):
                 return None
@@ -227,7 +227,7 @@ class ClassicElementActionManager(ElementActionManager):
         job = self.project().jobs[selection.job_index]
         if selection.is_subaction_selected():
             cloned = selection.sub_action.clone(name_postfix=self.CLONE_POSTFIX)
-            selection.sub_actions.insert(selection.sub_action_index + 1, cloned)
+            selection.sub_actions.insert(selection.subaction_index + 1, cloned)
         else:
             cloned = selection.action.clone(name_postfix=self.CLONE_POSTFIX)
             job.sub_actions.insert(selection.action_index + 1, cloned)
@@ -243,7 +243,6 @@ class ClassicElementActionManager(ElementActionManager):
         job_index = selection.job_index
         new_index = job_index + delta
         if 0 <= new_index < self.num_project_jobs():
-            self.mark_as_modified(True, "Shift Job", "move", (job_index, -1, -1))
             jobs = self.project().jobs
             jobs.insert(new_index, jobs.pop(job_index))
             self.callbacks['refresh_ui'](rows_to_state(self.project(), new_index, -1))
@@ -257,18 +256,13 @@ class ClassicElementActionManager(ElementActionManager):
         if selection.is_subaction_selected():
             if not selection.sub_actions:
                 return False
-            self.mark_as_modified(
-                True, "Shift Sub-action", "move",
-                (selection.job_index, selection.action_index, selection.sub_action_index))
-            new_index = selection.sub_action_index + delta
+            new_index = selection.subaction_index + delta
             if 0 <= new_index < len(selection.sub_actions):
                 selection.sub_actions.insert(
-                    new_index, selection.sub_actions.pop(selection.sub_action_index))
+                    new_index, selection.sub_actions.pop(selection.subaction_index))
         else:
             if not selection.actions:
                 return False
-            self.mark_as_modified(
-                True, "Shift Action", "move", (selection.job_index, selection.action_index, -1))
             new_index = selection.action_index + delta
             if 0 <= new_index < len(selection.actions):
                 selection.actions.insert(new_index, selection.actions.pop(selection.action_index))
@@ -303,7 +297,7 @@ class ClassicElementActionManager(ElementActionManager):
                 element_type = "Sub-action" if selection.is_subaction_selected() else "Action"
                 if selection.is_subaction_selected():
                     position = (selection.job_index, selection.action_index,
-                                selection.sub_action_index)
+                                selection.subaction_index)
                 else:
                     position = (selection.job_index, selection.action_index, -1)
                 self.mark_as_modified(True, f"{action_text} {element_type}", "edit", position)

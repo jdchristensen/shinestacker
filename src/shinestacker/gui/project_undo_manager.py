@@ -27,7 +27,15 @@ class ProjectUndoManager(QObject):
             self.set_enabled_undo_action_requested.emit(True, self._undo_buffer[-1]['description'])
         print(f"UNDO DEBUG: action={entry['action_type']}, "
               f"position={entry['affected_position']}, desc={entry['description']}")
-        return entry['item']
+        return entry
+
+    def peek(self):
+        if self._undo_buffer:
+            return self._undo_buffer[-1]
+        return None
+
+    def last_entry(self):
+        return self.peek()
 
     def filled(self):
         return len(self._undo_buffer) != 0

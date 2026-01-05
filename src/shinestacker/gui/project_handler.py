@@ -44,6 +44,11 @@ class ProjectHolder:
         if modified:
             self.add_undo(self.project.clone(), description, action_type, affected_position)
 
+    def save_undo_state(self, pre_state, description='', action_type='',
+                        affected_position=(-1, -1, -1)):
+        self.modified = True
+        self.add_undo(pre_state, description, action_type, affected_position)
+
     def reset_undo(self):
         self.undo_manager.reset()
 
@@ -58,9 +63,10 @@ class ProjectHolder:
 
     def undo(self):
         if self.filled_undo():
-            self.set_project(self.pop_undo())
-            return True
-        return False
+            entry = self.pop_undo()
+            self.set_project(entry['item'])
+            return entry
+        return None
 
     def set_copy_buffer(self, item):
         self.copy_buffer = item
@@ -116,6 +122,10 @@ class ProjectHandler:
     def mark_as_modified(self, modified=True, description='', action_type=None,
                          affected_position=(-1, -1, -1)):
         self.project_holder.mark_as_modified(modified, description, action_type, affected_position)
+
+    def save_undo_state(self, pre_state, description='', action_type='',
+                        affected_position=(-1, -1, -1)):
+        self.project_holder.save_undo_state(pre_state, description, action_type, affected_position)
 
     def undo_manager(self):
         return self.project_holder.undo_manager
