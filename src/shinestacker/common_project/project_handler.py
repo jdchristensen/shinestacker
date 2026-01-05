@@ -3,7 +3,7 @@ import os
 import json
 import jsonpickle
 from .. core.exceptions import InvalidProjectError
-from .project_model import Project
+from .. gui.project_model import Project
 
 
 class ProjectHolder:

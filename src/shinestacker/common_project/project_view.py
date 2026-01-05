@@ -8,10 +8,10 @@ from PySide6.QtWidgets import QWidget, QDialog, QMenu, QMessageBox
 from .. core.core_utils import running_under_windows, running_under_macos
 from .. config.constants import constants
 from .. gui.gui_logging import LogManager
-from .. gui.project_handler import ProjectHandler
 from .. gui.action_config_dialog import ActionConfigDialog
 from .. gui.project_model import (
     get_action_working_path, get_action_input_path, get_action_output_path)
+from .project_handler import ProjectHandler
 
 
 class ProjectView(QWidget, LogManager, ProjectHandler):

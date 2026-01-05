@@ -1,6 +1,6 @@
 # pylint: disable=C0114, C0115, C0116, W0246, E0611, R0917, R0913, R0912, R0911, R0904
 from .. config.constants import constants
-from .. gui.element_action_manager import ElementActionManager
+from .. common_project.element_action_manager import ElementActionManager
 from .element_operations import ElementOperations
 from .modern_selection_state import indices_to_state, ModernSelectionState
 

@@ -18,7 +18,7 @@ from .. gui.colors import (
     ACTION_STOPPED_COLOR, ACTION_FAILED_COLOR)
 from .. gui.time_progress_bar import TimerProgressBar
 from .. gui.flow_layout import FlowLayout
-from .. gui.processing_widget import MultiModuleStatusContainer
+from .. common_project.processing_widget import MultiModuleStatusContainer
 
 
 class ColorButton(QPushButton):

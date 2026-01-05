@@ -11,9 +11,9 @@ from .. config.defaults import DEFAULTS
 from .. config.app_config import AppConfig
 from .. algorithms.utils import read_img, extension_supported
 from .. algorithms.stack import get_bunches
-from .folder_file_selection import FolderFileSelectionWidget
-from .base_form_dialog import BaseFormDialog
-from .project_model import ActionConfig
+from .. gui.folder_file_selection import FolderFileSelectionWidget
+from .. gui.base_form_dialog import BaseFormDialog
+from .. gui.project_model import ActionConfig
 
 DEFAULT_NO_COUNT_LABEL = " - "
 

@@ -4,11 +4,11 @@ from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel, QSplitter, QMessageBox, QApplication, QDialog)
 from .. config.constants import constants
-from .. gui.project_view import ProjectView
 from .. gui.colors import ColorPalette
 from .. gui.action_config_dialog import ActionConfigDialog
 from .. gui.project_model import ActionConfig
-from .. gui.run_worker import JobLogWorker, ProjectLogWorker
+from .. common_project.run_worker import JobLogWorker, ProjectLogWorker
+from .. common_project.project_view import ProjectView
 from .tab_widget import TabWidgetWithPlaceholder
 from .gui_run import RunWindow
 from .list_container import ListContainer

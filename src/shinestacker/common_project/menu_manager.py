@@ -6,7 +6,7 @@ from PySide6.QtGui import QAction, QIcon
 from PySide6.QtWidgets import QMenu, QComboBox
 from .. config.constants import constants
 from .. config.app_config import AppConfig
-from .recent_file_manager import RecentFileManager
+from .. gui.recent_file_manager import RecentFileManager
 
 
 class MenuManager(QObject):

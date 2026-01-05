@@ -1,6 +1,6 @@
 # pylint: disable=C0114, C0115, C0116, E0611, R0912
 from PySide6.QtCore import QObject
-from .. gui.project_handler import ProjectHandler
+from .. common_project.project_handler import ProjectHandler
 
 
 class SelectionNavigationManager(ProjectHandler, QObject):

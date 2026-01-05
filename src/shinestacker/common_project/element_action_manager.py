@@ -2,7 +2,7 @@
 from PySide6.QtCore import QObject
 from PySide6.QtWidgets import QMessageBox
 from .. config.constants import constants
-from .. gui.project_handler import ProjectHandler
+from .project_handler import ProjectHandler
 
 
 class ElementActionManager(ProjectHandler, QObject):

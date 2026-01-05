@@ -12,13 +12,13 @@ from .. config.app_config import AppConfig
 from .. core.exceptions import InvalidProjectError
 from .. core.core_utils import get_app_base_path
 from .. gui.project_model import Project
-from .. gui.project_handler import ProjectHolder, ProjectIOHandler
 from .. gui.sys_mon import StatusBarSystemMonitor
-from .. gui.new_project import fill_new_project
 from .. gui.project_model import ActionConfig
 from .. gui.action_config_dialog import ActionConfigDialog
-from .. gui.project_undo_manager import ProjectUndoManager
-from .. gui.menu_manager import MenuManager
+from .. common_project.project_undo_manager import ProjectUndoManager
+from .. common_project.project_handler import ProjectHolder, ProjectIOHandler
+from .. common_project.menu_manager import MenuManager
+from .. common_project.new_project import fill_new_project
 from .. classic_project.classic_project_view import ClassicProjectView
 from .. modern_project.modern_project_view import ModernProjectView
 from .. modern_project.modern_selection_state import ModernSelectionState

@@ -7,10 +7,10 @@ from PySide6.QtGui import QCursor
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QSplitter, QScrollArea, QDialog, QMessageBox
 from .. config.constants import constants
 from .. gui.project_model import ActionConfig
-from .. gui.project_view import ProjectView
 from .. gui.gui_logging import QTextEditLogger
 from .. gui.action_config_dialog import ActionConfigDialog
-from .. gui.run_worker import JobLogWorker, ProjectLogWorker
+from .. common_project.run_worker import JobLogWorker, ProjectLogWorker
+from .. common_project.project_view import ProjectView
 from .job_widget import JobWidget
 from .modern_selection_state import ModernSelectionState
 from .progress_mapper import ProgressMapper

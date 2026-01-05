@@ -1,6 +1,6 @@
 # pylint: disable=C0114, C0115, C0116, E0611, R0903, R0904, R0913, R0917, E1101
 from dataclasses import dataclass
-from .. gui.base_selection_state import BaseSelectionState
+from .. common_project.base_selection_state import BaseSelectionState
 
 
 @dataclass

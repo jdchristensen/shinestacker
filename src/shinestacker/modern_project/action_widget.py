@@ -5,7 +5,7 @@ from .base_widget import ImgBaseWidget
 from .sub_action_widget import SubActionWidget
 from .. gui.project_model import get_action_input_path, get_action_output_path
 from .. gui.time_progress_bar import TimerProgressBar
-from .. gui.processing_widget import MultiModuleStatusContainer
+from .. common_project.processing_widget import MultiModuleStatusContainer
 
 
 class ActionWidget(ImgBaseWidget):

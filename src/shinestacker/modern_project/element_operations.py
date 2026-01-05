@@ -1,5 +1,5 @@
 # pylint: disable=C0114, C0115, C0116, W0246
-from .. gui.project_handler import ProjectHandler
+from .. common_project.project_handler import ProjectHandler
 
 
 class ElementOperations(ProjectHandler):

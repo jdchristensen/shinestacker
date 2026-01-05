@@ -1,5 +1,5 @@
 # pylint: disable=C0114, C0115, C0116, R1716
-from .. gui.base_selection_state import BaseSelectionState
+from .. common_project.base_selection_state import BaseSelectionState
 
 
 class ModernSelectionState(BaseSelectionState):
