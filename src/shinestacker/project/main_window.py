@@ -76,26 +76,24 @@ class MainWindow(ProjectIOHandler, QMainWindow):
             self.update_delete_action_state,
             self.show_status_message,
             self.menu_manager.set_enabled_sub_actions_gui)
-        self.modern_view.widget_deleted_signal.connect(self.handle_widget_deleted)
-        self.classic_view.widget_deleted_signal.connect(self.handle_widget_deleted)
-        self.modern_view.widget_cloned_signal.connect(self.handle_widget_cloned)
-        self.classic_view.widget_cloned_signal.connect(self.handle_widget_cloned)
-        self.modern_view.widget_pasted_signal.connect(self.handle_widget_pasted)
-        self.classic_view.widget_pasted_signal.connect(self.handle_widget_pasted)
-        self.modern_view.widget_moved_up_signal.connect(self.handle_widget_moved_up)
-        self.classic_view.widget_moved_up_signal.connect(self.handle_widget_moved_up)
-        self.modern_view.widget_moved_down_signal.connect(self.handle_widget_moved_down)
-        self.classic_view.widget_moved_down_signal.connect(self.handle_widget_moved_down)
-        self.modern_view.widget_added_signal.connect(self.handle_widget_added)
-        self.classic_view.widget_added_signal.connect(self.handle_widget_added)
-        self.modern_view.widget_enable_signal.connect(self.handle_widget_enable)
-        self.classic_view.widget_enable_signal.connect(self.handle_widget_enable)
-        self.modern_view.widget_enable_all_signal.connect(self.handle_widget_enable_all)
-        self.classic_view.widget_enable_all_signal.connect(self.handle_widget_enable_all)
-        self.classic_view.widget_updated_signal.connect(self.handle_widget_updated)
-        self.modern_view.widget_updated_signal.connect(self.handle_widget_updated)
-        self.classic_view.refresh_ui_signal.connect(self.refresh_ui)
-        self.modern_view.refresh_ui_signal.connect(self.refresh_ui)
+
+        signal_map = [
+            ('widget_deleted_signal', self.handle_widget_deleted),
+            ('widget_cloned_signal', self.handle_widget_cloned),
+            ('widget_pasted_signal', self.handle_widget_pasted),
+            ('widget_moved_up_signal', self.handle_widget_moved_up),
+            ('widget_moved_down_signal', self.handle_widget_moved_down),
+            ('widget_added_signal', self.handle_widget_added),
+            ('widget_enable_signal', self.handle_widget_enable),
+            ('widget_enable_all_signal', self.handle_widget_enable_all),
+            ('widget_updated_signal', self.handle_widget_updated),
+            ('refresh_ui_signal', self.refresh_ui),
+        ]
+        for view in self.views.values():
+            for signal_name, handler in signal_map:
+                if hasattr(view, signal_name):
+                    getattr(view, signal_name).connect(handler)
+
         self.script_dir = os.path.dirname(__file__)
         self.retouch_callback = None
         for _k, v in self.views.items():

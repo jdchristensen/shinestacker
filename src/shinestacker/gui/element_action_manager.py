@@ -1,4 +1,4 @@
-# pylint: disable=C0114, C0115, C0116, W0246, E0611, R0917, R0913
+# pylint: disable=C0114, C0115, C0116, W0246, E0611, R0917, R0913, W0613
 from PySide6.QtCore import QObject
 from PySide6.QtWidgets import QMessageBox
 from .. config.constants import constants
@@ -104,10 +104,6 @@ class ElementActionManager(ProjectHandler, QObject):
         self.set_enabled_all(False)
 
     def _set_element_enabled(self, element, enabled, element_type):
-        if enabled:
-            self.mark_as_modified(True, f"Enable {element_type}")
-        else:
-            self.mark_as_modified(True, f"Disable {element_type}")
         element.set_enabled(enabled)
 
     def set_enabled_all(self, enabled):
