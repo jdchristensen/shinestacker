@@ -396,7 +396,6 @@ class ModernProjectView(ProjectView):
                         subaction_widget, j_idx, a_idx, s_idx
                     )
                     subaction_widget._slots["enabled_toggled"] = self._on_widget_enabled_toggled
-
                     subaction_widget.clicked.connect(
                         subaction_widget._slots["clicked"]
                     )
