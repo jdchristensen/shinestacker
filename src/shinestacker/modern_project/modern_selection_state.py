@@ -6,16 +6,6 @@ class ModernSelectionState(BaseSelectionState):
     def is_job_selected(self):
         return self.widget_type == 'job' and self.job_index >= 0
 
-    def is_action_selected(self):
-        return self.widget_type == 'action' and self.job_index >= 0 and self.action_index >= 0
-
-    def is_subaction_selected(self):
-        return self.widget_type == 'subaction' and \
-            self.job_index >= 0 and self.action_index >= 0 and self.subaction_index >= 0
-
-    def is_valid(self):
-        return self.widget_type in ('job', 'action', 'subaction')
-
     def _determine_widget_type(self):
         if self.job_index >= 0 and self.action_index < 0:
             return 'job'

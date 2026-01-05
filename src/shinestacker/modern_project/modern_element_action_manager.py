@@ -15,7 +15,7 @@ class ModernElementActionManager(ElementActionManager):
 
     def new_indices_after_delete(self, state):
         job_idx, act_idx, sub_idx = state.to_tuple()
-        if job_idx < 0:
+        if not state.are_indices_valid():
             return (-1, -1, -1)
         if sub_idx >= 0:
             if job_idx >= self.num_project_jobs():
@@ -59,7 +59,7 @@ class ModernElementActionManager(ElementActionManager):
 
     def new_indices_after_insert(self, state, delta):
         job_idx, act_idx, sub_idx = state.to_tuple()
-        if job_idx < 0:
+        if not state.are_indices_valid():
             return (-1, -1, -1)
         if sub_idx >= 0:
             if job_idx >= self.num_project_jobs():
