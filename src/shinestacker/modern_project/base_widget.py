@@ -126,12 +126,16 @@ class BaseWidget(QFrame):
             self.main_layout.insertWidget(1, self.path_label)
             self.path_label.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
             self.path_label_in_top_row = False
+            self.icons_container.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Maximum)
+            self.enabled_icon.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Minimum)
         elif total_needed <= available_width and not self.path_label_in_top_row:
             self.main_layout.removeWidget(self.path_label)
             self.top_layout.insertWidget(1, self.path_label)
             self.top_layout.setStretch(1, 1)
             self.path_label.setAlignment(Qt.AlignCenter | Qt.AlignVCenter)
             self.path_label_in_top_row = True
+            self.icons_container.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Maximum)
+            self.enabled_icon.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Minimum)
 
     def _on_enabled_icon_clicked(self, event):
         self._enabled = not self._enabled

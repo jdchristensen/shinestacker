@@ -126,10 +126,12 @@ class ModernElementActionManager(ElementActionManager):
         self.callbacks['remove_widget'](removal_state)
         new_indices = self.new_indices_after_delete(old_state)
         new_state = indices_to_state(*new_indices)
-        self.selection_state.copy_from(new_state)
-        self.callbacks['update_selection'](new_state)
         if new_state:
+            self.selection_state.copy_from(new_state)
+            self.callbacks['update_selection'](new_state)
             self.callbacks['ensure_selected_visible']()
+        else:
+            self.selection_state.reset()
         return deleted_job
 
     def _delete_action(self, confirm=True):
@@ -151,9 +153,11 @@ class ModernElementActionManager(ElementActionManager):
         self.callbacks['remove_widget'](removal_state)
         new_indices = self.new_indices_after_delete(old_state)
         new_state = indices_to_state(*new_indices)
-        self.callbacks['update_selection'](new_state)
         if new_state:
+            self.callbacks['update_selection'](new_state)
             self.callbacks['ensure_selected_visible']()
+        else:
+            self.selection_state.reset()
         return deleted_action
 
     def _delete_subaction(self, confirm=True):
@@ -174,7 +178,8 @@ class ModernElementActionManager(ElementActionManager):
                 'sub-action', subaction.params.get('name', '')):
             return None
         self.mark_as_modified(
-            True, "Delete Sub-action", "delete", (job_index, action_index, subaction_index))
+            True, "Delete Sub-action", "delete",
+            (job_index, action_index, subaction_index))
         deleted_subaction = action.sub_actions.pop(subaction_index)
         old_state = self.selection_state.copy()
         removal_state = ModernSelectionState()
@@ -182,9 +187,11 @@ class ModernElementActionManager(ElementActionManager):
         self.callbacks['remove_widget'](removal_state)
         new_indices = self.new_indices_after_delete(old_state)
         new_state = indices_to_state(*new_indices)
-        self.callbacks['update_selection'](new_state)
         if new_state:
+            self.callbacks['update_selection'](new_state)
             self.callbacks['ensure_selected_visible']()
+        else:
+            self.selection_state.reset()
         return deleted_subaction
 
     def set_enabled(self, enabled, selection=None, update_project=True):

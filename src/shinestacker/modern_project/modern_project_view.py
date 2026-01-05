@@ -337,44 +337,29 @@ class ModernProjectView(ProjectView):
 
     def _refresh_job_widget_signals(self):
         for i, job_widget in enumerate(self.job_widgets):
-            try:
-                job_widget.clicked.disconnect()
-            except Exception:
-                pass
+            job_widget.clicked.disconnect()
+            job_widget.enabled_toggled.disconnect()
+            for action_idx, action_widget in enumerate(job_widget.child_widgets):
+                action_widget.clicked.disconnect()
+                action_widget.enabled_toggled.disconnect()
+                for subaction_idx, subaction_widget in enumerate(action_widget.child_widgets):
+                    subaction_widget.clicked.disconnect()
+                    subaction_widget.enabled_toggled.disconnect()
+        for i, job_widget in enumerate(self.job_widgets):
             job_widget.clicked.connect(
                 lambda checked=False, w=job_widget, idx=i:
                 self._on_widget_clicked(w, 'job', idx))
-            try:
-                job_widget.enabled_toggled.disconnect()
-            except Exception:
-                pass
             job_widget.enabled_toggled.connect(self._on_widget_enabled_toggled)
             for action_idx, action_widget in enumerate(job_widget.child_widgets):
-                try:
-                    action_widget.clicked.disconnect()
-                except Exception:
-                    pass
                 action_widget.clicked.connect(
                     lambda checked=False, w=action_widget, j_idx=i, a_idx=action_idx:
                     self._on_widget_clicked(w, 'action', j_idx, a_idx))
-                try:
-                    action_widget.enabled_toggled.disconnect()
-                except Exception:
-                    pass
                 action_widget.enabled_toggled.connect(self._on_widget_enabled_toggled)
                 for subaction_idx, subaction_widget in enumerate(action_widget.child_widgets):
-                    try:
-                        subaction_widget.clicked.disconnect()
-                    except Exception:
-                        pass
                     subaction_widget.clicked.connect(
                         lambda checked=False, w=subaction_widget,
                         j_idx=i, a_idx=action_idx, s_idx=subaction_idx:
                         self._on_widget_clicked(w, 'subaction', j_idx, a_idx, s_idx))
-                    try:
-                        subaction_widget.enabled_toggled.disconnect()
-                    except Exception:
-                        pass
                     subaction_widget.enabled_toggled.connect(self._on_widget_enabled_toggled)
 
     def _refresh_after_structure_change(self):
@@ -1220,11 +1205,16 @@ class ModernProjectView(ProjectView):
 
     def _remove_job_widget(self, job_index):
         if not 0 <= job_index < len(self.job_widgets):
-            raise IndexError(f"Job index {job_index} out of range (0-{len(self.job_widgets) - 1})")
+            raise IndexError(f"Job index {job_index} out of range")
         widget = self.job_widgets.pop(job_index)
         self.project_layout.removeWidget(widget)
-        widget.clicked.disconnect()
-        widget.double_clicked.disconnect()
+        try:
+            if widget.clicked:
+                widget.clicked.disconnect()
+            if widget.double_clicked:
+                widget.double_clicked.disconnect()
+        except Exception:
+            pass
         widget.deleteLater()
         self._refresh_job_widget_signals()
         return True
@@ -1238,8 +1228,10 @@ class ModernProjectView(ProjectView):
         action_widget = job_widget.child_widgets.pop(action_index)
         job_widget.child_container_layout.removeWidget(action_widget)
         try:
-            action_widget.clicked.disconnect()
-            action_widget.double_clicked.disconnect()
+            if action_widget.clicked:
+                action_widget.clicked.disconnect()
+            if action_widget.double_clicked:
+                action_widget.double_clicked.disconnect()
         except Exception:
             pass
         action_widget.deleteLater()
@@ -1258,8 +1250,10 @@ class ModernProjectView(ProjectView):
         subaction_widget = action_widget.child_widgets.pop(subaction_index)
         action_widget.child_container_layout.removeWidget(subaction_widget)
         try:
-            subaction_widget.clicked.disconnect()
-            subaction_widget.double_clicked.disconnect()
+            if subaction_widget.clicked:
+                subaction_widget.clicked.disconnect()
+            if subaction_widget.double_clicked:
+                subaction_widget.double_clicked.disconnect()
         except Exception:
             pass
         subaction_widget.deleteLater()
@@ -1496,14 +1490,16 @@ class ModernProjectView(ProjectView):
                 if subaction_idx < len(action.sub_actions):
                     subaction = action.sub_actions[subaction_idx]
                     self._insert_subaction_widget(job_idx, action_idx, subaction_idx, subaction)
-                    if (job_idx < len(self.job_widgets) and
-                        action_idx < len(self.job_widgets[job_idx].child_widgets) and
-                        subaction_idx < len(
-                            self.job_widgets[job_idx].child_widgets[action_idx].child_widgets)):
+                    if job_idx < len(self.job_widgets) and \
+                            action_idx < len(self.job_widgets[job_idx].child_widgets) and \
+                            subaction_idx < len(self.job_widgets[
+                                job_idx].child_widgets[action_idx].child_widgets):
                         widget = self.job_widgets[
                             job_idx].child_widgets[action_idx].child_widgets[subaction_idx]
-                        if self.selected_widget:
+                        try:
                             self.selected_widget.set_selected(False)
+                        except RuntimeError:
+                            self.selected_widget = None
                         widget.set_selected(True)
                         self.selected_widget = widget
                         self.selection_state.set_subaction(job_idx, action_idx, subaction_idx)
@@ -1515,8 +1511,10 @@ class ModernProjectView(ProjectView):
                 if job_idx < len(self.job_widgets) and \
                         action_idx < len(self.job_widgets[job_idx].child_widgets):
                     widget = self.job_widgets[job_idx].child_widgets[action_idx]
-                    if self.selected_widget:
+                    try:
                         self.selected_widget.set_selected(False)
+                    except RuntimeError:
+                        self.selected_widget = None
                     widget.set_selected(True)
                     self.selected_widget = widget
                     self.selection_state.set_action(job_idx, action_idx)
@@ -1526,8 +1524,10 @@ class ModernProjectView(ProjectView):
                 self._insert_job_widget(job_idx, job)
                 if job_idx < len(self.job_widgets):
                     widget = self.job_widgets[job_idx]
-                    if self.selected_widget:
+                    try:
                         self.selected_widget.set_selected(False)
+                    except RuntimeError:
+                        self.selected_widget = None
                     widget.set_selected(True)
                     self.selected_widget = widget
                     self.selection_state.set_job(job_idx)
