@@ -475,7 +475,7 @@ class ModernProjectView(ProjectView):
                 job, self.current_file_directory(), self.parent())
             if self.action_dialog.exec() == QDialog.Accepted:
                 self.save_undo_state(pre_edit_project, "Edit Job", "edit", (job_index, -1, -1))
-                self._update_job_widget(job_index, job)
+                self._update_widget(ModernSelectionState(job_index), job)
                 self.widget_updated_signal.emit((job_index, -1, -1, 'job'))
 
     def _on_action_double_clicked(self, job_index, action_index):
@@ -492,7 +492,7 @@ class ModernProjectView(ProjectView):
             if self.action_dialog.exec() == QDialog.Accepted:
                 self.save_undo_state(
                     pre_edit_project, "Edit Action", "edit", (job_index, action_index, -1))
-                self._update_action_widget(job_index, action_index, action)
+                self._update_widget(ModernSelectionState(job_index, action_index), action)
                 self.widget_updated_signal.emit((job_index, action_index, -1, 'action'))
 
     def _on_subaction_double_clicked(self, job_index, action_index, subaction_index):
@@ -513,31 +513,29 @@ class ModernProjectView(ProjectView):
                 self.save_undo_state(
                     pre_edit_project, "Edit Sub-action", "edit",
                     (job_index, action_index, subaction_index))
-                self._update_subaction_widget(
-                    job_index, action_index, subaction_index, subaction)
+                self._update_widget(ModernSelectionState(
+                    job_index, action_index, subaction_index), subaction)
                 self.widget_updated_signal.emit(
                     (job_index, action_index, subaction_index, 'subaction'))
 
-    def _update_job_widget(self, job_index, job):
-        if 0 <= job_index < len(self.job_widgets):
-            job_widget = self.job_widgets[job_index]
-            job_widget.update(job)
-
-    def _update_action_widget(self, job_index, action_index, action):
-        if 0 <= job_index < len(self.job_widgets):
-            job_widget = self.job_widgets[job_index]
-            if 0 <= action_index < job_widget.num_child_widgets():
-                action_widget = job_widget.child_widgets[action_index]
-                action_widget.update(action)
-
-    def _update_subaction_widget(self, job_index, action_index, subaction_index, subaction):
-        if 0 <= job_index < len(self.job_widgets):
-            job_widget = self.job_widgets[job_index]
-            if 0 <= action_index < job_widget.num_child_widgets():
-                action_widget = job_widget.child_widgets[action_index]
-                if 0 <= subaction_index < action_widget.num_child_widgets():
-                    subaction_widget = action_widget.child_widgets[subaction_index]
-                    subaction_widget.update(subaction)
+    def _update_widget(self, state, element):
+        if not state.is_valid():
+            return
+        if state.is_job_selected():
+            if 0 <= state.job_index < len(self.job_widgets):
+                self.job_widgets[state.job_index].update(element)
+        elif state.is_action_selected():
+            if 0 <= state.job_index < len(self.job_widgets):
+                job_widget = self.job_widgets[state.job_index]
+                if 0 <= state.action_index < job_widget.num_child_widgets():
+                    job_widget.child_widgets[state.action_index].update(element)
+        elif state.is_subaction_selected():
+            if 0 <= state.job_index < len(self.job_widgets):
+                job_widget = self.job_widgets[state.job_index]
+                if 0 <= state.action_index < job_widget.num_child_widgets():
+                    action_widget = job_widget.child_widgets[state.action_index]
+                    if 0 <= state.subaction_index < action_widget.num_child_widgets():
+                        action_widget.child_widgets[state.subaction_index].update(element)
 
     def _select_job_widget(self, widget):
         for i, job_widget in enumerate(self.job_widgets):
