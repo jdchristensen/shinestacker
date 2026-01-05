@@ -4,7 +4,7 @@ from unittest.mock import MagicMock, patch
 from PySide6.QtWidgets import QApplication
 from shinestacker.config.constants import constants
 from shinestacker.gui.colors import ColorEntry
-from shinestacker.gui.run_worker import RunWorker
+from shinestacker.common_project.run_worker import RunWorker
 from shinestacker.classic_project.gui_run import (
     ColorPalette, ColorButton, TimerProgressBar, RunWindow)
 
