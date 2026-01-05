@@ -950,46 +950,45 @@ class ModernProjectView(ProjectView):
             self.refresh_ui()
         return False
 
-    def set_enabled(self, enabled):
-        self._set_enabled(*self.selection_state.to_tuple(), enabled)
-
     def set_style_sheet(self, dark_theme):
         pass
 
-    def _set_enabled(self, job_idx, action_idx, subaction_idx, enabled):
-        if job_idx < 0:
+    def set_enabled(self, enabled):
+        state = self.selection_state
+        if not state.is_valid():
             return
-        if not self.enforce_stop_run():
-            return
-        if subaction_idx >= 0:
-            if (0 <= job_idx < self.num_project_jobs() and
-                    0 <= action_idx < len(self.project().jobs[job_idx].sub_actions)):
-                action = self.project().jobs[job_idx].sub_actions[action_idx]
-                if 0 <= subaction_idx < len(action.sub_actions):
+        position = state.get_indices()
+        if state.is_subaction_selected():
+            if state.job_index < self.num_project_jobs():
+                job = self.project().jobs[state.job_index]
+                if state.action_index < len(job.sub_actions):
+                    action = job.sub_actions[state.action_index]
+                    if state.subaction_index < len(action.sub_actions):
+                        self.mark_as_modified(
+                            True, f"{'Enable' if enabled else 'Disable'} Sub-action",
+                            "edit", position)
+                        action.sub_actions[state.subaction_index].set_enabled(enabled)
+                        widget = self._find_action_widget(
+                            state.job_index, state.action_index, state.subaction_index)
+                        if widget:
+                            widget.set_enabled_and_update(enabled)
+        elif state.is_action_selected():
+            if state.job_index < self.num_project_jobs():
+                job = self.project().jobs[state.job_index]
+                if state.action_index < len(job.sub_actions):
                     self.mark_as_modified(
-                        True, f"{'Enable' if enabled else 'Disable'} Sub-action", "edit",
-                        (job_idx, action_idx, subaction_idx))
-                    action.sub_actions[subaction_idx].set_enabled(enabled)
-                    widget = self._find_action_widget(job_idx, action_idx, subaction_idx)
+                        True, f"{'Enable' if enabled else 'Disable'} Action", "edit", position)
+                    job.sub_actions[state.action_index].set_enabled(enabled)
+                    widget = self._find_action_widget(state.job_index, state.action_index)
                     if widget:
                         widget.set_enabled_and_update(enabled)
-        elif action_idx >= 0:
-            if 0 <= job_idx < self.num_project_jobs() and \
-                    0 <= action_idx < len(self.project().jobs[job_idx].sub_actions):
+        else:
+            if state.job_index < self.num_project_jobs():
                 self.mark_as_modified(
-                    True, f"{'Enable' if enabled else 'Disable'} Action", "edit",
-                    (job_idx, action_idx, -1))
-                self.project().jobs[job_idx].sub_actions[action_idx].set_enabled(enabled)
-                widget = self._find_action_widget(job_idx, action_idx)
-                if widget:
-                    widget.set_enabled_and_update(enabled)
-        elif job_idx >= 0:
-            if 0 <= job_idx < self.num_project_jobs():
-                self.mark_as_modified(
-                    True, f"{'Enable' if enabled else 'Disable'} Job", "edit", (job_idx, -1, -1))
-                self.project().jobs[job_idx].set_enabled(enabled)
-                if 0 <= job_idx < len(self.job_widgets):
-                    self.job_widgets[job_idx].set_enabled_and_update(enabled)
+                    True, f"{'Enable' if enabled else 'Disable'} Job", "edit", position)
+                self.project().jobs[state.job_index].set_enabled(enabled)
+                if state.job_index < len(self.job_widgets):
+                    self.job_widgets[state.job_index].set_enabled_and_update(enabled)
 
     def _ensure_selected_visible(self):
         if not self.selected_widget or not self.scroll_area:
