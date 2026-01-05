@@ -10,17 +10,11 @@ class ModernSelectionState(BaseSelectionState):
         return self.widget_type == 'action' and self.job_index >= 0 and self.action_index >= 0
 
     def is_subaction_selected(self):
-        return (self.widget_type == 'subaction' and
-                self.job_index >= 0 and
-                self.action_index >= 0 and
-                self.subaction_index >= 0)
+        return self.widget_type == 'subaction' and \
+            self.job_index >= 0 and self.action_index >= 0 and self.subaction_index >= 0
 
     def is_valid(self):
         return self.widget_type in ('job', 'action', 'subaction')
-
-    def from_tuple(self, indices_tuple):
-        super().from_tuple(indices_tuple)
-        self.widget_type = self._determine_widget_type()
 
     def _determine_widget_type(self):
         if self.job_index >= 0 and self.action_index < 0:
@@ -32,9 +26,8 @@ class ModernSelectionState(BaseSelectionState):
         return None
 
     def equals(self, job_index, action_index, subaction_index):
-        return (self.job_index == job_index and
-                self.action_index == action_index and
-                self.subaction_index == subaction_index)
+        return self.job_index == job_index and \
+            self.action_index == action_index and self.subaction_index == subaction_index
 
     def is_within_bounds(self, total_jobs, job_actions_count=None, action_subactions_count=None):
         if not 0 <= self.job_index < total_jobs:
