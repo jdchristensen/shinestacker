@@ -1,5 +1,5 @@
 # pylint: disable=C0114, C0115, C0116, E0611, R0902, R0904, R0913, R0914, R0917, R0912, R0915, E1101
-# pylint: disable=R1716, C0302, R0911, R0903, W0718, W0613
+# pylint: disable=R1716, C0302, R0911, R0903, W0718, W0613, R0801
 import os
 from PySide6.QtCore import Qt, QTimer, Signal, Slot
 from PySide6.QtGui import QCursor
@@ -421,6 +421,7 @@ class ModernProjectView(ProjectView):
                 job, self.current_file_directory(), self.parent())
             if self.action_dialog.exec() == QDialog.Accepted:
                 self._update_job_widget(job_index, job)
+                self.widget_updated_signal.emit((job_index, -1, -1, 'job'))
 
     def _on_action_double_clicked(self, job_index, action_index):
         job_widget = self.job_widgets[job_index]
@@ -434,6 +435,7 @@ class ModernProjectView(ProjectView):
                 action, self.current_file_directory(), self.parent())
             if self.action_dialog.exec() == QDialog.Accepted:
                 self._update_action_widget(job_index, action_index, action)
+                self.widget_updated_signal.emit((job_index, action_index, -1, 'action'))
 
     def _on_subaction_double_clicked(self, job_index, action_index, subaction_index):
         job_widget = self.job_widgets[job_index]
@@ -450,6 +452,8 @@ class ModernProjectView(ProjectView):
                 subaction, self.current_file_directory(), self.parent())
             if self.action_dialog.exec() == QDialog.Accepted:
                 self._update_subaction_widget(job_index, action_index, subaction_index, subaction)
+                self.widget_updated_signal.emit(
+                    (job_index, action_index, subaction_index, 'subaction'))
 
     def _update_job_widget(self, job_index, job):
         if 0 <= job_index < len(self.job_widgets):
@@ -899,6 +903,34 @@ class ModernProjectView(ProjectView):
         except Exception:
             pass
         return False
+
+    def update_widget(self, selection=None, update_project=True):
+        if selection is None:
+            selection = self.selection_state
+        if not selection.is_valid():
+            return
+        if selection.is_job_selected():
+            job_idx = selection.job_index
+            if 0 <= job_idx < len(self.job_widgets):
+                job_widget = self.job_widgets[job_idx]
+                job_widget.update(job_widget.data_object)
+        elif selection.is_action_selected():
+            job_idx = selection.job_index
+            action_idx = selection.action_index
+            if (0 <= job_idx < len(self.job_widgets) and
+                    0 <= action_idx < self.job_widgets[job_idx].num_child_widgets()):
+                action_widget = self.job_widgets[job_idx].child_widgets[action_idx]
+                action_widget.update(action_widget.data_object)
+        elif selection.is_subaction_selected():
+            job_idx = selection.job_index
+            action_idx = selection.action_index
+            subaction_idx = selection.subaction_index
+            if (0 <= job_idx < len(self.job_widgets) and
+                    0 <= action_idx < self.job_widgets[job_idx].num_child_widgets()):
+                action_widget = self.job_widgets[job_idx].child_widgets[action_idx]
+                if 0 <= subaction_idx < action_widget.num_child_widgets():
+                    subaction_widget = action_widget.child_widgets[subaction_idx]
+                    subaction_widget.update(subaction_widget.data_object)
 
     def horizontal_actions_layout(self, horizontal=True):
         if self.actions_layout_horizontal != horizontal:

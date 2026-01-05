@@ -25,6 +25,7 @@ class ProjectView(QWidget, LogManager, ProjectHandler):
     widget_added_signal = Signal(tuple)
     widget_enable_signal = Signal(tuple, bool)
     widget_enable_all_signal = Signal(bool)
+    widget_updated_signal = Signal(tuple)
     current_action_working_path = None
     current_action_input_path = None
     current_action_output_path = None

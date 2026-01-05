@@ -92,6 +92,10 @@ class MainWindow(ProjectIOHandler, QMainWindow):
         self.classic_view.widget_enable_signal.connect(self.handle_widget_enable)
         self.modern_view.widget_enable_all_signal.connect(self.handle_widget_enable_all)
         self.classic_view.widget_enable_all_signal.connect(self.handle_widget_enable_all)
+        self.classic_view.widget_updated_signal.connect(self.handle_widget_updated)
+        self.modern_view.widget_updated_signal.connect(self.handle_widget_updated)
+        self.classic_view.refresh_ui_signal.connect(self.refresh_ui)
+        self.modern_view.refresh_ui_signal.connect(self.refresh_ui)
         self.script_dir = os.path.dirname(__file__)
         self.retouch_callback = None
         for _k, v in self.views.items():
@@ -120,8 +124,6 @@ class MainWindow(ProjectIOHandler, QMainWindow):
         self.update_title()
         self.statusBar().addPermanentWidget(StatusBarSystemMonitor(self))
         QApplication.instance().paletteChanged.connect(self.on_theme_changed)
-        self.classic_view.refresh_ui_signal.connect(self.refresh_ui)
-        self.modern_view.refresh_ui_signal.connect(self.refresh_ui)
         self._undo_manager.set_enabled_undo_action_requested.connect(
             self.menu_manager.set_enabled_undo_action)
         self.menu_manager.open_file_requested.connect(self.open_project)
@@ -466,6 +468,19 @@ class MainWindow(ProjectIOHandler, QMainWindow):
                     view.enable_all(update_project=False)
                 else:
                     view.disable_all(update_project=False)
+
+    def handle_widget_updated(self, indices_tuple):
+        job_idx, action_idx, subaction_idx, widget_type = indices_tuple
+        for _view_name, view in self.views.items():
+            if view != self.sender():
+                state = ModernSelectionState()
+                if widget_type == 'job':
+                    state.set_job(job_idx)
+                elif widget_type == 'action':
+                    state.set_action(job_idx, action_idx)
+                elif widget_type == 'subaction':
+                    state.set_subaction(job_idx, action_idx, subaction_idx)
+                view.update_widget(selection=state, update_project=False)
 
     def copy_element(self):
         self.current_view.copy_element()

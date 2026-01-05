@@ -578,6 +578,9 @@ class ClassicProjectView(ProjectView, ListContainer):
     def update_added_element(self, _indices_tuple):
         self.refresh_ui()
 
+    def update_widget(self, selection=None, update_project=True):
+        self.refresh_ui()
+
     # pylint: disable=C0103
     def contextMenuEvent(self, event):
         item = self.job_list().itemAt(self.job_list().viewport().mapFrom(self, event.pos()))
@@ -624,6 +627,7 @@ class ClassicProjectView(ProjectView, ListContainer):
                 if current_row >= 0:
                     self.job_list_item(current_row).setText(job.params['name'])
                 self.refresh_ui()
+                self.widget_updated_signal.emit((index, -1, -1, 'job'))
 
     def on_action_edit(self, item):
         job_index = self.current_job_index()
@@ -641,6 +645,12 @@ class ClassicProjectView(ProjectView, ListContainer):
                     self.refresh_ui()
                     self.set_current_job(job_index)
                     self.set_current_action(action_index)
+                    widget_type = 'subaction' if is_sub_action else 'action'
+                    subaction_index = -1
+                    if is_sub_action:
+                        subaction_index = self._get_current_subaction_index()
+                    self.widget_updated_signal.emit(
+                        (job_index, action_index, subaction_index, widget_type))
 
     def on_job_selected(self, index):
         self.clear_action_list()

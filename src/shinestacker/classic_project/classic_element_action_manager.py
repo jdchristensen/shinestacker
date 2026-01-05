@@ -1,4 +1,4 @@
-# pylint: disable=C0114, C0115, C0116, E0611, R0903, R0904, R0913, R0917, E1101, R0911
+# pylint: disable=C0114, C0115, C0116, E0611, R0903, R0904, R0913, R0917, E1101, R0911, R0801
 from .. config.constants import constants
 from .. gui.element_action_manager import ElementActionManager
 from .classic_selection_state import rows_to_state
