@@ -147,7 +147,11 @@ class FieldBuilder:
         return ''
 
     def update_params(self, params):
-        has_relative_paths = any(field['type'] == FIELD_REL_PATH for field in self.fields.values())
+        has_relative_paths = any(
+            field['type'] == FIELD_REL_PATH
+            and not field.get('skip_working_path_check', False)
+            for field in self.fields.values()
+        )
         if has_relative_paths:
             working_path = self.get_working_path()
             if not working_path:
@@ -197,6 +201,8 @@ class FieldBuilder:
                     QMessageBox.warning(None, "Error", f"{field['label']} is required")
                     return False
             if field['type'] == FIELD_REL_PATH and 'working_path' in params:
+                if field.get('skip_working_path_check', False):
+                    continue
                 try:
                     working_path = self.get_working_path()
                     if not working_path:

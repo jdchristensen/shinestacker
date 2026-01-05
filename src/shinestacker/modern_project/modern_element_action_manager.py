@@ -297,7 +297,7 @@ class ModernElementActionManager(ElementActionManager):
             new_job_index = 0
         else:
             new_job_index = min(max(self.selection_state.job_index + 1, 0), self.num_project_jobs())
-        success, element_type, _index = self.paste_job_logic(
+        success, _element_type, _index = self.paste_job_logic(
             copy_buffer, self.selection_state.job_index, True,
             "Paste Job", "paste", (new_job_index, -1, -1))
         if success:

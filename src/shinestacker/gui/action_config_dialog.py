@@ -641,7 +641,7 @@ class MaskNoiseConfigurator(DefaultActionConfigurator):
         super().create_form(layout, action)
         self.add_field(
             'noise_mask', FIELD_REL_PATH, 'Noise mask file', required=False,
-            path_type='file', must_exist=True,
+            path_type='file', must_exist=True, skip_working_path_check=True,
             default=AppConfig.get('noise_detection_params')['noise_map_filename'],
             placeholder=AppConfig.get('noise_detection_params')['noise_map_filename'])
         self.add_field(
