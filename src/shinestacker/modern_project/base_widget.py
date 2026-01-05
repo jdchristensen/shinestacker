@@ -119,23 +119,24 @@ class BaseWidget(QFrame):
         available_width = self.top_container.width() - 20
         name_width = self.name_label.sizeHint().width()
         path_width = self.path_label.sizeHint().width()
-        icons_width = self.icons_container.sizeHint().width()
+        icons_width = self.icons_container.minimumSizeHint().width()
         total_needed = name_width + path_width + icons_width + 20
         if total_needed > available_width and self.path_label_in_top_row:
             self.top_layout.removeWidget(self.path_label)
             self.main_layout.insertWidget(1, self.path_label)
             self.path_label.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
             self.path_label_in_top_row = False
-            self.icons_container.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Maximum)
-            self.enabled_icon.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Minimum)
+            self.top_layout.setStretch(2, 0)
+            self.icons_container.setMaximumWidth(icons_width)
         elif total_needed <= available_width and not self.path_label_in_top_row:
             self.main_layout.removeWidget(self.path_label)
             self.top_layout.insertWidget(1, self.path_label)
-            self.top_layout.setStretch(1, 1)
             self.path_label.setAlignment(Qt.AlignCenter | Qt.AlignVCenter)
             self.path_label_in_top_row = True
-            self.icons_container.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Maximum)
-            self.enabled_icon.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Minimum)
+            self.top_layout.setStretch(1, 1)
+            self.top_layout.setStretch(2, 0)
+            self.icons_container.setMaximumWidth(icons_width)
+        self.icons_container.setFixedWidth(icons_width)
 
     def _on_enabled_icon_clicked(self, event):
         self._enabled = not self._enabled
