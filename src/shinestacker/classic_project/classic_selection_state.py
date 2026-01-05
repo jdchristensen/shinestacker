@@ -5,11 +5,11 @@ from .. common_project.base_selection_state import BaseSelectionState
 class ClassicSelectionState(BaseSelectionState):
     def __init__(self, actions, sub_actions, action_index,
                  subaction_index=-1, job_index=-1, widget_type=None):
-        super().__init__()
+        super().__init__(job_index, action_index, subaction_index)
         self.actions = actions
         self.sub_actions = sub_actions
-        self.set_indices(job_index, action_index, subaction_index)
-        self.widget_type = widget_type
+        if widget_type is not None:
+            self.widget_type = widget_type
 
     @property
     def is_sub_action(self):
