@@ -170,7 +170,7 @@ class MainWindow(ProjectIOHandler, QMainWindow):
         if self.view_stack.currentIndex() == idx:
             return
         if self.current_view.is_running():
-            reply = QMessageBox.question(
+            reply = QMessageBox.warning(
                 self,
                 "Stop Run Warning",
                 "Switching view will stop the current run. Are you sure you want to stop the run?",
