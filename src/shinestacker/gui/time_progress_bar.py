@@ -76,13 +76,13 @@ class TimerProgressBar(QProgressBar):
         self._current_time = time.time()
         elapsed_time = self._current_time - self._start_time
         self.elapsed_str = self.time_str(elapsed_time)
-        fmt = f"Progress: %p% - %v of %m - elapsed: {self.elapsed_str}"
+        fmt = f"%p%, %v of %m. elapsed: {self.elapsed_str}"
         if 0 < val < self.maximum():
             time_per_iter = float(elapsed_time) / float(val)
             estimated_time = time_per_iter * self.maximum()
             remaining_time = max(0, estimated_time - elapsed_time)
             remaining_str = self.time_str(remaining_time)
-            fmt += f", {remaining_str} remaining"
+            fmt += f", remaining: {remaining_str}"
         self.setFormat(fmt)
 
     def start(self, steps):
