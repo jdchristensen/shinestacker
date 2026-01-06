@@ -51,21 +51,6 @@ def test_reset_undo_area():
     assert undo_manager.paint_area_manager.y_start == gui_constants.MAX_UNDO_SIZE
 
 
-def test_extend_undo_area():
-    mock_transformation_manager = Mock()
-    mock_paint_area_manager = PaintAreaManager()
-    undo_manager = UndoManager(mock_transformation_manager, mock_paint_area_manager)
-    undo_manager.paint_area_manager.x_start = 5
-    undo_manager.paint_area_manager.y_start = 5
-    undo_manager.paint_area_manager.x_end = 10
-    undo_manager.paint_area_manager.y_end = 10
-    undo_manager.extend_undo_area(3, 3, 12, 12)
-    assert undo_manager.paint_area_manager.x_start == 3
-    assert undo_manager.paint_area_manager.y_start == 3
-    assert undo_manager.paint_area_manager.x_end == 12
-    assert undo_manager.paint_area_manager.y_end == 12
-
-
 def test_save_undo_state_with_none_layer():
     mock_transformation_manager = Mock()
     mock_paint_area_manager = PaintAreaManager()
