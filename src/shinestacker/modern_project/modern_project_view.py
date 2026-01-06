@@ -281,8 +281,6 @@ class ModernProjectView(ProjectView):
         self.update_delete_action_state_requested.emit()
 
     def add_job_widget(self, job):
-        if not self.enforce_stop_run():
-            return
         job_widget = JobWidget(job, self.dark_theme,
                                self.actions_layout_horizontal,
                                self.subactions_layout_vertical)
@@ -418,6 +416,8 @@ class ModernProjectView(ProjectView):
         self.setFocus()
 
     def _on_widget_enabled_toggled(self, enabled):
+        if not self.enforce_stop_run():
+            return
         widget = self.sender()
         if not widget:
             return
@@ -457,6 +457,8 @@ class ModernProjectView(ProjectView):
                         return
 
     def _on_job_double_clicked(self, job_index):
+        if not self.enforce_stop_run():
+            return
         job_widget = self.job_widgets[job_index]
         self._on_widget_clicked(job_widget, 'job', job_index)
         job = self.project_job(job_index)
@@ -470,6 +472,8 @@ class ModernProjectView(ProjectView):
                 self.widget_updated_signal.emit((job_index, -1, -1, 'job'))
 
     def _on_action_double_clicked(self, job_index, action_index):
+        if not self.enforce_stop_run():
+            return
         job_widget = self.job_widgets[job_index]
         action_widget = job_widget.child_widgets[action_index]
         self._on_widget_clicked(action_widget, 'action', job_index, action_index)
@@ -487,6 +491,8 @@ class ModernProjectView(ProjectView):
                 self.widget_updated_signal.emit((job_index, action_index, -1, 'action'))
 
     def _on_subaction_double_clicked(self, job_index, action_index, subaction_index):
+        if not self.enforce_stop_run():
+            return
         job_widget = self.job_widgets[job_index]
         action_widget = job_widget.child_widgets[action_index]
         subaction_widget = action_widget.child_widgets[subaction_index]
@@ -538,11 +544,11 @@ class ModernProjectView(ProjectView):
 
     def enforce_stop_run(self):
         if self.is_running():
-            reply = QMessageBox.question(
+            reply = QMessageBox.warning(
                 self,
-                "Stop Run Warning",
-                "Modifying the project requrires to stop the run. "
-                "Are you sure you want to stop the run?",
+                "Stop Run Required",
+                "Modifying the project requires stopping the current run.\n\n"
+                "Are you sure you want to stop the run and continue?",
                 QMessageBox.Yes | QMessageBox.No,
                 QMessageBox.No
             )
@@ -553,6 +559,8 @@ class ModernProjectView(ProjectView):
         return True
 
     def delete_element(self, selection=None, update_project=True, confirm=True):
+        if not self.enforce_stop_run():
+            return
         if selection is None:
             old_selection = self.selection_state.copy()
             if update_project:
@@ -586,6 +594,8 @@ class ModernProjectView(ProjectView):
                 ))
 
     def paste_element(self, selection=None, update_project=True):
+        if not self.enforce_stop_run():
+            return
         if selection is None:
             old_selection = self.selection_state.copy()
             if update_project:
@@ -648,6 +658,8 @@ class ModernProjectView(ProjectView):
         return False
 
     def clone_element(self, selection=None, update_project=True, confirm=True):
+        if not self.enforce_stop_run():
+            return
         if selection is None:
             old_selection = self.selection_state.copy()
             if update_project:
@@ -717,6 +729,8 @@ class ModernProjectView(ProjectView):
             widget.set_enabled_and_update(enabled)
 
     def enable(self, selection=None, update_project=True):
+        if not self.enforce_stop_run():
+            return
         if selection is None:
             selection = self.selection_state
         if update_project:
@@ -731,6 +745,8 @@ class ModernProjectView(ProjectView):
         self._update_widget_enable_state(selection, True)
 
     def disable(self, selection=None, update_project=True):
+        if not self.enforce_stop_run():
+            return
         if selection is None:
             selection = self.selection_state
         if update_project:
@@ -745,12 +761,16 @@ class ModernProjectView(ProjectView):
         self._update_widget_enable_state(selection, False)
 
     def enable_all(self, update_project=True):
+        if not self.enforce_stop_run():
+            return
         if update_project:
             self.element_action.set_enabled_all(True)
             self.widget_enable_all_signal.emit(True)
         self._update_all_widgets_enabled(True)
 
     def disable_all(self, update_project=True):
+        if not self.enforce_stop_run():
+            return
         if update_project:
             self.element_action.set_enabled_all(False)
             self.widget_enable_all_signal.emit(False)

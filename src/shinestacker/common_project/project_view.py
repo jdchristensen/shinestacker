@@ -297,3 +297,6 @@ class ProjectView(QWidget, LogManager, ProjectHandler):
             return (self.selection_state.job_index, self.selection_state.action_index,
                     self.selection_state.subaction_index)
         return (-1, -1, -1)
+
+    def enforce_stop_run(self):
+        pass

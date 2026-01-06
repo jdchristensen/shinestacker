@@ -360,6 +360,8 @@ class MainWindow(ProjectIOHandler, QMainWindow):
             self.show_status_message("Undo performed")
 
     def perform_add_job(self):
+        if not self.current_view.enforce_stop_run():
+            return
         job_action = ActionConfig("Job")
         self.action_dialog = ActionConfigDialog(job_action, self.current_file_directory(), self)
         if self.action_dialog.exec() == QDialog.Accepted:
