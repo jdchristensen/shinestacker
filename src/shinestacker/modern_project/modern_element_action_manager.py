@@ -429,13 +429,12 @@ class ModernElementActionManager(ElementActionManager):
         job_idx, _, _ = self.selection_state.to_tuple()
         new_index = self.element_ops.shift_job(job_idx, delta)
         if new_index != job_idx:
-            new_indices = (new_index, -1, -1)
             self.selection_state.set_job(new_index)
             if 'move_widgets' in self.callbacks:
                 from_pos = SelectionState(job_idx)
-                to_pos = SelectionState(new_index)
+                to_pos = self.selection_state
                 self.callbacks['move_widgets'](from_pos, to_pos)
-            self.callbacks['update_selection'](SelectionState(*new_indices))
+            self.callbacks['update_selection'](self.selection_state)
             return True
         return False
 
@@ -445,13 +444,12 @@ class ModernElementActionManager(ElementActionManager):
         job_idx, action_idx, _ = self.selection_state.to_tuple()
         new_index = self.element_ops.shift_action(job_idx, action_idx, delta)
         if new_index != action_idx:
-            new_indices = (job_idx, new_index, -1)
             self.selection_state.set_action(job_idx, new_index)
             if 'move_widgets' in self.callbacks:
                 from_pos = SelectionState(job_idx, action_idx)
-                to_pos = SelectionState(job_idx, new_index)
+                to_pos = self.selection_state
                 self.callbacks['move_widgets'](from_pos, to_pos)
-            self.callbacks['update_selection'](SelectionState(*new_indices))
+            self.callbacks['update_selection'](self.selection_state)
             return True
         return False
 
@@ -461,13 +459,12 @@ class ModernElementActionManager(ElementActionManager):
         job_idx, action_idx, subaction_idx = self.selection_state.to_tuple()
         new_index = self.element_ops.shift_subaction(job_idx, action_idx, subaction_idx, delta)
         if new_index != subaction_idx:
-            new_indices = (job_idx, action_idx, new_index)
             self.selection_state.set_subaction(job_idx, action_idx, new_index)
             if 'move_widgets' in self.callbacks:
                 from_pos = SelectionState(job_idx, action_idx, subaction_idx)
-                to_pos = SelectionState(job_idx, action_idx, new_index)
+                to_pos = self.selection_state
                 self.callbacks['move_widgets'](from_pos, to_pos)
-            self.callbacks['update_selection'](SelectionState(*new_indices))
+            self.callbacks['update_selection'](self.selection_state)
             return True
         return False
 
