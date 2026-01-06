@@ -4,19 +4,19 @@
 class SelectionState:
     def __init__(self, job_index=-1, action_index=-1, subaction_index=-1):
         self.set_indices(job_index, action_index, subaction_index)
-        if subaction_index >= 0:
-            self.widget_type = 'subaction'
-        elif action_index >= 0:
-            self.widget_type = 'action'
-        elif job_index >= 0:
-            self.widget_type = 'job'
-        else:
-            self.widget_type = None
 
     def set_indices(self, job_idx, action_idx, subaction_idx):
         self.job_index = job_idx
         self.action_index = action_idx
         self.subaction_index = subaction_idx
+        if subaction_idx >= 0:
+            self.widget_type = 'subaction'
+        elif action_idx >= 0:
+            self.widget_type = 'action'
+        elif job_idx >= 0:
+            self.widget_type = 'job'
+        else:
+            self.widget_type = None
 
     def reset(self):
         self.set_indices(-1, -1, -1)

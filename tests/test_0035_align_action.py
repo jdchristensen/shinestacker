@@ -651,7 +651,7 @@ def test_align_frames_end_with_plot_summary_homography():
     class MockProcess:
         ref_idx = 1
         working_path = "/tmp"
-        output_path ="output"
+        output_path = "output"
         plot_path = "plots"
         name = "test"
         id = 1
