@@ -75,7 +75,7 @@ class ActionWidget(ImgBaseWidget):
             f"📂 <i>{self._format_path(out_path)}</i>"
         self._add_path_label(path_text)
 
-    def show_progress(self, total_steps, label=""):
+    def show_progress(self, total_steps):
         self.progress_bar.setVisible(True)
         self.progress_bar.start(total_steps)
         if self._has_frames_content:

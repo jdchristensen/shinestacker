@@ -560,7 +560,7 @@ class ModernProjectView(ProjectView):
 
     def delete_element(self, selection=None, update_project=True, confirm=True):
         if not self.enforce_stop_run():
-            return
+            return None
         if selection is None:
             old_selection = self.selection_state.copy()
             if update_project:
@@ -595,7 +595,7 @@ class ModernProjectView(ProjectView):
 
     def paste_element(self, selection=None, update_project=True):
         if not self.enforce_stop_run():
-            return
+            return None
         if selection is None:
             old_selection = self.selection_state.copy()
             if update_project:
@@ -659,7 +659,7 @@ class ModernProjectView(ProjectView):
 
     def clone_element(self, selection=None, update_project=True, confirm=True):
         if not self.enforce_stop_run():
-            return
+            return None
         if selection is None:
             old_selection = self.selection_state.copy()
             if update_project:

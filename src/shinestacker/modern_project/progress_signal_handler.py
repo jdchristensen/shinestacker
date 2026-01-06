@@ -46,7 +46,7 @@ class ProgressSignalHandler(QObject):
     @Slot(int, str, str)
     def handle_step_counts(self, _run_id, module_name, total_steps):
         self._call_on_widget(
-            module_name, lambda w: w.show_progress(total_steps, os.path.basename(module_name)))
+            module_name, lambda w: w.show_progress(total_steps))
 
     @Slot(int, str, str)
     def handle_after_step(self, _run_id, module_name, current_step):

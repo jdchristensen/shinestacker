@@ -3,6 +3,7 @@
 
 class SelectionState:
     def __init__(self, job_index=-1, action_index=-1, subaction_index=-1):
+        self.widget_type = ''
         self.set_indices(job_index, action_index, subaction_index)
 
     def set_indices(self, job_idx, action_idx, subaction_idx):
