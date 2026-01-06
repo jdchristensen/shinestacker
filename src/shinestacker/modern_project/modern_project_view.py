@@ -1450,120 +1450,80 @@ class ModernProjectView(ProjectView):
         action_type = entry.get('action_type', '')
         affected_position = entry.get('affected_position', (-1, -1, -1))
         description = entry.get('description', '')
-        if action_type == 'add':
-            self._undo_add_action(affected_position, description)
-        elif action_type == 'delete':
-            self._undo_delete_action(affected_position, description)
-        elif action_type == 'edit':
-            self._undo_edit_action(affected_position, description)
-        elif action_type == 'move':
+        if action_type == 'move':
             self._undo_move_action(affected_position, description)
         elif action_type == 'edit_all':
-            self._undo_edit_all_action(affected_position, description)
-        elif action_type == 'clone':
-            self._undo_clone_action(affected_position, description)
-        elif action_type == 'paste':
-            self._undo_paste_action(affected_position, description)
+            self._undo_edit_all_action(description)
         else:
-            self.refresh_ui()
-
-    def _undo_add_action(self, position, description):
-        job_idx, action_idx, subaction_idx = position
-        try:
-            state = ModernSelectionState()
-            if subaction_idx >= 0:
-                state.set_subaction(job_idx, action_idx, subaction_idx)
-            elif action_idx >= 0:
-                state.set_action(job_idx, action_idx)
-            elif job_idx >= 0:
-                state.set_job(job_idx)
+            state = ModernSelectionState(*affected_position)
+            if action_type == 'add':
+                self._undo_add_action(state, description)
+            elif action_type == 'delete':
+                self._undo_delete_action(state, description)
+            elif action_type == 'edit':
+                self._undo_edit_action(state, description)
+            elif action_type == 'clone':
+                self._undo_clone_action(state, description)
+            elif action_type == 'paste':
+                self._undo_paste_action(state, description)
             else:
                 self.refresh_ui()
-                return
-            self._remove_widget(state)
+
+    def _undo_add_action(self, state, description):
+        try:
+            if state.is_valid():
+                self._remove_widget(state)
         except Exception:
             self.refresh_ui()
 
-    def _undo_delete_action(self, position, description):
-        job_idx, action_idx, subaction_idx = position
-        if job_idx < 0:
+    def _undo_delete_action(self, state, description):
+        if not state.is_valid():
             return
-        if subaction_idx >= 0:
-            if job_idx < len(self.project().jobs) and \
-                    action_idx < len(self.project().jobs[job_idx].sub_actions):
-                action = self.project().jobs[job_idx].sub_actions[action_idx]
-                if subaction_idx < len(action.sub_actions):
-                    subaction = action.sub_actions[subaction_idx]
-                    self._insert_subaction_widget(job_idx, action_idx, subaction_idx, subaction)
-                    if job_idx < len(self.job_widgets) and \
-                            action_idx < len(self.job_widgets[job_idx].child_widgets) and \
-                            subaction_idx < len(self.job_widgets[
-                                job_idx].child_widgets[action_idx].child_widgets):
-                        widget = self.job_widgets[
-                            job_idx].child_widgets[action_idx].child_widgets[subaction_idx]
-                        try:
-                            self.selected_widget.set_selected(False)
-                        except RuntimeError:
-                            self.selected_widget = None
-                        widget.set_selected(True)
-                        self.selected_widget = widget
-                        self.selection_state.set_subaction(job_idx, action_idx, subaction_idx)
-        elif action_idx >= 0:
-            if job_idx < len(self.project().jobs) and \
-                    action_idx < len(self.project().jobs[job_idx].sub_actions):
-                action = self.project().jobs[job_idx].sub_actions[action_idx]
-                self._insert_action_widget(job_idx, action_idx, action)
-                if job_idx < len(self.job_widgets) and \
-                        action_idx < len(self.job_widgets[job_idx].child_widgets):
-                    widget = self.job_widgets[job_idx].child_widgets[action_idx]
-                    try:
-                        self.selected_widget.set_selected(False)
-                    except RuntimeError:
-                        self.selected_widget = None
-                    widget.set_selected(True)
-                    self.selected_widget = widget
-                    self.selection_state.set_action(job_idx, action_idx)
-        elif job_idx >= 0:
-            if job_idx < len(self.project().jobs):
-                job = self.project().jobs[job_idx]
-                self._insert_job_widget(job_idx, job)
-                if job_idx < len(self.job_widgets):
-                    widget = self.job_widgets[job_idx]
-                    try:
-                        self.selected_widget.set_selected(False)
-                    except RuntimeError:
-                        self.selected_widget = None
-                    widget.set_selected(True)
-                    self.selected_widget = widget
-                    self.selection_state.set_job(job_idx)
-        self._refresh_job_widget_signals()
-        self.update_delete_action_state_requested.emit()
-
-    def _undo_edit_action(self, position, description):
-        state = ModernSelectionState(*position)
         try:
-            widget = self._find_widget(state)
-            if widget:
-                if state.is_subaction_selected():
-                    if 0 <= state.job_index < len(self.project().jobs) and \
+            if state.is_subaction_selected():
+                if state.job_index < len(self.project().jobs) and \
+                        state.action_index < len(self.project().jobs[state.job_index].sub_actions):
+                    action = self.project().jobs[state.job_index].sub_actions[state.action_index]
+                    if state.subaction_index < len(action.sub_actions):
+                        subaction = action.sub_actions[state.subaction_index]
+                        self._insert_subaction_widget(
+                            state.job_index, state.action_index, state.subaction_index, subaction)
+                        widget = self._find_widget(state)
+                        if widget:
+                            if self.selected_widget:
+                                self.selected_widget.set_selected(False)
+                            widget.set_selected(True)
+                            self.selected_widget = widget
+                            self.selection_state.copy_from(state)
+            elif state.is_action_selected():
+                if state.job_index < len(self.project().jobs) and \
+                        state.action_index < len(self.project().jobs[state.job_index].sub_actions):
+                    action = self.project().jobs[state.job_index].sub_actions[state.action_index]
+                    self._insert_action_widget(state.job_index, state.action_index, action)
+            elif state.is_job_selected():
+                if state.job_index < len(self.project().jobs):
+                    job = self.project().jobs[state.job_index]
+                    self._insert_job_widget(state.job_index, job)
+            self._refresh_job_widget_signals()
+            self.update_delete_action_state_requested.emit()
+        except Exception:
+            self.refresh_ui()
+
+    def _undo_edit_action(self, state, description):
+        try:
+            if state.is_subaction_selected():
+                if 0 <= state.job_index < len(self.project().jobs) and \
                         0 <= state.action_index < len(
                             self.project().jobs[state.job_index].sub_actions):
-                        action = self.project().jobs[
-                            state.job_index].sub_actions[state.action_index]
-                        if 0 <= state.subaction_index < len(action.sub_actions):
-                            subaction = action.sub_actions[state.subaction_index]
-                            widget.update(subaction)
-                elif state.is_action_selected():
-                    if 0 <= state.job_index < len(self.project().jobs) and \
-                        0 <= state.action_index < len(
-                            self.project().jobs[state.job_index].sub_actions):
-                        action = self.project().jobs[
-                            state.job_index].sub_actions[state.action_index]
-                        widget.update(action)
-                elif state.is_job_selected():
-                    if 0 <= state.job_index < len(self.project().jobs):
-                        job = self.project().jobs[state.job_index]
-                        widget.update(job)
+                    action = self.project().jobs[state.job_index].sub_actions[state.action_index]
+                    if 0 <= state.subaction_index < len(action.sub_actions):
+                        self._update_widget(state, action.sub_actions[state.subaction_index])
+            elif state.is_action_selected():
+                if 0 <= state.job_index < len(self.project().jobs):
+                    self._update_widget(
+                        state, self.project().jobs[state.job_index].sub_actions[state.action_index])
+            elif state.is_job_selected():
+                self._update_widget(state, self.project().jobs[state.job_index])
         except Exception:
             self.refresh_ui()
 
@@ -1647,7 +1607,7 @@ class ModernProjectView(ProjectView):
         action_widget.child_container_layout.insertWidget(
             insert_second, child_widgets[insert_second])
 
-    def _undo_edit_all_action(self, position, description):
+    def _undo_edit_all_action(self, description):
         entry = self.undo_manager().last_entry()
         if not entry or 'item' not in entry:
             self.refresh_ui()
@@ -1679,43 +1639,30 @@ class ModernProjectView(ProjectView):
                                 subaction_widget.update(subaction_widget.data_object)
                                 subaction_widget.set_enabled_and_update(subaction_enabled)
 
-    def _undo_clone_action(self, position, description):
-        job_idx, action_idx, subaction_idx = position
+    def _undo_clone_action(self, state, description):
         try:
-            state = ModernSelectionState()
-            if subaction_idx >= 0:
-                cloned_subaction_idx = subaction_idx + 1
-                state.set_subaction(job_idx, action_idx, cloned_subaction_idx)
-            elif action_idx >= 0:
-                cloned_action_idx = action_idx + 1
-                state.set_action(job_idx, cloned_action_idx)
-            elif job_idx >= 0:
-                cloned_job_idx = job_idx + 1
-                state.set_job(cloned_job_idx)
+            if state.is_subaction_selected():
+                cloned_state = ModernSelectionState(
+                    state.job_index, state.action_index, state.subaction_index + 1)
+            elif state.is_action_selected():
+                cloned_state = ModernSelectionState(
+                    state.job_index, state.action_index + 1, -1)
+            elif state.is_job_selected():
+                cloned_state = ModernSelectionState(state.job_index + 1, -1, -1)
             else:
                 self.refresh_ui()
                 return
-            self._remove_widget(state)
+            self._remove_widget(cloned_state)
             self._refresh_job_widget_signals()
             self.update_delete_action_state_requested.emit()
         except Exception:
             self.refresh_ui()
 
-    def _undo_paste_action(self, position, description):
-        job_idx, action_idx, subaction_idx = position
+    def _undo_paste_action(self, state, description):
         try:
-            state = ModernSelectionState()
-            if subaction_idx >= 0:
-                state.set_subaction(job_idx, action_idx, subaction_idx)
-            elif action_idx >= 0:
-                state.set_action(job_idx, action_idx)
-            elif job_idx >= 0:
-                state.set_job(job_idx)
-            else:
-                self.refresh_ui()
-                return
-            self._remove_widget(state)
-            self._refresh_job_widget_signals()
-            self.update_delete_action_state_requested.emit()
+            if state.is_valid():
+                self._remove_widget(state)
+                self._refresh_job_widget_signals()
+                self.update_delete_action_state_requested.emit()
         except Exception:
             self.refresh_ui()
