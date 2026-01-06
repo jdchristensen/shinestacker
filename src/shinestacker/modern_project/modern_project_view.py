@@ -803,83 +803,78 @@ class ModernProjectView(ProjectView):
                     subaction_widget.data_object.params['enabled'] = enabled
                     subaction_widget.update(subaction_widget.data_object)
 
-    def _move_widgets(self, from_pos, to_pos):
-        from_job, from_action, from_sub = from_pos
-        to_job, to_action, to_sub = to_pos
+    def _move_widgets(self, from_state, to_state):
         try:
-            if from_sub == -1 and to_sub == -1:
-                if from_action == -1 and to_action == -1:
-                    self._swap_job_widgets(from_job, to_job)
-                elif from_job == to_job:
-                    self._swap_action_widgets(from_job, from_action, to_action)
-                else:
+            if from_state.is_job_selected() and to_state.is_job_selected():
+                if not (0 <= from_state.job_index < len(self.job_widgets) and
+                        0 <= to_state.job_index < len(self.job_widgets)):
                     self.refresh_ui()
-            elif from_job == to_job and from_action == to_action:
-                self._swap_subaction_widgets(from_job, from_action, from_sub, to_sub)
+                    return
+                job_widgets = self.job_widgets
+                project_layout = self.project_layout
+                project_layout.removeWidget(job_widgets[from_state.job_index])
+                project_layout.removeWidget(job_widgets[to_state.job_index])
+                a, b = from_state.job_index, to_state.job_index
+                job_widgets[a], job_widgets[b] = job_widgets[b], job_widgets[a]
+                insert_first = min(a, b)
+                insert_second = max(a, b)
+                project_layout.insertWidget(insert_first, job_widgets[insert_first])
+                project_layout.insertWidget(insert_second, job_widgets[insert_second])
+            elif from_state.is_action_selected() and to_state.is_action_selected() and \
+                    from_state.job_index == to_state.job_index:
+                if not 0 <= from_state.job_index < len(self.job_widgets):
+                    self.refresh_ui()
+                    return
+                job_widget = self.job_widgets[from_state.job_index]
+                child_widgets = job_widget.child_widgets
+                if not (0 <= from_state.action_index < len(child_widgets) and
+                        0 <= to_state.action_index < len(child_widgets)):
+                    self.refresh_ui()
+                    return
+                job_widget.child_container_layout.removeWidget(
+                    child_widgets[from_state.action_index])
+                job_widget.child_container_layout.removeWidget(
+                    child_widgets[to_state.action_index])
+                a, b = from_state.action_index, to_state.action_index
+                child_widgets[a], child_widgets[b] = child_widgets[b], child_widgets[a]
+                insert_first = min(a, b)
+                insert_second = max(a, b)
+                job_widget.child_container_layout.insertWidget(
+                    insert_first, child_widgets[insert_first])
+                job_widget.child_container_layout.insertWidget(
+                    insert_second, child_widgets[insert_second])
+            elif from_state.is_subaction_selected() and to_state.is_subaction_selected() and \
+                    from_state.job_index == to_state.job_index and \
+                    from_state.action_index == to_state.action_index:
+                if not 0 <= from_state.job_index < len(self.job_widgets):
+                    self.refresh_ui()
+                    return
+                job_widget = self.job_widgets[from_state.job_index]
+                if not 0 <= from_state.action_index < len(job_widget.child_widgets):
+                    self.refresh_ui()
+                    return
+                action_widget = job_widget.child_widgets[from_state.action_index]
+                child_widgets = action_widget.child_widgets
+                if not (0 <= from_state.subaction_index < len(child_widgets) and
+                        0 <= to_state.subaction_index < len(child_widgets)):
+                    self.refresh_ui()
+                    return
+                action_widget.child_container_layout.removeWidget(
+                    child_widgets[from_state.subaction_index])
+                action_widget.child_container_layout.removeWidget(
+                    child_widgets[to_state.subaction_index])
+                a, b = from_state.subaction_index, to_state.subaction_index
+                child_widgets[a], child_widgets[b] = child_widgets[b], child_widgets[a]
+                insert_first = min(a, b)
+                insert_second = max(a, b)
+                action_widget.child_container_layout.insertWidget(
+                    insert_first, child_widgets[insert_first])
+                action_widget.child_container_layout.insertWidget(
+                    insert_second, child_widgets[insert_second])
             else:
                 self.refresh_ui()
         except Exception:
             self.refresh_ui()
-
-    def _swap_job_widgets(self, from_idx, to_idx):
-        if not (0 <= from_idx < len(self.job_widgets) and
-                0 <= to_idx < len(self.job_widgets)):
-            self.refresh_ui()
-            return
-        job_widgets = self.job_widgets
-        project_layout = self.project_layout
-        project_layout.removeWidget(job_widgets[from_idx])
-        project_layout.removeWidget(job_widgets[to_idx])
-        job_widgets[from_idx], job_widgets[to_idx] = \
-            job_widgets[to_idx], job_widgets[from_idx]
-        insert_first = min(from_idx, to_idx)
-        insert_second = max(from_idx, to_idx)
-        project_layout.insertWidget(insert_first, job_widgets[insert_first])
-        project_layout.insertWidget(insert_second, job_widgets[insert_second])
-
-    def _swap_action_widgets(self, job_idx, from_idx, to_idx):
-        if not 0 <= job_idx < len(self.job_widgets):
-            self.refresh_ui()
-            return
-        job_widget = self.job_widgets[job_idx]
-        child_widgets = job_widget.child_widgets
-        if not (0 <= from_idx < len(child_widgets) and
-                0 <= to_idx < len(child_widgets)):
-            self.refresh_ui()
-            return
-        job_widget.child_container_layout.removeWidget(child_widgets[from_idx])
-        job_widget.child_container_layout.removeWidget(child_widgets[to_idx])
-        child_widgets[from_idx], child_widgets[to_idx] = \
-            child_widgets[to_idx], child_widgets[from_idx]
-        insert_first = min(from_idx, to_idx)
-        insert_second = max(from_idx, to_idx)
-        job_widget.child_container_layout.insertWidget(insert_first, child_widgets[insert_first])
-        job_widget.child_container_layout.insertWidget(insert_second, child_widgets[insert_second])
-
-    def _swap_subaction_widgets(self, job_idx, action_idx, from_idx, to_idx):
-        if not 0 <= job_idx < len(self.job_widgets):
-            self.refresh_ui()
-            return
-        job_widget = self.job_widgets[job_idx]
-        if not 0 <= action_idx < len(job_widget.child_widgets):
-            self.refresh_ui()
-            return
-        action_widget = job_widget.child_widgets[action_idx]
-        child_widgets = action_widget.child_widgets
-        if not (0 <= from_idx < len(child_widgets) and
-                0 <= to_idx < len(child_widgets)):
-            self.refresh_ui()
-            return
-        action_widget.child_container_layout.removeWidget(child_widgets[from_idx])
-        action_widget.child_container_layout.removeWidget(child_widgets[to_idx])
-        child_widgets[from_idx], child_widgets[to_idx] = \
-            child_widgets[to_idx], child_widgets[from_idx]
-        insert_first = min(from_idx, to_idx)
-        insert_second = max(from_idx, to_idx)
-        action_widget.child_container_layout.insertWidget(
-            insert_first, child_widgets[insert_first])
-        action_widget.child_container_layout.insertWidget(
-            insert_second, child_widgets[insert_second])
 
     def move_element_up(self, selection=None, update_project=True):
         if selection is None:

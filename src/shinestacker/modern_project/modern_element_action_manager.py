@@ -432,8 +432,8 @@ class ModernElementActionManager(ElementActionManager):
             new_indices = (new_index, -1, -1)
             self.selection_state.set_job(new_index)
             if 'move_widgets' in self.callbacks:
-                from_pos = (job_idx, -1, -1)
-                to_pos = (new_index, -1, -1)
+                from_pos = ModernSelectionState(job_idx)
+                to_pos = ModernSelectionState(new_index)
                 self.callbacks['move_widgets'](from_pos, to_pos)
             self.callbacks['update_selection'](indices_to_state(*new_indices))
             return True
@@ -448,8 +448,8 @@ class ModernElementActionManager(ElementActionManager):
             new_indices = (job_idx, new_index, -1)
             self.selection_state.set_action(job_idx, new_index)
             if 'move_widgets' in self.callbacks:
-                from_pos = (job_idx, action_idx, -1)
-                to_pos = (job_idx, new_index, -1)
+                from_pos = ModernSelectionState(job_idx, action_idx)
+                to_pos = ModernSelectionState(job_idx, new_index)
                 self.callbacks['move_widgets'](from_pos, to_pos)
             self.callbacks['update_selection'](indices_to_state(*new_indices))
             return True
@@ -464,8 +464,8 @@ class ModernElementActionManager(ElementActionManager):
             new_indices = (job_idx, action_idx, new_index)
             self.selection_state.set_subaction(job_idx, action_idx, new_index)
             if 'move_widgets' in self.callbacks:
-                from_pos = (job_idx, action_idx, subaction_idx)
-                to_pos = (job_idx, action_idx, new_index)
+                from_pos = ModernSelectionState(job_idx, action_idx, subaction_idx)
+                to_pos = ModernSelectionState(job_idx, action_idx, new_index)
                 self.callbacks['move_widgets'](from_pos, to_pos)
             self.callbacks['update_selection'](indices_to_state(*new_indices))
             return True
