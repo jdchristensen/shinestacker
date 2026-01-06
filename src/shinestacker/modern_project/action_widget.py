@@ -78,8 +78,6 @@ class ActionWidget(ImgBaseWidget):
     def show_progress(self, total_steps, label=""):
         self.progress_bar.setVisible(True)
         self.progress_bar.start(total_steps)
-        if label:
-            self.progress_bar.setFormat(f"{label} - %p%")
         if self._has_frames_content:
             self.frames_status_box.setVisible(True)
 
