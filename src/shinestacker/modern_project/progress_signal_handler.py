@@ -4,6 +4,7 @@ from PySide6.QtCore import Qt, QObject, Slot
 from .. algorithms.utils import extension_supported, extension_pdf
 from .. algorithms.plot_manager import DirectPlotManager
 from .. gui.gui_images import GuiPdfView, GuiImageView, GuiOpenApp
+from . modern_selection_state import ModernSelectionState
 
 
 class SignalConnector(QObject):
@@ -39,7 +40,7 @@ class ProgressSignalHandler(QObject):
     def handle_step_counts(self, _run_id, module_name, total_steps):
         indices = self.progress_mapper.get_indices(module_name)
         if indices:
-            widget = self.find_widget(*indices)
+            widget = self.find_widget(ModernSelectionState(indices))
             if widget and hasattr(widget, 'show_progress'):
                 widget.show_progress(total_steps, os.path.basename(module_name))
 

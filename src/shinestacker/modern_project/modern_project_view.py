@@ -42,7 +42,7 @@ class ModernProjectView(ProjectView):
         self.subactions_layout_vertical = False
         self.progress_handler = ProgressSignalHandler(
             self.progress_mapper,
-            self._find_action_widget,
+            self._find_widget,
             self._scroll_to_widget
         )
         self.selection_nav = SelectionNavigationManager(
@@ -191,15 +191,22 @@ class ModernProjectView(ProjectView):
     def _build_progress_mapping(self, job_indices=None):
         self.progress_mapper.build_mapping(self.project(), job_indices)
 
-    def _find_action_widget(self, job_idx, action_idx, subaction_idx=-1):
-        if self.is_valid_job_index(job_idx):
-            job_widget = self.job_widgets[job_idx]
-            if 0 <= action_idx < job_widget.num_child_widgets():
-                action_widget = job_widget.child_widgets[action_idx]
-                if subaction_idx == -1:
+    def _find_widget(self, state):
+        if not state.is_valid():
+            return None
+        if not self.is_valid_job_index(state.job_index):
+            return None
+        job_widget = self.job_widgets[state.job_index]
+        if state.is_action_selected() or state.is_subaction_selected():
+            if 0 <= state.action_index < job_widget.num_child_widgets():
+                action_widget = job_widget.child_widgets[state.action_index]
+                if state.is_subaction_selected():
+                    if 0 <= state.subaction_index < action_widget.num_child_widgets():
+                        return action_widget.child_widgets[state.subaction_index]
+                else:
                     return action_widget
-                if 0 <= subaction_idx < action_widget.num_child_widgets():
-                    return action_widget.child_widgets[subaction_idx]
+        else:
+            return job_widget
         return None
 
     def _scroll_to_widget(self, widget):
@@ -966,8 +973,7 @@ class ModernProjectView(ProjectView):
                             True, f"{'Enable' if enabled else 'Disable'} Sub-action",
                             "edit", position)
                         action.sub_actions[state.subaction_index].set_enabled(enabled)
-                        widget = self._find_action_widget(
-                            state.job_index, state.action_index, state.subaction_index)
+                        widget = self._find_widget(state)
                         if widget:
                             widget.set_enabled_and_update(enabled)
         elif state.is_action_selected():
@@ -977,7 +983,7 @@ class ModernProjectView(ProjectView):
                     self.mark_as_modified(
                         True, f"{'Enable' if enabled else 'Disable'} Action", "edit", position)
                     job.sub_actions[state.action_index].set_enabled(enabled)
-                    widget = self._find_action_widget(state.job_index, state.action_index)
+                    widget = self._find_widget(state)
                     if widget:
                         widget.set_enabled_and_update(enabled)
         else:
@@ -1534,30 +1540,30 @@ class ModernProjectView(ProjectView):
         self.update_delete_action_state_requested.emit()
 
     def _undo_edit_action(self, position, description):
-        job_idx, action_idx, subaction_idx = position
+        state = ModernSelectionState(*position)
         try:
-            if subaction_idx >= 0:
-                widget = self._find_action_widget(job_idx, action_idx, subaction_idx)
-                if widget:
-                    if 0 <= job_idx < len(self.project().jobs) and \
-                       0 <= action_idx < len(self.project().jobs[job_idx].sub_actions):
-                        action = self.project().jobs[job_idx].sub_actions[action_idx]
-                        if 0 <= subaction_idx < len(action.sub_actions):
-                            subaction = action.sub_actions[subaction_idx]
+            widget = self._find_widget(state)
+            if widget:
+                if state.is_subaction_selected():
+                    if 0 <= state.job_index < len(self.project().jobs) and \
+                        0 <= state.action_index < len(
+                            self.project().jobs[state.job_index].sub_actions):
+                        action = self.project().jobs[
+                            state.job_index].sub_actions[state.action_index]
+                        if 0 <= state.subaction_index < len(action.sub_actions):
+                            subaction = action.sub_actions[state.subaction_index]
                             widget.update(subaction)
-            elif action_idx >= 0:
-                widget = self._find_action_widget(job_idx, action_idx)
-                if widget:
-                    if 0 <= job_idx < len(self.project().jobs) and \
-                       0 <= action_idx < len(self.project().jobs[job_idx].sub_actions):
-                        action = self.project().jobs[job_idx].sub_actions[action_idx]
+                elif state.is_action_selected():
+                    if 0 <= state.job_index < len(self.project().jobs) and \
+                        0 <= state.action_index < len(
+                            self.project().jobs[state.job_index].sub_actions):
+                        action = self.project().jobs[
+                            state.job_index].sub_actions[state.action_index]
                         widget.update(action)
-            elif job_idx >= 0:
-                if 0 <= job_idx < len(self.job_widgets):
-                    job_widget = self.job_widgets[job_idx]
-                    if 0 <= job_idx < len(self.project().jobs):
-                        job = self.project().jobs[job_idx]
-                        job_widget.update(job)
+                elif state.is_job_selected():
+                    if 0 <= state.job_index < len(self.project().jobs):
+                        job = self.project().jobs[state.job_index]
+                        widget.update(job)
         except Exception:
             self.refresh_ui()
 
