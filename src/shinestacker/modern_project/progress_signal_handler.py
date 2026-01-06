@@ -4,7 +4,6 @@ from PySide6.QtCore import Qt, QObject, Slot
 from .. algorithms.utils import extension_supported, extension_pdf
 from .. algorithms.plot_manager import DirectPlotManager
 from .. gui.gui_images import GuiPdfView, GuiImageView, GuiOpenApp
-from .. common_project.selection_state import SelectionState
 
 
 class SignalConnector(QObject):
@@ -36,128 +35,107 @@ class ProgressSignalHandler(QObject):
     def set_horizontal_layout(self, horizontal=True):
         self.horizontal_layout = horizontal
 
+    def _call_on_widget(self, module_name, func):
+        state = self.progress_mapper.get_state(module_name)
+        if not state:
+            return
+        widget = self.find_widget(state)
+        if widget:
+            func(widget)
+
     @Slot(int, str, str)
     def handle_step_counts(self, _run_id, module_name, total_steps):
-        indices = self.progress_mapper.get_indices(module_name)
-        if indices:
-            widget = self.find_widget(SelectionState(indices))
-            if widget and hasattr(widget, 'show_progress'):
-                widget.show_progress(total_steps, os.path.basename(module_name))
+        self._call_on_widget(
+            module_name, lambda w: w.show_progress(total_steps, os.path.basename(module_name)))
 
     @Slot(int, str, str)
     def handle_after_step(self, _run_id, module_name, current_step):
-        indices = self.progress_mapper.get_indices(module_name)
-        if indices:
-            widget = self.find_widget(*indices)
-            if widget and hasattr(widget, 'update_progress'):
-                widget.update_progress(current_step)
+        self._call_on_widget(module_name, lambda w: w.update_progress(current_step))
 
     @Slot(int, str)
     def handle_end_steps(self, _run_id, module_name):
-        indices = self.progress_mapper.get_indices(module_name)
-        if indices:
-            widget = self.find_widget(*indices)
-            if widget and hasattr(widget, 'complete_progress'):
-                widget.complete_progress()
+        self._call_on_widget(module_name, lambda w: w.complete_progress())
 
     @Slot(int, str)
     def handle_begin_steps(self, _run_id, module_name):
-        indices = self.progress_mapper.get_indices(module_name)
-        if indices:
-            widget = self.find_widget(*indices)
-            if widget and hasattr(widget, 'progress_bar'):
-                if not widget.progress_bar.isVisible():
-                    widget.progress_bar.start(1)
-                    widget.progress_bar.setVisible(True)
-                    self.scroll_to_widget(widget)
+        def begin_func(widget):
+            if hasattr(widget, 'progress_bar') and not widget.progress_bar.isVisible():
+                widget.progress_bar.start(1)
+                widget.progress_bar.setVisible(True)
+                self.scroll_to_widget(widget)
+        self._call_on_widget(module_name, begin_func)
 
     @Slot(int, str)
     def handle_before_action(self, _run_id, name):
-        indices = self.progress_mapper.get_indices(name)
-        if indices:
-            widget = self.find_widget(*indices)
-            if widget and hasattr(widget, 'progress_bar'):
-                widget.progress_bar.set_running_style()
+        self._call_on_widget(name, lambda w: w.progress_bar.set_running_style())
 
     @Slot(int, str)
     def handle_after_action(self, _run_id, name):
-        indices = self.progress_mapper.get_indices(name)
-        if indices:
-            widget = self.find_widget(*indices)
-            if widget and hasattr(widget, 'progress_bar'):
-                widget.progress_bar.set_done_style()
+        self._call_on_widget(name, lambda w: w.progress_bar.set_done_style())
 
     @Slot(int, str)
     def handle_run_stopped(self, _run_id, name):
-        indices = self.progress_mapper.get_indices(name)
-        if indices:
-            widget = self.find_widget(*indices)
-            if widget and hasattr(widget, 'progress_bar'):
-                widget.progress_bar.set_stopped_style()
+        self._call_on_widget(name, lambda w: w.progress_bar.set_stopped_style())
 
     @Slot(int, str)
     def handle_run_failed(self, _run_id, name):
-        indices = self.progress_mapper.get_indices(name)
-        if indices:
-            widget = self.find_widget(*indices)
-            if widget and hasattr(widget, 'progress_bar'):
-                widget.progress_bar.set_failed_style()
+        self._call_on_widget(name, lambda w: w.progress_bar.set_failed_style())
 
     @Slot(str)
     def handle_add_status_box(self, module_name):
-        indices = self.progress_mapper.get_indices(module_name)
-        if indices:
-            widget = self.find_widget(*indices)
-            if widget and hasattr(widget, 'add_status_box'):
+        def add_status_func(widget):
+            if hasattr(widget, 'add_status_box'):
                 widget.add_status_box(module_name)
                 self.scroll_to_widget(widget)
+        self._call_on_widget(module_name, add_status_func)
 
     @Slot(int, str, str, int)
     def handle_add_frame(self, module_name, filename, total_actions):
-        indices = self.progress_mapper.get_indices(module_name)
-        if indices:
-            widget = self.find_widget(*indices)
-            if widget and hasattr(widget, 'add_frame'):
+        def add_frame_func(widget):
+            if hasattr(widget, 'add_frame'):
                 widget.add_frame(module_name, filename, total_actions)
                 self.scroll_to_widget(widget)
+        self._call_on_widget(module_name, add_frame_func)
 
     @Slot(int, str, str, int)
     def handle_update_frame_status(self, module_name, filename, status_id):
-        indices = self.progress_mapper.get_indices(module_name)
-        if indices:
-            widget = self.find_widget(*indices)
-            if widget and hasattr(widget, 'update_frame_status'):
+        def update_frame_func(widget):
+            if hasattr(widget, 'update_frame_status'):
                 widget.update_frame_status(module_name, filename, status_id)
                 self.scroll_to_widget(widget)
+        self._call_on_widget(module_name, update_frame_func)
 
     @Slot(int, str, str, int)
     def handle_set_total_actions(self, module_name, filename, total_actions):
-        indices = self.progress_mapper.get_indices(module_name)
-        if indices:
-            widget = self.find_widget(*indices)
-            if widget and hasattr(widget, 'set_frame_total_actions'):
+        def set_total_func(widget):
+            if hasattr(widget, 'set_frame_total_actions'):
                 widget.set_frame_total_actions(module_name, filename, total_actions)
+        self._call_on_widget(module_name, set_total_func)
 
     @Slot(int, str, str, str)
     def handle_save_plot(self, _run_id, module_name, _caption, path):
-        indices = self.progress_mapper.get_indices(module_name)
-        if indices:
-            widget = self.find_widget(*indices)
-            if widget:
-                fixed_height = indices[2] == -1 and self.horizontal_layout is False
-                if extension_pdf(path):
-                    image_view = GuiPdfView(path, widget, fixed_height=fixed_height)
-                elif extension_supported(path):
-                    image_view = GuiImageView(path, widget, fixed_height=fixed_height)
-                else:
-                    raise RuntimeError(f"Can't visualize file type {os.path.splitext(path)[1]}.")
-                widget.add_image_view(image_view)
+        state = self.progress_mapper.get_state(module_name)
+        if not state:
+            return
+        widget = self.find_widget(state)
+        if not widget:
+            return
+        fixed_height = state.subaction_index == -1 and self.horizontal_layout is False
+        if extension_pdf(path):
+            image_view = GuiPdfView(path, widget, fixed_height=fixed_height)
+        elif extension_supported(path):
+            image_view = GuiImageView(path, widget, fixed_height=fixed_height)
+        else:
+            raise RuntimeError(f"Can't visualize file type {os.path.splitext(path)[1]}.")
+        widget.add_image_view(image_view)
 
     @Slot(int, str, str, str)
     def handle_open_app(self, _run_id, name, app, path):
-        indices = self.progress_mapper.get_indices(name)
-        if indices:
-            widget = self.find_widget(*indices)
-            if widget:
-                image_view = GuiOpenApp(app, path, widget, fixed_height=indices[2] == -1)
-                widget.add_image_view(image_view)
+        state = self.progress_mapper.get_state(name)
+        if not state:
+            return
+        widget = self.find_widget(state)
+        if not widget:
+            return
+        image_view = GuiOpenApp(app, path, widget, fixed_height=state.subaction_index == -1)
+        widget.add_image_view(image_view)

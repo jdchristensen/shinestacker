@@ -1,6 +1,7 @@
 # pylint: disable=C0114, C0115, C0116
 import os
 from .. gui.project_model import get_action_output_path
+from .. common_project.selection_state import SelectionState
 
 
 class ProgressMapper:
@@ -34,5 +35,8 @@ class ProgressMapper:
     def has_module(self, module_name):
         return module_name in self.mapping
 
-    def get_indices(self, module_name):
-        return self.mapping.get(module_name)
+    def get_state(self, module_name):
+        indices = self.mapping.get(module_name)
+        if indices:
+            return SelectionState(*indices)
+        return None
