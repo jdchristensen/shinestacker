@@ -423,48 +423,43 @@ class ModernElementActionManager(ElementActionManager):
                     return True
         return False
 
+    def move_widgets_to_selection(self, from_pos):
+        self.callbacks['move_widgets'](from_pos, self.selection_state)
+        self.callbacks['update_selection'](self.selection_state)
+
     def _shift_job(self, delta):
         if not self.selection_state.is_job_selected():
             return False
-        job_idx, _, _ = self.selection_state.to_tuple()
-        new_index = self.element_ops.shift_job(job_idx, delta)
-        if new_index != job_idx:
+        prev_sel = self.selection_state.copy()
+        new_index = self.element_ops.shift_job(
+            prev_sel.job_index, delta)
+        if new_index != prev_sel.job_index:
             self.selection_state.set_job(new_index)
-            if 'move_widgets' in self.callbacks:
-                from_pos = SelectionState(job_idx)
-                to_pos = self.selection_state
-                self.callbacks['move_widgets'](from_pos, to_pos)
-            self.callbacks['update_selection'](self.selection_state)
+            self.move_widgets_to_selection(prev_sel)
             return True
         return False
 
     def _shift_action(self, delta):
         if not self.selection_state.is_action_selected():
             return False
-        job_idx, action_idx, _ = self.selection_state.to_tuple()
-        new_index = self.element_ops.shift_action(job_idx, action_idx, delta)
-        if new_index != action_idx:
-            self.selection_state.set_action(job_idx, new_index)
-            if 'move_widgets' in self.callbacks:
-                from_pos = SelectionState(job_idx, action_idx)
-                to_pos = self.selection_state
-                self.callbacks['move_widgets'](from_pos, to_pos)
-            self.callbacks['update_selection'](self.selection_state)
+        prev_sel = self.selection_state.copy()
+        new_index = self.element_ops.shift_action(
+            prev_sel.job_index, prev_sel.action_index, delta)
+        if new_index != prev_sel.action_index:
+            self.selection_state.set_action(prev_sel.job_index, new_index)
+            self.move_widgets_to_selection(prev_sel)
             return True
         return False
 
     def _shift_subaction(self, delta):
         if not self.selection_state.is_subaction_selected():
             return False
-        job_idx, action_idx, subaction_idx = self.selection_state.to_tuple()
-        new_index = self.element_ops.shift_subaction(job_idx, action_idx, subaction_idx, delta)
-        if new_index != subaction_idx:
-            self.selection_state.set_subaction(job_idx, action_idx, new_index)
-            if 'move_widgets' in self.callbacks:
-                from_pos = SelectionState(job_idx, action_idx, subaction_idx)
-                to_pos = self.selection_state
-                self.callbacks['move_widgets'](from_pos, to_pos)
-            self.callbacks['update_selection'](self.selection_state)
+        prev_sel = self.selection_state.copy()
+        new_index = self.element_ops.shift_subaction(
+            prev_sel.job_index, prev_sel.action_index, prev_sel.subaction_index, delta)
+        if new_index != prev_sel.subaction_index:
+            self.selection_state.set_subaction(prev_sel.job_index, prev_sel.action_index, new_index)
+            self.move_widgets_to_selection(prev_sel)
             return True
         return False
 
