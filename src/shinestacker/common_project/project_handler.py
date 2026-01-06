@@ -119,6 +119,9 @@ class ProjectHandler:
     def modified(self):
         return self.project_holder.modified
 
+    def set_modified(self, modified):
+        self.project_holder.set_modified(modified)
+
     def mark_as_modified(self, modified=True, description='', action_type=None,
                          affected_position=(-1, -1, -1)):
         self.project_holder.mark_as_modified(modified, description, action_type, affected_position)
