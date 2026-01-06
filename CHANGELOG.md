@@ -2,12 +2,12 @@
 
 This page reports the main releases only and the main changes therein.
 
-## [v1.13.x] - 2026-01-06
+## [v1.13.1] - 2026-01-06
 
-Main stability improvement, fixes and reengineering of the project GUI.
+Main reengineering stability of the project GUI for improvements and fixes.
 
 ### Fixed
-- correct and consistent updates of both views when the project is modified
+- correct and consistent GUI response with update of both views when the project is modified
 - refresh of GUI with minimal updates prevent accidental deletion of job run information
 
 ### Changed
