@@ -1508,81 +1508,9 @@ class ModernProjectView(ProjectView):
         if len(position) != 6:
             self.refresh_ui()
             return
-        from_job, from_action, from_sub, to_job, to_action, to_sub = position
-        try:
-            if from_sub == -1 and to_sub == -1:
-                if from_action == -1 and to_action == -1:
-                    self._undo_move_job(from_job, to_job)
-                elif from_job == to_job:
-                    self._undo_move_action_in_job(from_job, from_action, to_action)
-                else:
-                    self.refresh_ui()
-            elif from_job == to_job and from_action == to_action:
-                self._undo_move_subaction_in_action(from_job, from_action, from_sub, to_sub)
-            else:
-                self.refresh_ui()
-        except Exception:
-            self.refresh_ui()
-
-    def _undo_move_job(self, from_job_idx, to_job_idx):
-        if not (0 <= from_job_idx < len(self.job_widgets) and
-                0 <= to_job_idx < len(self.job_widgets)):
-            self.refresh_ui()
-            return
-        job_widgets = self.job_widgets
-        project_layout = self.project_layout
-        project_layout.removeWidget(job_widgets[from_job_idx])
-        project_layout.removeWidget(job_widgets[to_job_idx])
-        job_widgets[from_job_idx], job_widgets[to_job_idx] = \
-            job_widgets[to_job_idx], job_widgets[from_job_idx]
-        insert_first = min(from_job_idx, to_job_idx)
-        insert_second = max(from_job_idx, to_job_idx)
-        project_layout.insertWidget(insert_first, job_widgets[insert_first])
-        project_layout.insertWidget(insert_second, job_widgets[insert_second])
-
-    def _undo_move_action_in_job(self, job_idx, from_action_idx, to_action_idx):
-        if not 0 <= job_idx < len(self.job_widgets):
-            self.refresh_ui()
-            return
-        job_widget = self.job_widgets[job_idx]
-        child_widgets = job_widget.child_widgets
-        if not (0 <= from_action_idx < len(child_widgets) and
-                0 <= to_action_idx < len(child_widgets)):
-            self.refresh_ui()
-            return
-        job_widget.child_container_layout.removeWidget(child_widgets[from_action_idx])
-        job_widget.child_container_layout.removeWidget(child_widgets[to_action_idx])
-        child_widgets[from_action_idx], child_widgets[to_action_idx] = \
-            child_widgets[to_action_idx], child_widgets[from_action_idx]
-        insert_first = min(from_action_idx, to_action_idx)
-        insert_second = max(from_action_idx, to_action_idx)
-        job_widget.child_container_layout.insertWidget(insert_first, child_widgets[insert_first])
-        job_widget.child_container_layout.insertWidget(insert_second, child_widgets[insert_second])
-
-    def _undo_move_subaction_in_action(self, job_idx, action_idx, from_sub_idx, to_sub_idx):
-        if not 0 <= job_idx < len(self.job_widgets):
-            self.refresh_ui()
-            return
-        job_widget = self.job_widgets[job_idx]
-        if not 0 <= action_idx < len(job_widget.child_widgets):
-            self.refresh_ui()
-            return
-        action_widget = job_widget.child_widgets[action_idx]
-        child_widgets = action_widget.child_widgets
-        if not (0 <= from_sub_idx < len(child_widgets) and
-                0 <= to_sub_idx < len(child_widgets)):
-            self.refresh_ui()
-            return
-        action_widget.child_container_layout.removeWidget(child_widgets[from_sub_idx])
-        action_widget.child_container_layout.removeWidget(child_widgets[to_sub_idx])
-        child_widgets[from_sub_idx], child_widgets[to_sub_idx] = \
-            child_widgets[to_sub_idx], child_widgets[from_sub_idx]
-        insert_first = min(from_sub_idx, to_sub_idx)
-        insert_second = max(from_sub_idx, to_sub_idx)
-        action_widget.child_container_layout.insertWidget(
-            insert_first, child_widgets[insert_first])
-        action_widget.child_container_layout.insertWidget(
-            insert_second, child_widgets[insert_second])
+        from_state = ModernSelectionState(*position[:3])
+        to_state = ModernSelectionState(*position[3:])
+        self._move_widgets(from_state, to_state)
 
     def _undo_edit_all_action(self, description):
         entry = self.undo_manager().last_entry()
