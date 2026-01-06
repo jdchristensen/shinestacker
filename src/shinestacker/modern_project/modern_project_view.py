@@ -192,22 +192,21 @@ class ModernProjectView(ProjectView):
         self.progress_mapper.build_mapping(self.project(), job_indices)
 
     def _find_widget(self, state):
-        if not state.is_valid():
+        if not state or not state.is_valid():
             return None
-        if not self.is_valid_job_index(state.job_index):
+        if not 0 <= state.job_index < len(self.job_widgets):
             return None
         job_widget = self.job_widgets[state.job_index]
-        if state.is_action_selected() or state.is_subaction_selected():
-            if 0 <= state.action_index < job_widget.num_child_widgets():
-                action_widget = job_widget.child_widgets[state.action_index]
-                if state.is_subaction_selected():
-                    if 0 <= state.subaction_index < action_widget.num_child_widgets():
-                        return action_widget.child_widgets[state.subaction_index]
-                else:
-                    return action_widget
-        else:
+        if state.is_job_selected():
             return job_widget
-        return None
+        if not 0 <= state.action_index < len(job_widget.child_widgets):
+            return None
+        action_widget = job_widget.child_widgets[state.action_index]
+        if state.is_action_selected():
+            return action_widget
+        if not 0 <= state.subaction_index < len(action_widget.child_widgets):
+            return None
+        return action_widget.child_widgets[state.subaction_index]
 
     def _scroll_to_widget(self, widget):
         if not widget or not self.scroll_area:
@@ -727,28 +726,8 @@ class ModernProjectView(ProjectView):
         self.refresh_ui()
         return False
 
-    def _get_widget_from_selection(self, selection):
-        if not selection or not selection.is_valid():
-            return None
-        if selection.is_job_selected():
-            if 0 <= selection.job_index < len(self.job_widgets):
-                return self.job_widgets[selection.job_index]
-        elif selection.is_action_selected():
-            if 0 <= selection.job_index < len(self.job_widgets):
-                job_widget = self.job_widgets[selection.job_index]
-                if 0 <= selection.action_index < len(job_widget.child_widgets):
-                    return job_widget.child_widgets[selection.action_index]
-        elif selection.is_subaction_selected():
-            if 0 <= selection.job_index < len(self.job_widgets):
-                job_widget = self.job_widgets[selection.job_index]
-                if 0 <= selection.action_index < len(job_widget.child_widgets):
-                    action_widget = job_widget.child_widgets[selection.action_index]
-                    if 0 <= selection.subaction_index < len(action_widget.child_widgets):
-                        return action_widget.child_widgets[selection.subaction_index]
-        return None
-
     def _update_widget_enable_state(self, selection, enabled):
-        widget = self._get_widget_from_selection(selection)
+        widget = self._find_widget(selection)
         if widget:
             widget.set_enabled_and_update(enabled)
 
