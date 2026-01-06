@@ -100,13 +100,23 @@ class ModernProjectView(ProjectView):
         self.console_area.handle_html_message(
             f"<img width=100 src='{ico_path}'><hr><br>")
 
-    def _selection_callback(self, widget_type, job_index, action_index=None, subaction_index=None):
-        if widget_type == 'job':
-            self._select_job(job_index)
-        elif widget_type == 'action':
-            self._select_action(job_index, action_index)
-        elif widget_type == 'subaction':
-            self._select_subaction(job_index, action_index, subaction_index)
+    def _select_widget(self, state):
+        if not state or not state.is_valid():
+            return
+        widget = self._find_widget(state)
+        if not widget:
+            return
+        if self.selected_widget:
+            self.selected_widget.set_selected(False)
+        widget.set_selected(True)
+        self.selected_widget = widget
+        self.selection_state.copy_from(state)
+        self.update_delete_action_state_requested.emit()
+        self._ensure_selected_visible()
+
+    def _selection_callback(self, widget_type, job_index, action_index=-1, subaction_index=-1):
+        state = SelectionState(job_index, action_index, subaction_index)
+        self._select_widget(state)
 
     def connect_signals(self, update_delete_action_state, show_status_message, enable_sub_actions):
         self.update_delete_action_state_requested.connect(update_delete_action_state)
@@ -247,31 +257,6 @@ class ModernProjectView(ProjectView):
         if 0 <= subaction_idx < len(action.sub_actions):
             return action.sub_actions[subaction_idx]
         return None
-
-    def _select_job(self, job_index):
-        if self.is_valid_job_index(job_index):
-            job_widget = self.job_widgets[job_index]
-            self._on_widget_clicked(job_widget, 'job', job_index)
-            self._ensure_selected_visible()
-
-    def _select_action(self, job_index, action_index):
-        if self.is_valid_job_index(job_index):
-            job_widget = self.job_widgets[job_index]
-            if 0 <= action_index < job_widget.num_child_widgets():
-                action_widget = job_widget.child_widgets[action_index]
-                self._on_widget_clicked(action_widget, 'action', job_index, action_index)
-                self._ensure_selected_visible()
-
-    def _select_subaction(self, job_index, action_index, subaction_index):
-        if self.is_valid_job_index(job_index):
-            job_widget = self.job_widgets[job_index]
-            if 0 <= action_index < job_widget.num_child_widgets():
-                action_widget = job_widget.child_widgets[action_index]
-                if 0 <= subaction_index < action_widget.num_child_widgets():
-                    subaction_widget = action_widget.child_widgets[subaction_index]
-                    self._on_widget_clicked(
-                        subaction_widget, 'subaction', job_index, action_index, subaction_index)
-                    self._ensure_selected_visible()
 
     def _reset_selection(self):
         self.selected_widget = None
@@ -1376,7 +1361,7 @@ class ModernProjectView(ProjectView):
                 return
         self.refresh_ui()
         if 0 <= job_idx < len(self.job_widgets):
-            self._select_job(job_idx)
+            self._select_widget(SelectionState(job_idx))
 
     def select_first_job(self):
         if self.job_widgets:
