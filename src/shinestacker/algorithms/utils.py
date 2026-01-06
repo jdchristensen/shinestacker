@@ -40,10 +40,6 @@ EXTENSIONS_GUI_STR = " ".join([f"*.{ext}" for ext in EXTENSIONS_SUPPORTED])
 EXTENSION_GUI_TIF = " ".join([f"*.{ext}" for ext in EXTENSIONS_TIF])
 EXTENSION_GUI_JPG = " ".join([f"*.{ext}" for ext in EXTENSIONS_JPG])
 EXTENSION_GUI_PNG = " ".join([f"*.{ext}" for ext in EXTENSIONS_PNG])
-EXTENSIONS_GUI_SAVE_STR = f"TIFF Files ({EXTENSION_GUI_TIF});;" \
-                          f"JPEG Files ({EXTENSION_GUI_JPG});;" \
-                          f"PNG Files ({EXTENSION_GUI_PNG});;" \
-                          "All Files (*)"
 
 
 def extension_in(path, exts):

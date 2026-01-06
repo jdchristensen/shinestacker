@@ -23,9 +23,6 @@ class UndoManager(QObject):
     def reset_undo_area(self):
         self.paint_area_manager.reset()
 
-    def extend_undo_area(self, x_start, y_start, x_end, y_end):
-        self.paint_area_manager.extend(x_start, y_start, x_end, y_end)
-
     def paint_area(self):
         return self.paint_area_manager.area()
 

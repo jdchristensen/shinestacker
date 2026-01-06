@@ -1,8 +1,8 @@
 # pylint: disable=C0114, C0115, C0116, E0611, R0903, R0904, R0913, R0917, E1101
-from .. common_project.base_selection_state import BaseSelectionState
+from .. common_project.selection_state import SelectionState
 
 
-class ClassicSelectionState(BaseSelectionState):
+class ClassicSelectionState(SelectionState):
     def __init__(self, actions, sub_actions, action_index,
                  subaction_index=-1, job_index=-1, widget_type=None):
         super().__init__(job_index, action_index, subaction_index)

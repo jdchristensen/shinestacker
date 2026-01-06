@@ -1,7 +1,7 @@
-# pylint: disable=C0114, C0115, C0116, R1716
+# pylint: disable=C0114, C0115, C0116, R1716, R0904
 
 
-class BaseSelectionState:
+class SelectionState:
     def __init__(self, job_index=-1, action_index=-1, subaction_index=-1):
         self.set_indices(job_index, action_index, subaction_index)
         if subaction_index >= 0:
@@ -82,3 +82,26 @@ class BaseSelectionState:
     def set_subaction_indices(self, job_index, action_index, subaction_index):
         self.set_indices(job_index, action_index, subaction_index)
         self.widget_type = 'subaction'
+
+    def equals(self, job_index, action_index, subaction_index):
+        return self.job_index == job_index and \
+            self.action_index == action_index and self.subaction_index == subaction_index
+
+    def is_within_bounds(self, total_jobs, job_actions_count=None, action_subactions_count=None):
+        if not 0 <= self.job_index < total_jobs:
+            return False
+        if self.widget_type == 'job':
+            return True
+        if job_actions_count is not None and not 0 <= self.action_index < job_actions_count:
+            return False
+        if self.widget_type == 'action':
+            return True
+        if action_subactions_count is not None and not \
+                0 <= self.subaction_index < action_subactions_count:
+            return False
+        return True
+
+    def copy(self):
+        new_state = SelectionState()
+        new_state.copy_from(self)
+        return new_state

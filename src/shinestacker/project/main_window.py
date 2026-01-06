@@ -19,9 +19,9 @@ from .. common_project.project_undo_manager import ProjectUndoManager
 from .. common_project.project_handler import ProjectHolder, ProjectIOHandler
 from .. common_project.menu_manager import MenuManager
 from .. common_project.new_project import fill_new_project
+from .. common_project.selection_state import SelectionState
 from .. classic_project.classic_project_view import ClassicProjectView
 from .. modern_project.modern_project_view import ModernProjectView
-from .. modern_project.modern_selection_state import ModernSelectionState
 
 
 class MainWindow(ProjectIOHandler, QMainWindow):
@@ -381,7 +381,7 @@ class MainWindow(ProjectIOHandler, QMainWindow):
         job_idx, action_idx, subaction_idx, widget_type = indices_tuple
         for _view_name, view in self.views.items():
             if view != self.sender():
-                state = ModernSelectionState()
+                state = SelectionState()
                 if widget_type == 'job':
                     state.set_job(job_idx)
                 elif widget_type == 'action':
@@ -394,7 +394,7 @@ class MainWindow(ProjectIOHandler, QMainWindow):
         job_idx, action_idx, subaction_idx, widget_type = indices_tuple
         for _view_name, view in self.views.items():
             if view != self.sender():
-                state = ModernSelectionState()
+                state = SelectionState()
                 if widget_type == 'job':
                     state.set_job(job_idx)
                 elif widget_type == 'action':
@@ -407,7 +407,7 @@ class MainWindow(ProjectIOHandler, QMainWindow):
         job_idx, action_idx, subaction_idx, widget_type = indices_tuple
         for _view_name, view in self.views.items():
             if view != self.sender():
-                state = ModernSelectionState()
+                state = SelectionState()
                 if widget_type == 'job':
                     state.set_job(job_idx)
                 elif widget_type == 'action':
@@ -420,7 +420,7 @@ class MainWindow(ProjectIOHandler, QMainWindow):
         job_idx, action_idx, subaction_idx, widget_type = indices_tuple
         for _view_name, view in self.views.items():
             if view != self.sender():
-                state = ModernSelectionState()
+                state = SelectionState()
                 if widget_type == 'job':
                     state.set_job(job_idx)
                 elif widget_type == 'action':
@@ -433,7 +433,7 @@ class MainWindow(ProjectIOHandler, QMainWindow):
         job_idx, action_idx, subaction_idx, widget_type = indices_tuple
         for _view_name, view in self.views.items():
             if view != self.sender():
-                state = ModernSelectionState()
+                state = SelectionState()
                 if widget_type == 'job':
                     state.set_job(job_idx)
                 elif widget_type == 'action':
@@ -451,7 +451,7 @@ class MainWindow(ProjectIOHandler, QMainWindow):
         job_idx, action_idx, subaction_idx, widget_type = indices_tuple
         for _view_name, view in self.views.items():
             if view != self.sender():
-                state = ModernSelectionState()
+                state = SelectionState()
                 if widget_type == 'job':
                     state.set_job(job_idx)
                 elif widget_type == 'action':
@@ -475,7 +475,7 @@ class MainWindow(ProjectIOHandler, QMainWindow):
         job_idx, action_idx, subaction_idx, widget_type = indices_tuple
         for _view_name, view in self.views.items():
             if view != self.sender():
-                state = ModernSelectionState()
+                state = SelectionState()
                 if widget_type == 'job':
                     state.set_job(job_idx)
                 elif widget_type == 'action':

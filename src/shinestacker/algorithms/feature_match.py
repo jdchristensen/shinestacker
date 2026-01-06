@@ -194,6 +194,3 @@ class SubsamplingFeatureMatcher:
 
     def get_last_subsampled_images(self):
         return self._last_subsampled_images
-
-    def get_last_subsample_factor(self):
-        return self._last_subsample_factor

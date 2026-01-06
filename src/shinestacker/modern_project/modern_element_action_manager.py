@@ -1,8 +1,8 @@
 # pylint: disable=C0114, C0115, C0116, W0246, E0611, R0917, R0913, R0912, R0911, R0904
 from .. config.constants import constants
 from .. common_project.element_action_manager import ElementActionManager
+from .. common_project.selection_state import SelectionState
 from .element_operations import ElementOperations
-from .modern_selection_state import indices_to_state, ModernSelectionState
 
 
 class ModernElementActionManager(ElementActionManager):
@@ -121,11 +121,11 @@ class ModernElementActionManager(ElementActionManager):
         self.mark_as_modified(True, "Delete Job", "delete", (job_index, -1, -1))
         deleted_job = self.project().jobs.pop(job_index)
         old_state = self.selection_state.copy()
-        removal_state = ModernSelectionState()
+        removal_state = SelectionState()
         removal_state.set_job(job_index)
         self.callbacks['remove_widget'](removal_state)
         new_indices = self.new_indices_after_delete(old_state)
-        new_state = indices_to_state(*new_indices)
+        new_state = SelectionState(*new_indices)
         if new_state:
             self.selection_state.copy_from(new_state)
             self.callbacks['update_selection'](new_state)
@@ -148,11 +148,11 @@ class ModernElementActionManager(ElementActionManager):
         self.mark_as_modified(True, "Delete Action", "delete", (job_index, action_index, -1))
         deleted_action = job.sub_actions.pop(action_index)
         old_state = self.selection_state.copy()
-        removal_state = ModernSelectionState()
+        removal_state = SelectionState()
         removal_state.set_action(job_index, action_index)
         self.callbacks['remove_widget'](removal_state)
         new_indices = self.new_indices_after_delete(old_state)
-        new_state = indices_to_state(*new_indices)
+        new_state = SelectionState(*new_indices)
         if new_state:
             self.callbacks['update_selection'](new_state)
             self.callbacks['ensure_selected_visible']()
@@ -182,11 +182,11 @@ class ModernElementActionManager(ElementActionManager):
             (job_index, action_index, subaction_index))
         deleted_subaction = action.sub_actions.pop(subaction_index)
         old_state = self.selection_state.copy()
-        removal_state = ModernSelectionState()
+        removal_state = SelectionState()
         removal_state.set_subaction(job_index, action_index, subaction_index)
         self.callbacks['remove_widget'](removal_state)
         new_indices = self.new_indices_after_delete(old_state)
-        new_state = indices_to_state(*new_indices)
+        new_state = SelectionState(*new_indices)
         if new_state:
             self.callbacks['update_selection'](new_state)
             self.callbacks['ensure_selected_visible']()
@@ -432,10 +432,10 @@ class ModernElementActionManager(ElementActionManager):
             new_indices = (new_index, -1, -1)
             self.selection_state.set_job(new_index)
             if 'move_widgets' in self.callbacks:
-                from_pos = ModernSelectionState(job_idx)
-                to_pos = ModernSelectionState(new_index)
+                from_pos = SelectionState(job_idx)
+                to_pos = SelectionState(new_index)
                 self.callbacks['move_widgets'](from_pos, to_pos)
-            self.callbacks['update_selection'](indices_to_state(*new_indices))
+            self.callbacks['update_selection'](SelectionState(*new_indices))
             return True
         return False
 
@@ -448,10 +448,10 @@ class ModernElementActionManager(ElementActionManager):
             new_indices = (job_idx, new_index, -1)
             self.selection_state.set_action(job_idx, new_index)
             if 'move_widgets' in self.callbacks:
-                from_pos = ModernSelectionState(job_idx, action_idx)
-                to_pos = ModernSelectionState(job_idx, new_index)
+                from_pos = SelectionState(job_idx, action_idx)
+                to_pos = SelectionState(job_idx, new_index)
                 self.callbacks['move_widgets'](from_pos, to_pos)
-            self.callbacks['update_selection'](indices_to_state(*new_indices))
+            self.callbacks['update_selection'](SelectionState(*new_indices))
             return True
         return False
 
@@ -464,10 +464,10 @@ class ModernElementActionManager(ElementActionManager):
             new_indices = (job_idx, action_idx, new_index)
             self.selection_state.set_subaction(job_idx, action_idx, new_index)
             if 'move_widgets' in self.callbacks:
-                from_pos = ModernSelectionState(job_idx, action_idx, subaction_idx)
-                to_pos = ModernSelectionState(job_idx, action_idx, new_index)
+                from_pos = SelectionState(job_idx, action_idx, subaction_idx)
+                to_pos = SelectionState(job_idx, action_idx, new_index)
                 self.callbacks['move_widgets'](from_pos, to_pos)
-            self.callbacks['update_selection'](indices_to_state(*new_indices))
+            self.callbacks['update_selection'](SelectionState(*new_indices))
             return True
         return False
 

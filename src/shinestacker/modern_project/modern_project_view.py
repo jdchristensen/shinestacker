@@ -11,8 +11,8 @@ from .. gui.gui_logging import QTextEditLogger
 from .. gui.action_config_dialog import ActionConfigDialog
 from .. common_project.run_worker import JobLogWorker, ProjectLogWorker
 from .. common_project.project_view import ProjectView
+from .. common_project.selection_state import SelectionState
 from .job_widget import JobWidget
-from .modern_selection_state import ModernSelectionState
 from .progress_mapper import ProgressMapper
 from .element_operations import ElementOperations
 from .progress_signal_handler import ProgressSignalHandler, SignalConnector
@@ -33,7 +33,7 @@ class ModernProjectView(ProjectView):
         self.scroll_content = None
         self.project_layout = None
         self.selected_widget = None
-        self.selection_state = ModernSelectionState()
+        self.selection_state = SelectionState()
         self.show_status_message = None
         self._worker = None
         self.progress_mapper = ProgressMapper()
@@ -482,7 +482,7 @@ class ModernProjectView(ProjectView):
                 job, self.current_file_directory(), self.parent())
             if self.action_dialog.exec() == QDialog.Accepted:
                 self.save_undo_state(pre_edit_project, "Edit Job", "edit", (job_index, -1, -1))
-                self._update_widget(ModernSelectionState(job_index), job)
+                self._update_widget(SelectionState(job_index), job)
                 self.widget_updated_signal.emit((job_index, -1, -1, 'job'))
 
     def _on_action_double_clicked(self, job_index, action_index):
@@ -499,7 +499,7 @@ class ModernProjectView(ProjectView):
             if self.action_dialog.exec() == QDialog.Accepted:
                 self.save_undo_state(
                     pre_edit_project, "Edit Action", "edit", (job_index, action_index, -1))
-                self._update_widget(ModernSelectionState(job_index, action_index), action)
+                self._update_widget(SelectionState(job_index, action_index), action)
                 self.widget_updated_signal.emit((job_index, action_index, -1, 'action'))
 
     def _on_subaction_double_clicked(self, job_index, action_index, subaction_index):
@@ -520,7 +520,7 @@ class ModernProjectView(ProjectView):
                 self.save_undo_state(
                     pre_edit_project, "Edit Sub-action", "edit",
                     (job_index, action_index, subaction_index))
-                self._update_widget(ModernSelectionState(
+                self._update_widget(SelectionState(
                     job_index, action_index, subaction_index), subaction)
                 self.widget_updated_signal.emit(
                     (job_index, action_index, subaction_index, 'subaction'))
@@ -635,17 +635,17 @@ class ModernProjectView(ProjectView):
                 if copy_buffer.type_name != constants.ACTION_JOB:
                     return False
                 element = copy_buffer.clone()
-                new_state = ModernSelectionState(job_idx + 1, -1, -1)
+                new_state = SelectionState(job_idx + 1, -1, -1)
             elif selection.is_action_selected():
                 if copy_buffer.type_name not in constants.ACTION_TYPES:
                     return False
                 element = copy_buffer.clone()
-                new_state = ModernSelectionState(job_idx, selection.action_index + 1, -1)
+                new_state = SelectionState(job_idx, selection.action_index + 1, -1)
             elif selection.is_subaction_selected():
                 if copy_buffer.type_name not in constants.SUB_ACTION_TYPES:
                     return False
                 element = copy_buffer.clone()
-                new_state = ModernSelectionState(
+                new_state = SelectionState(
                     job_idx, selection.action_index, selection.subaction_index + 1)
             else:
                 return False
@@ -693,13 +693,13 @@ class ModernProjectView(ProjectView):
             job = self.project().jobs[job_idx]
             if selection.is_job_selected():
                 element = self.project_job(job_idx)
-                new_state = ModernSelectionState(job_idx + 1, -1, -1)
+                new_state = SelectionState(job_idx + 1, -1, -1)
             elif selection.is_action_selected():
                 action_idx = selection.action_index
                 if not 0 <= action_idx < len(job.sub_actions):
                     return False
                 element = job.sub_actions[action_idx]
-                new_state = ModernSelectionState(job_idx, action_idx + 1, -1)
+                new_state = SelectionState(job_idx, action_idx + 1, -1)
             elif selection.is_subaction_selected():
                 action_idx = selection.action_index
                 subaction_idx = selection.subaction_index
@@ -709,7 +709,7 @@ class ModernProjectView(ProjectView):
                 if not 0 <= subaction_idx < len(action.sub_actions):
                     return False
                 element = action.sub_actions[subaction_idx]
-                new_state = ModernSelectionState(job_idx, action_idx, subaction_idx + 1)
+                new_state = SelectionState(job_idx, action_idx, subaction_idx + 1)
             else:
                 return False
             new_widget = self._insert_widget(
@@ -1003,7 +1003,7 @@ class ModernProjectView(ProjectView):
                 insert_index = self.selection_state.action_index + 1
             self.mark_as_modified(True, "Add Action", "add", (job_index, insert_index, -1))
             self.project().jobs[job_index].sub_actions.insert(insert_index, action)
-            new_state = ModernSelectionState(job_index, insert_index)
+            new_state = SelectionState(job_index, insert_index)
             action_widget = self._insert_widget(new_state, action)
             if action_widget:
                 self.selection_state.copy_from(new_state)
@@ -1044,7 +1044,7 @@ class ModernProjectView(ProjectView):
                     self.mark_as_modified(
                         True, "Add Sub-action", "add", (job_index, action_index, insert_index))
                     action.sub_actions.insert(insert_index, sub_action)
-                    new_state = ModernSelectionState(job_index, action_index, insert_index)
+                    new_state = SelectionState(job_index, action_index, insert_index)
                     subaction_widget = self._insert_widget(new_state, sub_action)
                     if subaction_widget:
                         self.selection_state.copy_from(new_state)
@@ -1073,15 +1073,15 @@ class ModernProjectView(ProjectView):
                 if not 0 <= subaction_idx < len(action.sub_actions):
                     return False
                 subaction = action.sub_actions[subaction_idx]
-                self._insert_widget(ModernSelectionState(
+                self._insert_widget(SelectionState(
                     job_idx, action_idx, subaction_idx), subaction)
             elif action_idx != -1:
                 if not 0 <= action_idx < len(job.sub_actions):
                     return False
                 action = job.sub_actions[action_idx]
-                self._insert_widget(ModernSelectionState(job_idx, action_idx), action)
+                self._insert_widget(SelectionState(job_idx, action_idx), action)
             else:
-                self._insert_widget(ModernSelectionState(job_idx), job)
+                self._insert_widget(SelectionState(job_idx), job)
             return True
         except Exception:
             pass
@@ -1290,9 +1290,6 @@ class ModernProjectView(ProjectView):
                     return subaction_widget
         return None
 
-    def get_console_area(self):
-        return self.console_area
-
     def run_job(self):
         current_index = self.selection_state.job_index
         if current_index < 0:
@@ -1386,7 +1383,7 @@ class ModernProjectView(ProjectView):
         if new_job_count == old_job_count + 1:
             job = self.project_job(job_idx)
             if job:
-                self._insert_widget(ModernSelectionState(job_idx), job)
+                self._insert_widget(SelectionState(job_idx), job)
                 if 0 <= job_idx < len(self.job_widgets):
                     job_widget = self.job_widgets[job_idx]
                     if self.selected_widget:
@@ -1433,7 +1430,7 @@ class ModernProjectView(ProjectView):
         elif action_type == 'edit_all':
             self._undo_edit_all_action(description)
         else:
-            state = ModernSelectionState(*affected_position)
+            state = SelectionState(*affected_position)
             if action_type == 'add':
                 self._undo_add_action(state, description)
             elif action_type == 'delete':
@@ -1508,8 +1505,8 @@ class ModernProjectView(ProjectView):
         if len(position) != 6:
             self.refresh_ui()
             return
-        from_state = ModernSelectionState(*position[:3])
-        to_state = ModernSelectionState(*position[3:])
+        from_state = SelectionState(*position[:3])
+        to_state = SelectionState(*position[3:])
         self._move_widgets(from_state, to_state)
 
     def _undo_edit_all_action(self, description):
@@ -1547,13 +1544,13 @@ class ModernProjectView(ProjectView):
     def _undo_clone_action(self, state, description):
         try:
             if state.is_subaction_selected():
-                cloned_state = ModernSelectionState(
+                cloned_state = SelectionState(
                     state.job_index, state.action_index, state.subaction_index + 1)
             elif state.is_action_selected():
-                cloned_state = ModernSelectionState(
+                cloned_state = SelectionState(
                     state.job_index, state.action_index + 1, -1)
             elif state.is_job_selected():
-                cloned_state = ModernSelectionState(state.job_index + 1, -1, -1)
+                cloned_state = SelectionState(state.job_index + 1, -1, -1)
             else:
                 self.refresh_ui()
                 return

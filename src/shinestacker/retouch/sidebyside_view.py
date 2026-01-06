@@ -257,12 +257,6 @@ class DoubleViewBase(ViewStrategy, QWidget, ViewSignals):
             return self.current_view
         return None
 
-    def _apply_zoom_to_view(self, view, factor):
-        view.scale(factor, factor)
-        other_view = self.current_view if view == self.master_view else self.master_view
-        other_view.resetTransform()
-        other_view.scale(self.zoom_factor(), self.zoom_factor())
-
     def show_master(self):
         self.pixmap_item_master.setVisible(True)
         self.pixmap_item_current.setVisible(True)
