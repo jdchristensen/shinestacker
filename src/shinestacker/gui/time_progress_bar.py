@@ -22,6 +22,7 @@ class TimerProgressBar(QProgressBar):
         super().setRange(0, 10)
         super().setValue(0)
         self.set_running_style()
+        self._status = 'pending'
         self._start_time = -1
         self._current_time = -1
         self.elapsed_str = ''
@@ -48,6 +49,39 @@ class TimerProgressBar(QProgressBar):
           background-color: #{bar_color.hex()};
         }}
         """)
+
+    def capture_widget_state(self):
+        return {
+            'visible': self.isVisible(),
+            'value': self.value(),
+            'minimum': self.minimum(),
+            'maximum': self.maximum(),
+            'format': self.format(),
+            'status': self._status
+        }
+
+    def restore_widget_state(self, state):
+        if not state:
+            return
+        self.setVisible(state.get('visible', False))
+        self.setMinimum(state.get('minimum', 0))
+        self.setMaximum(state.get('maximum', 100))
+        super().setValue(state.get('value', 0))
+        if 'format' in state:
+            self.setFormat(state['format'])
+        status = state.get('status', 'pending')
+        if status == 'pending':
+            self._status = 'pending'
+            super().setRange(0, 10)
+            super().setValue(0)
+        elif status == 'running':
+            self.set_running_style()
+        elif status == 'done':
+            self.set_done_style()
+        elif status == 'stopped':
+            self.set_stopped_style()
+        elif status == 'failed':
+            self.set_failed_style()
 
     def time_str(self, secs):
         xsecs = int(secs * 10)
@@ -109,17 +143,21 @@ class TimerProgressBar(QProgressBar):
     # pylint: enable=C0103
 
     def set_running_style(self):
+        self._status = 'running'
         self.set_style(
             ACTION_RUNNING_COLOR, ACTION_RUNNING_BKG_COLOR, ACTION_RUNNING_TXT_COLOR)
 
     def set_done_style(self):
+        self._status = 'done'
         self.set_style(
             ACTION_COMPLETED_COLOR, ACTION_COMPLETED_BKG_COLOR, ACTION_COMPLETED_TXT_COLOR)
 
     def set_stopped_style(self):
+        self._status = 'stopped'
         self.set_style(
             ACTION_STOPPED_COLOR, ACTION_STOPPED_BKG_COLOR, ACTION_STOPPED_TXT_COLOR)
 
     def set_failed_style(self):
+        self._status = 'failed'
         self.set_style(
             ACTION_FAILED_COLOR, ACTION_FAILED_BKG_COLOR, ACTION_FAILED_TXT_COLOR)

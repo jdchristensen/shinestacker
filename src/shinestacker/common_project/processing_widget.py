@@ -50,7 +50,12 @@ class MultiModuleStatusContainer(QWidget):
     def resizeEvent(self, event):
         super().resizeEvent(event)
         self._resize_timer.start(100)
-        QTimer.singleShot(10, lambda: [self.content_size_changed.emit(), self._scroll_to_bottom()])
+        try:
+            QTimer.singleShot(
+                10,
+                lambda: [self.content_size_changed.emit(), self._scroll_to_bottom()])
+        except RuntimeError:
+            pass
 
     def _scroll_to_bottom(self):
         if self.classic_view:

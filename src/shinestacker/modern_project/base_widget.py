@@ -295,6 +295,20 @@ class BaseWidget(QFrame):
             }}
         """
 
+    def capture_widget_state(self):
+        state = {
+            'children': [child.capture_widget_state() for child in self.child_widgets]
+        }
+        return state
+
+    def restore_widget_state(self, state):
+        if not state:
+            return
+        if 'children' in state:
+            for i, child_state in enumerate(state['children']):
+                if i < len(self.child_widgets):
+                    self.child_widgets[i].restore_widget_state(child_state)
+
 
 class ImgBaseWidget(BaseWidget):
     def __init__(self, data_object, min_height=40, dark_theme=False,

@@ -134,3 +134,13 @@ class ActionWidget(ImgBaseWidget):
         scrollbar = self.image_scroll_area.horizontalScrollBar()
         scrollbar_height = scrollbar.sizeHint().height() if scrollbar.maximum() > 0 else 0
         self.image_scroll_area.setMinimumHeight(max_height + scrollbar_height)
+
+    def capture_widget_state(self):
+        state = super().capture_widget_state()
+        state['progress_bar'] = self.progress_bar.capture_widget_state()
+        return state
+
+    def restore_widget_state(self, state):
+        super().restore_widget_state(state)
+        if 'progress_bar' in state:
+            self.progress_bar.restore_widget_state(state['progress_bar'])

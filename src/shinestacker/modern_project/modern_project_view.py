@@ -558,16 +558,23 @@ class ModernProjectView(ProjectView):
             return False
         return True
 
+    def copy_element(self):
+        self.element_action.copy_element()
+
     def delete_element(self, selection=None, update_project=True, confirm=True):
         if not self.enforce_stop_run():
             return None
         if selection is None:
             old_selection = self.selection_state.copy()
+            widget_state = self._find_widget(old_selection).capture_widget_state()
             if update_project:
                 result = self.element_action.delete_element(confirm)
             else:
                 result = None
             if result:
+                if widget_state:
+                    self.undo_manager().add_extra_data_to_last_entry(
+                        'modern_widget_state', widget_state)
                 self.widget_deleted_signal.emit((
                     old_selection.job_index,
                     old_selection.action_index,
@@ -578,19 +585,20 @@ class ModernProjectView(ProjectView):
         self._remove_widget(selection)
         return None
 
-    def copy_element(self):
-        self.element_action.copy_element()
-
     def cut_element(self):
         if self.enforce_stop_run():
-            old_state = self.selection_state.copy() if self.selection_state else None
+            old_selection = self.selection_state.copy() if self.selection_state else None
+            widget_state = self._find_widget(old_selection).capture_widget_state()
             self.element_action.cut_element()
-            if old_state and old_state.is_valid():
+            if old_selection and old_selection.is_valid():
+                if widget_state:
+                    self.undo_manager().add_extra_data_to_last_entry(
+                        'modern_widget_state', widget_state)
                 self.widget_deleted_signal.emit((
-                    old_state.job_index,
-                    old_state.action_index,
-                    old_state.subaction_index,
-                    old_state.widget_type
+                    old_selection.job_index,
+                    old_selection.action_index,
+                    old_selection.subaction_index,
+                    old_selection.widget_type
                 ))
 
     def paste_element(self, selection=None, update_project=True):
@@ -1419,7 +1427,7 @@ class ModernProjectView(ProjectView):
             if action_type == 'add':
                 self._undo_add_action(state, description)
             elif action_type == 'delete':
-                self._undo_delete_action(state, description)
+                self._undo_delete_action(state, description, entry.get('modern_widget_state'))
             elif action_type == 'edit':
                 self._undo_edit_action(state, description)
             elif action_type == 'clone':
@@ -1436,7 +1444,7 @@ class ModernProjectView(ProjectView):
         except Exception:
             self.refresh_ui()
 
-    def _undo_delete_action(self, state, description):
+    def _undo_delete_action(self, state, description, widget_state):
         if not state.is_valid():
             return
         try:
@@ -1458,6 +1466,8 @@ class ModernProjectView(ProjectView):
                 self._insert_widget(state, element)
                 widget = self._find_widget(state)
                 if widget:
+                    if widget_state:
+                        widget.restore_widget_state(widget_state)
                     if self.selected_widget:
                         self.selected_widget.set_selected(False)
                     widget.set_selected(True)
