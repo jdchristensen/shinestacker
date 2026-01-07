@@ -138,9 +138,16 @@ class ActionWidget(ImgBaseWidget):
     def capture_widget_state(self):
         state = super().capture_widget_state()
         state['progress_bar'] = self.progress_bar.capture_widget_state()
+        if self._has_frames_content:
+            state['frames_status'] = self.frames_status_box.capture_widget_state()
         return state
 
     def restore_widget_state(self, state):
         super().restore_widget_state(state)
         if 'progress_bar' in state:
             self.progress_bar.restore_widget_state(state['progress_bar'])
+        if 'frames_status' in state:
+            self.frames_status_box.restore_widget_state(state['frames_status'])
+            if state['frames_status'].get('modules'):
+                self._has_frames_content = True
+                self.frames_status_box.setVisible(True)

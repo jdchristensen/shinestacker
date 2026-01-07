@@ -107,6 +107,24 @@ class MultiModuleStatusContainer(QWidget):
                 widget.deleteLater()
         self.status_widgets.clear()
 
+    def capture_widget_state(self):
+        state = {'modules': [], 'classic_view': self.classic_view}
+        for module_name, status_widget in self.status_widgets.items():
+            module_state = status_widget.capture_widget_state()
+            module_state['name'] = module_name
+            state['modules'].append(module_state)
+        return state
+
+    def restore_widget_state(self, state):
+        self.clear()
+        for module_state in state.get('modules', []):
+            module_name = module_state.get('name', '')
+            if module_name:
+                self.add_module(module_name)
+                status_widget = self.get_widget(module_name)
+                if status_widget:
+                    status_widget.restore_widget_state(module_state)
+
 
 class FrameStatusBox(QWidget):
     def __init__(self, filename, total_actions):
@@ -232,6 +250,21 @@ class FrameStatusBox(QWidget):
             return
         super().mouseDoubleClickEvent(event)
 
+    def capture_widget_state(self):
+        return {
+            'filename': self.filename,
+            'total_actions': self.total_actions,
+            'status_id': self.status_id,
+            'enable_doubleclick': self.enable_doubleclick
+        }
+
+    def restore_widget_state(self, state):
+        self.filename = state.get('filename', '')
+        self.total_actions = state.get('total_actions', 0)
+        self.enable_doubleclick = state.get('enable_doubleclick', False)
+        status_id = state.get('status_id', -1)
+        self.update_status(status_id)
+
 
 class PreprocessingStatusWidget(QWidget):
     def __init__(self):
@@ -319,3 +352,21 @@ class PreprocessingStatusWidget(QWidget):
             self.blockSignals(True)
             self.setMinimumHeight(new_min_height)
             self.blockSignals(False)
+
+    def capture_widget_state(self):
+        state = {'frames': []}
+        for _filename_key, frame_widget in self.frame_widgets.items():
+            frame_state = frame_widget.capture_widget_state()
+            state['frames'].append(frame_state)
+        return state
+
+    def restore_widget_state(self, state):
+        self.frame_widgets.clear()
+        for frame_state in state.get('frames', []):
+            filename = frame_state.get('filename', '')
+            total_actions = frame_state.get('total_actions', 0)
+            if filename:
+                key = os.path.basename(filename)
+                self.frame_widgets[key] = FrameStatusBox(filename, total_actions)
+                self.frame_widgets[key].restore_widget_state(frame_state)
+        self._update_layout()
