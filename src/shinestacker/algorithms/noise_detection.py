@@ -256,7 +256,7 @@ class NoiseDetection(TaskBase, ImageSequenceManager):
         self._implementation.set_plot_manager(self.plot_manager)
 
     def progress(self, i):
-        self.callback(constants.CALLBACK_AFTER_STEP, self.id, self.name, i)
+        self.callback(constants.CALLBACK_AFTER_STEP, self.id, self.name, i + 1)
         if not config.DISABLE_TQDM:
             self.tbar.update(1)
             if self.callback(constants.CALLBACK_CHECK_RUNNING, self.id, self.name) is False:
