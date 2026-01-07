@@ -27,7 +27,7 @@ class ActionWidget(ImgBaseWidget):
         self.progress_container = QWidget()
         self.progress_layout = QVBoxLayout(self.progress_container)
         self.progress_layout.setContentsMargins(0, 0, 0, 0)
-        self.progress_layout.setSpacing(2)
+        self.progress_layout.setSpacing(5)
         self.progress_bar = TimerProgressBar()
         self.progress_bar.setVisible(False)
         self.progress_layout.addWidget(self.progress_bar)
