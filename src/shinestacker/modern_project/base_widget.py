@@ -3,6 +3,7 @@ import os
 from PySide6.QtCore import Qt, Signal, QTimer
 from PySide6.QtWidgets import (
     QWidget, QFrame, QLabel, QVBoxLayout, QHBoxLayout, QSizePolicy, QLayout, QScrollArea)
+from ..gui.gui_images import GuiPdfView, GuiOpenApp, GuiImageView
 from ..gui.colors import ColorPalette
 
 
@@ -424,3 +425,33 @@ class ImgBaseWidget(BaseWidget):
         self.image_area_widget.setFixedHeight(total_height)
         self.image_area_widget.setFixedWidth(max_width)
         self.image_scroll_area.setMinimumHeight(min(total_height, 200))
+
+    def capture_widget_state(self):
+        state = super().capture_widget_state()
+        state['image_views'] = []
+        for view in self.image_views:
+            if hasattr(view, 'file_path'):
+                view_state = {
+                    'file_path': view.file_path,
+                    'type': type(view).__name__,
+                }
+                if hasattr(view, 'app'):
+                    view_state['app'] = view.app
+                state['image_views'].append(view_state)
+        return state
+
+    def restore_widget_state(self, state):
+        super().restore_widget_state(state)
+        self.clear_images()
+        for view_state in state.get('image_views', []):
+            file_path = view_state.get('file_path')
+            view_type = view_state.get('type', 'GuiImageView')
+            if file_path and os.path.exists(file_path):
+                if view_type == 'GuiPdfView':
+                    image_view = GuiPdfView(file_path, self)
+                elif view_type == 'GuiOpenApp':
+                    app = view_state.get('app', '')
+                    image_view = GuiOpenApp(app, file_path, self)
+                else:
+                    image_view = GuiImageView(file_path, self)
+                self.add_image_view(image_view)
