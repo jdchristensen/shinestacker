@@ -206,6 +206,10 @@ class BaseWidget(QFrame):
             self.enabled_icon.setText("🚫")
             self.enabled_icon.setToolTip("Enable")
 
+    def clear_all(self):
+        for child in self.child_widgets:
+            child.clear_all()
+
     def _on_enabled_toggled(self, enabled):
         self.data_object.params['enabled'] = enabled
         self._update_stylesheet()
@@ -357,6 +361,10 @@ class ImgBaseWidget(BaseWidget):
         else:
             self.image_scroll_area.setVisible(False)
             self.image_scroll_area.setMinimumHeight(0)
+
+    def clear_all(self):
+        self.clear_images()
+        super().clear_all()
 
     def clear_images(self):
         for view in self.image_views:

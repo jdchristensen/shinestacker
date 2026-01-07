@@ -95,6 +95,13 @@ class MultiModuleStatusContainer(QWidget):
         self.container_widget.layout().activate()
         return self.container_widget.layout().totalMinimumSize().height()
 
+    def clear(self):
+        for i in reversed(range(self.layout.count())):
+            widget = self.layout.itemAt(i).widget()
+            if widget:
+                widget.deleteLater()
+        self.status_widgets.clear()
+
 
 class FrameStatusBox(QWidget):
     def __init__(self, filename, total_actions):

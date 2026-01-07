@@ -94,6 +94,14 @@ class TimerProgressBar(QProgressBar):
         self.check_time(self.maximum())
         self.setValue(self.maximum())
 
+    def clear(self):
+        self._start_time = -1
+        self._current_time = -1
+        self.elapsed_str = ''
+        super().setRange(0, 10)
+        super().setValue(0)
+        self.set_running_style()
+
     # pylint: disable=C0103
     def setValue(self, val):
         self.check_time(val)

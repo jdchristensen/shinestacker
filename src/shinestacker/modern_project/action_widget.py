@@ -113,6 +113,14 @@ class ActionWidget(ImgBaseWidget):
         self.frames_status_box.setVisible(False)
         self._has_frames_content = False
 
+    def clear_all(self):
+        self.clear_frames_status()
+        self.frames_status_box.clear()
+        self.frames_status_box.setVisible(False)
+        self.progress_bar.clear()
+        self.progress_bar.setVisible(False)
+        super().clear_all()
+
     def _adjust_image_area_height(self):
         if not self.image_views:
             return
