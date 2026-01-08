@@ -345,7 +345,6 @@ class ClassicProjectView(ProjectView, ListContainer):
                 result = self.element_action.delete_element(confirm)
             else:
                 result = None
-            self.refresh_ui()
             if old_state and old_state.is_valid():
                 self.widget_deleted_signal.emit((
                     old_state.job_index,
@@ -395,7 +394,6 @@ class ClassicProjectView(ProjectView, ListContainer):
         self._sync_selection_to_action_manager()
         old_state = self._get_selection_state()
         self.element_action.cut_element()
-        self.refresh_ui()
         if old_state and old_state.is_valid():
             self.widget_deleted_signal.emit((
                 old_state.job_index,
