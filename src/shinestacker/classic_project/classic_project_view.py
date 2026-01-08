@@ -342,9 +342,11 @@ class ClassicProjectView(ProjectView, ListContainer):
         if selection is None:
             old_state = self._get_selection_state()
             if update_project:
-                result = self.element_action.delete_element(confirm)
+                deleted_element, new_selection = self.element_action.delete_element(confirm)
+                if new_selection is not False:
+                    self.refresh_ui(new_selection)
             else:
-                result = None
+                deleted_element = None
             if old_state and old_state.is_valid():
                 self.widget_deleted_signal.emit((
                     old_state.job_index,
@@ -352,7 +354,7 @@ class ClassicProjectView(ProjectView, ListContainer):
                     old_state.subaction_index,
                     old_state.widget_type
                 ))
-            return result
+            return deleted_element
         if selection and selection.is_valid():
             job_idx = selection.job_index
             if job_idx >= 0:

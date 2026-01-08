@@ -71,16 +71,15 @@ class ClassicElementActionManager(ElementActionManager):
         selection = self.selection_state
         if selection.is_job_selected():
             if not 0 <= selection.job_index < self.num_project_jobs():
-                return None
+                return None, False
             job = self.project().jobs[selection.job_index]
             if confirm:
                 if not self.confirm_delete_message('job', job.params.get('name', '')):
-                    return None
+                    return None, False
             self.mark_as_modified(True, "Delete Job", "delete", (selection.job_index, -1, -1))
-            deleted_job = self.project().jobs.pop(selection.job_index)
-            self.callbacks['refresh_ui'](rows_to_state(self.project(), -1, -1))
-            return deleted_job
-        if selection.is_action_selected() or selection.is_subaction_selected():
+            deleted_element = self.project().jobs.pop(selection.job_index)
+            new_selection = rows_to_state(self.project(), -1, -1)
+        elif selection.is_action_selected() or selection.is_subaction_selected():
             element = selection.sub_action if selection.is_subaction_selected() \
                 else selection.action
             container = selection.sub_actions if selection.is_subaction_selected() \
@@ -88,11 +87,11 @@ class ClassicElementActionManager(ElementActionManager):
             index = selection.subaction_index if selection.is_subaction_selected() \
                 else selection.action_index
             if not element or not container or index < 0 or index >= len(container):
-                return None
+                return None, False
             element_type = "sub-action" if selection.is_subaction_selected() else "action"
             if confirm:
                 if not self.confirm_delete_message(element_type, element.params.get('name', '')):
-                    return None
+                    return None, False
             action_type_str = "delete"
             if selection.is_subaction_selected():
                 position = (selection.job_index, selection.action_index, selection.subaction_index)
@@ -102,10 +101,8 @@ class ClassicElementActionManager(ElementActionManager):
             deleted_element = container.pop(index)
             current_action_row = selection.get_action_row()
             new_row = self.new_row_after_delete(current_action_row, selection)
-            self.callbacks['refresh_ui'](
-                rows_to_state(self.project(), selection.job_index, new_row))
-            return deleted_element
-        return None
+            new_selection = rows_to_state(self.project(), selection.job_index, new_row)
+        return deleted_element, new_selection
 
     def copy_job(self):
         if not self.selection_state.is_job_selected():
