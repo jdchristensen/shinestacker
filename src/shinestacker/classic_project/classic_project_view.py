@@ -58,14 +58,7 @@ class ClassicProjectView(ProjectView, ListContainer):
         QApplication.instance().setStyleSheet(
             self.style_dark if dark_theme else self.style_light)
         self.selection_state = ClassicSelectionState(None, None, -1, -1, -1, None)
-        self.element_action = ClassicElementActionManager(
-            project_holder,
-            self.selection_state,
-            {
-                'refresh_ui': self.refresh_ui,
-            },
-            self.parent()
-        )
+        self.element_action = ClassicElementActionManager(project_holder, self.parent())
         self._saved_selection = None
         self._setup_ui()
 
@@ -347,6 +340,7 @@ class ClassicProjectView(ProjectView, ListContainer):
                     self.refresh_ui(new_selection)
             else:
                 deleted_element = None
+                self.refresh_ui()
             if old_state and old_state.is_valid():
                 self.widget_deleted_signal.emit((
                     old_state.job_index,
@@ -378,6 +372,8 @@ class ClassicProjectView(ProjectView, ListContainer):
                         self.project(),
                         current_state.job_index,
                         current_state.get_action_row()))
+            else:
+                self.refresh_ui()
             if old_state and old_state.is_valid():
                 self.widget_pasted_signal.emit((
                     old_state.job_index,
@@ -411,6 +407,8 @@ class ClassicProjectView(ProjectView, ListContainer):
                 success, new_state = self.element_action.clone_element()
                 if success:
                     self.refresh_ui(restore_state=new_state)
+            else:
+                self.refresh_ui()
             if old_state and old_state.is_valid():
                 self.widget_cloned_signal.emit((
                     old_state.job_index,
@@ -425,36 +423,30 @@ class ClassicProjectView(ProjectView, ListContainer):
                 self.refresh_ui(rows_to_state(self.project(), new_job_idx, -1))
 
     def enable(self, selection=None, update_project=True):
-        self._sync_selection_to_action_manager()
-        if selection is None:
-            self.element_action.enable()
-            if update_project:
-                self.widget_enable_signal.emit((
-                    self.selection_state.job_index,
-                    self.selection_state.action_index,
-                    self.selection_state.subaction_index,
-                    self.selection_state.widget_type
-                ), True)
-        else:
-            if update_project:
-                self.element_action.set_enabled(True, selection)
-            self.refresh_ui()
+        self._set_enabled(True, selection, update_project)
 
     def disable(self, selection=None, update_project=True):
+        self._set_enabled(False, selection, update_project)
+
+    def _set_enabled(self, enabled, selection=None, update_project=True):
         self._sync_selection_to_action_manager()
+        new_selection = False
         if selection is None:
-            self.element_action.disable()
+            new_selection = self.element_action.set_enabled(enabled)
             if update_project:
                 self.widget_enable_signal.emit((
                     self.selection_state.job_index,
                     self.selection_state.action_index,
                     self.selection_state.subaction_index,
                     self.selection_state.widget_type
-                ), False)
+                ), enabled)
         else:
             if update_project:
-                self.element_action.set_enabled(False, selection)
-            self.refresh_ui()
+                new_selection = self.element_action.set_enabled(enabled, selection)
+            else:
+                self.refresh_ui()
+        if new_selection is not False:
+            self.refresh_ui(new_selection)
 
     def enable_all(self, update_project=True):
         if update_project:

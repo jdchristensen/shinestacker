@@ -79,12 +79,6 @@ class ElementActionManager(ProjectHandler, QObject):
             return self._shift_subaction(delta)
         return False
 
-    def enable(self):
-        self.set_enabled(True)
-
-    def disable(self):
-        self.set_enabled(False)
-
     def enable_all(self):
         self.set_enabled_all(True)
 

@@ -5,10 +5,9 @@ from .classic_selection_state import rows_to_state
 
 
 class ClassicElementActionManager(ElementActionManager):
-    def __init__(self, project_holder, selection_state, callbacks, parent=None):
+    def __init__(self, project_holder, selection_state, parent=None):
         super().__init__(project_holder, parent)
         self.selection_state = selection_state
-        self.callbacks = callbacks
 
     @staticmethod
     def new_row_after_delete(action_row, pos):
@@ -291,7 +290,8 @@ class ClassicElementActionManager(ElementActionManager):
         if selection is None:
             selection = self.selection_state
         if not selection.is_valid():
-            return
+            return False
+        new_selection = False
         if selection.is_job_selected():
             if 0 <= selection.job_index < self.num_project_jobs():
                 job = self.project().jobs[selection.job_index]
@@ -300,8 +300,7 @@ class ClassicElementActionManager(ElementActionManager):
                     self.mark_as_modified(
                         True, f"{action_text} Job", "edit", (selection.job_index, -1, -1))
                     self._set_element_enabled(job, enabled, "Job")
-                    self.callbacks['refresh_ui'](
-                        rows_to_state(self.project(), selection.job_index, -1))
+                    new_selection = rows_to_state(self.project(), selection.job_index, -1)
         elif selection.is_action_selected() or selection.is_subaction_selected():
             element = selection.sub_action if selection.is_subaction_selected() \
                 else selection.action
@@ -315,5 +314,6 @@ class ClassicElementActionManager(ElementActionManager):
                     position = (selection.job_index, selection.action_index, -1)
                 self.mark_as_modified(True, f"{action_text} {element_type}", "edit", position)
                 self._set_element_enabled(element, enabled, element_type)
-                self.callbacks['refresh_ui'](
-                    rows_to_state(self.project(), selection.job_index, selection.get_action_row()))
+                new_selection = rows_to_state(
+                    self.project(), selection.job_index, selection.get_action_row())
+        return new_selection
