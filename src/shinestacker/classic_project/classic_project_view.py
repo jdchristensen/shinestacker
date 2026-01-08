@@ -63,7 +63,6 @@ class ClassicProjectView(ProjectView, ListContainer):
             self.selection_state,
             {
                 'refresh_ui': self.refresh_ui,
-                'ensure_selected_visible': self._ensure_selected_visible,
             },
             self.parent()
         )
