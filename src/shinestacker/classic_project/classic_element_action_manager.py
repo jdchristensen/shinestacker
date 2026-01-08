@@ -74,7 +74,7 @@ class ClassicElementActionManager(ElementActionManager):
                 return None
             job = self.project().jobs[selection.job_index]
             if confirm:
-                confirmed = self.confirm_delete_message('job', job.params.get('name', ''))
+                confirmed = not self.confirm_delete_message('job', job.params.get('name', ''))
                 if not confirmed:
                     return None
             self.mark_as_modified(True, "Delete Job", "delete", (selection.job_index, -1, -1))
@@ -91,7 +91,7 @@ class ClassicElementActionManager(ElementActionManager):
             if not element or not container or index < 0 or index >= len(container):
                 return None
             element_type = "sub-action" if selection.is_subaction_selected() else "action"
-            if confirm and self.confirm_delete_message(
+            if confirm and not self.confirm_delete_message(
                     element_type, element.params.get('name', '')):
                 return None
             action_type_str = "delete"
