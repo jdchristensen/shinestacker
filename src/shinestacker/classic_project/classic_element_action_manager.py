@@ -304,9 +304,3 @@ class ClassicElementActionManager(ElementActionManager):
                 self._set_element_enabled(element, enabled, element_type)
                 self.callbacks['refresh_ui'](
                     rows_to_state(self.project(), selection.job_index, selection.get_action_row()))
-
-    def _refresh_after_enable_all(self):
-        selection = self.selection_state
-        job_row = selection.job_index if selection.is_valid() else -1
-        action_row = selection.get_action_row() if selection.is_valid() else -1
-        self.callbacks['refresh_ui'](rows_to_state(self.project(), job_row, action_row))

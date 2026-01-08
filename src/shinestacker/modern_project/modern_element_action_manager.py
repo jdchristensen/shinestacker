@@ -6,11 +6,10 @@ from .element_operations import ElementOperations
 
 
 class ModernElementActionManager(ElementActionManager):
-    def __init__(self, project_holder, selection_state, view_callbacks, parent=None):
+    def __init__(self, project_holder, selection_state, parent=None):
         super().__init__(project_holder, parent)
         self.element_ops = ElementOperations(project_holder)
         self.selection_state = selection_state
-        self.callbacks = view_callbacks
         self.selection_nav = None
 
     def new_indices_after_delete(self, state):
@@ -103,96 +102,53 @@ class ModernElementActionManager(ElementActionManager):
         return self.selection_state.job_index
 
     def delete_element(self, confirm=True):
-        if self.selection_state.is_job_selected():
-            return self._delete_job(confirm)
-        if self.selection_state.is_action_selected():
-            return self._delete_action(confirm)
-        if self.selection_state.is_subaction_selected():
-            return self._delete_subaction(confirm)
-        return None
-
-    def _delete_job(self, confirm=True):
-        job_index = self.selection_state.job_index
-        if not 0 <= job_index < self.num_project_jobs():
-            raise IndexError(f"Job index {job_index} out of range in data model")
-        job = self.project().jobs[job_index]
-        if confirm and not self.confirm_delete_message('job', job.params.get('name', '')):
-            return None
-        self.mark_as_modified(True, "Delete Job", "delete", (job_index, -1, -1))
-        deleted_job = self.project().jobs.pop(job_index)
-        old_state = self.selection_state.copy()
-        removal_state = SelectionState()
-        removal_state.set_job(job_index)
-        self.callbacks['remove_widget'](removal_state)
-        new_indices = self.new_indices_after_delete(old_state)
-        new_state = SelectionState(*new_indices)
-        if new_state:
-            self.selection_state.copy_from(new_state)
-            self.callbacks['update_selection'](new_state)
-            self.callbacks['ensure_selected_visible']()
-        else:
-            self.selection_state.reset()
-        return deleted_job
-
-    def _delete_action(self, confirm=True):
-        job_index = self.selection_state.job_index
-        action_index = self.selection_state.action_index
-        if not 0 <= job_index < self.num_project_jobs():
-            raise IndexError(f"Job index {job_index} out of range")
-        job = self.project().jobs[job_index]
-        if not 0 <= action_index < len(job.sub_actions):
-            raise IndexError(f"Action index {action_index} out of range for job {job_index}")
-        action = job.sub_actions[action_index]
-        if confirm and not self.confirm_delete_message('action', action.params.get('name', '')):
-            return None
-        self.mark_as_modified(True, "Delete Action", "delete", (job_index, action_index, -1))
-        deleted_action = job.sub_actions.pop(action_index)
-        old_state = self.selection_state.copy()
-        removal_state = SelectionState()
-        removal_state.set_action(job_index, action_index)
-        self.callbacks['remove_widget'](removal_state)
-        new_indices = self.new_indices_after_delete(old_state)
-        new_state = SelectionState(*new_indices)
-        if new_state:
-            self.callbacks['update_selection'](new_state)
-            self.callbacks['ensure_selected_visible']()
-        else:
-            self.selection_state.reset()
-        return deleted_action
-
-    def _delete_subaction(self, confirm=True):
+        if not self.selection_state.is_valid():
+            return None, None, None
         job_index = self.selection_state.job_index
         action_index = self.selection_state.action_index
         subaction_index = self.selection_state.subaction_index
         if not 0 <= job_index < self.num_project_jobs():
-            raise IndexError(f"Job index {job_index} out of range")
+            return None, None, None
         job = self.project().jobs[job_index]
-        if not 0 <= action_index < len(job.sub_actions):
-            raise IndexError(f"Action index {action_index} out of range for job {job_index}")
-        action = job.sub_actions[action_index]
-        if not 0 <= subaction_index < len(action.sub_actions):
-            raise IndexError(
-                f"Subaction index {subaction_index} out of range for action {action_index}")
-        subaction = action.sub_actions[subaction_index]
+        if self.selection_state.is_subaction_selected():
+            if not 0 <= action_index < len(job.sub_actions):
+                return None, None, None
+            action = job.sub_actions[action_index]
+            if not 0 <= subaction_index < len(action.sub_actions):
+                return None, None, None
+            element = action.sub_actions[subaction_index]
+            element_type = 'sub-action'
+            position = (job_index, action_index, subaction_index)
+            removal_state = SelectionState()
+            removal_state.set_subaction(job_index, action_index, subaction_index)
+        elif self.selection_state.is_action_selected():
+            if not 0 <= action_index < len(job.sub_actions):
+                return None, None, None
+            element = job.sub_actions[action_index]
+            element_type = 'action'
+            position = (job_index, action_index, -1)
+            removal_state = SelectionState()
+            removal_state.set_action(job_index, action_index)
+        else:
+            element = job
+            element_type = 'job'
+            position = (job_index, -1, -1)
+            removal_state = SelectionState()
+            removal_state.set_job(job_index)
         if confirm and not self.confirm_delete_message(
-                'sub-action', subaction.params.get('name', '')):
-            return None
-        self.mark_as_modified(
-            True, "Delete Sub-action", "delete",
-            (job_index, action_index, subaction_index))
-        deleted_subaction = action.sub_actions.pop(subaction_index)
+                element_type, element.params.get('name', '')):
+            return None, None, None
+        self.mark_as_modified(True, f"Delete {element_type.title()}", "delete", position)
+        if self.selection_state.is_subaction_selected():
+            deleted_element = job.sub_actions[action_index].sub_actions.pop(subaction_index)
+        elif self.selection_state.is_action_selected():
+            deleted_element = job.sub_actions.pop(action_index)
+        else:
+            deleted_element = self.project().jobs.pop(job_index)
         old_state = self.selection_state.copy()
-        removal_state = SelectionState()
-        removal_state.set_subaction(job_index, action_index, subaction_index)
-        self.callbacks['remove_widget'](removal_state)
         new_indices = self.new_indices_after_delete(old_state)
         new_state = SelectionState(*new_indices)
-        if new_state:
-            self.callbacks['update_selection'](new_state)
-            self.callbacks['ensure_selected_visible']()
-        else:
-            self.selection_state.reset()
-        return deleted_subaction
+        return removal_state, new_state, deleted_element
 
     def set_enabled(self, enabled, selection=None, update_project=True):
         if selection is None:
@@ -423,10 +379,6 @@ class ModernElementActionManager(ElementActionManager):
                     return True
         return False
 
-    def move_widgets_to_selection(self, from_pos):
-        self.callbacks['move_widgets'](from_pos, self.selection_state)
-        self.callbacks['update_selection'](self.selection_state)
-
     def _shift_job(self, delta):
         if not self.selection_state.is_job_selected():
             return False
@@ -435,7 +387,6 @@ class ModernElementActionManager(ElementActionManager):
             prev_sel.job_index, delta)
         if new_index != prev_sel.job_index:
             self.selection_state.set_job(new_index)
-            self.move_widgets_to_selection(prev_sel)
             return True
         return False
 
@@ -447,7 +398,6 @@ class ModernElementActionManager(ElementActionManager):
             prev_sel.job_index, prev_sel.action_index, delta)
         if new_index != prev_sel.action_index:
             self.selection_state.set_action(prev_sel.job_index, new_index)
-            self.move_widgets_to_selection(prev_sel)
             return True
         return False
 
@@ -459,9 +409,5 @@ class ModernElementActionManager(ElementActionManager):
             prev_sel.job_index, prev_sel.action_index, prev_sel.subaction_index, delta)
         if new_index != prev_sel.subaction_index:
             self.selection_state.set_subaction(prev_sel.job_index, prev_sel.action_index, new_index)
-            self.move_widgets_to_selection(prev_sel)
             return True
         return False
-
-    def _refresh_after_enable_all(self):
-        self.callbacks['refresh_ui']()

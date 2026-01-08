@@ -112,6 +112,3 @@ class ElementActionManager(ProjectHandler, QObject):
         for job in self.project().jobs:
             job.set_enabled_all(enabled)
         self._refresh_after_enable_all()
-
-    def _refresh_after_enable_all(self):
-        raise NotImplementedError

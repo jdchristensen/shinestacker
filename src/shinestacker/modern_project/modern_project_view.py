@@ -53,13 +53,6 @@ class ModernProjectView(ProjectView):
         self.element_action = ModernElementActionManager(
             project_holder,
             self.selection_state,
-            {
-                'refresh_ui': self.refresh_ui,
-                'ensure_selected_visible': self._ensure_selected_visible,
-                'remove_widget': self._remove_widget,
-                'update_selection': self._update_selection,
-                'move_widgets': self._move_widgets,
-            },
             self.parent()
         )
         self._saved_selection = None
@@ -574,21 +567,30 @@ class ModernProjectView(ProjectView):
             widget = self._find_widget(old_selection)
             if widget:
                 widget_state = widget.capture_widget_state()
-        if widget_state:
-            self.undo_manager().add_extra_data_to_last_entry('modern_widget_state', widget_state)
         if selection is None:
             if update_project:
-                result = self.element_action.delete_element(confirm)
-            else:
-                result = None
-            if result:
-                self.widget_deleted_signal.emit((
-                    old_selection.job_index,
-                    old_selection.action_index,
-                    old_selection.subaction_index,
-                    old_selection.widget_type
-                ))
-            return result
+                removal_state, new_state, deleted_element = \
+                    self.element_action.delete_element(confirm)
+                if removal_state:
+                    self._remove_widget(removal_state)
+                if new_state:
+                    self.selection_state.copy_from(new_state)
+                    self._update_selection(new_state)
+                    self._ensure_selected_visible()
+                else:
+                    self._reset_selection()
+                if widget_state:
+                    self.undo_manager().add_extra_data_to_last_entry(
+                        'modern_widget_state', widget_state)
+                if deleted_element:
+                    self.widget_deleted_signal.emit((
+                        old_selection.job_index,
+                        old_selection.action_index,
+                        old_selection.subaction_index,
+                        old_selection.widget_type
+                    ))
+                return deleted_element
+            return None
         self._remove_widget(selection)
         return None
 
@@ -881,21 +883,24 @@ class ModernProjectView(ProjectView):
             if update_project and self.enforce_stop_run():
                 pre_move_project = self.project().clone()
                 from_position = self._get_current_position_tuple()
-                result = self.element_action.move_element_up()
-                if result:
+                success = self.element_action.move_element_up()
+                if success:
+                    self._move_widgets(old_selection, self.selection_state)
+                    self._update_selection(self.selection_state)
+                    self._ensure_selected_visible()
                     to_position = self._get_current_position_tuple()
                     affected_position = from_position + to_position
                     self.save_undo_state(pre_move_project, "Move Up", "move", affected_position)
             else:
-                result = False
-            if result and old_selection and old_selection.is_valid():
+                success = False
+            if success and old_selection and old_selection.is_valid():
                 self.widget_moved_up_signal.emit((
                     old_selection.job_index,
                     old_selection.action_index,
                     old_selection.subaction_index,
                     old_selection.widget_type
                 ))
-            return result
+            return success
         if selection and selection.is_valid():
             self.refresh_ui()
         return False
@@ -906,21 +911,24 @@ class ModernProjectView(ProjectView):
             if update_project and self.enforce_stop_run():
                 pre_move_project = self.project().clone()
                 from_position = self._get_current_position_tuple()
-                result = self.element_action.move_element_down()
-                if result:
+                success = self.element_action.move_element_down()
+                if success:
+                    self._move_widgets(old_selection, self.selection_state)
+                    self._update_selection(self.selection_state)
+                    self._ensure_selected_visible()
                     to_position = self._get_current_position_tuple()
                     affected_position = from_position + to_position
                     self.save_undo_state(pre_move_project, "Move Down", "move", affected_position)
             else:
-                result = False
-            if result and old_selection and old_selection.is_valid():
+                success = False
+            if success and old_selection and old_selection.is_valid():
                 self.widget_moved_down_signal.emit((
                     old_selection.job_index,
                     old_selection.action_index,
                     old_selection.subaction_index,
                     old_selection.widget_type
                 ))
-            return result
+            return success
         if selection and selection.is_valid():
             self.refresh_ui()
         return False
