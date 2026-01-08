@@ -877,48 +877,21 @@ class ModernProjectView(ProjectView):
         except Exception:
             self.refresh_ui()
 
-    def move_element_up(self, selection=None, update_project=True):
+    def shift_element(self, delta, direction, selection=None, update_project=True):
         if selection is None:
             old_selection = self.selection_state.copy()
             if update_project and self.enforce_stop_run():
                 pre_move_project = self.project().clone()
                 from_position = self._get_current_position_tuple()
-                success = self.element_action.move_element_up()
+                success = self.element_action.shift_element(delta)
                 if success:
                     self._move_widgets(old_selection, self.selection_state)
                     self._update_selection(self.selection_state)
                     self._ensure_selected_visible()
                     to_position = self._get_current_position_tuple()
                     affected_position = from_position + to_position
-                    self.save_undo_state(pre_move_project, "Move Up", "move", affected_position)
-            else:
-                success = False
-            if success and old_selection and old_selection.is_valid():
-                self.widget_moved_up_signal.emit((
-                    old_selection.job_index,
-                    old_selection.action_index,
-                    old_selection.subaction_index,
-                    old_selection.widget_type
-                ))
-            return success
-        if selection and selection.is_valid():
-            self.refresh_ui()
-        return False
-
-    def move_element_down(self, selection=None, update_project=True):
-        if selection is None:
-            old_selection = self.selection_state.copy()
-            if update_project and self.enforce_stop_run():
-                pre_move_project = self.project().clone()
-                from_position = self._get_current_position_tuple()
-                success = self.element_action.move_element_down()
-                if success:
-                    self._move_widgets(old_selection, self.selection_state)
-                    self._update_selection(self.selection_state)
-                    self._ensure_selected_visible()
-                    to_position = self._get_current_position_tuple()
-                    affected_position = from_position + to_position
-                    self.save_undo_state(pre_move_project, "Move Down", "move", affected_position)
+                    self.save_undo_state(
+                        pre_move_project, f"Move {direction}", "move", affected_position)
             else:
                 success = False
             if success and old_selection and old_selection.is_valid():

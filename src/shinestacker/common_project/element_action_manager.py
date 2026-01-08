@@ -70,13 +70,7 @@ class ElementActionManager(ProjectHandler, QObject):
         job_clone = self.project().jobs[job_index].clone()
         self.set_copy_buffer(job_clone)
 
-    def move_element_up(self):
-        return self._shift_element(-1)
-
-    def move_element_down(self):
-        return self._shift_element(+1)
-
-    def _shift_element(self, delta):
+    def shift_element(self, delta):
         if self.is_job_selected():
             return self._shift_job(delta)
         if self.is_action_selected():

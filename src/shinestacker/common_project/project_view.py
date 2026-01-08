@@ -288,6 +288,12 @@ class ProjectView(QWidget, LogManager, ProjectHandler):
     def refresh_and_restore_selection(self):
         raise NotImplementedError
 
+    def move_element_up(self, selection=None, update_project=True):
+        self.shift_element(-1, "Up", selection, update_project)
+
+    def move_element_down(self, selection=None, update_project=True):
+        self.shift_element(+1, "Down", selection, update_project)
+
     def _get_current_position_tuple(self):
         if self.selection_state.is_job_selected():
             return (self.selection_state.job_index, -1, -1)

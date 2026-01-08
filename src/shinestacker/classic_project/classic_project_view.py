@@ -485,69 +485,30 @@ class ClassicProjectView(ProjectView, ListContainer):
             row += sub_idx + 1
         return row
 
-    def move_element_up(self, selection=None, update_project=True):
+    def shift_element(self, delta, direction, selection=None, update_project=True):
         self._sync_selection_to_action_manager()
         if selection is None:
             old_state = self._get_selection_state()
             if update_project:
                 pre_move_project = self.project().clone()
                 from_position = self._get_current_position_tuple()
-                result = self.element_action.move_element_up()
-                if result:
+                new_selection = self.element_action.shift_element(delta)
+                if new_selection is not False:
+                    self.refresh_ui(new_selection)
                     to_position = self._get_current_position_tuple()
                     affected_position = from_position + to_position
-                    self.save_undo_state(pre_move_project, "Move Up", "move", affected_position)
-                    restore_state = rows_to_state(
-                        self.project(), to_position[0], self._position_to_action_row(to_position))
-                    self.refresh_ui(restore_state=restore_state)
-                else:
-                    self.refresh_ui()
+                    self.save_undo_state(
+                        pre_move_project, f"Move {direction}", "move", affected_position)
             else:
-                result = None
-                self.refresh_ui()
-            if result and old_state and old_state.is_valid():
+                new_selection = None
+            if new_selection and old_state and old_state.is_valid():
                 self.widget_moved_up_signal.emit((
                     old_state.job_index,
                     old_state.action_index,
                     old_state.subaction_index,
                     old_state.widget_type
                 ))
-            return result
-        if selection and selection.is_valid():
-            job_idx = selection.job_index
-            if job_idx >= 0:
-                new_job_idx = max(0, min(job_idx, self.num_project_jobs() - 1))
-                self.refresh_ui(rows_to_state(self.project(), new_job_idx, -1))
-        return None
-
-    def move_element_down(self, selection=None, update_project=True):
-        self._sync_selection_to_action_manager()
-        if selection is None:
-            old_state = self._get_selection_state()
-            if update_project:
-                pre_move_project = self.project().clone()
-                from_position = self._get_current_position_tuple()
-                result = self.element_action.move_element_down()
-                if result:
-                    to_position = self._get_current_position_tuple()
-                    affected_position = from_position + to_position
-                    self.save_undo_state(pre_move_project, "Move Down", "move", affected_position)
-                    restore_state = rows_to_state(
-                        self.project(), to_position[0], self._position_to_action_row(to_position))
-                    self.refresh_ui(restore_state=restore_state)
-                else:
-                    self.refresh_ui()
-            else:
-                result = None
-                self.refresh_ui()
-            if result and old_state and old_state.is_valid():
-                self.widget_moved_down_signal.emit((
-                    old_state.job_index,
-                    old_state.action_index,
-                    old_state.subaction_index,
-                    old_state.widget_type
-                ))
-            return result
+            return new_selection
         if selection and selection.is_valid():
             job_idx = selection.job_index
             if job_idx >= 0:

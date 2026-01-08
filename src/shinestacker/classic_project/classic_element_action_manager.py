@@ -69,6 +69,8 @@ class ClassicElementActionManager(ElementActionManager):
 
     def delete_element(self, confirm=True):
         selection = self.selection_state
+        deleted_element = None
+        new_selection = False
         if selection.is_job_selected():
             if not 0 <= selection.job_index < self.num_project_jobs():
                 return None, False
@@ -252,8 +254,8 @@ class ClassicElementActionManager(ElementActionManager):
         if 0 <= new_index < self.num_project_jobs():
             jobs = self.project().jobs
             jobs.insert(new_index, jobs.pop(job_index))
-            self.callbacks['refresh_ui'](rows_to_state(self.project(), new_index, -1))
-            return True
+            new_selection = rows_to_state(self.project(), new_index, -1)
+            return new_selection
         return False
 
     def _shift_action(self, delta):
@@ -267,16 +269,20 @@ class ClassicElementActionManager(ElementActionManager):
             if 0 <= new_index < len(selection.sub_actions):
                 selection.sub_actions.insert(
                     new_index, selection.sub_actions.pop(selection.subaction_index))
+            else:
+                return False
         else:
             if not selection.actions:
                 return False
             new_index = selection.action_index + delta
             if 0 <= new_index < len(selection.actions):
                 selection.actions.insert(new_index, selection.actions.pop(selection.action_index))
+            else:
+                return False
         current_action_row = selection.get_action_row()
         new_row = self.new_row_after_insert(current_action_row, selection, delta)
-        self.callbacks['refresh_ui'](rows_to_state(self.project(), selection.job_index, new_row))
-        return True
+        new_selection = rows_to_state(self.project(), selection.job_index, new_row)
+        return new_selection
 
     def _shift_subaction(self, delta):
         return self._shift_action(delta)
