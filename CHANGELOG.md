@@ -2,12 +2,13 @@
 
 This page reports the main releases only and the main changes therein.
 
-## [v1.13.x] - 2026-01-07
+## [v1.13.x] - 2026-01-08
 
 Implemented GUI missing features
 
 ### Fixed
 - in modern view, when calling undo cut/delete, widget progress history is restored
+- cut element in classic view now works
 
 ---
 

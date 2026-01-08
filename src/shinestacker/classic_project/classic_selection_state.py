@@ -17,7 +17,8 @@ class ClassicSelectionState(SelectionState):
 
     @property
     def action(self):
-        return None if self.actions is None else self.actions[self.action_index]
+        return None if self.actions is None or \
+            not 0 <= self.action_index < len(self.actions) else self.actions[self.action_index]
 
     @property
     def sub_action(self):
