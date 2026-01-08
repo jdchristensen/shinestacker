@@ -53,12 +53,6 @@ class ElementActionManager(ProjectHandler, QObject):
         self.project().jobs.insert(new_job_index, element)
         return True, 'job', new_job_index
 
-    def clone_element(self):
-        if self.is_job_selected():
-            self.clone_job()
-        elif self.is_action_selected() or self.is_subaction_selected():
-            self.clone_action()
-
     def copy_element(self):
         if self.is_job_selected():
             self.copy_job()

@@ -408,7 +408,9 @@ class ClassicProjectView(ProjectView, ListContainer):
         if selection is None:
             old_state = self._get_selection_state()
             if update_project:
-                self.element_action.clone_element()
+                success, new_state = self.element_action.clone_element()
+                if success:
+                    self.refresh_ui(restore_state=new_state)
             if old_state and old_state.is_valid():
                 self.widget_cloned_signal.emit((
                     old_state.job_index,
