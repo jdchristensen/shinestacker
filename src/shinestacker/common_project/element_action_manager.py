@@ -79,12 +79,6 @@ class ElementActionManager(ProjectHandler, QObject):
             return self._shift_subaction(delta)
         return False
 
-    def enable_all(self):
-        self.set_enabled_all(True)
-
-    def disable_all(self):
-        self.set_enabled_all(False)
-
     def _set_element_enabled(self, element, enabled, element_type):
         element.set_enabled(enabled)
 
@@ -93,4 +87,3 @@ class ElementActionManager(ProjectHandler, QObject):
         self.mark_as_modified(True, f"{action} All")
         for job in self.project().jobs:
             job.set_enabled_all(enabled)
-        self._refresh_after_enable_all()

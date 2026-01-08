@@ -778,20 +778,18 @@ class ModernProjectView(ProjectView):
         self._update_widget_enable_state(selection, False)
 
     def enable_all(self, update_project=True):
-        if not self.enforce_stop_run():
-            return
-        if update_project:
-            self.element_action.set_enabled_all(True)
-            self.widget_enable_all_signal.emit(True)
-        self._update_all_widgets_enabled(True)
+        self._set_enabled_all(True, update_project)
 
     def disable_all(self, update_project=True):
+        self._set_enabled_all(False, update_project)
+
+    def _set_enabled_all(self, enabled, update_project=True):
         if not self.enforce_stop_run():
             return
         if update_project:
-            self.element_action.set_enabled_all(False)
-            self.widget_enable_all_signal.emit(False)
-        self._update_all_widgets_enabled(False)
+            self.element_action.set_enabled_all(enabled)
+            self.widget_enable_all_signal.emit(enabled)
+        self._update_all_widgets_enabled(enabled)
 
     def _update_all_widgets_enabled(self, enabled):
         for job_widget in self.job_widgets:

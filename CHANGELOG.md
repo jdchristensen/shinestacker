@@ -10,6 +10,9 @@ Implemented GUI missing features
 - in modern view, when calling undo cut/delete, widget progress history is restored
 - cut element in classic view now works
 
+### Changed
+- code refactoring and cleanup of the project GUI components
+
 ---
 
 ## [v1.13.1] - 2026-01-06

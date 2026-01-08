@@ -449,18 +449,17 @@ class ClassicProjectView(ProjectView, ListContainer):
             self.refresh_ui(new_selection)
 
     def enable_all(self, update_project=True):
-        if update_project:
-            self.element_action.enable_all()
-            self.widget_enable_all_signal.emit(True)
-        else:
-            self.refresh_ui()
+        self._set_enabled_all(True, update_project)
 
     def disable_all(self, update_project=True):
+        self._set_enabled_all(False, update_project)
+
+    def _set_enabled_all(self, enabled, update_project=True):
+        selection = self.selection_state
         if update_project:
-            self.element_action.disable_all()
-            self.widget_enable_all_signal.emit(False)
-        else:
-            self.refresh_ui()
+            self.element_action.set_enabled_all(enabled)
+            self.widget_enable_all_signal.emit(enabled)
+        self.refresh_ui(selection)
 
     def _position_to_action_row(self, position):
         job_idx, action_idx, sub_idx = position
