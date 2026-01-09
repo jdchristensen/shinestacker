@@ -17,7 +17,7 @@ jobs:
     - uses: Silleellie/pylint-github-action@v2.1
       with:
         lint-path: src
-        python-version: 3.9
+        python-version: 3.12
         requirements-path: requirements.txt
         readme-path: README.md
         pylintrc-path: .pylintrc
