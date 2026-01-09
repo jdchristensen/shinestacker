@@ -2,7 +2,7 @@
 
 This page reports the main releases only and the main changes therein.
 
-## [v1.13.x] - 2026-01-08
+## [v1.13.x] - 2026-01-09
 
 Implemented GUI missing features
 
