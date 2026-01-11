@@ -17,11 +17,11 @@ from .. gui.project_model import ActionConfig
 from .. gui.action_config_dialog import ActionConfigDialog
 from .. common_project.project_undo_manager import ProjectUndoManager
 from .. common_project.project_handler import ProjectHolder, ProjectIOHandler
-from .. common_project.new_project import fill_new_project
 from .. common_project.selection_state import SelectionState
 from .. classic_project.classic_project_view import ClassicProjectView
 from .. modern_project.modern_project_view import ModernProjectView
 from .menu_manager import MenuManager
+from .new_project import fill_new_project
 
 
 class MainWindow(ProjectIOHandler, QMainWindow):
