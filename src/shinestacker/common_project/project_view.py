@@ -26,6 +26,8 @@ class ProjectView(QWidget, LogManager, ProjectHandler):
     widget_enable_signal = Signal(tuple, bool)
     widget_enable_all_signal = Signal(bool)
     widget_updated_signal = Signal(tuple)
+    run_finished_signal = Signal()
+    fill_context_menu_signal = Signal(object, bool)
     current_action_working_path = None
     current_action_input_path = None
     current_action_output_path = None
@@ -39,7 +41,6 @@ class ProjectView(QWidget, LogManager, ProjectHandler):
         ProjectHandler.__init__(self, project_holder)
         QWidget.__init__(self, parent)
         LogManager.__init__(self)
-        self.menu_manager = None
         self.dark_theme = dark_theme
         self._setup_common_menu_actions()
 
@@ -122,22 +123,10 @@ class ProjectView(QWidget, LogManager, ProjectHandler):
 
     def create_common_context_menu(self, current_action):
         menu = QMenu(self)
-        if current_action.enabled():
-            menu.addAction(self.menu_manager.disable_action)
-        else:
-            menu.addAction(self.menu_manager.enable_action)
-        edit_config_action = QAction("Edit configuration")
+        edit_config_action = QAction("Edit configuration", self)
         edit_config_action.triggered.connect(self.edit_current_action)
         menu.addAction(edit_config_action)
-        menu.addSeparator()
-        menu.addAction(self.menu_manager.cut_action)
-        menu.addAction(self.menu_manager.copy_action)
-        menu.addAction(self.menu_manager.paste_action)
-        menu.addAction(self.menu_manager.duplicate_action)
-        menu.addAction(self.menu_manager.delete_element_action)
-        menu.addSeparator()
-        menu.addAction(self.menu_manager.run_job_action)
-        menu.addAction(self.menu_manager.run_all_jobs_action)
+        self.fill_context_menu_signal.emit(menu, current_action.enabled())
         try:
             self._add_path_browsing_actions(menu, current_action)
         except Exception:
@@ -204,9 +193,6 @@ class ProjectView(QWidget, LogManager, ProjectHandler):
         if self.action_dialog.exec() == QDialog.Accepted:
             self.mark_as_modified(True, "Edit Action")
             self.refresh_ui()
-
-    def set_menu_manager(self, menu_manager):
-        self.menu_manager = menu_manager
 
     def refresh_ui(self):
         self.refresh_ui_signal.emit()

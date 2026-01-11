@@ -17,11 +17,11 @@ from .. gui.project_model import ActionConfig
 from .. gui.action_config_dialog import ActionConfigDialog
 from .. common_project.project_undo_manager import ProjectUndoManager
 from .. common_project.project_handler import ProjectHolder, ProjectIOHandler
-from .. common_project.menu_manager import MenuManager
 from .. common_project.new_project import fill_new_project
 from .. common_project.selection_state import SelectionState
 from .. classic_project.classic_project_view import ClassicProjectView
 from .. modern_project.modern_project_view import ModernProjectView
+from .menu_manager import MenuManager
 
 
 class MainWindow(ProjectIOHandler, QMainWindow):
@@ -87,6 +87,8 @@ class MainWindow(ProjectIOHandler, QMainWindow):
             ('widget_enable_signal', self.handle_widget_enable),
             ('widget_enable_all_signal', self.handle_widget_enable_all),
             ('widget_updated_signal', self.handle_widget_updated),
+            ('run_finished_signal', self.handle_run_finished),
+            ('fill_context_menu_signal', self.menu_manager.handle_fill_context_menu),
             ('refresh_ui_signal', self.refresh_ui),
         ]
         for view in self.views.values():
@@ -97,7 +99,6 @@ class MainWindow(ProjectIOHandler, QMainWindow):
         self.script_dir = os.path.dirname(__file__)
         self.retouch_callback = None
         for _k, v in self.views.items():
-            v.set_menu_manager(self.menu_manager)
             v.set_style_sheet(dark_theme)
         self.menu_manager.add_menus()
         self.modern_view.progress_handler.set_horizontal_layout(
@@ -523,13 +524,29 @@ class MainWindow(ProjectIOHandler, QMainWindow):
         return self.current_view.add_sub_action(type_name)
 
     def run_job(self):
-        self.current_view.run_job()
+        success = self.current_view.run_job()
+        if success:
+            self.menu_manager.run_job_action.setEnabled(False)
+            self.menu_manager.run_all_jobs_action.setEnabled(False)
+            self.menu_manager.stop_action.setEnabled(True)
 
     def run_all_jobs(self):
-        self.current_view.run_all_jobs()
+        success = self.current_view.run_all_jobs()
+        if success:
+            self.menu_manager.run_job_action.setEnabled(False)
+            self.menu_manager.run_all_jobs_action.setEnabled(False)
+            self.menu_manager.stop_action.setEnabled(True)
 
     def stop(self):
-        self.current_view.stop()
+        success = self.current_view.stop()
+        if success:
+            self.handle_run_finished()
+
+    def handle_run_finished(self):
+        self.menu_manager.stop_action.setEnabled(False)
+        self.menu_manager.run_job_action.setEnabled(True)
+        if self.num_project_jobs() > 1:
+            self.menu_manager.run_all_jobs_action.setEnabled(True)
 
     def update_delete_action_state(self):
         self.menu_manager.delete_element_action.setEnabled(

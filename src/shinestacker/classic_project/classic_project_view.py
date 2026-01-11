@@ -213,9 +213,6 @@ class ClassicProjectView(ProjectView, ListContainer):
     def stop_worker(self, tab_position):
         worker = self._workers[tab_position]
         worker.stop()
-        self.menu_manager.run_job_action.setEnabled(True)
-        self.menu_manager.run_all_jobs_action.setEnabled(True)
-        self.menu_manager.stop_action.setEnabled(False)
 
     def is_running(self):
         return any(worker.isRunning() for worker in self._workers if worker is not None)
@@ -229,8 +226,7 @@ class ClassicProjectView(ProjectView, ListContainer):
         worker.after_step_signal.connect(window.handle_after_step)
         worker.save_plot_signal.connect(window.handle_save_plot)
         worker.open_app_signal.connect(window.handle_open_app)
-        worker.run_completed_signal.connect(
-            lambda run_id: self.handle_run_completed(window, run_id))
+        worker.run_completed_signal.connect(self.handle_run_completed)
         worker.run_stopped_signal.connect(window.handle_run_stopped)
         worker.run_failed_signal.connect(window.handle_run_failed)
         worker.add_status_box_signal.connect(window.handle_add_status_box)
@@ -244,39 +240,37 @@ class ClassicProjectView(ProjectView, ListContainer):
         if current_index < 0:
             msg = "No Job Selected" if self.num_project_jobs() > 0 else "No Job Added"
             QMessageBox.warning(self, msg, "Please select a job first.")
-            return
-        if current_index >= 0:
-            job = self.project_job(current_index)
-            validation_result = self.validate_output_paths_for_job(job)
-            if not validation_result['valid']:
-                proceed = self.show_validation_warning(validation_result, is_single_job=True)
-                if not proceed:
-                    return
-            if job.enabled():
-                job_name = job.params["name"]
-                labels = [[(self.action_text(a), a.enabled()) for a in job.sub_actions]]
-                r = self.get_retouch_path(job)
-                retouch_paths = [] if len(r) == 0 else [(job_name, r)]
-                new_window, id_str = self.create_new_window(f"{job_name} [Job]",
-                                                            labels, retouch_paths)
-                worker = JobLogWorker(job, id_str)
-                self.connect_worker_signals(worker, new_window)
-                self.menu_manager.run_job_action.setEnabled(False)
-                self.menu_manager.run_all_jobs_action.setEnabled(False)
-                self.start_thread(worker)
-                self._workers.append(worker)
-            else:
-                QMessageBox.warning(self, "Can't run Job",
-                                    "Job " + job.params["name"] + " is disabled.")
-                return
-        self.menu_manager.stop_action.setEnabled(True)
+            return False
+        if current_index < 0:
+            return False
+        job = self.project_job(current_index)
+        validation_result = self.validate_output_paths_for_job(job)
+        if not validation_result['valid']:
+            proceed = self.show_validation_warning(validation_result, is_single_job=True)
+            if not proceed:
+                return False
+        if not job.enabled():
+            QMessageBox.warning(self, "Can't run Job",
+                                "Job " + job.params["name"] + " is disabled.")
+            return False
+        job_name = job.params["name"]
+        labels = [[(self.action_text(a), a.enabled()) for a in job.sub_actions]]
+        r = self.get_retouch_path(job)
+        retouch_paths = [] if len(r) == 0 else [(job_name, r)]
+        new_window, id_str = self.create_new_window(f"{job_name} [Job]",
+                                                    labels, retouch_paths)
+        worker = JobLogWorker(job, id_str)
+        self.connect_worker_signals(worker, new_window)
+        self.start_thread(worker)
+        self._workers.append(worker)
+        return True
 
     def run_all_jobs(self):
         validation_result = self.validate_output_paths_for_project()
         if not validation_result['valid']:
             proceed = self.show_validation_warning(validation_result, is_single_job=False)
             if not proceed:
-                return
+                return False
         labels = [[(self.action_text(a), a.enabled() and
                     job.enabled()) for a in job.sub_actions] for job in self.project_jobs()]
         project_name = ".".join(self.current_file_name().split(".")[:-1])
@@ -291,26 +285,24 @@ class ClassicProjectView(ProjectView, ListContainer):
                                                     labels, retouch_paths)
         worker = ProjectLogWorker(self.project(), id_str)
         self.connect_worker_signals(worker, new_window)
-        self.menu_manager.run_job_action.setEnabled(False)
-        self.menu_manager.run_all_jobs_action.setEnabled(False)
         self.start_thread(worker)
         self._workers.append(worker)
-        self.menu_manager.stop_action.setEnabled(True)
+        return True
 
     def stop(self):
         tab_position = self.tab_widget.count()
         if tab_position > 0:
             self.stop_worker(tab_position - 1)
-            self.menu_manager.stop_action.setEnabled(False)
+            return True
+        return False
 
     def handle_end_message(self, status, id_str, message):
-        self.menu_manager.run_job_action.setEnabled(True)
-        self.menu_manager.run_all_jobs_action.setEnabled(True)
         tab = self.get_tab_at_position(id_str)
         tab.close_button.setEnabled(True)
         tab.stop_button.setEnabled(False)
         if hasattr(tab, 'retouch_widget') and tab.retouch_widget is not None:
             tab.retouch_widget.setEnabled(True)
+        self.run_finished_signal.emit()
 
     def _sync_selection_to_action_manager(self):
         current_selection = self._get_selection_state()
@@ -709,11 +701,8 @@ class ClassicProjectView(ProjectView, ListContainer):
         elif widget_type == 'subaction':
             self.set_current_job(job_index)
 
-    def handle_run_completed(self, window, run_id):
-        window.handle_run_completed(run_id)
-        self.menu_manager.stop_action.setEnabled(False)
-        self.menu_manager.run_job_action.setEnabled(True)
-        self.menu_manager.run_all_jobs_action.setEnabled(True)
+    def handle_run_completed(self):
+        self.run_finished_signal.emit()
 
     def quit(self):
         for worker in self._workers:

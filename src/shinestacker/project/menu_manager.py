@@ -268,6 +268,21 @@ class MenuManager(QObject):
         self.add_actions_menu()
         self.add_help_menu()
 
+    def handle_fill_context_menu(self, menu, enabled):
+        if enabled:
+            menu.addAction(self.disable_action)
+        else:
+            menu.addAction(self.enable_action)
+        menu.addSeparator()
+        menu.addAction(self.cut_action)
+        menu.addAction(self.copy_action)
+        menu.addAction(self.paste_action)
+        menu.addAction(self.duplicate_action)
+        menu.addAction(self.delete_element_action)
+        menu.addSeparator()
+        menu.addAction(self.run_job_action)
+        menu.addAction(self.run_all_jobs_action)
+
     def perform_add_action(self):
         type_name = self.action_selector.currentText()
         if self.add_action(type_name):

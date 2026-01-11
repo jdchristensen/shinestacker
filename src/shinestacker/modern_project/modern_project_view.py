@@ -225,12 +225,6 @@ class ModernProjectView(ProjectView):
             y_margin = 0
         self.scroll_area.ensureWidgetVisible(widget, 0, y_margin)
 
-    def _handle_end_of_run(self):
-        self.menu_manager.stop_action.setEnabled(False)
-        self.menu_manager.run_job_action.setEnabled(True)
-        if self.num_project_jobs() > 1:
-            self.menu_manager.run_all_jobs_action.setEnabled(True)
-
     def get_current_selected_action(self):
         if not self.selection_state.is_valid():
             return None
@@ -1098,8 +1092,7 @@ class ModernProjectView(ProjectView):
             self.actions_layout_horizontal = horizontal
             for job_widget in self.job_widgets:
                 job_widget.set_horizontal_layout(horizontal)
-            self.progress_handler.set_horizontal_layout(
-                self.menu_manager.horizontal_layout_action.isChecked())
+            self.progress_handler.set_horizontal_layout(horizontal)
             txt = "horizontal" if horizontal else "vertical"
             self.vertical_subactions_layout(vertical=horizontal)
             self.show_status_message_requested.emit(f"Actions layout set to {txt}", 2000)
@@ -1273,48 +1266,43 @@ class ModernProjectView(ProjectView):
         if current_index < 0:
             QMessageBox.warning(
                 self.parent(), "No Job Selected", "Please select a job first.")
-            return
+            return False
         job = self.project_job(current_index)
         validation_result = self.validate_output_paths_for_job(job)
         if not validation_result['valid']:
             proceed = self.show_validation_warning(validation_result, is_single_job=True)
             if not proceed:
-                return
+                return False
         self.job_widgets[current_index].clear_all()
         self._build_progress_mapping([current_index])
         if not job.enabled():
             QMessageBox.warning(
                 self.parent(), "Can't run Job", f"Job {job.params['name']} is disabled.")
-            return
+            return False
         self._worker = JobLogWorker(job, self.last_id_str())
         self._connect_worker_signals(self._worker)
-        self.menu_manager.run_job_action.setEnabled(False)
-        self.menu_manager.run_all_jobs_action.setEnabled(False)
         self.start_thread(self._worker)
-        self.menu_manager.stop_action.setEnabled(True)
+        return True
 
     def run_all_jobs(self):
         validation_result = self.validate_output_paths_for_project()
         if not validation_result['valid']:
             proceed = self.show_validation_warning(validation_result, is_single_job=False)
             if not proceed:
-                return
+                return False
         for job_widget in self.job_widgets:
             job_widget.clear_all()
         self._build_progress_mapping()
         self._worker = ProjectLogWorker(self.project(), self.last_id_str())
         self._connect_worker_signals(self._worker)
-        self.menu_manager.run_job_action.setEnabled(False)
-        self.menu_manager.run_all_jobs_action.setEnabled(False)
         self.start_thread(self._worker)
-        self.menu_manager.stop_action.setEnabled(True)
+        return True
 
     def stop(self):
         if self._worker:
             self._worker.stop()
-        self.menu_manager.run_job_action.setEnabled(True)
-        self.menu_manager.run_all_jobs_action.setEnabled(True)
-        self.menu_manager.stop_action.setEnabled(False)
+            return True
+        return False
 
     def is_running(self):
         return self._worker is not None and self._worker.isRunning()
@@ -1337,7 +1325,7 @@ class ModernProjectView(ProjectView):
 
     @Slot(int, str)
     def handle_run_completed(self, _run_id, _name):
-        self._handle_end_of_run()
+        self.run_finished_signal.emit()
 
     def quit(self):
         if self._worker:
