@@ -2,7 +2,7 @@
 
 This page reports the main releases only and the main changes therein.
 
-## [v1.13.x] - 2026-01-11
+## [v1.13.x] - 2026-01-13
 
 Implemented GUI missing features
 
@@ -11,6 +11,7 @@ Implemented GUI missing features
 - cut element in classic view now works
 
 ### Changed
+- removed redundant stop button from classic run job window
 - code refactoring and cleanup of the project GUI components
 
 ---

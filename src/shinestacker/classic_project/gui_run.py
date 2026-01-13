@@ -47,10 +47,9 @@ class ColorButton(QPushButton):
 
 
 class RunWindow(QTextEditLogger):
-    def __init__(self, labels, stop_worker_callback, close_window_callback, retouch_paths, parent):
+    def __init__(self, labels, close_window_callback, retouch_paths, parent):
         QTextEditLogger.__init__(self, parent)
         self.retouch_paths = retouch_paths
-        self.stop_worker_callback = stop_worker_callback
         self.close_window_callback = close_window_callback
         self.row_widget_id = 0
         layout = QVBoxLayout()
@@ -129,11 +128,6 @@ class RunWindow(QTextEditLogger):
                     self.retouch_paths[self.retouch_widget.currentIndex() - 1]))
             self.status_bar.addPermanentWidget(self.retouch_widget)
 
-        self.stop_button = QPushButton("Stop")
-        self.stop_button.setStyleSheet(RED_BUTTON_STYLE)
-        self.stop_button.clicked.connect(self.stop_worker)
-        self.status_bar.addPermanentWidget(self.stop_button)
-
         self.close_button = QPushButton("Close")
         self.close_button.setEnabled(False)
         self.close_button.setStyleSheet(RED_BUTTON_STYLE)
@@ -164,9 +158,6 @@ class RunWindow(QTextEditLogger):
                     new_bottom_size = available_height - new_top_size
                     if new_bottom_size > 100:
                         self.splitter.setSizes([new_top_size, new_bottom_size])
-
-    def stop_worker(self):
-        self.stop_worker_callback(self.id_str())
 
     def retouch(self, path):
 

@@ -193,7 +193,6 @@ class ClassicProjectView(ProjectView, ListContainer):
 
     def create_new_window(self, title, labels, retouch_paths):
         new_window = RunWindow(labels,
-                               lambda id_str: self.stop_worker(self.get_tab_position(id_str)),
                                lambda id_str: self.close_window(self.get_tab_position(id_str)),
                                retouch_paths, self)
         self.tab_widget.addTab(new_window, title)
@@ -299,7 +298,6 @@ class ClassicProjectView(ProjectView, ListContainer):
     def handle_end_message(self, status, id_str, message):
         tab = self.get_tab_at_position(id_str)
         tab.close_button.setEnabled(True)
-        tab.stop_button.setEnabled(False)
         if hasattr(tab, 'retouch_widget') and tab.retouch_widget is not None:
             tab.retouch_widget.setEnabled(True)
         self.run_finished_signal.emit()
