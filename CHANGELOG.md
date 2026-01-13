@@ -2,13 +2,13 @@
 
 This page reports the main releases only and the main changes therein.
 
-## [v1.13.x] - 2026-01-13
+## [v1.13.2] - 2026-01-13
 
 Implemented GUI missing features
 
 ### Fixed
-- in modern view, when calling undo cut/delete, widget progress history is restored
-- cut element in classic view now works
+- in the modern view, when calling undo cut/delete, widget full run progress, with image thumbnails and progress bar, is restored
+- cut element in classic view now works as expected
 
 ### Changed
 - removed redundant stop button from classic run job window
