@@ -4,10 +4,10 @@ This page reports the main releases only and the main changes therein.
 
 ## [v1.13.2] - 2026-01-13
 
-Implemented GUI missing features
+Implemented some GUI missing features
 
 ### Fixed
-- in the modern view, when calling undo cut/delete, widget full run progress, with image thumbnails and progress bar, is restored
+- undoing cut or delete in the modern view restures full run progress, with image thumbnails and progress bar
 - cut element in classic view now works as expected
 
 ### Changed
