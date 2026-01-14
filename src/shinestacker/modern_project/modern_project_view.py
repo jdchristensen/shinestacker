@@ -854,33 +854,23 @@ class ModernProjectView(ProjectView):
             self.refresh_ui()
 
     def shift_element(self, delta, direction, selection=None, update_project=True):
+        if not self.enforce_stop_run():
+            return False, None
+        success = False
+        old_selection = self.selection_state.copy() if selection is None else selection.copy()
         if selection is None:
-            old_selection = self.selection_state.copy()
-            if update_project and self.enforce_stop_run():
+            if update_project:
                 pre_move_project = self.project().clone()
                 from_position = self._get_current_position_tuple()
                 success = self.element_action.shift_element(delta)
-                if success:
-                    self._move_widgets(old_selection, self.selection_state)
-                    self._update_selection(self.selection_state)
-                    self._ensure_selected_visible()
-                    to_position = self._get_current_position_tuple()
-                    affected_position = from_position + to_position
-                    self.save_undo_state(
-                        pre_move_project, f"Move {direction}", "move", affected_position)
-            else:
-                success = False
-            if success and old_selection and old_selection.is_valid():
-                self.widget_moved_down_signal.emit((
-                    old_selection.job_index,
-                    old_selection.action_index,
-                    old_selection.subaction_index,
-                    old_selection.widget_type
-                ))
-            return success
-        if selection and selection.is_valid():
-            self.refresh_ui()
-        return False
+                to_position = self._get_current_position_tuple()
+                affected_position = from_position + to_position
+                self.save_undo_state(
+                    pre_move_project, f"Move {direction}", "move", affected_position)
+        self._move_widgets(old_selection, self.selection_state)
+        self._update_selection(self.selection_state)
+        self._ensure_selected_visible()
+        return success, old_selection
 
     def set_style_sheet(self, dark_theme):
         pass

@@ -453,34 +453,29 @@ class ClassicProjectView(ProjectView, ListContainer):
 
     def shift_element(self, delta, direction, selection=None, update_project=True):
         self._sync_selection_to_action_manager()
+        success = False
+        old_selection = self._get_selection_state().copy() if selection is None \
+            else selection.copy()
         if selection is None:
-            old_state = self._get_selection_state()
             if update_project:
                 pre_move_project = self.project().clone()
                 from_position = self._get_current_position_tuple()
                 new_selection = self.element_action.shift_element(delta)
                 if new_selection is not False:
+                    success = True
                     self.refresh_ui(new_selection)
                     to_position = self._get_current_position_tuple()
                     affected_position = from_position + to_position
                     self.save_undo_state(
                         pre_move_project, f"Move {direction}", "move", affected_position)
-            else:
-                new_selection = None
-            if new_selection and old_state and old_state.is_valid():
-                self.widget_moved_up_signal.emit((
-                    old_state.job_index,
-                    old_state.action_index,
-                    old_state.subaction_index,
-                    old_state.widget_type
-                ))
-            return new_selection
-        if selection and selection.is_valid():
+        elif selection.is_valid():
             job_idx = selection.job_index
             if job_idx >= 0:
                 new_job_idx = max(0, min(job_idx, self.num_project_jobs() - 1))
                 self.refresh_ui(rows_to_state(self.project(), new_job_idx, -1))
-        return None
+        else:
+            self.refresh_ui()
+        return success, old_selection
 
     def _get_current_subaction_index(self):
         if not self.selection_state.is_subaction_selected():

@@ -78,8 +78,6 @@ class MainWindow(ProjectIOHandler, QMainWindow):
             self.menu_manager.set_enabled_sub_actions_gui)
 
         signal_map = [
-            ('widget_moved_up_signal', self.handle_widget_moved_up),
-            ('widget_moved_down_signal', self.handle_widget_moved_down),
             ('widget_added_signal', self.handle_widget_added),
             ('widget_enable_signal', self.handle_widget_enable),
             ('widget_enable_all_signal', self.handle_widget_enable_all),
@@ -487,10 +485,18 @@ class MainWindow(ProjectIOHandler, QMainWindow):
         self.current_view.disable_all()
 
     def move_element_up(self):
-        self.current_view.move_element_up()
+        success, old_selection = self.current_view.move_element_up()
+        if success and old_selection and old_selection.is_valid():
+            for _view_name, view in self.views.items():
+                if view != self.current_view:
+                    view.move_element_up(selection=old_selection, update_project=False)
 
     def move_element_down(self):
-        self.current_view.move_element_down()
+        success, old_selection = self.current_view.move_element_down()
+        if success and old_selection and old_selection.is_valid():
+            for _view_name, view in self.views.items():
+                if view != self.current_view:
+                    view.move_element_down(selection=old_selection, update_project=False)
 
     def add_action(self, type_name):
         return self.current_view.add_action(type_name)

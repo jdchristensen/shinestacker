@@ -17,8 +17,6 @@ from .project_handler import ProjectHandler
 class ProjectView(QWidget, LogManager, ProjectHandler):
     refresh_ui_signal = Signal()
     enable_sub_actions_requested = Signal(bool)
-    widget_moved_up_signal = Signal(tuple)
-    widget_moved_down_signal = Signal(tuple)
     widget_added_signal = Signal(tuple)
     widget_enable_signal = Signal(tuple, bool)
     widget_enable_all_signal = Signal(bool)
@@ -272,10 +270,10 @@ class ProjectView(QWidget, LogManager, ProjectHandler):
         raise NotImplementedError
 
     def move_element_up(self, selection=None, update_project=True):
-        self.shift_element(-1, "Up", selection, update_project)
+        return self.shift_element(-1, "Up", selection, update_project)
 
     def move_element_down(self, selection=None, update_project=True):
-        self.shift_element(+1, "Down", selection, update_project)
+        return self.shift_element(+1, "Down", selection, update_project)
 
     def _get_current_position_tuple(self):
         if self.selection_state.is_job_selected():
