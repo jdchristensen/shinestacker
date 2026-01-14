@@ -79,7 +79,6 @@ class MainWindow(ProjectIOHandler, QMainWindow):
 
         signal_map = [
             ('widget_enable_signal', self.handle_widget_enable),
-            ('widget_enable_all_signal', self.handle_widget_enable_all),
             ('widget_updated_signal', self.handle_widget_updated),
             ('run_finished_signal', self.handle_run_finished),
             ('fill_context_menu_signal', self.menu_manager.handle_fill_context_menu),
@@ -440,14 +439,6 @@ class MainWindow(ProjectIOHandler, QMainWindow):
                 else:
                     view.disable(selection=state, update_project=False)
 
-    def handle_widget_enable_all(self, enabled):
-        for _view_name, view in self.views.items():
-            if view != self.sender():
-                if enabled:
-                    view.enable_all(update_project=False)
-                else:
-                    view.disable_all(update_project=False)
-
     def handle_widget_updated(self, indices_tuple):
         job_idx, action_idx, subaction_idx, widget_type = indices_tuple
         for _view_name, view in self.views.items():
@@ -493,9 +484,15 @@ class MainWindow(ProjectIOHandler, QMainWindow):
 
     def enable_all(self):
         self.current_view.enable_all()
+        for _view_name, view in self.views.items():
+            if view != self.current_view:
+                view.enable_all(update_project=False)
 
     def disable_all(self):
         self.current_view.disable_all()
+        for _view_name, view in self.views.items():
+            if view != self.current_view:
+                view.disable_all(update_project=False)
 
     def move_element_up(self):
         success, old_selection = self.current_view.move_element_up()

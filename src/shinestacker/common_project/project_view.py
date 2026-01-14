@@ -18,7 +18,6 @@ class ProjectView(QWidget, LogManager, ProjectHandler):
     refresh_ui_signal = Signal()
     enable_sub_actions_requested = Signal(bool)
     widget_enable_signal = Signal(tuple, bool)
-    widget_enable_all_signal = Signal(bool)
     widget_updated_signal = Signal(tuple)
     run_finished_signal = Signal()
     fill_context_menu_signal = Signal(object, bool)
@@ -312,8 +311,7 @@ class ProjectView(QWidget, LogManager, ProjectHandler):
         if job_index < 0:
             if self.num_project_jobs() > 0:
                 return False, "No Job Selected", "Please select a job first."
-            else:
-                return False, "No Job Added", "Please add a job first."
+            return False, "No Job Added", "Please add a job first."
         return True, "", ""
 
     def validate_add_subaction(self, job_index, action_index):

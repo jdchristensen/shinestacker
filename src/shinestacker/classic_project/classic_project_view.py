@@ -433,7 +433,6 @@ class ClassicProjectView(ProjectView, ListContainer):
     def _set_enabled_all(self, enabled, update_project=True):
         if update_project:
             self.element_action.set_enabled_all(enabled)
-            self.widget_enable_all_signal.emit(enabled)
         self.refresh_ui(self.selection_state)
 
     def _position_to_action_row(self, position):

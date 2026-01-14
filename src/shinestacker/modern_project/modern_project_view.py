@@ -766,7 +766,6 @@ class ModernProjectView(ProjectView):
             return
         if update_project:
             self.element_action.set_enabled_all(enabled)
-            self.widget_enable_all_signal.emit(enabled)
         self._update_all_widgets_enabled(enabled)
 
     def _update_all_widgets_enabled(self, enabled):
@@ -955,7 +954,6 @@ class ModernProjectView(ProjectView):
                 self._ensure_selected_visible()
                 self._refresh_job_widget_signals()
             new_position = (job_index, insert_index, -1)
-            self.widget_added_signal.emit(new_position)
             return True, new_position
         return False, None
 
