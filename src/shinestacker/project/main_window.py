@@ -399,26 +399,34 @@ class MainWindow(ProjectIOHandler, QMainWindow):
     def copy_element(self):
         self.current_view.copy_element()
 
-    def paste_element(self):
-        success, old_selection = self.current_view.paste_element()
+    def _propagate_to_views(self, current_method, other_method=None, **kwargs):
+        result = current_method()
+        if isinstance(result, tuple) and len(result) >= 2:
+            success, old_selection = result[:2]
+        else:
+            success, old_selection = result, None
         if success and old_selection and old_selection.is_valid():
+            method_name = other_method or current_method.__name__
             for _view_name, view in self.views.items():
                 if view != self.current_view:
-                    view.paste_element(selection=old_selection, update_project=False)
+                    getattr(view, method_name)(
+                        selection=old_selection, update_project=False, **kwargs)
+        return success, old_selection
+
+    def paste_element(self):
+        return self._propagate_to_views(self.current_view.paste_element)
 
     def cut_element(self):
-        cut_element, old_selection = self.current_view.cut_element()
-        if cut_element and old_selection and old_selection.is_valid():
-            for _view_name, view in self.views.items():
-                if view != self.current_view:
-                    view.delete_element(selection=old_selection, update_project=False)
+        return self._propagate_to_views(self.current_view.cut_element, 'delete_element')
 
     def clone_element(self):
-        success, old_selection = self.current_view.clone_element()
-        if success and old_selection and old_selection.is_valid():
-            for _view_name, view in self.views.items():
-                if view != self.current_view:
-                    view.clone_element(selection=old_selection, update_project=False, confirm=False)
+        return self._propagate_to_views(self.current_view.clone_element, confirm=False)
+
+    def move_element_up(self):
+        return self._propagate_to_views(self.current_view.move_element_up)
+
+    def move_element_down(self):
+        return self._propagate_to_views(self.current_view.move_element_down)
 
     def enable(self):
         self.current_view.enable()
@@ -437,20 +445,6 @@ class MainWindow(ProjectIOHandler, QMainWindow):
         for _view_name, view in self.views.items():
             if view != self.current_view:
                 view.disable_all(update_project=False)
-
-    def move_element_up(self):
-        success, old_selection = self.current_view.move_element_up()
-        if success and old_selection and old_selection.is_valid():
-            for _view_name, view in self.views.items():
-                if view != self.current_view:
-                    view.move_element_up(selection=old_selection, update_project=False)
-
-    def move_element_down(self):
-        success, old_selection = self.current_view.move_element_down()
-        if success and old_selection and old_selection.is_valid():
-            for _view_name, view in self.views.items():
-                if view != self.current_view:
-                    view.move_element_down(selection=old_selection, update_project=False)
 
     def run_job(self):
         success = self.current_view.run_job()
