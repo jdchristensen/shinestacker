@@ -145,7 +145,7 @@ class ClassicElementActionManager(ElementActionManager):
             if copy_buffer.type_name not in constants.ACTION_TYPES:
                 return False
             new_action_index = len(self.project().jobs[selection.job_index].sub_actions)
-            success, _element_type, index = self.paste_job_logic(
+            success, index = self.paste_job_logic(
                 copy_buffer, selection.job_index,
                 "Paste Action", "paste", (selection.job_index, new_action_index, -1))
             if success:
@@ -155,7 +155,7 @@ class ClassicElementActionManager(ElementActionManager):
             new_job_index = 0
         else:
             new_job_index = min(max(selection.job_index + 1, 0), self.num_project_jobs())
-        success, _element_type, index = self.paste_job_logic(
+        success, index = self.paste_job_logic(
             copy_buffer, selection.job_index,
             "Paste Job", "paste", (new_job_index, -1, -1))
         if success:

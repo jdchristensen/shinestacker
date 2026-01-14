@@ -249,7 +249,7 @@ class ModernElementActionManager(ElementActionManager):
             if copy_buffer.type_name not in constants.ACTION_TYPES:
                 return False
             new_action_index = len(self.project().jobs[self.selection_state.job_index].sub_actions)
-            success, _element_type, _index = self.paste_job_logic(
+            success, _index = self.paste_job_logic(
                 copy_buffer, self.selection_state.job_index,
                 "Paste Action", "paste", (self.selection_state.job_index, new_action_index, -1))
             if success:
@@ -260,7 +260,7 @@ class ModernElementActionManager(ElementActionManager):
             new_job_index = 0
         else:
             new_job_index = min(max(self.selection_state.job_index + 1, 0), self.num_project_jobs())
-        success, _element_type, _index = self.paste_job_logic(
+        success, _index = self.paste_job_logic(
             copy_buffer, self.selection_state.job_index,
             "Paste Job", "paste", (new_job_index, -1, -1))
         if success:

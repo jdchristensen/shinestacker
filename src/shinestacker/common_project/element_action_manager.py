@@ -37,21 +37,21 @@ class ElementActionManager(ProjectHandler, QObject):
             self.mark_as_modified(True, description, action_type, affected_position)
         if copy_buffer.type_name != constants.ACTION_JOB:
             if self.num_project_jobs() == 0:
-                return False, None, None
+                return False, None
             if copy_buffer.type_name not in constants.ACTION_TYPES:
-                return False, None, None
+                return False, None
             current_job = self.project().jobs[job_index]
             new_action_index = len(current_job.sub_actions)
             element = copy_buffer.clone()
             current_job.sub_actions.insert(new_action_index, element)
-            return True, 'action', new_action_index
+            return True, new_action_index
         if self.num_project_jobs() == 0:
             new_job_index = 0
         else:
             new_job_index = min(max(job_index + 1, 0), self.num_project_jobs())
         element = copy_buffer.clone()
         self.project().jobs.insert(new_job_index, element)
-        return True, 'job', new_job_index
+        return True, new_job_index
 
     def copy_element(self):
         if self.is_job_selected():
