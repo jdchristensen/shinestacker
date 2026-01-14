@@ -456,7 +456,7 @@ class ModernProjectView(ProjectView):
             if self.action_dialog.exec() == QDialog.Accepted:
                 self.save_undo_state(pre_edit_project, "Edit Job", "edit", (job_index, -1, -1))
                 self._update_widget(SelectionState(job_index), job)
-                self.widget_updated_signal.emit((job_index, -1, -1, 'job'))
+                self.widget_updated_signal.emit(SelectionState(job_index, -1, -1))
 
     def _on_action_double_clicked(self, job_index, action_index):
         if not self.enforce_stop_run():
@@ -475,7 +475,7 @@ class ModernProjectView(ProjectView):
                 self.save_undo_state(
                     pre_edit_project, "Edit Action", "edit", (job_index, action_index, -1))
                 self._update_widget(SelectionState(job_index, action_index), action)
-                self.widget_updated_signal.emit((job_index, action_index, -1, 'action'))
+                self.widget_updated_signal.emit(SelectionState(job_index, action_index, -1))
 
     def _on_subaction_double_clicked(self, job_index, action_index, subaction_index):
         if not self.enforce_stop_run():
@@ -500,7 +500,7 @@ class ModernProjectView(ProjectView):
                 self._update_widget(SelectionState(
                     job_index, action_index, subaction_index), subaction)
                 self.widget_updated_signal.emit(
-                    (job_index, action_index, subaction_index, 'subaction'))
+                    SelectionState(job_index, action_index, subaction_index))
 
     def _update_widget(self, state, element):
         if not state.is_valid():

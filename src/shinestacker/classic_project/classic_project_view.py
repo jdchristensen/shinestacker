@@ -593,7 +593,7 @@ class ClassicProjectView(ProjectView, ListContainer):
                 if current_row >= 0:
                     self.job_list_item(current_row).setText(job.params['name'])
                 self.refresh_ui()
-                self.widget_updated_signal.emit((index, -1, -1, 'job'))
+                self.widget_updated_signal.emit(rows_to_state(self.project(), index, -1))
 
     def on_action_edit(self, item):
         job_index = self.current_job_index()
@@ -620,7 +620,7 @@ class ClassicProjectView(ProjectView, ListContainer):
                     self.set_current_job(job_index)
                     self.set_current_action(action_index)
                     self.widget_updated_signal.emit(
-                        (job_index, action_index, subaction_index, widget_type))
+                        rows_to_state(self.project(), job_index, action_index))
 
     def on_job_selected(self, index):
         self.clear_action_list()

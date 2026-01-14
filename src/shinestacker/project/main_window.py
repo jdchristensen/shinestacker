@@ -439,18 +439,10 @@ class MainWindow(ProjectIOHandler, QMainWindow):
                 else:
                     view.disable(selection=state, update_project=False)
 
-    def handle_widget_updated(self, indices_tuple):
-        job_idx, action_idx, subaction_idx, widget_type = indices_tuple
+    def handle_widget_updated(self, selection):
         for _view_name, view in self.views.items():
             if view != self.sender():
-                state = SelectionState()
-                if widget_type == 'job':
-                    state.set_job(job_idx)
-                elif widget_type == 'action':
-                    state.set_action(job_idx, action_idx)
-                elif widget_type == 'subaction':
-                    state.set_subaction(job_idx, action_idx, subaction_idx)
-                view.update_widget(selection=state, update_project=False)
+                view.update_widget(selection=selection, update_project=False)
 
     def copy_element(self):
         self.current_view.copy_element()
