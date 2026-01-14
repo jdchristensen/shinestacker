@@ -485,21 +485,13 @@ class ClassicProjectView(ProjectView, ListContainer):
     def add_action(self, type_name):
         self._sync_selection_to_action_manager()
         current_job_index = self.current_job_index()
-        if current_job_index < 0:
-            if self.num_project_jobs() > 0:
-                QMessageBox.warning(self.parent(), "No Job Selected", "Please select a job first.")
-            else:
-                QMessageBox.warning(self.parent(), "No Job Added", "Please add a job first.")
-            return False
+        is_valid, error_title, error_msg = self.validate_add_action(current_job_index)
+        if not is_valid:
+            self.show_warning(error_title, error_msg)
+            return False, None
         job = self.project_job(current_job_index)
-        insert_index = len(job.sub_actions)
         selection = self.selection_state
-        if selection.is_action_selected():
-            if selection.action_index >= 0:
-                insert_index = selection.action_index + 1
-        elif selection.is_subaction_selected():
-            if selection.action_index >= 0:
-                insert_index = selection.action_index + 1
+        insert_index = self.calculate_action_insertion_index(selection, job)
         action = ActionConfig(type_name)
         action.parent = self.get_current_job()
         self.action_dialog = ActionConfigDialog(
@@ -509,10 +501,10 @@ class ClassicProjectView(ProjectView, ListContainer):
             job.sub_actions.insert(insert_index, action)
             gui_insert_pos = self.get_insertion_position(selection)[0]
             self.add_list_item(self.action_list(), action, False, gui_insert_pos)
-            self.widget_added_signal.emit((current_job_index, insert_index, -1))
+            new_position = (current_job_index, insert_index, -1)
             self.set_current_action(gui_insert_pos)
-            return True
-        return False
+            return True, new_position
+        return False, None
 
     def add_sub_action(self, type_name):
         self._sync_selection_to_action_manager()
@@ -520,21 +512,19 @@ class ClassicProjectView(ProjectView, ListContainer):
         current_action_index = self.current_action_index()
         if current_job_index < 0 or current_action_index < 0 or \
                 current_job_index >= self.num_project_jobs():
-            return False
+            return False, None
         job = self.project_job(current_job_index)
         selection = self.selection_state
         if not selection.is_action_selected() and not selection.is_subaction_selected():
-            return False
+            return False, None
         action_index = selection.action_index
-        if action_index < 0 or action_index >= len(job.sub_actions):
-            return False
+        is_valid, error_title, error_msg = self.validate_add_subaction(
+            current_job_index, action_index)
+        if not is_valid:
+            self.show_warning(error_title, error_msg)
+            return False, None
         action = job.sub_actions[action_index]
-        if action.type_name != constants.ACTION_COMBO:
-            return False
-        insert_index = len(action.sub_actions)
-        if selection.is_subaction_selected():
-            if selection.subaction_index >= 0:
-                insert_index = selection.subaction_index + 1
+        insert_index = self.calculate_subaction_insertion_index(selection, action)
         sub_action = ActionConfig(type_name)
         self.action_dialog = ActionConfigDialog(
             sub_action, self.current_file_directory(), self.parent())
@@ -544,11 +534,11 @@ class ClassicProjectView(ProjectView, ListContainer):
             action.sub_actions.insert(insert_index, sub_action)
             gui_insert_pos = self.get_insertion_position(selection)[0]
             self.add_list_item(self.action_list(), sub_action, True, gui_insert_pos)
-            self.widget_added_signal.emit((current_job_index, action_index, insert_index))
+            new_position = (current_job_index, action_index, insert_index)
             self.set_current_action(gui_insert_pos)
             self.action_list_item(gui_insert_pos).setSelected(True)
-            return True
-        return False
+            return True, new_position
+        return False, None
 
     def update_added_element(self, _indices_tuple):
         self.refresh_ui()

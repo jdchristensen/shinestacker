@@ -78,7 +78,6 @@ class MainWindow(ProjectIOHandler, QMainWindow):
             self.menu_manager.set_enabled_sub_actions_gui)
 
         signal_map = [
-            ('widget_added_signal', self.handle_widget_added),
             ('widget_enable_signal', self.handle_widget_enable),
             ('widget_enable_all_signal', self.handle_widget_enable_all),
             ('widget_updated_signal', self.handle_widget_updated),
@@ -370,6 +369,25 @@ class MainWindow(ProjectIOHandler, QMainWindow):
             self.on_job_count_changed()
             self.handle_widget_added((new_job_index, -1, -1))
 
+    def add_action(self, type_name):
+        success, new_position = self.current_view.add_action(type_name)
+        if success and new_position is not None:
+            for _view_name, view in self.views.items():
+                if view != self.current_view:
+                    self.handle_widget_added(new_position)
+
+    def add_sub_action(self, type_name):
+        success, new_position = self.current_view.add_sub_action(type_name)
+        if success and new_position is not None:
+            for _view_name, view in self.views.items():
+                if view != self.current_view:
+                    self.handle_widget_added(new_position)
+
+    def handle_widget_added(self, indices_tuple):
+        for _view_name, view in self.views.items():
+            if view != self.current_view:
+                view.update_added_element(indices_tuple)
+
     def delete_element(self):
         deleted_element, old_selection = self.current_view.delete_element()
         if deleted_element and old_selection and old_selection.is_valid():
@@ -405,11 +423,6 @@ class MainWindow(ProjectIOHandler, QMainWindow):
                 elif widget_type == 'subaction':
                     state.set_subaction(job_idx, action_idx, subaction_idx)
                 view.move_element_down(selection=state, update_project=False)
-
-    def handle_widget_added(self, indices_tuple):
-        for _view_name, view in self.views.items():
-            if view != self.current_view:
-                view.update_added_element(indices_tuple)
 
     def handle_widget_enable(self, indices_tuple, enabled):
         job_idx, action_idx, subaction_idx, widget_type = indices_tuple
@@ -497,12 +510,6 @@ class MainWindow(ProjectIOHandler, QMainWindow):
             for _view_name, view in self.views.items():
                 if view != self.current_view:
                     view.move_element_down(selection=old_selection, update_project=False)
-
-    def add_action(self, type_name):
-        return self.current_view.add_action(type_name)
-
-    def add_sub_action(self, type_name):
-        return self.current_view.add_sub_action(type_name)
 
     def run_job(self):
         success = self.current_view.run_job()

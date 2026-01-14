@@ -214,7 +214,6 @@ class MenuManager(QObject):
         self.add_job_action = self.action("Add Job")
         menu.addAction(self.add_job_action)
         menu.addSeparator()
-
         self.run_job_action = self.action("Run Job", requires_file=True)
         self.run_job_action.setEnabled(False)
         menu.addAction(self.run_job_action)

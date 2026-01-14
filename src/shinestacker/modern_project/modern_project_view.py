@@ -927,28 +927,21 @@ class ModernProjectView(ProjectView):
 
     def add_action(self, type_name):
         if not self.enforce_stop_run():
-            return False
+            return False, None
         job_index = self.selection_state.job_index
-        if job_index < 0:
-            if self.num_project_jobs() > 0:
-                QMessageBox.warning(self.parent(),
-                                    "No Job Selected", "Please select a job first.")
-            else:
-                QMessageBox.warning(self.parent(),
-                                    "No Job Added", "Please add a job first.")
-            return False
+        is_valid, error_title, error_msg = self.validate_add_action(job_index)
+        if not is_valid:
+            self.show_warning(error_title, error_msg)
+            return False, None
         action = ActionConfig(type_name)
         action.parent = self.project().jobs[job_index]
         self.action_dialog = ActionConfigDialog(
             action, self.current_file_directory(), self.parent())
         if self.action_dialog.exec() == QDialog.Accepted:
-            insert_index = len(self.project().jobs[job_index].sub_actions)
-            if self.selection_state.is_action_selected():
-                insert_index = self.selection_state.action_index + 1
-            elif self.selection_state.is_subaction_selected():
-                insert_index = self.selection_state.action_index + 1
+            job = self.project().jobs[job_index]
+            insert_index = self.calculate_action_insertion_index(self.selection_state, job)
             self.mark_as_modified(True, "Add Action", "add", (job_index, insert_index, -1))
-            self.project().jobs[job_index].sub_actions.insert(insert_index, action)
+            job.sub_actions.insert(insert_index, action)
             new_state = SelectionState(job_index, insert_index)
             action_widget = self._insert_widget(new_state, action)
             if action_widget:
@@ -961,28 +954,26 @@ class ModernProjectView(ProjectView):
                 self.selected_widget = action_widget
                 self._ensure_selected_visible()
                 self._refresh_job_widget_signals()
-            self.widget_added_signal.emit((job_index, insert_index, -1))
-            self.update_delete_action_state_requested.emit()
-            return True
-        return False
+            new_position = (job_index, insert_index, -1)
+            self.widget_added_signal.emit(new_position)
+            return True, new_position
+        return False, None
 
     def add_sub_action(self, type_name):
         if not self.enforce_stop_run():
-            return False
+            return False, None
         job_index = self.selection_state.job_index
         action_index = self.selection_state.action_index
-        if job_index < 0 or action_index < 0:
-            return False
+        is_valid, error_title, error_msg = self.validate_add_subaction(job_index, action_index)
+        if not is_valid:
+            self.show_warning(error_title, error_msg)
+            return False, None
         if 0 <= job_index < self.num_project_jobs():
             job = self.project().jobs[job_index]
             if 0 <= action_index < len(job.sub_actions):
                 action = job.sub_actions[action_index]
-                if action.type_name != constants.ACTION_COMBO:
-                    return False
-                if self.selection_state.is_subaction_selected():
-                    insert_index = self.selection_state.subaction_index + 1
-                else:
-                    insert_index = len(action.sub_actions)
+                insert_index = self.calculate_subaction_insertion_index(
+                    self.selection_state, action)
                 sub_action = ActionConfig(type_name)
                 self.action_dialog = ActionConfigDialog(
                     sub_action, self.current_file_directory(), self.parent())
@@ -1001,10 +992,10 @@ class ModernProjectView(ProjectView):
                         self.selected_widget = subaction_widget
                         self._ensure_selected_visible()
                         self._refresh_job_widget_signals()
-                    self.widget_added_signal.emit((job_index, action_index, insert_index))
+                    new_position = (job_index, action_index, insert_index)
                     self.update_delete_action_state_requested.emit()
-                    return True
-        return False
+                    return True, new_position
+        return False, None
 
     def update_added_element(self, indices_tuple):
         job_idx, action_idx, subaction_idx = indices_tuple
