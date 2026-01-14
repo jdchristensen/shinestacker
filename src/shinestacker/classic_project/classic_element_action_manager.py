@@ -211,18 +211,11 @@ class ClassicElementActionManager(ElementActionManager):
         return False, None
 
     def clone_job(self):
-        selection = self.selection_state
-        if not selection.is_job_selected():
+        job_clone, new_job_index = super().clone_job()
+        if not job_clone:
             return False, None
-        if 0 <= selection.job_index < self.num_project_jobs():
-            self.mark_as_modified(True, "Duplicate Job", "clone", (selection.job_index, -1, -1))
-            job = self.project().jobs[selection.job_index]
-            job_clone = job.clone(name_postfix=self.CLONE_POSTFIX)
-            new_job_index = selection.job_index + 1
-            self.project().jobs.insert(new_job_index, job_clone)
-            new_state = rows_to_state(self.project(), new_job_index, -1)
-            return True, new_state
-        return False, None
+        new_state = rows_to_state(self.project(), new_job_index, -1)
+        return True, new_state
 
     def clone_action(self):
         selection = self.selection_state

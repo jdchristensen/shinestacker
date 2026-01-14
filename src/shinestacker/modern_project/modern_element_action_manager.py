@@ -334,17 +334,8 @@ class ModernElementActionManager(ElementActionManager):
         return False
 
     def clone_job(self):
-        if not self.selection_state.is_job_selected():
-            return False
-        if not 0 <= self.selection_state.job_index < self.num_project_jobs():
-            return False
-        job_index = self.selection_state.job_index
-        self.mark_as_modified(True, "Duplicate Job", "clone", (job_index, -1, -1))
-        job = self.project().jobs[job_index]
-        job_clone = job.clone(name_postfix=self.CLONE_POSTFIX)
-        new_job_index = job_index + 1
-        self.project().jobs.insert(new_job_index, job_clone)
-        return True
+        job_clone, _new_job_index = super().clone_job()
+        return bool(job_clone)
 
     def clone_action(self):
         if self.selection_state.widget_type == 'action':

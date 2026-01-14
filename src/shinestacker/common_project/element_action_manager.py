@@ -70,6 +70,19 @@ class ElementActionManager(ProjectHandler, QObject):
         job_clone = self.project().jobs[job_index].clone()
         self.set_copy_buffer(job_clone)
 
+    def clone_job(self):
+        if not self.is_job_selected():
+            return False, None
+        job_index = self.get_selected_job_index()
+        if not 0 <= job_index < self.num_project_jobs():
+            return False, None
+        self.mark_as_modified(True, "Duplicate Job", "clone", (job_index, -1, -1))
+        job = self.project().jobs[job_index]
+        job_clone = job.clone(name_postfix=self.CLONE_POSTFIX)
+        new_job_index = job_index + 1
+        self.project().jobs.insert(new_job_index, job_clone)
+        return job_clone, new_job_index
+
     def shift_element(self, delta):
         if self.is_job_selected():
             return self._shift_job(delta)
