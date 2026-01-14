@@ -659,25 +659,18 @@ class ModernProjectView(ProjectView):
 
     def clone_element(self, selection=None, update_project=True, confirm=True):
         if not self.enforce_stop_run():
-            return None
+            return None, None
+        success = False
+        old_selection = self.selection_state.copy() if selection is None else selection.copy()
         if selection is None:
-            old_selection = self.selection_state.copy()
             if update_project:
-                result = self.element_action.clone_element()
-                if result:
+                success = self.element_action.clone_element()
+                if success:
                     self._clone_element_ui_only(old_selection)
             else:
-                result = self._clone_element_ui_only(old_selection)
-            if result:
-                self.widget_cloned_signal.emit((
-                    old_selection.job_index,
-                    old_selection.action_index,
-                    old_selection.subaction_index,
-                    old_selection.widget_type
-                ))
-            return result
+                success = self._clone_element_ui_only(old_selection)
         self._clone_element_ui_only(selection)
-        return None
+        return success, old_selection
 
     def _clone_element_ui_only(self, selection):
         if not selection or not selection.is_valid():
