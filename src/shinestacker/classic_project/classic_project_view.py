@@ -347,12 +347,14 @@ class ClassicProjectView(ProjectView, ListContainer):
         self.element_action.copy_element()
 
     def paste_element(self, selection=None, update_project=True):
+        self._sync_selection_to_action_manager()
+        success = False
+        old_selection = self._get_selection_state().copy() if selection is None \
+            else selection.copy()
         if selection is None:
-            self._sync_selection_to_action_manager()
-            old_state = self._get_selection_state()
             if update_project:
-                result = self.element_action.paste_element()
-                if result:
+                success = self.element_action.paste_element()
+                if success:
                     current_state = self._get_selection_state()
                     self.refresh_ui(rows_to_state(
                         self.project(),
@@ -360,31 +362,23 @@ class ClassicProjectView(ProjectView, ListContainer):
                         current_state.get_action_row()))
             else:
                 self.refresh_ui()
-            if old_state and old_state.is_valid():
-                self.widget_pasted_signal.emit((
-                    old_state.job_index,
-                    old_state.action_index,
-                    old_state.subaction_index,
-                    old_state.widget_type
-                ))
-            return result
         if selection and selection.is_valid():
             self.refresh_ui(
                 rows_to_state(
                     self.project(), selection.job_index, -1))
-        return None
+        return success, old_selection
 
     def cut_element(self):
         self._sync_selection_to_action_manager()
-        old_state = self._get_selection_state()
-        self.element_action.cut_element()
-        if old_state and old_state.is_valid():
-            self.widget_deleted_signal.emit((
-                old_state.job_index,
-                old_state.action_index,
-                old_state.subaction_index,
-                old_state.widget_type
-            ))
+        deleted_element = None
+        old_selection = self._get_selection_state().copy()
+        deleted_element, new_selection = self.element_action.cut_element()
+        if deleted_element:
+            if new_selection:
+                self.refresh_ui(new_selection)
+            else:
+                self.refresh_ui()
+        return deleted_element, old_selection
 
     def clone_element(self, selection=None, update_project=True, confirm=True):
         old_selection = self._get_selection_state().copy() if selection is None \

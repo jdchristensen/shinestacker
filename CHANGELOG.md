@@ -7,7 +7,7 @@ This page reports the main releases only and the main changes therein.
 Cleanup and refactoring
 
 ### Fixed
-- bug in deletion of project elements
+- bugs in deletion and pasting of project elements
 
 ### Changed
 - code refactoring and cleanup

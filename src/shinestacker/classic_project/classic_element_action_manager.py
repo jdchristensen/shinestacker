@@ -169,7 +169,7 @@ class ClassicElementActionManager(ElementActionManager):
             if selection.is_subaction_selected():
                 if selection.action and selection.action.type_name == constants.ACTION_COMBO:
                     target_action = selection.action
-                    insertion_index = len(selection.sub_actions)
+                    insertion_index = selection.subaction_index + 1
                     self.selection_state.set_subaction(
                         selection.job_index, selection.action_index, insertion_index)
             else:
@@ -188,18 +188,19 @@ class ClassicElementActionManager(ElementActionManager):
             if not selection.is_subaction_selected():
                 if not selection.actions:
                     return False
-                new_action_index = 0 if len(selection.actions) == 0 else selection.action_index + 1
+                insertion_index = selection.action_index + 1
                 self.mark_as_modified(
-                    True, "Paste Action", "paste", (selection.job_index, new_action_index, -1))
-                selection.actions.insert(new_action_index, copy_buffer)
-                self.selection_state.set_action(selection.job_index, new_action_index)
+                    True, "Paste Action", "paste", (selection.job_index, insertion_index, -1))
+                selection.actions.insert(insertion_index, copy_buffer)
+                self.selection_state.set_action(selection.job_index, insertion_index)
                 return True
         return False
 
     def cut_element(self):
-        element = self.delete_element(False)
-        if element:
-            self.set_copy_buffer(element)
+        deleted_element, new_selection = self.delete_element(False)
+        if deleted_element:
+            self.set_copy_buffer(deleted_element)
+        return deleted_element, new_selection
 
     def clone_element(self):
         if self.selection_state.is_job_selected():

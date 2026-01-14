@@ -78,7 +78,6 @@ class MainWindow(ProjectIOHandler, QMainWindow):
             self.menu_manager.set_enabled_sub_actions_gui)
 
         signal_map = [
-            ('widget_pasted_signal', self.handle_widget_pasted),
             ('widget_moved_up_signal', self.handle_widget_moved_up),
             ('widget_moved_down_signal', self.handle_widget_moved_down),
             ('widget_added_signal', self.handle_widget_added),
@@ -383,19 +382,6 @@ class MainWindow(ProjectIOHandler, QMainWindow):
         if self.num_project_jobs() > 0:
             self.menu_manager.delete_element_action.setEnabled(True)
 
-    def handle_widget_pasted(self, indices_tuple):
-        job_idx, action_idx, subaction_idx, widget_type = indices_tuple
-        for _view_name, view in self.views.items():
-            if view != self.sender():
-                state = SelectionState()
-                if widget_type == 'job':
-                    state.set_job(job_idx)
-                elif widget_type == 'action':
-                    state.set_action(job_idx, action_idx)
-                elif widget_type == 'subaction':
-                    state.set_subaction(job_idx, action_idx, subaction_idx)
-                view.paste_element(selection=state, update_project=False)
-
     def handle_widget_moved_up(self, indices_tuple):
         job_idx, action_idx, subaction_idx, widget_type = indices_tuple
         for _view_name, view in self.views.items():
@@ -468,10 +454,18 @@ class MainWindow(ProjectIOHandler, QMainWindow):
         self.current_view.copy_element()
 
     def paste_element(self):
-        self.current_view.paste_element()
+        success, old_selection = self.current_view.paste_element()
+        if success and old_selection and old_selection.is_valid():
+            for _view_name, view in self.views.items():
+                if view != self.current_view:
+                    view.paste_element(selection=old_selection, update_project=False)
 
     def cut_element(self):
-        self.current_view.cut_element()
+        cut_element, old_selection = self.current_view.cut_element()
+        if cut_element and old_selection and old_selection.is_valid():
+            for _view_name, view in self.views.items():
+                if view != self.current_view:
+                    view.delete_element(selection=old_selection, update_project=False)
 
     def clone_element(self):
         success, old_selection = self.current_view.clone_element()

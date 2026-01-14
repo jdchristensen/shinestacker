@@ -578,42 +578,44 @@ class ModernProjectView(ProjectView):
         return deleted_element, old_selection
 
     def cut_element(self):
-        if self.enforce_stop_run():
-            old_selection = self.selection_state.copy() if self.selection_state else None
-            widget_state = self._find_widget(old_selection).capture_widget_state()
+        if not self.enforce_stop_run():
+            return None, None
+        widget_state = None
+        deleted_element = None
+        old_selection = self.selection_state.copy()
+        if old_selection and old_selection.is_valid():
+            widget = self._find_widget(old_selection)
+            if widget:
+                widget_state = widget.capture_widget_state()
+        removal_state, new_state, deleted_element = \
             self.element_action.cut_element()
-            if widget_state:
-                self.undo_manager().add_extra_data_to_last_entry(
-                    'modern_widget_state', widget_state)
-            if old_selection and old_selection.is_valid():
-                self.widget_deleted_signal.emit((
-                    old_selection.job_index,
-                    old_selection.action_index,
-                    old_selection.subaction_index,
-                    old_selection.widget_type
-                ))
+        if removal_state:
+            self._remove_widget(removal_state)
+        if new_state:
+            self.selection_state.copy_from(new_state)
+            self._update_selection(new_state)
+            self._ensure_selected_visible()
+        else:
+            self._reset_selection()
+        if widget_state:
+            self.undo_manager().add_extra_data_to_last_entry(
+                'modern_widget_state', widget_state)
+        return deleted_element, old_selection
 
     def paste_element(self, selection=None, update_project=True):
         if not self.enforce_stop_run():
-            return None
+            return False, None
+        old_selection = self.selection_state.copy() if self.selection_state else None
+        success = False
         if selection is None:
-            old_selection = self.selection_state.copy()
             if update_project:
-                result = self.element_action.paste_element()
-                if result:
+                success = self.element_action.paste_element()
+                if success:
                     self._paste_element_ui_only(old_selection)
             else:
-                result = self._paste_element_ui_only(old_selection)
-            if result and old_selection and old_selection.is_valid():
-                self.widget_pasted_signal.emit((
-                    old_selection.job_index,
-                    old_selection.action_index,
-                    old_selection.subaction_index,
-                    old_selection.widget_type
-                ))
-            return result
+                success = self._paste_element_ui_only(old_selection)
         self._paste_element_ui_only(selection)
-        return None
+        return success, old_selection
 
     def _paste_element_ui_only(self, selection):
         if not selection or not selection.is_valid():

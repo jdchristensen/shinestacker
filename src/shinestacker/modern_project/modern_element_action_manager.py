@@ -320,9 +320,10 @@ class ModernElementActionManager(ElementActionManager):
         return True
 
     def cut_element(self):
-        element = self.delete_element(False)
-        if element:
-            self.set_copy_buffer(element)
+        removal_state, new_state, deleted_element = self.delete_element(False)
+        if deleted_element:
+            self.set_copy_buffer(deleted_element)
+        return removal_state, new_state, deleted_element
 
     def clone_element(self):
         if self.selection_state.is_job_selected():
