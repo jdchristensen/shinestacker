@@ -417,7 +417,7 @@ class ModernProjectView(ProjectView):
                     pre_state, f"{'Enable' if enabled else 'Disable'} Job",
                     "edit", (job_idx, -1, -1))
                 self.project().jobs[job_idx].set_enabled(enabled)
-                self.widget_enable_signal.emit((job_idx, -1, -1, 'job'), enabled)
+                self.widget_enable_signal.emit(SelectionState(job_idx), enabled)
                 return
             for action_idx, action_widget in enumerate(job_widget.child_widgets):
                 if widget == action_widget:
@@ -427,7 +427,7 @@ class ModernProjectView(ProjectView):
                         pre_state, f"{'Enable' if enabled else 'Disable'} Action", "edit",
                         (job_idx, action_idx, -1))
                     self.project().jobs[job_idx].sub_actions[action_idx].set_enabled(enabled)
-                    self.widget_enable_signal.emit((job_idx, action_idx, -1, 'action'), enabled)
+                    self.widget_enable_signal.emit(SelectionState(job_idx, action_idx), enabled)
                     return
                 for subaction_idx, subaction_widget in enumerate(action_widget.child_widgets):
                     if widget == subaction_widget:
@@ -440,7 +440,7 @@ class ModernProjectView(ProjectView):
                         actual_action = self.project().jobs[job_idx].sub_actions[action_idx]
                         actual_action.sub_actions[subaction_idx].set_enabled(enabled)
                         self.widget_enable_signal.emit(
-                            (job_idx, action_idx, subaction_idx, 'subaction'), enabled)
+                            SelectionState(job_idx, action_idx, subaction_idx), enabled)
                         return
 
     def _on_job_double_clicked(self, job_index):

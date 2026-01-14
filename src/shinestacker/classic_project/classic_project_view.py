@@ -410,12 +410,7 @@ class ClassicProjectView(ProjectView, ListContainer):
         if selection is None:
             new_selection = self.element_action.set_enabled(enabled)
             if update_project:
-                self.widget_enable_signal.emit((
-                    self.selection_state.job_index,
-                    self.selection_state.action_index,
-                    self.selection_state.subaction_index,
-                    self.selection_state.widget_type
-                ), enabled)
+                self.widget_enable_signal.emit(self.selection_state, enabled)
         else:
             if update_project:
                 new_selection = self.element_action.set_enabled(enabled, selection)

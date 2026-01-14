@@ -17,7 +17,6 @@ from .. gui.project_model import ActionConfig
 from .. gui.action_config_dialog import ActionConfigDialog
 from .. common_project.project_undo_manager import ProjectUndoManager
 from .. common_project.project_handler import ProjectHolder, ProjectIOHandler
-from .. common_project.selection_state import SelectionState
 from .. classic_project.classic_project_view import ClassicProjectView
 from .. modern_project.modern_project_view import ModernProjectView
 from .menu_manager import MenuManager
@@ -397,53 +396,6 @@ class MainWindow(ProjectIOHandler, QMainWindow):
         if self.num_project_jobs() > 0:
             self.menu_manager.delete_element_action.setEnabled(True)
 
-    def handle_widget_moved_up(self, indices_tuple):
-        job_idx, action_idx, subaction_idx, widget_type = indices_tuple
-        for _view_name, view in self.views.items():
-            if view != self.sender():
-                state = SelectionState()
-                if widget_type == 'job':
-                    state.set_job(job_idx)
-                elif widget_type == 'action':
-                    state.set_action(job_idx, action_idx)
-                elif widget_type == 'subaction':
-                    state.set_subaction(job_idx, action_idx, subaction_idx)
-                view.move_element_up(selection=state, update_project=False)
-
-    def handle_widget_moved_down(self, indices_tuple):
-        job_idx, action_idx, subaction_idx, widget_type = indices_tuple
-        for _view_name, view in self.views.items():
-            if view != self.sender():
-                state = SelectionState()
-                if widget_type == 'job':
-                    state.set_job(job_idx)
-                elif widget_type == 'action':
-                    state.set_action(job_idx, action_idx)
-                elif widget_type == 'subaction':
-                    state.set_subaction(job_idx, action_idx, subaction_idx)
-                view.move_element_down(selection=state, update_project=False)
-
-    def handle_widget_enable(self, indices_tuple, enabled):
-        job_idx, action_idx, subaction_idx, widget_type = indices_tuple
-        for _view_name, view in self.views.items():
-            if view != self.sender():
-                state = SelectionState()
-                if widget_type == 'job':
-                    state.set_job(job_idx)
-                elif widget_type == 'action':
-                    state.set_action(job_idx, action_idx)
-                elif widget_type == 'subaction':
-                    state.set_subaction(job_idx, action_idx, subaction_idx)
-                if enabled:
-                    view.enable(selection=state, update_project=False)
-                else:
-                    view.disable(selection=state, update_project=False)
-
-    def handle_widget_updated(self, selection):
-        for _view_name, view in self.views.items():
-            if view != self.sender():
-                view.update_widget(selection=selection, update_project=False)
-
     def copy_element(self):
         self.current_view.copy_element()
 
@@ -518,6 +470,19 @@ class MainWindow(ProjectIOHandler, QMainWindow):
         success = self.current_view.stop()
         if success:
             self.handle_run_finished()
+
+    def handle_widget_enable(self, selection, enabled):
+        for _view_name, view in self.views.items():
+            if view != self.sender():
+                if enabled:
+                    view.enable(selection=selection, update_project=False)
+                else:
+                    view.disable(selection=selection, update_project=False)
+
+    def handle_widget_updated(self, selection):
+        for _view_name, view in self.views.items():
+            if view != self.sender():
+                view.update_widget(selection=selection, update_project=False)
 
     def handle_run_finished(self):
         self.menu_manager.stop_action.setEnabled(False)
