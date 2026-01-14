@@ -58,7 +58,8 @@ class ClassicProjectView(ProjectView, ListContainer):
         QApplication.instance().setStyleSheet(
             self.style_dark if dark_theme else self.style_light)
         self.selection_state = ClassicSelectionState(None, None, -1, -1, -1, None)
-        self.element_action = ClassicElementActionManager(project_holder, self.parent())
+        self.element_action = ClassicElementActionManager(
+            project_holder, self.selection_state, self.parent())
         self._saved_selection = None
         self._setup_ui()
 
@@ -322,8 +323,11 @@ class ClassicProjectView(ProjectView, ListContainer):
             self.edit_action(current_action)
 
     def delete_element(self, selection=None, update_project=True, confirm=True):
+        self._sync_selection_to_action_manager()
+        deleted_element = None
+        old_selection = self._get_selection_state().copy() if selection is None \
+            else selection.copy()
         if selection is None:
-            old_state = self._get_selection_state()
             if update_project:
                 deleted_element, new_selection = self.element_action.delete_element(confirm)
                 if new_selection is not False:
@@ -331,20 +335,12 @@ class ClassicProjectView(ProjectView, ListContainer):
             else:
                 deleted_element = None
                 self.refresh_ui()
-            if old_state and old_state.is_valid():
-                self.widget_deleted_signal.emit((
-                    old_state.job_index,
-                    old_state.action_index,
-                    old_state.subaction_index,
-                    old_state.widget_type
-                ))
-            return deleted_element
-        if selection and selection.is_valid():
+        elif selection.is_valid():
             job_idx = selection.job_index
             if job_idx >= 0:
                 new_job_idx = max(0, min(job_idx, self.num_project_jobs() - 1))
                 self.refresh_ui(rows_to_state(self.project(), new_job_idx, -1))
-        return None
+        return deleted_element, old_selection
 
     def copy_element(self):
         self._sync_selection_to_action_manager()

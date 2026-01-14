@@ -550,13 +550,10 @@ class ModernProjectView(ProjectView):
 
     def delete_element(self, selection=None, update_project=True, confirm=True):
         if not self.enforce_stop_run():
-            return None
+            return None, None
         widget_state = None
-        old_selection = None
-        if selection is None:
-            old_selection = self.selection_state.copy()
-        else:
-            old_selection = selection.copy()
+        deleted_element = None
+        old_selection = self.selection_state.copy() if selection is None else selection.copy()
         if old_selection and old_selection.is_valid():
             widget = self._find_widget(old_selection)
             if widget:
@@ -576,17 +573,9 @@ class ModernProjectView(ProjectView):
                 if widget_state:
                     self.undo_manager().add_extra_data_to_last_entry(
                         'modern_widget_state', widget_state)
-                if deleted_element:
-                    self.widget_deleted_signal.emit((
-                        old_selection.job_index,
-                        old_selection.action_index,
-                        old_selection.subaction_index,
-                        old_selection.widget_type
-                    ))
-                return deleted_element
-            return None
-        self._remove_widget(selection)
-        return None
+        else:
+            self._remove_widget(selection)
+        return deleted_element, old_selection
 
     def cut_element(self):
         if self.enforce_stop_run():

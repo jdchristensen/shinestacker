@@ -2,6 +2,18 @@
 
 This page reports the main releases only and the main changes therein.
 
+## [v1.13.x] - 2026-01-14
+
+Cleanup and refactoring
+
+### Fixed
+- bug in deletion of project elements
+
+### Changed
+- code refactoring and cleanup
+
+---
+
 ## [v1.13.2] - 2026-01-13
 
 Implemented some GUI missing features
