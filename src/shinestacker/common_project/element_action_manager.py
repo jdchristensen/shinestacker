@@ -171,6 +171,14 @@ class ElementActionManager(ProjectHandler, QObject):
         job_clone = self.project().jobs[job_index].clone()
         self.set_copy_buffer(job_clone)
 
+    def clone_element(self):
+        selection = self.selection_state
+        if selection.is_job_selected():
+            return self.clone_job()
+        if selection.is_action_selected() or selection.is_subaction_selected():
+            return self.clone_action()
+        return False, None
+
     def clone_job(self):
         if not self.is_job_selected():
             return False, None
@@ -182,7 +190,7 @@ class ElementActionManager(ProjectHandler, QObject):
         job_clone = job.clone(name_postfix=self.CLONE_POSTFIX)
         new_job_index = job_index + 1
         self.project().jobs.insert(new_job_index, job_clone)
-        return job_clone, SelectionState(new_job_index)
+        return job_clone is not None, SelectionState(new_job_index)
 
     def clone_action(self):
         selection = self.selection_state
@@ -191,7 +199,8 @@ class ElementActionManager(ProjectHandler, QObject):
         if not self.get_job_actions(selection):
             return False, None
         self.mark_as_modified(
-            True, "Duplicate Action", "clone", (selection.job_index, selection.action_index, -1))
+            True, "Duplicate Action", "clone",
+            (selection.job_index, selection.action_index, selection.subaction_index))
         job = self.project().jobs[selection.job_index]
         if selection.is_subaction_selected():
             cloned = self.get_action(selection).clone(name_postfix=self.CLONE_POSTFIX)

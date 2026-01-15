@@ -167,14 +167,6 @@ class ClassicElementActionManager(ElementActionManager):
             self.set_copy_buffer(deleted_element)
         return deleted_element, new_selection
 
-    def clone_element(self):
-        if self.selection_state.is_job_selected():
-            return self.clone_job()
-        if self.selection_state.is_action_selected() or \
-                self.selection_state.is_subaction_selected():
-            return self.clone_action()
-        return False, None
-
     def _shift_job(self, delta):
         selection = self.selection_state
         if not selection.is_job_selected():

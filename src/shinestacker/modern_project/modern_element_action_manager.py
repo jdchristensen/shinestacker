@@ -234,16 +234,6 @@ class ModernElementActionManager(ElementActionManager):
             self.set_copy_buffer(deleted_element)
         return removal_state, new_state, deleted_element
 
-    def clone_element(self):
-        selection = self.selection_state
-        if selection.is_job_selected():
-            cloned, _state = self.clone_job()
-        if selection.is_action_selected() or selection.is_subaction_selected():
-            cloned, _state = self.clone_action()
-        else:
-            cloned = None
-        return cloned is not None
-
     def _shift_job(self, delta):
         if not self.selection_state.is_job_selected():
             return False

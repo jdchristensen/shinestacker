@@ -666,15 +666,16 @@ class ModernProjectView(ProjectView):
         old_selection = self.selection_state.copy() if selection is None else selection.copy()
         if selection is None:
             if update_project:
-                success = self.element_action.clone_element()
-                if success:
-                    self._clone_element_ui_only(old_selection)
+                success, new_state = self.element_action.clone_element()
+                if success and new_state:
+                    self._clone_element_ui_only(old_selection, new_state)
             else:
                 success = self._clone_element_ui_only(old_selection)
-        self._clone_element_ui_only(selection)
+        elif selection.is_valid():
+            success = self._clone_element_ui_only(selection)
         return success, old_selection
 
-    def _clone_element_ui_only(self, selection):
+    def _clone_element_ui_only(self, selection, new_state=None):
         if not selection or not selection.is_valid():
             return False
         try:
@@ -684,13 +685,13 @@ class ModernProjectView(ProjectView):
             job = self.project().jobs[job_idx]
             if selection.is_job_selected():
                 element = self.project_job(job_idx)
-                new_state = SelectionState(job_idx + 1, -1, -1)
+                computed_state = SelectionState(job_idx + 1, -1, -1)
             elif selection.is_action_selected():
                 action_idx = selection.action_index
                 if not 0 <= action_idx < len(job.sub_actions):
                     return False
                 element = job.sub_actions[action_idx]
-                new_state = SelectionState(job_idx, action_idx + 1, -1)
+                computed_state = SelectionState(job_idx, action_idx + 1, -1)
             elif selection.is_subaction_selected():
                 action_idx = selection.action_index
                 subaction_idx = selection.subaction_index
@@ -700,17 +701,18 @@ class ModernProjectView(ProjectView):
                 if not 0 <= subaction_idx < len(action.sub_actions):
                     return False
                 element = action.sub_actions[subaction_idx]
-                new_state = SelectionState(job_idx, action_idx, subaction_idx + 1)
+                computed_state = SelectionState(job_idx, action_idx, subaction_idx + 1)
             else:
                 return False
+            insert_state = new_state if new_state else computed_state
             new_widget = self._insert_widget(
-                new_state, element.clone(name_postfix=self.element_action.CLONE_POSTFIX))
+                insert_state, element.clone(name_postfix=self.element_action.CLONE_POSTFIX))
             if new_widget:
                 if self.selected_widget:
                     self.selected_widget.set_selected(False)
                 new_widget.set_selected(True)
                 self.selected_widget = new_widget
-                self.selection_state.copy_from(new_state)
+                self.selection_state.copy_from(insert_state)
                 self.update_delete_action_state_requested.emit()
                 return True
         except Exception:
