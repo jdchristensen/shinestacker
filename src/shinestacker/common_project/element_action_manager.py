@@ -268,33 +268,60 @@ class ElementActionManager(ProjectHandler, QObject):
                     return action.sub_actions[subaction_index].clone()
         return None
 
-    def _op_shift_job(self, job_index, delta):
-        jobs = self.project().jobs
+    def shift_element(self, delta):
+        if self.is_job_selected():
+            return self._shift_job(delta)
+        if self.is_action_selected():
+            return self._shift_action(delta)
+        if self.is_subaction_selected():
+            return self._shift_subaction(delta)
+        return None
+
+    def _shift_job(self, delta):
+        if not self.is_job_selected():
+            return None
+        job_index = self.selection_state.job_index
         new_index = job_index + delta
-        if 0 <= new_index < len(jobs):
+        if 0 <= new_index < self.num_project_jobs():
+            jobs = self.project().jobs
             jobs.insert(new_index, jobs.pop(job_index))
-            return new_index
-        return job_index
+            self.selection_state.set_job(new_index)
+            return self.selection_state.copy()
+        return None
 
-    def _op_shift_action(self, job_index, action_index, delta):
-        if 0 <= job_index < self.num_project_jobs():
-            job = self.project_job(job_index)
-            new_index = action_index + delta
-            if 0 <= new_index < len(job.sub_actions):
-                job.sub_actions.insert(new_index, job.sub_actions.pop(action_index))
-                return new_index
-        return action_index
+    def _shift_action(self, delta):
+        if not self.is_action_selected():
+            return None
+        job_index = self.selection_state.job_index
+        action_index = self.selection_state.action_index
+        if not 0 <= job_index < self.num_project_jobs():
+            return None
+        job = self.project().jobs[job_index]
+        new_index = action_index + delta
+        if 0 <= new_index < len(job.sub_actions):
+            job.sub_actions.insert(new_index, job.sub_actions.pop(action_index))
+            self.selection_state.set_action(job_index, new_index)
+            return self.selection_state.copy()
+        return None
 
-    def _op_shift_subaction(self, job_index, action_index, subaction_index, delta):
-        if 0 <= job_index < self.num_project_jobs():
-            job = self.project_job(job_index)
-            if 0 <= action_index < len(job.sub_actions):
-                action = job.sub_actions[action_index]
-                new_index = subaction_index + delta
-                if 0 <= new_index < len(action.sub_actions):
-                    action.sub_actions.insert(new_index, action.sub_actions.pop(subaction_index))
-                    return new_index
-        return subaction_index
+    def _shift_subaction(self, delta):
+        if not self.is_subaction_selected():
+            return None
+        job_index = self.selection_state.job_index
+        action_index = self.selection_state.action_index
+        subaction_index = self.selection_state.subaction_index
+        if not 0 <= job_index < self.num_project_jobs():
+            return None
+        job = self.project().jobs[job_index]
+        if not 0 <= action_index < len(job.sub_actions):
+            return None
+        action = job.sub_actions[action_index]
+        new_index = subaction_index + delta
+        if 0 <= new_index < len(action.sub_actions):
+            action.sub_actions.insert(new_index, action.sub_actions.pop(subaction_index))
+            self.selection_state.set_subaction(job_index, action_index, new_index)
+            return self.selection_state.copy()
+        return None
 
     def copy_element(self):
         if self.is_job_selected():
@@ -423,15 +450,6 @@ class ElementActionManager(ProjectHandler, QObject):
         if deleted_element:
             self.set_copy_buffer(deleted_element)
         return deleted_element, removal_state, new_state
-
-    def shift_element(self, delta):
-        if self.is_job_selected():
-            return self._shift_job(delta)
-        if self.is_action_selected():
-            return self._shift_action(delta)
-        if self.is_subaction_selected():
-            return self._shift_subaction(delta)
-        return False
 
     def _set_element_enabled(self, element, enabled, element_type):
         element.set_enabled(enabled)

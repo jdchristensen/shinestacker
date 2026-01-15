@@ -872,13 +872,13 @@ class ModernProjectView(ProjectView):
     def shift_element(self, delta, direction, selection=None, update_project=True):
         if not self.enforce_stop_run():
             return False, None
-        success = False
+        new_selection = False
         old_selection = self.selection_state.copy() if selection is None else selection.copy()
         if selection is None:
             if update_project:
                 pre_move_project = self.project().clone()
                 from_position = self._get_current_position_tuple()
-                success = self.element_action.shift_element(delta)
+                new_selection = self.element_action.shift_element(delta)
                 to_position = self._get_current_position_tuple()
                 affected_position = from_position + to_position
                 self.save_undo_state(
@@ -886,7 +886,7 @@ class ModernProjectView(ProjectView):
         self._move_widgets(old_selection, self.selection_state)
         self._update_selection(self.selection_state)
         self._ensure_selected_visible()
-        return success, old_selection
+        return new_selection, old_selection
 
     def set_style_sheet(self, dark_theme):
         pass

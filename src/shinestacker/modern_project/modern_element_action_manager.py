@@ -64,36 +64,3 @@ class ModernElementActionManager(ElementActionManager):
         self.mark_as_modified(True, f"{action} All", "edit_all", (-1, -1, -1))
         for job in self.project().jobs:
             job.set_enabled_all(enabled)
-
-    def _shift_job(self, delta):
-        if not self.selection_state.is_job_selected():
-            return False
-        prev_sel = self.selection_state.copy()
-        new_index = self._op_shift_job(
-            prev_sel.job_index, delta)
-        if new_index != prev_sel.job_index:
-            self.selection_state.set_job(new_index)
-            return True
-        return False
-
-    def _shift_action(self, delta):
-        if not self.selection_state.is_action_selected():
-            return False
-        prev_sel = self.selection_state.copy()
-        new_index = self._op_shift_action(
-            prev_sel.job_index, prev_sel.action_index, delta)
-        if new_index != prev_sel.action_index:
-            self.selection_state.set_action(prev_sel.job_index, new_index)
-            return True
-        return False
-
-    def _shift_subaction(self, delta):
-        if not self.selection_state.is_subaction_selected():
-            return False
-        prev_sel = self.selection_state.copy()
-        new_index = self._op_shift_subaction(
-            prev_sel.job_index, prev_sel.action_index, prev_sel.subaction_index, delta)
-        if new_index != prev_sel.subaction_index:
-            self.selection_state.set_subaction(prev_sel.job_index, prev_sel.action_index, new_index)
-            return True
-        return False

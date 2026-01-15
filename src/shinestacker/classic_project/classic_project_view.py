@@ -464,7 +464,7 @@ class ClassicProjectView(ProjectView, ListContainer):
                 pre_move_project = self.project().clone()
                 from_position = self._get_current_position_tuple()
                 new_selection = self.element_action.shift_element(delta)
-                if new_selection is not False:
+                if new_selection:
                     success = True
                     self.refresh_ui(new_selection)
                     to_position = self._get_current_position_tuple()
