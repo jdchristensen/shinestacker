@@ -649,15 +649,6 @@ class ClassicProjectView(ProjectView, ListContainer):
     def _ensure_selected_visible(self):
         pass
 
-    def _selection_callback(self, widget_type, job_index, _action_index=None,
-                            _subaction_index=None):
-        if widget_type == 'job':
-            self.set_current_job(job_index)
-        elif widget_type == 'action':
-            self.set_current_job(job_index)
-        elif widget_type == 'subaction':
-            self.set_current_job(job_index)
-
     def handle_run_completed(self):
         self.run_finished_signal.emit()
 

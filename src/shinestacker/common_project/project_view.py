@@ -293,7 +293,7 @@ class ProjectView(QWidget, LogManager, ProjectHandler):
         return (-1, -1, -1)
 
     def enforce_stop_run(self):
-        pass
+        return True
 
     def calculate_action_insertion_index(self, selection_state, job):
         if not selection_state or not job:

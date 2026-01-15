@@ -10,7 +10,7 @@ Fixes, cleanup and refactoring
 - better navigation in the project GUI
 
 ### Fixed
-- bugs in the project editing GUI
+- various bugs in the project editing GUI
 
 ### Changed
 - code refactoring and cleanup
