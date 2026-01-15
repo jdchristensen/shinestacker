@@ -4,22 +4,49 @@ from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel, QSplitter, QMessageBox, QApplication, QDialog)
 from .. config.constants import constants
-from .. gui.colors import ColorPalette
 from .. gui.action_config_dialog import ActionConfigDialog
 from .. gui.project_model import ActionConfig
+from .. gui.colors import ColorPalette
 from .. common_project.run_worker import JobLogWorker, ProjectLogWorker
 from .. common_project.project_view import ProjectView
 from .. common_project.selection_state import SelectionState
 from .. common_project.element_action_manager import ElementActionManager
 from .tab_widget import TabWidgetWithPlaceholder
 from .gui_run import RunWindow
-from .list_container import ListContainer, rows_to_state, get_action_row
+from .list_container import ListContainer, get_action_row
+
+
+def rows_to_state(project, job_row, action_row):
+    if job_row < 0:
+        return None
+    if action_row < 0:
+        state = SelectionState(job_row, -1, -1)
+        state.widget_type = 'job'
+        return state
+    job = project.jobs[job_row]
+    current_row = -1
+    for i, action in enumerate(job.sub_actions):
+        current_row += 1
+        if current_row == action_row:
+            state = SelectionState(job_row, i, -1)
+            state.widget_type = 'action'
+            return state
+        if action.sub_actions:
+            for sub_idx, _ in enumerate(action.sub_actions):
+                current_row += 1
+                if current_row == action_row:
+                    state = SelectionState(job_row, i, sub_idx)
+                    state.widget_type = 'subaction'
+                    return state
+    state = SelectionState(job_row, -1, -1)
+    state.widget_type = 'job'
+    return state
 
 
 class ClassicProjectView(ProjectView, ListContainer):
     def __init__(self, project_holder, dark_theme, parent=None):
         ProjectView.__init__(self, project_holder, dark_theme, parent)
-        ListContainer.__init__(self)
+        ListContainer.__init__(self, dark_theme)
         self.tab_widget = TabWidgetWithPlaceholder(dark_theme)
         self.tab_widget.resize(1000, 500)
         self._windows = []
@@ -39,27 +66,15 @@ class ClassicProjectView(ProjectView, ListContainer):
             QLabel[color-type="enabled"] {{ color: #{ColorPalette.LIGHT_BLUE.hex()}; }}
             QLabel[color-type="disabled"] {{ color: #{ColorPalette.LIGHT_RED.hex()}; }}
         """
-        self.list_style_sheet_light = f"""
-            QListWidget::item:selected {{
-                background-color: #{ColorPalette.LIGHT_BLUE.hex()};
-            }}
-            QListWidget::item:hover {{
-                background-color: #F0F0F0;
-            }}
-        """
-        self.list_style_sheet_dark = f"""
-            QListWidget::item:selected {{
-                background-color: #{ColorPalette.DARK_BLUE.hex()};
-            }}
-            QListWidget::item:hover {{
-                background-color: #303030;
-            }}
-        """
         QApplication.instance().setStyleSheet(
             self.style_dark if dark_theme else self.style_light)
+        self.set_style_sheet(dark_theme)
         self.selection_state = SelectionState(-1, -1, -1)
-        self.element_action = ElementActionManager(project_holder, self.selection_state, self.parent())
+        self.element_action = ElementActionManager(
+            project_holder, self.selection_state, self.parent())
         self._saved_selection = None
+        self.job_list().enter_key_pressed.connect(self.edit_current_action)
+        self.action_list().enter_key_pressed.connect(self.edit_current_action)
         self._setup_ui()
 
     def _setup_ui(self):
@@ -95,6 +110,9 @@ class ClassicProjectView(ProjectView, ListContainer):
         self.action_list().itemSelectionChanged.connect(self._get_selection_state)
         self.enable_sub_actions_requested.connect(set_enabled_sub_actions_gui)
 
+    def update_focus_styles(self):
+        ListContainer.update_focus_styles(self)
+
     def get_tab_widget(self):
         return self.tab_widget
 
@@ -112,12 +130,6 @@ class ClassicProjectView(ProjectView, ListContainer):
     def get_tab_position(self, id_str):
         i, _w = self.get_tab_and_position(id_str)
         return i
-
-    def set_style_sheet(self, dark_theme):
-        list_style_sheet = self.list_style_sheet_dark \
-            if dark_theme else self.list_style_sheet_light
-        self.job_list().setStyleSheet(list_style_sheet)
-        self.action_list().setStyleSheet(list_style_sheet)
 
     def refresh_and_select_job(self, job_idx):
         self.refresh_ui(rows_to_state(self.project(), job_idx, -1))
@@ -320,8 +332,7 @@ class ClassicProjectView(ProjectView, ListContainer):
                 current_action = job
             elif self.action_list_has_focus():
                 job_row, _action_row, pos = self.get_current_action()
-                if pos.actions is not None:
-                    current_action = pos.action if not pos.is_sub_action else pos.sub_action
+                current_action = self.element_action.get_action(pos)
         if current_action is not None:
             self.edit_action(current_action)
 

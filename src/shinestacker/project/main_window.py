@@ -110,6 +110,7 @@ class MainWindow(ProjectIOHandler, QMainWindow):
         for _k, v in self.views.items():
             self.view_stack.addWidget(v)
         self.view_stack.setCurrentIndex(0)
+        self.view_stack.currentChanged.connect(self.on_view_changed)
         layout.addWidget(self.view_stack)
         self.central_widget.setLayout(layout)
         self.update_title()
@@ -122,6 +123,13 @@ class MainWindow(ProjectIOHandler, QMainWindow):
         self.show_status_message("Shine Stacker ready.", 4000)
         self.set_view(AppConfig.get('project_view_strategy'))
         self.action_dialog = None
+
+    def on_view_changed(self, index):
+        current_widget = self.view_stack.widget(index)
+        if current_widget == self.classic_view:
+            self.classic_view.update_focus_styles()
+        elif current_widget == self.modern_view:
+            self.modern_view.update_focus_styles()
 
     def show_status_message(self, message, timeout=4000):
         self.statusBar().showMessage(message, timeout)

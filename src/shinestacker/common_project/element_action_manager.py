@@ -467,7 +467,7 @@ class ElementActionManager(ProjectHandler, QObject):
         if not selection.is_valid() or not update_project:
             return None
         j, a, s = selection.job_index, selection.action_index, selection.subaction_index
-        if not (0 <= j < self.num_project_jobs()):
+        if not 0 <= j < self.num_project_jobs():
             return None
         job = self.project().jobs[j]
         if selection.is_job_selected():

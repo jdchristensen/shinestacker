@@ -1,13 +1,17 @@
-# pylint: disable=C0114, C0115, C0116, E0611, R0903, R0904, R0913, R0917, E1101, R0911
+# pylint: disable=C0114, C0115, C0116, E0611, R0903, R0904, R0913, R0917, E1101, R0911, R0902
 import os
 from PySide6.QtCore import Qt, QEvent, QSize, Signal
 from PySide6.QtWidgets import QListWidget, QListWidgetItem, QLabel, QSizePolicy
 from .. config.constants import constants
+from .. gui.colors import ColorPalette
 from .. gui.project_model import get_action_input_path, get_action_output_path
 from .. common_project.selection_state import SelectionState
 
 
 class HandCursorListWidget(QListWidget):
+    arrow_key_pressed = Signal(str)
+    enter_key_pressed = Signal()
+
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setMouseTracking(True)
@@ -27,6 +31,21 @@ class HandCursorListWidget(QListWidget):
             self.viewport().setCursor(Qt.ArrowCursor)
         return super().event(event)
 
+    # pylint: disable=C0103
+    def keyPressEvent(self, event):
+        if event.key() in (Qt.Key_Return, Qt.Key_Enter):
+            self.enter_key_pressed.emit()
+            event.accept()
+        if event.key() == Qt.Key_Right:
+            self.arrow_key_pressed.emit("right")
+            event.accept()
+        elif event.key() == Qt.Key_Left:
+            self.arrow_key_pressed.emit("left")
+            event.accept()
+        else:
+            super().keyPressEvent(event)
+    # pylint: enable=C0103
+
 
 def get_action_row(selection_state, actions):
     if not (selection_state.is_action_selected() or selection_state.is_subaction_selected()):
@@ -44,47 +63,83 @@ def get_action_row(selection_state, actions):
     return -1
 
 
-def rows_to_state(project, job_row, action_row):
-    if job_row < 0:
-        return None
-    if action_row < 0:
-        state = SelectionState(job_row, -1, -1)
-        state.widget_type = 'job'
-        return state
-    job = project.jobs[job_row]
-    current_row = -1
-    for i, action in enumerate(job.sub_actions):
-        current_row += 1
-        if current_row == action_row:
-            state = SelectionState(job_row, i, -1)
-            state.widget_type = 'action'
-            return state
-        if action.sub_actions:
-            for sub_idx, _ in enumerate(action.sub_actions):
-                current_row += 1
-                if current_row == action_row:
-                    state = SelectionState(job_row, i, sub_idx)
-                    state.widget_type = 'subaction'
-                    return state
-    state = SelectionState(job_row, -1, -1)
-    state.widget_type = 'job'
-    return state
-
-
 class ListContainer:
     INDENT_SPACE = "&nbsp;&nbsp;&nbsp;↪&nbsp;&nbsp;&nbsp;"
 
     select_signal = Signal()
 
-    def __init__(self, job_list=False, action_list=False):
-        if job_list is False:
-            self._job_list = HandCursorListWidget()
+    def __init__(self, dark_theme, job_list=False, action_list=False):
+        self._job_list = HandCursorListWidget() if job_list is False else job_list
+        self._action_list = HandCursorListWidget() if action_list is False else action_list
+        self._job_list.setFocusPolicy(Qt.StrongFocus)
+        self._action_list.setFocusPolicy(Qt.StrongFocus)
+        self._job_list.arrow_key_pressed.connect(self.handle_arrow_key)
+        self._action_list.arrow_key_pressed.connect(self.handle_arrow_key)
+        self._job_list.itemClicked.connect(self.update_focus_styles)
+        self._action_list.itemClicked.connect(self.update_focus_styles)
+        self._focused_style_light = f"""
+            QListWidget::item:selected {{
+                background-color: #{ColorPalette.LIGHT_BLUE.hex()};
+            }}
+            QListWidget::item:hover {{
+                background-color: #F0F0F0;
+            }}
+        """
+        self._focused_style_dark = f"""
+            QListWidget::item:selected {{
+                background-color: #{ColorPalette.DARK_BLUE.hex()};
+            }}
+            QListWidget::item:hover {{
+                background-color: #303030;
+            }}
+        """
+        self._unfocused_style_light = """
+            QListWidget::item:hover {
+                background-color: #F0F0F0;
+            }
+        """
+        self._unfocused_style_dark = """
+            QListWidget::item:hover {
+                background-color: #303030;
+            }
+        """
+        self.set_style_sheet(dark_theme)
+
+    def set_style_sheet(self, dark_theme):
+        self._current_focused_style = self._focused_style_dark if dark_theme \
+            else self._focused_style_light
+        self._current_unfocused_style = self._unfocused_style_dark if dark_theme \
+            else self._unfocused_style_light
+        self.update_focus_styles()
+
+    def update_focus_styles(self):
+        if not hasattr(self, '_current_focused_style'):
+            return
+        if self._job_list.hasFocus():
+            self._job_list.setStyleSheet(self._current_focused_style)
+            self._action_list.setStyleSheet(self._current_unfocused_style)
+        elif self._action_list.hasFocus():
+            self._action_list.setStyleSheet(self._current_focused_style)
+            self._job_list.setStyleSheet(self._current_unfocused_style)
         else:
-            self._job_list = job_list
-        if action_list is False:
-            self._action_list = HandCursorListWidget()
-        else:
-            self._action_list = action_list
+            self._job_list.setStyleSheet(self._current_unfocused_style)
+            self._action_list.setStyleSheet(self._current_unfocused_style)
+
+    def handle_arrow_key(self, direction):
+        if direction == "right" and self.sender() == self._job_list:
+            if self._action_list.count() > 0:
+                self._action_list.setCurrentRow(0)
+            self._action_list.setFocus()
+            self.update_focus_styles()
+        elif direction == "left" and self.sender() == self._action_list:
+            current_job = self.current_job_index()
+            if current_job >= 0:
+                self._job_list.setCurrentRow(current_job)
+            self._job_list.setFocus()
+            self.update_focus_styles()
+
+    def edit_current_action(self):
+        pass
 
     def get_lists(self):
         return self._job_list, self._action_list
@@ -156,21 +211,6 @@ class ListContainer:
 
     def get_current_action(self):
         return self.get_action_at(self.current_action_index())
-
-    def find_action_position(self, job_index, ui_index):
-        if not 0 <= job_index < self.num_project_jobs():
-            return (None, None, -1)
-        actions = self.project_job(job_index).sub_actions
-        counter = -1
-        for action in actions:
-            counter += 1
-            if counter == ui_index:
-                return (action, None, -1)
-            for subaction_index, sub_action in enumerate(action.sub_actions):
-                counter += 1
-                if counter == ui_index:
-                    return (action, sub_action, subaction_index)
-        return (None, None, -1)
 
     def job_text(self, job, long_name=False, html=False):
         txt = f"{job.params.get('name', '(job)')}"
@@ -277,3 +317,18 @@ class ListContainer:
         else:
             state.widget_type = 'action'
         return (job_row, action_row, state)
+
+    def find_action_position(self, job_index, ui_index):
+        if not 0 <= job_index < self.num_project_jobs():
+            return (None, None, -1)
+        actions = self.project_job(job_index).sub_actions
+        counter = -1
+        for action in actions:
+            counter += 1
+            if counter == ui_index:
+                return (action, None, -1)
+            for subaction_index, sub_action in enumerate(action.sub_actions):
+                counter += 1
+                if counter == ui_index:
+                    return (action, sub_action, subaction_index)
+        return (None, None, -1)

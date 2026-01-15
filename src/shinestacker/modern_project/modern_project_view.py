@@ -48,7 +48,8 @@ class ModernProjectView(ProjectView):
             self.selection_state,
             self._selection_callback
         )
-        self.element_action = ElementActionManager(project_holder, self.selection_state, self.parent())
+        self.element_action = ElementActionManager(
+            project_holder, self.selection_state, self.parent())
         self._saved_selection = None
         self._setup_ui()
         self.change_theme(dark_theme)

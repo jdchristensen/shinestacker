@@ -40,6 +40,9 @@ class ProjectView(QWidget, LogManager, ProjectHandler):
     def _setup_common_menu_actions(self):
         pass
 
+    def update_focus_styles(self):
+        pass
+
     def edit_current_action(self):
         current_action = self.get_current_selected_action()
         if current_action is not None:
