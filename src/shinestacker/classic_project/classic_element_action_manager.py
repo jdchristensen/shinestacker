@@ -35,29 +35,6 @@ class ClassicElementActionManager(ElementActionManager):
         _, action_row = self.state_to_rows(self.project(), selection_state)
         return action_row
 
-    def get_action(self, selection):
-        if not selection.is_action_selected() and not selection.is_subaction_selected():
-            return None
-        job = self.project().jobs[selection.job_index]
-        action = job.sub_actions[selection.action_index]
-        if selection.is_subaction_selected():
-            return action.sub_actions[selection.subaction_index]
-        return action
-
-    def get_job_actions(self, selection):
-        if selection.job_index < 0:
-            return None
-        job = self.project().jobs[selection.job_index]
-        return job.sub_actions
-
-    def get_sub_actions(self, selection):
-        if selection.job_index < 0 or selection.action_index < 0:
-            return None
-        job = self.project().jobs[selection.job_index]
-        if selection.action_index >= len(job.sub_actions):
-            return None
-        return job.sub_actions[selection.action_index].sub_actions
-
     def delete_element(self, confirm=True):
         selection = self.selection_state
         deleted_element = None
@@ -197,31 +174,6 @@ class ClassicElementActionManager(ElementActionManager):
                 self.selection_state.is_subaction_selected():
             return self.clone_action()
         return False, None
-
-    def clone_job(self):
-        job_clone, new_job_index = super().clone_job()
-        if not job_clone:
-            return False, None
-        new_state = rows_to_state(self.project(), new_job_index, -1)
-        return True, new_state
-
-    def clone_action(self):
-        selection = self.selection_state
-        if not (selection.is_action_selected() or selection.is_subaction_selected()):
-            return False, None
-        if not self.get_job_actions(selection):
-            return False, None
-        self.mark_as_modified(
-            True, "Duplicate Action", "clone", (selection.job_index, selection.action_index, -1))
-        job = self.project().jobs[selection.job_index]
-        if selection.is_subaction_selected():
-            cloned = self.get_action(selection).clone(name_postfix=self.CLONE_POSTFIX)
-            self.get_sub_actions(selection).insert(selection.subaction_index + 1, cloned)
-        else:
-            cloned = self.get_action(selection).clone(name_postfix=self.CLONE_POSTFIX)
-            job.sub_actions.insert(selection.action_index + 1, cloned)
-        new_state = self.new_state_after_clone(selection)
-        return True, new_state
 
     def _shift_job(self, delta):
         selection = self.selection_state

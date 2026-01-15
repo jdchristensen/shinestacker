@@ -235,50 +235,14 @@ class ModernElementActionManager(ElementActionManager):
         return removal_state, new_state, deleted_element
 
     def clone_element(self):
-        if self.selection_state.is_job_selected():
-            return self.clone_job()
-        if self.selection_state.is_action_selected() or \
-                self.selection_state.is_subaction_selected():
-            return self.clone_action()
-        return False
-
-    def clone_job(self):
-        job_clone, _new_job_index = super().clone_job()
-        return bool(job_clone)
-
-    def clone_action(self):
-        if self.selection_state.widget_type == 'action':
-            job_index = self.selection_state.job_index
-            action_index = self.selection_state.action_index
-            if (0 <= job_index < self.num_project_jobs() and
-                    0 <= action_index < len(self.project().jobs[job_index].sub_actions)):
-                self.mark_as_modified(
-                    True, "Duplicate Action", "clone", (job_index, action_index, -1))
-                job = self.project().jobs[job_index]
-                action = job.sub_actions[action_index]
-                action_clone = action.clone(name_postfix=self.CLONE_POSTFIX)
-                new_action_index = action_index + 1
-                job.sub_actions.insert(new_action_index, action_clone)
-                return True
-        elif self.selection_state.widget_type == 'subaction':
-            job_index = self.selection_state.job_index
-            action_index = self.selection_state.action_index
-            subaction_index = self.selection_state.subaction_index
-            if (0 <= job_index < self.num_project_jobs() and
-                    0 <= action_index < len(self.project().jobs[job_index].sub_actions)):
-                job = self.project().jobs[job_index]
-                action = job.sub_actions[action_index]
-                if (action.type_name == constants.ACTION_COMBO and
-                        0 <= subaction_index < len(action.sub_actions)):
-                    self.mark_as_modified(
-                        True, "Duplicate Sub-action", "clone",
-                        (job_index, action_index, subaction_index))
-                    subaction = action.sub_actions[subaction_index]
-                    subaction_clone = subaction.clone(name_postfix=self.CLONE_POSTFIX)
-                    new_subaction_index = subaction_index + 1
-                    action.sub_actions.insert(new_subaction_index, subaction_clone)
-                    return True
-        return False
+        selection = self.selection_state
+        if selection.is_job_selected():
+            cloned, _state = self.clone_job()
+        if selection.is_action_selected() or selection.is_subaction_selected():
+            cloned, _state = self.clone_action()
+        else:
+            cloned = None
+        return cloned is not None
 
     def _shift_job(self, delta):
         if not self.selection_state.is_job_selected():
