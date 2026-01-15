@@ -258,6 +258,9 @@ class ProjectView(QWidget, LogManager, ProjectHandler):
         self._update_ui_after_add_sub_action(sub_action, position)
         return True, position
 
+    def copy_element(self):
+        self.element_action.copy_element()
+
     def _before_add_sub_action(self):
         return True
 

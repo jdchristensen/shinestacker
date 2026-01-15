@@ -340,7 +340,7 @@ class ClassicProjectView(ProjectView, ListContainer):
 
     def copy_element(self):
         self._sync_selection_to_action_manager()
-        self.element_action.copy_element()
+        ProjectView.copy_element(self)
 
     def paste_element(self, selection=None, update_project=True):
         self._sync_selection_to_action_manager()
