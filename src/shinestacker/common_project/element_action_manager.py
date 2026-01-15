@@ -13,16 +13,19 @@ class ElementActionManager(ProjectHandler, QObject):
         QObject.__init__(self, parent)
 
     def is_job_selected(self):
-        raise NotImplementedError
+        return self.selection_state.is_job_selected()
 
     def is_action_selected(self):
-        raise NotImplementedError
+        return self.selection_state.is_action_selected()
 
     def is_subaction_selected(self):
-        raise NotImplementedError
+        return self.selection_state.is_subaction_selected()
 
     def get_selected_job_index(self):
-        raise NotImplementedError
+        return self.selection_state.job_index
+
+    def is_valid_selection(self):
+        return self.selection_state.is_valid()
 
     def confirm_delete_message(self, type_name, element_name):
         return QMessageBox.question(

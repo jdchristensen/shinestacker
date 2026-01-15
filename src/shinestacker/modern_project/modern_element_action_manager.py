@@ -89,18 +89,6 @@ class ModernElementActionManager(ElementActionManager):
     def set_selection_navigation(self, selection_nav):
         self.selection_nav = selection_nav
 
-    def is_job_selected(self):
-        return self.selection_state.is_job_selected()
-
-    def is_action_selected(self):
-        return self.selection_state.is_action_selected()
-
-    def is_subaction_selected(self):
-        return self.selection_state.is_subaction_selected()
-
-    def get_selected_job_index(self):
-        return self.selection_state.job_index
-
     def delete_element(self, confirm=True):
         if not self.selection_state.is_valid():
             return None, None, None
