@@ -558,13 +558,13 @@ class ModernProjectView(ProjectView):
                 widget_state = widget.capture_widget_state()
         if selection is None:
             if update_project:
-                removal_state, new_state, deleted_element = \
+                deleted_element, removal_state, new_selection = \
                     self.element_action.delete_element(confirm)
                 if removal_state:
                     self._remove_widget(removal_state)
-                if new_state:
-                    self.selection_state.copy_from(new_state)
-                    self._update_selection(new_state)
+                if new_selection:
+                    self.selection_state.copy_from(new_selection)
+                    self._update_selection(new_selection)
                     self._ensure_selected_visible()
                 else:
                     self._reset_selection()
@@ -585,13 +585,13 @@ class ModernProjectView(ProjectView):
             widget = self._find_widget(old_selection)
             if widget:
                 widget_state = widget.capture_widget_state()
-        removal_state, new_state, deleted_element = \
+        deleted_element, removal_state, new_selection = \
             self.element_action.cut_element()
         if removal_state:
             self._remove_widget(removal_state)
-        if new_state:
-            self.selection_state.copy_from(new_state)
-            self._update_selection(new_state)
+        if new_selection:
+            self.selection_state.copy_from(new_selection)
+            self._update_selection(new_selection)
             self._ensure_selected_visible()
         else:
             self._reset_selection()

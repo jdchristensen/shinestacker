@@ -34,45 +34,6 @@ class ClassicElementActionManager(ElementActionManager):
         _, action_row = self.state_to_rows(self.project(), selection_state)
         return action_row
 
-    def delete_element(self, confirm=True):
-        selection = self.selection_state
-        deleted_element = None
-        if selection.is_job_selected():
-            if not 0 <= selection.job_index < self.num_project_jobs():
-                return None, False
-            job = self.project().jobs[selection.job_index]
-            if confirm:
-                if not self.confirm_delete_message('job', job.params.get('name', '')):
-                    return None, False
-            self.mark_as_modified(True, "Delete Job", "delete", (selection.job_index, -1, -1))
-            deleted_element = self.project().jobs.pop(selection.job_index)
-        elif selection.is_action_selected() or selection.is_subaction_selected():
-            element = self.get_action(selection)
-            container = self.get_sub_actions(selection) if selection.is_subaction_selected() \
-                else self.get_job_actions(selection)
-            index = selection.subaction_index if selection.is_subaction_selected() \
-                else selection.action_index
-            if not element or not container or index < 0 or index >= len(container):
-                return None, False
-            element_type = "sub-action" if selection.is_subaction_selected() else "action"
-            if confirm:
-                if not self.confirm_delete_message(element_type, element.params.get('name', '')):
-                    return None, False
-            action_type_str = "delete"
-            if selection.is_subaction_selected():
-                position = (selection.job_index, selection.action_index, selection.subaction_index)
-            else:
-                position = (selection.job_index, selection.action_index, -1)
-            self.mark_as_modified(True, f"Delete {element_type}", action_type_str, position)
-            deleted_element = container.pop(index)
-        return deleted_element, self.new_state_after_delete(selection)
-
-    def cut_element(self):
-        deleted_element, new_selection = self.delete_element(False)
-        if deleted_element:
-            self.set_copy_buffer(deleted_element)
-        return deleted_element, new_selection
-
     def _shift_job(self, delta):
         selection = self.selection_state
         if not selection.is_job_selected():

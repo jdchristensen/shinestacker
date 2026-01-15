@@ -333,7 +333,8 @@ class ClassicProjectView(ProjectView, ListContainer):
             else selection.copy()
         if selection is None:
             if update_project:
-                deleted_element, new_selection = self.element_action.delete_element(confirm)
+                deleted_element, _removal_state, new_selection = \
+                    self.element_action.delete_element(confirm)
                 if new_selection is not False:
                     self.refresh_ui(new_selection)
             else:
@@ -380,7 +381,7 @@ class ClassicProjectView(ProjectView, ListContainer):
         self._sync_selection_to_action_manager()
         deleted_element = None
         old_selection = self._get_selection_state().copy()
-        deleted_element, new_selection = self.element_action.cut_element()
+        deleted_element, _removal_state, new_selection = self.element_action.cut_element()
         if deleted_element:
             if new_selection:
                 self.refresh_ui(new_selection)
