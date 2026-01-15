@@ -1,7 +1,8 @@
-# pylint: disable=C0114, C0115, C0116, W0246, E0611, R0917, R0913, W0613
+# pylint: disable=C0114, C0115, C0116, W0246, E0611, R0917, R0913, W0613, R0911, R0912
 from PySide6.QtCore import QObject
 from PySide6.QtWidgets import QMessageBox
 from .. config.constants import constants
+from .. common_project.selection_state import SelectionState
 from .project_handler import ProjectHandler
 
 
@@ -11,6 +12,80 @@ class ElementActionManager(ProjectHandler, QObject):
     def __init__(self, project_holder, parent=None):
         ProjectHandler.__init__(self, project_holder)
         QObject.__init__(self, parent)
+
+    def new_state_after_delete(self, state):
+        job_idx, act_idx, sub_idx = state.to_tuple()
+        if not state.are_indices_valid():
+            return SelectionState(-1, -1, -1)
+        if sub_idx >= 0:
+            if job_idx >= self.num_project_jobs():
+                return SelectionState(-1, -1, -1)
+            job = self.project_job(job_idx)
+            if act_idx >= len(job.sub_actions):
+                return SelectionState(job_idx, -1, -1)
+            action = job.sub_actions[act_idx]
+            num_sub = len(action.sub_actions) + 1
+            if sub_idx < num_sub - 1:
+                return SelectionState(job_idx, act_idx, sub_idx)
+            return SelectionState(job_idx, act_idx, sub_idx - 1)
+        if act_idx >= 0:
+            if job_idx >= self.num_project_jobs():
+                return SelectionState(-1, -1, -1)
+            job = self.project_job(job_idx)
+            num_act = len(job.sub_actions) + 1
+            if act_idx >= num_act:
+                return SelectionState(job_idx, -1, -1)
+            if act_idx < num_act - 1:
+                return SelectionState(job_idx, act_idx, -1)
+            if act_idx == 0:
+                return SelectionState(job_idx, -1, -1)
+            return (job_idx, act_idx - 1, -1)
+        num_jobs = self.num_project_jobs() + 1
+        if job_idx >= num_jobs:
+            return SelectionState(-1, -1, -1)
+        if job_idx < num_jobs - 1:
+            return SelectionState(job_idx, -1, -1)
+        if job_idx == 0:
+            return SelectionState(-1, -1, -1)
+        return SelectionState(job_idx - 1, -1, -1)
+
+    def new_state_after_clone(self, state):
+        job_idx, act_idx, sub_idx = state.to_tuple()
+        if sub_idx >= 0:
+            return SelectionState(job_idx, act_idx, sub_idx + 1)
+        if act_idx >= 0:
+            return SelectionState(job_idx, act_idx + 1, -1)
+        return SelectionState(job_idx + 1, -1, -1)
+
+    def new_state_after_insert(self, state, delta):
+        job_idx, act_idx, sub_idx = state.to_tuple()
+        if not state.are_indices_valid():
+            return SelectionState(-1, -1, -1)
+        if sub_idx >= 0:
+            if job_idx >= self.num_project_jobs():
+                return SelectionState(job_idx, act_idx, sub_idx)
+            job = self.project_job(job_idx)
+            if act_idx >= len(job.sub_actions):
+                return SelectionState(job_idx, act_idx, sub_idx)
+            action = job.sub_actions[act_idx]
+            num_sub = len(action.sub_actions) + 1
+            new_sub_idx = sub_idx + delta
+            if 0 <= new_sub_idx < num_sub:
+                return SelectionState(job_idx, act_idx, new_sub_idx)
+        elif act_idx >= 0:
+            if job_idx >= self.num_project_jobs():
+                return SelectionState(job_idx, act_idx, -1)
+            job = self.project_job(job_idx)
+            num_act = len(job.sub_actions) + 1
+            new_act_idx = act_idx + delta
+            if 0 <= new_act_idx < num_act:
+                return SelectionState(job_idx, new_act_idx, -1)
+        else:
+            num_jobs = self.num_project_jobs() + 1
+            new_job_idx = job_idx + delta
+            if 0 <= new_job_idx < num_jobs:
+                return SelectionState(new_job_idx, -1, -1)
+        return SelectionState(job_idx, act_idx, sub_idx)
 
     def is_job_selected(self):
         return self.selection_state.is_job_selected()

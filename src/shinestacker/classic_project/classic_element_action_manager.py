@@ -9,49 +9,31 @@ class ClassicElementActionManager(ElementActionManager):
         super().__init__(project_holder, parent)
         self.selection_state = selection_state
 
-    def new_row_after_clone(self, job, action_row, is_sub_action, cloned):
-        return action_row + 1 if is_sub_action else \
-            sum(1 + len(action.sub_actions)
-                for action in job.sub_actions[:job.sub_actions.index(cloned)])
+    @staticmethod
+    def state_to_rows(project, selection_state):
+        if not selection_state or not selection_state.is_valid():
+            return (-1, -1)
+        job_row = selection_state.job_index
+        if selection_state.is_job_selected():
+            return (job_row, -1)
+        if selection_state.job_index < 0:
+            return (-1, -1)
+        job = project.jobs[selection_state.job_index]
+        action_row = 0
+        for i, action in enumerate(job.sub_actions):
+            if i == selection_state.action_index:
+                if selection_state.is_subaction_selected():
+                    action_row += selection_state.subaction_index + 1
+                return (job_row, action_row)
+            action_row += 1
+            action_row += len(action.sub_actions)
+        return (job_row, -1)
 
-    def new_row_after_insert(self, action_row, selection, delta):
-        new_row = action_row
-        if not selection.is_subaction_selected():
-            new_index = selection.action_index + delta
-            actions = self.get_job_actions(selection)
-            if actions and 0 <= new_index < len(actions):
-                new_row = 0
-                for i in range(new_index):
-                    action = actions[i]
-                    new_row += 1 + len(action.sub_actions)
-        else:
-            new_index = selection.subaction_index + delta
-            sub_actions = self.get_sub_actions(selection)
-            if sub_actions and 0 <= new_index < len(sub_actions):
-                new_row = 1 + new_index
-                actions = self.get_job_actions(selection)
-                if actions:
-                    for i in range(selection.action_index):
-                        action = actions[i]
-                        new_row += 1 + len(action.sub_actions)
-        return new_row
-
-    def new_row_after_delete(self, action_row, selection):
-        if selection.is_subaction_selected():
-            sub_actions = self.get_sub_actions(selection)
-            new_row = action_row if selection.subaction_index < len(sub_actions) else action_row - 1
-        else:
-            actions = self.get_job_actions(selection)
-            if selection.action_index == 0:
-                new_row = 0 if len(actions) > 0 else -1
-            elif selection.action_index < len(actions):
-                new_row = action_row
-            elif selection.action_index == len(actions):
-                action = actions[selection.action_index - 1]
-                new_row = action_row - len(action.sub_actions) - 1
-            else:
-                new_row = None
-        return new_row
+    def get_current_action_row(self, selection_state=None):
+        if selection_state is None:
+            selection_state = self.selection_state
+        _, action_row = self.state_to_rows(self.project(), selection_state)
+        return action_row
 
     def get_action(self, selection):
         if not selection.is_action_selected() and not selection.is_subaction_selected():
@@ -79,7 +61,6 @@ class ClassicElementActionManager(ElementActionManager):
     def delete_element(self, confirm=True):
         selection = self.selection_state
         deleted_element = None
-        new_selection = False
         if selection.is_job_selected():
             if not 0 <= selection.job_index < self.num_project_jobs():
                 return None, False
@@ -89,7 +70,6 @@ class ClassicElementActionManager(ElementActionManager):
                     return None, False
             self.mark_as_modified(True, "Delete Job", "delete", (selection.job_index, -1, -1))
             deleted_element = self.project().jobs.pop(selection.job_index)
-            new_selection = rows_to_state(self.project(), -1, -1)
         elif selection.is_action_selected() or selection.is_subaction_selected():
             element = self.get_action(selection)
             container = self.get_sub_actions(selection) if selection.is_subaction_selected() \
@@ -109,10 +89,7 @@ class ClassicElementActionManager(ElementActionManager):
                 position = (selection.job_index, selection.action_index, -1)
             self.mark_as_modified(True, f"Delete {element_type}", action_type_str, position)
             deleted_element = container.pop(index)
-            current_action_row = get_action_row(selection, self.get_job_actions(selection))
-            new_row = self.new_row_after_delete(current_action_row, selection)
-            new_selection = rows_to_state(self.project(), selection.job_index, new_row)
-        return deleted_element, new_selection
+        return deleted_element, self.new_state_after_delete(selection)
 
     def copy_job(self):
         if not self.selection_state.is_job_selected():
@@ -243,10 +220,7 @@ class ClassicElementActionManager(ElementActionManager):
         else:
             cloned = self.get_action(selection).clone(name_postfix=self.CLONE_POSTFIX)
             job.sub_actions.insert(selection.action_index + 1, cloned)
-        current_action_row = get_action_row(selection, self.get_job_actions(selection))
-        new_row = self.new_row_after_clone(
-            job, current_action_row, selection.is_subaction_selected(), cloned)
-        new_state = rows_to_state(self.project(), selection.job_index, new_row)
+        new_state = self.new_state_after_clone(selection)
         return True, new_state
 
     def _shift_job(self, delta):
@@ -285,10 +259,7 @@ class ClassicElementActionManager(ElementActionManager):
                 actions.insert(new_index, actions.pop(selection.action_index))
             else:
                 return False
-        current_action_row = get_action_row(selection, self.get_job_actions(selection))
-        new_row = self.new_row_after_insert(current_action_row, selection, delta)
-        new_selection = rows_to_state(self.project(), selection.job_index, new_row)
-        return new_selection
+        return self.new_state_after_insert(selection, delta)
 
     def _shift_subaction(self, delta):
         return self._shift_action(delta)
