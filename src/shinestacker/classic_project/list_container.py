@@ -4,7 +4,7 @@ from PySide6.QtCore import Qt, QEvent, QSize, Signal
 from PySide6.QtWidgets import QListWidget, QListWidgetItem, QLabel, QSizePolicy
 from .. config.constants import constants
 from .. gui.project_model import get_action_input_path, get_action_output_path
-from .classic_selection_state import ClassicSelectionState
+from .. common_project.selection_state import SelectionState
 
 
 class HandCursorListWidget(QListWidget):
@@ -26,6 +26,49 @@ class HandCursorListWidget(QListWidget):
         elif event.type() == QEvent.Leave:
             self.viewport().setCursor(Qt.ArrowCursor)
         return super().event(event)
+
+
+def get_action_row(selection_state, actions):
+    if not (selection_state.is_action_selected() or selection_state.is_subaction_selected()):
+        return -1
+    if not actions or not 0 <= selection_state.action_index < len(actions):
+        return -1
+    row = -1
+    for i, action in enumerate(actions):
+        row += 1
+        if i == selection_state.action_index:
+            if selection_state.is_subaction_selected():
+                row += selection_state.subaction_index + 1
+            return row
+        row += len(getattr(action, 'sub_actions', []))
+    return -1
+
+
+def rows_to_state(project, job_row, action_row):
+    if job_row < 0:
+        return None
+    if action_row < 0:
+        state = SelectionState(job_row, -1, -1)
+        state.widget_type = 'job'
+        return state
+    job = project.jobs[job_row]
+    current_row = -1
+    for i, action in enumerate(job.sub_actions):
+        current_row += 1
+        if current_row == action_row:
+            state = SelectionState(job_row, i, -1)
+            state.widget_type = 'action'
+            return state
+        if action.sub_actions:
+            for sub_idx, _ in enumerate(action.sub_actions):
+                current_row += 1
+                if current_row == action_row:
+                    state = SelectionState(job_row, i, sub_idx)
+                    state.widget_type = 'subaction'
+                    return state
+    state = SelectionState(job_row, -1, -1)
+    state.widget_type = 'job'
+    return state
 
 
 class ListContainer:
@@ -228,21 +271,9 @@ class ListContainer:
         if not action:
             return (job_row, action_row, None)
         job = self.project_job(job_row)
+        state = SelectionState(job_row, job.sub_actions.index(action), subaction_index)
         if sub_action:
-            return (job_row, action_row,
-                    ClassicSelectionState(
-                        job.sub_actions,
-                        action.sub_actions,
-                        job.sub_actions.index(action),
-                        subaction_index,
-                        job_index=job_row,
-                        widget_type='subaction'
-                    ))
-        return (job_row, action_row,
-                ClassicSelectionState(
-                    job.sub_actions,
-                    None,
-                    job.sub_actions.index(action),
-                    job_index=job_row,
-                    widget_type='action'
-                ))
+            state.widget_type = 'subaction'
+        else:
+            state.widget_type = 'action'
+        return (job_row, action_row, state)

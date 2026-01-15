@@ -9,10 +9,10 @@ from .. gui.action_config_dialog import ActionConfigDialog
 from .. gui.project_model import ActionConfig
 from .. common_project.run_worker import JobLogWorker, ProjectLogWorker
 from .. common_project.project_view import ProjectView
+from .. common_project.selection_state import SelectionState
 from .tab_widget import TabWidgetWithPlaceholder
 from .gui_run import RunWindow
-from .list_container import ListContainer
-from .classic_selection_state import ClassicSelectionState, rows_to_state
+from .list_container import ListContainer, rows_to_state, get_action_row
 from .classic_element_action_manager import ClassicElementActionManager
 
 
@@ -57,7 +57,7 @@ class ClassicProjectView(ProjectView, ListContainer):
         """
         QApplication.instance().setStyleSheet(
             self.style_dark if dark_theme else self.style_light)
-        self.selection_state = ClassicSelectionState(None, None, -1, -1, -1, None)
+        self.selection_state = SelectionState(-1, -1, -1)
         self.element_action = ClassicElementActionManager(
             project_holder, self.selection_state, self.parent())
         self._saved_selection = None
@@ -132,7 +132,11 @@ class ClassicProjectView(ProjectView, ListContainer):
                 action_row = -1
             elif restore_state.is_action_selected() or restore_state.is_subaction_selected():
                 job_row = restore_state.job_index
-                action_row = restore_state.get_action_row()
+                actions = None
+                if job_row >= 0:
+                    job = self.project_job(job_row)
+                    actions = job.sub_actions if job else None
+                action_row = get_action_row(restore_state, actions)
         self.clear_job_list()
         for job in self.project_jobs():
             self.add_list_item(self.job_list(), job, False)
@@ -356,10 +360,14 @@ class ClassicProjectView(ProjectView, ListContainer):
                 success = self.element_action.paste_element()
                 if success:
                     current_state = self._get_selection_state()
+                    actions = None
+                    if current_state.job_index >= 0:
+                        job = self.project_job(current_state.job_index)
+                        if job:
+                            actions = job.sub_actions
+                    action_row = get_action_row(current_state, actions)
                     self.refresh_ui(rows_to_state(
-                        self.project(),
-                        current_state.job_index,
-                        current_state.get_action_row()))
+                        self.project(), current_state.job_index, action_row))
             else:
                 self.refresh_ui()
         if selection and selection.is_valid():
@@ -633,20 +641,13 @@ class ClassicProjectView(ProjectView, ListContainer):
         if self.action_list_has_focus() and self.num_selected_actions() > 0:
             _job_row, _action_row, pos = self.get_current_action()
             if pos is not None:
-                self.selection_state.actions = pos.actions
-                self.selection_state.sub_actions = pos.sub_actions
-                self.selection_state.action_index = pos.action_index
-                self.selection_state.subaction_index = pos.subaction_index
-                self.selection_state.job_index = pos.job_index
+                self.selection_state.set_indices(
+                    pos.job_index, pos.action_index, pos.subaction_index)
                 self.selection_state.widget_type = pos.widget_type
         elif self.job_list_has_focus() and self.num_selected_jobs() > 0:
             job_idx = self.current_job_index()
             if 0 <= job_idx < self.num_project_jobs():
-                self.selection_state.actions = None
-                self.selection_state.sub_actions = None
-                self.selection_state.action_index = -1
-                self.selection_state.subaction_index = -1
-                self.selection_state.job_index = job_idx
+                self.selection_state.set_indices(job_idx, -1, -1)
                 self.selection_state.widget_type = 'job'
         else:
             self.selection_state.reset()
