@@ -38,6 +38,7 @@ class BaseWidget(QFrame):
         self._init_widget(data_object)
         self._update_stylesheet()
         self.enabled_toggled.connect(self._on_enabled_toggled)
+        self.setCursor(Qt.ArrowCursor)
 
     def _init_widget(self, data_object):
         self.setMinimumHeight(self.min_height)
@@ -241,6 +242,16 @@ class BaseWidget(QFrame):
                 widget.contextMenuEvent(event)
                 break
             widget = widget.parent()
+        event.accept()
+
+    def enterEvent(self, event):
+        super().enterEvent(event)
+        self.setCursor(Qt.PointingHandCursor)
+        event.accept()
+
+    def leaveEvent(self, event):
+        super().leaveEvent(event)
+        self.setCursor(Qt.ArrowCursor)
         event.accept()
     # pylint: enable=C0103
 
