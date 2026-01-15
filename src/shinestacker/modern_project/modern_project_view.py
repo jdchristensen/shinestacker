@@ -14,7 +14,6 @@ from .. common_project.project_view import ProjectView
 from .. common_project.selection_state import SelectionState
 from .job_widget import JobWidget
 from .progress_mapper import ProgressMapper
-from .element_operations import ElementOperations
 from .progress_signal_handler import ProgressSignalHandler, SignalConnector
 from .selection_navigation_manager import SelectionNavigationManager
 from .modern_element_action_manager import ModernElementActionManager
@@ -37,7 +36,6 @@ class ModernProjectView(ProjectView):
         self.show_status_message = None
         self._worker = None
         self.progress_mapper = ProgressMapper()
-        self.element_ops = ElementOperations(project_holder)
         self.actions_layout_horizontal = False
         self.subactions_layout_vertical = False
         self.progress_handler = ProgressSignalHandler(
@@ -614,7 +612,8 @@ class ModernProjectView(ProjectView):
                     self._paste_element_ui_only(old_selection)
             else:
                 success = self._paste_element_ui_only(old_selection)
-        self._paste_element_ui_only(selection)
+        else:
+            success = self._paste_element_ui_only(selection)
         return success, old_selection
 
     def _paste_element_ui_only(self, selection):

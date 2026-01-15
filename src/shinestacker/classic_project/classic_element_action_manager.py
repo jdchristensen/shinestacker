@@ -68,25 +68,6 @@ class ClassicElementActionManager(ElementActionManager):
             deleted_element = container.pop(index)
         return deleted_element, self.new_state_after_delete(selection)
 
-    def copy_job(self):
-        if not self.selection_state.is_job_selected():
-            return
-        job_index = self.selection_state.job_index
-        if 0 <= job_index < self.num_project_jobs():
-            job_clone = self.project().jobs[job_index].clone()
-            self.set_copy_buffer(job_clone)
-
-    def copy_action(self):
-        selection = self.selection_state
-        if not (selection.is_action_selected() or selection.is_subaction_selected()):
-            return
-        action = self.get_action(selection)
-        if action is not None:
-            self.set_copy_buffer(action.clone())
-
-    def copy_subaction(self):
-        self.copy_action()
-
     def paste_element(self):
         if not self.has_copy_buffer():
             return False

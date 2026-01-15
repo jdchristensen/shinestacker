@@ -2,13 +2,11 @@
 from .. config.constants import constants
 from .. common_project.element_action_manager import ElementActionManager
 from .. common_project.selection_state import SelectionState
-from .element_operations import ElementOperations
 
 
 class ModernElementActionManager(ElementActionManager):
     def __init__(self, project_holder, selection_state, parent=None):
         super().__init__(project_holder, parent)
-        self.element_ops = ElementOperations(project_holder)
         self.selection_state = selection_state
         self.selection_nav = None
 
@@ -117,27 +115,6 @@ class ModernElementActionManager(ElementActionManager):
         for job in self.project().jobs:
             job.set_enabled_all(enabled)
 
-    def copy_job(self):
-        job_clone = self.element_ops.copy_job(self.selection_state.job_index)
-        if job_clone:
-            self.set_copy_buffer(job_clone)
-
-    def copy_action(self):
-        if not self.selection_state.is_action_selected():
-            return
-        job_idx, action_idx, _ = self.selection_state.to_tuple()
-        job_clone = self.element_ops.copy_action(job_idx, action_idx)
-        if job_clone:
-            self.set_copy_buffer(job_clone)
-
-    def copy_subaction(self):
-        if not self.selection_state.is_subaction_selected():
-            return
-        job_idx, action_idx, subaction_idx = self.selection_state.to_tuple()
-        job_clone = self.element_ops.copy_subaction(job_idx, action_idx, subaction_idx)
-        if job_clone:
-            self.set_copy_buffer(job_clone)
-
     def paste_element(self):
         if not self.has_copy_buffer():
             return False
@@ -166,7 +143,7 @@ class ModernElementActionManager(ElementActionManager):
                 copy_buffer, self.selection_state.job_index,
                 "Paste Action", "paste", (self.selection_state.job_index, new_action_index, -1))
             if success:
-                self.selection_state = self.new_state_after_insert(self.selection_state, 0)
+                self.selection_state.copy_from(self.new_state_after_insert(self.selection_state, 0))
             return success
         if self.num_project_jobs() == 0:
             new_job_index = 0
@@ -176,7 +153,7 @@ class ModernElementActionManager(ElementActionManager):
             copy_buffer, self.selection_state.job_index,
             "Paste Job", "paste", (new_job_index, -1, -1))
         if success:
-            self.selection_state = self.new_state_after_insert(self.selection_state, 1)
+            self.selection_state.copy_from(self.new_state_after_insert(self.selection_state, 1))
         return success
 
     def paste_action(self):
@@ -225,7 +202,7 @@ class ModernElementActionManager(ElementActionManager):
             (self.selection_state.job_index, self.selection_state.action_index,
              new_subaction_index))
         action.sub_actions.insert(new_subaction_index, copy_buffer.clone())
-        self.selection_state = new_state
+        self.selection_state.copy_from(new_state)
         return True
 
     def cut_element(self):
@@ -238,7 +215,7 @@ class ModernElementActionManager(ElementActionManager):
         if not self.selection_state.is_job_selected():
             return False
         prev_sel = self.selection_state.copy()
-        new_index = self.element_ops.shift_job(
+        new_index = self._op_shift_job(
             prev_sel.job_index, delta)
         if new_index != prev_sel.job_index:
             self.selection_state.set_job(new_index)
@@ -249,7 +226,7 @@ class ModernElementActionManager(ElementActionManager):
         if not self.selection_state.is_action_selected():
             return False
         prev_sel = self.selection_state.copy()
-        new_index = self.element_ops.shift_action(
+        new_index = self._op_shift_action(
             prev_sel.job_index, prev_sel.action_index, delta)
         if new_index != prev_sel.action_index:
             self.selection_state.set_action(prev_sel.job_index, new_index)
@@ -260,7 +237,7 @@ class ModernElementActionManager(ElementActionManager):
         if not self.selection_state.is_subaction_selected():
             return False
         prev_sel = self.selection_state.copy()
-        new_index = self.element_ops.shift_subaction(
+        new_index = self._op_shift_subaction(
             prev_sel.job_index, prev_sel.action_index, prev_sel.subaction_index, delta)
         if new_index != prev_sel.subaction_index:
             self.selection_state.set_subaction(prev_sel.job_index, prev_sel.action_index, new_index)

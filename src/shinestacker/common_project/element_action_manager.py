@@ -1,4 +1,4 @@
-# pylint: disable=C0114, C0115, C0116, W0246, E0611, R0917, R0913, W0613, R0911, R0912
+# pylint: disable=C0114, C0115, C0116, W0246, E0611, R0917, R0913, W0613, R0911, R0912, R0904
 from PySide6.QtCore import QObject
 from PySide6.QtWidgets import QMessageBox
 from .. config.constants import constants
@@ -154,6 +154,76 @@ class ElementActionManager(ProjectHandler, QObject):
         self.project().jobs.insert(new_job_index, element)
         return True, new_job_index
 
+    def _op_delete_job(self, job_index):
+        if 0 <= job_index < self.num_project_jobs():
+            return self.project().jobs.pop(job_index)
+        return None
+
+    def _op_delete_action(self, job_index, action_index):
+        if 0 <= job_index < self.num_project_jobs():
+            job = self.project_job(job_index)
+            if 0 <= action_index < len(job.sub_actions):
+                return job.sub_actions.pop(action_index)
+        return None
+
+    def _op_delete_subaction(self, job_index, action_index, subaction_index):
+        if 0 <= job_index < self.num_project_jobs():
+            job = self.project_job(job_index)
+            if 0 <= action_index < len(job.sub_actions):
+                action = job.sub_actions[action_index]
+                if 0 <= subaction_index < len(action.sub_actions):
+                    return action.sub_actions.pop(subaction_index)
+        return None
+
+    def _op_copy_job(self, job_index):
+        if 0 <= job_index < self.num_project_jobs():
+            return self.project_job(job_index).clone()
+        return None
+
+    def _op_copy_action(self, job_index, action_index):
+        if 0 <= job_index < self.num_project_jobs():
+            job = self.project_job(job_index)
+            if 0 <= action_index < len(job.sub_actions):
+                return job.sub_actions[action_index].clone()
+        return None
+
+    def _op_copy_subaction(self, job_index, action_index, subaction_index):
+        if 0 <= job_index < self.num_project_jobs():
+            job = self.project_job(job_index)
+            if 0 <= action_index < len(job.sub_actions):
+                action = job.sub_actions[action_index]
+                if 0 <= subaction_index < len(action.sub_actions):
+                    return action.sub_actions[subaction_index].clone()
+        return None
+
+    def _op_shift_job(self, job_index, delta):
+        jobs = self.project().jobs
+        new_index = job_index + delta
+        if 0 <= new_index < len(jobs):
+            jobs.insert(new_index, jobs.pop(job_index))
+            return new_index
+        return job_index
+
+    def _op_shift_action(self, job_index, action_index, delta):
+        if 0 <= job_index < self.num_project_jobs():
+            job = self.project_job(job_index)
+            new_index = action_index + delta
+            if 0 <= new_index < len(job.sub_actions):
+                job.sub_actions.insert(new_index, job.sub_actions.pop(action_index))
+                return new_index
+        return action_index
+
+    def _op_shift_subaction(self, job_index, action_index, subaction_index, delta):
+        if 0 <= job_index < self.num_project_jobs():
+            job = self.project_job(job_index)
+            if 0 <= action_index < len(job.sub_actions):
+                action = job.sub_actions[action_index]
+                new_index = subaction_index + delta
+                if 0 <= new_index < len(action.sub_actions):
+                    action.sub_actions.insert(new_index, action.sub_actions.pop(subaction_index))
+                    return new_index
+        return subaction_index
+
     def copy_element(self):
         if self.is_job_selected():
             self.copy_job()
@@ -165,11 +235,26 @@ class ElementActionManager(ProjectHandler, QObject):
     def copy_job(self):
         if not self.is_job_selected():
             return
-        job_index = self.get_selected_job_index()
-        if not 0 <= job_index < self.num_project_jobs():
+        job_clone = self._op_copy_job(self.get_selected_job_index())
+        if job_clone:
+            self.set_copy_buffer(job_clone)
+
+    def copy_action(self):
+        if not self.is_action_selected():
             return
-        job_clone = self.project().jobs[job_index].clone()
-        self.set_copy_buffer(job_clone)
+        selection = self.selection_state
+        element_clone = self._op_copy_action(selection.job_index, selection.action_index)
+        if element_clone:
+            self.set_copy_buffer(element_clone)
+
+    def copy_subaction(self):
+        if not self.is_subaction_selected():
+            return
+        selection = self.selection_state
+        element_clone = self._op_copy_subaction(
+            selection.job_index, selection.action_index, selection.subaction_index)
+        if element_clone:
+            self.set_copy_buffer(element_clone)
 
     def clone_element(self):
         selection = self.selection_state
