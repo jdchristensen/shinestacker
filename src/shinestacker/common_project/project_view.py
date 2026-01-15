@@ -227,11 +227,42 @@ class ProjectView(QWidget, LogManager, ProjectHandler):
         if not self._show_action_config_dialog(action):
             return False, None
         insert_index = self.calculate_action_insertion_index(self.selection_state, job)
-        self.mark_as_modified(True, "Add Action", "add", (job_index, insert_index, -1))
+        self.mark_as_modified(
+            True, "Add Action", "add", (job_index, insert_index, -1))
         job.sub_actions.insert(insert_index, action)
         position = (job_index, insert_index, -1)
         self._update_ui_after_add_action(action, position)
         return True, position
+
+    def add_sub_action(self, type_name):
+        if not self._before_add_sub_action():
+            return False, None
+        job_index = self.selection_state.job_index
+        action_index = self.selection_state.action_index
+        if job_index < 0 or action_index < 0:
+            return False, None
+        is_valid, error_title, error_msg = self.validate_add_subaction(job_index, action_index)
+        if not is_valid:
+            self.show_warning(error_title, error_msg)
+            return False, None
+        job = self.project_job(job_index)
+        action = job.sub_actions[action_index]
+        sub_action = ActionConfig(type_name)
+        if not self._show_action_config_dialog(sub_action):
+            return False, None
+        insert_index = self.calculate_subaction_insertion_index(self.selection_state, action)
+        self.mark_as_modified(
+            True, "Add Sub-action", "add", (job_index, action_index, insert_index))
+        action.sub_actions.insert(insert_index, sub_action)
+        position = (job_index, action_index, insert_index)
+        self._update_ui_after_add_sub_action(sub_action, position)
+        return True, position
+
+    def _before_add_sub_action(self):
+        return True
+
+    def _update_ui_after_add_sub_action(self, sub_action, position):
+        raise NotImplementedError
 
     def _before_add_action(self):
         return True

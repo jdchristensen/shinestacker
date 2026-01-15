@@ -6,7 +6,6 @@ from PySide6.QtCore import Qt, QTimer, Signal, Slot
 from PySide6.QtGui import QCursor
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QSplitter, QScrollArea, QDialog, QMessageBox
 from .. config.constants import constants
-from .. gui.project_model import ActionConfig
 from .. gui.gui_logging import QTextEditLogger
 from .. gui.action_config_dialog import ActionConfigDialog
 from .. common_project.run_worker import JobLogWorker, ProjectLogWorker
@@ -953,43 +952,22 @@ class ModernProjectView(ProjectView):
     def current_job_index(self):
         return self.selection_state.job_index
 
-    def add_sub_action(self, type_name):
-        if not self.enforce_stop_run():
-            return False, None
-        job_index = self.selection_state.job_index
-        action_index = self.selection_state.action_index
-        is_valid, error_title, error_msg = self.validate_add_subaction(job_index, action_index)
-        if not is_valid:
-            self.show_warning(error_title, error_msg)
-            return False, None
-        if 0 <= job_index < self.num_project_jobs():
-            job = self.project().jobs[job_index]
-            if 0 <= action_index < len(job.sub_actions):
-                action = job.sub_actions[action_index]
-                insert_index = self.calculate_subaction_insertion_index(
-                    self.selection_state, action)
-                sub_action = ActionConfig(type_name)
-                self.action_dialog = ActionConfigDialog(
-                    sub_action, self.current_file_directory(), self.parent())
-                if self.action_dialog.exec() == QDialog.Accepted:
-                    self.mark_as_modified(
-                        True, "Add Sub-action", "add", (job_index, action_index, insert_index))
-                    action.sub_actions.insert(insert_index, sub_action)
-                    new_state = SelectionState(job_index, action_index, insert_index)
-                    subaction_widget = self._insert_widget(new_state, sub_action)
-                    if subaction_widget:
-                        self.selection_state.copy_from(new_state)
-                        self.selection_state.widget_type = 'subaction'
-                        if self.selected_widget:
-                            self.selected_widget.set_selected(False)
-                        subaction_widget.set_selected(True)
-                        self.selected_widget = subaction_widget
-                        self._ensure_selected_visible()
-                        self._refresh_job_widget_signals()
-                    new_position = (job_index, action_index, insert_index)
-                    self.update_delete_action_state_requested.emit()
-                    return True, new_position
-        return False, None
+    def _before_add_sub_action(self):
+        return self.enforce_stop_run()
+
+    def _update_ui_after_add_sub_action(self, sub_action, position):
+        job_index, action_index, insert_index = position
+        new_state = SelectionState(job_index, action_index, insert_index)
+        subaction_widget = self._insert_widget(new_state, sub_action)
+        if subaction_widget:
+            self.selection_state.copy_from(new_state)
+            self.selection_state.widget_type = 'subaction'
+            if self.selected_widget:
+                self.selected_widget.set_selected(False)
+            subaction_widget.set_selected(True)
+            self.selected_widget = subaction_widget
+            self._ensure_selected_visible()
+            self._refresh_job_widget_signals()
 
     def update_added_element(self, indices_tuple):
         job_idx, action_idx, subaction_idx = indices_tuple

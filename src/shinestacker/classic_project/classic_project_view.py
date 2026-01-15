@@ -5,7 +5,6 @@ from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel, QSplitter, QMessageBox, QApplication, QDialog)
 from .. config.constants import constants
 from .. gui.action_config_dialog import ActionConfigDialog
-from .. gui.project_model import ActionConfig
 from .. gui.colors import ColorPalette
 from .. common_project.run_worker import JobLogWorker, ProjectLogWorker
 from .. common_project.project_view import ProjectView
@@ -490,39 +489,28 @@ class ClassicProjectView(ProjectView, ListContainer):
     def current_job_index(self):
         return ListContainer.current_job_index(self)
 
-    def add_sub_action(self, type_name):
+    def _before_add_sub_action(self):
         self._sync_selection_to_action_manager()
-        current_job_index = self.current_job_index()
-        current_action_index = self.current_action_index()
-        if current_job_index < 0 or current_action_index < 0 or \
-                current_job_index >= self.num_project_jobs():
-            return False, None
-        job = self.project_job(current_job_index)
-        selection = self.selection_state
-        if not selection.is_action_selected() and not selection.is_subaction_selected():
-            return False, None
-        action_index = selection.action_index
-        is_valid, error_title, error_msg = self.validate_add_subaction(
-            current_job_index, action_index)
-        if not is_valid:
-            self.show_warning(error_title, error_msg)
-            return False, None
-        action = job.sub_actions[action_index]
-        insert_index = self.calculate_subaction_insertion_index(selection, action)
-        sub_action = ActionConfig(type_name)
-        self.action_dialog = ActionConfigDialog(
-            sub_action, self.current_file_directory(), self.parent())
-        if self.action_dialog.exec() == QDialog.Accepted:
-            self.mark_as_modified(
-                True, "Add Sub-action", "add", (current_job_index, action_index, insert_index))
-            action.sub_actions.insert(insert_index, sub_action)
-            gui_insert_pos = self.get_insertion_position(selection)[0]
-            self.add_list_item(self.action_list(), sub_action, True, gui_insert_pos)
-            new_position = (current_job_index, action_index, insert_index)
-            self.set_current_action(gui_insert_pos)
-            self.action_list_item(gui_insert_pos).setSelected(True)
-            return True, new_position
-        return False, None
+        return True
+
+    def _update_ui_after_add_sub_action(self, sub_action, position):
+        job_index, action_index, insert_index = position
+        gui_insert_pos = self._calculate_gui_sub_action_position(
+            job_index, action_index, insert_index)
+        self.add_list_item(self.action_list(), sub_action, True, gui_insert_pos)
+        self.set_current_action(gui_insert_pos)
+        self.action_list_item(gui_insert_pos).setSelected(True)
+
+    def _calculate_gui_sub_action_position(self, job_index, action_index, subaction_index):
+        job = self.project_job(job_index)
+        row = 0
+        for i in range(action_index):
+            if i < len(job.sub_actions):
+                row += 1
+                action = job.sub_actions[i]
+                row += len(action.sub_actions)
+        row += subaction_index + 1
+        return row
 
     def update_added_element(self, _indices_tuple):
         self.refresh_ui()
