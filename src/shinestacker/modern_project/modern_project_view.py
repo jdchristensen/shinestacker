@@ -685,13 +685,11 @@ class ModernProjectView(ProjectView):
             job = self.project().jobs[job_idx]
             if selection.is_job_selected():
                 element = self.project_job(job_idx)
-                computed_state = SelectionState(job_idx + 1, -1, -1)
             elif selection.is_action_selected():
                 action_idx = selection.action_index
                 if not 0 <= action_idx < len(job.sub_actions):
                     return False
                 element = job.sub_actions[action_idx]
-                computed_state = SelectionState(job_idx, action_idx + 1, -1)
             elif selection.is_subaction_selected():
                 action_idx = selection.action_index
                 subaction_idx = selection.subaction_index
@@ -701,10 +699,10 @@ class ModernProjectView(ProjectView):
                 if not 0 <= subaction_idx < len(action.sub_actions):
                     return False
                 element = action.sub_actions[subaction_idx]
-                computed_state = SelectionState(job_idx, action_idx, subaction_idx + 1)
             else:
                 return False
-            insert_state = new_state if new_state else computed_state
+            insert_state = new_state if new_state else \
+                self.element_action.new_state_after_clone(selection)
             new_widget = self._insert_widget(
                 insert_state, element.clone(name_postfix=self.element_action.CLONE_POSTFIX))
             if new_widget:
