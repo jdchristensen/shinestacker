@@ -12,7 +12,6 @@ from .. gui.action_config_dialog import ActionConfigDialog
 from .. common_project.run_worker import JobLogWorker, ProjectLogWorker
 from .. common_project.project_view import ProjectView
 from .. common_project.selection_state import SelectionState
-from .. common_project.element_action_manager import ElementActionManager
 from .job_widget import JobWidget
 from .progress_mapper import ProgressMapper
 from .progress_signal_handler import ProgressSignalHandler, SignalConnector
@@ -32,7 +31,6 @@ class ModernProjectView(ProjectView):
         self.scroll_content = None
         self.project_layout = None
         self.selected_widget = None
-        self.selection_state = SelectionState()
         self.show_status_message = None
         self._worker = None
         self.progress_mapper = ProgressMapper()
@@ -48,9 +46,6 @@ class ModernProjectView(ProjectView):
             self.selection_state,
             self._selection_callback
         )
-        self.element_action = ElementActionManager(
-            project_holder, self.selection_state, self.parent())
-        self._saved_selection = None
         self._setup_ui()
         self.change_theme(dark_theme)
         self.setFocusPolicy(Qt.StrongFocus)

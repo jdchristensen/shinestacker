@@ -10,7 +10,6 @@ from .. gui.colors import ColorPalette
 from .. common_project.run_worker import JobLogWorker, ProjectLogWorker
 from .. common_project.project_view import ProjectView
 from .. common_project.selection_state import SelectionState
-from .. common_project.element_action_manager import ElementActionManager
 from .tab_widget import TabWidgetWithPlaceholder
 from .gui_run import RunWindow
 from .list_container import ListContainer, get_action_row
@@ -69,10 +68,6 @@ class ClassicProjectView(ProjectView, ListContainer):
         QApplication.instance().setStyleSheet(
             self.style_dark if dark_theme else self.style_light)
         self.set_style_sheet(dark_theme)
-        self.selection_state = SelectionState(-1, -1, -1)
-        self.element_action = ElementActionManager(
-            project_holder, self.selection_state, self.parent())
-        self._saved_selection = None
         self.job_list().enter_key_pressed.connect(self.edit_current_action)
         self.action_list().enter_key_pressed.connect(self.edit_current_action)
         self._setup_ui()
@@ -322,19 +317,6 @@ class ClassicProjectView(ProjectView, ListContainer):
         current_selection = self._get_selection_state()
         if current_selection:
             self.element_action.selection_state = current_selection
-
-    def edit_current_action(self):
-        current_action = None
-        job_row = self.current_job_index()
-        if 0 <= job_row < self.num_project_jobs():
-            job = self.project_job(job_row)
-            if self.job_list_has_focus():
-                current_action = job
-            elif self.action_list_has_focus():
-                job_row, _action_row, pos = self.get_current_action()
-                current_action = self.element_action.get_action(pos)
-        if current_action is not None:
-            self.edit_action(current_action)
 
     def delete_element(self, selection=None, update_project=True, confirm=True):
         self._sync_selection_to_action_manager()

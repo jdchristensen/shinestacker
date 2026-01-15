@@ -11,6 +11,8 @@ from .. gui.gui_logging import LogManager
 from .. gui.action_config_dialog import ActionConfigDialog
 from .. gui.project_model import (
     get_action_working_path, get_action_input_path, get_action_output_path)
+from .. common_project.selection_state import SelectionState
+from .. common_project.element_action_manager import ElementActionManager
 from .project_handler import ProjectHandler
 
 
@@ -35,6 +37,10 @@ class ProjectView(QWidget, LogManager, ProjectHandler):
         QWidget.__init__(self, parent)
         LogManager.__init__(self)
         self.dark_theme = dark_theme
+        self.selection_state = SelectionState()
+        self.element_action = ElementActionManager(
+            project_holder, self.selection_state, self.parent())
+        self._saved_selection = None
         self._setup_common_menu_actions()
 
     def _setup_common_menu_actions(self):
