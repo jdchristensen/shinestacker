@@ -6,14 +6,13 @@ from PySide6.QtCore import Qt
 from PySide6.QtGui import QGuiApplication, QAction, QPalette
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QToolBar, QMainWindow, QApplication, QStackedWidget, QMessageBox,
-    QFileDialog, QDialog)
+    QFileDialog)
 from .. config.constants import constants
 from .. config.app_config import AppConfig
 from .. core.exceptions import InvalidProjectError
 from .. core.core_utils import get_app_base_path
 from .. gui.project_model import Project
 from .. gui.sys_mon import StatusBarSystemMonitor
-from .. gui.project_model import ActionConfig
 from .. gui.action_config_dialog import ActionConfigDialog
 from .. common_project.project_undo_manager import ProjectUndoManager
 from .. common_project.project_handler import ProjectHolder, ProjectIOHandler
@@ -57,7 +56,7 @@ class MainWindow(ProjectIOHandler, QMainWindow):
             "Enable All": self.enable_all,
             "Disable All": self.disable_all,
             "Expert Options": self.toggle_expert_options,
-            "Add Job": self.perform_add_job,
+            "Add Job": self.add_job,
             "Run Job": self.run_job,
             "Run All Jobs": self.run_all_jobs,
             "Stop": self.stop,
@@ -360,18 +359,10 @@ class MainWindow(ProjectIOHandler, QMainWindow):
             self.refresh_ui()
             self.show_status_message("Undo performed")
 
-    def perform_add_job(self):
-        if not self.current_view.enforce_stop_run():
-            return
-        job_action = ActionConfig("Job")
-        self.action_dialog = ActionConfigDialog(job_action, self.current_file_directory(), self)
-        if self.action_dialog.exec() == QDialog.Accepted:
-            new_job_index = 0 if self.num_project_jobs() == 0 \
-                else self.current_view.current_job_index() + 1
-            self.mark_as_modified(True, "Add Job", "add", (new_job_index, -1, -1))
-            self.project_jobs().insert(new_job_index, job_action)
+    def add_job(self):
+        new_job_index = self.current_view.add_job()
+        if new_job_index >= 0:
             self.set_enabled_file_open_close_actions(True)
-            self.current_view.refresh_and_select_job(new_job_index)
             self.on_job_count_changed()
             self.handle_widget_added((new_job_index, -1, -1))
 

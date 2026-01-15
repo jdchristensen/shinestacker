@@ -9,6 +9,7 @@ from .. core.core_utils import running_under_windows, running_under_macos
 from .. config.constants import constants
 from .. gui.gui_logging import LogManager
 from .. gui.action_config_dialog import ActionConfigDialog
+from .. gui.project_model import ActionConfig
 from .. gui.project_model import (
     get_action_working_path, get_action_input_path, get_action_output_path)
 from .. common_project.selection_state import SelectionState
@@ -196,6 +197,56 @@ class ProjectView(QWidget, LogManager, ProjectHandler):
             self.mark_as_modified(True, "Edit Action")
             self.refresh_ui()
 
+    def add_job(self):
+        if not self.enforce_stop_run():
+            return -1
+        job_action = ActionConfig("Job")
+        self.action_dialog = ActionConfigDialog(job_action, self.current_file_directory(), self)
+        if self.action_dialog.exec() == QDialog.Accepted:
+            new_job_index = 0 if self.num_project_jobs() == 0 \
+                else self.current_job_index() + 1
+            self.mark_as_modified(True, "Add Job", "add", (new_job_index, -1, -1))
+            self.project_jobs().insert(new_job_index, job_action)
+            self.refresh_and_select_job(new_job_index)
+            return new_job_index
+        return -1
+
+    def add_action(self, type_name):
+        if not self._before_add_action():
+            return False, None
+        job_index = self.current_job_index()
+        if job_index < 0:
+            return False, None
+        is_valid, error_title, error_msg = self.validate_add_action(job_index)
+        if not is_valid:
+            self.show_warning(error_title, error_msg)
+            return False, None
+        job = self.project_job(job_index)
+        action = ActionConfig(type_name)
+        action.parent = job
+        if not self._show_action_config_dialog(action):
+            return False, None
+        insert_index = self.calculate_action_insertion_index(self.selection_state, job)
+        self.mark_as_modified(True, "Add Action", "add", (job_index, insert_index, -1))
+        job.sub_actions.insert(insert_index, action)
+        position = (job_index, insert_index, -1)
+        self._update_ui_after_add_action(action, position)
+        return True, position
+
+    def _before_add_action(self):
+        return True
+
+    def _show_action_config_dialog(self, action):
+        self.action_dialog = ActionConfigDialog(
+            action, self.current_file_directory(), self.parent())
+        return self.action_dialog.exec() == QDialog.Accepted
+
+    def _update_ui_after_add_action(self, action, position):
+        raise NotImplementedError
+
+    def current_job_index(self):
+        raise NotImplementedError
+
     def refresh_ui(self):
         self.refresh_ui_signal.emit()
 
@@ -274,6 +325,9 @@ class ProjectView(QWidget, LogManager, ProjectHandler):
         raise NotImplementedError
 
     def refresh_and_restore_selection(self):
+        raise NotImplementedError
+
+    def refresh_and_select_job(self, job_idx):
         raise NotImplementedError
 
     def move_element_up(self, selection=None, update_project=True):

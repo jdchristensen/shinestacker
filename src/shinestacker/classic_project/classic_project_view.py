@@ -477,29 +477,18 @@ class ClassicProjectView(ProjectView, ListContainer):
             return -1
         return self.selection_state.subaction_index
 
-    def add_action(self, type_name):
+    def _before_add_action(self):
         self._sync_selection_to_action_manager()
-        current_job_index = self.current_job_index()
-        is_valid, error_title, error_msg = self.validate_add_action(current_job_index)
-        if not is_valid:
-            self.show_warning(error_title, error_msg)
-            return False, None
-        job = self.project_job(current_job_index)
+        return True
+
+    def _update_ui_after_add_action(self, action, position):
         selection = self.selection_state
-        insert_index = self.calculate_action_insertion_index(selection, job)
-        action = ActionConfig(type_name)
-        action.parent = self.get_current_job()
-        self.action_dialog = ActionConfigDialog(
-            action, self.current_file_directory(), self.parent())
-        if self.action_dialog.exec() == QDialog.Accepted:
-            self.mark_as_modified(True, "Add Action", "add", (current_job_index, insert_index, -1))
-            job.sub_actions.insert(insert_index, action)
-            gui_insert_pos = self.get_insertion_position(selection)[0]
-            self.add_list_item(self.action_list(), action, False, gui_insert_pos)
-            new_position = (current_job_index, insert_index, -1)
-            self.set_current_action(gui_insert_pos)
-            return True, new_position
-        return False, None
+        gui_insert_pos = self.get_insertion_position(selection)[0]
+        self.add_list_item(self.action_list(), action, False, gui_insert_pos)
+        self.set_current_action(gui_insert_pos)
+
+    def current_job_index(self):
+        return ListContainer.current_job_index(self)
 
     def add_sub_action(self, type_name):
         self._sync_selection_to_action_manager()

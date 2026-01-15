@@ -932,38 +932,26 @@ class ModernProjectView(ProjectView):
             y_margin = 0
         self.scroll_area.ensureWidgetVisible(self.selected_widget, 0, y_margin)
 
-    def add_action(self, type_name):
-        if not self.enforce_stop_run():
-            return False, None
-        job_index = self.selection_state.job_index
-        is_valid, error_title, error_msg = self.validate_add_action(job_index)
-        if not is_valid:
-            self.show_warning(error_title, error_msg)
-            return False, None
-        action = ActionConfig(type_name)
-        action.parent = self.project().jobs[job_index]
-        self.action_dialog = ActionConfigDialog(
-            action, self.current_file_directory(), self.parent())
-        if self.action_dialog.exec() == QDialog.Accepted:
-            job = self.project().jobs[job_index]
-            insert_index = self.calculate_action_insertion_index(self.selection_state, job)
-            self.mark_as_modified(True, "Add Action", "add", (job_index, insert_index, -1))
-            job.sub_actions.insert(insert_index, action)
-            new_state = SelectionState(job_index, insert_index)
-            action_widget = self._insert_widget(new_state, action)
-            if action_widget:
-                self.selection_state.copy_from(new_state)
-                self.selection_state.subaction_index = -1
-                self.selection_state.widget_type = 'action'
-                if self.selected_widget:
-                    self.selected_widget.set_selected(False)
-                action_widget.set_selected(True)
-                self.selected_widget = action_widget
-                self._ensure_selected_visible()
-                self._refresh_job_widget_signals()
-            new_position = (job_index, insert_index, -1)
-            return True, new_position
-        return False, None
+    def _before_add_action(self):
+        return self.enforce_stop_run()
+
+    def _update_ui_after_add_action(self, action, position):
+        job_index, insert_index, _ = position
+        new_state = SelectionState(job_index, insert_index)
+        action_widget = self._insert_widget(new_state, action)
+        if action_widget:
+            self.selection_state.copy_from(new_state)
+            self.selection_state.subaction_index = -1
+            self.selection_state.widget_type = 'action'
+            if self.selected_widget:
+                self.selected_widget.set_selected(False)
+            action_widget.set_selected(True)
+            self.selected_widget = action_widget
+            self._ensure_selected_visible()
+            self._refresh_job_widget_signals()
+
+    def current_job_index(self):
+        return self.selection_state.job_index
 
     def add_sub_action(self, type_name):
         if not self.enforce_stop_run():
@@ -1308,9 +1296,6 @@ class ModernProjectView(ProjectView):
         self.dark_theme = dark_theme
         for job_widget in self.job_widgets:
             job_widget.set_dark_theme(dark_theme)
-
-    def current_job_index(self):
-        return self.selection_state.job_index
 
     def refresh_and_select_job(self, job_idx):
         if job_idx < 0 or job_idx >= self.num_project_jobs():
