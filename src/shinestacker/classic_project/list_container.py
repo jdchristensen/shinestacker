@@ -206,7 +206,7 @@ class ListContainer:
             return self.action_list_count(), False
         if selection_state.is_job_selected():
             return 0, False
-        current_row = selection_state.get_action_row()
+        current_row = get_action_row(selection_state, self.action_list())
         if current_row < 0:
             return self.action_list_count(), False
         if selection_state.is_action_selected():

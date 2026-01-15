@@ -626,23 +626,41 @@ class ModernProjectView(ProjectView):
             if not self.element_action.has_copy_buffer():
                 return False
             copy_buffer = self.element_action.copy_buffer()
+            new_state = None
+            element = None
             if selection.is_job_selected():
-                if copy_buffer.type_name != constants.ACTION_JOB:
-                    return False
-                element = copy_buffer.clone()
-                new_state = SelectionState(job_idx + 1, -1, -1)
+                if copy_buffer.type_name == constants.ACTION_JOB:
+                    new_state = self.element_action.new_state_after_insert(selection, 1)
+                    element = copy_buffer.clone()
+                else:
+                    job = self.project().jobs[job_idx]
+                    new_action_index = len(job.sub_actions)
+                    new_state = SelectionState(job_idx, new_action_index, -1)
+                    element = copy_buffer.clone()
             elif selection.is_action_selected():
-                if copy_buffer.type_name not in constants.ACTION_TYPES:
+                if copy_buffer.type_name in constants.ACTION_TYPES:
+                    new_state = self.element_action.new_state_after_insert(selection, 1)
+                    element = copy_buffer.clone()
+                elif copy_buffer.type_name in constants.SUB_ACTION_TYPES:
+                    action = self.project().jobs[job_idx].sub_actions[selection.action_index]
+                    if action.type_name != constants.ACTION_COMBO:
+                        return False
+                    new_subaction_index = len(action.sub_actions)
+                    new_state = SelectionState(job_idx, selection.action_index, new_subaction_index)
+                    element = copy_buffer.clone()
+                else:
                     return False
-                element = copy_buffer.clone()
-                new_state = SelectionState(job_idx, selection.action_index + 1, -1)
             elif selection.is_subaction_selected():
                 if copy_buffer.type_name not in constants.SUB_ACTION_TYPES:
                     return False
+                action = self.project().jobs[job_idx].sub_actions[selection.action_index]
+                if action.type_name != constants.ACTION_COMBO:
+                    return False
+                new_state = self.element_action.new_state_after_insert(selection, 1)
                 element = copy_buffer.clone()
-                new_state = SelectionState(
-                    job_idx, selection.action_index, selection.subaction_index + 1)
             else:
+                return False
+            if not new_state or not element:
                 return False
             new_widget = self._insert_widget(new_state, element)
             if new_widget:

@@ -154,6 +154,78 @@ class ElementActionManager(ProjectHandler, QObject):
         self.project().jobs.insert(new_job_index, element)
         return True, new_job_index
 
+    def paste_element(self):
+        if not self.has_copy_buffer():
+            return False
+        copy_buffer = self.copy_buffer()
+        selection = self.selection_state
+        if copy_buffer.type_name == constants.ACTION_JOB:
+            return self._paste_job(copy_buffer, selection)
+        if copy_buffer.type_name in constants.ACTION_TYPES:
+            return self._paste_action(copy_buffer, selection)
+        if copy_buffer.type_name in constants.SUB_ACTION_TYPES:
+            return self._paste_subaction(copy_buffer, selection)
+        return False
+
+    def _paste_job(self, copy_buffer, selection):
+        if self.num_project_jobs() == 0:
+            new_job_index = 0
+        else:
+            new_job_index = min(max(selection.job_index + 1, 0), self.num_project_jobs())
+        success, _index = self.paste_job_logic(
+            copy_buffer, selection.job_index,
+            "Paste Job", "paste", (new_job_index, -1, -1))
+        if success:
+            new_state = self.new_state_after_insert(selection, 1)
+            self.selection_state.copy_from(new_state)
+        return success
+
+    def _paste_action(self, copy_buffer, selection):
+        if selection.job_index < 0 or selection.job_index >= self.num_project_jobs():
+            return False
+        job = self.project().jobs[selection.job_index]
+        if selection.is_action_selected():
+            new_state = self.new_state_after_insert(selection, 1)
+            new_action_index = new_state.action_index
+        elif selection.is_subaction_selected():
+            new_state = self.new_state_after_insert(selection, 1)
+            new_action_index = new_state.action_index
+        else:
+            new_action_index = len(job.sub_actions)
+            new_state = SelectionState(selection.job_index, new_action_index, -1)
+        self.mark_as_modified(
+            True, "Paste Action", "paste",
+            (selection.job_index, new_action_index, -1))
+        job.sub_actions.insert(new_action_index, copy_buffer.clone())
+        self.selection_state.copy_from(new_state)
+        return True
+
+    def _paste_subaction(self, copy_buffer, selection):
+        if not selection.is_action_selected() and not selection.is_subaction_selected():
+            return False
+        if selection.job_index < 0 or selection.job_index >= self.num_project_jobs():
+            return False
+        job = self.project().jobs[selection.job_index]
+        if selection.is_subaction_selected():
+            action_index = selection.action_index
+            new_state = self.new_state_after_insert(selection, 1)
+            new_subaction_index = new_state.subaction_index
+        else:
+            action_index = selection.action_index
+            new_subaction_index = len(job.sub_actions[action_index].sub_actions)
+            new_state = SelectionState(selection.job_index, action_index, new_subaction_index)
+        if action_index >= len(job.sub_actions):
+            return False
+        action = job.sub_actions[action_index]
+        if action.type_name != constants.ACTION_COMBO:
+            return False
+        self.mark_as_modified(
+            True, "Paste Sub-action", "paste",
+            (selection.job_index, action_index, new_subaction_index))
+        action.sub_actions.insert(new_subaction_index, copy_buffer.clone())
+        self.selection_state.copy_from(new_state)
+        return True
+
     def _op_delete_job(self, job_index):
         if 0 <= job_index < self.num_project_jobs():
             return self.project().jobs.pop(job_index)

@@ -1,5 +1,4 @@
 # pylint: disable=C0114, C0115, C0116, E0611, R0903, R0904, R0913, R0917, E1101, R0911, R0801
-from .. config.constants import constants
 from .. common_project.element_action_manager import ElementActionManager
 from .list_container import get_action_row, rows_to_state
 
@@ -67,80 +66,6 @@ class ClassicElementActionManager(ElementActionManager):
             self.mark_as_modified(True, f"Delete {element_type}", action_type_str, position)
             deleted_element = container.pop(index)
         return deleted_element, self.new_state_after_delete(selection)
-
-    def paste_element(self):
-        if not self.has_copy_buffer():
-            return False
-        copy_buffer = self.copy_buffer()
-        selection = self.selection_state
-        if selection.is_job_selected():
-            return self._paste_job(copy_buffer, selection)
-        if selection.is_action_selected() or selection.is_subaction_selected():
-            return self._paste_action(copy_buffer, selection)
-        return False
-
-    def _paste_job(self, copy_buffer, selection):
-        if copy_buffer.type_name != constants.ACTION_JOB:
-            if self.num_project_jobs() == 0:
-                return False
-            if copy_buffer.type_name not in constants.ACTION_TYPES:
-                return False
-            new_action_index = len(self.project().jobs[selection.job_index].sub_actions)
-            success, index = self.paste_job_logic(
-                copy_buffer, selection.job_index,
-                "Paste Action", "paste", (selection.job_index, new_action_index, -1))
-            if success:
-                self.selection_state.set_action(selection.job_index, index)
-            return success
-        if self.num_project_jobs() == 0:
-            new_job_index = 0
-        else:
-            new_job_index = min(max(selection.job_index + 1, 0), self.num_project_jobs())
-        success, index = self.paste_job_logic(
-            copy_buffer, selection.job_index,
-            "Paste Job", "paste", (new_job_index, -1, -1))
-        if success:
-            self.selection_state.set_job(index)
-        return success
-
-    def _paste_action(self, copy_buffer, selection):
-        if copy_buffer.type_name in constants.SUB_ACTION_TYPES:
-            target_action = None
-            insertion_index = 0
-            parent_action = None
-            if selection.job_index >= 0 and selection.action_index >= 0:
-                job = self.project().jobs[selection.job_index]
-                if selection.action_index < len(job.sub_actions):
-                    parent_action = job.sub_actions[selection.action_index]
-            if selection.is_subaction_selected():
-                if parent_action and parent_action.type_name == constants.ACTION_COMBO:
-                    target_action = parent_action
-                    insertion_index = selection.subaction_index + 1
-                    self.selection_state.set_subaction(
-                        selection.job_index, selection.action_index, insertion_index)
-            else:
-                if parent_action and parent_action.type_name == constants.ACTION_COMBO:
-                    target_action = parent_action
-                    insertion_index = len(parent_action.sub_actions)
-                    self.selection_state.set_subaction(
-                        selection.job_index, selection.action_index, insertion_index)
-            if target_action is not None:
-                self.mark_as_modified(
-                    True, "Paste Sub-action", "paste",
-                    (selection.job_index, selection.action_index, insertion_index))
-                target_action.sub_actions.insert(insertion_index, copy_buffer)
-                return True
-        if copy_buffer.type_name in constants.ACTION_TYPES:
-            if not selection.is_subaction_selected():
-                if not self.get_job_actions(selection):
-                    return False
-                insertion_index = selection.action_index + 1
-                self.mark_as_modified(
-                    True, "Paste Action", "paste", (selection.job_index, insertion_index, -1))
-                self.get_job_actions(selection).insert(insertion_index, copy_buffer)
-                self.selection_state.set_action(selection.job_index, insertion_index)
-                return True
-        return False
 
     def cut_element(self):
         deleted_element, new_selection = self.delete_element(False)
