@@ -1,4 +1,4 @@
-# pylint: disable=C0114, C0115, C0116, E0611, R0902, E1101, W0718, R0904
+# pylint: disable=C0114, C0115, C0116, E0611, R0902, E1101, W0718, R0904, E1121
 import os
 import subprocess
 import traceback
@@ -366,6 +366,31 @@ class ProjectView(QWidget, LogManager, ProjectHandler):
 
     def move_element_down(self, selection=None, update_project=True):
         return self.shift_element(+1, "Down", selection, update_project)
+
+    def shift_element(self, delta, direction, selection=None, update_project=True):
+        if not self._before_shift_element():
+            return False, None
+        old_selection = selection.copy() if selection is not None else self.selection_state.copy()
+        new_selection = None
+        success = False
+        if selection is None and update_project:
+            pre_move_project = self.project().clone()
+            from_position = self._get_current_position_tuple()
+            new_selection = self.element_action.shift_element(delta)
+            if new_selection:
+                success = True
+                to_position = self._get_current_position_tuple()
+                affected_position = from_position + to_position
+                self.save_undo_state(
+                    pre_move_project, f"Move {direction}", "move", affected_position)
+        self._update_ui_after_shift_element(old_selection, selection, success, new_selection)
+        return success, old_selection
+
+    def _before_shift_element(self):
+        return True
+
+    def _update_ui_after_shift_element(self, old_selection, selection, success, new_selection):
+        raise NotImplementedError
 
     def _get_current_position_tuple(self):
         if self.selection_state.is_job_selected():
