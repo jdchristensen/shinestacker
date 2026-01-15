@@ -49,13 +49,6 @@ class ClassicProjectView(ProjectView, ListContainer):
         self.tab_widget.resize(1000, 500)
         self._windows = []
         self._workers = []
-        self.current_action_working_path = None
-        self.current_action_input_path = None
-        self.current_action_output_path = None
-        self.browse_working_path_action = None
-        self.browse_input_path_action = None
-        self.browse_output_path_action = None
-        self.job_retouch_path_action = None
         self.style_light = f"""
             QLabel[color-type="enabled"] {{ color: #{ColorPalette.DARK_BLUE.hex()}; }}
             QLabel[color-type="disabled"] {{ color: #{ColorPalette.DARK_RED.hex()}; }}
