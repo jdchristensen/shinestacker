@@ -10,10 +10,10 @@ from .. gui.project_model import ActionConfig
 from .. common_project.run_worker import JobLogWorker, ProjectLogWorker
 from .. common_project.project_view import ProjectView
 from .. common_project.selection_state import SelectionState
+from .. common_project.element_action_manager import ElementActionManager
 from .tab_widget import TabWidgetWithPlaceholder
 from .gui_run import RunWindow
 from .list_container import ListContainer, rows_to_state, get_action_row
-from .classic_element_action_manager import ClassicElementActionManager
 
 
 class ClassicProjectView(ProjectView, ListContainer):
@@ -58,8 +58,7 @@ class ClassicProjectView(ProjectView, ListContainer):
         QApplication.instance().setStyleSheet(
             self.style_dark if dark_theme else self.style_light)
         self.selection_state = SelectionState(-1, -1, -1)
-        self.element_action = ClassicElementActionManager(
-            project_holder, self.selection_state, self.parent())
+        self.element_action = ElementActionManager(project_holder, self.selection_state, self.parent())
         self._saved_selection = None
         self._setup_ui()
 

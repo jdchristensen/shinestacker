@@ -9,8 +9,9 @@ from .project_handler import ProjectHandler
 class ElementActionManager(ProjectHandler, QObject):
     CLONE_POSTFIX = ' (clone)'
 
-    def __init__(self, project_holder, parent=None):
+    def __init__(self, project_holder, selection_state, parent=None):
         ProjectHandler.__init__(self, project_holder)
+        self.selection_state = selection_state
         QObject.__init__(self, parent)
 
     def new_state_after_delete(self, state):
@@ -459,3 +460,36 @@ class ElementActionManager(ProjectHandler, QObject):
         self.mark_as_modified(True, f"{action} All")
         for job in self.project().jobs:
             job.set_enabled_all(enabled)
+
+    def set_enabled(self, enabled, selection=None, update_project=True):
+        if selection is None:
+            selection = self.selection_state
+        if not selection.is_valid() or not update_project:
+            return None
+        j, a, s = selection.job_index, selection.action_index, selection.subaction_index
+        if not (0 <= j < self.num_project_jobs()):
+            return None
+        job = self.project().jobs[j]
+        if selection.is_job_selected():
+            if job.enabled() != enabled:
+                txt = "Enable" if enabled else "Disable"
+                self.mark_as_modified(True, f"{txt} Job", "edit", (j, -1, -1))
+                job.set_enabled(enabled)
+                return selection.copy()
+        elif selection.is_action_selected() and 0 <= a < len(job.sub_actions):
+            element = job.sub_actions[a]
+            if element.enabled() != enabled:
+                txt = "Enable" if enabled else "Disable"
+                self.mark_as_modified(True, f"{txt} Action", "edit", (j, a, -1))
+                element.set_enabled(enabled)
+                return selection.copy()
+        elif selection.is_subaction_selected() and 0 <= a < len(job.sub_actions):
+            action = job.sub_actions[a]
+            if 0 <= s < len(action.sub_actions):
+                element = action.sub_actions[s]
+                if element.enabled() != enabled:
+                    txt = "Enable" if enabled else "Disable"
+                    self.mark_as_modified(True, f"{txt} Sub-action", "edit", (j, a, s))
+                    element.set_enabled(enabled)
+                    return selection.copy()
+        return None
