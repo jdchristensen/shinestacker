@@ -1,6 +1,6 @@
 # Shine Stacker
 
-Focus Stacking Processing Framework and GUI designed for macro photographers, microscopists, and researchers who need precise control and reproducible stacking results.
+ShineStacker is a focus stacking tool with an interactive GUI and a Python API, designed for advanced image processing workflows in macro photography and microscopy.
 
 [![CI multiplatform](https://github.com/lucalista/shinestacker/actions/workflows/ci-multiplatform.yml/badge.svg)](https://github.com/lucalista/shinestacker/actions/workflows/ci-multiplatform.yml)
 [![PyPI version](https://img.shields.io/pypi/v/shinestacker?color=success)](https://pypi.org/project/shinestacker/)
