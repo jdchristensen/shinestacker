@@ -35,6 +35,7 @@ EXTENSIONS_TIF = ['tif', 'tiff']
 EXTENSIONS_JPG = ['jpg', 'jpeg']
 EXTENSIONS_PNG = ['png']
 EXTENSIONS_PDF = ['pdf']
+EXTENSIONS_RAW = ["arw", "cr2", "cr3", "dng", "nef", "orf", "pef", "raf", "raw", "rw2", "srw"]
 EXTENSIONS_SUPPORTED = EXTENSIONS_TIF + EXTENSIONS_JPG + EXTENSIONS_PNG
 EXTENSIONS_GUI_STR = " ".join([f"*.{ext}" for ext in EXTENSIONS_SUPPORTED])
 EXTENSION_GUI_TIF = " ".join([f"*.{ext}" for ext in EXTENSIONS_TIF])
