@@ -2,18 +2,19 @@
 
 This page reports the main releases only and the main changes therein.
 
-## [v1.13.x] - 2026-01-14
+## [v1.13.x] - 2026-01-16
 
 Fixes, cleanup and refactoring
 
 ### Added
-- better navigation in the project GUI
+- better navigation in the project GUI: arrow key navigation from job to actions, and edit triggered by enter/return key.
+- raw file extension now tolerated but issuing an error message in preparation for future support; the actual support will depend on next updates of rawpy package.
 
 ### Fixed
 - various bugs in the project editing GUI
 
 ### Changed
-- code refactoring and cleanup
+- code refactoring and cleanup: removed duplicated code in classic and modern project GUI views
 
 ---
 
