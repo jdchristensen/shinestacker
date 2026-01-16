@@ -1,7 +1,7 @@
 matplotlib
 imagecodecs
 jsonpickle
-numpy
+numpy>=2.4.1
 opencv_python>=4.11,<4.12
 pillow
 psdtags
