@@ -8,7 +8,7 @@ from PySide6.QtWidgets import (QFileDialog, QMessageBox, QVBoxLayout, QLabel, QD
                                QButtonGroup, QHBoxLayout)
 from PySide6.QtGui import QGuiApplication, QCursor
 from PySide6.QtCore import Qt, QObject, QTimer, Signal
-from .. algorithms.utils import EXTENSIONS_GUI_STR, extension_tif, write_img
+from .. algorithms.utils import EXTENSIONS_GUI_STR_IN, extension_tif, write_img
 from .. algorithms.exif import get_exif, write_image_with_exif_data
 from .file_loader import FileLoader
 from .io_threads import FileMultilayerSaver, FrameImporter
@@ -149,7 +149,7 @@ class IOGuiHandler(QObject, LayerCollectionHandler):
         if file_paths is None:
             file_paths, _ = QFileDialog.getOpenFileNames(
                 self.parent(), "Open Image", "",
-                F"Images ({EXTENSIONS_GUI_STR});;All Files (*)")
+                F"Images ({EXTENSIONS_GUI_STR_IN});;All Files (*)")
         if not file_paths:
             return
         if self.loader_thread and self.loader_thread.isRunning():
@@ -183,7 +183,7 @@ class IOGuiHandler(QObject, LayerCollectionHandler):
     def import_frames(self):
         file_paths, _ = QFileDialog.getOpenFileNames(
             self.parent(), "Select frames", "",
-            f"Images Images ({EXTENSIONS_GUI_STR});;All Files (*)")
+            f"Images Images ({EXTENSIONS_GUI_STR_IN});;All Files (*)")
         if file_paths:
             self.import_frames_from_files(file_paths)
 

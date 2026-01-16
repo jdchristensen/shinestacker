@@ -36,8 +36,10 @@ EXTENSIONS_JPG = ['jpg', 'jpeg']
 EXTENSIONS_PNG = ['png']
 EXTENSIONS_PDF = ['pdf']
 EXTENSIONS_RAW = ["arw", "cr2", "cr3", "dng", "nef", "orf", "pef", "raf", "raw", "rw2", "srw"]
-EXTENSIONS_SUPPORTED = EXTENSIONS_TIF + EXTENSIONS_JPG + EXTENSIONS_PNG
-EXTENSIONS_GUI_STR = " ".join([f"*.{ext}" for ext in EXTENSIONS_SUPPORTED])
+EXTENSIONS_SUPPORTED_OUT = EXTENSIONS_TIF + EXTENSIONS_JPG + EXTENSIONS_PNG
+EXTENSIONS_SUPPORTED_IN = EXTENSIONS_SUPPORTED_OUT + EXTENSIONS_RAW
+EXTENSIONS_GUI_STR_IN = " ".join([f"*.{ext}" for ext in EXTENSIONS_SUPPORTED_IN])
+EXTENSIONS_GUI_STR_OUT = " ".join([f"*.{ext}" for ext in EXTENSIONS_SUPPORTED_OUT])
 EXTENSION_GUI_TIF = " ".join([f"*.{ext}" for ext in EXTENSIONS_TIF])
 EXTENSION_GUI_JPG = " ".join([f"*.{ext}" for ext in EXTENSIONS_JPG])
 EXTENSION_GUI_PNG = " ".join([f"*.{ext}" for ext in EXTENSIONS_PNG])
@@ -57,6 +59,10 @@ def extension_jpg(path):
 
 def extension_png(path):
     return extension_in(path, EXTENSIONS_PNG)
+
+
+def extension_raw(path):
+    return extension_in(path, EXTENSIONS_RAW)
 
 
 def extension_pdf(path):
@@ -79,8 +85,21 @@ def extension_jpg_tif_png(path):
     return extension_in(path, EXTENSIONS_JPG + EXTENSIONS_TIF + EXTENSIONS_PNG)
 
 
-def extension_supported(path):
-    return extension_in(path, EXTENSIONS_SUPPORTED)
+def extension_supported_input(path):
+    return extension_in(path, EXTENSIONS_SUPPORTED_IN)
+
+
+def extension_supported_output(path):
+    return extension_in(path, EXTENSIONS_SUPPORTED_OUT)
+
+
+def get_output_extension(ext):
+    return "tif" if ext in EXTENSIONS_RAW else ext
+
+
+def get_output_filename(input_filename):
+    pre, ext = os.path.splitext(input_filename)
+    return pre + "." + get_output_extension(ext)[1:]
 
 
 def read_img(file_path):
@@ -88,6 +107,8 @@ def read_img(file_path):
     if not os.path.isfile(file_path):
         raise RuntimeError("File does not exist: " + file_path)
     img = None
+    if extension_raw(file_path):
+        raise RuntimeError("RAW image formats not yet supported.")
     if extension_jpg(file_path):
         img = cv2.imread(file_path)
     elif extension_tif_png(file_path):
@@ -130,7 +151,7 @@ def get_first_image_file(filenames):
         raise ValueError("No valid image files found in the selected path")
     first_img_file = None
     for filename in filenames:
-        if os.path.isfile(filename) and extension_supported(filename):
+        if os.path.isfile(filename) and extension_supported_input(filename):
             first_img_file = filename
             break
     if first_img_file is None:

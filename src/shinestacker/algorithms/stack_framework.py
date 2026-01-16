@@ -8,7 +8,9 @@ from .. core.colors import color_str
 from .. core.framework import Job, SequentialTask
 from .. core.core_utils import check_path_exists
 from .. core.exceptions import RunStopException
-from .utils import read_img, write_img, extension_supported, get_img_metadata, validate_image
+from .utils import (
+    read_img, write_img, extension_supported_input, get_img_metadata, validate_image,
+    get_output_filename)
 from .plot_manager import DirectPlotManager
 
 
@@ -101,7 +103,7 @@ class ImageSequenceManager:
                 filelist = []
                 for _dirpath, _, filenames in os.walk(d):
                     filelist = [os.path.join(_dirpath, name)
-                                for name in filenames if extension_supported(name)]
+                                for name in filenames if extension_supported_input(name)]
                     filelist.sort()
                     if self.reverse_order:
                         filelist.reverse()
@@ -348,7 +350,8 @@ class CombinedActions(ReferenceFrameTask):
 
     def run_frame(self, idx, ref_idx):
         input_path = self.input_filepath(idx)
-        filename = os.path.basename(input_path)
+        input_filename = os.path.basename(input_path)
+        output_filename = get_output_filename(input_filename)
         self.print_message(
             color_str(color_str(f'read input {self.frame_str(idx)}, '
                       f'{os.path.basename(input_path)}'), constants.LOG_COLOR_LEVEL_3))
@@ -376,7 +379,7 @@ class CombinedActions(ReferenceFrameTask):
                 if self.callback(constants.CALLBACK_CHECK_RUNNING, self.id, self.name) is False:
                     raise RunStopException(self.name)
                 self.callback(constants.CALLBACK_UPDATE_FRAME_STATUS, self.output_path,
-                              filename, a_idx + 1)
+                              output_filename, a_idx + 1)
                 if img is not None:
                     img = a.run_frame(idx, ref_idx, img)
                 else:
@@ -385,17 +388,20 @@ class CombinedActions(ReferenceFrameTask):
                                   constants.LOG_COLOR_ALERT),
                         level=logging.ERROR)
         if img is not None:
+
             output_path = os.path.join(self.output_full_path(), os.path.basename(input_path))
             self.print_message(
                 color_str(f'write output {self.frame_str(idx)}, '
                           f'{os.path.basename(output_path)}', constants.LOG_COLOR_LEVEL_3))
             write_img(output_path, img)
-            self.callback(constants.CALLBACK_UPDATE_FRAME_STATUS, self.output_path, filename, 1000)
+            self.callback(
+                constants.CALLBACK_UPDATE_FRAME_STATUS, self.output_path, output_filename, 1000)
             return img
         self.print_message(color_str(
             f"no output resulted from processing input file: {os.path.basename(input_path)}",
             constants.LOG_COLOR_ALERT), level=logging.ERROR)
-        self.callback(constants.CALLBACK_UPDATE_FRAME_STATUS, self.output_path, filename, 1001)
+        self.callback(
+            constants.CALLBACK_UPDATE_FRAME_STATUS, self.output_path, output_filename, 1001)
         return None
 
     def end(self):

@@ -1,4 +1,4 @@
-# pylint: disable=C0114, C0115, C0116, E0611, R0915, R0902, R0914, R0911, R0912, R0904
+# pylint: disable=C0114, C0115, C0116, E0611, R0915, R0902, R0914, R0911, R0912, R0904, W0718
 import os
 import numpy as np
 from PySide6.QtWidgets import (QHBoxLayout, QPushButton, QLabel, QCheckBox, QSpinBox, QDialog,
@@ -9,7 +9,7 @@ from .. config.gui_constants import gui_constants
 from .. config.constants import constants
 from .. config.defaults import DEFAULTS
 from .. config.app_config import AppConfig
-from .. algorithms.utils import read_img, extension_supported
+from .. algorithms.utils import read_img, extension_supported_input
 from .. algorithms.stack import get_bunches
 from .. gui.folder_file_selection import FolderFileSelectionWidget
 from .. gui.base_form_dialog import BaseFormDialog
@@ -212,7 +212,7 @@ class NewProjectDialog(BaseFormDialog):
                 return 0
             count = 0
             for filename in os.listdir(path):
-                if extension_supported(filename):
+                if extension_supported_input(filename):
                     count += 1
             return count
         if self.input_widget.get_selection_mode() == 'files' and \
@@ -250,14 +250,19 @@ class NewProjectDialog(BaseFormDialog):
             file_path = None
             for filename in files:
                 full_path = os.path.join(path, filename)
-                if extension_supported(full_path):
+                if extension_supported_input(full_path):
                     file_path = full_path
                     break
         if file_path is None:
             QMessageBox.warning(
                 self, "Invalid input", "Could not find images in the selected path")
             return 0, 0, 0, 0
-        img = read_img(file_path)
+        try:
+            img = read_img(file_path)
+        except Exception as e:
+            QMessageBox.warning(
+                self, "Invalid input", f"Could not read images file {file_path}:\n{str(e)}")
+            return 0, 0, 0, 0
         if img is None:
             QMessageBox.warning(
                 self, "Invalid input", f"Could not read images file {file_path}")

@@ -14,7 +14,8 @@ from .. config.config import config
 from .. config.defaults import DEFAULTS
 from .. core.colors import color_str
 from .. core.framework import TaskBase
-from .utils import EXTENSIONS_TIF, EXTENSIONS_JPG, EXTENSIONS_PNG, EXTENSIONS_SUPPORTED
+from .utils import (
+    EXTENSIONS_TIF, EXTENSIONS_JPG, EXTENSIONS_PNG, EXTENSIONS_RAW, EXTENSIONS_SUPPORTED_IN)
 from .stack_framework import ImageSequenceManager
 from .exif import exif_extra_tags_for_tif, get_exif
 
@@ -30,6 +31,8 @@ def write_multilayer_tiff(input_files, output_file, labels=None, exif_path='', c
         raise RuntimeError("All input files must have the same extension. "
                            f"Input list has the following extensions: {msg}.")
     extension = extensions[0].lower()
+    if extension in EXTENSIONS_RAW:
+        raise RuntimeError("RAW image formats not yet supported.")
     if extension in EXTENSIONS_TIF:
         images = [tifffile.imread(p) for p in input_files]
     elif extension in EXTENSIONS_JPG:
@@ -143,7 +146,7 @@ def write_multilayer_tiff_from_images(image_dict, output_file, exif_path='', cal
         elif os.path.isdir(exif_path):
             _dirpath, _, fnames = next(os.walk(exif_path))
             fnames = [name for name in fnames
-                      if os.path.splitext(name)[-1][1:].lower() in EXTENSIONS_SUPPORTED]
+                      if os.path.splitext(name)[-1][1:].lower() in EXTENSIONS_SUPPORTED_IN]
             file_path = os.path.join(exif_path, fnames[0])
             extra_tags, exif_tags = exif_extra_tags_for_tif(get_exif(file_path))
         extra_tags = [tag for tag in extra_tags if isinstance(tag[0], int)]

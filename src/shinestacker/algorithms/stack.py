@@ -8,7 +8,7 @@ from .. config.defaults import DEFAULTS
 from .. core.framework import TaskBase
 from .. core.colors import color_str
 from .. core.exceptions import InvalidOptionError
-from .utils import write_img, extension_supported
+from .utils import write_img, extension_supported_output, get_output_filename
 from .stack_framework import ImageSequenceManager, SequentialTask
 from .exif import copy_exif_from_file_to_file
 from .denoise import denoise
@@ -38,11 +38,10 @@ class FocusStackBase(TaskBase, ImageSequenceManager):
 
     def focus_stack(self, filenames):
         self.sub_message_r(color_str(': reading input files', constants.LOG_COLOR_LEVEL_3))
-        in_filename = os.path.basename(filenames[0]).split(".")
-        out_filename = os.path.join(
-            self.output_full_path(),
-            f"{self.prefix}{in_filename[0]}." + '.'.join(in_filename[1:]))
-        filename = os.path.basename(out_filename)
+        input_filename = os.path.basename(filenames[0])
+        output_filename = os.path.join(
+            self.output_full_path(), self.prefix + get_output_filename(input_filename))
+        filename = os.path.basename(output_filename)
         self.callback(constants.CALLBACK_UPDATE_FRAME_STATUS, self.name, filename, 0)
         self.stack_algo.set_output_filename(filename)
         stacked_img = self.stack_algo.focus_stack()
@@ -54,10 +53,10 @@ class FocusStackBase(TaskBase, ImageSequenceManager):
             self.sub_message_r(color_str(': sharpen image', constants.LOG_COLOR_LEVEL_3))
             stacked_img = unsharp_mask(
                 stacked_img, self.sharpen_amount, self.sharpen_radius, self.sharpen_threshold)
-        write_img(out_filename, stacked_img)
+        write_img(output_filename, stacked_img)
         if self.exif_path != '':
             if stacked_img.dtype == np.uint16 and \
-               os.path.splitext(out_filename)[-1].lower() == '.png':
+               os.path.splitext(output_filename)[-1].lower() == '.png':
                 self.sub_message_r(color_str(': exif not supported for 16-bit PNG format',
                                              constants.LOG_COLOR_WARNING),
                                    level=logging.WARNING)
@@ -67,11 +66,11 @@ class FocusStackBase(TaskBase, ImageSequenceManager):
                     raise RuntimeError(f"path {self.exif_path} does not exist.")
                 try:
                     _dirpath, _, fnames = next(os.walk(self.exif_path))
-                    fnames = [name for name in fnames if extension_supported(name)]
+                    fnames = [name for name in fnames if extension_supported_output(name)]
                     if len(fnames) == 0:
                         raise RuntimeError(f"path {self.exif_path} does not contain image files.")
                     exif_filename = os.path.join(self.exif_path, fnames[0])
-                    copy_exif_from_file_to_file(exif_filename, out_filename)
+                    copy_exif_from_file_to_file(exif_filename, output_filename)
                     self.sub_message_r(' ' * 60)
                 except Exception as e:
                     traceback.print_tb(e.__traceback__)
@@ -85,7 +84,7 @@ class FocusStackBase(TaskBase, ImageSequenceManager):
             if idx_str != '':
                 caption += f"\nbunch: {idx_str}"
             self.callback(constants.CALLBACK_SAVE_PLOT, self.id, self.output_path,
-                          caption, out_filename)
+                          caption, output_filename)
         if self.frame_count >= 0:
             self.frame_count += 1
 

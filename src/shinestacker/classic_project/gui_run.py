@@ -7,7 +7,7 @@ from PySide6.QtGui import QColor
 from PySide6.QtCore import Qt, QTimer
 from PySide6.QtCore import Slot
 from .. config.gui_constants import gui_constants
-from .. algorithms.utils import extension_supported, extension_pdf
+from .. algorithms.utils import extension_supported_output, extension_pdf
 from .. algorithms.plot_manager import DirectPlotManager
 from .. gui.gui_logging import QTextEditLogger
 from .. gui.gui_images import GuiPdfView, GuiImageView, GuiOpenApp
@@ -235,7 +235,7 @@ class RunWindow(QTextEditLogger):
         try:
             if extension_pdf(path):
                 image_view = GuiPdfView(path, self)
-            elif extension_supported(path):
+            elif extension_supported_output(path):
                 image_view = GuiImageView(path, self)
             else:
                 traceback.print_exc()

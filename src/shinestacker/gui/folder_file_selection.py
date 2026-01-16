@@ -3,7 +3,7 @@ import os
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (QWidget, QRadioButton, QButtonGroup, QLineEdit,
                                QPushButton, QHBoxLayout, QVBoxLayout, QFileDialog, QMessageBox)
-from .. algorithms.utils import EXTENSIONS_GUI_STR
+from .. algorithms.utils import EXTENSIONS_GUI_STR_IN
 
 
 class FolderFileSelectionWidget(QWidget):
@@ -74,7 +74,7 @@ class FolderFileSelectionWidget(QWidget):
     def browse_files(self):
         files, _ = QFileDialog.getOpenFileNames(
             self, "Select Input Files", "",
-            f"Image files ({EXTENSIONS_GUI_STR})"
+            f"Image files ({EXTENSIONS_GUI_STR_IN})"
         )
         if files:
             parent_dir = os.path.dirname(files[0])

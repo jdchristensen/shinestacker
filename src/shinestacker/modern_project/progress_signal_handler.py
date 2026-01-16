@@ -1,7 +1,7 @@
 # pylint: disable=C0114, C0115, C0116, E0611, R0903
 import os
 from PySide6.QtCore import Qt, QObject, Slot
-from .. algorithms.utils import extension_supported, extension_pdf
+from .. algorithms.utils import extension_supported_output, extension_pdf
 from .. algorithms.plot_manager import DirectPlotManager
 from .. gui.gui_images import GuiPdfView, GuiImageView, GuiOpenApp
 
@@ -123,7 +123,7 @@ class ProgressSignalHandler(QObject):
         fixed_height = state.subaction_index == -1 and self.horizontal_layout is False
         if extension_pdf(path):
             image_view = GuiPdfView(path, widget, fixed_height=fixed_height)
-        elif extension_supported(path):
+        elif extension_supported_output(path):
             image_view = GuiImageView(path, widget, fixed_height=fixed_height)
         else:
             raise RuntimeError(f"Can't visualize file type {os.path.splitext(path)[1]}.")
