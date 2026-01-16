@@ -8,6 +8,7 @@ Fixes, cleanup and refactoring
 
 ### Added
 - better navigation in the project GUI: arrow key navigation from job to actions, and edit triggered by enter/return key.
+- keyboard shortcuts for main project and retouch menu entries
 - raw file extension now tolerated but issuing an error message in preparation for future support; the actual support will depend on next updates of rawpy package.
 
 ### Fixed
