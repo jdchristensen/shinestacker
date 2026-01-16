@@ -22,7 +22,7 @@ dependencies = [
     "jsonpickle",
     "matplotlib",
     "numpy",
-    "opencv_python",
+    "opencv_python>=4.11,<4.12",
     "pillow",
     "psdtags",
     "psutil",
