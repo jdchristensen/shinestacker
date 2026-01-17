@@ -2,7 +2,7 @@
 
 This page reports the main releases only and the main changes therein.
 
-## [v1.13.x] - 2026-01-16
+## [v1.13.x] - 2026-01-17
 
 Fixes, cleanup and refactoring
 
@@ -13,6 +13,7 @@ Fixes, cleanup and refactoring
 
 ### Fixed
 - various bugs in the project editing GUI
+- forced numpy vesion >=2.4.1 to prevent potential bugs in OpenCV due to inconsistent versions
 
 ### Changed
 - code refactoring and cleanup: removed duplicated code in classic and modern project GUI views

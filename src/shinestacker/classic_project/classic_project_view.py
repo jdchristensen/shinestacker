@@ -2,9 +2,8 @@
 # pylint: disable=W0613
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
-    QWidget, QVBoxLayout, QHBoxLayout, QLabel, QSplitter, QMessageBox, QApplication, QDialog)
+    QWidget, QVBoxLayout, QHBoxLayout, QLabel, QSplitter, QMessageBox, QApplication)
 from .. config.constants import constants
-from .. gui.action_config_dialog import ActionConfigDialog
 from .. gui.colors import ColorPalette
 from .. common_project.run_worker import JobLogWorker, ProjectLogWorker
 from .. common_project.project_view import ProjectView
@@ -538,17 +537,11 @@ class ClassicProjectView(ProjectView, ListContainer):
     def get_job_at(self, index):
         return None if index < 0 else self.project_job(index)
 
-    def action_config_dialog(self, action):
-        return ActionConfigDialog(action, self.current_file_directory(), self.parent())
-
     def on_job_edit(self, item):
         index = self.job_list().row(item)
         if 0 <= index < self.num_project_jobs():
             job = self.project_job(index)
-            pre_edit_project = self.project().clone()
-            dialog = self.action_config_dialog(job)
-            if dialog.exec() == QDialog.Accepted:
-                self.save_undo_state(pre_edit_project, "Edit Job", "edit", (index, -1, -1))
+            if self.execute_edit_dialog(job, "Job", (index, -1, -1)):
                 current_row = self.current_job_index()
                 if current_row >= 0:
                     self.job_list_item(current_row).setText(job.params['name'])
@@ -565,16 +558,12 @@ class ClassicProjectView(ProjectView, ListContainer):
                 if not is_sub_action:
                     self.enable_sub_actions_requested.emit(
                         current_action.type_name == constants.ACTION_COMBO)
-                pre_edit_project = self.project().clone()
-                dialog = self.action_config_dialog(current_action)
-                if dialog.exec() == QDialog.Accepted:
-                    widget_type = 'subaction' if is_sub_action else 'action'
-                    subaction_index = -1
-                    if is_sub_action:
-                        subaction_index = self._get_current_subaction_index()
-                    self.save_undo_state(
-                        pre_edit_project, f"Edit {widget_type}", "edit",
-                        (job_index, action_index, subaction_index))
+                widget_type = 'subaction' if is_sub_action else 'action'
+                subaction_index = -1
+                if is_sub_action:
+                    subaction_index = self._get_current_subaction_index()
+                if self.execute_edit_dialog(
+                        current_action, widget_type, (job_index, action_index, subaction_index)):
                     self.on_job_selected(job_index)
                     self.refresh_ui()
                     self.set_current_job(job_index)

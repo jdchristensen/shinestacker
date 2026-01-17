@@ -4,10 +4,9 @@ import os
 from functools import partial
 from PySide6.QtCore import Qt, QTimer, Signal, Slot
 from PySide6.QtGui import QCursor
-from PySide6.QtWidgets import QWidget, QVBoxLayout, QSplitter, QScrollArea, QDialog, QMessageBox
+from PySide6.QtWidgets import QWidget, QVBoxLayout, QSplitter, QScrollArea, QMessageBox
 from .. config.constants import constants
 from .. gui.gui_logging import QTextEditLogger
-from .. gui.action_config_dialog import ActionConfigDialog
 from .. common_project.run_worker import JobLogWorker, ProjectLogWorker
 from .. common_project.project_view import ProjectView
 from .. common_project.selection_state import SelectionState
@@ -437,14 +436,9 @@ class ModernProjectView(ProjectView):
         job_widget = self.job_widgets[job_index]
         self._on_widget_clicked(job_widget, 'job', job_index)
         job = self.project_job(job_index)
-        if job:
-            pre_edit_project = self.project().clone()
-            self.action_dialog = ActionConfigDialog(
-                job, self.current_file_directory(), self.parent())
-            if self.action_dialog.exec() == QDialog.Accepted:
-                self.save_undo_state(pre_edit_project, "Edit Job", "edit", (job_index, -1, -1))
-                self._update_widget(SelectionState(job_index), job)
-                self.widget_updated_signal.emit(SelectionState(job_index, -1, -1))
+        if job and self.execute_edit_dialog(job, "Job", (job_index, -1, -1)):
+            self._update_widget(SelectionState(job_index), job)
+            self.widget_updated_signal.emit(SelectionState(job_index, -1, -1))
 
     def _on_action_double_clicked(self, job_index, action_index):
         if not self.enforce_stop_run():
@@ -456,12 +450,7 @@ class ModernProjectView(ProjectView):
         action = job.sub_actions[action_index] if hasattr(job, 'sub_actions') else None
         if action:
             self.enable_sub_actions_requested.emit(action.type_name == constants.ACTION_COMBO)
-            pre_edit_project = self.project().clone()
-            self.action_dialog = ActionConfigDialog(
-                action, self.current_file_directory(), self.parent())
-            if self.action_dialog.exec() == QDialog.Accepted:
-                self.save_undo_state(
-                    pre_edit_project, "Edit Action", "edit", (job_index, action_index, -1))
+            if self.execute_edit_dialog(action, "Action", (job_index, action_index, -1)):
                 self._update_widget(SelectionState(job_index, action_index), action)
                 self.widget_updated_signal.emit(SelectionState(job_index, action_index, -1))
 
@@ -477,18 +466,12 @@ class ModernProjectView(ProjectView):
         action = job.sub_actions[action_index] if hasattr(job, 'sub_actions') else None
         subaction = action.sub_actions[subaction_index] \
             if action and hasattr(action, 'sub_actions') else None
-        if subaction:
-            pre_edit_project = self.project().clone()
-            self.action_dialog = ActionConfigDialog(
-                subaction, self.current_file_directory(), self.parent())
-            if self.action_dialog.exec() == QDialog.Accepted:
-                self.save_undo_state(
-                    pre_edit_project, "Edit Sub-action", "edit",
-                    (job_index, action_index, subaction_index))
-                self._update_widget(SelectionState(
-                    job_index, action_index, subaction_index), subaction)
-                self.widget_updated_signal.emit(
-                    SelectionState(job_index, action_index, subaction_index))
+        if subaction and self.execute_edit_dialog(
+                subaction, "Sub-action", (job_index, action_index, subaction_index)):
+            self._update_widget(SelectionState(
+                job_index, action_index, subaction_index), subaction)
+            self.widget_updated_signal.emit(
+                SelectionState(job_index, action_index, subaction_index))
 
     def _update_widget(self, state, element):
         if not state.is_valid():
