@@ -1149,41 +1149,33 @@ class ModernProjectView(ProjectView):
         return None
 
     def run_job(self):
-        current_index = self.selection_state.job_index
-        if current_index < 0:
-            QMessageBox.warning(
-                self.parent(), "No Job Selected", "Please select a job first.")
-            return False
-        job = self.project_job(current_index)
-        validation_result = self.validate_output_paths_for_job(job)
-        if not validation_result['valid']:
-            proceed = self.show_validation_warning(validation_result, is_single_job=True)
-            if not proceed:
-                return False
-        self.job_widgets[current_index].clear_all()
-        self._build_progress_mapping([current_index])
-        if not job.enabled():
-            QMessageBox.warning(
-                self.parent(), "Can't run Job", f"Job {job.params['name']} is disabled.")
-            return False
+        return self.execute_run_job()
+
+    def run_all_jobs(self):
+        return self.execute_run_all_jobs()
+
+    def _start_job_worker(self, job_index, job):
+        self._prepare_job_run_ui(job_index, job)
         self._worker = JobLogWorker(job, self.last_id_str())
         self._connect_worker_signals(self._worker)
         self.start_thread(self._worker)
         return True
 
-    def run_all_jobs(self):
-        validation_result = self.validate_output_paths_for_project()
-        if not validation_result['valid']:
-            proceed = self.show_validation_warning(validation_result, is_single_job=False)
-            if not proceed:
-                return False
-        for job_widget in self.job_widgets:
-            job_widget.clear_all()
-        self._build_progress_mapping()
+    def _start_project_worker(self):
+        self._prepare_project_run_ui()
         self._worker = ProjectLogWorker(self.project(), self.last_id_str())
         self._connect_worker_signals(self._worker)
         self.start_thread(self._worker)
         return True
+
+    def _prepare_job_run_ui(self, job_index, job):
+        self.job_widgets[job_index].clear_all()
+        self._build_progress_mapping([job_index])
+
+    def _prepare_project_run_ui(self):
+        for job_widget in self.job_widgets:
+            job_widget.clear_all()
+        self._build_progress_mapping()
 
     def stop(self):
         if self._worker:

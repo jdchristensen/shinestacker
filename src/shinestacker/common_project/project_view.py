@@ -444,6 +444,40 @@ class ProjectView(QWidget, LogManager, ProjectHandler):
     def enforce_stop_run(self):
         return True
 
+    def execute_run_job(self):
+        current_index = self.current_job_index()
+        if current_index < 0:
+            msg = "No Job Selected" if self.num_project_jobs() > 0 else "No Job Added"
+            QMessageBox.warning(self.parent() if self.parent() else self,
+                                msg, "Please select a job first.")
+            return False
+        job = self.project_job(current_index)
+        validation_result = self.validate_output_paths_for_job(job)
+        if not validation_result['valid']:
+            proceed = self.show_validation_warning(validation_result, is_single_job=True)
+            if not proceed:
+                return False
+        if not job.enabled():
+            QMessageBox.warning(self.parent() if self.parent() else self,
+                                "Can't run Job",
+                                f"Job {job.params['name']} is disabled.")
+            return False
+        return self._start_job_worker(current_index, job)
+
+    def execute_run_all_jobs(self):
+        validation_result = self.validate_output_paths_for_project()
+        if not validation_result['valid']:
+            proceed = self.show_validation_warning(validation_result, is_single_job=False)
+            if not proceed:
+                return False
+        return self._start_project_worker()
+
+    def _start_job_worker(self, job_index, job):
+        raise NotImplementedError
+
+    def _start_project_worker(self):
+        raise NotImplementedError
+
     def calculate_action_insertion_index(self, selection_state, job):
         if not selection_state or not job:
             return len(job.sub_actions)

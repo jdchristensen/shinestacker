@@ -1,8 +1,7 @@
 # pylint: disable=C0114, C0115, C0116, E0611, R0902, R0904, R0913, R0914, R0917, R0912, R0915, E1101
 # pylint: disable=W0613
 from PySide6.QtCore import Qt
-from PySide6.QtWidgets import (
-    QWidget, QVBoxLayout, QHBoxLayout, QLabel, QSplitter, QMessageBox, QApplication)
+from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QLabel, QSplitter, QApplication
 from .. config.constants import constants
 from .. gui.colors import ColorPalette
 from .. common_project.run_worker import JobLogWorker, ProjectLogWorker
@@ -237,23 +236,13 @@ class ClassicProjectView(ProjectView, ListContainer):
         worker.plot_manager.save_plot_signal.connect(window.handle_save_plot_via_manager)
 
     def run_job(self):
-        current_index = self.current_job_index()
-        if current_index < 0:
-            msg = "No Job Selected" if self.num_project_jobs() > 0 else "No Job Added"
-            QMessageBox.warning(self, msg, "Please select a job first.")
-            return False
-        if current_index < 0:
-            return False
-        job = self.project_job(current_index)
-        validation_result = self.validate_output_paths_for_job(job)
-        if not validation_result['valid']:
-            proceed = self.show_validation_warning(validation_result, is_single_job=True)
-            if not proceed:
-                return False
-        if not job.enabled():
-            QMessageBox.warning(self, "Can't run Job",
-                                "Job " + job.params["name"] + " is disabled.")
-            return False
+        return self.execute_run_job()
+
+    def run_all_jobs(self):
+        return self.execute_run_all_jobs()
+
+    def _start_job_worker(self, job_index, job):
+        self._prepare_job_run_ui(job_index, job)
         job_name = job.params["name"]
         labels = [[(self.action_text(a), a.enabled()) for a in job.sub_actions]]
         r = self.get_retouch_path(job)
@@ -266,12 +255,8 @@ class ClassicProjectView(ProjectView, ListContainer):
         self._workers.append(worker)
         return True
 
-    def run_all_jobs(self):
-        validation_result = self.validate_output_paths_for_project()
-        if not validation_result['valid']:
-            proceed = self.show_validation_warning(validation_result, is_single_job=False)
-            if not proceed:
-                return False
+    def _start_project_worker(self):
+        self._prepare_project_run_ui()
         labels = [[(self.action_text(a), a.enabled() and
                     job.enabled()) for a in job.sub_actions] for job in self.project_jobs()]
         project_name = ".".join(self.current_file_name().split(".")[:-1])
@@ -289,6 +274,12 @@ class ClassicProjectView(ProjectView, ListContainer):
         self.start_thread(worker)
         self._workers.append(worker)
         return True
+
+    def _prepare_job_run_ui(self, job_index, job):
+        pass
+
+    def _prepare_project_run_ui(self):
+        pass
 
     def stop(self):
         tab_position = self.tab_widget.count()
