@@ -208,6 +208,31 @@ class ProjectView(QWidget, LogManager, ProjectHandler):
             self.mark_as_modified(True, "Edit Action")
             self.refresh_ui()
 
+    def execute_set_enabled(self, enabled, selection=None, update_project=True):
+        if selection is None:
+            selection = self.selection_state
+        if not update_project:
+            self._update_widget_enable_state(selection, enabled)
+            return
+        new_selection = self.element_action.set_enabled(enabled, selection)
+        if new_selection is not False:
+            self._after_set_enabled(new_selection, enabled)
+            self.widget_enable_signal.emit(selection, enabled)
+
+    def execute_set_enabled_all(self, enabled, update_project=True):
+        if update_project:
+            self.element_action.set_enabled_all(enabled)
+        self._update_all_widgets_enabled(enabled)
+
+    def _after_set_enabled(self, selection, enabled):
+        raise NotImplementedError
+
+    def _update_widget_enable_state(self, selection, enabled):
+        raise NotImplementedError
+
+    def _update_all_widgets_enabled(self, enabled):
+        raise NotImplementedError
+
     def add_job(self):
         if not self.enforce_stop_run():
             return -1

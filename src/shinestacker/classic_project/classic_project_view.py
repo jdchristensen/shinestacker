@@ -391,35 +391,24 @@ class ClassicProjectView(ProjectView, ListContainer):
         return success, old_selection
 
     def enable(self, selection=None, update_project=True):
-        self._set_enabled(True, selection, update_project)
+        self.execute_set_enabled(True, selection, update_project)
 
     def disable(self, selection=None, update_project=True):
-        self._set_enabled(False, selection, update_project)
-
-    def _set_enabled(self, enabled, selection=None, update_project=True):
-        self._sync_selection_to_action_manager()
-        new_selection = False
-        if selection is None:
-            new_selection = self.element_action.set_enabled(enabled)
-            if update_project:
-                self.widget_enable_signal.emit(self.selection_state, enabled)
-        else:
-            if update_project:
-                new_selection = self.element_action.set_enabled(enabled, selection)
-            else:
-                self.refresh_ui()
-        if new_selection is not False:
-            self.refresh_ui(new_selection)
+        self.execute_set_enabled(False, selection, update_project)
 
     def enable_all(self, update_project=True):
-        self._set_enabled_all(True, update_project)
+        self.execute_set_enabled_all(True, update_project)
 
     def disable_all(self, update_project=True):
-        self._set_enabled_all(False, update_project)
+        self.execute_set_enabled_all(False, update_project)
 
-    def _set_enabled_all(self, enabled, update_project=True):
-        if update_project:
-            self.element_action.set_enabled_all(enabled)
+    def _after_set_enabled(self, selection, enabled):
+        self.refresh_ui(selection)
+
+    def _update_widget_enable_state(self, selection, enabled):
+        self.refresh_ui(selection)
+
+    def _update_all_widgets_enabled(self, enabled):
         self.refresh_ui(self.selection_state)
 
     def _position_to_action_row(self, position):

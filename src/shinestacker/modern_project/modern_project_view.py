@@ -705,55 +705,33 @@ class ModernProjectView(ProjectView):
         self.refresh_ui()
         return False
 
-    def _update_widget_enable_state(self, selection, enabled):
-        widget = self._find_widget(selection)
-        if widget:
-            widget.set_enabled_and_update(enabled)
-
     def enable(self, selection=None, update_project=True):
         if not self.enforce_stop_run():
             return
-        if selection is None:
-            selection = self.selection_state
-        if update_project:
-            self.element_action.set_enabled(True, update_project=True)
-            if update_project:
-                self.widget_enable_signal.emit((
-                    self.selection_state.job_index,
-                    self.selection_state.action_index,
-                    self.selection_state.subaction_index,
-                    self.selection_state.widget_type
-                ), True)
-        self._update_widget_enable_state(selection, True)
+        self.execute_set_enabled(True, selection, update_project)
 
     def disable(self, selection=None, update_project=True):
         if not self.enforce_stop_run():
             return
-        if selection is None:
-            selection = self.selection_state
-        if update_project:
-            self.element_action.set_enabled(False, update_project=True)
-            if update_project:
-                self.widget_enable_signal.emit((
-                    self.selection_state.job_index,
-                    self.selection_state.action_index,
-                    self.selection_state.subaction_index,
-                    self.selection_state.widget_type
-                ), False)
-        self._update_widget_enable_state(selection, False)
+        self.execute_set_enabled(False, selection, update_project)
 
     def enable_all(self, update_project=True):
-        self._set_enabled_all(True, update_project)
-
-    def disable_all(self, update_project=True):
-        self._set_enabled_all(False, update_project)
-
-    def _set_enabled_all(self, enabled, update_project=True):
         if not self.enforce_stop_run():
             return
-        if update_project:
-            self.element_action.set_enabled_all(enabled)
-        self._update_all_widgets_enabled(enabled)
+        self.execute_set_enabled_all(True, update_project)
+
+    def disable_all(self, update_project=True):
+        if not self.enforce_stop_run():
+            return
+        self.execute_set_enabled_all(False, update_project)
+
+    def _after_set_enabled(self, selection, enabled):
+        self.refresh_ui(selection)
+
+    def _update_widget_enable_state(self, selection, enabled):
+        widget = self._find_widget(selection)
+        if widget:
+            widget.set_enabled_and_update(enabled)
 
     def _update_all_widgets_enabled(self, enabled):
         for job_widget in self.job_widgets:
