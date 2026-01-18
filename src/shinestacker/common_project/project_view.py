@@ -24,6 +24,7 @@ class ProjectView(QWidget, LogManager, ProjectHandler):
     widget_updated_signal = Signal(tuple)
     run_finished_signal = Signal()
     fill_context_menu_signal = Signal(object, bool)
+    project_modified_signal = Signal(bool)
     current_action_working_path = None
     current_action_input_path = None
     current_action_output_path = None
@@ -43,6 +44,10 @@ class ProjectView(QWidget, LogManager, ProjectHandler):
             project_holder, self.selection_state, self.parent())
         self._saved_selection = None
         self._setup_common_menu_actions()
+        self.element_action.project_modified_signal.connect(self._forward_modified_signal)
+
+    def _forward_modified_signal(self, modified):
+        self.project_modified_signal.emit(modified)
 
     def _setup_common_menu_actions(self):
         pass
@@ -141,6 +146,16 @@ class ProjectView(QWidget, LogManager, ProjectHandler):
                 "Please edit the job configuration to set a working path."
             )
         return menu
+
+    def mark_as_modified(self, modified=True, description='', action_type='',
+                         affected_position=(-1, -1, -1)):
+        ProjectHandler.mark_as_modified(self, modified, description, action_type, affected_position)
+        self.project_modified_signal.emit(modified)
+
+    def save_undo_state(self, pre_state, description='', action_type='',
+                        affected_position=(-1, -1, -1)):
+        ProjectHandler.save_undo_state(self, pre_state, description, action_type, affected_position)
+        self.project_modified_signal.emit(True)
 
     def _add_path_browsing_actions(self, menu, current_action):
         self.current_action_working_path, name = get_action_working_path(current_action)

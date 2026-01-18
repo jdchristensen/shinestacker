@@ -80,6 +80,7 @@ class MainWindow(ProjectIOHandler, QMainWindow):
             ('widget_updated_signal', self.handle_widget_updated),
             ('run_finished_signal', self.handle_run_finished),
             ('fill_context_menu_signal', self.menu_manager.handle_fill_context_menu),
+            ('project_modified_signal', self.menu_manager.save_actions_set_enabled),
             ('refresh_ui_signal', self.refresh_ui),
         ]
         for view in self.views.values():

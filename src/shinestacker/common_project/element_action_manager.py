@@ -1,5 +1,5 @@
 # pylint: disable=C0114, C0115, C0116, W0246, E0611, R0917, R0913, W0613, R0911, R0912, R0904
-from PySide6.QtCore import QObject
+from PySide6.QtCore import QObject, Signal
 from PySide6.QtWidgets import QMessageBox
 from .. config.constants import constants
 from .. common_project.selection_state import SelectionState
@@ -8,6 +8,7 @@ from .project_handler import ProjectHandler
 
 class ElementActionManager(ProjectHandler, QObject):
     CLONE_POSTFIX = ' (clone)'
+    project_modified_signal = Signal(bool)
 
     def __init__(self, project_holder, selection_state, parent=None):
         ProjectHandler.__init__(self, project_holder)
@@ -40,7 +41,7 @@ class ElementActionManager(ProjectHandler, QObject):
                 return SelectionState(job_idx, act_idx)
             if act_idx == 0:
                 return SelectionState(job_idx)
-            return (job_idx, act_idx - 1)
+            return SelectionState(job_idx, act_idx - 1)
         num_jobs = self.num_project_jobs() + 1
         if job_idx >= num_jobs:
             return SelectionState()
@@ -132,6 +133,16 @@ class ElementActionManager(ProjectHandler, QObject):
             f"Are you sure you want to delete {type_name} '{element_name}'?",
             QMessageBox.Yes | QMessageBox.No
         ) == QMessageBox.Yes
+
+    def mark_as_modified(self, modified=True, description='', action_type=None,
+                         affected_position=(-1, -1, -1)):
+        ProjectHandler.mark_as_modified(self, modified, description, action_type, affected_position)
+        self.project_modified_signal.emit(modified)
+
+    def save_undo_state(self, pre_state, description='', action_type='',
+                        affected_position=(-1, -1, -1)):
+        ProjectHandler.save_undo_state(self, pre_state, description, action_type, affected_position)
+        self.project_modified_signal.emit(True)
 
     def paste_job_logic(self, copy_buffer, job_index, description="",
                         action_type="", affected_position=None):
