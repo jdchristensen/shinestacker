@@ -61,15 +61,6 @@ class PyramidBase(BaseStackAlgo):
             next_layer[:, :, channel] = self.expand_layer(layer[:, :, channel])
         return next_layer
 
-    def fuse_laplacian(self, laplacians):
-        gray_laps = [cv2.cvtColor(lap.astype(np.float32), cv2.COLOR_BGR2GRAY) for lap in laplacians]
-        energies = [self.convolve(np.square(gray_lap)) for gray_lap in gray_laps]
-        best = np.argmax(energies, axis=0)
-        fused = np.zeros_like(laplacians[0])
-        for i, lap in enumerate(laplacians):
-            fused += np.where(best[:, :, np.newaxis] == i, lap, 0)
-        return fused
-
     def collapse(self, pyramid):
         self.print_message(': collapsing pyramid')
         img = pyramid[-1]
@@ -143,6 +134,18 @@ class PyramidBase(BaseStackAlgo):
             laplacian.append(pyr - expanded)
         return laplacian
 
+    def _compute_energies(self, gray_laps):
+        return [self.convolve(np.square(gray_lap)) for gray_lap in gray_laps]
+
+    def fuse_laplacian(self, laplacians):
+        gray_laps = [cv2.cvtColor(lap.astype(np.float32), cv2.COLOR_BGR2GRAY)
+                    for lap in laplacians]
+        energies = self._compute_energies(gray_laps)
+        best = np.argmax(energies, axis=0)
+        fused = np.zeros_like(laplacians[0])
+        for i, lap in enumerate(laplacians):
+            fused += np.where(best[:, :, np.newaxis] == i, lap, 0)
+        return fused
 
 class PyramidStack(PyramidBase):
     def __init__(self, **kwargs):

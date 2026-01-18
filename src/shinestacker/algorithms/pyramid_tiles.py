@@ -83,7 +83,8 @@ class PyramidTilesStack(PyramidBase, TempDirBase):
     def load_level_tile(self, img_index, level, y, x):
         return np.load(
             os.path.join(self.temp_dir_path,
-                         f'img_{img_index}_level_{level}_tile_{y}_{x}.npy'))
+                         f'img_{img_index}_level_{level}_tile_{y}_{x}.npy'),
+            mmap_mode='r').copy()
 
     def load_level(self, img_index, level):
         return np.load(os.path.join(self.temp_dir_path, f'img_{img_index}_level_{level}.npy'))
@@ -211,6 +212,9 @@ class PyramidTilesStack(PyramidBase, TempDirBase):
                 os.remove(tile_path)
             except Exception as e:
                 traceback.print_tb(e.__traceback__)
+
+    def _compute_energies(self, gray_laps):
+        return np.array([self.convolve(np.square(gray_lap)) for gray_lap in gray_laps])
 
     def fuse_pyramids(self, all_level_counts):
         num_images = self.num_images()

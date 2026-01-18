@@ -17,6 +17,7 @@ Fixes, cleanup and refactoring
 
 ### Changed
 - code refactoring and cleanup: removed duplicated code in classic and modern project GUI views
+- optimized pyramid algorithm
 
 ---
 
