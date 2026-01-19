@@ -2,7 +2,7 @@
 
 This page reports the main releases only and the main changes therein.
 
-## [v1.13.x] - 2026-01-17
+## [v1.13.x] - 2026-01-19
 
 Fixes, cleanup and refactoring
 
@@ -18,6 +18,7 @@ Fixes, cleanup and refactoring
 ### Changed
 - code refactoring and cleanup: removed duplicated code in classic and modern project GUI views
 - optimized pyramid algorithm
+- allow latest OpenCV version, 4.13.0.90
 
 ---
 
