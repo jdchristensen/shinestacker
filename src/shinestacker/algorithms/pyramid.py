@@ -139,13 +139,14 @@ class PyramidBase(BaseStackAlgo):
 
     def fuse_laplacian(self, laplacians):
         gray_laps = [cv2.cvtColor(lap.astype(np.float32), cv2.COLOR_BGR2GRAY)
-                    for lap in laplacians]
+                     for lap in laplacians]
         energies = self._compute_energies(gray_laps)
         best = np.argmax(energies, axis=0)
         fused = np.zeros_like(laplacians[0])
         for i, lap in enumerate(laplacians):
             fused += np.where(best[:, :, np.newaxis] == i, lap, 0)
         return fused
+
 
 class PyramidStack(PyramidBase):
     def __init__(self, **kwargs):
