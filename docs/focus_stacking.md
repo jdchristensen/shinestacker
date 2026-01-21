@@ -9,6 +9,7 @@ Arguments for the constructor of ```FocusStack``` are:
 * ```input_path``` (optional): the subdirectory within ```working_path``` that contains input images to be processed. If not specified, the last output path is used, or, if this is the first action, the ```input_path``` specified with the ```StackJob``` construction is used. If the ```StackJob``` specifies no ```input_path```, at least the first action must specify an  ```input_path```.
 * ```output_path``` (optional): the subdirectory within ```working_path``` where aligned images are written. If not specified,  it is equal to  ```name```.
 * ```working_path```: the directory that contains input and output image subdirectories. If not specified, it is the same as ```job.working_path```.
+* ```plot_path``` (optional, default: ```plots```): the directory within ```working_path``` that contains plots produced by the algrithm.
 * ```exif_path``` (optional): if specified, EXIF data are copied to the output file from file in the specified directory. If not specified, it is the source directory used as input for the first action. If set equal to ```''``` no EXIF data is saved.
 * ```denoise_amount``` (optional; default: 0): if > 0, a denois algorithm is applied. A value of 0.75 to 1.00 does not reduce details in an appreciable way, and is suitable for modest noise reduction. denoise may be useful for 8-bit images, or for images taken at large ISO. 16-bits images at low ISO usually don't require denoise. See [Image Denoising](https://docs.opencv.org/3.4/d5/d69/tutorial_py_non_local_means.html) for more details.
 * ```sharpen_amount_percent``` (optional; default: 0): if > 0, a unsharp mask algorithm is applied. Values from 50% up apply a visible amount of sharpening.
@@ -30,6 +31,7 @@ Arguments for the constructor of ```FocusStackBunch``` are:
 * ```input_path``` (optional): the subdirectory within ```working_path``` that contains input images to be processed. If not specified, the last output path is used, or, if this is the first action, the ```input_path``` specified with the ```StackJob``` construction is used. If the ```StackJob``` specifies no ```input_path```, at least the first action must specify an  ```input_path```.
 * * ```output_path``` (optional): the subdirectory within ```working_path``` where aligned images are written. If not specified,  it is equal to  ```name```.
 * ```working_path```: the directory that contains input and output image subdirectories. If not specified, it is the same as ```job.working_path```.
+* ```plot_path``` (optional, default: ```plots```): the directory within ```working_path``` that contains plots produced by the algrithm.
 * ```exif_path``` (optional): if specified, EXIF data are copied to the output file from file in the specified directory. If not specified, it is the source directory used as * ```frames``` (optional, default: 10): the number of frames in each bunch that are stacked together.
 * ```frames``` (optional, default: 10): the number of frames that are fused together. 
 * ```overlap``` (optional, default: 0): the number of overlapping frames between a bunch and the following one. 
@@ -82,5 +84,6 @@ Arguments for the constructor are:
    * ```energy_sigma_color``` (optiona, default: 0.8): controls how much energy values can differ while still smoothing together for the energy map.
    * ```energy_sigma_space``` (optional, default: 8): controls the spatial distance for smoothing neighborhood. Larger values require slower computation.
    * ```temperature``` (optional, default: 0.15): controls fusion transition. Lower value means sharper transitions.
+   * ```plot_depth_map``` (optional, default: ```False```): produces a grayscale depth map and saves it in the ```plot_path``` folder.
 
 For more details about bilateral filters applied to energy and weights map, see [Bilateral Filtering](https://www.geeksforgeeks.org/python/python-bilateral-filtering/).
