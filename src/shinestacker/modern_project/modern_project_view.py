@@ -308,27 +308,55 @@ class ModernProjectView(ProjectView):
     # pylint: disable=W0212
     def _refresh_job_widget_signals(self):
         for job_widget in self.job_widgets:
-            if getattr(job_widget, "_signals_connected", False):
-                for name, slot in job_widget._slots.items():
-                    self._safe_disconnect(getattr(job_widget, name), slot)
-                job_widget._signals_connected = False
+            try:
+                job_widget.clicked.disconnect()
+            except Exception:
+                pass
+            try:
+                job_widget.double_clicked.disconnect()
+            except Exception:
+                pass
+            try:
+                job_widget.enabled_toggled.disconnect()
+            except Exception:
+                pass
             for action_widget in job_widget.child_widgets:
-                if getattr(action_widget, "_signals_connected", False):
-                    for name, slot in action_widget._slots.items():
-                        self._safe_disconnect(getattr(action_widget, name), slot)
-                    action_widget._signals_connected = False
+                try:
+                    action_widget.clicked.disconnect()
+                except Exception:
+                    pass
+                try:
+                    action_widget.double_clicked.disconnect()
+                except Exception:
+                    pass
+                try:
+                    action_widget.enabled_toggled.disconnect()
+                except Exception:
+                    pass
                 for subaction_widget in action_widget.child_widgets:
-                    if getattr(subaction_widget, "_signals_connected", False):
-                        for name, slot in subaction_widget._slots.items():
-                            self._safe_disconnect(getattr(subaction_widget, name), slot)
-                        subaction_widget._signals_connected = False
+                    try:
+                        subaction_widget.clicked.disconnect()
+                    except Exception:
+                        pass
+                    try:
+                        subaction_widget.double_clicked.disconnect()
+                    except Exception:
+                        pass
+                    try:
+                        subaction_widget.enabled_toggled.disconnect()
+                    except Exception:
+                        pass
         for j_idx, job_widget in enumerate(self.job_widgets):
             job_widget._slots = {}
             job_widget._slots["clicked"] = partial(
                 self._on_widget_clicked, job_widget, "job", j_idx
             )
+            job_widget._slots["double_clicked"] = partial(
+                self._on_job_double_clicked, j_idx
+            )
             job_widget._slots["enabled_toggled"] = self._on_widget_enabled_toggled
             job_widget.clicked.connect(job_widget._slots["clicked"])
+            job_widget.double_clicked.connect(job_widget._slots["double_clicked"])
             job_widget.enabled_toggled.connect(job_widget._slots["enabled_toggled"])
             job_widget._signals_connected = True
             for a_idx, action_widget in enumerate(job_widget.child_widgets):
@@ -337,16 +365,12 @@ class ModernProjectView(ProjectView):
                     self._on_widget_clicked, action_widget, "action", j_idx, a_idx
                 )
                 action_widget._slots["double_clicked"] = partial(
-                    self._on_action_double_clicked, action_widget, j_idx, a_idx
+                    self._on_action_double_clicked, j_idx, a_idx
                 )
                 action_widget._slots["enabled_toggled"] = self._on_widget_enabled_toggled
                 action_widget.clicked.connect(action_widget._slots["clicked"])
-                action_widget.double_clicked.connect(
-                    action_widget._slots["double_clicked"]
-                )
-                action_widget.enabled_toggled.connect(
-                    action_widget._slots["enabled_toggled"]
-                )
+                action_widget.double_clicked.connect(action_widget._slots["double_clicked"])
+                action_widget.enabled_toggled.connect(action_widget._slots["enabled_toggled"])
                 action_widget._signals_connected = True
                 for s_idx, subaction_widget in enumerate(action_widget.child_widgets):
                     subaction_widget._slots = {}
@@ -355,19 +379,14 @@ class ModernProjectView(ProjectView):
                         subaction_widget, "subaction", j_idx, a_idx, s_idx
                     )
                     subaction_widget._slots["double_clicked"] = partial(
-                        self._on_subaction_double_clicked,
-                        subaction_widget, j_idx, a_idx, s_idx
+                        self._on_subaction_double_clicked, j_idx, a_idx, s_idx
                     )
                     subaction_widget._slots["enabled_toggled"] = self._on_widget_enabled_toggled
-                    subaction_widget.clicked.connect(
-                        subaction_widget._slots["clicked"]
-                    )
+                    subaction_widget.clicked.connect(subaction_widget._slots["clicked"])
                     subaction_widget.double_clicked.connect(
-                        subaction_widget._slots["double_clicked"]
-                    )
+                        subaction_widget._slots["double_clicked"])
                     subaction_widget.enabled_toggled.connect(
-                        subaction_widget._slots["enabled_toggled"]
-                    )
+                        subaction_widget._slots["enabled_toggled"])
                     subaction_widget._signals_connected = True
     # pylint: enable=W0212
 

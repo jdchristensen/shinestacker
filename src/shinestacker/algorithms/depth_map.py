@@ -197,21 +197,16 @@ class DepthMapStack(BaseStackAlgo, TempDirBase):
                                 f"{self.process.name}-depth-map.png")
         n_images = weights.shape[0]
         i_max = max(n_images - 1, 1)
-        
         weights_clean = np.nan_to_num(weights, nan=0.0, posinf=0.0, neginf=0.0)
-        
         indices = np.arange(n_images).reshape(-1, 1, 1)
         weighted_sum = np.sum(weights_clean * indices, axis=0)
         sum_weights = np.sum(weights_clean, axis=0)
-        
         depth_map = np.zeros_like(sum_weights)
         mask = sum_weights > 1e-10
         if np.any(mask):
             depth_map[mask] = (weighted_sum[mask] / sum_weights[mask]) / i_max * 255.0
-        
         depth_map = np.nan_to_num(depth_map, nan=0.0, posinf=255.0, neginf=0.0)
         img = np.clip(depth_map, 0, 255).astype(np.uint8)
-        
         self.print_message(": writing depth map")
         write_img(filepath, img)
         self.process.callback(
@@ -246,7 +241,7 @@ class DepthMapStack(BaseStackAlgo, TempDirBase):
         for i, relative in enumerate(relative_maps):
             self.print_message(f": compute weight, {self.image_str(i)}")
             weights[i] = relative / sum_relative
-            self.after_step(i + n_images * 2 +  1)
+            self.after_step(i + n_images * 2 + 1)
             self.check_running()
         self.cleanup_temp_files(energy_files)
         return weights
