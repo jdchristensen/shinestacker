@@ -302,15 +302,16 @@ class FocusStackBaseConfigurator(DefaultActionConfigurator):
             expert=True)
         self.add_field_to_layout(
             layout, 'input_path', FIELD_REL_PATH, 'Input path', required=False,
-            expert=True,
-            placeholder='relative to working path')
+            expert=True, placeholder='relative to working path')
         self.add_field_to_layout(
             layout, 'output_path', FIELD_REL_PATH, 'Output path', required=False,
-            expert=True,
-            placeholder='relative to working path')
+            expert=True, placeholder='relative to working path')
         self.add_field_to_layout(
             layout, 'scratch_output_dir', FIELD_BOOL, 'Scratch output folder before run',
             required=False, default=True)
+        self.add_field_to_layout(
+            layout, 'plot_path', FIELD_REL_PATH, 'Plots path', required=False,
+            expert=True, default="plots", placeholder='relative to working path')
         self.add_field_to_layout(
             layout, 'denoise_amount', FIELD_FLOAT, 'Denoise, amount', required=False,
             expert=False, default=AppConfig.get('focus_stack_params')['denoise_amount'],
@@ -517,6 +518,9 @@ class FocusStackBaseConfigurator(DefaultActionConfigurator):
 
         layout.addRow(stacked)
         combo.currentIndexChanged.connect(change)
+        self.add_field_to_layout(
+            q_depthmap.layout(), 'depthmap_plot_depth_map', FIELD_BOOL, 'Plot depth map',
+            required=False, default=AppConfig.get('depth_map_params')['plot_depth_map'])
 
 
 class FocusStackConfigurator(FocusStackBaseConfigurator):

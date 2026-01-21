@@ -34,6 +34,8 @@ class FocusStackBase(TaskBase, ImageSequenceManager):
         self.plot_stack = kwargs.pop(
             'plot_stack', DEFAULTS['focus_stack_params']['plot_stack'])
         self.stack_algo.set_process(self)
+        self.plot_path = kwargs.pop(
+            'plot_path', DEFAULTS['image_sequence_manager']['plots_path'])
         self.frame_count = -1
 
     def focus_stack(self, filenames):

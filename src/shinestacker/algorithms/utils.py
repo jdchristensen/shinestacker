@@ -117,6 +117,8 @@ def read_img(file_path):
 
 
 def write_img(file_path, img):
+    if img is None:
+        raise RuntimeError("Trying to write null image.")
     check_windows_path(file_path)
     if extension_jpg(file_path):
         cv2.imwrite(file_path, img, [int(cv2.IMWRITE_JPEG_QUALITY), 100])

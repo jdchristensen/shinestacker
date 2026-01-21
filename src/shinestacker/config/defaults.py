@@ -103,7 +103,8 @@ DEFAULTS = {
         'energy_smooth_size': 7,
         'energy_sigma_color': 0.8,
         'energy_sigma_space': 8,
-        'temperature': 0.15
+        'temperature': 0.15,
+        'plot_depth_map': False
     },
     'pyramid_params': {
         'method': 'rgb',

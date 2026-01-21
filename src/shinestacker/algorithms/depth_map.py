@@ -5,7 +5,7 @@ import cv2
 from .. config.constants import constants
 from .. config.defaults import DEFAULTS
 from .. core.exceptions import InvalidOptionError
-from .utils import read_img, read_and_validate_img, img_bw
+from .utils import read_img, write_img, read_and_validate_img, img_bw
 from .base_stack_algo import BaseStackAlgo, TempDirBase
 
 
@@ -40,6 +40,7 @@ class DepthMapStack(BaseStackAlgo, TempDirBase):
         self.memory_limit = kwargs.get('memory_limit', focus_stack_params['memory_limit'])
         self.steps_count = 0
         self.cv_float = cv2.CV_64F if self.float_type == np.float64 else cv2.CV_32F
+        self.plot_depth_map = kwargs.get('plot_depth_map', default_params['plot_depth_map'])
 
     def get_sobel_map(self, gray_img):
         sobel_energy = np.abs(cv2.Sobel(gray_img, self.cv_float, 1, 0, ksize=3)) + \
@@ -182,12 +183,31 @@ class DepthMapStack(BaseStackAlgo, TempDirBase):
             sum_weights = np.where(sum_weights == 0, np.finfo(weights.dtype).eps, sum_weights)
             weights = np.divide(weights, sum_weights)
             self.check_running()
+        if self.plot_depth_map:
+            self.save_depth_map_plot(weights)
         result = self.weighted_pyramid_blend(weights, n_images)
         self.steps_count += 1
         self.process.callback(constants.CALLBACK_UPDATE_FRAME_STATUS,
                               self.process.name, self.output_filename,
                               self.steps_count)
         return result
+
+    def save_depth_map_plot(self, weights):
+        filepath = os.path.join(self.process.working_path, self.process.plot_path,
+                                f"{self.process.name}-depth-map.png")
+        n_images = weights.shape[0]
+        i_max = n_images - 1
+        indices = np.arange(n_images).reshape(-1, 1, 1)
+        weighted_sum = np.sum(weights * indices, axis=0)
+        sum_weights = np.sum(weights, axis=0)
+        sum_weights = np.where(sum_weights == 0, np.finfo(weights.dtype).eps, sum_weights)
+        depth_map = (weighted_sum / sum_weights) / i_max * 255.0
+        img = np.clip(depth_map, 0, 255).astype(np.uint8)
+        self.print_message(": writing depth map")
+        write_img(filepath, img)
+        self.process.callback(
+            constants.CALLBACK_SAVE_PLOT, self.process.id, self.process.output_path,
+            "Depth map", filepath)
 
     def get_focus_map_from_disk_average(self, energy_files, sum_energies, n_images):
         sum_energies = np.where(sum_energies == 0, np.finfo(self.float_type).eps, sum_energies)

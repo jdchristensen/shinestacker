@@ -55,6 +55,18 @@ def test_jpg_dm():
         assert False
 
 
+def test_jpg_dm_plot():
+    try:
+        job = StackJob("job", "examples", input_path="input/img-jpg")
+        job.add_action(FocusStack("stack-depthmap", DepthMapStack(),
+                                  output_path="output/img-jpg-stack",
+                                  delete_output_at_end=True,
+                                  prefix='dm_', plot_depth_map=True))
+        job.run()
+    except Exception:
+        assert False
+
+
 def test_jpg_pt_1():
     try:
         job = StackJob("job", "examples", input_path="input/img-jpg")

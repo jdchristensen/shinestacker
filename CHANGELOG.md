@@ -2,14 +2,15 @@
 
 This page reports the main releases only and the main changes therein.
 
-## [v1.13.x] - 2026-01-19
+## [v1.13.2] - 2026-01-21
 
-Fixes, cleanup and refactoring
+Fixes and minor GUI improvements, cleanup and refactoring
 
 ### Added
-- better navigation in the project GUI: arrow key navigation from job to actions, and edit triggered by enter/return key.
-- keyboard shortcuts for main project and retouch menu entries
-- raw file extension now tolerated but issuing an error message in preparation for future support; the actual support will depend on next updates of rawpy package.
+- optional plot of the estimated depth map for focus stacking with the DepthMap algorithm
+- better navigation in the project classic GUI: arrow key navigation from job to actions, and edit triggered by enter/return key.
+- keyboard shortcuts for main project and retouch menu main entries
+- raw file extension is now tolerated but issues an error message in preparation for future support; the actual support will depend on next updates of rawpy package
 
 ### Fixed
 - various bugs in the project editing GUI
@@ -17,7 +18,7 @@ Fixes, cleanup and refactoring
 
 ### Changed
 - code refactoring and cleanup: removed duplicated code in classic and modern project GUI views
-- optimized pyramid algorithm
+- minor optimization of pyramid algorithm
 - allow latest OpenCV version, 4.13.0.90
 
 ---
