@@ -4,7 +4,7 @@ This page reports the main releases only and the main changes therein.
 
 ## [v1.13.3] - 2026-01-21
 
-Fixes and minor GUI improvements, cleanup and refactoring
+**Fixes and minor GUI improvements, cleanup and refactoring**
 
 ### Added
 - optional plot of the estimated depth map for focus stacking with the DepthMap algorithm
@@ -25,7 +25,7 @@ Fixes and minor GUI improvements, cleanup and refactoring
 
 ## [v1.13.2] - 2026-01-13
 
-Implemented some GUI missing features
+**Implemented some GUI missing features**
 
 ### Fixed
 - undoing cut or delete in the modern view restures full run progress, with image thumbnails and progress bar
@@ -39,7 +39,7 @@ Implemented some GUI missing features
 
 ## [v1.13.1] - 2026-01-06
 
-Main stability reengineering of the project GUI: improvements and fixes
+**Main stability reengineering of the project GUI: improvements and fixes**
 
 ### Fixed
 - correct and consistent GUI response with update of both views when the project is modified
@@ -52,9 +52,9 @@ Main stability reengineering of the project GUI: improvements and fixes
 
 ## [v1.13.0] - 2025-12-29
 
-This release introduces a redesigned project GUI with an integrated editing and run workflow.
+**This release introduces a redesigned project GUI with an integrated editing and run workflow.
 Project modules now display their outputs directly inside their corresponding boxes, making complex pipelines easier to understand and manage.
-The classic project view is still available and can be enabled at any time from the View menu.
+The classic project view is still available and can be enabled at any time from the View menu.**
 
 ### Added
 - new integrated project editing view with a redesigned interactive GUI; the classic view is still available via *View > View Mode > Classic*
@@ -75,6 +75,8 @@ The classic project view is still available and can be enabled at any time from 
 ---
 
 ## [v1.12.0] - 2025-12-21
+
+**New tonemapping filter**
 
 ### Added
 - new tonemapping filter
@@ -177,12 +179,12 @@ The classic project view is still available and can be enabled at any time from 
 ---
 
 ## [v1.10.0] - 2025-11-19 (⚠️ DEPRECATED — use 1.10.1)
-** One source file missing; replaced by 1.10.1.
+**One source file missing; replaced by 1.10.1.**
 
 ---
 
 ## [v1.9.7] - 2025-11-13
-** Fixed serious alignment bug from previous release **
+**Fixed serious alignment bug from previous release**
 
 ### Fixed
 - fixed serious bug in alignment module introduced with code refactoring in releae 1.9.6
@@ -192,7 +194,7 @@ The classic project view is still available and can be enabled at any time from 
 ---
 
 ## [v1.9.6] - 2025-11-13
-** GUI improvements and bug fixes **
+**GUI improvements and bug fixes**
 
 ### Added
 - visual progress indicators for frame processing
@@ -210,7 +212,7 @@ The classic project view is still available and can be enabled at any time from 
 ---
 
 ## [v1.9.5] - 2025-11-07
-** Fixed possible crash in focus bunches **
+**Fixed possible crash in focus bunches**
 
 ### Fixed
 - fixed crash in focus bunches if only a subset of files in a folder is selected
@@ -218,7 +220,7 @@ The classic project view is still available and can be enabled at any time from 
 ---
 
 ## [v1.9.4] - 2025-11-07
-** Improved GUI and more fixes to EXIF data **
+**Improved GUI and more fixes to EXIF data**
 
 ### Fixed
 - more consistent naming in EXIF data display
@@ -234,7 +236,7 @@ The classic project view is still available and can be enabled at any time from 
 ---
 
 ## [v1.9.3] - 2025-11-02
-** Fixes to EXIF data and GUI **
+**Fixes to EXIF data and GUI**
 
 ### Fixed
 - fault tolerant copy of EXIF data prevents to write corrupted files
@@ -251,7 +253,7 @@ The classic project view is still available and can be enabled at any time from 
 ---
 
 ## [v1.9.2] - 2025-10-29
-** Fixes to EXIF data and alignment; GUI refinements **
+**Fixes to EXIF data and alignment; GUI refinements**
 
 ### Added
 - new keyboard and mouse wheel shortcuts to control brush opacity and flow
@@ -267,7 +269,7 @@ The classic project view is still available and can be enabled at any time from 
 ---
 
 ## [v1.9.1] - 2025-10-23
-** Improved EXIF data handling GUI refinements **
+**Improved EXIF data handling GUI refinements**
 
 ### Added
 - missing actions "Show EXIF Data" and "Delete EXIF Data"
@@ -285,7 +287,7 @@ The classic project view is still available and can be enabled at any time from 
 -----
 
 ## [v1.9.0] - 2025-10-19
-** Added PNG format support and fixed EXIF failure **
+**Added PNG format support and fixed EXIF failure**
 
 ### Added
 - support of images in PNG format, both in 8 bit and 16 bit depth. Note: EXIF data are not supported for 16 bit PNG because of limitations in the PIL and Open CV python libraries.
@@ -295,9 +297,8 @@ The classic project view is still available and can be enabled at any time from 
 
 -----
 
-
 ## [v1.8.1] - 2025-10-16
-** Alignment stability and performance improvements **
+**Alignment stability and performance improvements**
 
 ### Added
 - optional alignment algorithm based on phase correlation as fallback when no feature match is found
@@ -323,7 +324,7 @@ The classic project view is still available and can be enabled at any time from 
 -----
 
 ## [v1.8.0] - 2025-10-08
-** Minor improvements and accessibility fix **
+**Minor improvements and accessibility fix**
 
 ### Added
 - temporary disk space can be cleaned up with a new option to scratch output files at the end of a job 
@@ -340,7 +341,7 @@ The classic project view is still available and can be enabled at any time from 
 -----
 
 ## [v1.7.0] - 2025-10-04
-** New image adjustment actions and macOS dmg image installer **
+**New image adjustment actions and macOS dmg image installer**
 
 ### Added
 - luminosity and contrast adjustment action
@@ -356,7 +357,7 @@ The classic project view is still available and can be enabled at any time from 
 -----
 
 ## [v1.6.1] - 2025-10-01
-** Performance improvements **
+**Performance improvements**
 
 ### Added
 - windows installer
