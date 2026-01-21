@@ -307,87 +307,49 @@ class ModernProjectView(ProjectView):
 
     # pylint: disable=W0212
     def _refresh_job_widget_signals(self):
-        for job_widget in self.job_widgets:
-            try:
-                job_widget.clicked.disconnect()
-            except Exception:
-                pass
-            try:
-                job_widget.double_clicked.disconnect()
-            except Exception:
-                pass
-            try:
-                job_widget.enabled_toggled.disconnect()
-            except Exception:
-                pass
-            for action_widget in job_widget.child_widgets:
+        signal_types = ["clicked", "double_clicked", "enabled_toggled"]
+
+        def disconnect_signals(widget):
+            for signal in signal_types:
                 try:
-                    action_widget.clicked.disconnect()
+                    getattr(widget, signal).disconnect()
                 except Exception:
                     pass
-                try:
-                    action_widget.double_clicked.disconnect()
-                except Exception:
-                    pass
-                try:
-                    action_widget.enabled_toggled.disconnect()
-                except Exception:
-                    pass
-                for subaction_widget in action_widget.child_widgets:
-                    try:
-                        subaction_widget.clicked.disconnect()
-                    except Exception:
-                        pass
-                    try:
-                        subaction_widget.double_clicked.disconnect()
-                    except Exception:
-                        pass
-                    try:
-                        subaction_widget.enabled_toggled.disconnect()
-                    except Exception:
-                        pass
+
+        def connect_widget_signals(widget, widget_type, indices):
+            widget._slots = {}
+            if widget_type == "job":
+                j_idx = indices[0]
+                widget._slots["clicked"] = partial(self._on_widget_clicked, widget, "job", j_idx)
+                widget._slots["double_clicked"] = partial(self._on_job_double_clicked, j_idx)
+            elif widget_type == "action":
+                j_idx, a_idx = indices
+                widget._slots["clicked"] = partial(
+                    self._on_widget_clicked, widget, "action", j_idx, a_idx)
+                widget._slots["double_clicked"] = partial(
+                    self._on_action_double_clicked, j_idx, a_idx)
+            else:
+                j_idx, a_idx, s_idx = indices
+                widget._slots["clicked"] = partial(
+                    self._on_widget_clicked, widget, "subaction", j_idx, a_idx, s_idx)
+                widget._slots["double_clicked"] = partial(
+                    self._on_subaction_double_clicked, j_idx, a_idx, s_idx)
+            widget._slots["enabled_toggled"] = self._on_widget_enabled_toggled
+            for signal in signal_types:
+                getattr(widget, signal).connect(widget._slots[signal])
+            widget._signals_connected = True
+
         for j_idx, job_widget in enumerate(self.job_widgets):
-            job_widget._slots = {}
-            job_widget._slots["clicked"] = partial(
-                self._on_widget_clicked, job_widget, "job", j_idx
-            )
-            job_widget._slots["double_clicked"] = partial(
-                self._on_job_double_clicked, j_idx
-            )
-            job_widget._slots["enabled_toggled"] = self._on_widget_enabled_toggled
-            job_widget.clicked.connect(job_widget._slots["clicked"])
-            job_widget.double_clicked.connect(job_widget._slots["double_clicked"])
-            job_widget.enabled_toggled.connect(job_widget._slots["enabled_toggled"])
-            job_widget._signals_connected = True
+            disconnect_signals(job_widget)
+            for action_widget in job_widget.child_widgets:
+                disconnect_signals(action_widget)
+                for subaction_widget in action_widget.child_widgets:
+                    disconnect_signals(subaction_widget)
+            connect_widget_signals(job_widget, "job", (j_idx,))
             for a_idx, action_widget in enumerate(job_widget.child_widgets):
-                action_widget._slots = {}
-                action_widget._slots["clicked"] = partial(
-                    self._on_widget_clicked, action_widget, "action", j_idx, a_idx
-                )
-                action_widget._slots["double_clicked"] = partial(
-                    self._on_action_double_clicked, j_idx, a_idx
-                )
-                action_widget._slots["enabled_toggled"] = self._on_widget_enabled_toggled
-                action_widget.clicked.connect(action_widget._slots["clicked"])
-                action_widget.double_clicked.connect(action_widget._slots["double_clicked"])
-                action_widget.enabled_toggled.connect(action_widget._slots["enabled_toggled"])
-                action_widget._signals_connected = True
+                connect_widget_signals(action_widget, "action", (j_idx, a_idx))
                 for s_idx, subaction_widget in enumerate(action_widget.child_widgets):
-                    subaction_widget._slots = {}
-                    subaction_widget._slots["clicked"] = partial(
-                        self._on_widget_clicked,
-                        subaction_widget, "subaction", j_idx, a_idx, s_idx
-                    )
-                    subaction_widget._slots["double_clicked"] = partial(
-                        self._on_subaction_double_clicked, j_idx, a_idx, s_idx
-                    )
-                    subaction_widget._slots["enabled_toggled"] = self._on_widget_enabled_toggled
-                    subaction_widget.clicked.connect(subaction_widget._slots["clicked"])
-                    subaction_widget.double_clicked.connect(
-                        subaction_widget._slots["double_clicked"])
-                    subaction_widget.enabled_toggled.connect(
-                        subaction_widget._slots["enabled_toggled"])
-                    subaction_widget._signals_connected = True
+                    connect_widget_signals(subaction_widget, "subaction", (j_idx, a_idx, s_idx))
     # pylint: enable=W0212
 
     def _refresh_after_structure_change(self):
