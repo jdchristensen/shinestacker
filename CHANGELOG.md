@@ -2,7 +2,7 @@
 
 This page reports the main releases only and the main changes therein.
 
-## [v1.13.2] - 2026-01-21
+## [v1.13.3] - 2026-01-21
 
 Fixes and minor GUI improvements, cleanup and refactoring
 
