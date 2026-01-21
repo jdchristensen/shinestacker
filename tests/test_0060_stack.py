@@ -58,10 +58,10 @@ def test_jpg_dm():
 def test_jpg_dm_plot():
     try:
         job = StackJob("job", "examples", input_path="input/img-jpg")
-        job.add_action(FocusStack("stack-depthmap", DepthMapStack(),
+        job.add_action(FocusStack("stack-depthmap", DepthMapStack(plot_depth_map=True),
                                   output_path="output/img-jpg-stack",
                                   delete_output_at_end=True,
-                                  prefix='dm_', plot_depth_map=True))
+                                  prefix='dm_'))
         job.run()
     except Exception:
         assert False
@@ -132,6 +132,7 @@ if __name__ == '__main__':
     test_jpg_filter()
     test_tif()
     test_jpg_dm()
+    test_jpg_dm_plot()
     test_jpg_pt_1()
     test_jpg_pt_2()
     test_jpg_auto_1()
