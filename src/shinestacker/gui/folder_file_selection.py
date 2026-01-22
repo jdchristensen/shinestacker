@@ -66,14 +66,18 @@ class FolderFileSelectionWidget(QWidget):
             self.browse_files()
 
     def browse_folder(self):
-        path = QFileDialog.getExistingDirectory(self, "Select Input Folder")
+        current_path = self.path_edit.text()
+        start_dir = current_path if os.path.isdir(current_path) else ""
+        path = QFileDialog.getExistingDirectory(self, "Select Input Folder", start_dir)
         if path:
             self.selected_files = []
             self.path_edit.setText(path)
 
     def browse_files(self):
+        current_path = self.path_edit.text()
+        start_dir = current_path if os.path.isdir(current_path) else ""
         files, _ = QFileDialog.getOpenFileNames(
-            self, "Select Input Files", "",
+            self, "Select Input Files", start_dir,
             f"Image files ({EXTENSIONS_GUI_STR_IN})"
         )
         if files:
