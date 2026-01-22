@@ -1,4 +1,4 @@
-# pylint: disable=C0114, C0115, C0116, R0913, R0917, W0718, R0902
+# pylint: disable=C0114, C0115, C0116, R0913, R0917, W0718, R0902, R0912
 import os
 import traceback
 import logging
@@ -8,7 +8,7 @@ from .. config.defaults import DEFAULTS
 from .. core.framework import TaskBase
 from .. core.colors import color_str
 from .. core.exceptions import InvalidOptionError
-from .utils import write_img, extension_supported_output, get_output_filename
+from .utils import read_img, write_img, extension_supported_output, get_output_filename
 from .stack_framework import ImageSequenceManager, SequentialTask
 from .exif import copy_exif_from_file_to_file
 from .denoise import denoise
@@ -45,8 +45,16 @@ class FocusStackBase(TaskBase, ImageSequenceManager):
             self.output_full_path(), self.prefix + get_output_filename(input_filename))
         filename = os.path.basename(output_filename)
         self.callback(constants.CALLBACK_UPDATE_FRAME_STATUS, self.name, filename, 0)
-        self.stack_algo.set_output_filename(filename)
-        stacked_img = self.stack_algo.focus_stack()
+        n_frames = len(filenames)
+        if n_frames > 1:
+            self.sub_message_r(color_str(
+                f': focus stacking: blending {n_frames} frames', constants.LOG_COLOR_LEVEL_3))
+            self.stack_algo.set_output_filename(filename)
+            stacked_img = self.stack_algo.focus_stack()
+        else:
+            self.sub_message_r(color_str(
+                ': focus stack made of a single file, skip blending', constants.LOG_COLOR_LEVEL_3))
+            stacked_img = read_img(filenames[0])
         if self.denoise_amount > 0.0:
             self.sub_message_r(color_str(': denoise image', constants.LOG_COLOR_LEVEL_3))
             stacked_img = denoise(

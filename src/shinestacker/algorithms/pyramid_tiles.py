@@ -100,8 +100,8 @@ class PyramidTilesStack(PyramidBase, TempDirBase):
                         os.remove(file_path)
                     except Exception:
                         pass
-        except Exception as e:
-            traceback.print_tb(e.__traceback__)
+        except Exception:
+            traceback.print_exc()
             try:
                 if self.temp_dir_manager:
                     shutil.rmtree(self.temp_dir_manager.name, ignore_errors=True)
@@ -112,8 +112,8 @@ class PyramidTilesStack(PyramidBase, TempDirBase):
                             os.remove(file_path)
                         except Exception:
                             pass
-            except Exception as ee:
-                traceback.print_tb(ee.__traceback__)
+            except Exception:
+                traceback.print_exc()
 
     def _fuse_level_tiles_serial(self, level, num_images, all_level_counts, h, w, count):
         fused_level = np.zeros((h, w, 3), dtype=self.float_type)
@@ -166,7 +166,7 @@ class PyramidTilesStack(PyramidBase, TempDirBase):
                         level=logging.ERROR)
                     raise
                 except Exception as e:
-                    traceback.print_tb(e.__traceback__)
+                    traceback.print_exc()
                     self.print_message(f": error processing tile ({y}, {x}): {str(e)}")
                 self.after_step(count)
                 self.check_running(self.cleanup_temp_files)
@@ -182,8 +182,8 @@ class PyramidTilesStack(PyramidBase, TempDirBase):
                     try:
                         tile = self.load_level_tile(img_index, level, y, x)
                         laplacians.append(tile)
-                    except FileNotFoundError as e:
-                        traceback.print_tb(e.__traceback__)
+                    except FileNotFoundError:
+                        traceback.print_exc()
                         continue
             if laplacians:
                 stacked = np.stack(laplacians, axis=0)
@@ -195,8 +195,8 @@ class PyramidTilesStack(PyramidBase, TempDirBase):
             x_end = min(x + self.tile_size, w)
             gc.collect()
             return np.zeros((y_end - y, x_end - x, 3), dtype=self.float_type)
-        except Exception as e:
-            traceback.print_tb(e.__traceback__)
+        except Exception:
+            traceback.print_exc()
             self.print_message(color_str(
                 f": failed to process tile ({y},{x}) at level {level}: ",
                 constants.LOG_COLOR_ALERT), level=logging.ERROR)
@@ -210,8 +210,8 @@ class PyramidTilesStack(PyramidBase, TempDirBase):
         if os.path.exists(tile_path):
             try:
                 os.remove(tile_path)
-            except Exception as e:
-                traceback.print_tb(e.__traceback__)
+            except Exception:
+                traceback.print_exc()
 
     def _compute_energies(self, gray_laps):
         return np.array([self.convolve(np.square(gray_lap)) for gray_lap in gray_laps])
@@ -282,7 +282,7 @@ class PyramidTilesStack(PyramidBase, TempDirBase):
                                 os.remove(tile_path)
                                 deleted_count += 1
                             except Exception as e:
-                                traceback.print_tb(e.__traceback__)
+                                traceback.print_exc()
                                 self.print_message(
                                     f': warning: could not delete {tile_path}: {str(e)}')
         self.print_message(f': deleted {deleted_count} '
@@ -302,7 +302,7 @@ class PyramidTilesStack(PyramidBase, TempDirBase):
                         os.remove(level_path)
                         deleted_count += 1
                     except Exception as e:
-                        traceback.print_tb(e.__traceback__)
+                        traceback.print_exc()
                         self.print_message(f': warning: could not delete {level_path}: {str(e)}')
         self.print_message(f': deleted {deleted_count} level files for level {level}')
 
@@ -393,7 +393,7 @@ class PyramidTilesStack(PyramidBase, TempDirBase):
         try:
             self.cleanup_temp_files()
         except Exception as e:
-            traceback.print_tb(e.__traceback__)
+            traceback.print_exc()
             self.print_message(f": warning during cleanup: {str(e)}")
             time.sleep(1)
             try:
@@ -432,14 +432,14 @@ class PyramidTilesStack(PyramidBase, TempDirBase):
                         self.print_message(
                             f": preprocessing completed, {self.image_str(completed_count - 1)}")
                     except RunStopException as e:
-                        traceback.print_tb(e.__traceback__)
+                        traceback.print_exc()
                         self.print_message(
                             color_str(f": error processing {self.image_str(i)}: {str(e)}",
                                       constants.LOG_COLOR_ALERT),
                             level=logging.ERROR)
                         raise
                     except Exception as e:
-                        traceback.print_tb(e.__traceback__)
+                        traceback.print_exc()
                         self.print_message(
                             f": error processing {self.image_str(i)}: {str(e)}")
                     self.after_step(completed_count)
@@ -465,7 +465,7 @@ class PyramidTilesStack(PyramidBase, TempDirBase):
                     level_count = self.process_single_image(img, self.n_levels, i)
                     all_level_counts[i] = level_count
                 except Exception as e:
-                    traceback.print_tb(e.__traceback__)
+                    traceback.print_exc()
                     self.process.sub_message_r(color_str(
                         f": failed to process {self.image_str(i)}: ", constants.LOG_COLOR_ALERT),
                         level=logging.ERROR)
@@ -479,7 +479,7 @@ class PyramidTilesStack(PyramidBase, TempDirBase):
                 fused_pyramid = self.fuse_pyramids(all_level_counts)
                 stacked_image = self.collapse(fused_pyramid).astype(self.dtype)
             except Exception as e:
-                traceback.print_tb(e.__traceback__)
+                traceback.print_exc()
                 self.process.sub_message_r(color_str(
                     f": failed to process {self.image_str(i)}: ", constants.LOG_COLOR_ALERT),
                     level=logging.ERROR)

@@ -196,7 +196,7 @@ class DepthMapStack(BaseStackAlgo, TempDirBase):
             self.check_running()
         if self.plot_depth_map:
             self.save_depth_map_plot(weights)
-        result = self.weighted_pyramid_blend(weights, n_images, step_count)
+        result = self.weighted_pyramid_blend(weights, step_count)
         self.process.callback(constants.CALLBACK_UPDATE_FRAME_STATUS,
                               self.process.name, self.output_filename,
                               self.steps_count)
@@ -233,7 +233,7 @@ class DepthMapStack(BaseStackAlgo, TempDirBase):
         self.cleanup_temp_files(energy_files)
         return weights
 
-    def weighted_pyramid_blend(self, weights, n_images, step_count):
+    def weighted_pyramid_blend(self, weights, step_count):
         self.print_message(": begin pyramid blending")
         sum_weights = np.sum(weights, axis=0)
         sum_weights = np.where(sum_weights == 0, np.finfo(weights.dtype).eps, sum_weights)

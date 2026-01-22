@@ -117,7 +117,7 @@ def test_weighted_pyramid_blend(example_images):
         gray_img = img.astype(np.float32)
         energies[i] = dms.get_sobel_map(gray_img)
     weights = dms.get_focus_map(energies)
-    result = dms.weighted_pyramid_blend(weights, 3)
+    result = dms.weighted_pyramid_blend(weights, [3])
     assert result.shape == (dms.shape[0], dms.shape[1], 3)
     assert result.dtype == np.uint8
 

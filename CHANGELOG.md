@@ -10,6 +10,7 @@ This page reports the main releases only and the main changes therein.
 ### Fixed
 - added protection for depth map plot
 - minor GUI fixes
+- skip stacking if a single frame is provided
 
 ---
 
