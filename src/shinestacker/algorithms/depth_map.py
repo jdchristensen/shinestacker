@@ -111,7 +111,7 @@ class DepthMapStack(BaseStackAlgo, TempDirBase):
             self.steps_per_frame += 1
 
     def total_steps(self, n_frames):
-        extra_steps = 3 if self.weight_power != 1.0 else 1
+        extra_steps = 4 if self.weight_power != 1.0 else 2
         steps = BaseStackAlgo.total_steps(self, n_frames) + extra_steps
         return steps
 
@@ -171,7 +171,6 @@ class DepthMapStack(BaseStackAlgo, TempDirBase):
                               self.process.name, self.output_filename,
                               self.steps_count)
         self.print_message(": create focus map")
-        # step C: + 1
         step_count[0] += 1
         self.after_step(step_count[0])
         if use_disk:
@@ -308,6 +307,8 @@ class DepthMapStack(BaseStackAlgo, TempDirBase):
             result = np.clip(result * 65535.0, 0, 65535).astype(np.uint16)
         else:
             result = np.clip(result, 0, 1.0).astype(self.dtype)
+        step_count[0] += 1
+        self.after_step(step_count[0])
         return result
 
     def cleanup_temp_files(self, energy_files):
@@ -322,6 +323,9 @@ class DepthMapStack(BaseStackAlgo, TempDirBase):
     def save_depth_map_plot(self, weights):
         filepath = os.path.join(self.process.working_path, self.process.plot_path,
                                 f"{self.process.name}-depth-map.png")
+        dirname = os.path.dirname(filepath)
+        if not os.path.exists(dirname):
+            os.makedirs(dirname)
         n_images = weights.shape[0]
         i_max = max(n_images - 1, 1)
         weights_clean = np.nan_to_num(weights, nan=0.0, posinf=0.0, neginf=0.0)
