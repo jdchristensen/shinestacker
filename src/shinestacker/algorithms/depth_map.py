@@ -13,22 +13,18 @@ class DepthMapStack(BaseStackAlgo, TempDirBase):
     def __init__(self, **kwargs):
         default_params = DEFAULTS['depth_map_params']
         focus_stack_params = DEFAULTS['focus_stack_params']
-        self.steps_per_frame = 2
         self.energy_smooth_size = kwargs.get(
             'energy_smooth_size', default_params['energy_smooth_size'])
-        if self.energy_smooth_size > 0:
-            self.steps_per_frame += 1
         self.pyramid_smooth_size = kwargs.get(
             'pyramid_smooth_size', default_params['pyramid_smooth_size'])
-        if self.pyramid_smooth_size > 0:
-            self.steps_per_frame += 1
+        self.weight_power = kwargs.get('weight_power', default_params['weight_power'])
+        self.compute_steps_per_frame()
         float_type = kwargs.get('float_type', default_params['float_type'])
         BaseStackAlgo.__init__(self, "depth map", self.steps_per_frame, float_type)
         TempDirBase.__init__(self)
         self.map_type = kwargs.get('map_type', default_params['map_type'])
         self.pyramid_levels = kwargs.get('pyramid_levels', default_params['pyramid_levels'])
         self.energy = kwargs.get('energy', default_params['energy'])
-        self.weight_power = kwargs.get('weight_power', default_params['weight_power'])
         self.kernel_size = kwargs.get('kernel_size', default_params['kernel_size'])
         self.blur_size = kwargs.get('blur_size', default_params['blur_size'])
         self.energy_sigma_color = kwargs.get(
@@ -109,12 +105,21 @@ class DepthMapStack(BaseStackAlgo, TempDirBase):
             details=f"Valid values are {constants.DM_ENERGY_SOBEL} and "
                     f"{constants.DM_ENERGY_LAPLACIAN}.")
 
+    def compute_steps_per_frame(self):
+        self.steps_per_frame = 2
+        if self.energy_smooth_size > 0:
+            self.steps_per_frame += 1
+
+    def total_steps(self, n_frames):
+        extra_steps = 3 if self.weight_power != 1.0 else 1
+        steps = BaseStackAlgo.total_steps(self, n_frames) + extra_steps
+        return steps
+
     def focus_stack(self):
         n_images = len(self.filenames)
         self.process.callback(constants.CALLBACKS_SET_TOTAL_ACTIONS,
                               self.process.output_path, self.output_filename,
-                              self.steps_per_frame)
-
+                              self.total_steps(n_images))
         energy_memory_gb = (n_images * self.shape[0] * self.shape[1] *
                             np.dtype(self.float_type).itemsize) / (1024**3)
         if self.mode == 'auto':
@@ -128,13 +133,13 @@ class DepthMapStack(BaseStackAlgo, TempDirBase):
             energy_files = []
             if self.map_type == constants.DM_MAP_AVERAGE:
                 sum_energies = np.zeros(self.shape, dtype=self.float_type)
-            else:  # DM_MAP_MAX
+            else:
                 max_energy = np.zeros(self.shape, dtype=self.float_type)
         else:
             self.print_message(
                 f": using in-memory processing (estimated {energy_memory_gb:.1f} GB)")
         energies = None if use_disk else np.empty((n_images, *self.shape), dtype=self.float_type)
-        step_count = 0
+        step_count = [0]
         for i, img_path in enumerate(self.filenames):
             self.print_message(f": computing energy for {self.image_str(i)}")
             self.process.callback(constants.CALLBACK_UPDATE_FRAME_STATUS,
@@ -142,22 +147,22 @@ class DepthMapStack(BaseStackAlgo, TempDirBase):
             img = read_and_validate_img(img_path, self.shape, self.dtype)
             gray = img_bw(img).astype(self.float_type)
             energy_map = self.compute_energy_map(gray)
-            step_count += 1
-            self.after_step(step_count)
+            step_count[0] += 1
+            self.after_step(step_count[0])
             self.check_running()
             if self.energy_smooth_size > 0:
                 self.print_message(f": smoothing energy for {self.image_str(i)}")
                 energy_map = self.smooth_energy(energy_map)
-                step_count += 1
-                self.after_step(step_count)
+                step_count[0] += 1
+                self.after_step(step_count[0])
                 self.check_running()
             if use_disk:
                 temp_file = os.path.join(temp_dir, f"energy_{i:06d}.npy")
                 np.save(temp_file, energy_map)
                 energy_files.append(temp_file)
                 if self.map_type == constants.DM_MAP_AVERAGE:
-                    sum_energies += energy_map  # Accumulate sum
-                else:  # DM_MAP_MAX
+                    sum_energies += energy_map
+                else:
                     max_energy = np.maximum(max_energy, energy_map)
             else:
                 energies[i] = energy_map
@@ -166,10 +171,13 @@ class DepthMapStack(BaseStackAlgo, TempDirBase):
                               self.process.name, self.output_filename,
                               self.steps_count)
         self.print_message(": create focus map")
+        # step C: + 1
+        step_count[0] += 1
+        self.after_step(step_count[0])
         if use_disk:
             if self.map_type == constants.DM_MAP_AVERAGE:
                 weights = self.get_focus_map_from_disk_average(energy_files, sum_energies, n_images)
-            else:  # DM_MAP_MAX
+            else:
                 weights = self.get_focus_map_from_disk_max(energy_files, max_energy, n_images)
         else:
             weights = self.get_focus_map(energies)
@@ -177,41 +185,23 @@ class DepthMapStack(BaseStackAlgo, TempDirBase):
         if self.weight_power != 1.0:
             self.print_message(": apply weights power correction")
             weights = np.power(weights, self.weight_power)
+            step_count[0] += 1
+            self.after_step(step_count[0])
             self.check_running()
             self.print_message(": normalize weights")
             sum_weights = np.sum(weights, axis=0)
             sum_weights = np.where(sum_weights == 0, np.finfo(weights.dtype).eps, sum_weights)
             weights = np.divide(weights, sum_weights)
+            step_count[0] += 1
+            self.after_step(step_count[0])
             self.check_running()
         if self.plot_depth_map:
             self.save_depth_map_plot(weights)
-        result = self.weighted_pyramid_blend(weights, n_images)
-        self.steps_count += 1
+        result = self.weighted_pyramid_blend(weights, n_images, step_count)
         self.process.callback(constants.CALLBACK_UPDATE_FRAME_STATUS,
                               self.process.name, self.output_filename,
                               self.steps_count)
         return result
-
-    def save_depth_map_plot(self, weights):
-        filepath = os.path.join(self.process.working_path, self.process.plot_path,
-                                f"{self.process.name}-depth-map.png")
-        n_images = weights.shape[0]
-        i_max = max(n_images - 1, 1)
-        weights_clean = np.nan_to_num(weights, nan=0.0, posinf=0.0, neginf=0.0)
-        indices = np.arange(n_images).reshape(-1, 1, 1)
-        weighted_sum = np.sum(weights_clean * indices, axis=0)
-        sum_weights = np.sum(weights_clean, axis=0)
-        depth_map = np.zeros_like(sum_weights)
-        mask = sum_weights > 1e-10
-        if np.any(mask):
-            depth_map[mask] = (weighted_sum[mask] / sum_weights[mask]) / i_max * 255.0
-        depth_map = np.nan_to_num(depth_map, nan=0.0, posinf=255.0, neginf=0.0)
-        img = np.clip(depth_map, 0, 255).astype(np.uint8)
-        self.print_message(": writing depth map")
-        write_img(filepath, img)
-        self.process.callback(
-            constants.CALLBACK_SAVE_PLOT, self.process.id, self.process.output_path,
-            "Depth map", filepath)
 
     def get_focus_map_from_disk_average(self, energy_files, sum_energies, n_images):
         sum_energies = np.where(sum_energies == 0, np.finfo(self.float_type).eps, sum_energies)
@@ -220,7 +210,6 @@ class DepthMapStack(BaseStackAlgo, TempDirBase):
             self.print_message(f": compute weight, {self.image_str(i)}")
             energy_map = np.load(energy_file)
             weights[i] = energy_map / sum_energies
-            self.after_step(i + n_images * 2 + 1)
             self.check_running()
         self.cleanup_temp_files(energy_files)
         return weights
@@ -241,23 +230,12 @@ class DepthMapStack(BaseStackAlgo, TempDirBase):
         for i, relative in enumerate(relative_maps):
             self.print_message(f": compute weight, {self.image_str(i)}")
             weights[i] = relative / sum_relative
-            self.after_step(i + n_images * 2 + 1)
             self.check_running()
         self.cleanup_temp_files(energy_files)
         return weights
 
-    def cleanup_temp_files(self, energy_files):
-        for energy_file in energy_files:
-            try:
-                os.remove(energy_file)
-            except OSError:
-                pass
-        if self.temp_dir_manager is not None:
-            self.temp_dir_manager.cleanup()
-
-    def weighted_pyramid_blend(self, weights, n_images):
+    def weighted_pyramid_blend(self, weights, n_images, step_count):
         self.print_message(": begin pyramid blending")
-        n_steps = 2 if self.energy_smooth_size <= 0 else 3
         sum_weights = np.sum(weights, axis=0)
         sum_weights = np.where(sum_weights == 0, np.finfo(weights.dtype).eps, sum_weights)
         blended_pyramid = None
@@ -305,7 +283,8 @@ class DepthMapStack(BaseStackAlgo, TempDirBase):
                 blended_pyramid = [bp + cb for bp, cb in zip(blended_pyramid, current_blend)]
                 weight_pyramid_accum = [wp + cw for wp, cw
                                         in zip(weight_pyramid_accum, current_weights)]
-            self.after_step(i + n_images * n_steps + 1)
+            step_count[0] += 1
+            self.after_step(step_count[0])
             self.check_running()
             self.process.callback(constants.CALLBACK_UPDATE_FRAME_STATUS,
                                   self.process.input_path, filename, 201)
@@ -330,3 +309,33 @@ class DepthMapStack(BaseStackAlgo, TempDirBase):
         else:
             result = np.clip(result, 0, 1.0).astype(self.dtype)
         return result
+
+    def cleanup_temp_files(self, energy_files):
+        for energy_file in energy_files:
+            try:
+                os.remove(energy_file)
+            except OSError:
+                pass
+        if self.temp_dir_manager is not None:
+            self.temp_dir_manager.cleanup()
+
+    def save_depth_map_plot(self, weights):
+        filepath = os.path.join(self.process.working_path, self.process.plot_path,
+                                f"{self.process.name}-depth-map.png")
+        n_images = weights.shape[0]
+        i_max = max(n_images - 1, 1)
+        weights_clean = np.nan_to_num(weights, nan=0.0, posinf=0.0, neginf=0.0)
+        indices = np.arange(n_images).reshape(-1, 1, 1)
+        weighted_sum = np.sum(weights_clean * indices, axis=0)
+        sum_weights = np.sum(weights_clean, axis=0)
+        depth_map = np.zeros_like(sum_weights)
+        mask = sum_weights > 1e-10
+        if np.any(mask):
+            depth_map[mask] = (weighted_sum[mask] / sum_weights[mask]) / i_max * 255.0
+        depth_map = np.nan_to_num(depth_map, nan=0.0, posinf=255.0, neginf=0.0)
+        img = np.clip(depth_map, 0, 255).astype(np.uint8)
+        self.print_message(": writing depth map")
+        write_img(filepath, img)
+        self.process.callback(
+            constants.CALLBACK_SAVE_PLOT, self.process.id, self.process.output_path,
+            "Depth map", filepath)
