@@ -2,7 +2,10 @@
 
 This page reports the main releases only and the main changes therein.
 
-## [v1.13.x] - 2026-01-21
+## [v1.13.x] - 2026-01-22
+
+### Added
+- expert options toggle in new project dialog
 
 ### Fixed
 - added protection for depth map plot

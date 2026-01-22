@@ -4,7 +4,7 @@ import numpy as np
 from PySide6.QtWidgets import (QHBoxLayout, QPushButton, QLabel, QCheckBox, QSpinBox, QDialog,
                                QMessageBox, QGroupBox, QVBoxLayout, QFormLayout, QSizePolicy)
 from PySide6.QtGui import QIcon
-from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt, QTimer
 from .. config.gui_constants import gui_constants
 from .. config.constants import constants
 from .. config.defaults import DEFAULTS
@@ -23,6 +23,9 @@ class NewProjectDialog(BaseFormDialog):
 
     def __init__(self, parent=None):
         super().__init__("New Project", 600, parent)
+        self.expert_widgets = []
+        self.expert_labels = []
+        self.expert_init = AppConfig.get('expert_options')
         self.create_form()
         button_box = QHBoxLayout()
         self.ok_button = QPushButton("OK")
@@ -34,9 +37,10 @@ class NewProjectDialog(BaseFormDialog):
         cancel_button.clicked.connect(self.reject)
         self.n_image_files = 0
         self.selected_filenames = []
+        self.update_expert_visibility()
 
     def expert(self):
-        return AppConfig.get('expert_options')
+        return self.expert_init
 
     def add_bold_label(self, label):
         label = QLabel(label)
@@ -48,12 +52,29 @@ class NewProjectDialog(BaseFormDialog):
         self.form_layout.addRow(label)
 
     def create_form(self):
+        name_row = QHBoxLayout()
+        name_row.setContentsMargins(0, 0, 0, 0)
+        expert_layout = QHBoxLayout()
+        expert_layout.setContentsMargins(0, 0, 0, 0)
+        expert_label = QLabel("Show expert options:")
+        self.expert_cb = QCheckBox()
+        self.expert_cb.setChecked(self.expert_init)
+        self.expert_cb.stateChanged.connect(self.toggle_expert_options)
+        expert_layout.addWidget(expert_label)
+        expert_layout.addWidget(self.expert_cb)
+        name_row.addStretch()
+        name_row.addLayout(expert_layout)
+        self.form_layout.addRow(name_row)
         self.input_widget = FolderFileSelectionWidget()
         self.input_widget.text_changed_connect(self.input_submitted)
-        self.noise_detection = QCheckBox()
-        self.noise_detection.setChecked(gui_constants.NEW_PROJECT_NOISE_DETECTION)
-        self.vignetting_correction = QCheckBox()
-        self.vignetting_correction.setChecked(gui_constants.NEW_PROJECT_VIGNETTING_CORRECTION)
+        self.noise_detection = self.create_expert_widget(
+            QCheckBox(), "noise_detection",
+            checked=gui_constants.NEW_PROJECT_NOISE_DETECTION
+        )
+        self.vignetting_correction = self.create_expert_widget(
+            QCheckBox(), "vignetting_correction",
+            checked=gui_constants.NEW_PROJECT_VIGNETTING_CORRECTION
+        )
         self.align_frames = QCheckBox()
         self.align_frames.setChecked(gui_constants.NEW_PROJECT_ALIGN_FRAMES)
         self.balance_frames = QCheckBox()
@@ -76,17 +97,20 @@ class NewProjectDialog(BaseFormDialog):
         self.bunch_overlap.valueChanged.connect(self.update_bunches_label)
         self.focus_stack_pyramid = QCheckBox()
         self.focus_stack_pyramid.setChecked(gui_constants.NEW_PROJECT_FOCUS_STACK_PYRAMID)
-        self.focus_stack_depth_map = QCheckBox()
-        self.focus_stack_depth_map.setChecked(gui_constants.NEW_PROJECT_FOCUS_STACK_DEPTH_MAP)
-        self.multi_layer = QCheckBox()
-        self.multi_layer.setChecked(gui_constants.NEW_PROJECT_MULTI_LAYER)
+        self.focus_stack_depth_map = self.create_expert_widget(
+            QCheckBox(), "focus_stack_depth_map",
+            checked=gui_constants.NEW_PROJECT_FOCUS_STACK_DEPTH_MAP
+        )
+        self.multi_layer = self.create_expert_widget(
+            QCheckBox(), "multi_layer",
+            checked=gui_constants.NEW_PROJECT_MULTI_LAYER
+        )
 
         step1_group = QGroupBox("1) Select Input")
         step1_layout = QVBoxLayout()
         step1_layout.setContentsMargins(15, 0, 15, 15)
         step1_layout.addWidget(
-            QLabel("Select a folder containing "
-                   "all your images, or specific image files."))
+            QLabel("Select a folder containing all your images, or specific image files."))
         input_layout = QHBoxLayout()
         input_layout.setContentsMargins(0, 0, 0, 0)
         input_layout.setSpacing(10)
@@ -119,39 +143,45 @@ class NewProjectDialog(BaseFormDialog):
                        self.bunch_overlap, self.focus_stack_pyramid,
                        self.focus_stack_depth_map, self.multi_layer]:
             widget.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
-        if self.expert():
-            step2_layout.addRow("Automatic noise detection:", self.noise_detection)
-            step2_layout.addRow("Vignetting correction:", self.vignetting_correction)
         step2_layout.addRow(
-            # f" {constants.ACTION_ICONS[constants.ACTION_ALIGNFRAMES]} "
-            "Align frames:", self.align_frames)
+            self.create_expert_label("Automatic noise detection:", "noise_detection"),
+            self.noise_detection
+        )
         step2_layout.addRow(
-            # f" {constants.ACTION_ICONS[constants.ACTION_BALANCEFRAMES]} "
-            "Balance frames:", self.balance_frames)
+            self.create_expert_label("Vignetting correction:", "vignetting_correction"),
+            self.vignetting_correction
+        )
         step2_layout.addRow(
-            # f" {constants.ACTION_ICONS[constants.ACTION_FOCUSSTACKBUNCH]} "
-            "Create bunches:", self.bunch_stack)
-        self.bunch_stack.setToolTip("Combine multiple frames into fewer, high-quality "
-                                    "composite frames for easier retouching")
+            QLabel("Align frames:"),
+            self.align_frames
+        )
+        step2_layout.addRow(
+            QLabel("Balance frames:"),
+            self.balance_frames
+        )
+        step2_layout.addRow(
+            QLabel("Create bunches:"),
+            self.bunch_stack
+        )
+        self.bunch_stack.setToolTip(
+            "Combine multiple frames into fewer, "
+            "high-quality composite frames for easier retouching")
         step2_layout.addRow("Frames per bunch:", self.bunch_frames)
         step2_layout.addRow("Overlap between bunches:", self.bunch_overlap)
         self.bunches_label.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
         step2_layout.addRow("Number of resulting bunches: ", self.bunches_label)
-        if self.expert():
-            step2_layout.addRow(
-                f" {constants.ACTION_ICONS[constants.ACTION_FOCUSSTACK]} "
-                "Focus stack (pyramid):", self.focus_stack_pyramid)
-            step2_layout.addRow(
-                f" {constants.ACTION_ICONS[constants.ACTION_FOCUSSTACK]} "
-                "Focus stack (depth map):", self.focus_stack_depth_map)
-        else:
-            step2_layout.addRow(
-                f" {constants.ACTION_ICONS[constants.ACTION_FOCUSSTACK]} "
-                "Focus stack:", self.focus_stack_pyramid)
-        if self.expert():
-            step2_layout.addRow(
-                f" {constants.ACTION_ICONS[constants.ACTION_MULTILAYER]} "
-                "Export as multilayer TIFF:", self.multi_layer)
+        step2_layout.addRow(
+            QLabel("Focus stack:"),
+            self.focus_stack_pyramid
+        )
+        step2_layout.addRow(
+            self.create_expert_label("Focus stack (depth map):", "focus_stack_depth_map"),
+            self.focus_stack_depth_map
+        )
+        step2_layout.addRow(
+            self.create_expert_label("Export as multilayer TIFF:", "multi_layer"),
+            self.multi_layer
+        )
         step2_group.setLayout(step2_layout)
         self.form_layout.addRow(step2_group)
         step3_group = QGroupBox("3) Confirm")
@@ -160,7 +190,7 @@ class NewProjectDialog(BaseFormDialog):
         step3_layout.addWidget(
             QLabel("Click 🆗 to create project with these settings."))
         step3_layout.addWidget(
-            QLabel("Select: <b>View</b> > <b>Expert options</b> for advanced configuration."))
+            QLabel("Toggle 'Show expert options' above for advanced configuration."))
         step3_group.setLayout(step3_layout)
         self.form_layout.addRow(step3_group)
         step4_group = QGroupBox("4) Execute")
@@ -197,6 +227,40 @@ class NewProjectDialog(BaseFormDialog):
         self.form_layout.setFieldGrowthPolicy(QFormLayout.AllNonFixedFieldsGrow)
         self.form_layout.setFormAlignment(Qt.AlignLeft)
         self.form_layout.setLabelAlignment(Qt.AlignLeft)
+
+    def create_expert_widget(self, widget, tag, checked=False):
+        self.expert_widgets.append((widget, tag))
+        widget.setChecked(checked)
+        return widget
+
+    def create_expert_label(self, text, tag):
+        label = QLabel(text)
+        self.expert_labels.append((label, tag))
+        return label
+
+    def update_expert_visibility(self):
+        visible = self.expert_cb.isChecked() if self.expert_cb else self.expert_init
+        for widget, _tag in self.expert_widgets:
+            widget.setVisible(visible)
+        for label, _tag in self.expert_labels:
+            label.setVisible(visible)
+        QTimer.singleShot(50, self._resize_dialog)
+
+    def toggle_expert_options(self, _state):
+        self.update_expert_visibility()
+
+    def _resize_dialog(self):
+        content_height = 0
+        for group in self.findChildren(QGroupBox):
+            content_height += group.sizeHint().height()
+        margin = 40
+        button_height = 50
+        new_height = content_height + button_height + margin
+        screen_geo = self.screen().availableGeometry()
+        max_height = int(screen_geo.height() * 0.8)
+        new_height = min(new_height, max_height)
+        current_size = self.size()
+        self.resize(current_size.width(), new_height)
 
     def update_bunch_options(self, checked):
         self.bunch_frames.setEnabled(checked)
