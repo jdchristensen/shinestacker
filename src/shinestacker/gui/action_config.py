@@ -356,8 +356,8 @@ class FieldBuilder:
     def create_float_field(self, tag, default=0.0, min_val=0.0, max_val=1.0,
                            step=0.1, decimals=2):
         spin = QDoubleSpinBox()
-        spin.setValue(self.action.params.get(tag, default))
         spin.setRange(min_val, max_val)
+        spin.setValue(self.action.params.get(tag, default))
         spin.setDecimals(decimals)
         spin.setSingleStep(step)
         return spin

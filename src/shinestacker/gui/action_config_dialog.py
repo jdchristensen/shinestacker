@@ -319,7 +319,7 @@ class FocusStackBaseConfigurator(DefaultActionConfigurator):
         self.add_field_to_layout(
             layout, 'sharpen_amount_percent', FIELD_FLOAT, 'Sharpen, amount (%)', required=False,
             expert=False, default=AppConfig.get('focus_stack_params')['sharpen_amount_percent'],
-            min_val=0.0, max_val=300.0, step=1)
+            min_val=0.0, max_val=300.0, step=0.5, decimals=1)
         self.add_field_to_layout(
             layout, 'sharpen_radius', FIELD_FLOAT, 'Sharpen, radius (px)', required=False,
             expert=False, default=AppConfig.get('focus_stack_params')['sharpen_radius'],
