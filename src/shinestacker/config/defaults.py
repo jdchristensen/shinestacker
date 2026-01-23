@@ -59,7 +59,10 @@ DEFAULTS = {
         'align_mode': 'auto',
         'chunk_submit': True,
         'bw_matching': False,
-        'delta_max': 2
+        'delta_max': 2,
+        'rans_inlier_fraction_threshold': 0.9,
+        'rans_avg_error_threshold': 0.2,
+        'rans_max_error_threshold': 3,
     },
     'balance_frames_params': {
         'subsample': 0,

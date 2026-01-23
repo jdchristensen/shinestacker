@@ -136,7 +136,10 @@ def test_extract_transformation_valid_matches():
     alignment_config = {
         'transform': 'rigid', 'min_good_matches': 10, 'phase_corr_fallback': True,
         'abort_abnormal': False, 'align_method': 'RANSAC', 'rans_threshold': 3.0,
-        'max_iters': 1000, 'align_confidence': 95, 'refine_iters': 10
+        'max_iters': 1000, 'align_confidence': 95, 'refine_iters': 10,
+        'rans_inlier_fraction_threshold': 0.9,
+        'rans_avg_error_threshold': 0.2,
+        'rans_max_error_threshold': 3,
     }
     extractor = TransformationExtractor(alignment_config, AFFINE_THRESHOLDS, None)
     match_result = MagicMock()
@@ -149,7 +152,7 @@ def test_extract_transformation_valid_matches():
     img_0_sub = np.ones((50, 50, 3), dtype=np.uint8)
     with patch('shinestacker.algorithms.transform_estimate.find_transform') as mock_find:
         with patch('shinestacker.algorithms.transform_estimate.check_transform') as mock_check:
-            mock_find.return_value = (np.float32([[1, 0, 0], [0, 1, 0]]), np.array([1, 1, 1]))
+            mock_find.return_value = (np.float32([[1, 0, 0], [0, 1, 0]]), np.array([1, 1, 1]), {})
             mock_check.return_value = (True, "Valid", None)
             result = extractor.extract_transformation(match_result, img_ref_sub, img_0_sub, 1,
                                                       (100, 100), callbacks)
@@ -162,7 +165,10 @@ def test_extract_transformation_invalid_transform():
         'transform': 'rigid', 'min_good_matches': 10,
         'phase_corr_fallback': True, 'abort_abnormal': False,
         'align_method': 'RANSAC', 'rans_threshold': 3.0,
-        'max_iters': 1000, 'align_confidence': 95, 'refine_iters': 10
+        'max_iters': 1000, 'align_confidence': 95, 'refine_iters': 10,
+        'rans_inlier_fraction_threshold': 0.9,
+        'rans_avg_error_threshold': 0.2,
+        'rans_max_error_threshold': 3,
     }
     extractor = TransformationExtractor(alignment_config, AFFINE_THRESHOLDS, None)
     match_result = MagicMock()
@@ -175,7 +181,7 @@ def test_extract_transformation_invalid_transform():
     img_0_sub = np.ones((50, 50, 3), dtype=np.uint8)
     with patch('shinestacker.algorithms.transform_estimate.find_transform') as mock_find:
         with patch('shinestacker.algorithms.transform_estimate.check_transform') as mock_check:
-            mock_find.return_value = (np.float32([[2, 0, 0], [0, 2, 0]]), np.array([1, 1, 1]))
+            mock_find.return_value = (np.float32([[2, 0, 0], [0, 2, 0]]), np.array([1, 1, 1]), {})
             mock_check.return_value = (False, "Invalid transform", None)
             result = extractor.extract_transformation(
                 match_result, img_ref_sub, img_0_sub, 1, (100, 100), callbacks)
@@ -205,7 +211,10 @@ def test_extract_transformation_abort_abnormal():
         'transform': 'rigid', 'min_good_matches': 10,
         'phase_corr_fallback': True, 'abort_abnormal': True,
         'align_method': 'RANSAC', 'rans_threshold': 3.0,
-        'max_iters': 1000, 'align_confidence': 95, 'refine_iters': 10
+        'max_iters': 1000, 'align_confidence': 95, 'refine_iters': 10,
+        'rans_inlier_fraction_threshold': 0.9,
+        'rans_avg_error_threshold': 0.2,
+        'rans_max_error_threshold': 3,
     }
     extractor = TransformationExtractor(alignment_config, AFFINE_THRESHOLDS, None)
     match_result = MagicMock()
@@ -218,7 +227,7 @@ def test_extract_transformation_abort_abnormal():
     img_0_sub = np.ones((50, 50, 3), dtype=np.uint8)
     with patch('shinestacker.algorithms.transform_estimate.find_transform') as mock_find:
         with patch('shinestacker.algorithms.transform_estimate.check_transform') as mock_check:
-            mock_find.return_value = (np.float32([[2, 0, 0], [0, 2, 0]]), np.array([1, 1, 1]))
+            mock_find.return_value = (np.float32([[2, 0, 0], [0, 2, 0]]), np.array([1, 1, 1]), {})
             mock_check.return_value = (False, "Invalid transform", None)
             with pytest.raises(RuntimeError):
                 extractor.extract_transformation(
@@ -230,7 +239,10 @@ def test_extract_transformation_with_plot_path():
         'transform': 'rigid', 'min_good_matches': 10,
         'phase_corr_fallback': False, 'abort_abnormal': False,
         'align_method': 'RANSAC', 'rans_threshold': 3.0,
-        'max_iters': 1000, 'align_confidence': 95, 'refine_iters': 10
+        'max_iters': 1000, 'align_confidence': 95, 'refine_iters': 10,
+        'rans_inlier_fraction_threshold': 0.9,
+        'rans_avg_error_threshold': 0.2,
+        'rans_max_error_threshold': 3,
     }
     extractor = TransformationExtractor(alignment_config, AFFINE_THRESHOLDS, None)
     match_result = MagicMock()
@@ -248,7 +260,7 @@ def test_extract_transformation_with_plot_path():
     with patch('shinestacker.algorithms.transform_estimate.find_transform') as mock_find:
         with patch('shinestacker.algorithms.transform_estimate.check_transform') as mock_check:
             with patch('shinestacker.algorithms.transform_estimate.plot_matches') as mock_plot:
-                mock_find.return_value = (np.float32([[1, 0, 0], [0, 1, 0]]), np.array([1, 1, 1]))
+                mock_find.return_value = (np.float32([[1, 0, 0], [0, 1, 0]]), np.array([1, 1, 1]), {})
                 mock_check.return_value = (True, "Valid", None)
                 extractor.extract_transformation(
                     match_result, img_ref_sub, img_0_sub, 1, (100, 100),

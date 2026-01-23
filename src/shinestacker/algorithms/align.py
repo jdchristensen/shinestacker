@@ -1,4 +1,4 @@
-# pylint: disable=C0114, C0115, C0116, E1101, R0914, R0913, E1128
+# pylint: disable=C0114, C0115, C0116, E1101, R0914, R0913, E1128, C3001
 # pylint: disable=R0917, R0912, R0915, R0902, E1121, W0102, W0718
 import os
 import math
@@ -53,7 +53,7 @@ def align_images(img_ref, img_0, feature_config=None, matching_config=None, alig
     img_ref_sub, img_0_sub = feature_matcher.get_last_subsampled_images()
     extractor = TransformationExtractor(
         alignment_config, affine_thresholds, homography_thresholds)
-    m, _phase_corr_called, _msk = extractor.extract_transformation(
+    m, _phase_corr_called, _msk, _quality = extractor.extract_transformation(
         match_result, img_ref_sub, img_0_sub, subsample, img_0.shape, callbacks,
         plot_path, plot_manager)
     if m is None:
@@ -95,6 +95,9 @@ class AlignFramesBase(SubAction):
         self._translation_y = None
         self._rotation = None
         self._shear = None
+        self._inlier_fractions = None
+        self._avg_errors = None
+        self._max_errors = None
         if use_large_thresholds:
             affine_thresholds, homography_thresholds = self.get_transform_thresholds_large()
         else:
@@ -125,6 +128,9 @@ class AlignFramesBase(SubAction):
         self._translation_y = np.zeros(process.total_action_counts)
         self._rotation = np.zeros(process.total_action_counts)
         self._shear = np.zeros(process.total_action_counts)
+        self._inlier_fractions = np.zeros(process.total_action_counts)
+        self._avg_errors = np.zeros(process.total_action_counts)
+        self._max_errors = np.zeros(process.total_action_counts)
 
     def get_img_ref(self, _ref_idx):
         return None
@@ -311,6 +317,71 @@ class AlignFramesBase(SubAction):
                 self.process.callback(constants.CALLBACK_SAVE_PLOT, self.process.id,
                                       save_plot_name,
                                       f"{self.process.name}: rotation", plot_path)
+            rans_inlier_fraction_threshold = self.alignment_config.get(
+                'rans_inlier_fraction_threshold')
+            rans_avg_error_threshold = self.alignment_config.get('rans_avg_error_threshold')
+            rans_max_error_threshold = self.alignment_config.get('rans_max_error_threshold')
+
+            fig = plt.figure(figsize=constants.PLT_FIG_SIZE)
+            x, y, y_ref = get_coordinates(self._inlier_fractions)
+            plt.plot([self.process.ref_idx + 1, self.process.ref_idx + 1],
+                     [0, y_ref], color='cornflowerblue', linestyle='--', label='reference frame')
+            plt.axhline(y=rans_inlier_fraction_threshold, color='red',
+                        linestyle='--', label=f'threshold ({rans_inlier_fraction_threshold})')
+            plt.plot(x, y, color='darkgreen', linewidth=2, label='inlier ratio')
+            plt.title("RANSAC Inlier Ratio per Frame")
+            plt.xlabel('frame')
+            plt.ylabel('inlier ratio')
+            plt.ylim(0, 1.05)
+            plt.legend()
+            plt.grid(True, alpha=0.3)
+            plt.xlim(x[0], x[-1])
+            plot_path = f"{self.process.working_path}/{self.process.plot_path}/" \
+                        f"{self.process.name}-inlier-ratio.{plots_ext}"
+            self.process.plot_manager.save_plot(plot_path, fig)
+            self.process.callback(constants.CALLBACK_SAVE_PLOT, self.process.id,
+                                  save_plot_name,
+                                  f"{self.process.name}: inlier ratio", plot_path)
+            fig = plt.figure(figsize=constants.PLT_FIG_SIZE)
+            x, y, y_ref = get_coordinates(self._avg_errors)
+            plt.plot([self.process.ref_idx + 1, self.process.ref_idx + 1],
+                     [0, y_ref], color='cornflowerblue', linestyle='--', label='reference frame')
+            plt.axhline(y=rans_avg_error_threshold, color='red',
+                        linestyle='--', label=f'threshold ({rans_avg_error_threshold}px)')
+            plt.plot(x, y, color='darkred', linewidth=2, label='avg error (px)')
+            plt.title("Average Reprojection Error per Frame")
+            plt.xlabel('frame')
+            plt.ylabel('error (pixels)')
+            plt.legend()
+            plt.grid(True, alpha=0.3)
+            plt.xlim(x[0], x[-1])
+            plot_path = f"{self.process.working_path}/{self.process.plot_path}/" \
+                        f"{self.process.name}-avg-error.{plots_ext}"
+            self.process.plot_manager.save_plot(plot_path, fig)
+            self.process.callback(constants.CALLBACK_SAVE_PLOT, self.process.id,
+                                  save_plot_name,
+                                  f"{self.process.name}: avg error", plot_path)
+
+            fig = plt.figure(figsize=constants.PLT_FIG_SIZE)
+            x, y, y_ref = get_coordinates(self._max_errors)
+            rans_max_error_threshold = self.alignment_config.get('rans_max_error_threshold', 1.0)
+            plt.plot([self.process.ref_idx + 1, self.process.ref_idx + 1],
+                     [0, y_ref], color='cornflowerblue', linestyle='--', label='reference frame')
+            plt.axhline(y=rans_max_error_threshold, color='red',
+                        linestyle='--', label=f'threshold ({rans_max_error_threshold}px)')
+            plt.plot(x, y, color='purple', linewidth=2, label='max error (px)')
+            plt.title("Maximum Reprojection Error per Frame")
+            plt.xlabel('frame')
+            plt.ylabel('max error (pixels)')
+            plt.legend()
+            plt.grid(True, alpha=0.3)
+            plt.xlim(x[0], x[-1])
+            plot_path = f"{self.process.working_path}/{self.process.plot_path}/" \
+                        f"{self.process.name}-max-error.{plots_ext}"
+            self.process.plot_manager.save_plot(plot_path, fig)
+            self.process.callback(constants.CALLBACK_SAVE_PLOT, self.process.id,
+                                  save_plot_name,
+                                  f"{self.process.name}: max error", plot_path)
 
     def save_transform_result(self, idx, result):
         if result is None:
@@ -334,6 +405,52 @@ class AlignFramesBase(SubAction):
                 'transform', transform,
                 f". Valid options are: {constants.ALIGN_HOMOGRAPHY}, {constants.ALIGN_RIGID}"
             )
+
+    def save_quality_metrics(self, idx, quality_metrics):
+        if quality_metrics is None:
+            return
+        self._inlier_fractions[idx] = quality_metrics.get('inlier_fraction', 0)
+        self._avg_errors[idx] = quality_metrics.get('avg_error_px', 0)
+        self._max_errors[idx] = quality_metrics.get('max_error_px', 0)
+
+    def compute_transformation(self, idx, img_ref, img_0, callbacks, plot_path):
+        def run_with_subsample(subsample_val):
+            match_result, _final_subsample = self.feature_matcher.match_images_with_fallback(
+                img_ref, img_0, subsample=subsample_val,
+                warning_callback=warning_callback
+            )
+            n_good_matches = match_result.n_good_matches()
+            img_ref_sub, img_0_sub = self.feature_matcher.get_last_subsampled_images()
+            m, phase_corr_called, _msk, quality = \
+                self.transformation_extractor.extract_transformation(
+                    match_result, img_ref_sub, img_0_sub, subsample_val, img_0.shape, callbacks,
+                    plot_path, self.process.plot_manager)
+            return m, phase_corr_called, quality, n_good_matches
+
+        h0, w0 = img_0.shape[:2]
+        subsample = self.alignment_config['subsample']
+        if subsample == 0:
+            img_res = (float(h0) / constants.ONE_KILO) * (float(w0) / constants.ONE_KILO)
+            target_res = DEFAULTS['align_frames_params']['resolution_target']
+            subsample = int(1 + math.floor(img_res / target_res))
+        warning_callback = None
+        if callbacks and 'warning' in callbacks:
+            warning_callback = callbacks['warning']
+        else:
+            warning_callback = lambda msg: self.print_message(  # noqa
+                f'{self.image_str(idx)}: {msg}',
+                color=constants.LOG_COLOR_WARNING, level=logging.WARNING)
+
+        m, phase_corr_called, quality, n_good_matches = run_with_subsample(subsample)
+        if quality and quality.get('status') != 'GOOD' and subsample != 1:
+            self.print_message(
+                f'{self.image_str(idx)}: poor match quality, '
+                'retrying with no subsampling',
+                color=constants.LOG_COLOR_WARNING, level=logging.WARNING)
+            m, phase_corr_called, quality, n_good_matches = run_with_subsample(1)
+        if quality:
+            self.save_quality_metrics(idx, quality)
+        return m, phase_corr_called, quality, n_good_matches
 
 
 class AlignFrames(AlignFramesBase):
@@ -369,28 +486,15 @@ class AlignFrames(AlignFramesBase):
             plot_path = None
         if callbacks and 'message' in callbacks:
             callbacks['message']()
-        h0, w0 = img_0.shape[:2]
-        subsample = self.alignment_config['subsample']
-        if subsample == 0:
-            img_res = (float(h0) / constants.ONE_KILO) * (float(w0) / constants.ONE_KILO)
-            target_res = DEFAULTS['align_frames_params']['resolution_target']
-            subsample = int(1 + math.floor(img_res / target_res))
-        match_result, _final_subsample = self.feature_matcher.match_images_with_fallback(
-            img_ref, img_0, subsample=subsample,
-            warning_callback=lambda msg:
-                callbacks['warning'](msg) if callbacks and 'warning' in callbacks else None
-        )
-        n_good_matches = match_result.n_good_matches()
-        img_ref_sub, img_0_sub = self.feature_matcher.get_last_subsampled_images()
-        m, _phase_corr_called, _msk = self.transformation_extractor.extract_transformation(
-            match_result, img_ref_sub, img_0_sub, subsample, img_0.shape, callbacks,
-            plot_path, self.process.plot_manager)
+
+        m, _phase_corr_called, _quality, n_good_matches = self.compute_transformation(
+            idx, img_ref, img_0, callbacks, plot_path)
+
+        self._n_good_matches[idx] = n_good_matches
         if m is None:
-            self._n_good_matches[idx] = n_good_matches
             return None
         img_warp = self.transformation_extractor.apply_alignment_transform(
             img_0, img_ref, m, callbacks)
-        self._n_good_matches[idx] = match_result.n_good_matches()
         return img_warp
 
     def get_img_ref(self, ref_idx):

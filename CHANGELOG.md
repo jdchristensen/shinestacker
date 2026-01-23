@@ -2,7 +2,7 @@
 
 This page reports the main releases only and the main changes therein.
 
-## [v1.13.x] - 2026-01-22
+## [v1.13.x] - 2026-01-23
 
 ### Added
 - expert options toggle in new project dialog
@@ -11,6 +11,10 @@ This page reports the main releases only and the main changes therein.
 - added protection for depth map plot
 - minor GUI fixes
 - skip stacking if a single frame is provided
+- input filepaths explicitly sorted alphabetically
+
+### Changed
+- revert to no subsampling if poor quality transformation detected
 
 ---
 

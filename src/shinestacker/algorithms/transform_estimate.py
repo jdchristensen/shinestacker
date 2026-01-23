@@ -127,7 +127,13 @@ def find_transform(src_pts, dst_pts, transform=DEFAULTS['align_frames_params']['
                    rans_threshold=DEFAULTS['align_frames_params']['rans_threshold'],
                    max_iters=DEFAULTS['align_frames_params']['max_iters'],
                    align_confidence=DEFAULTS['align_frames_params']['align_confidence'],
-                   refine_iters=DEFAULTS['align_frames_params']['refine_iters']):
+                   refine_iters=DEFAULTS['align_frames_params']['refine_iters'],
+                   rans_inlier_fraction_threshold=DEFAULTS[
+                       'align_frames_params']['rans_inlier_fraction_threshold'],
+                   rans_avg_error_threshold=DEFAULTS[
+                       'align_frames_params']['rans_avg_error_threshold'],
+                   rans_max_error_threshold=DEFAULTS[
+                       'align_frames_params']['rans_max_error_threshold']):
     if method == 'RANSAC':
         cv2_method = cv2.RANSAC
     elif method == 'LMEDS':
@@ -138,20 +144,74 @@ def find_transform(src_pts, dst_pts, transform=DEFAULTS['align_frames_params']['
             f". Valid options are: {constants.ALIGN_RANSAC}, {constants.ALIGN_LMEDS}"
         )
     if transform == constants.ALIGN_HOMOGRAPHY:
-        result = cv2.findHomography(src_pts, dst_pts, method=cv2_method,
-                                    ransacReprojThreshold=rans_threshold,
-                                    maxIters=max_iters)
+        m, mask = cv2.findHomography(src_pts, dst_pts, method=cv2_method,
+                                     ransacReprojThreshold=rans_threshold,
+                                     maxIters=max_iters)
     elif transform == constants.ALIGN_RIGID:
-        result = cv2.estimateAffinePartial2D(src_pts, dst_pts, method=cv2_method,
-                                             ransacReprojThreshold=rans_threshold,
-                                             confidence=align_confidence / 100.0,
-                                             refineIters=refine_iters)
+        m, mask = cv2.estimateAffinePartial2D(src_pts, dst_pts, method=cv2_method,
+                                              ransacReprojThreshold=rans_threshold,
+                                              confidence=align_confidence / 100.0,
+                                              refineIters=refine_iters)
     else:
         raise InvalidOptionError(
             'transform', method,
             f". Valid options are: {constants.ALIGN_HOMOGRAPHY}, {constants.ALIGN_RIGID}"
         )
-    return result
+    quality = compute_ransac_quality(
+        src_pts, dst_pts, m, mask, transform,
+        rans_inlier_fraction_threshold, rans_avg_error_threshold, rans_max_error_threshold)
+    return m, mask, quality
+
+
+def compute_ransac_quality(src_pts, dst_pts, m, mask, transform_type,
+                           rans_inlier_fraction_threshold,
+                           rans_avg_error_threshold,
+                           rans_max_error_threshold):
+    if m is None or mask is None:
+        return None
+    src_pts = np.array(src_pts, dtype=np.float32).reshape(-1, 2)
+    dst_pts = np.array(dst_pts, dtype=np.float32).reshape(-1, 2)
+    m = np.array(m, dtype=np.float32)
+    mask = np.array(mask, dtype=np.uint8).ravel()
+    inlier_indices = np.where(mask == 1)[0]
+    n_inliers = len(inlier_indices)
+    n_total = len(src_pts)
+    if n_inliers == 0:
+        return {
+            'inlier_fraction': 0.0, 'avg_error_px': float('inf'), 'status': 'FAILED', 'n_inliers': 0
+        }
+    src_inliers = src_pts[inlier_indices]
+    dst_inliers = dst_pts[inlier_indices]
+    if transform_type == constants.ALIGN_HOMOGRAPHY:
+        src_homo = np.hstack([src_inliers, np.ones((n_inliers, 1))])
+        dst_pred_homo = np.dot(src_homo, m.T)
+        dst_pred = dst_pred_homo[:, :2] / dst_pred_homo[:, 2:3]
+    else:
+        if m.shape != (2, 3):
+            if m.size == 6:
+                m = m.reshape(2, 3)
+            else:
+                return None
+        src_homo = np.hstack([src_inliers, np.ones((n_inliers, 1))])
+        dst_pred = np.dot(src_homo, m.T)
+    errors = np.linalg.norm(dst_inliers - dst_pred, axis=1)
+    avg_error = float(np.mean(errors))
+    max_error = float(np.max(errors))
+    inlier_fraction = n_inliers / n_total
+    if inlier_fraction > rans_inlier_fraction_threshold and avg_error < rans_avg_error_threshold \
+            and max_error < rans_max_error_threshold:
+        status = 'GOOD'
+    elif n_inliers > 0:
+        status = 'POOR'
+    else:
+        status = 'FAILED'
+    return {
+        'inlier_fraction': inlier_fraction,
+        'avg_error_px': avg_error,
+        'max_error_px': max_error,
+        'status': status,
+        'n_inliers': n_inliers
+    }
 
 
 def rescale_transform(m, w0, h0, w_sub, h_sub, subsample, transform):
@@ -274,15 +334,19 @@ class TransformationExtractor:
         n_good_matches = match_result.n_good_matches()
         m = None
         msk = None
+        quality = None
         phase_corr_called = False
         if match_result.has_sufficient_matches(min_good_matches):
             src_pts = match_result.get_src_points()
             dst_pts = match_result.get_dst_points()
-            m, msk = find_transform(
+            m, msk, quality = find_transform(
                 src_pts, dst_pts, transform_type, self.alignment_config['align_method'],
                 *(self.alignment_config[k]
                   for k in ['rans_threshold', 'max_iters',
-                            'align_confidence', 'refine_iters']))
+                            'align_confidence', 'refine_iters',
+                            'rans_inlier_fraction_threshold',
+                            'rans_avg_error_threshold',
+                            'rans_max_error_threshold']))
             if m is not None and plot_path is not None and plot_manager is not None:
                 plot_matches(msk, img_ref_sub, img_0_sub, match_result.kp_ref, match_result.kp_0,
                              match_result.good_matches, plot_path, plot_manager)
@@ -300,18 +364,18 @@ class TransformationExtractor:
                 if m is None:
                     if callbacks and 'warning' in callbacks:
                         callbacks['warning']("alignment by phase correlation failed")
-                    return None, phase_corr_called, msk
+                    return None, phase_corr_called, msk, None
             elif not match_result.has_sufficient_matches(min_matches):
                 if callbacks and 'warning' in callbacks:
                     s_str = 'es' if n_good_matches > 1 else ''
                     callbacks['warning'](
                         f"only {n_good_matches} < {min_good_matches} "
                         f"match{s_str} found, alignment falied")
-                return None, phase_corr_called, msk
+                return None, phase_corr_called, msk, None
             else:
                 if callbacks and 'warning' in callbacks:
                     callbacks['warning']("could not compute transformation, alignment failed")
-                return None, phase_corr_called, msk
+                return None, phase_corr_called, msk, None
         h0, w0 = original_shape[:2]
         h_sub, w_sub = img_0_sub.shape[:2]
         if subsample > 1:
@@ -319,7 +383,7 @@ class TransformationExtractor:
             if m is None:
                 if callbacks and 'warning' in callbacks:
                     callbacks['warning']("can't rescale transformation matrix, alignment failed")
-                return None, phase_corr_called, msk
+                return None, phase_corr_called, msk, None
         is_valid, reason, result = check_transform(
             m, original_shape, transform_type,
             self.affine_thresholds, self.homography_thresholds)
@@ -330,10 +394,10 @@ class TransformationExtractor:
                 callbacks['warning'](f"invalid transformation: {reason}, alignment failed")
             if self.alignment_config['abort_abnormal']:
                 raise RuntimeError(f"invalid transformation: {reason}, alignment failed")
-            return None, phase_corr_called, msk
+            return None, phase_corr_called, msk, None
         if not phase_corr_called and callbacks and 'matches_message' in callbacks:
             callbacks['matches_message'](n_good_matches)
-        return m, phase_corr_called, msk
+        return m, phase_corr_called, msk, quality
 
     def apply_alignment_transform(self, img_0, img_ref, m, callbacks=None):
         try:

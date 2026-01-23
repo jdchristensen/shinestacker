@@ -379,7 +379,8 @@ def test_find_transform_successful():
                 mock_extract.return_value = (
                     np.eye(2, 3, dtype=np.float32),  # m
                     False,  # phase_corr_called
-                    None   # msk
+                    None,   # msk
+                    None,   # quality
                 )
                 info, warnings = aligner.find_transform(1, delta=1)
                 assert aligner._transforms[1] is not None
@@ -461,6 +462,7 @@ def test_find_transform_phase_correlation_fallback():
                 mock_extract.return_value = (
                     np.eye(2, 3, dtype=np.float32),
                     True,
+                    None,
                     None
                 )
                 info, warnings = aligner.find_transform(1, delta=1)

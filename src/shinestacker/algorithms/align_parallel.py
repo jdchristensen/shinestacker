@@ -3,7 +3,6 @@
 import gc
 import os
 import copy
-import math
 import traceback
 import threading
 import logging
@@ -110,7 +109,7 @@ class AlignFramesParallel(AlignFramesBase):
                                           self.process.output_path, filename, 1001)
                     raise e
                 except Exception as e:
-                    traceback.print_tb(e.__traceback__)
+                    traceback.print_exc()
                     self.process.callback(constants.CALLBACK_UPDATE_FRAME_STATUS,
                                           self.process.output_path, filename, 1001)
                     self.print_message(
@@ -251,20 +250,7 @@ class AlignFramesParallel(AlignFramesBase):
         warning_messages = []
         img_0 = self.cache_img(idx)
         img_ref = self.cache_img(target_idx)
-        h0, w0 = img_0.shape[:2]
-        subsample = self.alignment_config['subsample']
-        if subsample == 0:
-            img_res = (float(h0) / constants.ONE_KILO) * (float(w0) / constants.ONE_KILO)
-            target_res = DEFAULTS['align_frames_params']['resolution_target']
-            subsample = int(1 + math.floor(img_res / target_res))
-        match_result, _final_subsample = self.feature_matcher.match_images_with_fallback(
-            img_ref, img_0, subsample=subsample,
-            warning_callback=lambda msg: self.print_message(
-                f'{self.image_str(idx)}: {msg}',
-                color=constants.LOG_COLOR_WARNING, level=logging.WARNING)
-        )
-        self._n_good_matches[idx] = match_result.n_good_matches()
-        img_ref_sub, img_0_sub = self.feature_matcher.get_last_subsampled_images()
+
         idx_str = f"{idx:04d}"
         if self.plot_matches:
             plots_ext = AppConfig.get('plots_format')
@@ -279,10 +265,9 @@ class AlignFramesParallel(AlignFramesBase):
                 constants.CALLBACK_SAVE_PLOT, self.process.id, self.process.output_path,
                 f"{self.process.name}: matches\nframe {idx_str}", plot_path),
         }
-        m, phase_corr_called, _ = \
-            self.transformation_extractor.extract_transformation(
-                match_result, img_ref_sub, img_0_sub, subsample, img_0.shape, callbacks,
-                plot_path, self.process.plot_manager)
+        m, phase_corr_called, _quality, n_good_matches = self.compute_transformation(
+            idx, img_ref, img_0, callbacks, plot_path)
+        self._n_good_matches[idx] = n_good_matches
         if m is None:
             if phase_corr_called:
                 return info_messages, warning_messages

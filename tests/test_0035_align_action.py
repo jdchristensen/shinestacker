@@ -615,7 +615,12 @@ def test_align_frames_end_no_plot_summary():
 
 def test_align_frames_end_with_plot_summary_rigid():
     align_frames = AlignFrames(
-        plot_summary=True, alignment_config={'transform': constants.ALIGN_RIGID})
+        plot_summary=True, alignment_config={
+            'transform': constants.ALIGN_RIGID,
+            'rans_inlier_fraction_threshold': 0.5,
+            'rans_avg_error_threshold': 1.0,
+            'rans_max_error_threshold': 2.0
+        })
 
     class MockProcess:
         ref_idx = 2
@@ -639,14 +644,30 @@ def test_align_frames_end_with_plot_summary_rigid():
     align_frames._translation_y = np.array([0.0, -2.0, 0.0, 4.0, -1.0])
     align_frames._rotation = np.array([0.0, 1.5, 0.0, -2.0, 0.5])
     align_frames._shear = np.array([0.0, 0.3, 0.0, -0.4, 0.1])
+    
+    # Initialize the quality metrics arrays that are used in end()
+    align_frames._inlier_fractions = np.zeros(5)
+    align_frames._avg_errors = np.zeros(5)
+    align_frames._max_errors = np.zeros(5)
+    
+    # Also need to initialize other arrays that might be accessed
+    align_frames._area_ratio = np.ones(5)
+    align_frames._aspect_ratio = np.ones(5)
+    align_frames._max_angle_dev = np.zeros(5)
+    
     align_frames.end()
-    assert len(process.callback_calls) == 4
+    assert len(process.callback_calls) == 7  # Changed from 4 to 7
     process.plot_manager.save_plot.assert_called()
 
 
 def test_align_frames_end_with_plot_summary_homography():
     align_frames = AlignFrames(
-        plot_summary=True, alignment_config={'transform': constants.ALIGN_HOMOGRAPHY})
+        plot_summary=True, alignment_config={
+            'transform': constants.ALIGN_HOMOGRAPHY,
+            'rans_inlier_fraction_threshold': 0.5,
+            'rans_avg_error_threshold': 1.0,
+            'rans_max_error_threshold': 2.0
+        })
 
     class MockProcess:
         ref_idx = 1
@@ -667,8 +688,22 @@ def test_align_frames_end_with_plot_summary_homography():
     align_frames._area_ratio = np.array([1.0, 1.0, 1.1, 0.9])
     align_frames._aspect_ratio = np.array([1.0, 1.0, 1.2, 0.8])
     align_frames._max_angle_dev = np.array([0.0, 0.0, 1.0, 2.0])
+    
+    # Initialize the quality metrics arrays that are used in end()
+    align_frames._inlier_fractions = np.zeros(4)
+    align_frames._avg_errors = np.zeros(4)
+    align_frames._max_errors = np.zeros(4)
+    
+    # Also need to initialize other arrays that might be accessed for rigid transform
+    align_frames._scale_x = np.ones(4)
+    align_frames._scale_y = np.ones(4)
+    align_frames._translation_x = np.zeros(4)
+    align_frames._translation_y = np.zeros(4)
+    align_frames._rotation = np.zeros(4)
+    align_frames._shear = np.zeros(4)
+    
     align_frames.end()
-    assert len(process.callback_calls) == 4
+    assert len(process.callback_calls) == 7  # Changed from 4 to 7
     process.plot_manager.save_plot.assert_called()
 
 
