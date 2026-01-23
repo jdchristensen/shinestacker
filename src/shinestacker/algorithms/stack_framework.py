@@ -22,9 +22,10 @@ class StackJob(Job):
         self.working_path = working_path
         self._input_path = input_path
         self._action_paths = [] if input_path == '' else [input_path]
-        self._input_filepaths = []
         self._input_full_path = None
         self._input_filepaths = input_filepaths
+        if self._input_filepaths:
+            self._input_filepaths.sort()
         self.plot_manager = plot_manager if plot_manager is not None else DirectPlotManager()
         Job.__init__(self, name, **kwargs)
 
