@@ -109,8 +109,7 @@ def check_homography_distortion(m, img_shape, homography_thresholds):  # =_HOMOG
         (area_ratio, aspect_ratio, max_angle_dev)
 
 
-def check_transform(m, img_shape, transform_type,
-                    affine_thresholds, homography_thresholds):
+def check_transform(m, img_shape, transform_type, affine_thresholds, homography_thresholds):
     if img_shape is None:
         return False, 'null image shape', None
     if transform_type == constants.ALIGN_RIGID:
@@ -349,6 +348,7 @@ class TransformationExtractor:
                 *(self.alignment_config[k]
                   for k in ['rans_threshold', 'max_iters',
                             'align_confidence', 'refine_iters',
+                            'compute_rans_quality',
                             'rans_inlier_fraction_threshold',
                             'rans_avg_error_threshold',
                             'rans_max_error_threshold']))

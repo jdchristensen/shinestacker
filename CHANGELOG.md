@@ -2,12 +2,13 @@
 
 This page reports the main releases only and the main changes therein.
 
-## [v1.13.x] - 2026-01-23
+## [v1.13.x] - 2026-01-24
 
 ### Added
 - expert options toggle in new project dialog
 
 ### Fixed
+- incorrect automatic subsampling factor causing poor alignment quality
 - added protection for depth map plot
 - minor GUI fixes
 - skip stacking if a single frame is provided

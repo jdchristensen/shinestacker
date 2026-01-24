@@ -14,15 +14,17 @@ from shinestacker.algorithms.transform_estimate import (
 def test_find_transform_invalid_method():
     src_pts = np.array([[0, 0], [1, 0], [0, 1]], dtype=np.float32)
     dst_pts = np.array([[0, 0], [1, 0], [0, 1]], dtype=np.float32)
+    subsample = 1
     with pytest.raises(InvalidOptionError):
-        find_transform(src_pts, dst_pts, method='INVALID_METHOD')
+        find_transform(src_pts, dst_pts, subsample, method='INVALID_METHOD')
 
 
 def test_find_transform_invalid_transform():
     src_pts = np.array([[0, 0], [1, 0], [0, 1]], dtype=np.float32)
     dst_pts = np.array([[0, 0], [1, 0], [0, 1]], dtype=np.float32)
+    subsample = 1
     with pytest.raises(InvalidOptionError):
-        find_transform(src_pts, dst_pts, transform='INVALID_TRANSFORM')
+        find_transform(src_pts, dst_pts, subsample, transform='INVALID_TRANSFORM')
 
 
 def test_rescale_transform_invalid_type():
@@ -137,6 +139,7 @@ def test_extract_transformation_valid_matches():
         'transform': 'rigid', 'min_good_matches': 10, 'phase_corr_fallback': True,
         'abort_abnormal': False, 'align_method': 'RANSAC', 'rans_threshold': 3.0,
         'max_iters': 1000, 'align_confidence': 95, 'refine_iters': 10,
+        'compute_rans_quality': False,
         'rans_inlier_fraction_threshold': 0.9,
         'rans_avg_error_threshold': 0.2,
         'rans_max_error_threshold': 3,
@@ -166,6 +169,7 @@ def test_extract_transformation_invalid_transform():
         'phase_corr_fallback': True, 'abort_abnormal': False,
         'align_method': 'RANSAC', 'rans_threshold': 3.0,
         'max_iters': 1000, 'align_confidence': 95, 'refine_iters': 10,
+        'compute_rans_quality': False,
         'rans_inlier_fraction_threshold': 0.9,
         'rans_avg_error_threshold': 0.2,
         'rans_max_error_threshold': 3,
@@ -212,6 +216,7 @@ def test_extract_transformation_abort_abnormal():
         'phase_corr_fallback': True, 'abort_abnormal': True,
         'align_method': 'RANSAC', 'rans_threshold': 3.0,
         'max_iters': 1000, 'align_confidence': 95, 'refine_iters': 10,
+        'compute_rans_quality': False,
         'rans_inlier_fraction_threshold': 0.9,
         'rans_avg_error_threshold': 0.2,
         'rans_max_error_threshold': 3,
@@ -240,6 +245,7 @@ def test_extract_transformation_with_plot_path():
         'phase_corr_fallback': False, 'abort_abnormal': False,
         'align_method': 'RANSAC', 'rans_threshold': 3.0,
         'max_iters': 1000, 'align_confidence': 95, 'refine_iters': 10,
+        'compute_rans_quality': False,
         'rans_inlier_fraction_threshold': 0.9,
         'rans_avg_error_threshold': 0.2,
         'rans_max_error_threshold': 3,
