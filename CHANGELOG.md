@@ -16,7 +16,6 @@ This page reports the main releases only and the main changes therein.
 - minor GUI fixes
 
 ### Changed
-- revert to no subsampling if poor quality transformation detected
 - minor optimization: skip stacking if input has a single frame
 
 ---
