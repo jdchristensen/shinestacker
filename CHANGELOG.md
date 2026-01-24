@@ -5,18 +5,18 @@ This page reports the main releases only and the main changes therein.
 ## [v1.13.x] - 2026-01-24
 
 ### Added
-- expert options toggle in new project dialog
 - visual icon representing stacking algorithm, ▲ (pyramid) and ■ (depth map)
+- expert options toggle in new project dialog
 
 ### Fixed
-- incorrect automatic subsampling factor causing poor alignment quality
-- added protection for depth map plot
-- minor GUI fixes
-- skip stacking if a single frame is provided
+- incorrect automatic subsampling factor causing in some cases poor alignment quality
+- added fault protection for depth map plot
 - input filepaths explicitly sorted alphabetically
+- minor GUI fixes
 
 ### Changed
 - revert to no subsampling if poor quality transformation detected
+- minor optimization: skip stacking if input has a single frame
 
 ---
 
