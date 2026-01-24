@@ -77,6 +77,4 @@ class JobWidget(BaseWidget):
         while parent and not hasattr(parent, 'run_retouch_path'):
             parent = parent.parent()
         if parent:
-            retouch_paths = parent.get_retouch_path(self.data_object)
-            if retouch_paths:
-                parent.run_retouch_path(self.data_object, retouch_paths)
+            parent.run_retouch_job(self.data_object)

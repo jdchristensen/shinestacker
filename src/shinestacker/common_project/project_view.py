@@ -85,7 +85,7 @@ class ProjectView(QWidget, LogManager, ProjectHandler):
         if self.current_action_output_path:
             self.browse_path(self.current_action_output_path)
 
-    def run_retouch_path(self, _job, retouch_path):
+    def run_retouch_path(self, retouch_path):
         def find_parent(widget, class_name):
             current = widget
             while current is not None:
@@ -104,6 +104,21 @@ class ProjectView(QWidget, LogManager, ProjectHandler):
             self._show_retouch_error(
                 "Cannot find main window. "
                 "Ensure MainWindow has objectName='mainWindow'")
+
+    def run_retouch_job(self, job):
+        retouch_paths = self.get_retouch_path(job)
+        if retouch_paths:
+            self.run_retouch_path(retouch_paths)
+
+    def run_retouch_selected_job(self):
+        current_index = self.current_job_index()
+        if current_index < 0:
+            msg = "No Job Selected" if self.num_project_jobs() > 0 else "No Job Added"
+            QMessageBox.warning(self.parent() if self.parent() else self,
+                                msg, "Please select a job first.")
+            return False
+        job = self.project_job(current_index)
+        self.run_retouch_job(job)
 
     def _show_retouch_error(self, message):
         QMessageBox.warning(self, "Retouch Error",
@@ -200,9 +215,9 @@ class ProjectView(QWidget, LogManager, ProjectHandler):
             retouch_path = self.get_retouch_path(current_action)
             if len(retouch_path) > 0:
                 menu.addSeparator()
-                self.job_retouch_path_action = QAction("Retouch path")
+                self.job_retouch_path_action = QAction("Retouch Job Output")
                 self.job_retouch_path_action.triggered.connect(
-                    lambda: self.run_retouch_path(current_action, retouch_path))
+                    lambda: self.run_retouch_path(retouch_path))
                 menu.addAction(self.job_retouch_path_action)
 
     def action_config_dialog(self, action):

@@ -59,6 +59,7 @@ class MainWindow(ProjectIOHandler, QMainWindow):
             "Add Job": self.add_job,
             "Run Job": self.run_job,
             "Run All Jobs": self.run_all_jobs,
+            "Retouch Selected Job Output": self.run_retouch_selected_job,
             "Stop": self.stop,
             "Classic View": lambda: self.set_view('classic'),
             "Modern View": lambda: self.set_view('modern'),
@@ -462,6 +463,9 @@ class MainWindow(ProjectIOHandler, QMainWindow):
             self.menu_manager.run_job_action.setEnabled(False)
             self.menu_manager.run_all_jobs_action.setEnabled(False)
             self.menu_manager.stop_action.setEnabled(True)
+
+    def run_retouch_selected_job(self):
+        self.current_view.run_retouch_selected_job()
 
     def stop(self):
         success = self.current_view.stop()

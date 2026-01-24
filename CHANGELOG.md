@@ -7,6 +7,7 @@ This page reports the main releases only and the main changes therein.
 ### Added
 - visual icon representing stacking algorithm, ▲ (pyramid) and ■ (depth map)
 - expert options toggle in new project dialog
+- retouch job action entry in top menu
 
 ### Fixed
 - incorrect automatic subsampling factor causing in some cases poor alignment quality

@@ -223,6 +223,9 @@ class MenuManager(QObject):
         self.stop_action = self.action("Stop", requires_file=True)
         self.stop_action.setEnabled(False)
         menu.addAction(self.stop_action)
+        menu.addSeparator()
+        self.run_retouch_selected_job_action = self.action("Retouch Selected Job Output")
+        menu.addAction(self.run_retouch_selected_job_action)
 
     def add_actions_menu(self):
         menu = self.menubar.addMenu("&Actions")
