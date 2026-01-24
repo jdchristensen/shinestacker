@@ -6,6 +6,7 @@ This page reports the main releases only and the main changes therein.
 
 ### Added
 - expert options toggle in new project dialog
+- visual icon representing stacking algorithm, ▲ (pyramid) and ■ (depth map)
 
 ### Fixed
 - incorrect automatic subsampling factor causing poor alignment quality

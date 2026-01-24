@@ -3,8 +3,42 @@ import os
 from PySide6.QtCore import Qt, Signal, QTimer
 from PySide6.QtWidgets import (
     QWidget, QFrame, QLabel, QVBoxLayout, QHBoxLayout, QSizePolicy, QLayout, QScrollArea)
+from ..config.constants import constants
 from ..gui.gui_images import GuiPdfView, GuiOpenApp, GuiImageView
 from ..gui.colors import ColorPalette
+
+
+CONDITIONAL_ICONS = {
+    'pyramid_stack': {
+        'key': 'stacker',
+        'value': constants.STACK_ALGO_PYRAMID,
+        'types_names': [
+            constants.ACTION_FOCUSSTACK, constants.ACTION_FOCUSSTACKBUNCH],
+        'default_for_types_names': [
+            constants.ACTION_FOCUSSTACK, constants.ACTION_FOCUSSTACKBUNCH],
+        'icon': '▲',
+        'tooltip': 'Pyramid stack algorithm'
+    },
+    'depth_map': {
+        'key': 'stacker',
+        'value': constants.STACK_ALGO_DEPTH_MAP,
+        'types_names': [
+            constants.ACTION_FOCUSSTACK, constants.ACTION_FOCUSSTACKBUNCH],
+        'default_for_types_names': [],
+        'icon': '■',
+        'tooltip': 'Depth Map stack algorithm'
+    },
+}
+
+
+def check_icon_condition(data_object, icon_config):
+    if data_object.type_name not in icon_config.get('types_names', []):
+        return False
+    key = icon_config['key']
+    expected_value = icon_config['value']
+    if key in data_object.params:
+        return data_object.params[key] == expected_value
+    return data_object.type_name in icon_config.get('default_for_types_names', [])
 
 
 class BaseWidget(QFrame):
@@ -30,6 +64,7 @@ class BaseWidget(QFrame):
         self.path_label_in_top_row = None
         self.child_container = None
         self.child_container_layout = None
+        self.conditional_icons = {}
         self.setFocusPolicy(Qt.NoFocus)
         self.setAttribute(Qt.WA_Hover, True)
         self.name_label = None
@@ -39,6 +74,7 @@ class BaseWidget(QFrame):
         self._update_stylesheet()
         self.enabled_toggled.connect(self._on_enabled_toggled)
         self.setCursor(Qt.ArrowCursor)
+        self._create_conditional_icons()
 
     def _init_widget(self, data_object):
         self.setMinimumHeight(self.min_height)
@@ -88,6 +124,29 @@ class BaseWidget(QFrame):
         self.main_layout.addWidget(self.child_container)
         self.setLayout(self.main_layout)
         self.update(data_object)
+
+    def _create_conditional_icons(self):
+        for icon_name, icon_data in CONDITIONAL_ICONS.items():
+            if check_icon_condition(self.data_object, icon_data):
+                self._add_conditional_icon(icon_name, icon_data['icon'], icon_data['tooltip'])
+
+    def _add_conditional_icon(self, name, icon_text, tooltip):
+        if name in self.conditional_icons:
+            return
+        label = QLabel(icon_text)
+        label.setToolTip(tooltip)
+        self.icons_layout.insertWidget(len(self.conditional_icons), label)
+        self.conditional_icons[name] = label
+
+    def _remove_conditional_icons(self):
+        for label in self.conditional_icons.values():
+            self.icons_layout.removeWidget(label)
+            label.deleteLater()
+        self.conditional_icons.clear()
+
+    def _update_conditional_icons(self):
+        self._remove_conditional_icons()
+        self._create_conditional_icons()
 
     def add_child_widget(self, child_widget, add_to_layout=True):
         self.child_widgets.append(child_widget)
@@ -276,6 +335,7 @@ class BaseWidget(QFrame):
         self.set_name(name)
         self._enabled = data_object.params.get('enabled', True)
         self._update_enabled_icon()
+        self._update_conditional_icons()
         self._update_stylesheet()
 
     def scroll_area_css(self, orientation):
