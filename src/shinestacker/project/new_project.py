@@ -171,7 +171,7 @@ class NewProjectDialog(BaseFormDialog):
         self.bunches_label.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
         step2_layout.addRow("Number of resulting bunches: ", self.bunches_label)
         step2_layout.addRow(
-            QLabel("Focus stack:"),
+            QLabel("Focus stack (pyramid):"),
             self.focus_stack_pyramid
         )
         step2_layout.addRow(
