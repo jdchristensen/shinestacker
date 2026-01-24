@@ -190,6 +190,9 @@ class MainWindow(ProjectIOHandler, QMainWindow):
     def vertical_actions_layout(self):
         self.modern_view.horizontal_actions_layout(False)
 
+    def get_retouch_path(self, job):
+        return self.current_view.get_retouch_path(job)
+
     def quit(self):
         if self.check_unsaved_changes():
             q = True
