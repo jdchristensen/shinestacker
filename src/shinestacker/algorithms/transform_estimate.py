@@ -122,12 +122,15 @@ def check_transform(m, img_shape, transform_type,
     return False, f'invalid transfrom option {transform_type}', None
 
 
-def find_transform(src_pts, dst_pts, transform=DEFAULTS['align_frames_params']['transform'],
+def find_transform(src_pts, dst_pts, subsample,
+                   transform=DEFAULTS['align_frames_params']['transform'],
                    method=DEFAULTS['align_frames_params']['align_method'],
                    rans_threshold=DEFAULTS['align_frames_params']['rans_threshold'],
                    max_iters=DEFAULTS['align_frames_params']['max_iters'],
                    align_confidence=DEFAULTS['align_frames_params']['align_confidence'],
                    refine_iters=DEFAULTS['align_frames_params']['refine_iters'],
+                   compute_rans_quality=DEFAULTS[
+                       'align_frames_params']['compute_rans_quality'],
                    rans_inlier_fraction_threshold=DEFAULTS[
                        'align_frames_params']['rans_inlier_fraction_threshold'],
                    rans_avg_error_threshold=DEFAULTS[
@@ -157,13 +160,16 @@ def find_transform(src_pts, dst_pts, transform=DEFAULTS['align_frames_params']['
             'transform', method,
             f". Valid options are: {constants.ALIGN_HOMOGRAPHY}, {constants.ALIGN_RIGID}"
         )
-    quality = compute_ransac_quality(
-        src_pts, dst_pts, m, mask, transform,
-        rans_inlier_fraction_threshold, rans_avg_error_threshold, rans_max_error_threshold)
+    if compute_rans_quality:
+        quality = compute_ransac_quality(
+            src_pts, dst_pts, m, mask, transform, subsample,
+            rans_inlier_fraction_threshold, rans_avg_error_threshold, rans_max_error_threshold)
+    else:
+        quality = None
     return m, mask, quality
 
 
-def compute_ransac_quality(src_pts, dst_pts, m, mask, transform_type,
+def compute_ransac_quality(src_pts, dst_pts, m, mask, transform_type, subsample,
                            rans_inlier_fraction_threshold,
                            rans_avg_error_threshold,
                            rans_max_error_threshold):
@@ -177,9 +183,7 @@ def compute_ransac_quality(src_pts, dst_pts, m, mask, transform_type,
     n_inliers = len(inlier_indices)
     n_total = len(src_pts)
     if n_inliers == 0:
-        return {
-            'inlier_fraction': 0.0, 'avg_error_px': float('inf'), 'status': 'FAILED', 'n_inliers': 0
-        }
+        return {'status': 'FAILED', 'n_inliers': 0}
     src_inliers = src_pts[inlier_indices]
     dst_inliers = dst_pts[inlier_indices]
     if transform_type == constants.ALIGN_HOMOGRAPHY:
@@ -195,8 +199,8 @@ def compute_ransac_quality(src_pts, dst_pts, m, mask, transform_type,
         src_homo = np.hstack([src_inliers, np.ones((n_inliers, 1))])
         dst_pred = np.dot(src_homo, m.T)
     errors = np.linalg.norm(dst_inliers - dst_pred, axis=1)
-    avg_error = float(np.mean(errors))
-    max_error = float(np.max(errors))
+    avg_error = float(np.mean(errors) / math.sqrt(n_inliers) * subsample)
+    max_error = float(np.max(errors) * subsample)
     inlier_fraction = n_inliers / n_total
     if inlier_fraction > rans_inlier_fraction_threshold and avg_error < rans_avg_error_threshold \
             and max_error < rans_max_error_threshold:
@@ -210,7 +214,8 @@ def compute_ransac_quality(src_pts, dst_pts, m, mask, transform_type,
         'avg_error_px': avg_error,
         'max_error_px': max_error,
         'status': status,
-        'n_inliers': n_inliers
+        'n_inliers': n_inliers,
+        'subsample': subsample
     }
 
 
@@ -340,7 +345,7 @@ class TransformationExtractor:
             src_pts = match_result.get_src_points()
             dst_pts = match_result.get_dst_points()
             m, msk, quality = find_transform(
-                src_pts, dst_pts, transform_type, self.alignment_config['align_method'],
+                src_pts, dst_pts, subsample, transform_type, self.alignment_config['align_method'],
                 *(self.alignment_config[k]
                   for k in ['rans_threshold', 'max_iters',
                             'align_confidence', 'refine_iters',

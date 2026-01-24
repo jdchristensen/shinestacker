@@ -34,6 +34,7 @@ DEFAULT_ALIGNMENT_CONFIG = {
     'min_good_matches': DEFAULTS['align_frames_params']['min_good_matches'],
     'phase_corr_fallback': DEFAULTS['align_frames_params']['phase_corr_fallback'],
     'abort_abnormal': DEFAULTS['align_frames_params']['abort_abnormal'],
+    'compute_rans_quality': DEFAULTS['align_frames_params']['compute_rans_quality'],
     'rans_inlier_fraction_threshold':
         DEFAULTS['align_frames_params']['rans_inlier_fraction_threshold'],
     'rans_avg_error_threshold': DEFAULTS['align_frames_params']['rans_avg_error_threshold'],

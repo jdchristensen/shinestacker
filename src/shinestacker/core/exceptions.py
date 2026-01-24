@@ -55,7 +55,7 @@ class RunStopException(FocusStackError):
     def __init__(self, name):
         if name != "":
             name = f"{name} "
-        super().__init__(f"Job {name}stopped")
+        super().__init__(f"Job {name} stopped")
 
 
 class PathTooLong(FocusStackError):

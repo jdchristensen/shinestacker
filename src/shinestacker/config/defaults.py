@@ -60,9 +60,10 @@ DEFAULTS = {
         'chunk_submit': True,
         'bw_matching': False,
         'delta_max': 2,
-        'rans_inlier_fraction_threshold': 0.9,
-        'rans_avg_error_threshold': 0.2,
-        'rans_max_error_threshold': 3,
+        'compute_rans_quality': False,
+        'rans_inlier_fraction_threshold': 0.75,
+        'rans_avg_error_threshold': 1.0,
+        'rans_max_error_threshold': 30,
     },
     'balance_frames_params': {
         'subsample': 0,

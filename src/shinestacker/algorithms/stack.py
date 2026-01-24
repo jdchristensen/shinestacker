@@ -90,7 +90,7 @@ class FocusStackBase(TaskBase, ImageSequenceManager):
         self.callback(constants.CALLBACK_UPDATE_FRAME_STATUS, self.name, filename, 1000)
         if self.plot_stack:
             idx_str = f"{self.frame_count + 1:04d}" if self.frame_count >= 0 else ''
-            caption = f"{self.name}: {self.stack_algo.name()}"
+            caption = f"{self.name}: {self.stack_algo.algo_name()}"
             if idx_str != '':
                 caption += f"\nbunch: {idx_str}"
             self.callback(constants.CALLBACK_SAVE_PLOT, self.id, self.output_path,

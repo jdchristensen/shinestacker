@@ -33,7 +33,7 @@ class BaseStackAlgo:
                 details=" valid values are FLOAT_32 and FLOAT_64"
             )
 
-    def name(self):
+    def algo_name(self):
         return self._name
 
     def set_process(self, process):
@@ -74,7 +74,7 @@ class BaseStackAlgo:
                                  self.process.id, self.process.name) is False:
             if cleanup_callback is not None:
                 cleanup_callback()
-            raise RunStopException(self.name)
+            raise RunStopException(self.process.name)
 
     def after_step(self, step):
         if self.do_step_callback:

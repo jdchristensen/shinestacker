@@ -89,7 +89,7 @@ class AlignFramesParallel(AlignFramesBase):
                 try:
                     info_messages, warning_messages = future.result()
                     message = f"{self.image_str(idx)}: " \
-                              f"matches found: {self._n_good_matches[idx]}"
+                              f"good matches found: {self._n_good_matches[idx]}"
                     if len(info_messages) > 0:
                         message += ", " + ", ".join(info_messages)
                     color = constants.LOG_COLOR_LEVEL_3

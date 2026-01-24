@@ -27,6 +27,11 @@ def align_images_phase_correlation(img_ref, img_0):
     return m, img_warp
 
 
+def get_subsample_factor(h0, w0, target_res):
+    img_res = (float(h0) / constants.ONE_KILO) * (float(w0) / constants.ONE_KILO)
+    return int(math.sqrt(1 + math.floor(img_res / target_res)))
+
+
 def align_images(img_ref, img_0, feature_config=None, matching_config=None, alignment_config=None,
                  plot_path=None, plot_manager=None, callbacks=None,
                  affine_thresholds=AFFINE_THRESHOLDS,
@@ -39,9 +44,8 @@ def align_images(img_ref, img_0, feature_config=None, matching_config=None, alig
     h0, w0 = img_0.shape[:2]
     subsample = alignment_config['subsample']
     if subsample == 0:
-        img_res = (float(h0) / constants.ONE_KILO) * (float(w0) / constants.ONE_KILO)
-        target_res = DEFAULTS['align_frames_params']['resolution_target']
-        subsample = int(1 + math.floor(img_res / target_res))
+        subsample = get_subsample_factor(
+            h0, w0, DEFAULTS['align_frames_params']['resolution_target'])
     feature_matcher = SubsamplingFeatureMatcher(
         feature_config, matching_config, alignment_config, callbacks)
     match_result, _final_subsample = feature_matcher.match_images_with_fallback(
@@ -86,6 +90,7 @@ class AlignFramesBase(SubAction):
         for k in self.alignment_config:
             if k in kwargs:
                 self.alignment_config[k] = kwargs[k]
+        self._subsamples = None
         self._area_ratio = None
         self._aspect_ratio = None
         self._max_angle_dev = None
@@ -118,6 +123,7 @@ class AlignFramesBase(SubAction):
 
     def begin(self, process):
         self.process = process
+        self._subsamples = np.zeros(process.total_action_counts)
         self._n_good_matches = np.zeros(process.total_action_counts)
         self._area_ratio = np.ones(process.total_action_counts)
         self._aspect_ratio = np.ones(process.total_action_counts)
@@ -317,71 +323,94 @@ class AlignFramesBase(SubAction):
                 self.process.callback(constants.CALLBACK_SAVE_PLOT, self.process.id,
                                       save_plot_name,
                                       f"{self.process.name}: rotation", plot_path)
-            rans_inlier_fraction_threshold = self.alignment_config.get(
-                'rans_inlier_fraction_threshold')
-            rans_avg_error_threshold = self.alignment_config.get('rans_avg_error_threshold')
-            rans_max_error_threshold = self.alignment_config.get('rans_max_error_threshold')
-
             fig = plt.figure(figsize=constants.PLT_FIG_SIZE)
-            x, y, y_ref = get_coordinates(self._inlier_fractions)
+            x, y, y_ref = get_coordinates(self._subsamples)
             plt.plot([self.process.ref_idx + 1, self.process.ref_idx + 1],
                      [0, y_ref], color='cornflowerblue', linestyle='--', label='reference frame')
-            plt.axhline(y=rans_inlier_fraction_threshold, color='red',
-                        linestyle='--', label=f'threshold ({rans_inlier_fraction_threshold})')
-            plt.plot(x, y, color='darkgreen', linewidth=2, label='inlier ratio')
-            plt.title("RANSAC Inlier Ratio per Frame")
+            plt.axhline(y=1, color='red',
+                        linestyle='--', label='full resolution')
+            plt.plot(x, y, color='darkgreen', linewidth=2, label='subsample factor')
+            plt.title("Subsample factor")
             plt.xlabel('frame')
-            plt.ylabel('inlier ratio')
-            plt.ylim(0, 1.05)
+            plt.ylabel('subsample factor')
+            plt.ylim(0)
             plt.legend()
             plt.grid(True, alpha=0.3)
             plt.xlim(x[0], x[-1])
             plot_path = f"{self.process.working_path}/{self.process.plot_path}/" \
-                        f"{self.process.name}-inlier-ratio.{plots_ext}"
+                        f"{self.process.name}-subsample.{plots_ext}"
             self.process.plot_manager.save_plot(plot_path, fig)
             self.process.callback(constants.CALLBACK_SAVE_PLOT, self.process.id,
                                   save_plot_name,
                                   f"{self.process.name}: inlier ratio", plot_path)
-            fig = plt.figure(figsize=constants.PLT_FIG_SIZE)
-            x, y, y_ref = get_coordinates(self._avg_errors)
-            plt.plot([self.process.ref_idx + 1, self.process.ref_idx + 1],
-                     [0, y_ref], color='cornflowerblue', linestyle='--', label='reference frame')
-            plt.axhline(y=rans_avg_error_threshold, color='red',
-                        linestyle='--', label=f'threshold ({rans_avg_error_threshold}px)')
-            plt.plot(x, y, color='darkred', linewidth=2, label='avg error (px)')
-            plt.title("Average Reprojection Error per Frame")
-            plt.xlabel('frame')
-            plt.ylabel('error (pixels)')
-            plt.legend()
-            plt.grid(True, alpha=0.3)
-            plt.xlim(x[0], x[-1])
-            plot_path = f"{self.process.working_path}/{self.process.plot_path}/" \
-                        f"{self.process.name}-avg-error.{plots_ext}"
-            self.process.plot_manager.save_plot(plot_path, fig)
-            self.process.callback(constants.CALLBACK_SAVE_PLOT, self.process.id,
-                                  save_plot_name,
-                                  f"{self.process.name}: avg error", plot_path)
-
-            fig = plt.figure(figsize=constants.PLT_FIG_SIZE)
-            x, y, y_ref = get_coordinates(self._max_errors)
-            rans_max_error_threshold = self.alignment_config.get('rans_max_error_threshold', 1.0)
-            plt.plot([self.process.ref_idx + 1, self.process.ref_idx + 1],
-                     [0, y_ref], color='cornflowerblue', linestyle='--', label='reference frame')
-            plt.axhline(y=rans_max_error_threshold, color='red',
-                        linestyle='--', label=f'threshold ({rans_max_error_threshold}px)')
-            plt.plot(x, y, color='purple', linewidth=2, label='max error (px)')
-            plt.title("Maximum Reprojection Error per Frame")
-            plt.xlabel('frame')
-            plt.ylabel('max error (pixels)')
-            plt.legend()
-            plt.grid(True, alpha=0.3)
-            plt.xlim(x[0], x[-1])
-            plot_path = f"{self.process.working_path}/{self.process.plot_path}/" \
-                        f"{self.process.name}-max-error.{plots_ext}"
-            self.process.plot_manager.save_plot(plot_path, fig)
-            self.process.callback(constants.CALLBACK_SAVE_PLOT, self.process.id,
-                                  save_plot_name,
-                                  f"{self.process.name}: max error", plot_path)
+            if self.alignment_config['compute_rans_quality']:
+                rans_inlier_fraction_threshold = self.alignment_config.get(
+                    'rans_inlier_fraction_threshold')
+                rans_avg_error_threshold = self.alignment_config.get('rans_avg_error_threshold')
+                rans_max_error_threshold = self.alignment_config.get('rans_max_error_threshold')
+                fig = plt.figure(figsize=constants.PLT_FIG_SIZE)
+                x, y, y_ref = get_coordinates(self._inlier_fractions)
+                plt.plot([self.process.ref_idx + 1, self.process.ref_idx + 1],
+                         [0, y_ref], color='cornflowerblue', linestyle='--',
+                         label='reference frame')
+                plt.axhline(y=rans_inlier_fraction_threshold, color='red',
+                            linestyle='--', label=f'threshold ({rans_inlier_fraction_threshold})')
+                plt.plot(x, y, color='darkgreen', linewidth=2, label='inlier ratio')
+                plt.title("RANSAC Inlier Ratio per Frame")
+                plt.xlabel('frame')
+                plt.ylabel('inlier ratio')
+                plt.ylim(0, 1.05)
+                plt.legend()
+                plt.grid(True, alpha=0.3)
+                plt.xlim(x[0], x[-1])
+                plot_path = f"{self.process.working_path}/{self.process.plot_path}/" \
+                            f"{self.process.name}-inlier-ratio.{plots_ext}"
+                self.process.plot_manager.save_plot(plot_path, fig)
+                self.process.callback(constants.CALLBACK_SAVE_PLOT, self.process.id,
+                                      save_plot_name,
+                                      f"{self.process.name}: inlier ratio", plot_path)
+                fig = plt.figure(figsize=constants.PLT_FIG_SIZE)
+                x, y, y_ref = get_coordinates(self._avg_errors)
+                plt.plot([self.process.ref_idx + 1, self.process.ref_idx + 1],
+                         [0, y_ref], color='cornflowerblue', linestyle='--',
+                         label='reference frame')
+                plt.axhline(y=rans_avg_error_threshold, color='red',
+                            linestyle='--', label=f'threshold ({rans_avg_error_threshold}px)')
+                plt.plot(x, y, color='darkred', linewidth=2, label='avg error (px)')
+                plt.title("Average Reprojection Error per Frame")
+                plt.xlabel('frame')
+                plt.ylabel('error (pixels)')
+                plt.legend()
+                plt.grid(True, alpha=0.3)
+                plt.xlim(x[0], x[-1])
+                plot_path = f"{self.process.working_path}/{self.process.plot_path}/" \
+                            f"{self.process.name}-avg-error.{plots_ext}"
+                self.process.plot_manager.save_plot(plot_path, fig)
+                self.process.callback(constants.CALLBACK_SAVE_PLOT, self.process.id,
+                                      save_plot_name,
+                                      f"{self.process.name}: avg error", plot_path)
+                fig = plt.figure(figsize=constants.PLT_FIG_SIZE)
+                x, y, y_ref = get_coordinates(self._max_errors)
+                rans_max_error_threshold = self.alignment_config.get(
+                    'rans_max_error_threshold', 1.0)
+                plt.plot([self.process.ref_idx + 1, self.process.ref_idx + 1],
+                         [0, y_ref], color='cornflowerblue', linestyle='--',
+                         label='reference frame')
+                plt.axhline(y=rans_max_error_threshold, color='red',
+                            linestyle='--', label=f'threshold ({rans_max_error_threshold}px)')
+                plt.plot(x, y, color='purple', linewidth=2, label='max error (px)')
+                plt.title("Maximum Reprojection Error per Frame")
+                plt.xlabel('frame')
+                plt.ylabel('max error (pixels)')
+                plt.legend()
+                plt.grid(True, alpha=0.3)
+                plt.xlim(x[0], x[-1])
+                plot_path = f"{self.process.working_path}/{self.process.plot_path}/" \
+                            f"{self.process.name}-max-error.{plots_ext}"
+                self.process.plot_manager.save_plot(plot_path, fig)
+                self.process.callback(constants.CALLBACK_SAVE_PLOT, self.process.id,
+                                      save_plot_name,
+                                      f"{self.process.name}: max error", plot_path)
 
     def save_transform_result(self, idx, result):
         if result is None:
@@ -396,8 +425,8 @@ class AlignFramesBase(SubAction):
             scale_x, scale_y, translation_x, translation_y, rotation, shear = result
             self._scale_x[idx] = scale_x
             self._scale_y[idx] = scale_y
-            self._translation_x[idx] = translation_x
-            self._translation_y[idx] = translation_y
+            self._translation_x[idx] = translation_x * self._subsamples[idx]
+            self._translation_y[idx] = translation_y * self._subsamples[idx]
             self._rotation[idx] = rotation
             self._shear[idx] = shear
         else:
@@ -406,16 +435,16 @@ class AlignFramesBase(SubAction):
                 f". Valid options are: {constants.ALIGN_HOMOGRAPHY}, {constants.ALIGN_RIGID}"
             )
 
-    def save_quality_metrics(self, idx, quality_metrics):
-        if quality_metrics is None:
+    def save_quality_metrics(self, idx, quality):
+        if quality is None:
             return
-        self._inlier_fractions[idx] = quality_metrics.get('inlier_fraction', 0)
-        self._avg_errors[idx] = quality_metrics.get('avg_error_px', 0)
-        self._max_errors[idx] = quality_metrics.get('max_error_px', 0)
+        self._inlier_fractions[idx] = quality.get('inlier_fraction', 0)
+        self._avg_errors[idx] = quality.get('avg_error_px', 0)
+        self._max_errors[idx] = quality.get('max_error_px', 0)
 
     def compute_transformation(self, idx, img_ref, img_0, callbacks, plot_path):
         def run_with_subsample(subsample_val):
-            match_result, _final_subsample = self.feature_matcher.match_images_with_fallback(
+            match_result, final_subsample = self.feature_matcher.match_images_with_fallback(
                 img_ref, img_0, subsample=subsample_val,
                 warning_callback=warning_callback
             )
@@ -423,16 +452,16 @@ class AlignFramesBase(SubAction):
             img_ref_sub, img_0_sub = self.feature_matcher.get_last_subsampled_images()
             m, phase_corr_called, _msk, quality = \
                 self.transformation_extractor.extract_transformation(
-                    match_result, img_ref_sub, img_0_sub, subsample_val, img_0.shape, callbacks,
+                    match_result, img_ref_sub, img_0_sub, final_subsample, img_0.shape, callbacks,
                     plot_path, self.process.plot_manager)
             return m, phase_corr_called, quality, n_good_matches
 
         h0, w0 = img_0.shape[:2]
         subsample = self.alignment_config['subsample']
         if subsample == 0:
-            img_res = (float(h0) / constants.ONE_KILO) * (float(w0) / constants.ONE_KILO)
-            target_res = DEFAULTS['align_frames_params']['resolution_target']
-            subsample = int(1 + math.floor(img_res / target_res))
+            subsample = get_subsample_factor(
+                h0, w0, DEFAULTS['align_frames_params']['resolution_target'])
+            self._subsamples[idx] = subsample
         warning_callback = None
         if callbacks and 'warning' in callbacks:
             warning_callback = callbacks['warning']
@@ -440,13 +469,14 @@ class AlignFramesBase(SubAction):
             warning_callback = lambda msg: self.print_message(  # noqa
                 f'{self.image_str(idx)}: {msg}',
                 color=constants.LOG_COLOR_WARNING, level=logging.WARNING)
-
         m, phase_corr_called, quality, n_good_matches = run_with_subsample(subsample)
-        if quality and quality.get('status') != 'GOOD' and subsample != 1:
+        if self.alignment_config['compute_rans_quality'] and quality and \
+                quality.get('status') != 'GOOD' and subsample != 1:
             self.print_message(
-                f'{self.image_str(idx)}: poor match quality, '
+                f'{self.image_str(idx)}: poor match quality: {quality}, '
                 'retrying with no subsampling',
                 color=constants.LOG_COLOR_WARNING, level=logging.WARNING)
+            self._subsamples[idx] = 1
             m, phase_corr_called, quality, n_good_matches = run_with_subsample(1)
         if quality:
             self.save_quality_metrics(idx, quality)
@@ -465,8 +495,10 @@ class AlignFrames(AlignFramesBase):
         callbacks = {
             'message': lambda: self.print_message(
                 f'{idx_tot_str}: estimate transform using feature matching'),
-            'matches_message': lambda n: self.print_message(f'{idx_tot_str}: good matches: {n}'),
-            'estimation_message': lambda: self.print_message(f'{idx_tot_str}: align images'),
+            'matches_message': lambda n: self.print_message(
+                f'{idx_tot_str}: good matches found: {n}'),
+            'estimation_message': lambda: self.print_message(
+                f'{idx_tot_str}: align images'),
             'blur_message': lambda: self.print_message(f'{idx_tot_str}: blur borders'),
             'warning': lambda msg: self.print_message(color_str(
                 f'{msg}', constants.LOG_COLOR_WARNING), level=logging.WARNING),
