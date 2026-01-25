@@ -2,15 +2,15 @@
 
 This page reports the main releases only and the main changes therein.
 
-## [v1.13.x] - 2026-01-24
+## [v1.13.x] - 2026-01-25
 
 ### Added
-- visual icon representing stacking algorithm, ▲ (pyramid) and ■ (depth map)
+- visual icon representing stacking algorithm, ▲ for pyramid or ■ for depth map (#11)
 - expert options toggle in new project dialog
 - retouch job action entry in top menu
 
 ### Fixed
-- incorrect automatic subsampling factor causing in some cases poor alignment quality
+- incorrect automatic subsampling factor causing in some cases poor alignment quality (#7)
 - added fault protection for depth map plot
 - input filepaths explicitly sorted alphabetically
 - minor GUI fixes
