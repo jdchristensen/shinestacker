@@ -67,10 +67,9 @@ class ActionWidget(ImgBaseWidget):
     def widget_type(self):
         return 'ActionWidget'
 
-    def update(self, data_object):
-        super().update(data_object)
-        in_path = get_action_input_path(data_object)[0]
-        out_path = get_action_output_path(data_object)[0]
+    def update_path_label(self):
+        in_path = get_action_input_path(self.data_object)[0]
+        out_path = get_action_output_path(self.data_object)[0]
         path_text = f"📁 <i>{self._format_path(in_path)}</i> → " \
             f"📂 <i>{self._format_path(out_path)}</i>"
         self._add_path_label(path_text)

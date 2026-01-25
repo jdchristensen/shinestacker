@@ -337,6 +337,15 @@ class BaseWidget(QFrame):
         self._update_enabled_icon()
         self._update_conditional_icons()
         self._update_stylesheet()
+        self.update_path_recursive()
+
+    def update_path_recursive(self):
+        self.update_path_label()
+        for child in self.child_widgets:
+            child.update_path_recursive()
+
+    def update_path_label(self):
+        pass
 
     def scroll_area_css(self, orientation):
         size = 'width' if orientation == 'vertical' else 'height'
