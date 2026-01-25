@@ -333,6 +333,7 @@ class MainWindow(ProjectIOHandler, QMainWindow):
                 file_path += '.fsp'
             self.do_save(file_path)
             self.set_current_file_path(file_path)
+            self.update_title()
             os.chdir(os.path.dirname(file_path))
 
     def handle_config(self):
