@@ -23,10 +23,10 @@ def mean_image(file_paths, max_frames=-1, message_callback=None, progress_callba
     mean_img = None
     counter = 0
     for i, path in enumerate(file_paths):
-        if 1 <= max_frames < i:
+        if 1 <= max_frames <= i:
             break
         if message_callback:
-            message_callback(path)
+            message_callback(i, path)
         if not os.path.exists(path):
             raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), path)
         try:
@@ -284,8 +284,8 @@ class NoiseDetection(TaskBase, ImageSequenceManager):
 
         mean_img = mean_image(
             file_paths=in_paths, max_frames=self.max_frames,
-            message_callback=lambda path: self.print_message_r(
-                color_str(f"reading frame: {os.path.basename(path)}",
+            message_callback=lambda i, path: self.print_message_r(
+                color_str(f"reading frame {i + 1}/{n_frames}: {os.path.basename(path)}",
                           constants.LOG_COLOR_LEVEL_2)), progress_callback=progress_callback)
         # write_img(os.path.join(self.working_path, self.output_path, "mean-img.jpg"), mean_img)
         if not config.DISABLE_TQDM:
