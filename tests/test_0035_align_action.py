@@ -645,14 +645,13 @@ def test_align_frames_end_with_plot_summary_rigid():
     align_frames._translation_y = np.array([0.0, -2.0, 0.0, 4.0, -1.0])
     align_frames._rotation = np.array([0.0, 1.5, 0.0, -2.0, 0.5])
     align_frames._shear = np.array([0.0, 0.3, 0.0, -0.4, 0.1])
-    align_frames._subsamples = np.array([1, 1, 1, 1, 1])    
+    align_frames._subsamples = np.array([1, 1, 1, 1, 1])
     align_frames._inlier_fractions = np.zeros(5)
     align_frames._avg_errors = np.zeros(5)
-    align_frames._max_errors = np.zeros(5)    
+    align_frames._max_errors = np.zeros(5)
     align_frames._area_ratio = np.ones(5)
     align_frames._aspect_ratio = np.ones(5)
     align_frames._max_angle_dev = np.zeros(5)
-    
     align_frames.end()
     assert len(process.callback_calls) == 5
     process.plot_manager.save_plot.assert_called()
@@ -685,10 +684,10 @@ def test_align_frames_end_with_plot_summary_homography():
     align_frames._n_good_matches = np.array([15, 0, 20, 25])
     align_frames._area_ratio = np.array([1.0, 1.0, 1.1, 0.9])
     align_frames._aspect_ratio = np.array([1.0, 1.0, 1.2, 0.8])
-    align_frames._max_angle_dev = np.array([0.0, 0.0, 1.0, 2.0])    
+    align_frames._max_angle_dev = np.array([0.0, 0.0, 1.0, 2.0])
     align_frames._inlier_fractions = np.zeros(4)
     align_frames._avg_errors = np.zeros(4)
-    align_frames._max_errors = np.zeros(4)    
+    align_frames._max_errors = np.zeros(4)
     align_frames._scale_x = np.ones(4)
     align_frames._scale_y = np.ones(4)
     align_frames._translation_x = np.zeros(4)
@@ -696,7 +695,6 @@ def test_align_frames_end_with_plot_summary_homography():
     align_frames._rotation = np.zeros(4)
     align_frames._shear = np.zeros(4)
     align_frames._subsamples = np.ones(4)
-    
     align_frames.end()
     assert len(process.callback_calls) == 5
     process.plot_manager.save_plot.assert_called()

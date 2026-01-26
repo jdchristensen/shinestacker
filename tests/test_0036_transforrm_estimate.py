@@ -266,7 +266,8 @@ def test_extract_transformation_with_plot_path():
     with patch('shinestacker.algorithms.transform_estimate.find_transform') as mock_find:
         with patch('shinestacker.algorithms.transform_estimate.check_transform') as mock_check:
             with patch('shinestacker.algorithms.transform_estimate.plot_matches') as mock_plot:
-                mock_find.return_value = (np.float32([[1, 0, 0], [0, 1, 0]]), np.array([1, 1, 1]), {})
+                mock_find.return_value = (np.float32([[1, 0, 0], [0, 1, 0]]),
+                                          np.array([1, 1, 1]), {})
                 mock_check.return_value = (True, "Valid", None)
                 extractor.extract_transformation(
                     match_result, img_ref_sub, img_0_sub, 1, (100, 100),
