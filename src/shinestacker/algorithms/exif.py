@@ -328,8 +328,8 @@ def get_exif_from_tiff(image, exif_filename):
             for tag_id in [EXPOSURETIME, FNUMBER, ISOSPEEDRATINGS, FOCALLENGTH, LENSMODEL]:
                 if tag_id in xmp_exif and tag_id not in exif_data:
                     exif_data[tag_id] = xmp_exif[tag_id]
-    except Exception as e:
-        print(f"Error processing XMP: {e}")
+    except Exception:
+        pass
     return exif_data
 
 
@@ -346,16 +346,59 @@ def get_exif_from_jpg(image, exif_filename):
         pass
     if MAKERNOTE in exif_data:
         del exif_data[MAKERNOTE]
+    icc_profile = None
+    if hasattr(image, 'info') and 'icc_profile' in image.info:
+        icc_profile = image.info['icc_profile']
+        if icc_profile and len(icc_profile) > 0:
+            exif_data[INTERCOLORPROFILE] = icc_profile
+    if not icc_profile and INTERCOLORPROFILE in exif_data:
+        icc_profile = exif_data[INTERCOLORPROFILE]
+    if not icc_profile:
+        try:
+            with open(exif_filename, 'rb') as f:
+                data = f.read()
+                icc_profile = extract_icc_from_jpeg(data)
+                if icc_profile:
+                    exif_data[INTERCOLORPROFILE] = icc_profile
+        except Exception:
+            pass
     with open(exif_filename, 'rb') as f:
         data = extract_enclosed_data_for_jpg(f.read(), b'<?xpacket', b'<?xpacket end="w"?>')
         if data is not None:
             exif_data[XMLPACKET] = data
-    if hasattr(image, 'info') and 'icc_profile' in image.info:
-        exif_data[INTERCOLORPROFILE] = image.info['icc_profile']
-        print(f"DEBUG: Found ICC profile in source JPEG: {len(image.info['icc_profile'])} bytes")
-    else:
-        print(f"DEBUG: No ICC profile found in image.info. Keys: {list(image.info.keys())}")
     return exif_data
+
+
+def extract_icc_from_jpeg(jpeg_data):
+    pos = 0
+    while pos < len(jpeg_data) - 4:
+        if jpeg_data[pos:pos + 2] == b'\xff\xe2':  # APP2 marker
+            length = int.from_bytes(jpeg_data[pos + 2:pos + 4], 'big')
+            if pos + 2 + length <= len(jpeg_data):
+                segment = jpeg_data[pos:pos + 2 + length]
+                if segment.startswith(b'\xff\xe2') and b'ICC_PROFILE' in segment[:20]:
+                    # Extract ICC profile data (skip 2-byte marker, 2-byte length, and ICC header)
+                    # ICC profile in APP2 marker has format: "ICC_PROFILE\0<chunk>\0<total>"
+                    # Skip marker (2), length (2), and "ICC_PROFILE\0" (12)
+                    icc_data = segment[14:]  # Adjust based on actual format
+                    return icc_data
+                pos += 2 + length
+            else:
+                break
+        elif jpeg_data[pos] == 0xFF:
+            marker = jpeg_data[pos + 1]
+            if marker == 0xDA:  # Start of scan
+                break
+            if marker == 0xD9:  # End of image
+                break
+            if pos + 4 <= len(jpeg_data):
+                length = int.from_bytes(jpeg_data[pos + 2:pos + 4], 'big')
+                pos += 2 + length
+            else:
+                break
+        else:
+            pos += 1
+    return None
 
 
 def get_exif_from_png(image):
@@ -507,7 +550,6 @@ def get_tiff_dtype_count(value):
 def add_exif_data_to_jpg_file(exif, in_filename, out_filename, verbose=False):
     if exif is None:
         raise RuntimeError('No exif data provided.')
-    logger = logging.getLogger(__name__)
     xmp_data = exif.get(XMLPACKET) if hasattr(exif, 'get') else None
     if out_filename is None:
         out_filename = in_filename
@@ -520,6 +562,20 @@ def add_exif_data_to_jpg_file(exif, in_filename, out_filename, verbose=False):
     try:
         with Image.open(in_filename) as image:
             jpeg_exif = Image.Exif()
+            icc_profile = None
+            if INTERCOLORPROFILE in exif:
+                icc_profile = exif[INTERCOLORPROFILE]
+                if not isinstance(icc_profile, bytes):
+                    if isinstance(icc_profile, str):
+                        icc_profile = icc_profile.encode('utf-8', errors='ignore')
+                    else:
+                        icc_profile = None
+                        if verbose:
+                            print(f"ICC profile is not bytes: {type(icc_profile)}")
+            if not icc_profile and hasattr(image, 'info') and 'icc_profile' in image.info:
+                icc_profile = image.info['icc_profile']
+                if verbose:
+                    print(f"Using ICC profile from source image: {len(icc_profile)} bytes")
             for tag_id in COMPATIBLE_TAGS:
                 if tag_id in exif:
                     value = exif[tag_id]
@@ -548,7 +604,7 @@ def add_exif_data_to_jpg_file(exif, in_filename, out_filename, verbose=False):
                                 print(f"Skipping unsupported type for tag {tag_id}: {type(value)}")
                     except Exception as e:
                         if verbose:
-                            logger.warning(msg=f"Failed to add tag {tag_id}: {e}")
+                            print(msg=f"Failed to add tag {tag_id}: {e}")
             try:
                 if hasattr(jpeg_exif, 'get_ifd'):
                     exif_ifd = jpeg_exif.get_ifd(EXIFIFD)
@@ -565,20 +621,32 @@ def add_exif_data_to_jpg_file(exif, in_filename, out_filename, verbose=False):
                                 del jpeg_exif[tag_id]
             except Exception as e:
                 if verbose:
-                    logger.warning(msg=f"Failed to move tags to EXIF sub-IFD: {e}")
+                    print(msg=f"Failed to move tags to EXIF sub-IFD: {e}")
             exif_bytes = jpeg_exif.tobytes()
-            save_kwargs = {"exif": exif_bytes, "quality": 100}
-            if INTERCOLORPROFILE in exif and isinstance(exif[INTERCOLORPROFILE], bytes):
-                save_kwargs["icc_profile"] = exif[INTERCOLORPROFILE]
-            image.save(final_filename, "JPEG", exif=exif_bytes, quality=100)
+            save_kwargs = {"exif": exif_bytes, "quality": 100, "subsampling": 0}
+            if icc_profile and isinstance(icc_profile, bytes) and len(icc_profile) > 0:
+                try:
+                    if icc_profile.startswith(b'\x00') or len(icc_profile) < 128:
+                        if verbose:
+                            print(f"ICC profile appears invalid: {len(icc_profile)} bytes")
+                    else:
+                        save_kwargs["icc_profile"] = icc_profile
+                        if verbose:
+                            print(f"Adding ICC profile to JPEG: {len(icc_profile)} bytes")
+                except Exception as e:
+                    if verbose:
+                        print(f"Failed to prepare ICC profile: {e}")
+            image.save(final_filename, "JPEG", **save_kwargs)
             if xmp_data and isinstance(xmp_data, bytes):
                 _insert_xmp_into_jpeg(final_filename, xmp_data, verbose)
         if use_temp:
             if os.path.exists(out_filename):
                 os.remove(out_filename)
             os.rename(temp_filename, out_filename)
-    except Exception:
+    except Exception as e:
         traceback.print_exc()
+        if verbose:
+            print(f"Failed to save JPEG with EXIF: {e}")
         if use_temp and os.path.exists(temp_filename):
             try:
                 os.remove(temp_filename)

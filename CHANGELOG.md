@@ -9,6 +9,7 @@ This page reports the main releases only and the main changes therein.
 - expert options toggle added in new project dialog
 - retouch job action has an entry in top menu
 - project run information is saved persistently with the project file
+- support ICC profile in EXIF data
 
 ### Fixed
 - incorrect automatic subsampling factor causing in some cases poor alignment quality (#7)

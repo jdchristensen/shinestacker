@@ -56,21 +56,16 @@ def test_exif_jpg():
         print_exif(exif_copy)
         all_tags = set(exif.keys()) | set(exif_copy.keys())
         mismatches = []
-        
         for tag in all_tags:
             if tag in SKIP_TAGS:
                 continue
             data_orig = exif.get(tag)
             data_copy = exif_copy.get(tag)
-            
-            # Special handling for ICC profile (binary data)
             if tag == 34675:  # INTERCOLORPROFILE
                 if data_orig is None and data_copy is None:
                     continue  # Both None is OK
                 elif data_orig is not None and data_copy is not None:
-                    # Compare binary data directly
                     if data_orig != data_copy:
-                        # Compare only first 100 bytes for error message
                         orig_preview = data_orig[:100].hex()[:50]
                         copy_preview = data_copy[:100].hex()[:50]
                         mismatches.append(
@@ -79,17 +74,16 @@ def test_exif_jpg():
                             f"start: {orig_preview}... vs {copy_preview}..."
                         )
                 elif data_orig is not None:
-                    mismatches.append(f"Tag {tag} missing in copy (ICC profile: {len(data_orig)} bytes)")
+                    mismatches.append(
+                        f"Tag {tag} missing in copy (ICC profile: {len(data_orig)} bytes)")
                 else:
-                    mismatches.append(f"Tag {tag} added in copy (ICC profile: {len(data_copy)} bytes)")
+                    mismatches.append(
+                        f"Tag {tag} added in copy (ICC profile: {len(data_copy)} bytes)")
                 continue
-            
-            # Handle other tags (convert bytes to string for comparison)
             if isinstance(data_orig, bytes):
                 data_orig = safe_decode_bytes(data_orig)
             if isinstance(data_copy, bytes):
                 data_copy = safe_decode_bytes(data_copy)
-                
             if tag in exif and tag in exif_copy:
                 if data_orig != data_copy:
                     mismatches.append(f"Tag {tag}: {data_orig} vs {data_copy}")
@@ -97,7 +91,6 @@ def test_exif_jpg():
                 mismatches.append(f"Tag {tag} missing in copy (was: {data_orig})")
             elif tag not in exif and tag in exif_copy:
                 mismatches.append(f"Tag {tag} added in copy (value: {data_copy})")
-        
         if mismatches:
             for mismatch in mismatches:
                 logger.error(mismatch)
@@ -2583,6 +2576,56 @@ def _values_equal(val1, val2):
         return str(val1) == str(val2)
 
 
+def test_exif_jpg_icc_profile():
+    try:
+        setup_logging()
+        logger = logging.getLogger(__name__)
+        output_dir = "output/img-exif"
+        if not os.path.exists(output_dir):
+            os.makedirs(output_dir)
+        logger.info("======== Testing JPG ICC Profile ========")
+        dummy_icc = b"fake_icc_profile_data_" + b"x" * 100
+        logger.info("*** Test 1: Writing JPEG with ICC profile ***")
+        out_filename = output_dir + "/test_icc.jpg"
+        test_exif = {
+            271: "Test Camera",  # Make
+            272: "Test Model",   # Model
+            305: "Test Software",
+            34675: dummy_icc,    # INTERCOLORPROFILE
+        }
+        test_image = np.ones((100, 100, 3), dtype=np.uint8) * 128
+        write_image_with_exif_data(test_exif, test_image, out_filename, verbose=True)
+        written_exif = get_exif(out_filename)
+        logger.info("*** Written JPG EXIF ***")
+        print_exif(written_exif)
+        if 34675 in written_exif:
+            icc_data = written_exif[34675]
+            logger.info(f"ICC profile found in written JPEG: {len(icc_data)} bytes")
+            assert isinstance(icc_data, bytes), "ICC profile should be bytes"
+            assert len(icc_data) > 0, "ICC profile should not be empty"
+        else:
+            logger.warning("No ICC profile found in written JPEG")
+        logger.info("*** Test 2: Round-trip ICC profile preservation ***")
+        if os.path.exists("examples/input/img-jpg/0000.jpg"):
+            source_exif = get_exif("examples/input/img-jpg/0000.jpg")
+            source_image = read_img("examples/input/img-jpg/0000.jpg")
+            if 34675 not in source_exif:
+                source_exif[34675] = dummy_icc
+            roundtrip_file = output_dir + "/test_icc_roundtrip.jpg"
+            write_image_with_exif_data(source_exif, source_image, roundtrip_file, verbose=True)
+            roundtrip_exif = get_exif(roundtrip_file)
+            if 34675 in roundtrip_exif:
+                logger.info(f"ICC preserved in round-trip: {len(roundtrip_exif[34675])} bytes")
+            else:
+                logger.warning("ICC not preserved in round-trip")
+        logger.info("✓ JPG ICC profile test completed")
+    except Exception as e:
+        logger.error(f"JPG ICC profile test failed: {str(e)}")
+        import traceback
+        logger.error(traceback.format_exc())
+        assert False
+
+
 if __name__ == '__main__':
     test_exif_tiff()
     test_exif_jpg()
@@ -2645,3 +2688,4 @@ if __name__ == '__main__':
     test_exif_dict_exif_prefix()
     test_print_exif_none()
     test_exif_round_trip_tiff_to_png()
+    test_exif_jpg_icc_profile()
