@@ -129,7 +129,6 @@ class TimerProgressBar(QProgressBar):
         self.set_running_style()
 
     def done(self):
-        self.check_time(self.maximum())
         self.setValue(self.maximum())
         self.set_done_style()
 
