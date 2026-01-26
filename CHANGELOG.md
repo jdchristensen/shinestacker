@@ -6,8 +6,8 @@ This page reports the main releases only and the main changes therein.
 
 ### Added
 - visual icon representing stacking algorithm, ▲ for pyramid or ■ for depth map (#11)
-- expert options toggle in new project dialog
-- retouch job action entry in top menu
+- expert options toggle added in new project dialog
+- retouch job action has an entry in top menu
 - project run information is saved persistently with the project file
 
 ### Fixed
