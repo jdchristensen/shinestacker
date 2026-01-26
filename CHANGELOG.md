@@ -14,7 +14,7 @@ This page reports the main releases only and the main changes therein.
 - incorrect automatic subsampling factor causing in some cases poor alignment quality (#7)
 - added fault protection for depth map plot
 - input filepaths explicitly sorted alphabetically
-- minor GUI fixes
+- minor GUI fixes and improvements
 
 ### Changed
 - minor optimization: skip stacking if input has a single frame

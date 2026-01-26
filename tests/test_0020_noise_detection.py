@@ -15,7 +15,7 @@ def check_fail_size(extension, directory, ExepctionType, files):
     shape_err = False
     try:
         mean_image(["output/" + directory + f"/image{i}." + extension for i in files],
-                   message_callback=lambda msg: logger.info(msg))
+                   message_callback=lambda i, path: logger.info(path))
     except ExepctionType:
         shape_err = True
     assert shape_err
