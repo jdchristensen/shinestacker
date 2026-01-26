@@ -954,6 +954,7 @@ def exif_extra_tags_for_tif(exif):
             if processed_data:
                 dtype, count, data_value = processed_data
                 extra.append((tag_id, dtype, count, data_value, False))
+    extra.sort(key=lambda x: x[0])
     return extra, exif_tags
 
 
