@@ -7,8 +7,8 @@ class SubActionWidget(ImgBaseWidget):
     MAX_SCROLL_HEIGHT = 200
 
     def __init__(self, data_object, dark_theme=False, parent=None, horizontal_images=True):
-        super().__init__(data_object, 35, dark_theme, horizontal_layout=False,
-                         parent=parent, horizontal_images=horizontal_images)
+        super().__init__(data_object, 35, dark_theme, False, 0, parent,
+                         horizontal_images=horizontal_images)
         self.image_scroll_area.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
         self.image_scroll_area.setMaximumHeight(self.MAX_SCROLL_HEIGHT)
         self.progress_container = QWidget()

@@ -24,6 +24,18 @@ class ColorPalette:
     MEDIUM_BLUE = ColorEntry(160, 160, 200)
     MEDIUM_GREEN = ColorEntry(160, 200, 160)
     MEDIUM_RED = ColorEntry(200, 160, 160)
+    DARK_BLUE_0 = DARK_BLUE
+    DARK_BLUE_1 = ColorEntry(26, 26, 93)   # ~10% lighter
+    DARK_BLUE_2 = ColorEntry(51, 51, 106)  # ~20% lighter
+    LIGHT_BLUE_0 = LIGHT_BLUE
+    LIGHT_BLUE_1 = ColorEntry(189, 189, 216)  # ~10% darker
+    LIGHT_BLUE_2 = ColorEntry(168, 168, 192)  # ~20% darker
+    DARK_RED_0 = DARK_RED
+    DARK_RED_1 = ColorEntry(93, 26, 26)   # ~10% lighter
+    DARK_RED_2 = ColorEntry(106, 51, 51)  # ~20% lighter
+    LIGHT_RED_0 = LIGHT_RED
+    LIGHT_RED_1 = ColorEntry(216, 189, 189)  # ~10% darker
+    LIGHT_RED_2 = ColorEntry(192, 168, 168)  # ~20% darker
 
 
 RED_BUTTON_STYLE = f"""

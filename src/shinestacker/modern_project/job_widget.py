@@ -13,7 +13,7 @@ class JobWidget(BaseWidget):
         self.retouch_button = QPushButton("🖌️")
         self.retouch_button.setToolTip("Retouch outputs")
         self.retouch_button.clicked.connect(self._on_retouch_clicked)
-        super().__init__(job, 50, dark_theme, horizontal_layout, parent)
+        super().__init__(job, 50, dark_theme, horizontal_layout, 2, parent)
         in_path = get_action_input_path(job)[0]
         self._add_path_label(f"📁 {self._format_path(in_path)}")
         if hasattr(job, 'sub_actions') and job.sub_actions:

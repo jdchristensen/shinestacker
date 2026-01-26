@@ -279,7 +279,6 @@ class MainWindow(ProjectIOHandler, QMainWindow):
                             self.action_dialog = ActionConfigDialog(
                                 action, self.current_file_directory(), self)
                             self.action_dialog.exec()
-                self.refresh_ui_and_select_first_job()
         elif msg != '':
             self.show_status_message(msg)
 

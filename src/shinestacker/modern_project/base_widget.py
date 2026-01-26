@@ -47,7 +47,7 @@ class BaseWidget(QFrame):
     enabled_toggled = Signal(bool)
 
     def __init__(self, data_object, min_height=40, dark_theme=False,
-                 horizontal_layout=False, parent=None):
+                 horizontal_layout=False, color_level=0, parent=None):
         super().__init__(parent)
         self.data_object = data_object
         self._selected = False
@@ -55,6 +55,7 @@ class BaseWidget(QFrame):
         self._dark_theme = dark_theme
         self.horizontal_layout = horizontal_layout
         self.min_height = min_height
+        self._color_level = color_level
         self.path_label = None
         self.child_widgets = []
         self.top_container = None
@@ -260,26 +261,21 @@ class BaseWidget(QFrame):
         if self._dark_theme:
             border_color = ColorPalette.LIGHT_BLUE.hex()
             selected_bg = ColorPalette.DARK_BLUE.hex()
-            hover_bg = ColorPalette.MEDIUM_BLUE.hex()
             disabled_border_color = ColorPalette.LIGHT_RED.hex()
             disabled_selected_bg = ColorPalette.DARK_RED.hex()
-            disabled_hover_bg = ColorPalette.MEDIUM_RED.hex()
         else:
             border_color = ColorPalette.DARK_BLUE.hex()
             selected_bg = ColorPalette.LIGHT_BLUE.hex()
-            hover_bg = ColorPalette.MEDIUM_BLUE.hex()
             disabled_border_color = ColorPalette.DARK_RED.hex()
             disabled_selected_bg = ColorPalette.LIGHT_RED.hex()
-            disabled_hover_bg = ColorPalette.MEDIUM_RED.hex()
         widget_type = self.widget_type()
         if self._enabled:
             border = border_color
             selected = selected_bg
-            hover = hover_bg
         else:
             border = disabled_border_color
             selected = disabled_selected_bg
-            hover = disabled_hover_bg
+        hover_color = self._get_hover_color()
         stylesheet = f"""
             {widget_type} {{
                 border: 2px solid #{border};
@@ -291,12 +287,29 @@ class BaseWidget(QFrame):
                 background-color: #{selected};
             }}
             {widget_type}:hover {{
-                background-color: #{hover};
+                background-color: #{hover_color};
             }}
         """
         self.setStyleSheet(stylesheet)
         self.style().unpolish(self)
         self.style().polish(self)
+
+    def _get_hover_color(self):
+        if not self._enabled:
+            if self._dark_theme:
+                colors = [ColorPalette.DARK_RED_0, ColorPalette.DARK_RED_1,
+                          ColorPalette.DARK_RED_2]
+            else:
+                colors = [ColorPalette.LIGHT_RED_0, ColorPalette.LIGHT_RED_1,
+                          ColorPalette.LIGHT_RED_2]
+        else:
+            if self._dark_theme:
+                colors = [ColorPalette.DARK_BLUE_0, ColorPalette.DARK_BLUE_1,
+                          ColorPalette.DARK_BLUE_2]
+            else:
+                colors = [ColorPalette.LIGHT_BLUE_0, ColorPalette.LIGHT_BLUE_1,
+                          ColorPalette.LIGHT_BLUE_2]
+        return colors[self._color_level].hex()
 
     def _update_enabled_icon(self):
         if self._enabled:
@@ -434,10 +447,11 @@ class BaseWidget(QFrame):
 
 class ImgBaseWidget(BaseWidget):
     def __init__(self, data_object, min_height=40, dark_theme=False,
-                 horizontal_layout=False, parent=None, horizontal_images=True):
+                 horizontal_layout=False, color_level=0, parent=None, horizontal_images=True):
         self.image_views = []
         self._pending_image_views_state = None
-        super().__init__(data_object, min_height, dark_theme, horizontal_layout, parent)
+        super().__init__(
+            data_object, min_height, dark_theme, horizontal_layout, color_level, parent)
         self.horizontal_images = horizontal_images
         self.image_scroll_area = QScrollArea()
         self.image_scroll_area.setWidgetResizable(True)

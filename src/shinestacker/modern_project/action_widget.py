@@ -1,4 +1,4 @@
-# pylint: disable=C0114, C0115, C0116, E0611, R0903, R0902
+# pylint: disable=C0114, C0115, C0116, E0611, R0903, R0902, R0915
 from PySide6.QtCore import QTimer
 from PySide6.QtWidgets import QWidget, QHBoxLayout, QVBoxLayout, QSizePolicy, QSpacerItem
 from .base_widget import ImgBaseWidget
@@ -12,8 +12,8 @@ class ActionWidget(ImgBaseWidget):
     def __init__(self, action, dark_theme=False, vertical_subactions=False, parent=None):
         self._has_frames_content = False
         self._pending_frames_state = None
-        super().__init__(action, 50, dark_theme, not vertical_subactions,
-                         parent=parent, horizontal_images=True)
+        super().__init__(action, 50, dark_theme, not vertical_subactions, 1, parent,
+                         horizontal_images=True)
         self.vertical_subactions = vertical_subactions
         self.progress_container = QWidget()
         self.progress_layout = QVBoxLayout(self.progress_container)
