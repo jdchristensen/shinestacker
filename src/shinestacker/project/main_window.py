@@ -59,7 +59,7 @@ class MainWindow(ProjectIOHandler, QMainWindow):
             "Add Job": self.add_job,
             "Run Job": self.run_job,
             "Run All Jobs": self.run_all_jobs,
-            "Retouch Selected Job Output": self.run_retouch_selected_job,
+            "Retouch Job Output": self.run_retouch_selected_job,
             "Stop": self.stop,
             "Classic View": lambda: self.set_view('classic'),
             "Modern View": lambda: self.set_view('modern'),

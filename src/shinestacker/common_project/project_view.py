@@ -119,6 +119,7 @@ class ProjectView(QWidget, LogManager, ProjectHandler):
             return False
         job = self.project_job(current_index)
         self.run_retouch_job(job)
+        return True
 
     def _show_retouch_error(self, message):
         QMessageBox.warning(self, "Retouch Error",

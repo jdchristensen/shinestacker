@@ -22,8 +22,15 @@ class ActionConfig:
             self.params = {}
         if params:
             self.params = {**self.params, **params}
+        self.metadata = {}
         self.parent = parent
         self.sub_actions: list[ActionConfig] = []
+
+    def add_metadata(self, key, value):
+        self.metadata[key] = value
+
+    def get_metadata(self, key, default=None):
+        self.metadata.get(key, default)
 
     def enabled(self):
         return self.params.get('enabled', True)
@@ -47,6 +54,8 @@ class ActionConfig:
 
     def clone(self, name_postfix=''):
         c = ActionConfig(self.type_name, deepcopy(self.params))
+        if len(self.metadata) > 0:
+            c.metadata = deepcopy(self.metadata)
         c.sub_actions = [s.clone() for s in self.sub_actions]
         for s in c.sub_actions:
             s.parent = c
@@ -55,7 +64,8 @@ class ActionConfig:
         return c
 
     def to_dict(self):
-        project_dict = {'type_name': self.type_name, 'params': self.params}
+        project_dict = {
+            'type_name': self.type_name, 'params': self.params, 'metadata': self.metadata}
         if len(self.sub_actions) > 0:
             project_dict['sub_actions'] = [a.to_dict() for a in self.sub_actions]
         return project_dict
@@ -63,6 +73,8 @@ class ActionConfig:
     @classmethod
     def from_dict(cls, data, version):
         a = ActionConfig(data['type_name'], data['params'])
+        if 'metadata' in data.keys():
+            a.metadata = data['metadata']
         if 'sub_actions' in data.keys():
             a.sub_actions = [ActionConfig.from_dict(s, version) for s in data['sub_actions']]
             for s in a.sub_actions:

@@ -155,8 +155,7 @@ class FrameStatusBox(QWidget):
         postprocess_color = (64, 224, 208)
         unknown_color = (138, 43, 226)
         self.status_id = status_id
-        if status_id == 1000:
-            self.enable_doubleclick = True
+        self.enable_doubleclick = status_id == 1000 or status_id >= 200
         if status_id == -1:
             self.fill_color = QColor(*pending_color)
         elif status_id == 1000:
@@ -255,13 +254,11 @@ class FrameStatusBox(QWidget):
             'filename': self.filename,
             'total_actions': self.total_actions,
             'status_id': self.status_id,
-            'enable_doubleclick': self.enable_doubleclick
         }
 
     def restore_widget_state(self, state):
         self.filename = state.get('filename', '')
         self.total_actions = state.get('total_actions', 0)
-        self.enable_doubleclick = state.get('enable_doubleclick', False)
         status_id = state.get('status_id', -1)
         self.update_status(status_id)
 

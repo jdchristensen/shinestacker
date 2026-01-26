@@ -445,7 +445,7 @@ class PyramidTilesStack(PyramidBase, TempDirBase):
                     self.after_step(completed_count)
                     self.check_running(lambda: None)
             except RunStopException:
-                self.print_message(color_str(": stopping image processing...",
+                self.print_message(color_str(": stopping parallel image processing...",
                                              constants.LOG_COLOR_ALERT),
                                    level=logging.ERROR)
                 if executor:

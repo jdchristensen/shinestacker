@@ -2,12 +2,13 @@
 
 This page reports the main releases only and the main changes therein.
 
-## [v1.13.x] - 2026-01-25
+## [v1.13.x] - 2026-01-26
 
 ### Added
 - visual icon representing stacking algorithm, ▲ for pyramid or ■ for depth map (#11)
 - expert options toggle in new project dialog
 - retouch job action entry in top menu
+- project run information is saved persistently with the project file
 
 ### Fixed
 - incorrect automatic subsampling factor causing in some cases poor alignment quality (#7)

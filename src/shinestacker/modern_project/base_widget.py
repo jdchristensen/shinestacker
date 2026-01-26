@@ -1,4 +1,4 @@
-# pylint: disable=C0114, C0115, C0116, E0611, R0903, R0913, R0917, R0902
+# pylint: disable=C0114, C0115, C0116, E0611, R0903, R0913, R0917, R0902, R0915, R0904
 import os
 from PySide6.QtCore import Qt, Signal, QTimer
 from PySide6.QtWidgets import (
@@ -70,6 +70,10 @@ class BaseWidget(QFrame):
         self.name_label = None
         self.enabled_icon = None
         self.path_label_in_top_row = True
+        self._metadata_restored = False
+        self._initializing = True
+        self.image_layout = None
+        self.image_area_widget = None
         self._init_widget(data_object)
         self._update_stylesheet()
         self.enabled_toggled.connect(self._on_enabled_toggled)
@@ -123,7 +127,40 @@ class BaseWidget(QFrame):
         self.child_container.setLayout(self.child_container_layout)
         self.main_layout.addWidget(self.child_container)
         self.setLayout(self.main_layout)
-        self.update(data_object)
+        name = f"<b>{data_object.params['name']}</b> [{data_object.type_name}]"
+        self.set_name(name)
+        self._enabled = data_object.params.get('enabled', True)
+        self._update_enabled_icon()
+
+    def _complete_initialization(self):
+        if not self._metadata_restored:
+            self.restore_from_metadata()
+            self._metadata_restored = True
+        self._initializing = False
+
+    def restore_from_metadata(self):
+        if self._metadata_restored:
+            return
+        if self.data_object is None:
+            return
+        widget_state = self.data_object.metadata.get('widget_state')
+        if widget_state is None:
+            return
+        self._restore_widget_state(widget_state)
+        self._metadata_restored = True
+
+    def update_metadata(self):
+        if self.data_object is None or self._initializing or not self._metadata_restored:
+            return
+        widget_state = self._capture_widget_state()
+        if widget_state:
+            self.data_object.metadata['widget_state'] = widget_state
+
+    def _capture_widget_state(self):
+        return {}
+
+    def _restore_widget_state(self, state):
+        pass
 
     def _create_conditional_icons(self):
         for icon_name, icon_data in CONDITIONAL_ICONS.items():
@@ -152,6 +189,8 @@ class BaseWidget(QFrame):
         self.child_widgets.append(child_widget)
         if add_to_layout:
             self.child_container_layout.addWidget(child_widget)
+        if self._metadata_restored:
+            self.update_metadata()
 
     def set_horizontal_layout(self, horizontal):
         if self.horizontal_layout != horizontal:
@@ -330,6 +369,8 @@ class BaseWidget(QFrame):
         self.name_label.setText(name)
 
     def update(self, data_object):
+        if data_object == self.data_object:
+            return
         self.data_object = data_object
         name = f"<b>{data_object.params['name']}</b> [{data_object.type_name}]"
         self.set_name(name)
@@ -394,26 +435,24 @@ class BaseWidget(QFrame):
 class ImgBaseWidget(BaseWidget):
     def __init__(self, data_object, min_height=40, dark_theme=False,
                  horizontal_layout=False, parent=None, horizontal_images=True):
+        self.image_views = []
+        self._pending_image_views_state = None
         super().__init__(data_object, min_height, dark_theme, horizontal_layout, parent)
         self.horizontal_images = horizontal_images
         self.image_scroll_area = QScrollArea()
         self.image_scroll_area.setWidgetResizable(True)
         self.image_scroll_area.setFrameShape(QFrame.NoFrame)
-        self.image_views = []
-        self.image_layout = None
-        self.image_area_widget = None
         self._setup_image_area()
+        self.child_container_layout.addWidget(self.image_scroll_area)
 
     def _setup_image_area(self):
         if self.horizontal_images:
             self.image_scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
             self.image_scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-            self.image_scroll_area.setStyleSheet(self.scroll_area_css('horizontal'))
             self.image_layout = QHBoxLayout()
         else:
             self.image_scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
             self.image_scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
-            self.image_scroll_area.setStyleSheet(self.scroll_area_css('vertical'))
             self.image_layout = QVBoxLayout()
         self.image_area_widget = QWidget()
         self.image_layout.setSpacing(5)
@@ -422,6 +461,24 @@ class ImgBaseWidget(BaseWidget):
         self.image_area_widget.setLayout(self.image_layout)
         self.image_scroll_area.setWidget(self.image_area_widget)
         self.image_scroll_area.setVisible(False)
+
+    def _process_pending_image_views(self):
+        if self._pending_image_views_state is not None:
+            for view_state in self._pending_image_views_state:
+                file_path = view_state.get('file_path')
+                view_type = view_state.get('type', 'GuiImageView')
+                if file_path and os.path.exists(file_path):
+                    if view_type == 'GuiPdfView':
+                        image_view = GuiPdfView(file_path, self)
+                    elif view_type == 'GuiOpenApp':
+                        image_view = GuiOpenApp(view_state.get('app', ''), file_path, self)
+                    else:
+                        image_view = GuiImageView(file_path, self)
+                    self.image_views.append(image_view)
+                    self.image_layout.addWidget(image_view)
+                    self.image_scroll_area.setVisible(True)
+                    self._adjust_image_area()
+            self._pending_image_views_state = None
 
     def set_image_orientation(self, horizontal):
         if self.horizontal_images == horizontal:
@@ -469,13 +526,16 @@ class ImgBaseWidget(BaseWidget):
         self.image_views.clear()
         self.image_scroll_area.setVisible(False)
         self.image_scroll_area.setMinimumHeight(0)
+        self.update_metadata()
 
-    def add_image_view(self, image_view):
+    def add_image_view(self, image_view, from_restoration=False):
         self.image_views.append(image_view)
         self.image_layout.addWidget(image_view)
         self.image_scroll_area.setVisible(True)
         self._adjust_image_area()
         QTimer.singleShot(0, self.image_area_widget.adjustSize)
+        if not from_restoration and self._metadata_restored:
+            self.update_metadata()
 
     def _adjust_image_area(self):
         if not self.image_views:
@@ -506,32 +566,19 @@ class ImgBaseWidget(BaseWidget):
         self.image_area_widget.setFixedWidth(max_width)
         self.image_scroll_area.setMinimumHeight(min(total_height, 200))
 
-    def capture_widget_state(self):
-        state = super().capture_widget_state()
-        state['image_views'] = []
+    def _capture_widget_state(self):
+        state = super()._capture_widget_state()
+        image_views_state = []
         for view in self.image_views:
             if hasattr(view, 'file_path'):
-                view_state = {
-                    'file_path': view.file_path,
-                    'type': type(view).__name__,
-                }
+                view_state = {'file_path': view.file_path, 'type': type(view).__name__}
                 if hasattr(view, 'app'):
                     view_state['app'] = view.app
-                state['image_views'].append(view_state)
+                image_views_state.append(view_state)
+        state['image_views'] = image_views_state
         return state
 
-    def restore_widget_state(self, state):
-        super().restore_widget_state(state)
-        self.clear_images()
-        for view_state in state.get('image_views', []):
-            file_path = view_state.get('file_path')
-            view_type = view_state.get('type', 'GuiImageView')
-            if file_path and os.path.exists(file_path):
-                if view_type == 'GuiPdfView':
-                    image_view = GuiPdfView(file_path, self)
-                elif view_type == 'GuiOpenApp':
-                    app = view_state.get('app', '')
-                    image_view = GuiOpenApp(app, file_path, self)
-                else:
-                    image_view = GuiImageView(file_path, self)
-                self.add_image_view(image_view)
+    def _restore_widget_state(self, state):
+        super()._restore_widget_state(state)
+        if 'image_views' in state:
+            self._pending_image_views_state = state['image_views']
