@@ -312,6 +312,9 @@ def get_exif_from_tiff(image, exif_filename):
                                 value = IFDRational(value[0], value[1])
                             exif_data[tag_id] = value
                     break
+                if INTERCOLORPROFILE in page.tags:
+                    icc_profile = page.tags[INTERCOLORPROFILE].value
+                    exif_data[INTERCOLORPROFILE] = icc_profile
     except Exception as e:
         print(f"Error reading EXIF with tifffile: {e}")
     try:
@@ -347,6 +350,11 @@ def get_exif_from_jpg(image, exif_filename):
         data = extract_enclosed_data_for_jpg(f.read(), b'<?xpacket', b'<?xpacket end="w"?>')
         if data is not None:
             exif_data[XMLPACKET] = data
+    if hasattr(image, 'info') and 'icc_profile' in image.info:
+        exif_data[INTERCOLORPROFILE] = image.info['icc_profile']
+        print(f"DEBUG: Found ICC profile in source JPEG: {len(image.info['icc_profile'])} bytes")
+    else:
+        print(f"DEBUG: No ICC profile found in image.info. Keys: {list(image.info.keys())}")
     return exif_data
 
 
@@ -559,6 +567,9 @@ def add_exif_data_to_jpg_file(exif, in_filename, out_filename, verbose=False):
                 if verbose:
                     logger.warning(msg=f"Failed to move tags to EXIF sub-IFD: {e}")
             exif_bytes = jpeg_exif.tobytes()
+            save_kwargs = {"exif": exif_bytes, "quality": 100}
+            if INTERCOLORPROFILE in exif and isinstance(exif[INTERCOLORPROFILE], bytes):
+                save_kwargs["icc_profile"] = exif[INTERCOLORPROFILE]
             image.save(final_filename, "JPEG", exif=exif_bytes, quality=100)
             if xmp_data and isinstance(xmp_data, bytes):
                 _insert_xmp_into_jpeg(final_filename, xmp_data, verbose)
@@ -792,11 +803,12 @@ def _add_png_text_tag(pnginfo, key, value):
 
 
 def _extract_icc_profile(exif):
+    if INTERCOLORPROFILE in exif and isinstance(exif[INTERCOLORPROFILE], bytes):
+        return exif[INTERCOLORPROFILE]
     for key, value in exif.items():
-        if (isinstance(key, str) and
-            isinstance(value, bytes) and
-                ('icc' in key.lower() or 'profile' in key.lower())):
-            return value
+        if isinstance(key, str) and isinstance(value, bytes):
+            if 'icc' in key.lower() or 'profile' in key.lower():
+                return value
     return None
 
 
@@ -847,6 +859,12 @@ def exif_extra_tags_for_tif(exif):
             if processed_data:
                 dtype, count, data_value = processed_data
                 extra.append((tag_id, dtype, count, data_value, False))
+
+    if INTERCOLORPROFILE in exif:
+        icc_profile = exif[INTERCOLORPROFILE]
+        if isinstance(icc_profile, bytes):
+            extra.append((INTERCOLORPROFILE, 7, len(icc_profile), icc_profile, False))
+
     for tag_id in special_handling_tags:
         if tag_id in exif:
             data = exif[tag_id]

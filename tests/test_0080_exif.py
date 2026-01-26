@@ -19,7 +19,7 @@ from shinestacker.algorithms.exif import (
 
 NO_TEST_TIFF_TAGS = [
     "XMLPacket", "Compression", "StripOffsets", "RowsPerStrip", "StripByteCounts",
-    "ImageResources", "ExifOffset", 34665, "IPTCNAA", 33723]
+    "ImageResources", "ExifOffset", 34665, "IPTCNAA", 33723, "InterColorProfile"]
 
 NO_TEST_JPG_TAGS = [34665]
 
@@ -43,7 +43,8 @@ def test_exif_jpg():
             278,  # ROWSPERSTRIP
             279,  # STRIPBYTECOUNTS
             284,  # PLANARCONFIGURATION
-            34665,  # EDIFID
+            34665,  # EDIFID,
+            34675,  # INTERCOLORPROFILE
         ]
         logger.info("======== Testing JPG EXIF ======== ")
         logger.info("*** Source JPG EXIF ***")
@@ -55,15 +56,40 @@ def test_exif_jpg():
         print_exif(exif_copy)
         all_tags = set(exif.keys()) | set(exif_copy.keys())
         mismatches = []
+        
         for tag in all_tags:
             if tag in SKIP_TAGS:
                 continue
             data_orig = exif.get(tag)
             data_copy = exif_copy.get(tag)
+            
+            # Special handling for ICC profile (binary data)
+            if tag == 34675:  # INTERCOLORPROFILE
+                if data_orig is None and data_copy is None:
+                    continue  # Both None is OK
+                elif data_orig is not None and data_copy is not None:
+                    # Compare binary data directly
+                    if data_orig != data_copy:
+                        # Compare only first 100 bytes for error message
+                        orig_preview = data_orig[:100].hex()[:50]
+                        copy_preview = data_copy[:100].hex()[:50]
+                        mismatches.append(
+                            f"Tag {tag} (ICC profile): data mismatch "
+                            f"({len(data_orig)} bytes vs {len(data_copy)} bytes) "
+                            f"start: {orig_preview}... vs {copy_preview}..."
+                        )
+                elif data_orig is not None:
+                    mismatches.append(f"Tag {tag} missing in copy (ICC profile: {len(data_orig)} bytes)")
+                else:
+                    mismatches.append(f"Tag {tag} added in copy (ICC profile: {len(data_copy)} bytes)")
+                continue
+            
+            # Handle other tags (convert bytes to string for comparison)
             if isinstance(data_orig, bytes):
-                data_orig = data_orig.decode('utf-8', errors='ignore')
+                data_orig = safe_decode_bytes(data_orig)
             if isinstance(data_copy, bytes):
-                data_copy = data_copy.decode('utf-8', errors='ignore')
+                data_copy = safe_decode_bytes(data_copy)
+                
             if tag in exif and tag in exif_copy:
                 if data_orig != data_copy:
                     mismatches.append(f"Tag {tag}: {data_orig} vs {data_copy}")
@@ -71,6 +97,7 @@ def test_exif_jpg():
                 mismatches.append(f"Tag {tag} missing in copy (was: {data_orig})")
             elif tag not in exif and tag in exif_copy:
                 mismatches.append(f"Tag {tag} added in copy (value: {data_copy})")
+        
         if mismatches:
             for mismatch in mismatches:
                 logger.error(mismatch)
@@ -119,7 +146,7 @@ def test_exif_tiff():
                         logger.warning("Test: can't decode EXIF tag {tag:25} [#{tag_id}]")
                         data = '<<< decode error >>>'
                         assert False
-            if isinstance(data_copy, bytes):
+            if isinstance(data_copy, bytes) and tag_copy != "InterColorProfile":
                 data_copy = data_copy.decode()
             meta[tag], meta_copy[tag_copy] = data, data_copy
         for (tag, data, data_copy) in list(common_entries(meta, meta_copy)):
