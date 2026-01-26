@@ -398,8 +398,8 @@ class PyramidTilesStack(PyramidBase, TempDirBase):
             time.sleep(1)
             try:
                 self.cleanup_temp_files()
-            except Exception as ee:
-                traceback.print_tb(ee.__traceback__)
+            except Exception:
+                traceback.print_exc()
                 self.print_message(": could not fully clean up temporary files")
 
     def focus_stack(self):

@@ -161,8 +161,8 @@ class Vignetting(SubAction):
         try:
             params = compute_fit_parameters(
                 img_0, self.r_steps, radii, intensities, subsample, self.fast_subsampling)
-        except Exception as e:
-            traceback.print_tb(e.__traceback__)
+        except Exception:
+            traceback.print_exc()
             self.process.sub_message(
                 color_str(": could not find vignetting model", "red"), level=logging.WARNING)
             params = None
@@ -205,7 +205,7 @@ class Vignetting(SubAction):
                 try:
                     c = bisect(lambda x: sigmoid_model(x, *params) / self.v0 - p, 0, self.r_max)
                 except Exception as e:
-                    traceback.print_tb(e.__traceback__)
+                    traceback.print_exc()
                     self.process.sub_message(color_str(f": {str(e).lower()}", "yellow"),
                                              level=logging.WARNING)
             elif s1 <= p:

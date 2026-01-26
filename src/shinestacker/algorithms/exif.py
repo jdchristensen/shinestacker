@@ -566,18 +566,18 @@ def add_exif_data_to_jpg_file(exif, in_filename, out_filename, verbose=False):
             if os.path.exists(out_filename):
                 os.remove(out_filename)
             os.rename(temp_filename, out_filename)
-    except Exception as e:
-        traceback.print_tb(e.__traceback__)
+    except Exception:
+        traceback.print_exc()
         if use_temp and os.path.exists(temp_filename):
             try:
                 os.remove(temp_filename)
-            except Exception as ee:
-                traceback.print_tb(ee.__traceback__)
+            except Exception:
+                traceback.print_exc()
         else:
             try:
                 write_img(out_filename, read_img(in_filename))
-            except Exception as ee:
-                traceback.print_tb(ee.__traceback__)
+            except Exception:
+                traceback.print_exc()
         raise
 
 

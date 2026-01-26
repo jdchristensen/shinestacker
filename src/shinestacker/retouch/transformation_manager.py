@@ -18,8 +18,8 @@ class TransfromationManager(LayerCollectionHandler):
                 undo = self.editor.undo_manager
                 undo.set_paint_area(0, 1, 0, 1)
                 undo.save_undo_state(self.editor.master_layer(), label)
-            except Exception as e:
-                traceback.print_tb(e.__traceback__)
+            except Exception:
+                traceback.print_exc()
         self.set_master_layer(transf_func(self.master_layer()))
         self.set_layer_stack([transf_func(layer) for layer in self.layer_stack()])
         self.copy_master_layer()

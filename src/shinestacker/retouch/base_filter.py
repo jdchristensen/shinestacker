@@ -272,7 +272,7 @@ class BaseFilter(QObject, LayerCollectionHandler):
                     result = self.func(*self.args, **self.kwargs)
                 self.finished.emit(result, self.request_id, self.region)
             except Exception as e:
-                traceback.print_tb(e.__traceback__)
+                traceback.print_exc()
                 raise RuntimeError("Filter preview failed") from e
 
 

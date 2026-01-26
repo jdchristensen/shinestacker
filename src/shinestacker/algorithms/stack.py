@@ -83,7 +83,7 @@ class FocusStackBase(TaskBase, ImageSequenceManager):
                     copy_exif_from_file_to_file(exif_filename, output_filename)
                     self.sub_message_r(' ' * 60)
                 except Exception as e:
-                    traceback.print_tb(e.__traceback__)
+                    traceback.print_exc()
                     self.sub_message_r(color_str(f': failed to copy EXIF data: {str(e)}',
                                                  constants.LOG_COLOR_WARNING),
                                        level=logging.WARNING)

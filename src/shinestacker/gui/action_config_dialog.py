@@ -981,7 +981,7 @@ class AlignFramesConfigurator(SubsampleActionConfigurator, AlignFramesConfigBase
                 validate_align_config(detector, descriptor, match_method)
                 return super().update_params(params)
             except Exception as e:
-                traceback.print_tb(e.__traceback__)
+                traceback.print_exc()
                 QMessageBox.warning(None, "Error", f"{str(e)}")
                 return False
         return super().update_params(params)

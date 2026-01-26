@@ -42,7 +42,7 @@ class FileLoader(QThread):
                 current_labels = [f"Layer {i + 1}" for i in range(len(current_stack))]
             self.finished.emit(current_stack, current_labels, master_layer)
         except Exception as e:
-            # traceback.print_tb(e.__traceback__)
+            # traceback.print_exc()
             self.error.emit(f"Error loading file:\n{str(e)}")
 
     def load_stack(self, path):
@@ -54,8 +54,8 @@ class FileLoader(QThread):
             try:
                 stack = np.array([cv2.cvtColor(read_img(path), cv2.COLOR_BGR2RGB)])
                 return stack, [os.path.splitext(os.path.basename(path))[0]]
-            except Exception as e:
-                traceback.print_tb(e.__traceback__)
+            except Exception:
+                traceback.print_exc()
                 return None, None
         elif extension_tif(path):
             try:
@@ -94,14 +94,14 @@ class FileLoader(QThread):
                     try:
                         stack = np.array([cv2.cvtColor(read_img(path), cv2.COLOR_BGR2RGB)])
                         return stack, [path.split('/')[-1].split('.')[0]]
-                    except Exception as e:
-                        traceback.print_tb(e.__traceback__)
+                    except Exception:
+                        traceback.print_exc()
                         return None, None
                 else:
-                    traceback.print_tb(val_err.__traceback__)
+                    traceback.print_exc()
                     raise val_err
-            except Exception as e:
-                traceback.print_tb(e.__traceback__)
+            except Exception:
+                traceback.print_exc()
                 return None, None
         else:
             return None, None

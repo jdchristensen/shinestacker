@@ -39,7 +39,7 @@ class ProjectConverter:
             logger.warning(f"=== job: {job.name} stopped ===")
             return constants.RUN_STOPPED, ''
         except Exception as e:
-            traceback.print_tb(e.__traceback__)
+            traceback.print_exc()
             msg = str(e)
             logger.error(f"=== job: {job.name} failed: {msg} ===")
             return constants.RUN_FAILED, msg
@@ -49,7 +49,7 @@ class ProjectConverter:
         try:
             jobs = self.project(proj, logger_name, callbacks)
         except Exception as e:
-            traceback.print_tb(e.__traceback__)
+            traceback.print_exc()
             return constants.RUN_FAILED, str(e)
         status = constants.RUN_COMPLETED, ''
         for job in jobs:
@@ -63,7 +63,7 @@ class ProjectConverter:
         try:
             job = self.job(job, logger_name, callbacks)
         except Exception as e:
-            traceback.print_tb(e.__traceback__)
+            traceback.print_exc()
             return constants.RUN_FAILED, str(e)
         status = self.run(job, logger)
         return status
@@ -157,5 +157,5 @@ class ProjectConverter:
             msg = str(e)
             logger = self.get_logger(logger_name)
             logger.error(msg=f"=== can't create job: {name}: {msg} ===")
-            traceback.print_tb(e.__traceback__)
+            traceback.print_exc()
             raise e

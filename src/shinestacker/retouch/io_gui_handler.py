@@ -376,7 +376,7 @@ class IOGuiHandler(QObject, LayerCollectionHandler):
             self.status_message_requested.emit(
                 f"Saved master layer to files: {os.path.basename(path)}.")
         except Exception as e:
-            traceback.print_tb(e.__traceback__)
+            traceback.print_exc()
             msg = f"Could not save file: {str(e)}."
             self.status_message_requested.emit(msg)
             QMessageBox.critical(self.parent(), "Save Error", msg)
@@ -439,7 +439,7 @@ class IOGuiHandler(QObject, LayerCollectionHandler):
             self.saving_timer.start(100)
             self.saver_thread.start()
         except Exception as e:
-            traceback.print_tb(e.__traceback__)
+            traceback.print_exc()
             msg = f"Could not save file: {str(e)}."
             self.status_message_requested.emit(msg)
             QMessageBox.critical(self.parent(), "Save Error", msg)

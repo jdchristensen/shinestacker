@@ -234,7 +234,7 @@ class MainWindow(ProjectIOHandler, QMainWindow):
                 QMessageBox.critical(self, "Error", str(e))
                 return False, file_path, str(e)
             except Exception as e:
-                traceback.print_tb(e.__traceback__)
+                traceback.print_exc()
                 msg = f"Cannot open file {file_path}:\n{str(e)}"
                 QMessageBox.critical(self, "Error", msg)
                 return False, file_path, msg

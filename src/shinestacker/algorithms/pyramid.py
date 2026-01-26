@@ -195,7 +195,7 @@ class PyramidStack(PyramidBase):
                 err_msg = f"failed to process {self.image_str(i)}: {str(e)}"
                 self.process.sub_message_r(color_str(f": {err_msg}", constants.LOG_COLOR_ALERT),
                                            level=logging.ERROR)
-                traceback.print_tb(e.__traceback__)
+                traceback.print_exc()
                 raise RuntimeError(err_msg) from e
             self.after_step(i + 1)
             self.process.callback(constants.CALLBACK_UPDATE_FRAME_STATUS,

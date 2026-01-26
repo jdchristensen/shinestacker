@@ -51,8 +51,8 @@ class Settings(StdPathFile):
                     json_data = json.load(file)
                     file_settings = json_data['settings']
                     self._deep_merge_settings(file_settings)
-            except Exception as e:
-                traceback.print_tb(e.__traceback__)
+            except Exception:
+                traceback.print_exc()
                 print(f"Can't read file from path {file_path}. Default settings ignored.")
 
     def _deep_copy_defaults(self):

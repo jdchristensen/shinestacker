@@ -231,7 +231,7 @@ class FieldBuilder:
                                                     f"{field['label']} {p} does not exist")
                                 return False
                 except Exception as e:
-                    traceback.print_tb(e.__traceback__)
+                    traceback.print_exc()
                     QMessageBox.warning(None, "Error", f"Invalid path: {str(e)}")
                     return False
         return True
@@ -293,8 +293,8 @@ class FieldBuilder:
                                         f"{label} must be a subdirectory of working path")
                                     return
                                 rel_paths.append(rel_path)
-                            except ValueError as e:
-                                traceback.print_tb(e.__traceback__)
+                            except ValueError:
+                                traceback.print_exc()
                                 QMessageBox.warning(None, "Error",
                                                     "Could not compute relative path")
                                 return
@@ -312,8 +312,8 @@ class FieldBuilder:
                                                         f"{label} must be within working path")
                                     return
                                 rel_paths.append(rel_path)
-                            except ValueError as e:
-                                traceback.print_tb(e.__traceback__)
+                            except ValueError:
+                                traceback.print_exc()
                                 QMessageBox.warning(None, "Error",
                                                     "Could not compute relative path")
                                 return
@@ -348,8 +348,8 @@ class FieldBuilder:
                                                 f"{label} must be a subdirectory of working path")
                             return
                         edit.setText(rel_path)
-                    except ValueError as e:
-                        traceback.print_tb(e.__traceback__)
+                    except ValueError:
+                        traceback.print_exc()
                         QMessageBox.warning(None, "Error", "Could not compute relative path")
         return create_layout_widget_and_connect(button, edit, browse)
 

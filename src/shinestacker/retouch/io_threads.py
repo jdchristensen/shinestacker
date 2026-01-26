@@ -25,7 +25,7 @@ class FileMultilayerSaver(QThread):
                 self.images_dict, self.path, exif_path=self.exif_path)
             self.finished.emit()
         except Exception as e:
-            traceback.print_tb(e.__traceback__)
+            traceback.print_exc()
             self.error.emit(str(e))
 
 

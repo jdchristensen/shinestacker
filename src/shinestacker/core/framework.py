@@ -285,7 +285,7 @@ class SequentialTask(TaskBase):
                 except RunStopException as e:
                     raise e
                 except Exception as e:
-                    traceback.print_tb(e.__traceback__)
+                    traceback.print_exc()
                     self.print_message(color_str(
                         f"failed processing step: {idx + 1}: {str(e)}",
                         constants.LOG_COLOR_ALERT))

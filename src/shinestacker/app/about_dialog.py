@@ -139,7 +139,7 @@ def get_latest_version():
                 raise
     except (URLError, ValueError, KeyError, TimeoutError) as e:
         print(f"error: {str(e)}")
-        traceback.print_tb(e.__traceback__)
+        traceback.print_exc()
         return None
 
 
@@ -150,8 +150,8 @@ def show_about_dialog(parent):
         result = check_version()
         if result:
             update_available, latest_version = result
-    except Exception as e:
-        traceback.print_tb(e.__traceback__)
+    except Exception:
+        traceback.print_exc()
     update_text = ""
     if latest_version:
         if update_available:
