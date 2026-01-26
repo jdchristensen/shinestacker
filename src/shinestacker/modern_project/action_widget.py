@@ -19,9 +19,6 @@ class ActionWidget(ImgBaseWidget):
         self.progress_layout = QVBoxLayout(self.progress_container)
         self.progress_layout.setContentsMargins(0, 0, 0, 0)
         self.progress_layout.setSpacing(5)
-        self.progress_bar = TimerProgressBar()
-        self.progress_bar.setVisible(False)
-        self.progress_layout.addWidget(self.progress_bar)
         self.frames_status_box = MultiModuleStatusContainer(classic_view=False)
         self.frames_status_box.setVisible(False)
         self.frames_status_box.content_size_changed.connect(self._update_container_size)
@@ -41,12 +38,15 @@ class ActionWidget(ImgBaseWidget):
         self.progress_bar.setVisible(False)
         self.progress_bar_layout.addWidget(self.progress_bar)
         self.main_layout.addWidget(self.progress_bar_container)
-        self._complete_initialization()
+        if self.data_object and 'widget_state' in self.data_object.metadata:
+            state = self.data_object.metadata['widget_state']
+            self._restore_widget_state(state)
+            self._metadata_restored = True
         self._process_pending_image_views()
         in_path = get_action_input_path(action)[0]
         out_path = get_action_output_path(action)[0]
         path_text = f"📁 <i>{self._format_path(in_path)}</i> → " \
-            f"📂 <i>{self._format_path(out_path)}</i>"
+                    f"📂 <i>{self._format_path(out_path)}</i>"
         self._add_path_label(path_text)
         for sub_action in action.sub_actions:
             sub_action_widget = SubActionWidget(
@@ -58,6 +58,14 @@ class ActionWidget(ImgBaseWidget):
                 self._has_frames_content = True
                 self.frames_status_box.setVisible(True)
             self._pending_frames_state = None
+        if self.data_object and 'widget_state' in self.data_object.metadata:
+            state = self.data_object.metadata['widget_state']
+            if 'progress_bar' in state:
+                if hasattr(self, 'progress_bar') and self.progress_bar:
+                    self.progress_bar.restore_widget_state(state['progress_bar'])
+                    self.progress_bar.update()
+                    QTimer.singleShot(0, self.progress_bar.update)
+        self._initializing = False
         QTimer.singleShot(0, self._check_and_adjust_layout)
 
     def _adjust_scroll_after_layout(self):
@@ -88,17 +96,34 @@ class ActionWidget(ImgBaseWidget):
         self.progress_bar.start(total_steps)
         if self._has_frames_content:
             self.frames_status_box.setVisible(True)
+        self.update_metadata()
 
     def update_progress(self, current_step):
         self.progress_bar.setValue(current_step)
+        self.update_metadata()
 
-    def complete_progress(self):
+    def run_progress(self):
+        self.progress_bar.run()
+        self.update_metadata()
+
+    def done_progress(self):
+        self.progress_bar.done()
+        self.update_metadata()
+
+    def stop_progress(self):
         self.progress_bar.stop()
+        self.update_metadata()
+
+    def fail_progress(self):
+        self.progress_bar.fail()
+        self.update_metadata()
 
     def hide_progress(self):
+        self.progress_bar.clear()
         self.progress_bar.setVisible(False)
         if not self._has_frames_content:
             self.frames_status_box.setVisible(False)
+        self.update_metadata()
 
     def add_status_box(self, module_name):
         self.frames_status_box.setVisible(True)
@@ -137,6 +162,13 @@ class ActionWidget(ImgBaseWidget):
         self.progress_bar.clear()
         self.progress_bar.setVisible(False)
         super().clear_all()
+        self.update_metadata()
+
+    def restore_from_metadata_immediate(self):
+        if self.data_object and 'widget_state' in self.data_object.metadata:
+            state = self.data_object.metadata['widget_state']
+            if 'progress_bar' in state:
+                self.progress_bar.restore_widget_state(state['progress_bar'])
 
     def _adjust_image_area_height(self):
         if not self.image_views:
@@ -156,6 +188,8 @@ class ActionWidget(ImgBaseWidget):
         state = super()._capture_widget_state()
         if self._has_frames_content:
             state['frames_status'] = self.frames_status_box.capture_widget_state()
+        if self.progress_bar and self.progress_bar.isVisible():
+            state['progress_bar'] = self.progress_bar.capture_widget_state()
         return state
 
     def _restore_widget_state(self, state):
@@ -168,3 +202,8 @@ class ActionWidget(ImgBaseWidget):
                     self.frames_status_box.setVisible(True)
             else:
                 self._pending_frames_state = state['frames_status']
+        if 'progress_bar' in state:
+            if hasattr(self, 'progress_bar') and self.progress_bar:
+                self.progress_bar.restore_widget_state(state['progress_bar'])
+                self.progress_bar.update()
+                QTimer.singleShot(0, self.progress_bar.update)

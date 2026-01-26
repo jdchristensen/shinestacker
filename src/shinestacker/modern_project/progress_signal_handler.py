@@ -54,7 +54,7 @@ class ProgressSignalHandler(QObject):
 
     @Slot(int, str)
     def handle_end_steps(self, _run_id, module_name):
-        self._call_on_widget(module_name, lambda w: w.complete_progress())
+        self._call_on_widget(module_name, lambda w: w.done_progress())
 
     @Slot(int, str)
     def handle_begin_steps(self, _run_id, module_name):
@@ -67,19 +67,19 @@ class ProgressSignalHandler(QObject):
 
     @Slot(int, str)
     def handle_before_action(self, _run_id, name):
-        self._call_on_widget(name, lambda w: w.progress_bar.set_running_style())
+        self._call_on_widget(name, lambda w: w.run_progress())
 
     @Slot(int, str)
     def handle_after_action(self, _run_id, name):
-        self._call_on_widget(name, lambda w: w.progress_bar.set_done_style())
+        self._call_on_widget(name, lambda w: w.done_progress())
 
     @Slot(int, str)
     def handle_run_stopped(self, _run_id, name):
-        self._call_on_widget(name, lambda w: w.progress_bar.set_stopped_style())
+        self._call_on_widget(name, lambda w: w.stop_progress())
 
     @Slot(int, str)
     def handle_run_failed(self, _run_id, name):
-        self._call_on_widget(name, lambda w: w.progress_bar.set_failed_style())
+        self._call_on_widget(name, lambda w: w.fail_progress())
 
     @Slot(str)
     def handle_add_status_box(self, module_name):

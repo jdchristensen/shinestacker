@@ -123,10 +123,21 @@ class TimerProgressBar(QProgressBar):
         super().setMaximum(steps)
         self._start_time = time.time()
         self.setValue(0)
+        self.set_running_style()
 
-    def stop(self):
+    def run(self):
+        self.set_running_style()
+
+    def done(self):
         self.check_time(self.maximum())
         self.setValue(self.maximum())
+        self.set_done_style()
+
+    def stop(self):
+        self.set_stopped_style()
+
+    def fail(self):
+        self.set_failed_style()
 
     def clear(self):
         self._start_time = -1
@@ -140,6 +151,8 @@ class TimerProgressBar(QProgressBar):
     def setValue(self, val):
         self.check_time(val)
         super().setValue(val)
+        if val >= self.maximum() and self.maximum() > 0:
+            self.set_done_style()
     # pylint: enable=C0103
 
     def set_running_style(self):

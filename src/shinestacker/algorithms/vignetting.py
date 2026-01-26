@@ -169,7 +169,7 @@ class Vignetting(SubAction):
         if params is None:
             return img_0
         self.v0 = sigmoid_model(0, *params)
-        i0_fit, k_fit, r0_fit = params
+        # i0_fit, k_fit, r0_fit = params
         # self.process.print_message(
         #     color_str(f"{self.process.frame_str(idx)}: vignetting model parameters: ", "cyan") +
         #     color_str(f"i0={i0_fit / 2:.4f}, "

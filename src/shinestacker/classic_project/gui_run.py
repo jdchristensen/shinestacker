@@ -195,7 +195,7 @@ class RunWindow(QTextEditLogger):
                 widget.setText(widget.text() + " - running")
                 self.progress_bar.start(1)
         if run_id == -1:
-            self.progress_bar.set_running_style()
+            self.progress_bar.run()
 
     @Slot(int, str)
     def handle_after_action(self, run_id, _name):
@@ -209,7 +209,7 @@ class RunWindow(QTextEditLogger):
                 self.progress_bar.stop()
         if run_id == -1:
             self.row_widget_id += 1
-            self.progress_bar.set_done_style()
+            self.progress_bar.done()
 
     @Slot(int, str, str)
     def handle_step_counts(self, _run_id, _name, steps):
@@ -286,13 +286,13 @@ class RunWindow(QTextEditLogger):
     @Slot(int)
     def handle_run_stopped(self, run_id, _name):
         postfix = f" - stopped after {self.progress_bar.elapsed_str}"
-        self.progress_bar.set_stopped_style()
+        self.progress_bar.stop()
         self.handle_run_interrupt(run_id, ACTION_STOPPED_COLOR.tuple(), postfix)
 
     @Slot(int)
     def handle_run_failed(self, run_id, _name):
         postfix = f" - failed after {self.progress_bar.elapsed_str}"
-        self.progress_bar.set_failed_style()
+        self.progress_bar.fail()
         self.handle_run_interrupt(run_id, ACTION_FAILED_COLOR.tuple(), postfix)
 
     @Slot(str)
