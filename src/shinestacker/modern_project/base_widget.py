@@ -72,7 +72,8 @@ class BaseWidget(QFrame):
         self.enabled_icon = None
         self.path_label_in_top_row = True
         self._metadata_restored = False
-        self._initializing = True
+        # self._initializing = True
+        self._complete_initialization()
         self.image_layout = None
         self.image_area_widget = None
         self._init_widget(data_object)
