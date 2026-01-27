@@ -312,8 +312,13 @@ class ModernProjectView(ProjectView):
         def disconnect_signals(widget):
             for signal in signal_types:
                 try:
-                    getattr(widget, signal).disconnect()
-                except Exception:
+                    signal_obj = getattr(widget, signal)
+                    if signal_obj:
+                        try:
+                            signal_obj.disconnect()
+                        except TypeError:
+                            pass
+                except AttributeError:
                     pass
 
         def connect_widget_signals(widget, widget_type, indices):
@@ -1235,6 +1240,21 @@ class ModernProjectView(ProjectView):
             return
         self.selection_nav.restore_selection(self._saved_selection)
         self._saved_selection = None
+
+    def perform_undo(self, selection=None, update_project=True):
+        if update_project and not self.enforce_stop_run():
+            return False, None, None
+        if update_project:
+            entry = super().undo()
+            if entry:
+                self.post_undo(entry)
+                self.show_status_message_requested.emit("Undo performed", 2000)
+                return True, self.selection_state.copy(), entry
+        else:
+            if selection:
+                self.post_undo(selection)
+            return True, None, selection
+        return False, None, None
 
     def post_undo(self, entry=None):
         if entry:

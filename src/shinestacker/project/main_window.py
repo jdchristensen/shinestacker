@@ -356,13 +356,15 @@ class MainWindow(ProjectIOHandler, QMainWindow):
     def perform_undo(self):
         for view in self.views.values():
             view.save_current_selection()
-        entry = self.undo()
-        if entry:
-            for view in self.views.values():
-                view.post_undo(entry)
+        success, _old_selection, undo_entry = self.current_view.perform_undo()
+        if success and undo_entry:
+            for _view_name, view in self.views.items():
+                if view != self.current_view:
+                    view.perform_undo(selection=undo_entry, update_project=False)
             self.update_title()
-            self.refresh_ui()
             self.show_status_message("Undo performed")
+            return True
+        return False
 
     def add_job(self):
         new_job_index = self.current_view.add_job()
@@ -404,6 +406,8 @@ class MainWindow(ProjectIOHandler, QMainWindow):
         self.current_view.copy_element()
 
     def _propagate_to_views(self, current_method, other_method=None, **kwargs):
+        if current_method.__name__ == 'perform_undo':
+            return current_method()
         result = current_method()
         if isinstance(result, tuple) and len(result) >= 2:
             success, old_selection = result[:2]

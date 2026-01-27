@@ -607,6 +607,18 @@ class ClassicProjectView(ProjectView, ListContainer):
         self.refresh_ui(restore_state=self._saved_selection)
         self._saved_selection = None
 
+    def perform_undo(self, selection=None, update_project=True):
+        if update_project:
+            entry = super().undo()
+            if entry:
+                self.post_undo(entry)
+                return True, self._get_selection_state(), entry
+        else:
+            if selection:
+                self.post_undo(selection)
+            return True, None, selection
+        return False, None, None
+
     def post_undo(self, entry=None):
         if entry:
             self.refresh_ui(restore_state=self._saved_selection)
