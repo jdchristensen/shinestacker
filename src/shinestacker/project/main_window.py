@@ -367,7 +367,7 @@ class MainWindow(ProjectIOHandler, QMainWindow):
             view.save_current_selection()
         success, _old_selection, undo_entry = self.current_view.perform_undo()
         if success and undo_entry:
-            if undo_entry and undo_entry.get('description') == "Clear Run Information":
+            if undo_entry and undo_entry.get('action_type') == 'clear_run_info':
                 self.menu_manager.clear_run_info_action.setEnabled(True)
             for _view_name, view in self.views.items():
                 if view != self.current_view:
