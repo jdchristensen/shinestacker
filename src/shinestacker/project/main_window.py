@@ -172,6 +172,11 @@ class MainWindow(ProjectIOHandler, QMainWindow):
         idx = self.view_idx[mode]
         if self.view_stack.currentIndex() == idx:
             return
+        current_mode = None
+        for view_name, view in self.views.items():
+            if view == self.current_view:
+                current_mode = view_name
+                break
         if self.current_view.is_running():
             reply = QMessageBox.warning(
                 self,
@@ -181,10 +186,13 @@ class MainWindow(ProjectIOHandler, QMainWindow):
                 QMessageBox.No
             )
             if reply == QMessageBox.No:
+                if current_mode:
+                    self.menu_manager.set_view(current_mode.title(), do_switch=False)
                 return
         self.view_stack.currentWidget().stop()
         self.view_stack.setCurrentIndex(idx)
         self.current_view = self.view_stack.currentWidget()
+        self.menu_manager.set_view(mode, do_switch=False)
 
     def horizontal_actions_layout(self):
         self.modern_view.horizontal_actions_layout(True)

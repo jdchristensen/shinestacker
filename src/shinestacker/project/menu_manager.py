@@ -169,8 +169,8 @@ class MenuManager(QObject):
         self.view_strategy_menu.addAction(self.modern_view_action)
         self.classic_view_action.setCheckable(True)
         self.modern_view_action.setCheckable(True)
-        self.classic_view_action.triggered.connect(lambda: self.set_view('Classic'))
-        self.modern_view_action.triggered.connect(lambda: self.set_view('Modern'))
+        self.classic_view_action.triggered.connect(lambda: self.parent.set_view('classic'))
+        self.modern_view_action.triggered.connect(lambda: self.parent.set_view('modern'))
         self.set_view(AppConfig.get('project_view_strategy').title(), False)
         menu.addMenu(self.view_strategy_menu)
         modern_view_menu = QMenu("Modern View Layout", menu)
@@ -204,11 +204,13 @@ class MenuManager(QObject):
             action_func()
 
     def set_view(self, view, do_switch=True):
+        view_title = view.title()
+        view_title = view.title()
         for label, mode in self.view_mode_actions.items():
-            mode.setEnabled(label != view)
-            mode.setChecked(label == view)
+            mode.setEnabled(label != view_title)
+            mode.setChecked(label == view_title)
         if do_switch:
-            self.actions.get(view + " View")()
+            self.actions.get(view_title + " View")()
 
     def add_job_menu(self):
         menu = self.menubar.addMenu("&Jobs")
