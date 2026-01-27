@@ -367,6 +367,8 @@ class MainWindow(ProjectIOHandler, QMainWindow):
             view.save_current_selection()
         success, _old_selection, undo_entry = self.current_view.perform_undo()
         if success and undo_entry:
+            if undo_entry and undo_entry.get('description') == "Clear Run Information":
+                self.menu_manager.clear_run_info_action.setEnabled(True)
             for _view_name, view in self.views.items():
                 if view != self.current_view:
                     view.perform_undo(selection=undo_entry, update_project=False)
@@ -464,6 +466,7 @@ class MainWindow(ProjectIOHandler, QMainWindow):
                 view.disable_all(update_project=False)
 
     def run_job(self):
+        self.menu_manager.clear_run_info_action.setEnabled(True)
         success = self.current_view.run_job()
         if success:
             self.menu_manager.run_job_action.setEnabled(False)
@@ -471,6 +474,7 @@ class MainWindow(ProjectIOHandler, QMainWindow):
             self.menu_manager.stop_action.setEnabled(True)
 
     def run_all_jobs(self):
+        self.menu_manager.clear_run_info_action.setEnabled(True)
         success = self.current_view.run_all_jobs()
         if success:
             self.menu_manager.run_job_action.setEnabled(False)
@@ -482,6 +486,7 @@ class MainWindow(ProjectIOHandler, QMainWindow):
 
     def clear_run_metadata(self):
         self.current_view.clear_run_metadata()
+        self.menu_manager.clear_run_info_action.setEnabled(False)
 
     def stop(self):
         success = self.current_view.stop()
