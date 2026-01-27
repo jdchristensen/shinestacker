@@ -425,7 +425,7 @@ class ProjectView(QWidget, LogManager, ProjectHandler):
     def restore_saved_selection(self):
         raise NotImplementedError
 
-    def refresh_and_restore_selection(self):
+    def post_undo(self):
         raise NotImplementedError
 
     def refresh_and_select_job(self, job_idx):
