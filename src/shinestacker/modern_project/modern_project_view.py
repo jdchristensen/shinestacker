@@ -1135,9 +1135,13 @@ class ModernProjectView(ProjectView):
         return None
 
     def run_job(self):
+        if self.selection_state.is_job_selected():
+            self.save_undo_state(self.project().clone(), "Run Job", "run",
+                                 (self.selection_state.job_index, -1, -1))
         return self.execute_run_job()
 
     def run_all_jobs(self):
+        self.save_undo_state(self.project().clone(), "Run All Jobs", "run_all")
         return self.execute_run_all_jobs()
 
     def _start_job_worker(self, job_index, job):
@@ -1174,6 +1178,25 @@ class ModernProjectView(ProjectView):
 
     def _connect_worker_signals(self, worker):
         SignalConnector.connect_worker_signals(worker, self, self.progress_handler)
+
+    def clear_run_metadata(self):
+        self.save_undo_state(self.project().clone(), "Clear Run Information", "clear_run_info")
+        for job_widget in self.job_widgets:
+            self._clear_widget_metadata(job_widget)
+
+    def _clear_widget_metadata(self, widget):
+        if widget.data_object and 'widget_state' in widget.data_object.metadata:
+            widget.data_object.metadata.pop('widget_state', None)
+        if hasattr(widget, 'clear_all'):
+            widget.clear_all()
+        if hasattr(widget, 'clear_images'):
+            widget.clear_images()
+        if hasattr(widget, 'clear_frames_status'):
+            widget.clear_frames_status()
+        if hasattr(widget, 'hide_progress'):
+            widget.hide_progress()
+        for child in widget.child_widgets:
+            self._clear_widget_metadata(child)
 
     @Slot(str, int, str, int)
     def handle_status_signal(self, message, _status, _error_message, timeout):
@@ -1273,6 +1296,8 @@ class ModernProjectView(ProjectView):
             self._undo_move_action(affected_position, description)
         elif action_type == 'edit_all':
             self._undo_edit_all_action(description)
+        elif action_type in ['run', 'run_all', 'clear_run_info']:
+            self.refresh_ui()
         else:
             state = SelectionState(*affected_position)
             if action_type == 'add':

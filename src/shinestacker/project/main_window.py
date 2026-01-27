@@ -65,6 +65,7 @@ class MainWindow(ProjectIOHandler, QMainWindow):
             "Modern View": lambda: self.set_view('modern'),
             "Horizontal Layout": self.horizontal_actions_layout,
             "Vertical Layout": self.vertical_actions_layout,
+            "Clear Run Information": self.clear_run_metadata
         }
         self.menu_manager = MenuManager(
             self.menuBar(), actions, self.add_action, self.add_sub_action, dark_theme, self)
@@ -470,6 +471,9 @@ class MainWindow(ProjectIOHandler, QMainWindow):
 
     def run_retouch_selected_job(self):
         self.current_view.run_retouch_selected_job()
+
+    def clear_run_metadata(self):
+        self.current_view.clear_run_metadata()
 
     def stop(self):
         success = self.current_view.stop()

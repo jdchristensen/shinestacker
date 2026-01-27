@@ -121,6 +121,9 @@ class ProjectView(QWidget, LogManager, ProjectHandler):
         self.run_retouch_job(job)
         return True
 
+    def clear_run_metadata(self):
+        pass
+
     def _show_retouch_error(self, message):
         QMessageBox.warning(self, "Retouch Error",
                             f"{message}\n\nRetouch functionality may not be available.")

@@ -35,7 +35,7 @@ class MenuManager(QObject):
             "Cop&y": "Ctrl+C",
             "&Paste": "Ctrl+V",
             "Duplicate": "Ctrl+D",
-            "Delete": "Del",
+            "Delete": "Backspace",
             "Move &Up": "Ctrl+Up",
             "Move &Down": "Ctrl+Down",
             "E&nable": "Ctrl+E",
@@ -48,7 +48,8 @@ class MenuManager(QObject):
             "Add Job": "Ctrl+P",
             "Run Job": "Ctrl+J",
             "Run All Jobs": "Ctrl+Shift+J",
-            "Stop": "Ctrl+Shift+X"
+            "Stop": "Ctrl+Shift+X",
+            "Clear Run Information": "Ctrl+Shift+M"
         }
         self.icons = {
             "Delete": "close-round-line-icon",
@@ -223,6 +224,8 @@ class MenuManager(QObject):
         self.stop_action = self.action("Stop", requires_file=True)
         self.stop_action.setEnabled(False)
         menu.addAction(self.stop_action)
+        menu.addSeparator()
+        menu.addAction(self.action("Clear Run Information", requires_file=True))
         menu.addSeparator()
         self.run_retouch_selected_job_action = self.action("Retouch Job Output")
         menu.addAction(self.run_retouch_selected_job_action)

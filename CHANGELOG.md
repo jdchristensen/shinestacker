@@ -2,13 +2,14 @@
 
 This page reports the main releases only and the main changes therein.
 
-## [v1.13.x] - 2026-01-26
+## [v1.13.x] - 2026-01-27
 
 ### Added
 - visual icon representing stacking algorithm, ▲ for pyramid or ■ for depth map (#11)
 - expert options toggle added in new project dialog
 - retouch job action has an entry in top menu
 - project run information is saved persistently with the project file
+- menu entry to clear project run information
 - support ICC profile in EXIF data
 
 ### Fixed
@@ -19,6 +20,7 @@ This page reports the main releases only and the main changes therein.
 
 ### Changed
 - minor optimization: skip stacking if input has a single frame
+- in the project area, the delete shortcuts is now the backspace key instead of the delete key
 
 ---
 
