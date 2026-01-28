@@ -505,7 +505,7 @@ class ModernProjectView(ProjectView):
             self.undo_manager().add_extra_data_to_last_entry(
                 'modern_widget_state', widget_state)
 
-    def _update_ui_only(self, selection, old_selection):
+    def _update_ui_after_external_delete(self, selection, old_selection):
         if selection:
             self._remove_widget(selection)
 

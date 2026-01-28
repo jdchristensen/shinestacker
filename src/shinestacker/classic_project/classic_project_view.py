@@ -306,7 +306,7 @@ class ClassicProjectView(ProjectView, ListContainer):
         else:
             self.refresh_ui()
 
-    def _update_ui_only(self, selection, old_selection):
+    def _update_ui_after_external_delete(self, selection, old_selection):
         if selection and selection.is_valid():
             job_idx = selection.job_index
             if job_idx >= 0:

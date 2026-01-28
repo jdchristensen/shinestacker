@@ -342,16 +342,16 @@ class ProjectView(QWidget, LogManager, ProjectHandler):
                 self._update_ui_after_project_delete(
                     deleted_element, removal_state, new_selection, old_selection)
                 return deleted_element, old_selection
-            self._update_ui_only(None, old_selection)
+            self._update_ui_after_external_delete(None, old_selection)
             return None, old_selection
-        self._update_ui_only(selection, old_selection)
+        self._update_ui_after_external_delete(selection, old_selection)
         return None, old_selection
 
     def _update_ui_after_project_delete(
             self, deleted_element, removal_state, new_selection, old_selection):
         raise NotImplementedError
 
-    def _update_ui_only(self, selection, old_selection):
+    def _update_ui_after_external_delete(self, selection, old_selection):
         raise NotImplementedError
 
     def _before_add_sub_action(self):
