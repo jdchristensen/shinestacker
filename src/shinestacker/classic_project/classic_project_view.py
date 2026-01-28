@@ -295,13 +295,7 @@ class ClassicProjectView(ProjectView, ListContainer):
             tab.retouch_widget.setEnabled(True)
         self.run_finished_signal.emit()
 
-    def _sync_selection_to_action_manager(self):
-        current_selection = self._get_selection_state()
-        if current_selection:
-            self.element_action.selection_state = current_selection
-
     def delete_element(self, selection=None, update_project=True, confirm=True):
-        self._sync_selection_to_action_manager()
         deleted_element = None
         old_selection = self._get_selection_state().copy() if selection is None \
             else selection.copy()
@@ -322,11 +316,10 @@ class ClassicProjectView(ProjectView, ListContainer):
         return deleted_element, old_selection
 
     def copy_element(self):
-        self._sync_selection_to_action_manager()
+        self._update_selection_state()
         ProjectView.copy_element(self)
 
     def paste_element(self, selection=None, update_project=True):
-        self._sync_selection_to_action_manager()
         success = False
         old_selection = self._get_selection_state().copy() if selection is None \
             else selection.copy()
@@ -352,7 +345,6 @@ class ClassicProjectView(ProjectView, ListContainer):
         return success, old_selection
 
     def cut_element(self):
-        self._sync_selection_to_action_manager()
         deleted_element = None
         old_selection = self._get_selection_state().copy()
         deleted_element, _removal_state, new_selection = self.element_action.cut_element()
@@ -418,7 +410,7 @@ class ClassicProjectView(ProjectView, ListContainer):
         return row
 
     def _before_shift_element(self):
-        self._sync_selection_to_action_manager()
+        self._update_selection_state()
         return True
 
     def _update_ui_after_shift_element(self, old_selection, selection, success, new_selection):
@@ -443,7 +435,7 @@ class ClassicProjectView(ProjectView, ListContainer):
         return self.selection_state.subaction_index
 
     def _before_add_action(self):
-        self._sync_selection_to_action_manager()
+        self._update_selection_state()
         return True
 
     def _update_ui_after_add_action(self, action, position):
@@ -456,7 +448,7 @@ class ClassicProjectView(ProjectView, ListContainer):
         return ListContainer.current_job_index(self)
 
     def _before_add_sub_action(self):
-        self._sync_selection_to_action_manager()
+        self._update_selection_state()
         return True
 
     def _update_ui_after_add_sub_action(self, sub_action, position):
@@ -563,7 +555,7 @@ class ClassicProjectView(ProjectView, ListContainer):
             self.select_signal.emit()
         self._get_selection_state()
 
-    def _get_selection_state(self):
+    def _update_selection_state(self):
         if self.action_list_has_focus() and self.num_selected_actions() > 0:
             _job_row, _action_row, pos = self.get_current_action()
             if pos is not None:
@@ -577,6 +569,9 @@ class ClassicProjectView(ProjectView, ListContainer):
                 self.selection_state.widget_type = 'job'
         else:
             self.selection_state.reset()
+
+    def _get_selection_state(self):
+        self._update_selection_state()
         return self.selection_state.copy()
 
     def _ensure_selected_visible(self):
