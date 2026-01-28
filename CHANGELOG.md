@@ -3,6 +3,7 @@
 This page reports the main releases only and the main changes therein.
 
 ## [v1.13.4] - 2026-01-28
+**GUI fixes and improvements**
 
 ### Added
 - visual icon representing stacking algorithm, ▲ for pyramid or ■ for depth map (#11)
