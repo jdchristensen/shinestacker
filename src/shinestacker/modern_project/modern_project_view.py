@@ -486,15 +486,14 @@ class ModernProjectView(ProjectView):
             else:
                 job_widget.set_selected(False)
 
-    def _update_ui_after_project_delete(
-            self, deleted_element, removal_state, new_selection, old_selection):
+    def delete_element(self, deleted_element, new_selection, old_selection):
         widget_state = None
         if old_selection and old_selection.is_valid():
             widget = self._find_widget(old_selection)
             if widget:
                 widget_state = widget.capture_widget_state()
-        if removal_state:
-            self._remove_widget(removal_state)
+        if old_selection:
+            self._remove_widget(old_selection)
         if new_selection:
             self.selection_state.copy_from(new_selection)
             self._update_selection(new_selection)
@@ -504,10 +503,6 @@ class ModernProjectView(ProjectView):
         if widget_state and self.undo_manager():
             self.undo_manager().add_extra_data_to_last_entry(
                 'modern_widget_state', widget_state)
-
-    def _update_ui_after_external_delete(self, selection, old_selection):
-        if selection:
-            self._remove_widget(selection)
 
     def cut_element(self):
         if not self.enforce_stop_run():

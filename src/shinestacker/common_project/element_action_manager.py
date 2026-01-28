@@ -444,18 +444,14 @@ class ElementActionManager(ProjectHandler, QObject):
                 element_type, element.params.get('name', '')):
             return None, None, None
         self.mark_as_modified(True, f"Delete {element_type.title()}", "delete", position)
-        removal_state = SelectionState()
         if self.selection_state.is_subaction_selected():
-            removal_state.set_subaction(job_index, action_index, subaction_index)
             deleted_element = self._op_delete_subaction(job_index, action_index, subaction_index)
         elif self.selection_state.is_action_selected():
-            removal_state.set_action(job_index, action_index)
             deleted_element = self._op_delete_action(job_index, action_index)
         else:
-            removal_state.set_job(job_index)
             deleted_element = self._op_delete_job(job_index)
         new_state = self.new_state_after_delete(self.selection_state)
-        return deleted_element, removal_state, new_state
+        return deleted_element, new_state
 
     def cut_element(self):
         deleted_element, removal_state, new_state = self.delete_element(False)

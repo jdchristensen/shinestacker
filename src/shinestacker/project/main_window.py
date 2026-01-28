@@ -404,12 +404,13 @@ class MainWindow(ProjectIOHandler, QMainWindow):
                 view.update_added_element(indices_tuple)
 
     def delete_element(self):
-        deleted_element, old_selection = self.current_view.delete_element()
+        if not self.current_view.enforce_stop_run():
+            return None, None
+        old_selection = self.current_view.selection_state.copy()
+        deleted_element, new_selection = self.current_view.element_action.delete_element(True)
         if deleted_element and old_selection and old_selection.is_valid():
             for _view_name, view in self.views.items():
-                if view != self.current_view:
-                    view.delete_element(selection=old_selection, update_project=False,
-                                        confirm=False)
+                view.delete_element(deleted_element, new_selection, old_selection)
         if self.num_project_jobs() > 0:
             self.menu_manager.delete_element_action.setEnabled(True)
 

@@ -299,19 +299,9 @@ class ClassicProjectView(ProjectView, ListContainer):
             tab.retouch_widget.setEnabled(True)
         self.run_finished_signal.emit()
 
-    def _update_ui_after_project_delete(
-            self, deleted_element, removal_state, new_selection, old_selection):
+    def delete_element(self, deleted_element, new_selection, old_selection):
         if new_selection is not False:
             self.refresh_ui(new_selection)
-        else:
-            self.refresh_ui()
-
-    def _update_ui_after_external_delete(self, selection, old_selection):
-        if selection and selection.is_valid():
-            job_idx = selection.job_index
-            if job_idx >= 0:
-                new_job_idx = max(0, min(job_idx, self.num_project_jobs() - 1))
-                self.refresh_ui(rows_to_state(self.project(), new_job_idx, -1))
         else:
             self.refresh_ui()
 

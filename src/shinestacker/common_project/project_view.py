@@ -331,27 +331,7 @@ class ProjectView(QWidget, LogManager, ProjectHandler):
     def copy_element(self):
         self.element_action.copy_element()
 
-    def delete_element(self, selection=None, update_project=True, confirm=True):
-        if not self.enforce_stop_run():
-            return None, None
-        old_selection = self.selection_state.copy() if selection is None else selection.copy()
-        if selection is None:
-            if update_project:
-                deleted_element, removal_state, new_selection = \
-                    self.element_action.delete_element(confirm)
-                self._update_ui_after_project_delete(
-                    deleted_element, removal_state, new_selection, old_selection)
-                return deleted_element, old_selection
-            self._update_ui_after_external_delete(None, old_selection)
-            return None, old_selection
-        self._update_ui_after_external_delete(selection, old_selection)
-        return None, old_selection
-
-    def _update_ui_after_project_delete(
-            self, deleted_element, removal_state, new_selection, old_selection):
-        raise NotImplementedError
-
-    def _update_ui_after_external_delete(self, selection, old_selection):
+    def delete_element(self, deleted_element, new_selection, old_selection):
         raise NotImplementedError
 
     def _before_add_sub_action(self):
