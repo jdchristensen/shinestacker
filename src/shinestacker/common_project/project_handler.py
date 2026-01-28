@@ -69,7 +69,7 @@ class ProjectHolder:
         return None
 
     def set_copy_buffer(self, item):
-        self.copy_buffer = item
+        self.copy_buffer = item.clone()
 
     def has_copy_buffer(self):
         return self.copy_buffer is not None

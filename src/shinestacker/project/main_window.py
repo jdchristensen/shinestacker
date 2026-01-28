@@ -431,7 +431,16 @@ class MainWindow(ProjectIOHandler, QMainWindow):
             self.menu_manager.delete_element_action.setEnabled(True)
 
     def copy_element(self):
-        self.current_view.copy_element()
+        self.element_action.copy_element()
+
+    def paste_element(self):
+        if not self.current_view.enforce_stop_run():
+            return
+        old_selection = self.selection_state.copy()
+        success = self.element_action.paste_element()
+        if success:
+            for _view_name, view in self.views.items():
+                view.paste_element(old_selection)
 
     def _propagate_to_views(self, current_method, other_method=None, **kwargs):
         if current_method.__name__ == 'perform_undo':
@@ -448,9 +457,6 @@ class MainWindow(ProjectIOHandler, QMainWindow):
                     getattr(view, method_name)(
                         selection=old_selection, update_project=False, **kwargs)
         return success, old_selection
-
-    def paste_element(self):
-        return self._propagate_to_views(self.current_view.paste_element)
 
     def clone_element(self):
         return self._propagate_to_views(self.current_view.clone_element, confirm=False)

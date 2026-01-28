@@ -504,30 +504,10 @@ class ModernProjectView(ProjectView):
             self.undo_manager().add_extra_data_to_last_entry(
                 'modern_widget_state', widget_state)
 
-    def paste_element(self, selection=None, update_project=True):
-        if not self.enforce_stop_run():
-            return False, None
-        old_selection = self.selection_state.copy() if self.selection_state else None
-        success = False
-        if selection is None:
-            if update_project:
-                success = self.element_action.paste_element()
-                if success:
-                    self._paste_element_ui_only(old_selection)
-            else:
-                success = self._paste_element_ui_only(old_selection)
-        else:
-            success = self._paste_element_ui_only(selection)
-        return success, old_selection
-
-    def _paste_element_ui_only(self, selection):
-        if not selection or not selection.is_valid():
-            return False
+    def paste_element(self, selection):
         try:
             job_idx = selection.job_index
             if not 0 <= job_idx < self.num_project_jobs():
-                return False
-            if not self.element_action.has_copy_buffer():
                 return False
             copy_buffer = self.element_action.copy_buffer()
             new_state = None
