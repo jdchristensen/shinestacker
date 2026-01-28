@@ -331,6 +331,29 @@ class ProjectView(QWidget, LogManager, ProjectHandler):
     def copy_element(self):
         self.element_action.copy_element()
 
+    def delete_element(self, selection=None, update_project=True, confirm=True):
+        if not self.enforce_stop_run():
+            return None, None
+        old_selection = self.selection_state.copy() if selection is None else selection.copy()
+        if selection is None:
+            if update_project:
+                deleted_element, removal_state, new_selection = \
+                    self.element_action.delete_element(confirm)
+                self._update_ui_after_project_delete(
+                    deleted_element, removal_state, new_selection, old_selection)
+                return deleted_element, old_selection
+            self._update_ui_only(None, old_selection)
+            return None, old_selection
+        self._update_ui_only(selection, old_selection)
+        return None, old_selection
+
+    def _update_ui_after_project_delete(
+            self, deleted_element, removal_state, new_selection, old_selection):
+        raise NotImplementedError
+
+    def _update_ui_only(self, selection, old_selection):
+        raise NotImplementedError
+
     def _before_add_sub_action(self):
         return True
 
@@ -476,7 +499,23 @@ class ProjectView(QWidget, LogManager, ProjectHandler):
         return (-1, -1, -1)
 
     def enforce_stop_run(self):
+        if self.is_running():
+            reply = QMessageBox.warning(
+                self,
+                "Stop Run Required",
+                "Modifying the project requires stopping the current run.\n\n"
+                "Are you sure you want to stop the run and continue?",
+                QMessageBox.Yes | QMessageBox.No,
+                QMessageBox.No
+            )
+            if reply == QMessageBox.Yes:
+                self.stop()
+                return True
+            return False
         return True
+
+    def stop(self):
+        raise NotImplementedError
 
     def execute_run_job(self):
         current_index = self.current_job_index()

@@ -4,7 +4,7 @@ import os
 from functools import partial
 from PySide6.QtCore import Qt, QTimer, Signal, Slot
 from PySide6.QtGui import QCursor
-from PySide6.QtWidgets import QWidget, QVBoxLayout, QSplitter, QScrollArea, QMessageBox
+from PySide6.QtWidgets import QWidget, QVBoxLayout, QSplitter, QScrollArea
 from .. config.constants import constants
 from .. gui.gui_logging import QTextEditLogger
 from .. common_project.run_worker import JobLogWorker, ProjectLogWorker
@@ -486,50 +486,28 @@ class ModernProjectView(ProjectView):
             else:
                 job_widget.set_selected(False)
 
-    def enforce_stop_run(self):
-        if self.is_running():
-            reply = QMessageBox.warning(
-                self,
-                "Stop Run Required",
-                "Modifying the project requires stopping the current run.\n\n"
-                "Are you sure you want to stop the run and continue?",
-                QMessageBox.Yes | QMessageBox.No,
-                QMessageBox.No
-            )
-            if reply == QMessageBox.Yes:
-                self.stop()
-                return True
-            return False
-        return True
-
-    def delete_element(self, selection=None, update_project=True, confirm=True):
-        if not self.enforce_stop_run():
-            return None, None
+    def _update_ui_after_project_delete(
+            self, deleted_element, removal_state, new_selection, old_selection):
         widget_state = None
-        deleted_element = None
-        old_selection = self.selection_state.copy() if selection is None else selection.copy()
         if old_selection and old_selection.is_valid():
             widget = self._find_widget(old_selection)
             if widget:
                 widget_state = widget.capture_widget_state()
-        if selection is None:
-            if update_project:
-                deleted_element, removal_state, new_selection = \
-                    self.element_action.delete_element(confirm)
-                if removal_state:
-                    self._remove_widget(removal_state)
-                if new_selection:
-                    self.selection_state.copy_from(new_selection)
-                    self._update_selection(new_selection)
-                    self._ensure_selected_visible()
-                else:
-                    self._reset_selection()
-                if widget_state:
-                    self.undo_manager().add_extra_data_to_last_entry(
-                        'modern_widget_state', widget_state)
+        if removal_state:
+            self._remove_widget(removal_state)
+        if new_selection:
+            self.selection_state.copy_from(new_selection)
+            self._update_selection(new_selection)
+            self._ensure_selected_visible()
         else:
+            self._reset_selection()
+        if widget_state and self.undo_manager():
+            self.undo_manager().add_extra_data_to_last_entry(
+                'modern_widget_state', widget_state)
+
+    def _update_ui_only(self, selection, old_selection):
+        if selection:
             self._remove_widget(selection)
-        return deleted_element, old_selection
 
     def cut_element(self):
         if not self.enforce_stop_run():

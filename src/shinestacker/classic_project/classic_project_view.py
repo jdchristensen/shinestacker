@@ -299,25 +299,21 @@ class ClassicProjectView(ProjectView, ListContainer):
             tab.retouch_widget.setEnabled(True)
         self.run_finished_signal.emit()
 
-    def delete_element(self, selection=None, update_project=True, confirm=True):
-        deleted_element = None
-        old_selection = self.selection_state.copy() if selection is None \
-            else selection.copy()
-        if selection is None:
-            if update_project:
-                deleted_element, _removal_state, new_selection = \
-                    self.element_action.delete_element(confirm)
-                if new_selection is not False:
-                    self.refresh_ui(new_selection)
-            else:
-                deleted_element = None
-                self.refresh_ui()
-        elif selection.is_valid():
+    def _update_ui_after_project_delete(
+            self, deleted_element, removal_state, new_selection, old_selection):
+        if new_selection is not False:
+            self.refresh_ui(new_selection)
+        else:
+            self.refresh_ui()
+
+    def _update_ui_only(self, selection, old_selection):
+        if selection and selection.is_valid():
             job_idx = selection.job_index
             if job_idx >= 0:
                 new_job_idx = max(0, min(job_idx, self.num_project_jobs() - 1))
                 self.refresh_ui(rows_to_state(self.project(), new_job_idx, -1))
-        return deleted_element, old_selection
+        else:
+            self.refresh_ui()
 
     def paste_element(self, selection=None, update_project=True):
         success = False
