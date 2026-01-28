@@ -40,8 +40,8 @@ def rows_to_state(project, job_row, action_row):
 
 
 class ClassicProjectView(ProjectView, ListContainer):
-    def __init__(self, project_holder, dark_theme, parent=None):
-        ProjectView.__init__(self, project_holder, dark_theme, parent)
+    def __init__(self, element_action, dark_theme, parent=None):
+        ProjectView.__init__(self, element_action, dark_theme, parent)
         ListContainer.__init__(self, dark_theme)
         self.tab_widget = TabWidgetWithPlaceholder(dark_theme)
         self.tab_widget.resize(1000, 500)
@@ -333,7 +333,7 @@ class ClassicProjectView(ProjectView, ListContainer):
     def cut_element(self):
         deleted_element = None
         old_selection = self.selection_state.copy()
-        deleted_element, _removal_state, new_selection = self.element_action.cut_element()
+        deleted_element, new_selection = self.element_action.cut_element()
         if deleted_element:
             if new_selection:
                 self.refresh_ui(new_selection)

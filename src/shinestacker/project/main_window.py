@@ -16,6 +16,8 @@ from .. gui.sys_mon import StatusBarSystemMonitor
 from .. gui.action_config_dialog import ActionConfigDialog
 from .. common_project.project_undo_manager import ProjectUndoManager
 from .. common_project.project_handler import ProjectHolder, ProjectIOHandler
+from .. common_project.selection_state import SelectionState
+from .. common_project.element_action_manager import ElementActionManager
 from .. classic_project.classic_project_view import ClassicProjectView
 from .. modern_project.modern_project_view import ModernProjectView
 from .menu_manager import MenuManager
@@ -29,8 +31,11 @@ class MainWindow(ProjectIOHandler, QMainWindow):
         ProjectIOHandler.__init__(self, ProjectHolder(self._undo_manager))
         self.setObjectName("mainWindow")
         dark_theme = self.is_dark_theme()
-        self.classic_view = ClassicProjectView(self.project_holder, dark_theme, self)
-        self.modern_view = ModernProjectView(self.project_holder, dark_theme, self)
+        self.selection_state = SelectionState()
+        self.element_action = ElementActionManager(
+            self.project_holder, self.selection_state, self)
+        self.classic_view = ClassicProjectView(self.element_action, dark_theme, self)
+        self.modern_view = ModernProjectView(self.element_action, dark_theme, self)
         self.views = {
             'classic': self.classic_view,
             'modern': self.modern_view
@@ -405,9 +410,9 @@ class MainWindow(ProjectIOHandler, QMainWindow):
 
     def delete_element(self):
         if not self.current_view.enforce_stop_run():
-            return None, None
-        old_selection = self.current_view.selection_state.copy()
-        deleted_element, new_selection = self.current_view.element_action.delete_element(True)
+            return
+        old_selection = self.selection_state.copy()
+        deleted_element, new_selection = self.element_action.delete_element(True)
         if deleted_element and old_selection and old_selection.is_valid():
             for _view_name, view in self.views.items():
                 view.delete_element(deleted_element, new_selection, old_selection)

@@ -22,8 +22,8 @@ class ModernProjectView(ProjectView):
     update_delete_action_state_requested = Signal()
     show_status_message_requested = Signal(str, int)
 
-    def __init__(self, project_holder, dark_theme, parent=None):
-        ProjectView.__init__(self, project_holder, dark_theme, parent)
+    def __init__(self, element_action, dark_theme, parent=None):
+        ProjectView.__init__(self, element_action, dark_theme, parent)
         self.job_widgets = []
         self.scroll_area = None
         self.scroll_content = None
@@ -40,7 +40,7 @@ class ModernProjectView(ProjectView):
             self._scroll_to_widget
         )
         self.selection_nav = SelectionNavigationManager(
-            project_holder,
+            self.project_holder,
             self.selection_state,
             self._selection_callback
         )
@@ -514,10 +514,10 @@ class ModernProjectView(ProjectView):
             widget = self._find_widget(old_selection)
             if widget:
                 widget_state = widget.capture_widget_state()
-        deleted_element, removal_state, new_selection = \
+        deleted_element, new_selection = \
             self.element_action.cut_element()
-        if removal_state:
-            self._remove_widget(removal_state)
+        if old_selection:
+            self._remove_widget(old_selection)
         if new_selection:
             self.selection_state.copy_from(new_selection)
             self._update_selection(new_selection)
