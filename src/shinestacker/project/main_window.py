@@ -419,6 +419,17 @@ class MainWindow(ProjectIOHandler, QMainWindow):
         if self.num_project_jobs() > 0:
             self.menu_manager.delete_element_action.setEnabled(True)
 
+    def cut_element(self):
+        if not self.current_view.enforce_stop_run():
+            return
+        old_selection = self.selection_state.copy()
+        deleted_element, new_selection = self.element_action.cut_element()
+        if deleted_element and old_selection and old_selection.is_valid():
+            for _view_name, view in self.views.items():
+                view.delete_element(deleted_element, new_selection, old_selection)
+        if self.num_project_jobs() > 0:
+            self.menu_manager.delete_element_action.setEnabled(True)
+
     def copy_element(self):
         self.current_view.copy_element()
 
@@ -440,9 +451,6 @@ class MainWindow(ProjectIOHandler, QMainWindow):
 
     def paste_element(self):
         return self._propagate_to_views(self.current_view.paste_element)
-
-    def cut_element(self):
-        return self._propagate_to_views(self.current_view.cut_element, 'delete_element')
 
     def clone_element(self):
         return self._propagate_to_views(self.current_view.clone_element, confirm=False)

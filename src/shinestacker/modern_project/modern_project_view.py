@@ -504,31 +504,6 @@ class ModernProjectView(ProjectView):
             self.undo_manager().add_extra_data_to_last_entry(
                 'modern_widget_state', widget_state)
 
-    def cut_element(self):
-        if not self.enforce_stop_run():
-            return None, None
-        widget_state = None
-        deleted_element = None
-        old_selection = self.selection_state.copy()
-        if old_selection and old_selection.is_valid():
-            widget = self._find_widget(old_selection)
-            if widget:
-                widget_state = widget.capture_widget_state()
-        deleted_element, new_selection = \
-            self.element_action.cut_element()
-        if old_selection:
-            self._remove_widget(old_selection)
-        if new_selection:
-            self.selection_state.copy_from(new_selection)
-            self._update_selection(new_selection)
-            self._ensure_selected_visible()
-        else:
-            self._reset_selection()
-        if widget_state:
-            self.undo_manager().add_extra_data_to_last_entry(
-                'modern_widget_state', widget_state)
-        return deleted_element, old_selection
-
     def paste_element(self, selection=None, update_project=True):
         if not self.enforce_stop_run():
             return False, None

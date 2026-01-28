@@ -330,17 +330,6 @@ class ClassicProjectView(ProjectView, ListContainer):
                     self.project(), selection.job_index, -1))
         return success, old_selection
 
-    def cut_element(self):
-        deleted_element = None
-        old_selection = self.selection_state.copy()
-        deleted_element, new_selection = self.element_action.cut_element()
-        if deleted_element:
-            if new_selection:
-                self.refresh_ui(new_selection)
-            else:
-                self.refresh_ui()
-        return deleted_element, old_selection
-
     def clone_element(self, selection=None, update_project=True, confirm=True):
         old_selection = self.selection_state.copy() if selection is None \
             else selection.copy()
