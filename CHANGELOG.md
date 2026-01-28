@@ -4,7 +4,7 @@
 **GUI fixes and refactoring**
 
 ### Fixed
-- multiple past issue in modern project view
+- various GUI issues
 
 ### Changes
 - code refactoring

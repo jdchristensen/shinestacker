@@ -1,5 +1,5 @@
-# pylint: disable=C0114, C0115, C0116, E0611, R0902, R0904, R0913, R0914, R0917, R0912, R0915, E1101
-# pylint: disable=W0613
+# pylint: disable=C0114, C0115, C0116, E0611, R0902, R0904, R0913, R0914, R0917
+# pylint: disable=R0912, R0915, E1101, R0911, W0613
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QLabel, QSplitter, QApplication
 from .. config.constants import constants
@@ -419,8 +419,17 @@ class ClassicProjectView(ProjectView, ListContainer):
                 return self.project_job(job_row)
         elif self.action_list_has_focus():
             _job_row, _action_row, pos = self.get_current_action()
-            if pos.actions is not None:
-                return pos.action if not pos.is_sub_action else pos.sub_action
+            if not 0 <= pos.job_index < self.num_project_jobs():
+                return None
+            job = self.project_job(pos.job_index)
+            if not 0 <= pos.action_index < len(job.sub_actions):
+                return None
+            action = job.sub_actions[pos.action_index]
+            if pos.subaction_index < 0:
+                return action
+            if not 0 <= pos.subaction_index < len(action.sub_actions):
+                return None
+            return action.sub_actions[pos.subaction_index]
         return None
 
     def get_job_at(self, index):
