@@ -436,49 +436,11 @@ class ProjectView(QWidget, LogManager, ProjectHandler):
     def post_undo(self):
         raise NotImplementedError
 
+    def shift_element(self, old_selection, new_selection):
+        raise NotImplementedError
+
     def refresh_and_select_job(self, job_idx):
         raise NotImplementedError
-
-    def move_element_up(self, selection=None, update_project=True):
-        return self.shift_element(-1, "Up", selection, update_project)
-
-    def move_element_down(self, selection=None, update_project=True):
-        return self.shift_element(+1, "Down", selection, update_project)
-
-    def shift_element(self, delta, direction, selection=None, update_project=True):
-        if not self._before_shift_element():
-            return False, None
-        old_selection = selection.copy() if selection is not None else self.selection_state.copy()
-        new_selection = None
-        success = False
-        if selection is None and update_project:
-            pre_move_project = self.project().clone()
-            from_position = self._get_current_position_tuple()
-            new_selection = self.element_action.shift_element(delta)
-            if new_selection:
-                success = True
-                to_position = self._get_current_position_tuple()
-                affected_position = from_position + to_position
-                self.save_undo_state(
-                    pre_move_project, f"Move {direction}", "move", affected_position)
-        self._update_ui_after_shift_element(old_selection, selection, success, new_selection)
-        return success, old_selection
-
-    def _before_shift_element(self):
-        return True
-
-    def _update_ui_after_shift_element(self, old_selection, selection, success, new_selection):
-        raise NotImplementedError
-
-    def _get_current_position_tuple(self):
-        if self.selection_state.is_job_selected():
-            return (self.selection_state.job_index, -1, -1)
-        if self.selection_state.is_action_selected():
-            return (self.selection_state.job_index, self.selection_state.action_index, -1)
-        if self.selection_state.is_subaction_selected():
-            return (self.selection_state.job_index, self.selection_state.action_index,
-                    self.selection_state.subaction_index)
-        return (-1, -1, -1)
 
     def enforce_stop_run(self):
         if self.is_running():

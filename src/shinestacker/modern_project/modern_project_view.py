@@ -713,13 +713,10 @@ class ModernProjectView(ProjectView):
     def _before_shift_element(self):
         return self.enforce_stop_run()
 
-    def _update_ui_after_shift_element(self, old_selection, selection, success, new_selection):
-        if selection is None:
-            self._move_widgets(old_selection, self.selection_state)
-            self._update_selection(self.selection_state)
-            self._ensure_selected_visible()
-        elif selection.is_valid():
-            self.refresh_ui()
+    def shift_element(self, old_selection, new_selection):
+        self._move_widgets(old_selection, new_selection)
+        self._update_selection(new_selection)
+        self._ensure_selected_visible()
 
     def set_style_sheet(self, dark_theme):
         pass

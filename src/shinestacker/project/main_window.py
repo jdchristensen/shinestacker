@@ -467,11 +467,27 @@ class MainWindow(ProjectIOHandler, QMainWindow):
                         selection=old_selection, update_project=False, **kwargs)
         return success, old_selection
 
+    def shift_element(self, delta, direction):
+        if not self.current_view.enforce_stop_run():
+            return
+        old_selection = self.selection_state.copy()
+        pre_move_project = self.project().clone()
+        from_position = self.selection_state.to_tuple()
+        success = self.element_action.shift_element(delta)
+        if success:
+            new_selection = self.selection_state.copy()
+            to_position = new_selection.to_tuple()
+            affected_position = from_position + to_position
+            self.save_undo_state(
+                pre_move_project, f"Move {direction}", "move", affected_position)
+            for _view_name, view in self.views.items():
+                view.shift_element(old_selection, new_selection)
+
     def move_element_up(self):
-        return self._propagate_to_views(self.current_view.move_element_up)
+        self.shift_element(-1, "Up")
 
     def move_element_down(self):
-        return self._propagate_to_views(self.current_view.move_element_down)
+        self.shift_element(+1, "Down")
 
     def enable(self):
         self.current_view.enable()
