@@ -41,7 +41,7 @@ This page reports the main releases only and the main changes therein.
 ### Changed
 - code refactoring and cleanup: removed duplicated code in classic and modern project GUI views
 - minor optimization of pyramid algorithm
-- allow latest OpenCV version, 4.13.0.90
+- allowed latest OpenCV version, 4.13.0.90
 
 ---
 
