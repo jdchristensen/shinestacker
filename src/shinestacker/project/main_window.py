@@ -451,22 +451,6 @@ class MainWindow(ProjectIOHandler, QMainWindow):
             for _view_name, view in self.views.items():
                 view.clone_element(old_selection, new_selection)
 
-    def _propagate_to_views(self, current_method, other_method=None, **kwargs):
-        if current_method.__name__ == 'perform_undo':
-            return current_method()
-        result = current_method()
-        if isinstance(result, tuple) and len(result) >= 2:
-            success, old_selection = result[:2]
-        else:
-            success, old_selection = result, None
-        if success and old_selection and old_selection.is_valid():
-            method_name = other_method or current_method.__name__
-            for _view_name, view in self.views.items():
-                if view != self.current_view:
-                    getattr(view, method_name)(
-                        selection=old_selection, update_project=False, **kwargs)
-        return success, old_selection
-
     def shift_element(self, delta, direction):
         if not self.current_view.enforce_stop_run():
             return
