@@ -2,7 +2,7 @@
 
 This page reports the main releases only and the main changes therein.
 
-## [v1.13.x] - 2026-01-27
+## [v1.13.4] - 2026-01-28
 
 ### Added
 - visual icon representing stacking algorithm, ▲ for pyramid or ■ for depth map (#11)
@@ -20,7 +20,7 @@ This page reports the main releases only and the main changes therein.
 
 ### Changed
 - minor optimization: skip stacking if input has a single frame
-- in the project area, the delete shortcuts is now the backspace key instead of the delete key
+- in the project area, the delete shortcut is now the backspace key instead of the delete key
 
 ---
 
