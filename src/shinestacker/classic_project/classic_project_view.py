@@ -40,8 +40,8 @@ def rows_to_state(project, job_row, action_row):
 
 
 class ClassicProjectView(ProjectView, ListContainer):
-    def __init__(self, element_action, dark_theme, parent=None):
-        ProjectView.__init__(self, element_action, dark_theme, parent)
+    def __init__(self, project_holder, selection_state, dark_theme, parent=None):
+        ProjectView.__init__(self, project_holder, selection_state, dark_theme, parent)
         ListContainer.__init__(self, dark_theme)
         self.tab_widget = TabWidgetWithPlaceholder(dark_theme)
         self.tab_widget.resize(1000, 500)
@@ -124,6 +124,7 @@ class ClassicProjectView(ProjectView, ListContainer):
         self.refresh_ui(rows_to_state(self.project(), job_idx, -1))
 
     def refresh_ui(self, restore_state=None):
+        selection = self.selection_state.copy()
         job_row = -1
         action_row = -1
         if restore_state is not None:
@@ -146,6 +147,7 @@ class ClassicProjectView(ProjectView, ListContainer):
             self.set_current_job(job_row)
         if action_row >= 0:
             self.set_current_action(action_row)
+        self.selection_state.copy_from(selection)
         ProjectView.refresh_ui(self)
 
     def select_first_job(self):
@@ -305,23 +307,11 @@ class ClassicProjectView(ProjectView, ListContainer):
         else:
             self.refresh_ui()
 
-    def paste_element(self, old_selection):
+    def paste_element(self, old_selection, new_selection):
         self.refresh_ui(old_selection)
 
     def clone_element(self, old_selection, new_selection):
         self.refresh_ui(new_selection)
-
-    def enable(self, selection=None, update_project=True):
-        self.execute_set_enabled(True, selection, update_project)
-
-    def disable(self, selection=None, update_project=True):
-        self.execute_set_enabled(False, selection, update_project)
-
-    def enable_all(self, update_project=True):
-        self.execute_set_enabled_all(True, update_project)
-
-    def disable_all(self, update_project=True):
-        self.execute_set_enabled_all(False, update_project)
 
     def _after_set_enabled(self, selection, enabled):
         self.refresh_ui(selection)
@@ -329,8 +319,11 @@ class ClassicProjectView(ProjectView, ListContainer):
     def _update_widget_enable_state(self, selection, enabled):
         self.refresh_ui(selection)
 
-    def _update_all_widgets_enabled(self, enabled):
+    def set_enabled_all(self, enabled):
         self.refresh_ui(self.selection_state)
+
+    def set_enabled(self, enabled, selection):
+        self.refresh_ui(selection)
 
     def _position_to_action_row(self, position):
         job_idx, action_idx, sub_idx = position
@@ -350,7 +343,7 @@ class ClassicProjectView(ProjectView, ListContainer):
     def _before_shift_element(self):
         return True
 
-    def shift_element(self, _old_selection, _new_selection):
+    def shift_element(self, old_selection, new_selection):
         self.refresh_ui(self.selection_state)
 
     def _get_current_subaction_index(self):

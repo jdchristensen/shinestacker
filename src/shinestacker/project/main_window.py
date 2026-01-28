@@ -34,8 +34,10 @@ class MainWindow(ProjectIOHandler, QMainWindow):
         self.selection_state = SelectionState()
         self.element_action = ElementActionManager(
             self.project_holder, self.selection_state, self)
-        self.classic_view = ClassicProjectView(self.element_action, dark_theme, self)
-        self.modern_view = ModernProjectView(self.element_action, dark_theme, self)
+        self.classic_view = ClassicProjectView(
+            self.project_holder, self.selection_state, dark_theme, self)
+        self.modern_view = ModernProjectView(
+            self.project_holder, self.selection_state, dark_theme, self)
         self.views = {
             'classic': self.classic_view,
             'modern': self.modern_view
@@ -87,13 +89,14 @@ class MainWindow(ProjectIOHandler, QMainWindow):
             ('widget_updated_signal', self.handle_widget_updated),
             ('run_finished_signal', self.handle_run_finished),
             ('fill_context_menu_signal', self.menu_manager.handle_fill_context_menu),
-            ('project_modified_signal', self.menu_manager.save_actions_set_enabled),
             ('refresh_ui_signal', self.refresh_ui),
         ]
         for view in self.views.values():
             for signal_name, handler in signal_map:
                 if hasattr(view, signal_name):
                     getattr(view, signal_name).connect(handler)
+        self.element_action.project_modified_signal.connect(
+            self.menu_manager.save_actions_set_enabled)
 
         self.script_dir = os.path.dirname(__file__)
         self.retouch_callback = None
@@ -438,9 +441,10 @@ class MainWindow(ProjectIOHandler, QMainWindow):
             return
         old_selection = self.selection_state.copy()
         success = self.element_action.paste_element()
+        new_selection = self.selection_state.copy()
         if success:
             for _view_name, view in self.views.items():
-                view.paste_element(old_selection)
+                view.paste_element(old_selection, new_selection)
 
     def clone_element(self):
         if not self.current_view.enforce_stop_run():
@@ -473,23 +477,33 @@ class MainWindow(ProjectIOHandler, QMainWindow):
     def move_element_down(self):
         self.shift_element(+1, "Down")
 
+    def set_enabled(self, enabled):
+        if not self.current_view.enforce_stop_run():
+            return
+        selection = self.selection_state.copy()
+        success = self.element_action.set_enabled(enabled, selection)
+        if success:
+            for _view_name, view in self.views.items():
+                view.set_enabled(enabled, selection)
+
     def enable(self):
-        self.current_view.enable()
+        self.set_enabled(True)
 
     def disable(self):
-        self.current_view.disable()
+        self.set_enabled(False)
+
+    def set_enabled_all(self, enabled):
+        if not self.current_view.enforce_stop_run():
+            return
+        self.element_action.set_enabled_all(enabled)
+        for _view_name, view in self.views.items():
+            view.set_enabled_all(enabled)
 
     def enable_all(self):
-        self.current_view.enable_all()
-        for _view_name, view in self.views.items():
-            if view != self.current_view:
-                view.enable_all(update_project=False)
+        self.set_enabled_all(True)
 
     def disable_all(self):
-        self.current_view.disable_all()
-        for _view_name, view in self.views.items():
-            if view != self.current_view:
-                view.disable_all(update_project=False)
+        self.set_enabled_all(False)
 
     def run_job(self):
         self.menu_manager.clear_run_info_action.setEnabled(True)
@@ -521,11 +535,7 @@ class MainWindow(ProjectIOHandler, QMainWindow):
 
     def handle_widget_enable(self, selection, enabled):
         for _view_name, view in self.views.items():
-            if view != self.sender():
-                if enabled:
-                    view.enable(selection=selection, update_project=False)
-                else:
-                    view.disable(selection=selection, update_project=False)
+            view.set_enabled(enabled, selection)
 
     def handle_widget_updated(self, selection):
         for _view_name, view in self.views.items():

@@ -10,6 +10,7 @@ from .. gui.gui_logging import QTextEditLogger
 from .. common_project.run_worker import JobLogWorker, ProjectLogWorker
 from .. common_project.project_view import ProjectView
 from .. common_project.selection_state import SelectionState
+from .. common_project.element_action_manager import CLONE_POSTFIX
 from .job_widget import JobWidget
 from .progress_mapper import ProgressMapper
 from .progress_signal_handler import ProgressSignalHandler, SignalConnector
@@ -22,8 +23,8 @@ class ModernProjectView(ProjectView):
     update_delete_action_state_requested = Signal()
     show_status_message_requested = Signal(str, int)
 
-    def __init__(self, element_action, dark_theme, parent=None):
-        ProjectView.__init__(self, element_action, dark_theme, parent)
+    def __init__(self, project_holder, selection_state, dark_theme, parent=None):
+        ProjectView.__init__(self, project_holder, selection_state, dark_theme, parent)
         self.job_widgets = []
         self.scroll_area = None
         self.scroll_content = None
@@ -504,56 +505,21 @@ class ModernProjectView(ProjectView):
             self.undo_manager().add_extra_data_to_last_entry(
                 'modern_widget_state', widget_state)
 
-    def paste_element(self, old_selection):
+    def paste_element(self, old_selection, new_selection):
         try:
             job_idx = old_selection.job_index
             if not 0 <= job_idx < self.num_project_jobs():
                 return
-            copy_buffer = self.element_action.copy_buffer()
-            new_state = None
-            element = None
-            if old_selection.is_job_selected():
-                if copy_buffer.type_name == constants.ACTION_JOB:
-                    new_state = self.element_action.new_state_after_insert(old_selection, 1)
-                    element = copy_buffer.clone()
-                else:
-                    job = self.project().jobs[job_idx]
-                    new_action_index = len(job.sub_actions)
-                    new_state = SelectionState(job_idx, new_action_index, -1)
-                    element = copy_buffer.clone()
-            elif old_selection.is_action_selected():
-                if copy_buffer.type_name in constants.ACTION_TYPES:
-                    new_state = self.element_action.new_state_after_insert(old_selection, 1)
-                    element = copy_buffer.clone()
-                elif copy_buffer.type_name in constants.SUB_ACTION_TYPES:
-                    action = self.project().jobs[job_idx].sub_actions[old_selection.action_index]
-                    if action.type_name != constants.ACTION_COMBO:
-                        return
-                    new_subaction_index = len(action.sub_actions)
-                    new_state = SelectionState(
-                        job_idx, old_selection.action_index, new_subaction_index)
-                    element = copy_buffer.clone()
-                else:
-                    return
-            elif old_selection.is_subaction_selected():
-                if copy_buffer.type_name not in constants.SUB_ACTION_TYPES:
-                    return
-                action = self.project().jobs[job_idx].sub_actions[old_selection.action_index]
-                if action.type_name != constants.ACTION_COMBO:
-                    return
-                new_state = self.element_action.new_state_after_insert(old_selection, 1)
-                element = copy_buffer.clone()
-            else:
+            if not self.copy_buffer():
                 return
-            if not new_state or not element:
-                return
-            new_widget = self._insert_widget(new_state, element)
+            element = self.copy_buffer().clone()
+            new_widget = self._insert_widget(new_selection, element)
             if new_widget:
                 if self.selected_widget:
                     self.selected_widget.set_selected(False)
                 new_widget.set_selected(True)
                 self.selected_widget = new_widget
-                self.selection_state.copy_from(new_state)
+                self.selection_state.copy_from(new_selection)
                 self.update_delete_action_state_requested.emit()
         except Exception:
             self.refresh_ui()
@@ -584,39 +550,17 @@ class ModernProjectView(ProjectView):
                 element = action.sub_actions[subaction_idx]
             else:
                 return
-            insert_state = new_selection if new_selection else \
-                self.element_action.new_state_after_clone(old_selection)
             new_widget = self._insert_widget(
-                insert_state, element.clone(name_postfix=self.element_action.CLONE_POSTFIX))
+                new_selection, element.clone(name_postfix=CLONE_POSTFIX))
             if new_widget:
                 if self.selected_widget:
                     self.selected_widget.set_selected(False)
                 new_widget.set_selected(True)
                 self.selected_widget = new_widget
-                self.selection_state.copy_from(insert_state)
+                self.selection_state.copy_from(new_selection)
                 self.update_delete_action_state_requested.emit()
         except Exception:
             self.refresh_ui()
-
-    def enable(self, selection=None, update_project=True):
-        if not self.enforce_stop_run():
-            return
-        self.execute_set_enabled(True, selection, update_project)
-
-    def disable(self, selection=None, update_project=True):
-        if not self.enforce_stop_run():
-            return
-        self.execute_set_enabled(False, selection, update_project)
-
-    def enable_all(self, update_project=True):
-        if not self.enforce_stop_run():
-            return
-        self.execute_set_enabled_all(True, update_project)
-
-    def disable_all(self, update_project=True):
-        if not self.enforce_stop_run():
-            return
-        self.execute_set_enabled_all(False, update_project)
 
     def _after_set_enabled(self, selection, enabled):
         self.refresh_ui(selection)
@@ -626,16 +570,13 @@ class ModernProjectView(ProjectView):
         if widget:
             widget.set_enabled_and_update(enabled)
 
-    def _update_all_widgets_enabled(self, enabled):
+    def set_enabled_all(self, enabled):
         for job_widget in self.job_widgets:
-            job_widget.data_object.params['enabled'] = enabled
-            job_widget.update(job_widget.data_object)
+            job_widget.set_enabled_and_update(enabled)
             for action_widget in job_widget.child_widgets:
-                action_widget.data_object.params['enabled'] = enabled
-                action_widget.update(action_widget.data_object)
+                action_widget.set_enabled_and_update(enabled)
                 for subaction_widget in action_widget.child_widgets:
-                    subaction_widget.data_object.params['enabled'] = enabled
-                    subaction_widget.update(subaction_widget.data_object)
+                    subaction_widget.set_enabled_and_update(enabled)
 
     def _move_widgets(self, from_state, to_state):
         try:
@@ -721,41 +662,40 @@ class ModernProjectView(ProjectView):
     def set_style_sheet(self, dark_theme):
         pass
 
-    def set_enabled(self, enabled):
-        state = self.selection_state
-        if not state.is_valid():
+    def set_enabled(self, enabled, selection):
+        if not selection.is_valid():
             return
-        position = state.get_indices()
-        if state.is_subaction_selected():
-            if state.job_index < self.num_project_jobs():
-                job = self.project().jobs[state.job_index]
-                if state.action_index < len(job.sub_actions):
-                    action = job.sub_actions[state.action_index]
-                    if state.subaction_index < len(action.sub_actions):
+        position = selection.get_indices()
+        if selection.is_subaction_selected():
+            if selection.job_index < self.num_project_jobs():
+                job = self.project().jobs[selection.job_index]
+                if selection.action_index < len(job.sub_actions):
+                    action = job.sub_actions[selection.action_index]
+                    if selection.subaction_index < len(action.sub_actions):
                         self.mark_as_modified(
                             True, f"{'Enable' if enabled else 'Disable'} Sub-action",
                             "edit", position)
-                        action.sub_actions[state.subaction_index].set_enabled(enabled)
-                        widget = self._find_widget(state)
+                        action.sub_actions[selection.subaction_index].set_enabled(enabled)
+                        widget = self._find_widget(selection)
                         if widget:
                             widget.set_enabled_and_update(enabled)
-        elif state.is_action_selected():
-            if state.job_index < self.num_project_jobs():
-                job = self.project().jobs[state.job_index]
-                if state.action_index < len(job.sub_actions):
+        elif selection.is_action_selected():
+            if selection.job_index < self.num_project_jobs():
+                job = self.project().jobs[selection.job_index]
+                if selection.action_index < len(job.sub_actions):
                     self.mark_as_modified(
                         True, f"{'Enable' if enabled else 'Disable'} Action", "edit", position)
-                    job.sub_actions[state.action_index].set_enabled(enabled)
-                    widget = self._find_widget(state)
+                    job.sub_actions[selection.action_index].set_enabled(enabled)
+                    widget = self._find_widget(selection)
                     if widget:
                         widget.set_enabled_and_update(enabled)
         else:
-            if state.job_index < self.num_project_jobs():
+            if selection.job_index < self.num_project_jobs():
                 self.mark_as_modified(
                     True, f"{'Enable' if enabled else 'Disable'} Job", "edit", position)
-                self.project().jobs[state.job_index].set_enabled(enabled)
-                if state.job_index < len(self.job_widgets):
-                    self.job_widgets[state.job_index].set_enabled_and_update(enabled)
+                self.project().jobs[selection.job_index].set_enabled(enabled)
+                if selection.job_index < len(self.job_widgets):
+                    self.job_widgets[selection.job_index].set_enabled_and_update(enabled)
 
     def _ensure_selected_visible(self):
         if not self.selected_widget or not self.scroll_area:

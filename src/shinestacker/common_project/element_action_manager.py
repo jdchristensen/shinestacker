@@ -5,9 +5,10 @@ from .. config.constants import constants
 from .. common_project.selection_state import SelectionState
 from .project_handler import ProjectHandler
 
+CLONE_POSTFIX = ' (clone)'
+
 
 class ElementActionManager(ProjectHandler, QObject):
-    CLONE_POSTFIX = ' (clone)'
     project_modified_signal = Signal(bool)
 
     def __init__(self, project_holder, selection_state, parent=None):
@@ -375,7 +376,7 @@ class ElementActionManager(ProjectHandler, QObject):
                 return False, None
             self.mark_as_modified(True, "Duplicate Job", "clone", (job_index, -1, -1))
             job = self.project().jobs[job_index]
-            job_clone = job.clone(name_postfix=self.CLONE_POSTFIX)
+            job_clone = job.clone(name_postfix=CLONE_POSTFIX)
             new_job_index = job_index + 1
             self.project().jobs.insert(new_job_index, job_clone)
             return job_clone is not None, SelectionState(new_job_index)
@@ -390,10 +391,10 @@ class ElementActionManager(ProjectHandler, QObject):
                 (selection.job_index, selection.action_index, selection.subaction_index))
             job = self.project().jobs[selection.job_index]
             if selection.is_subaction_selected():
-                cloned = self.get_action(selection).clone(name_postfix=self.CLONE_POSTFIX)
+                cloned = self.get_action(selection).clone(name_postfix=CLONE_POSTFIX)
                 self.get_sub_actions(selection).insert(selection.subaction_index + 1, cloned)
             else:
-                cloned = self.get_action(selection).clone(name_postfix=self.CLONE_POSTFIX)
+                cloned = self.get_action(selection).clone(name_postfix=CLONE_POSTFIX)
                 job.sub_actions.insert(selection.action_index + 1, cloned)
             new_state = self.new_state_after_clone(selection)
             return True, new_state
@@ -460,28 +461,28 @@ class ElementActionManager(ProjectHandler, QObject):
         for job in self.project().jobs:
             job.set_enabled_all(enabled)
 
-    def set_enabled(self, enabled, selection=None, update_project=True):
+    def set_enabled(self, enabled, selection):
         if selection is None:
             selection = self.selection_state
-        if not selection.is_valid() or not update_project:
-            return None
+        if not selection.is_valid():
+            return False
         j, a, s = selection.job_index, selection.action_index, selection.subaction_index
         if not 0 <= j < self.num_project_jobs():
-            return None
+            return False
         job = self.project().jobs[j]
         if selection.is_job_selected():
             if job.enabled() != enabled:
                 txt = "Enable" if enabled else "Disable"
                 self.mark_as_modified(True, f"{txt} Job", "edit", (j, -1, -1))
                 job.set_enabled(enabled)
-                return selection.copy()
+                return True
         elif selection.is_action_selected() and 0 <= a < len(job.sub_actions):
             element = job.sub_actions[a]
             if element.enabled() != enabled:
                 txt = "Enable" if enabled else "Disable"
                 self.mark_as_modified(True, f"{txt} Action", "edit", (j, a, -1))
                 element.set_enabled(enabled)
-                return selection.copy()
+                return True
         elif selection.is_subaction_selected() and 0 <= a < len(job.sub_actions):
             action = job.sub_actions[a]
             if 0 <= s < len(action.sub_actions):
@@ -490,5 +491,5 @@ class ElementActionManager(ProjectHandler, QObject):
                     txt = "Enable" if enabled else "Disable"
                     self.mark_as_modified(True, f"{txt} Sub-action", "edit", (j, a, s))
                     element.set_enabled(enabled)
-                    return selection.copy()
-        return None
+                    return True
+        return False

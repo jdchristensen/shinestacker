@@ -12,7 +12,6 @@ from .. gui.action_config_dialog import ActionConfigDialog
 from .. gui.project_model import ActionConfig
 from .. gui.project_model import (
     get_action_working_path, get_action_input_path, get_action_output_path)
-from .. common_project.selection_state import SelectionState
 from .project_handler import ProjectHandler
 
 
@@ -23,7 +22,6 @@ class ProjectView(QWidget, LogManager, ProjectHandler):
     widget_updated_signal = Signal(tuple)
     run_finished_signal = Signal()
     fill_context_menu_signal = Signal(object, bool)
-    project_modified_signal = Signal(bool)
     current_action_working_path = None
     current_action_input_path = None
     current_action_output_path = None
@@ -33,20 +31,14 @@ class ProjectView(QWidget, LogManager, ProjectHandler):
     job_retouch_path_action = None
     action_dialog = None
 
-    def __init__(self, element_action, dark_theme, parent=None):
-        ProjectHandler.__init__(self, element_action.project_holder)
+    def __init__(self, project_holder, selection_state, dark_theme, parent=None):
+        ProjectHandler.__init__(self, project_holder)
         QWidget.__init__(self, parent)
         LogManager.__init__(self)
         self.dark_theme = dark_theme
-        self.selection_state = SelectionState()
-        self.selection_state = element_action.selection_state
-        self.element_action = element_action
+        self.selection_state = selection_state
         self._saved_selection = None
         self._setup_common_menu_actions()
-        self.element_action.project_modified_signal.connect(self._forward_modified_signal)
-
-    def _forward_modified_signal(self, modified):
-        self.project_modified_signal.emit(modified)
 
     def _setup_common_menu_actions(self):
         pass
@@ -241,29 +233,13 @@ class ProjectView(QWidget, LogManager, ProjectHandler):
             self.mark_as_modified(True, "Edit Action")
             self.refresh_ui()
 
-    def execute_set_enabled(self, enabled, selection=None, update_project=True):
-        if selection is None:
-            selection = self.selection_state
-        if not update_project:
-            self._update_widget_enable_state(selection, enabled)
-            return
-        new_selection = self.element_action.set_enabled(enabled, selection)
-        if new_selection is not False:
-            self._after_set_enabled(new_selection, enabled)
-            self.widget_enable_signal.emit(selection, enabled)
+    def set_enabled_all(self, enabled):
+        raise NotImplementedError
 
-    def execute_set_enabled_all(self, enabled, update_project=True):
-        if update_project:
-            self.element_action.set_enabled_all(enabled)
-        self._update_all_widgets_enabled(enabled)
+    def set_enabled(self, enabled, selection):
+        raise NotImplementedError
 
     def _after_set_enabled(self, selection, enabled):
-        raise NotImplementedError
-
-    def _update_widget_enable_state(self, selection, enabled):
-        raise NotImplementedError
-
-    def _update_all_widgets_enabled(self, enabled):
         raise NotImplementedError
 
     def add_job(self):
@@ -330,7 +306,7 @@ class ProjectView(QWidget, LogManager, ProjectHandler):
     def delete_element(self, deleted_element, new_selection, old_selection):
         raise NotImplementedError
 
-    def paste_element(self, old_selection):
+    def paste_element(self, old_selection, new_selection):
         raise NotImplementedError
 
     def clone_element(self, old_selection, new_selection):
