@@ -84,15 +84,19 @@ class ClassicProjectView(ProjectView, ListContainer):
         self.setLayout(layout)
         layout.addWidget(h_splitter)
         self.job_list().itemDoubleClicked.connect(self.on_job_edit)
+        self.job_list().itemDoubleClicked.connect(self._update_selection_state)
         self.action_list().itemDoubleClicked.connect(self.on_action_edit)
+        self.action_list().itemDoubleClicked.connect(self._update_selection_state)
+        self.job_list().itemClicked.connect(self._update_selection_state)
+        self.action_list().itemClicked.connect(self._update_selection_state)
+        self.job_list().currentRowChanged.connect(self.on_job_selected)
+        self.job_list().itemSelectionChanged.connect(self._update_selection_state)
+        self.action_list().itemSelectionChanged.connect(self._update_selection_state)
 
     def connect_signals(
             self, update_delete_action_state, set_enabled_sub_actions_gui):
-        self.job_list().currentRowChanged.connect(self.on_job_selected)
         self.job_list().itemSelectionChanged.connect(update_delete_action_state)
-        self.job_list().itemSelectionChanged.connect(self._get_selection_state)
         self.action_list().itemSelectionChanged.connect(update_delete_action_state)
-        self.action_list().itemSelectionChanged.connect(self._get_selection_state)
         self.enable_sub_actions_requested.connect(set_enabled_sub_actions_gui)
 
     def update_focus_styles(self):
@@ -297,7 +301,7 @@ class ClassicProjectView(ProjectView, ListContainer):
 
     def delete_element(self, selection=None, update_project=True, confirm=True):
         deleted_element = None
-        old_selection = self._get_selection_state().copy() if selection is None \
+        old_selection = self.selection_state.copy() if selection is None \
             else selection.copy()
         if selection is None:
             if update_project:
@@ -315,19 +319,15 @@ class ClassicProjectView(ProjectView, ListContainer):
                 self.refresh_ui(rows_to_state(self.project(), new_job_idx, -1))
         return deleted_element, old_selection
 
-    def copy_element(self):
-        self._update_selection_state()
-        ProjectView.copy_element(self)
-
     def paste_element(self, selection=None, update_project=True):
         success = False
-        old_selection = self._get_selection_state().copy() if selection is None \
+        old_selection = self.selection_state.copy() if selection is None \
             else selection.copy()
         if selection is None:
             if update_project:
                 success = self.element_action.paste_element()
                 if success:
-                    current_state = self._get_selection_state()
+                    current_state = self.selection_state.copy()
                     actions = None
                     if current_state.job_index >= 0:
                         job = self.project_job(current_state.job_index)
@@ -346,7 +346,7 @@ class ClassicProjectView(ProjectView, ListContainer):
 
     def cut_element(self):
         deleted_element = None
-        old_selection = self._get_selection_state().copy()
+        old_selection = self.selection_state.copy()
         deleted_element, _removal_state, new_selection = self.element_action.cut_element()
         if deleted_element:
             if new_selection:
@@ -356,7 +356,7 @@ class ClassicProjectView(ProjectView, ListContainer):
         return deleted_element, old_selection
 
     def clone_element(self, selection=None, update_project=True, confirm=True):
-        old_selection = self._get_selection_state().copy() if selection is None \
+        old_selection = self.selection_state.copy() if selection is None \
             else selection.copy()
         success = False
         if selection is None:
@@ -553,7 +553,7 @@ class ClassicProjectView(ProjectView, ListContainer):
                     for sub_action in action.sub_actions:
                         self.add_list_item(self.action_list(), sub_action, True)
             self.select_signal.emit()
-        self._get_selection_state()
+        self._update_selection_state()
 
     def _update_selection_state(self):
         if self.action_list_has_focus() and self.num_selected_actions() > 0:
@@ -569,10 +569,6 @@ class ClassicProjectView(ProjectView, ListContainer):
                 self.selection_state.widget_type = 'job'
         else:
             self.selection_state.reset()
-
-    def _get_selection_state(self):
-        self._update_selection_state()
-        return self.selection_state.copy()
 
     def _ensure_selected_visible(self):
         pass
@@ -594,7 +590,7 @@ class ClassicProjectView(ProjectView, ListContainer):
         self.set_style_sheet(dark_theme)
 
     def save_current_selection(self):
-        self._saved_selection = self._get_selection_state()
+        self._saved_selection = self.selection_state.copy()
 
     def restore_saved_selection(self):
         if self._saved_selection is None:
@@ -607,7 +603,7 @@ class ClassicProjectView(ProjectView, ListContainer):
             entry = super().undo()
             if entry:
                 self.post_undo(entry)
-                return True, self._get_selection_state(), entry
+                return True, self.selection_state.copy(), entry
         else:
             if selection:
                 self.post_undo(selection)
