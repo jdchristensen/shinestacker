@@ -1,5 +1,16 @@
 # Changelog
 
+## [v1.13.x] - 2026-01-28
+**GUI fixes and refactoring**
+
+### Fixed
+- multiple past issue in modern project view
+
+### Changes
+- code refactoring
+
+---
+
 This page reports the main releases only and the main changes therein.
 
 ## [v1.13.4] - 2026-01-28

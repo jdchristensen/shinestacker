@@ -333,6 +333,9 @@ class ProjectView(QWidget, LogManager, ProjectHandler):
     def paste_element(self, old_selection):
         raise NotImplementedError
 
+    def clone_element(self, old_selection, new_selection):
+        raise NotImplementedError
+
     def _before_add_sub_action(self):
         return True
 

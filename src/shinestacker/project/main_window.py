@@ -442,6 +442,15 @@ class MainWindow(ProjectIOHandler, QMainWindow):
             for _view_name, view in self.views.items():
                 view.paste_element(old_selection)
 
+    def clone_element(self):
+        if not self.current_view.enforce_stop_run():
+            return
+        old_selection = self.selection_state.copy()
+        success, new_selection = self.element_action.clone_element()
+        if success:
+            for _view_name, view in self.views.items():
+                view.clone_element(old_selection, new_selection)
+
     def _propagate_to_views(self, current_method, other_method=None, **kwargs):
         if current_method.__name__ == 'perform_undo':
             return current_method()
@@ -457,9 +466,6 @@ class MainWindow(ProjectIOHandler, QMainWindow):
                     getattr(view, method_name)(
                         selection=old_selection, update_project=False, **kwargs)
         return success, old_selection
-
-    def clone_element(self):
-        return self._propagate_to_views(self.current_view.clone_element, confirm=False)
 
     def move_element_up(self):
         return self._propagate_to_views(self.current_view.move_element_up)

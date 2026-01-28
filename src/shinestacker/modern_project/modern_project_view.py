@@ -504,48 +504,49 @@ class ModernProjectView(ProjectView):
             self.undo_manager().add_extra_data_to_last_entry(
                 'modern_widget_state', widget_state)
 
-    def paste_element(self, selection):
+    def paste_element(self, old_selection):
         try:
-            job_idx = selection.job_index
+            job_idx = old_selection.job_index
             if not 0 <= job_idx < self.num_project_jobs():
-                return False
+                return
             copy_buffer = self.element_action.copy_buffer()
             new_state = None
             element = None
-            if selection.is_job_selected():
+            if old_selection.is_job_selected():
                 if copy_buffer.type_name == constants.ACTION_JOB:
-                    new_state = self.element_action.new_state_after_insert(selection, 1)
+                    new_state = self.element_action.new_state_after_insert(old_selection, 1)
                     element = copy_buffer.clone()
                 else:
                     job = self.project().jobs[job_idx]
                     new_action_index = len(job.sub_actions)
                     new_state = SelectionState(job_idx, new_action_index, -1)
                     element = copy_buffer.clone()
-            elif selection.is_action_selected():
+            elif old_selection.is_action_selected():
                 if copy_buffer.type_name in constants.ACTION_TYPES:
-                    new_state = self.element_action.new_state_after_insert(selection, 1)
+                    new_state = self.element_action.new_state_after_insert(old_selection, 1)
                     element = copy_buffer.clone()
                 elif copy_buffer.type_name in constants.SUB_ACTION_TYPES:
-                    action = self.project().jobs[job_idx].sub_actions[selection.action_index]
+                    action = self.project().jobs[job_idx].sub_actions[old_selection.action_index]
                     if action.type_name != constants.ACTION_COMBO:
-                        return False
+                        return
                     new_subaction_index = len(action.sub_actions)
-                    new_state = SelectionState(job_idx, selection.action_index, new_subaction_index)
+                    new_state = SelectionState(
+                        job_idx, old_selection.action_index, new_subaction_index)
                     element = copy_buffer.clone()
                 else:
-                    return False
-            elif selection.is_subaction_selected():
+                    return
+            elif old_selection.is_subaction_selected():
                 if copy_buffer.type_name not in constants.SUB_ACTION_TYPES:
-                    return False
-                action = self.project().jobs[job_idx].sub_actions[selection.action_index]
+                    return
+                action = self.project().jobs[job_idx].sub_actions[old_selection.action_index]
                 if action.type_name != constants.ACTION_COMBO:
-                    return False
-                new_state = self.element_action.new_state_after_insert(selection, 1)
+                    return
+                new_state = self.element_action.new_state_after_insert(old_selection, 1)
                 element = copy_buffer.clone()
             else:
-                return False
+                return
             if not new_state or not element:
-                return False
+                return
             new_widget = self._insert_widget(new_state, element)
             if new_widget:
                 if self.selected_widget:
@@ -554,56 +555,37 @@ class ModernProjectView(ProjectView):
                 self.selected_widget = new_widget
                 self.selection_state.copy_from(new_state)
                 self.update_delete_action_state_requested.emit()
-                return True
         except Exception:
-            pass
-        self.refresh_ui()
-        return False
+            self.refresh_ui()
 
-    def clone_element(self, selection=None, update_project=True, confirm=True):
-        if not self.enforce_stop_run():
-            return None, None
-        success = False
-        old_selection = self.selection_state.copy() if selection is None else selection.copy()
-        if selection is None:
-            if update_project:
-                success, new_state = self.element_action.clone_element()
-                if success and new_state:
-                    self._clone_element_ui_only(old_selection, new_state)
-            else:
-                success = self._clone_element_ui_only(old_selection)
-        elif selection.is_valid():
-            success = self._clone_element_ui_only(selection)
-        return success, old_selection
-
-    def _clone_element_ui_only(self, selection, new_state=None):
-        if not selection or not selection.is_valid():
-            return False
+    def clone_element(self, old_selection, new_selection):
+        if not old_selection or not old_selection.is_valid():
+            return
         try:
-            job_idx = selection.job_index
+            job_idx = old_selection.job_index
             if not 0 <= job_idx < self.num_project_jobs():
-                return False
+                return
             job = self.project().jobs[job_idx]
-            if selection.is_job_selected():
+            if old_selection.is_job_selected():
                 element = self.project_job(job_idx)
-            elif selection.is_action_selected():
-                action_idx = selection.action_index
+            elif old_selection.is_action_selected():
+                action_idx = old_selection.action_index
                 if not 0 <= action_idx < len(job.sub_actions):
-                    return False
+                    return
                 element = job.sub_actions[action_idx]
-            elif selection.is_subaction_selected():
-                action_idx = selection.action_index
-                subaction_idx = selection.subaction_index
+            elif old_selection.is_subaction_selected():
+                action_idx = old_selection.action_index
+                subaction_idx = old_selection.subaction_index
                 if not 0 <= action_idx < len(job.sub_actions):
-                    return False
+                    return
                 action = job.sub_actions[action_idx]
                 if not 0 <= subaction_idx < len(action.sub_actions):
-                    return False
+                    return
                 element = action.sub_actions[subaction_idx]
             else:
-                return False
-            insert_state = new_state if new_state else \
-                self.element_action.new_state_after_clone(selection)
+                return
+            insert_state = new_selection if new_selection else \
+                self.element_action.new_state_after_clone(old_selection)
             new_widget = self._insert_widget(
                 insert_state, element.clone(name_postfix=self.element_action.CLONE_POSTFIX))
             if new_widget:
@@ -613,11 +595,8 @@ class ModernProjectView(ProjectView):
                 self.selected_widget = new_widget
                 self.selection_state.copy_from(insert_state)
                 self.update_delete_action_state_requested.emit()
-                return True
         except Exception:
-            pass
-        self.refresh_ui()
-        return False
+            self.refresh_ui()
 
     def enable(self, selection=None, update_project=True):
         if not self.enforce_stop_run():

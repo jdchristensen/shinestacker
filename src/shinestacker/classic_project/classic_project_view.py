@@ -305,26 +305,11 @@ class ClassicProjectView(ProjectView, ListContainer):
         else:
             self.refresh_ui()
 
-    def paste_element(self, selection):
-        self.refresh_ui(selection)
+    def paste_element(self, old_selection):
+        self.refresh_ui(old_selection)
 
-    def clone_element(self, selection=None, update_project=True, confirm=True):
-        old_selection = self.selection_state.copy() if selection is None \
-            else selection.copy()
-        success = False
-        if selection is None:
-            if update_project:
-                success, new_state = self.element_action.clone_element()
-                if success:
-                    self.refresh_ui(restore_state=new_state)
-            else:
-                self.refresh_ui()
-        elif selection and selection.is_valid():
-            job_idx = selection.job_index
-            if job_idx >= 0:
-                new_job_idx = max(0, min(job_idx, self.num_project_jobs() - 1))
-                self.refresh_ui(rows_to_state(self.project(), new_job_idx, -1))
-        return success, old_selection
+    def clone_element(self, old_selection, new_selection):
+        self.refresh_ui(new_selection)
 
     def enable(self, selection=None, update_project=True):
         self.execute_set_enabled(True, selection, update_project)
