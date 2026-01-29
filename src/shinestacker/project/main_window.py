@@ -371,19 +371,17 @@ class MainWindow(ProjectIOHandler, QMainWindow):
         self.menu_manager.add_action_entry_action.setEnabled(job_count > 0)
 
     def perform_undo(self):
-        for view in self.views.values():
-            view.save_current_selection()
-        success, _old_selection, undo_entry = self.current_view.perform_undo()
-        if success and undo_entry:
-            if undo_entry and undo_entry.get('action_type') == 'clear_run_info':
+        if not self.current_view.enforce_stop_run():
+            return
+        old_selection = self.selection_state.copy()
+        entry = self.undo()
+        if entry:
+            for view in self.views.values():
+                view.perform_undo(entry, old_selection)
+            if entry.get('action_type') == 'clear_run_info':
                 self.menu_manager.clear_run_info_action.setEnabled(True)
-            for _view_name, view in self.views.items():
-                if view != self.current_view:
-                    view.perform_undo(selection=undo_entry, update_project=False)
             self.update_title()
             self.show_status_message("Undo performed")
-            return True
-        return False
 
     def add_job(self):
         new_job_index = self.current_view.add_job()

@@ -1099,38 +1099,14 @@ class ModernProjectView(ProjectView):
         if self.job_widgets:
             self._select_job_widget(self.job_widgets[0])
 
-    def save_current_selection(self):
-        self._saved_selection = self.selection_state.copy() if self.selection_state else None
-
-    def restore_saved_selection(self):
-        if self._saved_selection is None:
-            return
-        self.selection_nav.restore_selection(self._saved_selection)
-        self._saved_selection = None
-
-    def perform_undo(self, selection=None, update_project=True):
-        if update_project and not self.enforce_stop_run():
-            return False, None, None
-        if update_project:
-            entry = super().undo()
-            if entry:
-                self.post_undo(entry)
-                self.show_status_message_requested.emit("Undo performed", 2000)
-                return True, self.selection_state.copy(), entry
-        else:
-            if selection:
-                self.post_undo(selection)
-            return True, None, selection
-        return False, None, None
-
-    def post_undo(self, entry=None):
+    def perform_undo(self, entry, old_selection):
         if entry:
             self.targeted_undo(entry)
         else:
             self.refresh_ui()
         if self._saved_selection:
-            self.selection_nav.restore_selection(self._saved_selection)
-            self._saved_selection = None
+            self.selection_nav.restore_selection(
+                SelectionState(*entry.get('affected_position', old_selection)))
 
     def targeted_undo(self, entry):
         action_type = entry.get('action_type', '')

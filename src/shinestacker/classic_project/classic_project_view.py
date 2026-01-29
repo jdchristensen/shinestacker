@@ -515,29 +515,7 @@ class ClassicProjectView(ProjectView, ListContainer):
             self.style_dark if dark_theme else self.style_light)
         self.set_style_sheet(dark_theme)
 
-    def save_current_selection(self):
-        self._saved_selection = self.selection_state.copy()
-
-    def restore_saved_selection(self):
-        if self._saved_selection is None:
-            return
-        self.refresh_ui(restore_state=self._saved_selection)
-        self._saved_selection = None
-
-    def perform_undo(self, selection=None, update_project=True):
-        if update_project:
-            entry = super().undo()
-            if entry:
-                self.post_undo(entry)
-                return True, self.selection_state.copy(), entry
-        else:
-            if selection:
-                self.post_undo(selection)
-            return True, None, selection
-        return False, None, None
-
-    def post_undo(self, entry=None):
+    def perform_undo(self, entry, old_selection):
         if entry:
-            self.refresh_ui(restore_state=self._saved_selection)
-        else:
-            self.restore_saved_selection()
+            self.refresh_ui(
+                restore_state=SelectionState(*entry.get('affected_position', old_selection)))

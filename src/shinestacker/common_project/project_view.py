@@ -160,12 +160,12 @@ class ProjectView(QWidget, LogManager, ProjectHandler):
     def mark_as_modified(self, modified=True, description='', action_type='',
                          affected_position=(-1, -1, -1)):
         ProjectHandler.mark_as_modified(self, modified, description, action_type, affected_position)
-        self.project_modified_signal.emit(modified)
+        # self.project_modified_signal.emit(modified)
 
     def save_undo_state(self, pre_state, description='', action_type='',
                         affected_position=(-1, -1, -1)):
         ProjectHandler.save_undo_state(self, pre_state, description, action_type, affected_position)
-        self.project_modified_signal.emit(True)
+        # self.project_modified_signal.emit(True)
 
     def _add_path_browsing_actions(self, menu, current_action):
         self.current_action_working_path, name = get_action_working_path(current_action)
@@ -403,13 +403,7 @@ class ProjectView(QWidget, LogManager, ProjectHandler):
         result = msg_box.exec()
         return result == QMessageBox.Yes
 
-    def save_current_selection(self):
-        raise NotImplementedError
-
-    def restore_saved_selection(self):
-        raise NotImplementedError
-
-    def post_undo(self):
+    def perform_undo(self, entry, old_selection):
         raise NotImplementedError
 
     def shift_element(self, old_selection, new_selection):
