@@ -497,7 +497,7 @@ class ModernProjectView(ProjectView):
             self._remove_widget(old_selection)
         if new_selection:
             self.selection_state.copy_from(new_selection)
-            self._update_selection(new_selection)
+            self.selection_nav.restore_selection(new_selection)
             self._ensure_selected_visible()
         else:
             self._reset_selection()
@@ -656,7 +656,7 @@ class ModernProjectView(ProjectView):
 
     def shift_element(self, old_selection, new_selection):
         self._move_widgets(old_selection, new_selection)
-        self._update_selection(new_selection)
+        self.selection_nav.restore_selection(new_selection)
         self._ensure_selected_visible()
 
     def set_style_sheet(self, dark_theme):
@@ -837,42 +837,6 @@ class ModernProjectView(ProjectView):
         if old_state:
             self.selection_nav.restore_selection(old_state)
             self._ensure_selected_visible()
-
-    def _update_selection(self, state):
-        if not state or not state.is_valid():
-            if self.selected_widget:
-                self.selected_widget.set_selected(False)
-            self.selected_widget = None
-            self.selection_state.reset()
-            return
-        self.selection_state.copy_from(state)
-        if state.is_job_selected():
-            if 0 <= state.job_index < len(self.job_widgets):
-                widget = self.job_widgets[state.job_index]
-                if self.selected_widget:
-                    self.selected_widget.set_selected(False)
-                widget.set_selected(True)
-                self.selected_widget = widget
-        elif state.is_action_selected():
-            if 0 <= state.job_index < len(self.job_widgets) and \
-                    0 <= state.action_index < self.job_widgets[state.job_index].num_child_widgets():
-                job_widget = self.job_widgets[state.job_index]
-                widget = job_widget.child_widgets[state.action_index]
-                if self.selected_widget:
-                    self.selected_widget.set_selected(False)
-                widget.set_selected(True)
-                self.selected_widget = widget
-        elif state.is_subaction_selected():
-            if 0 <= state.job_index < len(self.job_widgets) and \
-                    0 <= state.action_index < self.job_widgets[state.job_index].num_child_widgets():
-                job_widget = self.job_widgets[state.job_index]
-                action_widget = job_widget.child_widgets[state.action_index]
-                if 0 <= state.subaction_index < action_widget.num_child_widgets():
-                    widget = action_widget.child_widgets[state.subaction_index]
-                    if self.selected_widget:
-                        self.selected_widget.set_selected(False)
-                    widget.set_selected(True)
-                    self.selected_widget = widget
 
     def _safe_disconnect_all(self, widget):
         try:
