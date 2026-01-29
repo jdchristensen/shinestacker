@@ -412,26 +412,6 @@ class ClassicProjectView(ProjectView, ListContainer):
             menu.exec(event.globalPos())
     # pylint: enable=C0103
 
-    def get_current_selected_action(self):
-        if self.job_list_has_focus():
-            job_row = self.current_job_index()
-            if 0 <= job_row < self.num_project_jobs():
-                return self.project_job(job_row)
-        elif self.action_list_has_focus():
-            _job_row, _action_row, pos = self.get_current_action()
-            if not 0 <= pos.job_index < self.num_project_jobs():
-                return None
-            job = self.project_job(pos.job_index)
-            if not 0 <= pos.action_index < len(job.sub_actions):
-                return None
-            action = job.sub_actions[pos.action_index]
-            if pos.subaction_index < 0:
-                return action
-            if not 0 <= pos.subaction_index < len(action.sub_actions):
-                return None
-            return action.sub_actions[pos.subaction_index]
-        return None
-
     def get_job_at(self, index):
         return None if index < 0 else self.project_job(index)
 

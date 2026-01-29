@@ -213,26 +213,6 @@ class ModernProjectView(ProjectView):
             y_margin = 0
         self.scroll_area.ensureWidgetVisible(widget, 0, y_margin)
 
-    def get_current_selected_action(self):
-        if not self.selection_state.is_valid():
-            return None
-        job_idx = self.selection_state.job_index
-        action_idx = self.selection_state.action_index
-        subaction_idx = self.selection_state.subaction_index
-        if not self.is_valid_job_index(job_idx):
-            return None
-        job = self.project().jobs[job_idx]
-        if self.selection_state.is_job_selected():
-            return job
-        if not 0 <= action_idx < len(job.sub_actions):
-            return None
-        action = job.sub_actions[action_idx]
-        if self.selection_state.is_action_selected():
-            return action
-        if 0 <= subaction_idx < len(action.sub_actions):
-            return action.sub_actions[subaction_idx]
-        return None
-
     def _reset_selection(self):
         self.selected_widget = None
         self.selection_state.reset()

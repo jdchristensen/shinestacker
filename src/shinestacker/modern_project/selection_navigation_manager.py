@@ -11,7 +11,7 @@ class SelectionNavigationManager(ProjectHandler, QObject):
         self.select = select_callback
 
     def handle_key_navigation(self, key):
-        if not self.job_widgets_exist():
+        if not self.jobs_exist():
             return False
         if key in ("up", "left"):
             self.select_previous_widget()
@@ -137,17 +137,17 @@ class SelectionNavigationManager(ProjectHandler, QObject):
                 return len(action.sub_actions) if hasattr(action, 'sub_actions') else 0
         return 0
 
-    def job_widgets_exist(self):
+    def jobs_exist(self):
         return self.num_project_jobs() > 0
 
     def restore_selection(self, old_state):
         if not old_state.is_valid():
-            if self.job_widgets_exist():
+            if self.jobs_exist():
                 self.select('job', 0)
             return
         job_idx = old_state.job_index
         if not self._is_valid_job_index(job_idx):
-            if self.job_widgets_exist():
+            if self.jobs_exist():
                 self.select('job', 0)
             return
         if old_state.is_job_selected():

@@ -1,4 +1,4 @@
-# pylint: disable=C0114, C0115, C0116, E0611, R0902, E1101, W0718, R0904, E1121
+# pylint: disable=C0114, C0115, C0116, E0611, R0902, E1101, W0718, R0904, E1121, R0911
 import os
 import subprocess
 import traceback
@@ -52,7 +52,24 @@ class ProjectView(QWidget, LogManager, ProjectHandler):
             self.edit_action(current_action)
 
     def get_current_selected_action(self):
-        raise NotImplementedError
+        if not self.selection_state.is_valid():
+            return None
+        job_idx = self.selection_state.job_index
+        action_idx = self.selection_state.action_index
+        subaction_idx = self.selection_state.subaction_index
+        if not self.is_valid_job_index(job_idx):
+            return None
+        job = self.project().jobs[job_idx]
+        if self.selection_state.is_job_selected():
+            return job
+        if not 0 <= action_idx < len(job.sub_actions):
+            return None
+        action = job.sub_actions[action_idx]
+        if self.selection_state.is_action_selected():
+            return action
+        if 0 <= subaction_idx < len(action.sub_actions):
+            return action.sub_actions[subaction_idx]
+        return None
 
     def browse_path(self, path):
         ps = path.split(constants.PATH_SEPARATOR)
