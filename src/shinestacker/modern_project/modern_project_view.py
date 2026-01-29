@@ -1102,11 +1102,10 @@ class ModernProjectView(ProjectView):
     def perform_undo(self, entry, old_selection):
         if entry:
             self.targeted_undo(entry)
-        else:
-            self.refresh_ui()
-        if self._saved_selection:
             self.selection_nav.restore_selection(
                 SelectionState(*entry.get('affected_position', old_selection)))
+        else:
+            self.refresh_ui()
 
     def targeted_undo(self, entry):
         action_type = entry.get('action_type', '')
