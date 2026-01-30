@@ -234,11 +234,10 @@ class ElementActionManager(ProjectHandler, QObject):
         element = self.project_element(*position)
         if not element:
             return None, None
-        element_type = self.selection_state.type()
         if confirm and not self.confirm_delete_message(
                 element_type, element.params.get('name', '')):
             return None, None
-        self.mark_as_modified(True, f"Delete {element_type.title()}", "delete", position)
+        self.mark_as_modified(True, f"Delete {self.selection_state.type().title()}", "delete", position)
         deleted_element = None
         idx, s = self._get_position_stack(position)
         if len(idx) == 0:
@@ -265,31 +264,12 @@ class ElementActionManager(ProjectHandler, QObject):
 
     def set_enabled(self, enabled, selection):
         if selection is None:
-            selection = self.selection_state
-        if not selection.is_valid():
             return False
-        j, a, s = selection.job_index, selection.action_index, selection.subaction_index
-        if not 0 <= j < self.num_project_jobs():
+        position = self.selection_state.to_tuple()
+        if not self.valid_indices(*position):
             return False
-        job = self.project().jobs[j]
         txt = "Enable" if enabled else "Disable"
-        if selection.is_job_selected():
-            if job.enabled() != enabled:
-                self.mark_as_modified(True, f"{txt} Job", "edit", (j, -1, -1))
-                job.set_enabled(enabled)
-                return True
-        elif selection.is_action_selected() and 0 <= a < len(job.sub_actions):
-            element = job.sub_actions[a]
-            if element.enabled() != enabled:
-                self.mark_as_modified(True, f"{txt} Action", "edit", (j, a, -1))
-                element.set_enabled(enabled)
-                return True
-        elif selection.is_subaction_selected() and 0 <= a < len(job.sub_actions):
-            action = job.sub_actions[a]
-            if 0 <= s < len(action.sub_actions):
-                element = action.sub_actions[s]
-                if element.enabled() != enabled:
-                    self.mark_as_modified(True, f"{txt} Sub-action", "edit", (j, a, s))
-                    element.set_enabled(enabled)
-                    return True
-        return False
+        element = self.project_element(*position)
+        self.mark_as_modified(True, f"{txt} {self.selection_state.type().title()}", "edit", position)
+        element.set_enabled(enabled)
+        return True
