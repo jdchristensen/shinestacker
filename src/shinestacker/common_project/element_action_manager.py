@@ -105,25 +105,15 @@ class ElementActionManager(ProjectHandler, QObject):
     def get_action(self, selection):
         if not selection.is_action_selected() and not selection.is_subaction_selected():
             return None
-        job = self.project().jobs[selection.job_index]
-        action = job.sub_actions[selection.action_index]
-        if selection.is_subaction_selected():
-            return action.sub_actions[selection.subaction_index]
-        return action
+        return self.project_element(*selection.to_tuple())
 
     def get_job_actions(self, selection):
-        if selection.job_index < 0:
-            return None
-        job = self.project().jobs[selection.job_index]
-        return job.sub_actions
+        job = self.project_job(selection.job_index)
+        return job.sub_actions if job is not None else None
 
-    def get_sub_actions(self, selection):
-        if selection.job_index < 0 or selection.action_index < 0:
-            return None
-        job = self.project().jobs[selection.job_index]
-        if selection.action_index >= len(job.sub_actions):
-            return None
-        return job.sub_actions[selection.action_index].sub_actions
+    def get_subactions(self, selection):
+        action = self.project_action(selection.job_index, selection.action_index)
+        return action.sub_actions if action is not None else None
 
     def confirm_delete_message(self, type_name, element_name):
         return QMessageBox.question(
@@ -324,7 +314,7 @@ class ElementActionManager(ProjectHandler, QObject):
             if not 0 <= job_index < self.num_project_jobs():
                 return False, None
             self.mark_as_modified(True, "Duplicate Job", "clone", (job_index, -1, -1))
-            job = self.project().jobs[job_index]
+            job = self.project_job(job_index)
             job_clone = job.clone(name_postfix=CLONE_POSTFIX)
             new_job_index = job_index + 1
             self.project().jobs.insert(new_job_index, job_clone)
@@ -338,10 +328,10 @@ class ElementActionManager(ProjectHandler, QObject):
             self.mark_as_modified(
                 True, f"Duplicate {label}", "clone",
                 (selection.job_index, selection.action_index, selection.subaction_index))
-            job = self.project().jobs[selection.job_index]
+            job = self.project_job(selection.job_index)
             if selection.is_subaction_selected():
                 cloned = self.get_action(selection).clone(name_postfix=CLONE_POSTFIX)
-                self.get_sub_actions(selection).insert(selection.subaction_index + 1, cloned)
+                self.get_subactions(selection).insert(selection.subaction_index + 1, cloned)
             else:
                 cloned = self.get_action(selection).clone(name_postfix=CLONE_POSTFIX)
                 job.sub_actions.insert(selection.action_index + 1, cloned)
