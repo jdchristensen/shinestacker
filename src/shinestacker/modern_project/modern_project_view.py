@@ -331,18 +331,13 @@ class ModernProjectView(ProjectView):
     def _refresh_after_structure_change(self):
         self._refresh_job_widget_signals()
 
-    def _on_widget_clicked(self, widget, widget_type, job_index, action_index=None,
-                           subaction_index=None):
+    def _on_widget_clicked(self, widget, widget_type, job_index, action_index=-1,
+                           subaction_index=-1):
         if self.selected_widget:
             self.selected_widget.set_selected(False)
         widget.set_selected(True)
         self.selected_widget = widget
-        if widget_type == 'job':
-            self.selection_state.set_job(job_index)
-        elif widget_type == 'action':
-            self.selection_state.set_action(job_index, action_index)
-        elif widget_type == 'subaction':
-            self.selection_state.set_subaction(job_index, action_index, subaction_index)
+        self.selection_state.from_tuple((job_index, action_index, subaction_index))
         self.update_delete_action_state_requested.emit()
         self.setFocus()
 

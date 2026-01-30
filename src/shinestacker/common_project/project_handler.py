@@ -107,14 +107,40 @@ class ProjectHandler:
     def num_project_jobs(self):
         return self.project_holder.num_project_jobs()
 
+    def is_valid_job_index(self, index):
+        return 0 <= index < self.num_project_jobs()
+
     def project_job(self, index):
-        return self.project_holder.project_job(index)
+        return self.project_holder.project_job(index) if self.is_valid_job_index(index) else None
+
+    def is_valid_index_in(self, a, index):
+        return False if a is None else 0 <= index < len(a.sub_actions)
+
+    def project_action(self, job_index, action_index):
+        job = self.project_job(job_index)
+        if job is None:
+            return None
+        return job.sub_actions[action_index] \
+            if self.is_valid_index_in(job, action_index) else None
+
+    def project_subaction(self, job_index, action_index, subaction_index):
+        action = self.project_action(job_index, action_index)
+        if action is None:
+            return None
+        return action.sub_actions[subaction_index] \
+            if self.is_valid_index_in(action, subaction_index) else None
+
+    def project_element(self, job_index, action_index, subaction_index):
+        if job_index < 0:
+            return None
+        if action_index < 0:
+            return self.project_job(job_index)
+        if subaction_index < 0:
+            return self.project_action(job_index, action_index)
+        return self.project_subaction(job_index, action_index, subaction_index)
 
     def add_job_to_project(self, job):
         self.project_holder.add_job_to_project(job)
-
-    def is_valid_job_index(self, index):
-        return 0 <= index < self.num_project_jobs()
 
     def modified(self):
         return self.project_holder.modified

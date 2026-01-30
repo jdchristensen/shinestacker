@@ -99,9 +99,6 @@ class ElementActionManager(ProjectHandler, QObject):
     def is_subaction_selected(self):
         return self.selection_state.is_subaction_selected()
 
-    def get_selected_job_index(self):
-        return self.selection_state.job_index
-
     def is_valid_selection(self):
         return self.selection_state.is_valid()
 
@@ -260,27 +257,6 @@ class ElementActionManager(ProjectHandler, QObject):
                     return action.sub_actions.pop(subaction_index)
         return None
 
-    def _op_copy_job(self, job_index):
-        if 0 <= job_index < self.num_project_jobs():
-            return self.project_job(job_index).clone()
-        return None
-
-    def _op_copy_action(self, job_index, action_index):
-        if 0 <= job_index < self.num_project_jobs():
-            job = self.project_job(job_index)
-            if 0 <= action_index < len(job.sub_actions):
-                return job.sub_actions[action_index].clone()
-        return None
-
-    def _op_copy_subaction(self, job_index, action_index, subaction_index):
-        if 0 <= job_index < self.num_project_jobs():
-            job = self.project_job(job_index)
-            if 0 <= action_index < len(job.sub_actions):
-                action = job.sub_actions[action_index]
-                if 0 <= subaction_index < len(action.sub_actions):
-                    return action.sub_actions[subaction_index].clone()
-        return None
-
     def shift_element(self, delta):
         if self.is_job_selected():
             return self._shift_job(delta)
@@ -337,26 +313,14 @@ class ElementActionManager(ProjectHandler, QObject):
         return False
 
     def copy_element(self):
-        if self.is_job_selected():
-            job_clone = self._op_copy_job(self.get_selected_job_index())
-            if job_clone:
-                self.set_copy_buffer(job_clone)
-        elif self.is_action_selected():
-            selection = self.selection_state
-            element_clone = self._op_copy_action(selection.job_index, selection.action_index)
-            if element_clone:
-                self.set_copy_buffer(element_clone)
-        elif self.is_subaction_selected():
-            selection = self.selection_state
-            element_clone = self._op_copy_subaction(
-                selection.job_index, selection.action_index, selection.subaction_index)
-            if element_clone:
-                self.set_copy_buffer(element_clone)
+        element_clone = self.project_element(*self.selection_state.to_tuple()).clone()
+        if element_clone:
+            self.set_copy_buffer(element_clone)
 
     def clone_element(self):
         selection = self.selection_state
         if selection.is_job_selected():
-            job_index = self.get_selected_job_index()
+            job_index = self.selection_state.job_index
             if not 0 <= job_index < self.num_project_jobs():
                 return False, None
             self.mark_as_modified(True, "Duplicate Job", "clone", (job_index, -1, -1))
