@@ -18,7 +18,7 @@ from .project_handler import ProjectHandler
 class ProjectView(QWidget, LogManager, ProjectHandler):
     refresh_ui_signal = Signal()
     enable_sub_actions_requested = Signal(bool)
-    widget_enable_signal = Signal(tuple, bool)
+    widget_enable_signal = Signal(tuple)
     widget_updated_signal = Signal(tuple)
     run_finished_signal = Signal()
     fill_context_menu_signal = Signal(object, bool)

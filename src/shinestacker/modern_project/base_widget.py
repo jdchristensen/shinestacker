@@ -78,7 +78,6 @@ class BaseWidget(QFrame):
         self.image_area_widget = None
         self._init_widget(data_object)
         self._update_stylesheet()
-        self.enabled_toggled.connect(self._on_enabled_toggled)
         self.setCursor(Qt.ArrowCursor)
         self._create_conditional_icons()
 
@@ -244,6 +243,7 @@ class BaseWidget(QFrame):
         self._enabled = not self._enabled
         self._update_enabled_icon()
         self._update_stylesheet()
+        self.clicked.emit()
         self.enabled_toggled.emit(self._enabled)
         event.accept()
 
@@ -323,10 +323,6 @@ class BaseWidget(QFrame):
     def clear_all(self):
         for child in self.child_widgets:
             child.clear_all()
-
-    def _on_enabled_toggled(self, enabled):
-        self.data_object.params['enabled'] = enabled
-        self._update_stylesheet()
 
     def set_enabled_and_update(self, enabled):
         self._enabled = enabled

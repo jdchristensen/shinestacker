@@ -85,7 +85,7 @@ class MainWindow(ProjectIOHandler, QMainWindow):
             self.menu_manager.set_enabled_sub_actions_gui)
 
         signal_map = [
-            ('widget_enable_signal', self.handle_widget_enable),
+            ('widget_enable_signal', self.set_enabled),
             ('widget_updated_signal', self.handle_widget_updated),
             ('run_finished_signal', self.handle_run_finished),
             ('fill_context_menu_signal', self.menu_manager.handle_fill_context_menu),
@@ -479,7 +479,7 @@ class MainWindow(ProjectIOHandler, QMainWindow):
         if not self.current_view.enforce_stop_run():
             return
         selection = self.selection_state.copy()
-        success = self.element_action.set_enabled(enabled, selection)
+        success = self.element_action.set_enabled(selection, enabled)
         if success:
             for view in self.views.values():
                 view.set_enabled(enabled, selection)
@@ -530,10 +530,6 @@ class MainWindow(ProjectIOHandler, QMainWindow):
         success = self.current_view.stop()
         if success:
             self.handle_run_finished()
-
-    def handle_widget_enable(self, selection, enabled):
-        for view in self.views.values():
-            view.set_enabled(enabled, selection)
 
     def handle_widget_updated(self, selection):
         for view in self.views.values():

@@ -203,7 +203,7 @@ class ElementActionManager(ProjectHandler, QObject):
         for job in self.project().jobs:
             job.set_enabled_all(enabled)
 
-    def set_enabled(self, enabled, selection):
+    def set_enabled(self, selection, enabled):
         if selection is None:
             return False
         position = selection.to_tuple()
