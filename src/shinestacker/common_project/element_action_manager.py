@@ -83,62 +83,34 @@ class ElementActionManager(ProjectHandler, QObject):
     def paste_element(self):
         if not self.has_copy_buffer():
             return False
+        position = self.selection_state.to_tuple()
+        if not self.valid_indices(*position):
+            return False
         copy_buffer = self.copy_buffer()
-        selection = self.selection_state
         if copy_buffer.type_name == constants.ACTION_JOB:
-            return self._paste_job(copy_buffer, selection)
-        if copy_buffer.type_name in constants.ACTION_TYPES:
-            return self._paste_action(copy_buffer, selection)
-        if copy_buffer.type_name in constants.SUB_ACTION_TYPES:
-            return self._paste_subaction(copy_buffer, selection)
-        return False
-
-    def _paste_job(self, copy_buffer, selection):
-        if self.num_project_jobs() == 0:
-            insert_index = 0
+            level = 0
+            idx = (-1, -1)
+        elif copy_buffer.type_name in constants.ACTION_TYPES:
+            level = 1
+            idx = (position[0], -1)
+        elif copy_buffer.type_name in constants.SUB_ACTION_TYPES:
+            level = 2
+            idx = (position[0], position[1])
+            action = self.project_action(*idx)
+            if not action or action.type_name != constants.ACTION_COMBO:
+                return False
         else:
-            insert_index = selection.job_index + 1 \
-                if selection.job_index >= 0 else self.num_project_jobs()
-            insert_index = min(max(insert_index, 0), self.num_project_jobs())
-        self.mark_as_modified(True, "Paste Job", "paste", (insert_index, -1, -1))
-        self.project().jobs.insert(insert_index, copy_buffer.clone())
-        self.selection_state.set_indices(insert_index)
-        return True
-
-    def _paste_action(self, copy_buffer, selection):
-        if not 0 <= selection.job_index < self.num_project_jobs():
             return False
-        job = self.project().jobs[selection.job_index]
-        if selection.is_action_selected() or selection.is_subaction_selected():
-            insert_index = selection.action_index + 1
-        else:
-            insert_index = len(job.sub_actions)
-        insert_index = min(max(insert_index, 0), len(job.sub_actions))
-        self.mark_as_modified(
-            True, "Paste Action", "paste", (selection.job_index, insert_index, -1))
-        job.sub_actions.insert(insert_index, copy_buffer.clone())
-        self.selection_state.set_indices(selection.job_index, insert_index, -1)
-        return True
-
-    def _paste_subaction(self, copy_buffer, selection):
-        if not 0 <= selection.job_index < self.num_project_jobs():
+        container = self.project_container(*idx)
+        if container is None:
             return False
-        job = self.project().jobs[selection.job_index]
-        if selection.action_index < 0 or selection.action_index >= len(job.sub_actions):
-            return False
-        action = job.sub_actions[selection.action_index]
-        if action.type_name != constants.ACTION_COMBO:
-            return False
-        if selection.is_subaction_selected():
-            insert_index = selection.subaction_index + 1
-        else:
-            insert_index = len(action.sub_actions)
-        insert_index = min(max(insert_index, 0), len(action.sub_actions))
-        self.mark_as_modified(
-            True, "Paste Sub-action", "paste",
-            (selection.job_index, selection.action_index, insert_index))
-        action.sub_actions.insert(insert_index, copy_buffer.clone())
-        self.selection_state.set_indices(selection.job_index, selection.action_index, insert_index)
+        pos = position[level] if len(position) > level else -1
+        insert_index = min(max(pos + 1 if pos >= 0 else len(container), 0), len(container))
+        element_type = ["Job", "Action", "Subaction"][level]
+        self.mark_as_modified(True, f"Paste {element_type}", "paste", position)
+        container.insert(insert_index, copy_buffer.clone())
+        new_position = list(position[:level]) + [insert_index] + [-1] * (2 - level)
+        self.selection_state.from_tuple(new_position)
         return True
 
     def shift_element(self, delta):
@@ -153,7 +125,7 @@ class ElementActionManager(ProjectHandler, QObject):
             return False
         new_index = current_index + delta
         if 0 <= new_index < len(container):
-            container.insert(new_index, container.pop(current_index))            
+            container.insert(new_index, container.pop(current_index))
             if position[2] >= 0:
                 self.selection_state.set_subaction(position[0], position[1], new_index)
             elif position[1] >= 0:
@@ -175,7 +147,7 @@ class ElementActionManager(ProjectHandler, QObject):
         if position[1] >= 0:
             return [position[0]], position[1]
         if position[0] >= 0:
-            return[-1], position[0]
+            return [-1], position[0]
         return [], -1
 
     def clone_element(self):
@@ -201,10 +173,12 @@ class ElementActionManager(ProjectHandler, QObject):
         element = self.project_element(*position)
         if not element:
             return None, None
+        element_type = self.selection_state.type()
         if confirm and not self.confirm_delete_message(
                 element_type, element.params.get('name', '')):
             return None, None
-        self.mark_as_modified(True, f"Delete {self.selection_state.type().title()}", "delete", position)
+        self.mark_as_modified(
+            True, f"Delete {element_type.title()}", "delete", position)
         deleted_element = None
         idx, s = self._get_position_stack(position)
         if len(idx) == 0:
