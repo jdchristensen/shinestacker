@@ -16,72 +16,27 @@ class ElementActionManager(ProjectHandler, QObject):
         self.selection_state = selection_state
         QObject.__init__(self, parent)
 
-    def new_state_after_delete(self, state):
+    def new_state_after_op(self, state, delta):
         job_idx, act_idx, sub_idx = state.to_tuple()
         job = self.project_job(job_idx)
         if job is None:
             return SelectionState()
-        if sub_idx >= 0:
-            if act_idx > len(job.sub_actions):
-                return SelectionState(job_idx)
-            num_sub = len(job.sub_actions[act_idx].sub_actions)
-            return SelectionState(job_idx, act_idx, min(sub_idx, num_sub - 1))
-        if act_idx >= 0:
-            job = self.project_job(job_idx)
-            num_act = len(job.sub_actions) + 1
-            if act_idx >= num_act:
-                return SelectionState(job_idx)
-            if act_idx < num_act - 1:
-                return SelectionState(job_idx, act_idx)
-            if act_idx == 0:
-                return SelectionState(job_idx)
-            return SelectionState(job_idx, act_idx - 1)
-        num_jobs = self.num_project_jobs() + 1
-        if job_idx >= num_jobs:
-            return SelectionState()
-        if job_idx < num_jobs - 1:
+        if act_idx > len(job.sub_actions):
             return SelectionState(job_idx)
-        if job_idx == 0:
-            return SelectionState()
-        return SelectionState(job_idx - 1)
-
-    def new_state_after_clone(self, state):
-        job_idx, act_idx, sub_idx = state.to_tuple()
         if sub_idx >= 0:
-            return SelectionState(job_idx, act_idx, sub_idx + 1)
+            num_sub = len(job.sub_actions[act_idx].sub_actions)
+            return SelectionState(job_idx, act_idx, min(sub_idx + delta, num_sub - 1))
         if act_idx >= 0:
-            return SelectionState(job_idx, act_idx + 1)
-        return SelectionState(job_idx + 1)
+            num_act = len(job.sub_actions)
+            return SelectionState(job_idx, min(act_idx + delta, num_act - 1))
+        num_job = self.num_project_jobs()
+        return SelectionState(min(job_idx + delta, num_job - 1))
 
-    def new_state_after_insert(self, state, delta):
-        if not state.is_valid():
-            return SelectionState()
-        job_idx, act_idx, sub_idx = state.to_tuple()
-        if sub_idx >= 0:
-            if job_idx >= self.num_project_jobs():
-                return SelectionState(job_idx, act_idx, sub_idx)
-            job = self.project_job(job_idx)
-            if act_idx >= len(job.sub_actions):
-                return SelectionState(job_idx, act_idx, sub_idx)
-            action = job.sub_actions[act_idx]
-            num_sub = len(action.sub_actions) + 1
-            new_sub_idx = sub_idx + delta
-            if 0 <= new_sub_idx < num_sub:
-                return SelectionState(job_idx, act_idx, new_sub_idx)
-        elif act_idx >= 0:
-            if job_idx >= self.num_project_jobs():
-                return SelectionState(job_idx, act_idx)
-            job = self.project_job(job_idx)
-            num_act = len(job.sub_actions) + 1
-            new_act_idx = act_idx + delta
-            if 0 <= new_act_idx < num_act:
-                return SelectionState(job_idx, new_act_idx)
-        else:
-            num_jobs = self.num_project_jobs() + 1
-            new_job_idx = job_idx + delta
-            if 0 <= new_job_idx < num_jobs:
-                return SelectionState(new_job_idx)
-        return SelectionState(job_idx, act_idx, sub_idx)
+    def new_state_after_delete(self, state):
+        return self.new_state_after_op(state, 0)
+
+    def new_state_after_insert(self, state):
+        return self.new_state_after_op(state, 1)
 
     def is_job_selected(self):
         return self.selection_state.is_job_selected()
@@ -140,8 +95,6 @@ class ElementActionManager(ProjectHandler, QObject):
             element = copy_buffer.clone()
             current_job.sub_actions.insert(new_action_index, element)
             return True, new_action_index
-            if self.num_project_jobs() > 0:
-                new_job_index = min(max(job_index + 1, 0), self.num_project_jobs())
         element = copy_buffer.clone()
         self.project().jobs.insert(new_job_index, element)
         return True, new_job_index
@@ -168,7 +121,7 @@ class ElementActionManager(ProjectHandler, QObject):
             copy_buffer, selection.job_index,
             "Paste Job", "paste", (new_job_index, -1, -1))
         if success:
-            new_state = self.new_state_after_insert(selection, 1)
+            new_state = self.new_state_after_insert(selection)
             self.selection_state.copy_from(new_state)
         return success
 
@@ -177,10 +130,10 @@ class ElementActionManager(ProjectHandler, QObject):
             return False
         job = self.project().jobs[selection.job_index]
         if selection.is_action_selected():
-            new_state = self.new_state_after_insert(selection, 1)
+            new_state = self.new_state_after_insert(selection)
             new_action_index = new_state.action_index
         elif selection.is_subaction_selected():
-            new_state = self.new_state_after_insert(selection, 1)
+            new_state = self.new_state_after_insert(selection)
             new_action_index = new_state.action_index
         else:
             new_action_index = len(job.sub_actions)
@@ -200,7 +153,7 @@ class ElementActionManager(ProjectHandler, QObject):
         job = self.project().jobs[selection.job_index]
         if selection.is_subaction_selected():
             action_index = selection.action_index
-            new_state = self.new_state_after_insert(selection, 1)
+            new_state = self.new_state_after_insert(selection)
             new_subaction_index = new_state.subaction_index
         else:
             action_index = selection.action_index
@@ -296,9 +249,9 @@ class ElementActionManager(ProjectHandler, QObject):
 
     def copy_element(self):
         if self.selection_state and self.selection_state.is_valid():
-            element_clone = self.project_element(*self.selection_state.to_tuple()).clone()
-            if element_clone:
-                self.set_copy_buffer(element_clone)
+            element = self.project_element(*self.selection_state.to_tuple())
+            if element:
+                self.set_copy_buffer(element.clone())
 
     def clone_element(self):
         selection = self.selection_state
@@ -325,7 +278,7 @@ class ElementActionManager(ProjectHandler, QObject):
                 self.get_subactions(selection).insert(selection.subaction_index + 1, cloned)
             else:
                 job.sub_actions.insert(selection.action_index + 1, cloned)
-            new_state = self.new_state_after_clone(selection)
+            new_state = self.new_state_after_insert(selection)
             return True, new_state
         return False, None
 

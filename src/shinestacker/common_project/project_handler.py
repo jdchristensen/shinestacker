@@ -130,7 +130,7 @@ class ProjectHandler:
         return action.sub_actions[subaction_index] \
             if self.is_valid_index_in(action, subaction_index) else None
 
-    def project_element(self, job_index, action_index, subaction_index):
+    def project_element(self, job_index, action_index=-1, subaction_index=-1):
         if job_index < 0:
             return None
         if action_index < 0:
@@ -138,6 +138,19 @@ class ProjectHandler:
         if subaction_index < 0:
             return self.project_action(job_index, action_index)
         return self.project_subaction(job_index, action_index, subaction_index)
+
+    def valid_indices(self, job_index, action_index=-1, subaction_index=-1):
+        job = self.project_job(job_index)
+        if job is None:
+            return False
+        if action_index == -1:
+            return True
+        if not self.is_valid_index_in(job, action_index):
+            return False
+        if subaction_index == -1:
+            return True
+        action = job.sub_actions[action_index]
+        return self.is_valid_index_in(action, subaction_index)
 
     def add_job_to_project(self, job):
         self.project_holder.add_job_to_project(job)

@@ -484,6 +484,7 @@ class ModernProjectView(ProjectView):
                     self.selected_widget.set_selected(False)
                 new_widget.set_selected(True)
                 self.selected_widget = new_widget
+                self._ensure_selected_visible()
                 self.selection_state.copy_from(new_selection)
                 self.update_delete_action_state_requested.emit()
         except Exception:
@@ -522,6 +523,7 @@ class ModernProjectView(ProjectView):
                     self.selected_widget.set_selected(False)
                 new_widget.set_selected(True)
                 self.selected_widget = new_widget
+                self._ensure_selected_visible()
                 self.selection_state.copy_from(new_selection)
                 self.update_delete_action_state_requested.emit()
         except Exception:
