@@ -340,7 +340,7 @@ class ProjectView(QWidget, LogManager, ProjectHandler):
             return False, "Invalid Action Type", "Sub-actions can only be added to Combo actions."
         return True, "", ""
 
-    def delete_element(self, deleted_element, new_selection, old_selection):
+    def delete_element(self, new_selection, old_selection):
         raise NotImplementedError
 
     def paste_element(self, old_selection, new_selection):

@@ -457,7 +457,7 @@ class ModernProjectView(ProjectView):
             else:
                 job_widget.set_selected(False)
 
-    def delete_element(self, deleted_element, new_selection, old_selection):
+    def delete_element(self, new_selection, old_selection):
         widget_state = None
         if old_selection and old_selection.is_valid():
             widget = self._find_widget(old_selection)
@@ -1068,8 +1068,7 @@ class ModernProjectView(ProjectView):
 
     def _undo_add_action(self, state, description):
         try:
-            if state.is_valid():
-                self._remove_widget(state)
+            self._remove_widget(state)
         except Exception:
             self.refresh_ui()
 
