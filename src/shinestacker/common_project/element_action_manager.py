@@ -265,11 +265,11 @@ class ElementActionManager(ProjectHandler, QObject):
     def set_enabled(self, enabled, selection):
         if selection is None:
             return False
-        position = self.selection_state.to_tuple()
-        if not self.valid_indices(*position):
+        position = selection.to_tuple()
+        element = self.project_element(*position)
+        if not element or element.enabled() == enabled:
             return False
         txt = "Enable" if enabled else "Disable"
-        element = self.project_element(*position)
-        self.mark_as_modified(True, f"{txt} {self.selection_state.type().title()}", "edit", position)
+        self.mark_as_modified(True, f"{txt} {selection.type().title()}", "edit", position)
         element.set_enabled(enabled)
         return True
