@@ -3,6 +3,7 @@ from PySide6.QtCore import QObject, Signal
 from PySide6.QtWidgets import QMessageBox, QDialog
 from .. config.constants import constants
 from .. gui.action_config_dialog import ActionConfigDialog
+from .. gui.project_model import ActionConfig
 from .. common_project.selection_state import SelectionState
 from .project_handler import ProjectHandler
 
@@ -15,6 +16,7 @@ class ElementActionManager(ProjectHandler, QObject):
     def __init__(self, project_holder, selection_state, parent=None):
         ProjectHandler.__init__(self, project_holder)
         self.selection_state = selection_state
+        self.action_dialog = None
         QObject.__init__(self, parent)
 
     def new_state_after_op(self, state, delta):
@@ -216,6 +218,9 @@ class ElementActionManager(ProjectHandler, QObject):
         element.set_enabled(enabled)
         return True
 
+    def action_config_dialog(self, action):
+        return ActionConfigDialog(action, self.current_file_directory(), self.parent())
+
     def edit_element(self, selection):
         element = self.project_element(*selection.to_tuple())
         pre_edit_project = self.project().clone()
@@ -226,5 +231,13 @@ class ElementActionManager(ProjectHandler, QObject):
             return True
         return False
 
-    def action_config_dialog(self, action):
-        return ActionConfigDialog(action, self.current_file_directory(), self.parent())
+    def add_job(self):
+        job_action = ActionConfig("Job")
+        self.action_dialog = self.action_config_dialog(job_action)
+        if self.action_dialog.exec() == QDialog.Accepted:
+            new_job_index = 0 if self.num_project_jobs() == 0 \
+                else self.selection_state.job_index + 1
+            self.mark_as_modified(True, "Add Job", "add", (new_job_index, -1, -1))
+            self.project_jobs().insert(new_job_index, job_action)
+            return True, SelectionState(new_job_index)
+        return False, SelectionState()

@@ -361,8 +361,8 @@ class ClassicProjectView(ProjectView, ListContainer):
         row += subaction_index + 1
         return row
 
-    def update_added_element(self, _indices_tuple):
-        self.refresh_ui()
+    def update_added_element(self, new_selection):
+        self.refresh_ui(SelectionState(*new_selection))
 
     def update_widget(self, selection=None, update_project=True):
         self.refresh_ui()

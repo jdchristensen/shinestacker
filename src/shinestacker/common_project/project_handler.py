@@ -64,7 +64,6 @@ class ProjectHolder:
     def undo(self):
         if self.filled_undo():
             entry = self.pop_undo()
-            print("undo entry: ", entry)
             self.set_project(entry['item'])
             return entry
         return None

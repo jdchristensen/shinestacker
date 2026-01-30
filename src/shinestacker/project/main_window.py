@@ -386,13 +386,16 @@ class MainWindow(ProjectIOHandler, QMainWindow):
             self.show_status_message("Undo performed")
 
     def add_job(self):
-        new_job_index = self.current_view.add_job()
-        if new_job_index >= 0:
-            self.set_enabled_file_open_close_actions(True)
-            self.on_job_count_changed()
-            self.handle_widget_added((new_job_index, -1, -1))
+        if not self.current_view.enforce_stop_run():
+            return
+        success, new_selection = self.element_action.add_job()
+        if success:
+            for view in self.views.values():
+                view.update_added_element(new_selection.to_tuple())
 
     def add_action(self, type_name):
+        if not self.current_view.enforce_stop_run():
+            return
         success, new_position = self.current_view.add_action(type_name)
         if success and new_position is not None:
             for view in self.views.values():
@@ -400,6 +403,8 @@ class MainWindow(ProjectIOHandler, QMainWindow):
                     self.handle_widget_added(new_position)
 
     def add_sub_action(self, type_name):
+        if not self.current_view.enforce_stop_run():
+            return
         success, new_position = self.current_view.add_sub_action(type_name)
         if success and new_position is not None:
             for view in self.views.values():

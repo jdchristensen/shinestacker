@@ -598,6 +598,8 @@ class ModernProjectView(ProjectView):
                 self._insert_widget(SelectionState(job_idx, action_idx), action)
             else:
                 self._insert_widget(SelectionState(job_idx), job)
+            self.selection_state.copy_from(SelectionState(*indices_tuple))
+            self._select_widget(self.selection_state)
             return True
         except Exception:
             pass

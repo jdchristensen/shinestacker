@@ -264,20 +264,6 @@ class ProjectView(QWidget, LogManager, ProjectHandler):
     def _after_set_enabled(self, selection, enabled):
         raise NotImplementedError
 
-    def add_job(self):
-        if not self.enforce_stop_run():
-            return -1
-        job_action = ActionConfig("Job")
-        self.action_dialog = ActionConfigDialog(job_action, self.current_file_directory(), self)
-        if self.action_dialog.exec() == QDialog.Accepted:
-            new_job_index = 0 if self.num_project_jobs() == 0 \
-                else self.current_job_index() + 1
-            self.mark_as_modified(True, "Add Job", "add", (new_job_index, -1, -1))
-            self.project_jobs().insert(new_job_index, job_action)
-            self.refresh_and_select_job(new_job_index)
-            return new_job_index
-        return -1
-
     def add_action(self, type_name):
         if not self._before_add_action():
             return False, None
