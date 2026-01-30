@@ -338,35 +338,20 @@ class ElementActionManager(ProjectHandler, QObject):
 
     def copy_element(self):
         if self.is_job_selected():
-            self.copy_job()
+            job_clone = self._op_copy_job(self.get_selected_job_index())
+            if job_clone:
+                self.set_copy_buffer(job_clone)
         elif self.is_action_selected():
-            self.copy_action()
+            selection = self.selection_state
+            element_clone = self._op_copy_action(selection.job_index, selection.action_index)
+            if element_clone:
+                self.set_copy_buffer(element_clone)
         elif self.is_subaction_selected():
-            self.copy_subaction()
-
-    def copy_job(self):
-        if not self.is_job_selected():
-            return
-        job_clone = self._op_copy_job(self.get_selected_job_index())
-        if job_clone:
-            self.set_copy_buffer(job_clone)
-
-    def copy_action(self):
-        if not self.is_action_selected():
-            return
-        selection = self.selection_state
-        element_clone = self._op_copy_action(selection.job_index, selection.action_index)
-        if element_clone:
-            self.set_copy_buffer(element_clone)
-
-    def copy_subaction(self):
-        if not self.is_subaction_selected():
-            return
-        selection = self.selection_state
-        element_clone = self._op_copy_subaction(
-            selection.job_index, selection.action_index, selection.subaction_index)
-        if element_clone:
-            self.set_copy_buffer(element_clone)
+            selection = self.selection_state
+            element_clone = self._op_copy_subaction(
+                selection.job_index, selection.action_index, selection.subaction_index)
+            if element_clone:
+                self.set_copy_buffer(element_clone)
 
     def clone_element(self):
         selection = self.selection_state
