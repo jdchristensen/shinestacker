@@ -325,16 +325,6 @@ class ClassicProjectView(ProjectView, ListContainer):
             return -1
         return self.selection_state.subaction_index
 
-    def _before_add_action(self):
-        self._update_selection_state()
-        return True
-
-    def _update_ui_after_add_action(self, action, position):
-        selection = self.selection_state
-        gui_insert_pos = self.get_insertion_position(selection)[0]
-        self.add_list_item(self.action_list(), action, False, gui_insert_pos)
-        self.set_current_action(gui_insert_pos)
-
     def current_job_index(self):
         return ListContainer.current_job_index(self)
 

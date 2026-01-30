@@ -396,11 +396,10 @@ class MainWindow(ProjectIOHandler, QMainWindow):
     def add_action(self, type_name):
         if not self.current_view.enforce_stop_run():
             return
-        success, new_position = self.current_view.add_action(type_name)
-        if success and new_position is not None:
+        success, new_selection = self.element_action.add_action(type_name)
+        if success:
             for view in self.views.values():
-                if view != self.current_view:
-                    self.handle_widget_added(new_position)
+                view.update_added_element(new_selection.to_tuple())
 
     def add_sub_action(self, type_name):
         if not self.current_view.enforce_stop_run():

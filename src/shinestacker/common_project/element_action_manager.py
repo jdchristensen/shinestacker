@@ -35,6 +35,9 @@ class ElementActionManager(ProjectHandler, QObject):
         num_job = self.num_project_jobs()
         return SelectionState(min(job_idx + delta, num_job - 1))
 
+    def show_warning(self, title, message):
+        QMessageBox.warning(self.parent() if self.parent() else self, title, message)
+
     def new_state_after_delete(self, state):
         return self.new_state_after_op(state, 0)
 
@@ -234,10 +237,50 @@ class ElementActionManager(ProjectHandler, QObject):
     def add_job(self):
         job_action = ActionConfig("Job")
         self.action_dialog = self.action_config_dialog(job_action)
-        if self.action_dialog.exec() == QDialog.Accepted:
-            new_job_index = 0 if self.num_project_jobs() == 0 \
-                else self.selection_state.job_index + 1
-            self.mark_as_modified(True, "Add Job", "add", (new_job_index, -1, -1))
-            self.project_jobs().insert(new_job_index, job_action)
-            return True, SelectionState(new_job_index)
-        return False, SelectionState()
+        if self.action_dialog.exec() != QDialog.Accepted:
+            return False, SelectionState()
+        new_job_index = 0 if self.num_project_jobs() == 0 \
+            else self.selection_state.job_index + 1
+        self.mark_as_modified(True, "Add Job", "add", (new_job_index, -1, -1))
+        self.project_jobs().insert(new_job_index, job_action)
+        return True, SelectionState(new_job_index)
+
+    def add_action(self, type_name):
+        job_index = self.selection_state.job_index
+        if job_index < 0:
+            return False, None
+        is_valid, error_title, error_msg = self.validate_add_action(job_index)
+        if not is_valid:
+            self.show_warning(error_title, error_msg)
+            return False, None
+        job = self.project_job(job_index)
+        action = ActionConfig(type_name)
+        action.parent = job
+        self.action_dialog = self.action_config_dialog(action)
+        if self.action_dialog.exec() != QDialog.Accepted:
+            return False, None
+        insert_index = self.calculate_action_insertion_index(self.selection_state, job)
+        self.mark_as_modified(
+            True, "Add Action", "add", (job_index, insert_index, -1))
+        job.sub_actions.insert(insert_index, action)
+        new_selection = SelectionState(job_index, insert_index, -1)
+        return True, new_selection
+
+    def validate_add_action(self, job_index):
+        if job_index < 0:
+            if self.num_project_jobs() > 0:
+                return False, "No Job Selected", "Please select a job first."
+            return False, "No Job Added", "Please add a job first."
+        return True, "", ""
+
+    def calculate_action_insertion_index(self, selection_state, job):
+        if not selection_state or not job:
+            return len(job.sub_actions)
+        insert_index = len(job.sub_actions)
+        if selection_state.is_action_selected():
+            if 0 <= selection_state.action_index < len(job.sub_actions):
+                insert_index = selection_state.action_index + 1
+        elif selection_state.is_subaction_selected():
+            if 0 <= selection_state.action_index < len(job.sub_actions):
+                insert_index = selection_state.action_index + 1
+        return min(max(0, insert_index), len(job.sub_actions))

@@ -264,36 +264,6 @@ class ProjectView(QWidget, LogManager, ProjectHandler):
     def _after_set_enabled(self, selection, enabled):
         raise NotImplementedError
 
-    def add_action(self, type_name):
-        if not self._before_add_action():
-            return False, None
-        job_index = self.current_job_index()
-        if job_index < 0:
-            return False, None
-        is_valid, error_title, error_msg = self.validate_add_action(job_index)
-        if not is_valid:
-            self.show_warning(error_title, error_msg)
-            return False, None
-        job = self.project_job(job_index)
-        action = ActionConfig(type_name)
-        action.parent = job
-        if not self._show_action_config_dialog(action):
-            return False, None
-        insert_index = self.calculate_action_insertion_index(self.selection_state, job)
-        self.mark_as_modified(
-            True, "Add Action", "add", (job_index, insert_index, -1))
-        job.sub_actions.insert(insert_index, action)
-        position = (job_index, insert_index, -1)
-        self._update_ui_after_add_action(action, position)
-        return True, position
-
-    def validate_add_action(self, job_index):
-        if job_index < 0:
-            if self.num_project_jobs() > 0:
-                return False, "No Job Selected", "Please select a job first."
-            return False, "No Job Added", "Please add a job first."
-        return True, "", ""
-
     def add_sub_action(self, type_name):
         if not self._before_add_sub_action():
             return False, None
@@ -345,9 +315,6 @@ class ProjectView(QWidget, LogManager, ProjectHandler):
 
     def _update_ui_after_add_sub_action(self, sub_action, position):
         raise NotImplementedError
-
-    def _before_add_action(self):
-        return True
 
     def _show_action_config_dialog(self, action):
         self.action_dialog = ActionConfigDialog(
@@ -492,18 +459,6 @@ class ProjectView(QWidget, LogManager, ProjectHandler):
 
     def _start_project_worker(self):
         raise NotImplementedError
-
-    def calculate_action_insertion_index(self, selection_state, job):
-        if not selection_state or not job:
-            return len(job.sub_actions)
-        insert_index = len(job.sub_actions)
-        if selection_state.is_action_selected():
-            if 0 <= selection_state.action_index < len(job.sub_actions):
-                insert_index = selection_state.action_index + 1
-        elif selection_state.is_subaction_selected():
-            if 0 <= selection_state.action_index < len(job.sub_actions):
-                insert_index = selection_state.action_index + 1
-        return min(max(0, insert_index), len(job.sub_actions))
 
     def calculate_subaction_insertion_index(self, selection_state, action):
         if not selection_state or not action:

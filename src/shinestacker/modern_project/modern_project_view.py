@@ -541,22 +541,6 @@ class ModernProjectView(ProjectView):
             y_margin = 0
         self.scroll_area.ensureWidgetVisible(self.selected_widget, 0, y_margin)
 
-    def _before_add_action(self):
-        return self.enforce_stop_run()
-
-    def _update_ui_after_add_action(self, action, position):
-        job_index, insert_index, _ = position
-        new_state = SelectionState(job_index, insert_index)
-        action_widget = self._insert_widget(new_state, action)
-        if action_widget:
-            self.selection_state.copy_from(new_state)
-            if self.selected_widget:
-                self.selected_widget.set_selected(False)
-            action_widget.set_selected(True)
-            self.selected_widget = action_widget
-            self._ensure_selected_visible()
-            self._refresh_job_widget_signals()
-
     def current_job_index(self):
         return self.selection_state.job_index
 
