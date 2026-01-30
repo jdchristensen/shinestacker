@@ -623,6 +623,7 @@ class ModernProjectView(ProjectView):
         self._move_widgets(old_selection, new_selection)
         self.selection_nav.restore_selection(new_selection)
         self._ensure_selected_visible()
+        self._refresh_job_widget_signals()
 
     def set_style_sheet(self, dark_theme):
         pass

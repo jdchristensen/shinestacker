@@ -6,7 +6,7 @@ class SelectionState:
         self.widget_type = ''
         self.set_indices(job_index, action_index, subaction_index)
 
-    def set_indices(self, job_idx, action_idx, subaction_idx):
+    def set_indices(self, job_idx=-1, action_idx=-1, subaction_idx=-1):
         self.job_index = job_idx
         self.action_index = action_idx
         self.subaction_index = subaction_idx
@@ -46,7 +46,7 @@ class SelectionState:
             self.job_index >= 0 and self.action_index >= 0 and self.subaction_index >= 0
 
     def is_valid(self):
-        return self.widget_type in ('job', 'action', 'subaction')
+        return self.widget_type in ('job', 'action', 'subaction') and self.job_index >= 0
 
     def to_tuple(self):
         return self.get_indices()
@@ -62,9 +62,6 @@ class SelectionState:
 
     def get_indices(self):
         return (self.job_index, self.action_index, self.subaction_index)
-
-    def are_indices_valid(self):
-        return self.job_index >= 0
 
     def are_action_indices_valid(self):
         return self.job_index >= 0 and self.action_index >= 0

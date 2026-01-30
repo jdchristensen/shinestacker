@@ -18,22 +18,15 @@ class ElementActionManager(ProjectHandler, QObject):
 
     def new_state_after_delete(self, state):
         job_idx, act_idx, sub_idx = state.to_tuple()
-        if not state.are_indices_valid():
+        job = self.project_job(job_idx)
+        if job is None:
             return SelectionState()
         if sub_idx >= 0:
-            if job_idx >= self.num_project_jobs():
-                return SelectionState()
-            job = self.project_job(job_idx)
-            if act_idx >= len(job.sub_actions):
+            if act_idx > len(job.sub_actions):
                 return SelectionState(job_idx)
-            action = job.sub_actions[act_idx]
-            num_sub = len(action.sub_actions) + 1
-            if sub_idx < num_sub - 1:
-                return SelectionState(job_idx, act_idx, sub_idx)
-            return SelectionState(job_idx, act_idx, sub_idx - 1)
+            num_sub = len(job.sub_actions[act_idx].sub_actions)
+            return SelectionState(job_idx, act_idx, min(sub_idx, num_sub - 1))
         if act_idx >= 0:
-            if job_idx >= self.num_project_jobs():
-                return SelectionState()
             job = self.project_job(job_idx)
             num_act = len(job.sub_actions) + 1
             if act_idx >= num_act:
@@ -61,9 +54,9 @@ class ElementActionManager(ProjectHandler, QObject):
         return SelectionState(job_idx + 1)
 
     def new_state_after_insert(self, state, delta):
-        job_idx, act_idx, sub_idx = state.to_tuple()
-        if not state.are_indices_valid():
+        if not state.is_valid():
             return SelectionState()
+        job_idx, act_idx, sub_idx = state.to_tuple()
         if sub_idx >= 0:
             if job_idx >= self.num_project_jobs():
                 return SelectionState(job_idx, act_idx, sub_idx)
@@ -136,20 +129,19 @@ class ElementActionManager(ProjectHandler, QObject):
                         action_type="", affected_position=None):
         if affected_position:
             self.mark_as_modified(True, description, action_type, affected_position)
+        new_job_index = 0
         if copy_buffer.type_name != constants.ACTION_JOB:
             if self.num_project_jobs() == 0:
                 return False, None
             if copy_buffer.type_name not in constants.ACTION_TYPES:
                 return False, None
-            current_job = self.project().jobs[job_index]
+            current_job = self.project_job(job_index)
             new_action_index = len(current_job.sub_actions)
             element = copy_buffer.clone()
             current_job.sub_actions.insert(new_action_index, element)
             return True, new_action_index
-        if self.num_project_jobs() == 0:
-            new_job_index = 0
-        else:
-            new_job_index = min(max(job_index + 1, 0), self.num_project_jobs())
+            if self.num_project_jobs() > 0:
+                new_job_index = min(max(job_index + 1, 0), self.num_project_jobs())
         element = copy_buffer.clone()
         self.project().jobs.insert(new_job_index, element)
         return True, new_job_index
@@ -317,11 +309,9 @@ class ElementActionManager(ProjectHandler, QObject):
             job = self.project_job(job_index)
             job_clone = job.clone(name_postfix=CLONE_POSTFIX)
             new_job_index = job_index + 1
-            self.project().jobs.insert(new_job_index, job_clone)
+            self.project_jobs().insert(new_job_index, job_clone)
             return job_clone is not None, SelectionState(new_job_index)
         if selection.is_action_selected() or selection.is_subaction_selected():
-            if not (selection.is_action_selected() or selection.is_subaction_selected()):
-                return False, None
             if not self.get_job_actions(selection):
                 return False, None
             label = "Subaction" if selection.is_subaction_selected() else "Action"
@@ -329,11 +319,10 @@ class ElementActionManager(ProjectHandler, QObject):
                 True, f"Duplicate {label}", "clone",
                 (selection.job_index, selection.action_index, selection.subaction_index))
             job = self.project_job(selection.job_index)
+            cloned = self.get_action(selection).clone(name_postfix=CLONE_POSTFIX)
             if selection.is_subaction_selected():
-                cloned = self.get_action(selection).clone(name_postfix=CLONE_POSTFIX)
                 self.get_subactions(selection).insert(selection.subaction_index + 1, cloned)
             else:
-                cloned = self.get_action(selection).clone(name_postfix=CLONE_POSTFIX)
                 job.sub_actions.insert(selection.action_index + 1, cloned)
             new_state = self.new_state_after_clone(selection)
             return True, new_state
@@ -350,7 +339,6 @@ class ElementActionManager(ProjectHandler, QObject):
         job = self.project().jobs[job_index]
         element = None
         element_type = ''
-        position = ()
         if self.selection_state.is_subaction_selected():
             if not 0 <= action_index < len(job.sub_actions):
                 return None, None
@@ -358,32 +346,30 @@ class ElementActionManager(ProjectHandler, QObject):
             if not 0 <= subaction_index < len(action.sub_actions):
                 return None, None
             element = action.sub_actions[subaction_index]
-            element_type = 'sub-action'
-            position = (job_index, action_index, subaction_index)
+            element_type = 'Subction'
         elif self.selection_state.is_action_selected():
             if not 0 <= action_index < len(job.sub_actions):
                 return None, None
             element = job.sub_actions[action_index]
-            element_type = 'action'
-            position = (job_index, action_index, -1)
+            element_type = 'Action'
         else:
             element = job
-            element_type = 'job'
-            position = (job_index, -1, -1)
+            element_type = 'Job'
         if not element:
             return None, None
         if confirm and not self.confirm_delete_message(
                 element_type, element.params.get('name', '')):
             return None, None
-        self.mark_as_modified(True, f"Delete {element_type.title()}", "delete", position)
+        self.mark_as_modified(True, f"Delete {element_type.title()}", "delete",
+                              (job_index, action_index, subaction_index))
         if self.selection_state.is_subaction_selected():
             deleted_element = self._op_delete_subaction(job_index, action_index, subaction_index)
         elif self.selection_state.is_action_selected():
             deleted_element = self._op_delete_action(job_index, action_index)
         else:
             deleted_element = self._op_delete_job(job_index)
-        new_state = self.new_state_after_delete(self.selection_state)
-        return deleted_element, new_state
+        new_selection = self.new_state_after_delete(self.selection_state)
+        return deleted_element, new_selection
 
     def cut_element(self):
         deleted_element, new_state = self.delete_element(False)

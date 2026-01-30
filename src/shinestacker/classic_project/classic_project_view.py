@@ -281,10 +281,7 @@ class ClassicProjectView(ProjectView, ListContainer):
         self.run_finished_signal.emit()
 
     def delete_element(self, old_selection, new_selection):
-        if new_selection is not False:
-            self.refresh_ui(new_selection)
-        else:
-            self.refresh_ui()
+        self.refresh_ui(new_selection)
 
     def paste_element(self, old_selection, new_selection):
         self.refresh_ui(old_selection)

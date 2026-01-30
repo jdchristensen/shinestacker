@@ -415,7 +415,7 @@ class MainWindow(ProjectIOHandler, QMainWindow):
         old_selection = self.selection_state.copy()
         deleted_element, new_selection = self.element_action.delete_element(True)
         if deleted_element and old_selection and old_selection.is_valid():
-            for view in self.views.values():
+            for name, view in self.views.items():
                 view.delete_element(old_selection, new_selection)
         if self.num_project_jobs() > 0:
             self.menu_manager.delete_element_action.setEnabled(True)
@@ -426,8 +426,8 @@ class MainWindow(ProjectIOHandler, QMainWindow):
         old_selection = self.selection_state.copy()
         deleted_element, new_selection = self.element_action.cut_element()
         if deleted_element and old_selection and old_selection.is_valid():
-            for view in self.views.values():
-                view.delete_element(new_selection, old_selection)
+            for name, view in self.views.items():
+                view.delete_element(old_selection, new_selection)
         if self.num_project_jobs() > 0:
             self.menu_manager.delete_element_action.setEnabled(True)
 

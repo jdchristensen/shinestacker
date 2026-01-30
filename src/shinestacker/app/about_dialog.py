@@ -2,7 +2,6 @@
 import traceback
 import json
 import ssl
-import warnings
 from urllib.request import urlopen, Request
 from urllib.error import URLError
 from PySide6.QtWidgets import (
@@ -130,7 +129,7 @@ def get_latest_version():
                 return data['tag_name']
         except URLError as ssl_error:
             if "CERTIFICATE_VERIFY_FAILED" in str(ssl_error):
-                warnings.warn("SSL verification failed, using unverified context", RuntimeWarning)
+                print("SSL verification failed, using unverified context", RuntimeWarning)
                 context = ssl._create_unverified_context()
                 with urlopen(req, timeout=5, context=context) as response:
                     data = json.loads(response.read().decode())
@@ -138,7 +137,7 @@ def get_latest_version():
             else:
                 raise
     except (URLError, ValueError, KeyError, TimeoutError) as e:
-        print(f"error: {str(e)}")
+        print(f"URL open error: {str(e)}")
         traceback.print_exc()
         return None
 
