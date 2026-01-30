@@ -137,12 +137,11 @@ class TestSelectionState:
         state = SelectionState(3, 4, 5)
         assert state.get_indices() == (3, 4, 5)
 
-    def test_are_indices_valid(self):
+    def test_is_valid(self):
         state = SelectionState(0, -1, -1)
-        assert state.are_indices_valid()
-
+        assert state.is_valid()
         state.job_index = -1
-        assert not state.are_indices_valid()
+        assert not state.is_valid()
 
     def test_are_action_indices_valid(self):
         state = SelectionState(0, 1, -1)

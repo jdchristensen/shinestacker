@@ -295,9 +295,10 @@ class ElementActionManager(ProjectHandler, QObject):
         return False
 
     def copy_element(self):
-        element_clone = self.project_element(*self.selection_state.to_tuple()).clone()
-        if element_clone:
-            self.set_copy_buffer(element_clone)
+        if self.selection_state and self.selection_state.is_valid():
+            element_clone = self.project_element(*self.selection_state.to_tuple()).clone()
+            if element_clone:
+                self.set_copy_buffer(element_clone)
 
     def clone_element(self):
         selection = self.selection_state

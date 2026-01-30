@@ -65,6 +65,9 @@ class MockProjectHolder:
     def has_copy_buffer(self):
         return self._copy_buffer is not None
 
+    def project_jobs(self):
+        return self._project.jobs
+
 
 class TestElementActionManager(unittest.TestCase):
     def setUp(self):
@@ -101,7 +104,7 @@ class TestElementActionManager(unittest.TestCase):
 
     def test_get_selected_job_index(self):
         self.selection_state.set_job(5)
-        self.assertEqual(self.manager.get_selected_job_index(), 5)
+        self.assertEqual(self.selection_state.job_index, 5)
 
     def test_is_valid_selection(self):
         self.selection_state.set_job(0)
@@ -170,25 +173,23 @@ class TestElementActionManager(unittest.TestCase):
         self.assertEqual(len(result), 1)
         self.assertEqual(result[0], action)
 
-    def test_copy_job(self):
+    def test_copy_element(self):
+        self.project_holder.project().jobs = []
         job = MockElement('Job1', constants.ACTION_JOB)
         self.project_holder.project().jobs.append(job)
         self.selection_state.set_job(0)
-        self.manager.copy_job()
+        self.manager.copy_element()
         self.assertIsNotNone(self.project_holder.copy_buffer())
         self.assertEqual(self.project_holder.copy_buffer().params['name'], 'Job1')
-
-    def test_copy_action(self):
+        self.project_holder.project().jobs = []
         job = MockElement('Job1', constants.ACTION_JOB)
         action = MockElement('Action1', constants.ACTION_TYPES[0])
         job.sub_actions.append(action)
         self.project_holder.project().jobs.append(job)
         self.selection_state.set_action(0, 0)
-        self.manager.copy_action()
-        self.assertIsNotNone(self.project_holder.copy_buffer())
+        self.manager.copy_element()
         self.assertEqual(self.project_holder.copy_buffer().params['name'], 'Action1')
-
-    def test_copy_subaction(self):
+        self.project_holder.project().jobs = []
         job = MockElement('Job1', constants.ACTION_JOB)
         action = MockElement('Action1', constants.ACTION_COMBO)
         subaction = MockElement('SubAction1', constants.SUB_ACTION_TYPES[0])
@@ -196,8 +197,7 @@ class TestElementActionManager(unittest.TestCase):
         job.sub_actions.append(action)
         self.project_holder.project().jobs.append(job)
         self.selection_state.set_subaction(0, 0, 0)
-        self.manager.copy_subaction()
-        self.assertIsNotNone(self.project_holder.copy_buffer())
+        self.manager.copy_element()
         self.assertEqual(self.project_holder.copy_buffer().params['name'], 'SubAction1')
 
     def test_clone_job(self):

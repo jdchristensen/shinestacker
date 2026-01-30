@@ -111,9 +111,9 @@ class TestSelectionState(unittest.TestCase):
 
     def test_are_indices_valid(self):
         state = SelectionState(job_index=0)
-        self.assertTrue(state.are_indices_valid())
+        self.assertTrue(state.is_valid())
         state.reset()
-        self.assertFalse(state.are_indices_valid())
+        self.assertFalse(state.is_valid())
 
     def test_are_action_indices_valid(self):
         state = SelectionState(job_index=0, action_index=1)

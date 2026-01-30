@@ -67,6 +67,7 @@ def test_jpg_homo():
     except Exception:
         assert False
 
+
 def test_jpg_quality_plots():
     try:
         job = StackJob("job", "examples", input_path="input/img-jpg", callbacks='tqdm')
@@ -77,8 +78,8 @@ def test_jpg_quality_plots():
                     alignment_config={'compute_rans_quality': True},
                     plot_summary=True,
                     plot_matches=True)],
-                    output_path="output/img-jpg-align",
-                    delete_output_at_end=True))
+                output_path="output/img-jpg-align",
+                delete_output_at_end=True))
         job.run()
     except Exception:
         assert False
