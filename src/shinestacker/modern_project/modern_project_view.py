@@ -1044,35 +1044,34 @@ class ModernProjectView(ProjectView):
     def targeted_undo(self, entry):
         action_type = entry.get('action_type', '')
         affected_position = entry.get('affected_position', (-1, -1, -1))
-        description = entry.get('description', '')
         if action_type == 'move':
-            self._undo_move_action(affected_position, description)
+            self._undo_move_action(affected_position)
         elif action_type == 'edit_all':
-            self._undo_edit_all_action(description)
+            self._undo_edit_all_action()
         elif action_type in ['run', 'run_all', 'clear_run_info']:
             self.refresh_ui()
         else:
             state = SelectionState(*affected_position)
             if action_type == 'add':
-                self._undo_add_action(state, description)
+                self._undo_add_action(state)
             elif action_type == 'delete':
-                self._undo_delete_action(state, description, entry.get('modern_widget_state'))
+                self._undo_delete_action(state, entry.get('modern_widget_state'))
             elif action_type == 'edit':
-                self._undo_edit_action(state, description)
+                self._undo_edit_action(state)
             elif action_type == 'clone':
-                self._undo_clone_action(state, description)
+                self._undo_clone_action(state)
             elif action_type == 'paste':
-                self._undo_paste_action(state, description)
+                self._undo_paste_action(state)
             else:
                 self.refresh_ui()
 
-    def _undo_add_action(self, state, description):
+    def _undo_add_action(self, state):
         try:
             self._remove_widget(state)
         except Exception:
             self.refresh_ui()
 
-    def _undo_delete_action(self, state, description, widget_state):
+    def _undo_delete_action(self, state, widget_state):
         if not state.is_valid():
             return
         try:
@@ -1106,7 +1105,7 @@ class ModernProjectView(ProjectView):
         except Exception:
             self.refresh_ui()
 
-    def _undo_edit_action(self, state, description):
+    def _undo_edit_action(self, state):
         try:
             if state.is_subaction_selected():
                 if 0 <= state.job_index < len(self.project().jobs) and \
@@ -1124,7 +1123,7 @@ class ModernProjectView(ProjectView):
         except Exception:
             self.refresh_ui()
 
-    def _undo_move_action(self, position, description):
+    def _undo_move_action(self, position):
         if len(position) != 6:
             self.refresh_ui()
             return
@@ -1132,7 +1131,7 @@ class ModernProjectView(ProjectView):
         to_state = SelectionState(*position[3:])
         self._move_widgets(from_state, to_state)
 
-    def _undo_edit_all_action(self, description):
+    def _undo_edit_all_action(self):
         entry = self.undo_manager().last_entry()
         if not entry or 'item' not in entry:
             self.refresh_ui()
@@ -1164,7 +1163,7 @@ class ModernProjectView(ProjectView):
                                 subaction_widget.update(subaction_widget.data_object)
                                 subaction_widget.set_enabled_and_update(subaction_enabled)
 
-    def _undo_clone_action(self, state, description):
+    def _undo_clone_action(self, state):
         try:
             if state.is_subaction_selected():
                 cloned_state = SelectionState(
@@ -1183,7 +1182,7 @@ class ModernProjectView(ProjectView):
         except Exception:
             self.refresh_ui()
 
-    def _undo_paste_action(self, state, description):
+    def _undo_paste_action(self, state):
         try:
             if state.is_valid():
                 self._remove_widget(state)
