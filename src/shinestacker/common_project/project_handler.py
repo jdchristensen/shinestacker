@@ -139,6 +139,13 @@ class ProjectHandler:
             return self.project_action(job_index, action_index)
         return self.project_subaction(job_index, action_index, subaction_index)
 
+    def project_container(self, job_index=-1, action_index=-1):
+        if job_index < 0:
+            return self.project().jobs
+        if action_index < 0:
+            return self.project_job(job_index).sub_actions
+        return self.project_action(job_index, action_index).sub_actions
+
     def valid_indices(self, job_index, action_index=-1, subaction_index=-1):
         job = self.project_job(job_index)
         if job is None:

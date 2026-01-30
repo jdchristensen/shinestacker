@@ -102,7 +102,7 @@ class ElementActionManager(ProjectHandler, QObject):
             insert_index = min(max(insert_index, 0), self.num_project_jobs())
         self.mark_as_modified(True, "Paste Job", "paste", (insert_index, -1, -1))
         self.project().jobs.insert(insert_index, copy_buffer.clone())
-        self.selection_state.copy_from(SelectionState(insert_index))
+        self.selection_state.set_indices(insert_index)
         return True
 
     def _paste_action(self, copy_buffer, selection):
@@ -117,7 +117,7 @@ class ElementActionManager(ProjectHandler, QObject):
         self.mark_as_modified(
             True, "Paste Action", "paste", (selection.job_index, insert_index, -1))
         job.sub_actions.insert(insert_index, copy_buffer.clone())
-        self.selection_state.copy_from(SelectionState(selection.job_index, insert_index, -1))
+        self.selection_state.set_indices(selection.job_index, insert_index, -1)
         return True
 
     def _paste_subaction(self, copy_buffer, selection):
@@ -138,30 +138,8 @@ class ElementActionManager(ProjectHandler, QObject):
             True, "Paste Sub-action", "paste",
             (selection.job_index, selection.action_index, insert_index))
         action.sub_actions.insert(insert_index, copy_buffer.clone())
-        self.selection_state.copy_from(
-            SelectionState(selection.job_index, selection.action_index, insert_index))
+        self.selection_state.set_indices(selection.job_index, selection.action_index, insert_index)
         return True
-
-    def _op_delete_job(self, job_index):
-        if 0 <= job_index < self.num_project_jobs():
-            return self.project().jobs.pop(job_index)
-        return None
-
-    def _op_delete_action(self, job_index, action_index):
-        if 0 <= job_index < self.num_project_jobs():
-            job = self.project_job(job_index)
-            if 0 <= action_index < len(job.sub_actions):
-                return job.sub_actions.pop(action_index)
-        return None
-
-    def _op_delete_subaction(self, job_index, action_index, subaction_index):
-        if 0 <= job_index < self.num_project_jobs():
-            job = self.project_job(job_index)
-            if 0 <= action_index < len(job.sub_actions):
-                action = job.sub_actions[action_index]
-                if 0 <= subaction_index < len(action.sub_actions):
-                    return action.sub_actions.pop(subaction_index)
-        return None
 
     def shift_element(self, delta):
         if self.is_job_selected():
@@ -258,21 +236,26 @@ class ElementActionManager(ProjectHandler, QObject):
             return None, None
         position = self.selection_state.to_tuple()
         element = self.project_element(*position)
-        element_type = self.selection_state.widget_type()
         if not element:
             return None, None
+        element_type = self.selection_state.widget_type()
         if confirm and not self.confirm_delete_message(
                 element_type, element.params.get('name', '')):
             return None, None
         self.mark_as_modified(True, f"Delete {element_type.title()}", "delete", position)
-        if self.selection_state.is_subaction_selected():
-            deleted_element = self._op_delete_subaction(*position)
-        elif self.selection_state.is_action_selected():
-            deleted_element = self._op_delete_action(*position[:2])
+        deleted_element = None
+        if position[2] >= 0:
+            idx, s = [position[0], position[1]], position[2]
+        elif position[1] >= 0:
+            idx, s = [position[0]], position[1]
+        elif position[0] >= 0:
+            idx, s = [-1], position[0]
         else:
-            deleted_element = self._op_delete_job(position[0])
-        new_selection = self.new_state_after_delete(self.selection_state)
-        return deleted_element, new_selection
+            return None, None
+        container = self.project_container(*idx)
+        if container and 0 <= s < len(container):
+            deleted_element = container.pop(s)
+        return deleted_element, self.new_state_after_delete(self.selection_state)
 
     def cut_element(self):
         deleted_element, new_state = self.delete_element(False)
