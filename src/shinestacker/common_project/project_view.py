@@ -22,6 +22,7 @@ class ProjectView(QWidget, LogManager, ProjectHandler):
     widget_updated_signal = Signal(tuple)
     run_finished_signal = Signal()
     fill_context_menu_signal = Signal(object, bool)
+    edit_element_signal = Signal()
     current_action_working_path = None
     current_action_input_path = None
     current_action_output_path = None
@@ -247,8 +248,9 @@ class ProjectView(QWidget, LogManager, ProjectHandler):
         self.action_dialog = ActionConfigDialog(
             action, self.current_file_directory(), self.parent())
         if self.action_dialog.exec() == QDialog.Accepted:
-            self.mark_as_modified(True, "Edit Action")
-            self.refresh_ui()
+            self.mark_as_modified(True, "Edit Action", 'edit', self.selection_state.to_tuple())
+            return True
+        return False
 
     def clear_project(self):
         raise NotImplementedError

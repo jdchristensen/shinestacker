@@ -24,7 +24,7 @@ class JobWidget(BaseWidget):
         self._update_button_style()
         self.retouch_button.setVisible(self._should_show_retouch_button())
 
-    def update(self, data_object):
+    def update(self, data_object=None):
         super().update(data_object)
         self.retouch_button.setVisible(self._should_show_retouch_button())
         self._update_button_style()

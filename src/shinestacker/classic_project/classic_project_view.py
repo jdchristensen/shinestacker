@@ -88,6 +88,8 @@ class ClassicProjectView(ProjectView, ListContainer):
         self.job_list().currentRowChanged.connect(self.on_job_selected)
         self.job_list().itemSelectionChanged.connect(self._update_selection_state)
         self.action_list().itemSelectionChanged.connect(self._update_selection_state)
+        self.job_list().itemClicked.connect(self.check_enable_subactions)
+        self.action_list().itemClicked.connect(self.check_enable_subactions)
 
     def connect_signals(
             self, update_delete_action_state, set_enabled_sub_actions_gui):
@@ -386,6 +388,12 @@ class ClassicProjectView(ProjectView, ListContainer):
 
     def get_job_at(self, index):
         return None if index < 0 else self.project_job(index)
+
+    def check_enable_subactions(self):
+        element = self.project_element(*self.selection_state.to_tuple())
+        self.enable_sub_actions_requested.emit(
+            self.selection_state.is_subaction_selected() or
+            element.type_name == constants.ACTION_COMBO)
 
     def on_job_edit(self, item):
         index = self.job_list().row(item)

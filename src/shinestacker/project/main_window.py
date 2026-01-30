@@ -62,6 +62,7 @@ class MainWindow(ProjectIOHandler, QMainWindow):
             "Di&sable": self.disable,
             "Enable All": self.enable_all,
             "Disable All": self.disable_all,
+            "Edit Element": self.edit_element,
             "Expert Options": self.toggle_expert_options,
             "Add Job": self.add_job,
             "Run Job": self.run_job,
@@ -90,6 +91,7 @@ class MainWindow(ProjectIOHandler, QMainWindow):
             ('run_finished_signal', self.handle_run_finished),
             ('fill_context_menu_signal', self.menu_manager.handle_fill_context_menu),
             ('refresh_ui_signal', self.refresh_ui),
+            ('edit_element_signal', self.edit_element)
         ]
         for view in self.views.values():
             for signal_name, handler in signal_map:
@@ -502,6 +504,12 @@ class MainWindow(ProjectIOHandler, QMainWindow):
 
     def disable_all(self):
         self.set_enabled_all(False)
+
+    def edit_element(self):
+        success = self.element_action.edit_element(self.selection_state)
+        if success:
+            for view in self.views.values():
+                view.update_widget(self.selection_state)
 
     def run_job(self):
         self.menu_manager.clear_run_info_action.setEnabled(True)

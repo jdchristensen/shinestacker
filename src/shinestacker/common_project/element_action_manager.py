@@ -1,7 +1,8 @@
 # pylint: disable=C0114, C0115, C0116, W0246, E0611, R0917, R0913, W0613, R0911, R0912, R0904
 from PySide6.QtCore import QObject, Signal
-from PySide6.QtWidgets import QMessageBox
+from PySide6.QtWidgets import QMessageBox, QDialog
 from .. config.constants import constants
+from .. gui.action_config_dialog import ActionConfigDialog
 from .. common_project.selection_state import SelectionState
 from .project_handler import ProjectHandler
 
@@ -214,3 +215,16 @@ class ElementActionManager(ProjectHandler, QObject):
         self.mark_as_modified(True, f"{txt} {selection.type().title()}", "edit", position)
         element.set_enabled(enabled)
         return True
+
+    def edit_element(self, selection):
+        element = self.project_element(*selection.to_tuple())
+        pre_edit_project = self.project().clone()
+        dialog = self.action_config_dialog(element)
+        if dialog.exec() == QDialog.Accepted:
+            self.save_undo_state(
+                pre_edit_project, f"Edit {selection.type().title()}", "edit", selection.to_tuple())
+            return True
+        return False
+
+    def action_config_dialog(self, action):
+        return ActionConfigDialog(action, self.current_file_directory(), self.parent())

@@ -43,6 +43,7 @@ class MenuManager(QObject):
             "Enable All": "Ctrl+Shift+E",
             "Disable All": "Ctrl+Shift+B",
             "Expert Options": "Ctrl+Shift+X",
+            "Edit Element": "Ctrl+Enter",
             "Classic": "Ctrl+1",
             "Modern": "Ctrl+2",
             "Add Job": "Ctrl+P",
@@ -144,6 +145,9 @@ class MenuManager(QObject):
         menu.addSeparator()
         for name in ["Move &Up", "Move &Down"]:
             menu.addAction(self.action(name, requires_file=True))
+        menu.addSeparator()
+        self.edit_element_action = self.action("Edit Element", requires_file=True)
+        menu.addAction(self.edit_element_action)
         menu.addSeparator()
         self.enable_action = self.action("E&nable", requires_file=True)
         menu.addAction(self.enable_action)
