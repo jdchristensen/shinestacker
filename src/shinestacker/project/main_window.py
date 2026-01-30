@@ -306,8 +306,8 @@ class MainWindow(ProjectIOHandler, QMainWindow):
             self.update_title()
             if fill_new_project(self.project(), self):
                 self.set_modified(True)
-                for _k, v in self.views.items():
-                    v.clear_project()
+                for view in self.views.values():
+                    view.clear_project()
             self.refresh_ui_and_select_first_job()
             self.menu_manager.save_actions_set_enabled(True)
             self.set_enabled_file_open_close_actions(True)
@@ -393,19 +393,19 @@ class MainWindow(ProjectIOHandler, QMainWindow):
     def add_action(self, type_name):
         success, new_position = self.current_view.add_action(type_name)
         if success and new_position is not None:
-            for _view_name, view in self.views.items():
+            for view in self.views.values():
                 if view != self.current_view:
                     self.handle_widget_added(new_position)
 
     def add_sub_action(self, type_name):
         success, new_position = self.current_view.add_sub_action(type_name)
         if success and new_position is not None:
-            for _view_name, view in self.views.items():
+            for view in self.views.values():
                 if view != self.current_view:
                     self.handle_widget_added(new_position)
 
     def handle_widget_added(self, indices_tuple):
-        for _view_name, view in self.views.items():
+        for view in self.views.values():
             if view != self.current_view:
                 view.update_added_element(indices_tuple)
 
@@ -415,7 +415,7 @@ class MainWindow(ProjectIOHandler, QMainWindow):
         old_selection = self.selection_state.copy()
         deleted_element, new_selection = self.element_action.delete_element(True)
         if deleted_element and old_selection and old_selection.is_valid():
-            for _view_name, view in self.views.items():
+            for view in self.views.values():
                 view.delete_element(old_selection, new_selection)
         if self.num_project_jobs() > 0:
             self.menu_manager.delete_element_action.setEnabled(True)
@@ -426,7 +426,7 @@ class MainWindow(ProjectIOHandler, QMainWindow):
         old_selection = self.selection_state.copy()
         deleted_element, new_selection = self.element_action.cut_element()
         if deleted_element and old_selection and old_selection.is_valid():
-            for _view_name, view in self.views.items():
+            for view in self.views.values():
                 view.delete_element(new_selection, old_selection)
         if self.num_project_jobs() > 0:
             self.menu_manager.delete_element_action.setEnabled(True)
@@ -441,7 +441,7 @@ class MainWindow(ProjectIOHandler, QMainWindow):
         success = self.element_action.paste_element()
         new_selection = self.selection_state.copy()
         if success:
-            for _view_name, view in self.views.items():
+            for view in self.views.values():
                 view.paste_element(old_selection, new_selection)
 
     def clone_element(self):
@@ -450,7 +450,7 @@ class MainWindow(ProjectIOHandler, QMainWindow):
         old_selection = self.selection_state.copy()
         success, new_selection = self.element_action.clone_element()
         if success:
-            for _view_name, view in self.views.items():
+            for view in self.views.values():
                 view.clone_element(old_selection, new_selection)
 
     def shift_element(self, delta, direction):
@@ -466,7 +466,7 @@ class MainWindow(ProjectIOHandler, QMainWindow):
             affected_position = from_position + to_position
             self.save_undo_state(
                 pre_move_project, f"Move {direction}", "move", affected_position)
-            for _view_name, view in self.views.items():
+            for view in self.views.values():
                 view.shift_element(old_selection, new_selection)
 
     def move_element_up(self):
@@ -481,7 +481,7 @@ class MainWindow(ProjectIOHandler, QMainWindow):
         selection = self.selection_state.copy()
         success = self.element_action.set_enabled(enabled, selection)
         if success:
-            for _view_name, view in self.views.items():
+            for view in self.views.values():
                 view.set_enabled(enabled, selection)
 
     def enable(self):
@@ -494,7 +494,7 @@ class MainWindow(ProjectIOHandler, QMainWindow):
         if not self.current_view.enforce_stop_run():
             return
         self.element_action.set_enabled_all(enabled)
-        for _view_name, view in self.views.items():
+        for view in self.views.values():
             view.set_enabled_all(enabled)
 
     def enable_all(self):
@@ -532,11 +532,11 @@ class MainWindow(ProjectIOHandler, QMainWindow):
             self.handle_run_finished()
 
     def handle_widget_enable(self, selection, enabled):
-        for _view_name, view in self.views.items():
+        for view in self.views.values():
             view.set_enabled(enabled, selection)
 
     def handle_widget_updated(self, selection):
-        for _view_name, view in self.views.items():
+        for view in self.views.values():
             if view != self.sender():
                 view.update_widget(selection=selection, update_project=False)
 

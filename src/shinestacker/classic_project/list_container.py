@@ -193,10 +193,6 @@ class ListContainer:
     def clear_action_list(self):
         self._action_list.clear()
 
-    def clear_project(self):
-        self._job_list.clear()
-        self._action_list.clear()
-
     def num_selected_jobs(self):
         return len(self._job_list.selectedItems())
 

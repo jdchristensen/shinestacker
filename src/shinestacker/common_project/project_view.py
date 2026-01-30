@@ -250,6 +250,9 @@ class ProjectView(QWidget, LogManager, ProjectHandler):
             self.mark_as_modified(True, "Edit Action")
             self.refresh_ui()
 
+    def clear_project(self):
+        raise NotImplementedError
+
     def set_enabled_all(self, enabled):
         raise NotImplementedError
 

@@ -120,6 +120,10 @@ class ClassicProjectView(ProjectView, ListContainer):
         i, _w = self.get_tab_and_position(id_str)
         return i
 
+    def clear_project(self):
+        self.clear_job_list()
+        self.clear_action_list()
+
     def refresh_and_select_job(self, job_idx):
         self.refresh_ui(rows_to_state(self.project(), job_idx, -1))
 
