@@ -308,10 +308,6 @@ class ListContainer:
             return (job_row, action_row, None)
         job = self.project_job(job_row)
         state = SelectionState(job_row, job.sub_actions.index(action), subaction_index)
-        if sub_action:
-            state.widget_type = 'subaction'
-        else:
-            state.widget_type = 'action'
         return (job_row, action_row, state)
 
     def find_action_position(self, job_index, ui_index):

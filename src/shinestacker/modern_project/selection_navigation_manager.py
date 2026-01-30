@@ -28,21 +28,21 @@ class SelectionNavigationManager(ProjectHandler, QObject):
         return False
 
     def select_next_widget(self):
-        if self.selection_state.widget_type == 'job':
+        if self.selection_state.is_job_selected():
             if self._has_actions_in_job(self.selection_state.job_index):
                 self._select_first_action_in_job(self.selection_state.job_index)
-        elif self.selection_state.widget_type == 'action':
+        elif self.selection_state.is_action_selected():
             if self._has_subactions_in_action(
                     self.selection_state.job_index, self.selection_state.action_index):
                 self._select_first_subaction_in_action(
                     self.selection_state.job_index, self.selection_state.action_index)
             else:
                 self._select_next_action_or_job()
-        elif self.selection_state.widget_type == 'subaction':
+        elif self.selection_state.is_subaction_selected():
             self._select_next_subaction_or_action_or_job()
 
     def select_previous_widget(self):
-        if self.selection_state.widget_type == 'subaction':
+        if self.selection_state.is_action_selected():
             if self.selection_state.subaction_index > 0:
                 self.select('subaction',
                             self.selection_state.job_index,
@@ -52,7 +52,7 @@ class SelectionNavigationManager(ProjectHandler, QObject):
                 self.select('action',
                             self.selection_state.job_index,
                             self.selection_state.action_index)
-        elif self.selection_state.widget_type == 'action':
+        elif self.selection_state.is_action_selected():
             if self.selection_state.action_index > 0:
                 prev_action_index = self.selection_state.action_index - 1
                 if self._has_subactions_in_action(
@@ -69,7 +69,7 @@ class SelectionNavigationManager(ProjectHandler, QObject):
                                 prev_action_index)
             else:
                 self.select('job', self.selection_state.job_index)
-        elif self.selection_state.widget_type == 'job':
+        elif self.selection_state.is_job_selected():
             if self.selection_state.job_index > 0:
                 self.select('job', self.selection_state.job_index - 1)
 

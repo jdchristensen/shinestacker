@@ -80,10 +80,9 @@ class ElementActionManager(ProjectHandler, QObject):
         ProjectHandler.save_undo_state(self, pre_state, description, action_type, affected_position)
         self.project_modified_signal.emit(True)
 
-    def paste_job_logic(self, copy_buffer, job_index, description="",
-                        action_type="", affected_position=None):
-        if affected_position:
-            self.mark_as_modified(True, description, action_type, affected_position)
+    def paste_job_logic(self, copy_buffer, job_index, description,
+                        action_type, affected_position):
+        self.mark_as_modified(True, description, action_type, affected_position)
         new_job_index = 0
         if copy_buffer.type_name != constants.ACTION_JOB:
             if self.num_project_jobs() == 0:
@@ -287,7 +286,7 @@ class ElementActionManager(ProjectHandler, QObject):
             return None, None
         position = self.selection_state.to_tuple()
         element = self.project_element(*position)
-        element_type = self.selection_state.widget_type
+        element_type = self.selection_state.widget_type()
         if not element:
             return None, None
         if confirm and not self.confirm_delete_message(

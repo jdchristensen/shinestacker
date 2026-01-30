@@ -17,7 +17,6 @@ def rows_to_state(project, job_row, action_row):
         return None
     if action_row < 0:
         state = SelectionState(job_row, -1, -1)
-        state.widget_type = 'job'
         return state
     job = project.jobs[job_row]
     current_row = -1
@@ -25,17 +24,14 @@ def rows_to_state(project, job_row, action_row):
         current_row += 1
         if current_row == action_row:
             state = SelectionState(job_row, i, -1)
-            state.widget_type = 'action'
             return state
         if action.sub_actions:
             for sub_idx, _ in enumerate(action.sub_actions):
                 current_row += 1
                 if current_row == action_row:
                     state = SelectionState(job_row, i, sub_idx)
-                    state.widget_type = 'subaction'
                     return state
     state = SelectionState(job_row, -1, -1)
-    state.widget_type = 'job'
     return state
 
 
@@ -443,12 +439,10 @@ class ClassicProjectView(ProjectView, ListContainer):
             if pos is not None:
                 self.selection_state.set_indices(
                     pos.job_index, pos.action_index, pos.subaction_index)
-                self.selection_state.widget_type = pos.widget_type
         elif self.job_list_has_focus() and self.num_selected_jobs() > 0:
             job_idx = self.current_job_index()
             if 0 <= job_idx < self.num_project_jobs():
                 self.selection_state.set_indices(job_idx, -1, -1)
-                self.selection_state.widget_type = 'job'
         else:
             self.selection_state.reset()
 

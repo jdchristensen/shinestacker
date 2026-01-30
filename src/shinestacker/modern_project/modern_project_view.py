@@ -688,8 +688,6 @@ class ModernProjectView(ProjectView):
         action_widget = self._insert_widget(new_state, action)
         if action_widget:
             self.selection_state.copy_from(new_state)
-            self.selection_state.subaction_index = -1
-            self.selection_state.widget_type = 'action'
             if self.selected_widget:
                 self.selected_widget.set_selected(False)
             action_widget.set_selected(True)
@@ -709,7 +707,6 @@ class ModernProjectView(ProjectView):
         subaction_widget = self._insert_widget(new_state, sub_action)
         if subaction_widget:
             self.selection_state.copy_from(new_state)
-            self.selection_state.widget_type = 'subaction'
             if self.selected_widget:
                 self.selected_widget.set_selected(False)
             subaction_widget.set_selected(True)
