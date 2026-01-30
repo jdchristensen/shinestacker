@@ -9,25 +9,25 @@ class TestSelectionState(unittest.TestCase):
         self.assertEqual(state.job_index, -1)
         self.assertEqual(state.action_index, -1)
         self.assertEqual(state.subaction_index, -1)
-        self.assertIsNone(state.widget_type)
+        self.assertEqual(state.type(), '')
 
     def test_init_with_job(self):
         state = SelectionState(job_index=5)
         self.assertEqual(state.job_index, 5)
-        self.assertEqual(state.widget_type, 'job')
+        self.assertEqual(state.type(), 'job')
 
     def test_init_with_action(self):
         state = SelectionState(job_index=2, action_index=3)
         self.assertEqual(state.job_index, 2)
         self.assertEqual(state.action_index, 3)
-        self.assertEqual(state.widget_type, 'action')
+        self.assertEqual(state.type(), 'action')
 
     def test_init_with_subaction(self):
         state = SelectionState(job_index=1, action_index=2, subaction_index=3)
         self.assertEqual(state.job_index, 1)
         self.assertEqual(state.action_index, 2)
         self.assertEqual(state.subaction_index, 3)
-        self.assertEqual(state.widget_type, 'subaction')
+        self.assertEqual(state.type(), 'subaction')
 
     def test_reset(self):
         state = SelectionState(1, 2, 3)
@@ -35,7 +35,7 @@ class TestSelectionState(unittest.TestCase):
         self.assertEqual(state.job_index, -1)
         self.assertEqual(state.action_index, -1)
         self.assertEqual(state.subaction_index, -1)
-        self.assertIsNone(state.widget_type)
+        self.assertEqual(state.type(), '')
 
     def test_set_job(self):
         state = SelectionState()
@@ -43,7 +43,7 @@ class TestSelectionState(unittest.TestCase):
         self.assertEqual(state.job_index, 5)
         self.assertEqual(state.action_index, -1)
         self.assertEqual(state.subaction_index, -1)
-        self.assertEqual(state.widget_type, 'job')
+        self.assertEqual(state.type(), 'job')
 
     def test_set_action(self):
         state = SelectionState()
@@ -51,7 +51,7 @@ class TestSelectionState(unittest.TestCase):
         self.assertEqual(state.job_index, 2)
         self.assertEqual(state.action_index, 4)
         self.assertEqual(state.subaction_index, -1)
-        self.assertEqual(state.widget_type, 'action')
+        self.assertEqual(state.type(), 'action')
 
     def test_set_subaction(self):
         state = SelectionState()
@@ -59,7 +59,7 @@ class TestSelectionState(unittest.TestCase):
         self.assertEqual(state.job_index, 1)
         self.assertEqual(state.action_index, 2)
         self.assertEqual(state.subaction_index, 3)
-        self.assertEqual(state.widget_type, 'subaction')
+        self.assertEqual(state.type(), 'subaction')
 
     def test_is_job_selected(self):
         state = SelectionState(job_index=0)
@@ -103,7 +103,7 @@ class TestSelectionState(unittest.TestCase):
         self.assertEqual(state2.job_index, 1)
         self.assertEqual(state2.action_index, 2)
         self.assertEqual(state2.subaction_index, 3)
-        self.assertEqual(state2.widget_type, 'subaction')
+        self.assertEqual(state2.type(), 'subaction')
 
     def test_get_indices(self):
         state = SelectionState(7, 8, 9)
@@ -132,30 +132,55 @@ class TestSelectionState(unittest.TestCase):
         self.assertTrue(state.equals(1, 2, 3))
         self.assertFalse(state.equals(1, 2, 4))
 
-    def test_is_within_bounds_job(self):
-        state = SelectionState(job_index=2)
-        self.assertTrue(state.is_within_bounds(5))
-        self.assertFalse(state.is_within_bounds(2))
-
-    def test_is_within_bounds_action(self):
-        state = SelectionState(job_index=1, action_index=2)
-        self.assertTrue(state.is_within_bounds(5, job_actions_count=3))
-        self.assertFalse(state.is_within_bounds(5, job_actions_count=2))
-
-    def test_is_within_bounds_subaction(self):
-        state = SelectionState(job_index=1, action_index=2, subaction_index=3)
-        self.assertTrue(state.is_within_bounds(5, 5, action_subactions_count=4))
-        self.assertFalse(state.is_within_bounds(5, 5, action_subactions_count=3))
-
     def test_copy(self):
         state1 = SelectionState(1, 2, 3)
         state2 = state1.copy()
         self.assertEqual(state2.job_index, 1)
         self.assertEqual(state2.action_index, 2)
         self.assertEqual(state2.subaction_index, 3)
-        self.assertEqual(state2.widget_type, 'subaction')
+        self.assertEqual(state2.type(), 'subaction')
         state1.reset()
         self.assertEqual(state2.job_index, 1)
+
+    def test_type_method(self):
+        state = SelectionState()
+        self.assertEqual(state.type(), '')
+        state.set_job(0)
+        self.assertEqual(state.type(), 'job')
+        state.set_action(0, 1)
+        self.assertEqual(state.type(), 'action')
+        state.set_subaction(0, 1, 2)
+        self.assertEqual(state.type(), 'subaction')
+        state.reset()
+        self.assertEqual(state.type(), '')
+
+    def test_set_indices_method(self):
+        state = SelectionState()
+        state.set_indices(1, 2, 3)
+        self.assertEqual(state.job_index, 1)
+        self.assertEqual(state.action_index, 2)
+        self.assertEqual(state.subaction_index, 3)
+
+    def test_set_job_indices_method(self):
+        state = SelectionState()
+        state.set_job_indices(5)
+        self.assertEqual(state.job_index, 5)
+        self.assertEqual(state.action_index, -1)
+        self.assertEqual(state.subaction_index, -1)
+
+    def test_set_action_indices_method(self):
+        state = SelectionState()
+        state.set_action_indices(2, 4)
+        self.assertEqual(state.job_index, 2)
+        self.assertEqual(state.action_index, 4)
+        self.assertEqual(state.subaction_index, -1)
+
+    def test_set_subaction_indices_method(self):
+        state = SelectionState()
+        state.set_subaction_indices(1, 2, 3)
+        self.assertEqual(state.job_index, 1)
+        self.assertEqual(state.action_index, 2)
+        self.assertEqual(state.subaction_index, 3)
 
 
 if __name__ == '__main__':
