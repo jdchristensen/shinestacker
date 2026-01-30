@@ -276,7 +276,7 @@ class ClassicProjectView(ProjectView, ListContainer):
             tab.retouch_widget.setEnabled(True)
         self.run_finished_signal.emit()
 
-    def delete_element(self, new_selection, old_selection):
+    def delete_element(self, old_selection, new_selection):
         if new_selection is not False:
             self.refresh_ui(new_selection)
         else:
