@@ -153,31 +153,6 @@ class ClassicProjectView(ProjectView, ListContainer):
     def select_first_job(self):
         self.set_current_job(0)
 
-    def has_selected_jobs(self):
-        return self.num_selected_jobs() > 0
-
-    def has_selected_actions(self):
-        return self.num_selected_actions() > 0
-
-    def has_selection(self):
-        return self.has_selected_jobs() or self.has_selected_actions()
-
-    def has_selected_jobs_and_actions(self):
-        return self.has_selected_jobs() and self.has_selected_actions()
-
-    def has_selected_sub_action(self):
-        if self.has_selected_jobs_and_actions():
-            job_index = min(self.current_job_index(), self.num_project_jobs() - 1)
-            action_index = self.current_action_index()
-            if job_index >= 0:
-                job = self.project_job(job_index)
-                current_action, is_sub_action = \
-                    self.get_current_action_at(job, action_index)
-                selected_sub_action = current_action is not None and \
-                    (is_sub_action or current_action.type_name == constants.ACTION_COMBO)
-                return selected_sub_action
-        return False
-
     def get_current_action_at(self, job, action_index):
         action_counter = -1
         current_action = None

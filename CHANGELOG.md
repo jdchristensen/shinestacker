@@ -1,6 +1,6 @@
 # Changelog
 
-## [v1.13.x] - 2026-01-29
+## [v1.13.x] - 2026-01-30
 **GUI fixes and refactoring**
 
 ### Fixed

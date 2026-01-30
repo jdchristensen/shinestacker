@@ -169,16 +169,6 @@ class ModernProjectView(ProjectView):
             menu.exec(event.globalPos())
     # pylint: enable=C0103
 
-    def has_selection(self):
-        return self.selection_state.is_valid()
-
-    def has_selected_sub_action(self):
-        if self.selection_state.is_subaction_selected():
-            return True
-        if self.selection_state.is_action_selected() and self.selected_widget is not None:
-            return self.selected_widget.data_object.type_name == constants.ACTION_COMBO
-        return False
-
     def _build_progress_mapping(self, job_indices=None):
         self.progress_mapper.build_mapping(self.project(), job_indices)
 

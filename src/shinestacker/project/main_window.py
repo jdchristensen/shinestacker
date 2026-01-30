@@ -548,9 +548,9 @@ class MainWindow(ProjectIOHandler, QMainWindow):
 
     def update_delete_action_state(self):
         self.menu_manager.delete_element_action.setEnabled(
-            self.current_view.has_selection())
+            self.selection_state.is_valid())
         self.menu_manager.set_enabled_sub_actions_gui(
-            self.current_view.has_selected_sub_action())
+            self.selection_state.is_subaction_selected())
 
     def set_enabled_file_open_close_actions(self, enabled):
         should_enable = enabled or self.num_project_jobs() > 0

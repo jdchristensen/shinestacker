@@ -296,6 +296,13 @@ class ProjectView(QWidget, LogManager, ProjectHandler):
         self._update_ui_after_add_action(action, position)
         return True, position
 
+    def validate_add_action(self, job_index):
+        if job_index < 0:
+            if self.num_project_jobs() > 0:
+                return False, "No Job Selected", "Please select a job first."
+            return False, "No Job Added", "Please add a job first."
+        return True, "", ""
+
     def add_sub_action(self, type_name):
         if not self._before_add_sub_action():
             return False, None
@@ -319,6 +326,19 @@ class ProjectView(QWidget, LogManager, ProjectHandler):
         position = (job_index, action_index, insert_index)
         self._update_ui_after_add_sub_action(sub_action, position)
         return True, position
+
+    def validate_add_subaction(self, job_index, action_index):
+        if job_index < 0 or action_index < 0:
+            return False, "Invalid Selection", "Please select an action first."
+        if job_index >= self.num_project_jobs():
+            return False, "Invalid Job", "Selected job does not exist."
+        job = self.project_job(job_index)
+        if action_index >= len(job.sub_actions):
+            return False, "Invalid Action", "Selected action does not exist."
+        action = job.sub_actions[action_index]
+        if action.type_name != constants.ACTION_COMBO:
+            return False, "Invalid Action Type", "Sub-actions can only be added to Combo actions."
+        return True, "", ""
 
     def delete_element(self, deleted_element, new_selection, old_selection):
         raise NotImplementedError
@@ -502,26 +522,6 @@ class ProjectView(QWidget, LogManager, ProjectHandler):
             if 0 <= selection_state.subaction_index < len(action.sub_actions):
                 insert_index = selection_state.subaction_index + 1
         return min(max(0, insert_index), len(action.sub_actions))
-
-    def validate_add_action(self, job_index):
-        if job_index < 0:
-            if self.num_project_jobs() > 0:
-                return False, "No Job Selected", "Please select a job first."
-            return False, "No Job Added", "Please add a job first."
-        return True, "", ""
-
-    def validate_add_subaction(self, job_index, action_index):
-        if job_index < 0 or action_index < 0:
-            return False, "Invalid Selection", "Please select an action first."
-        if job_index >= self.num_project_jobs():
-            return False, "Invalid Job", "Selected job does not exist."
-        job = self.project_job(job_index)
-        if action_index >= len(job.sub_actions):
-            return False, "Invalid Action", "Selected action does not exist."
-        action = job.sub_actions[action_index]
-        if action.type_name != constants.ACTION_COMBO:
-            return False, "Invalid Action Type", "Sub-actions can only be added to Combo actions."
-        return True, "", ""
 
     def show_warning(self, title, message):
         QMessageBox.warning(self.parent() if self.parent() else self, title, message)
