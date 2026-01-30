@@ -97,7 +97,8 @@ class ElementActionManager(ProjectHandler, QObject):
         if self.num_project_jobs() == 0:
             insert_index = 0
         else:
-            insert_index = selection.job_index + 1 if selection.job_index >= 0 else self.num_project_jobs()
+            insert_index = selection.job_index + 1 \
+                if selection.job_index >= 0 else self.num_project_jobs()
             insert_index = min(max(insert_index, 0), self.num_project_jobs())
         self.mark_as_modified(True, "Paste Job", "paste", (insert_index, -1, -1))
         self.project().jobs.insert(insert_index, copy_buffer.clone())
@@ -105,7 +106,7 @@ class ElementActionManager(ProjectHandler, QObject):
         return True
 
     def _paste_action(self, copy_buffer, selection):
-        if not (0 <= selection.job_index < self.num_project_jobs()):
+        if not 0 <= selection.job_index < self.num_project_jobs():
             return False
         job = self.project().jobs[selection.job_index]
         if selection.is_action_selected() or selection.is_subaction_selected():
@@ -113,13 +114,14 @@ class ElementActionManager(ProjectHandler, QObject):
         else:
             insert_index = len(job.sub_actions)
         insert_index = min(max(insert_index, 0), len(job.sub_actions))
-        self.mark_as_modified(True, "Paste Action", "paste", (selection.job_index, insert_index, -1))
+        self.mark_as_modified(
+            True, "Paste Action", "paste", (selection.job_index, insert_index, -1))
         job.sub_actions.insert(insert_index, copy_buffer.clone())
         self.selection_state.copy_from(SelectionState(selection.job_index, insert_index, -1))
         return True
 
     def _paste_subaction(self, copy_buffer, selection):
-        if not (0 <= selection.job_index < self.num_project_jobs()):
+        if not 0 <= selection.job_index < self.num_project_jobs():
             return False
         job = self.project().jobs[selection.job_index]
         if selection.action_index < 0 or selection.action_index >= len(job.sub_actions):
@@ -132,9 +134,12 @@ class ElementActionManager(ProjectHandler, QObject):
         else:
             insert_index = len(action.sub_actions)
         insert_index = min(max(insert_index, 0), len(action.sub_actions))
-        self.mark_as_modified(True, "Paste Sub-action", "paste", (selection.job_index, selection.action_index, insert_index))
+        self.mark_as_modified(
+            True, "Paste Sub-action", "paste",
+            (selection.job_index, selection.action_index, insert_index))
         action.sub_actions.insert(insert_index, copy_buffer.clone())
-        self.selection_state.copy_from(SelectionState(selection.job_index, selection.action_index, insert_index))
+        self.selection_state.copy_from(
+            SelectionState(selection.job_index, selection.action_index, insert_index))
         return True
 
     def _op_delete_job(self, job_index):

@@ -303,7 +303,7 @@ class ListContainer:
         job_row = self.current_job_index()
         if job_row < 0 or action_row < 0:
             return (job_row, action_row, None)
-        action, sub_action, subaction_index = self.find_action_position(job_row, action_row)
+        action, _sub_action, subaction_index = self.find_action_position(job_row, action_row)
         if not action:
             return (job_row, action_row, None)
         job = self.project_job(job_row)
