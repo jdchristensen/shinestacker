@@ -477,4 +477,4 @@ class ClassicProjectView(ProjectView, ListContainer):
     def perform_undo(self, entry, old_selection):
         if entry:
             self.refresh_ui(
-                restore_state=SelectionState(*entry.get('affected_position', old_selection)))
+                restore_state=SelectionState(*(entry.get('affected_position', old_selection)[:3])))

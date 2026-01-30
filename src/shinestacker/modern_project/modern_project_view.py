@@ -1037,21 +1037,26 @@ class ModernProjectView(ProjectView):
         if entry:
             self.targeted_undo(entry)
             self.selection_nav.restore_selection(
-                SelectionState(*entry.get('affected_position', old_selection)))
+                SelectionState(*entry.get('affected_position', old_selection)[:3]))
         else:
             self.refresh_ui()
 
     def targeted_undo(self, entry):
         action_type = entry.get('action_type', '')
-        affected_position = entry.get('affected_position', (-1, -1, -1))
+        position = entry.get('affected_position', (-1, -1, -1))
         if action_type == 'move':
-            self._undo_move_action(affected_position)
+            if len(position) < 6:
+                self.refresh_ui()
+            else:
+                from_position = SelectionState(*position[:3])
+                to_position = SelectionState(*position[3:])
+                self._undo_move_action(from_position, to_position)
         elif action_type == 'edit_all':
             self._undo_edit_all_action()
         elif action_type in ['run', 'run_all', 'clear_run_info']:
             self.refresh_ui()
         else:
-            state = SelectionState(*affected_position)
+            state = SelectionState(*position)
             if action_type == 'add':
                 self._undo_add_action(state)
             elif action_type == 'delete':
@@ -1123,13 +1128,8 @@ class ModernProjectView(ProjectView):
         except Exception:
             self.refresh_ui()
 
-    def _undo_move_action(self, position):
-        if len(position) != 6:
-            self.refresh_ui()
-            return
-        from_state = SelectionState(*position[:3])
-        to_state = SelectionState(*position[3:])
-        self._move_widgets(from_state, to_state)
+    def _undo_move_action(self, from_position, to_position):
+        self._move_widgets(from_position, to_position)
 
     def _undo_edit_all_action(self):
         entry = self.undo_manager().last_entry()
