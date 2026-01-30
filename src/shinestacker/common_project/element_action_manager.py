@@ -142,57 +142,24 @@ class ElementActionManager(ProjectHandler, QObject):
         return True
 
     def shift_element(self, delta):
-        if self.is_job_selected():
-            return self._shift_job(delta)
-        if self.is_action_selected():
-            return self._shift_action(delta)
-        if self.is_subaction_selected():
-            return self._shift_subaction(delta)
-        return False
-
-    def _shift_job(self, delta):
-        if not self.is_job_selected():
+        if not self.selection_state.is_valid():
             return False
-        job_index = self.selection_state.job_index
-        new_index = job_index + delta
-        if 0 <= new_index < self.num_project_jobs():
-            jobs = self.project().jobs
-            jobs.insert(new_index, jobs.pop(job_index))
-            self.selection_state.set_job(new_index)
-            return True
-        return False
-
-    def _shift_action(self, delta):
-        if not self.is_action_selected():
+        position = self.selection_state.to_tuple()
+        idx, current_index = self._get_position_stack(position)
+        if len(idx) == 0:
             return False
-        job_index = self.selection_state.job_index
-        action_index = self.selection_state.action_index
-        if not 0 <= job_index < self.num_project_jobs():
+        container = self.project_container(*idx)
+        if not container:
             return False
-        job = self.project().jobs[job_index]
-        new_index = action_index + delta
-        if 0 <= new_index < len(job.sub_actions):
-            job.sub_actions.insert(new_index, job.sub_actions.pop(action_index))
-            self.selection_state.set_action(job_index, new_index)
-            return True
-        return False
-
-    def _shift_subaction(self, delta):
-        if not self.is_subaction_selected():
-            return False
-        job_index = self.selection_state.job_index
-        action_index = self.selection_state.action_index
-        subaction_index = self.selection_state.subaction_index
-        if not 0 <= job_index < self.num_project_jobs():
-            return False
-        job = self.project().jobs[job_index]
-        if not 0 <= action_index < len(job.sub_actions):
-            return False
-        action = job.sub_actions[action_index]
-        new_index = subaction_index + delta
-        if 0 <= new_index < len(action.sub_actions):
-            action.sub_actions.insert(new_index, action.sub_actions.pop(subaction_index))
-            self.selection_state.set_subaction(job_index, action_index, new_index)
+        new_index = current_index + delta
+        if 0 <= new_index < len(container):
+            container.insert(new_index, container.pop(current_index))            
+            if position[2] >= 0:
+                self.selection_state.set_subaction(position[0], position[1], new_index)
+            elif position[1] >= 0:
+                self.selection_state.set_action(position[0], new_index)
+            else:
+                self.selection_state.set_job(new_index)
             return True
         return False
 
