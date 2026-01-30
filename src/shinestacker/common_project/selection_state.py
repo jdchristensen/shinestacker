@@ -34,7 +34,7 @@ class SelectionState:
     def is_valid(self):
         return self.job_index >= 0
 
-    def widget_type(self):
+    def type(self):
         if self.job_index < 0:
             return ''
         if self.action_index < 0:

@@ -202,34 +202,30 @@ class ElementActionManager(ProjectHandler, QObject):
             if element:
                 self.set_copy_buffer(element.clone())
 
+    def _get_position_stack(self, position):
+        if position[2] >= 0:
+            return [position[0], position[1]], position[2]
+        if position[1] >= 0:
+            return [position[0]], position[1]
+        if position[0] >= 0:
+            return[-1], position[0]
+        return [], -1
+
     def clone_element(self):
-        selection = self.selection_state
-        if selection.is_job_selected():
-            job_index = self.selection_state.job_index
-            if not 0 <= job_index < self.num_project_jobs():
-                return False, None
-            self.mark_as_modified(True, "Duplicate Job", "clone", (job_index, -1, -1))
-            job = self.project_job(job_index)
-            job_clone = job.clone(name_postfix=CLONE_POSTFIX)
-            new_job_index = job_index + 1
-            self.project_jobs().insert(new_job_index, job_clone)
-            return job_clone is not None, SelectionState(new_job_index)
-        if selection.is_action_selected() or selection.is_subaction_selected():
-            if not self.get_job_actions(selection):
-                return False, None
-            label = "Subaction" if selection.is_subaction_selected() else "Action"
-            self.mark_as_modified(
-                True, f"Duplicate {label}", "clone",
-                (selection.job_index, selection.action_index, selection.subaction_index))
-            job = self.project_job(selection.job_index)
-            cloned = self.get_action(selection).clone(name_postfix=CLONE_POSTFIX)
-            if selection.is_subaction_selected():
-                self.get_subactions(selection).insert(selection.subaction_index + 1, cloned)
-            else:
-                job.sub_actions.insert(selection.action_index + 1, cloned)
-            new_state = self.new_state_after_insert(selection)
-            return True, new_state
-        return False, None
+        position = self.selection_state.to_tuple()
+        if not self.valid_indices(*position):
+            return False, None
+        self.mark_as_modified(
+            True, f"Duplicate {self.selection_state.type().title()}", "clone", position)
+        element = self.project_element(*position)
+        new_selection = self.new_state_after_insert(self.selection_state)
+        position = self.selection_state.to_tuple()
+        idx, s = self._get_position_stack(position)
+        if len(idx) == 0:
+            return False, None
+        container = self.project_container(*idx)
+        container.insert(s + 1, element.clone(name_postfix=CLONE_POSTFIX))
+        return True, new_selection
 
     def delete_element(self, confirm=True):
         if not self.selection_state.is_valid():
@@ -238,19 +234,14 @@ class ElementActionManager(ProjectHandler, QObject):
         element = self.project_element(*position)
         if not element:
             return None, None
-        element_type = self.selection_state.widget_type()
+        element_type = self.selection_state.type()
         if confirm and not self.confirm_delete_message(
                 element_type, element.params.get('name', '')):
             return None, None
         self.mark_as_modified(True, f"Delete {element_type.title()}", "delete", position)
         deleted_element = None
-        if position[2] >= 0:
-            idx, s = [position[0], position[1]], position[2]
-        elif position[1] >= 0:
-            idx, s = [position[0]], position[1]
-        elif position[0] >= 0:
-            idx, s = [-1], position[0]
-        else:
+        idx, s = self._get_position_stack(position)
+        if len(idx) == 0:
             return None, None
         container = self.project_container(*idx)
         if container and 0 <= s < len(container):
@@ -281,16 +272,15 @@ class ElementActionManager(ProjectHandler, QObject):
         if not 0 <= j < self.num_project_jobs():
             return False
         job = self.project().jobs[j]
+        txt = "Enable" if enabled else "Disable"
         if selection.is_job_selected():
             if job.enabled() != enabled:
-                txt = "Enable" if enabled else "Disable"
                 self.mark_as_modified(True, f"{txt} Job", "edit", (j, -1, -1))
                 job.set_enabled(enabled)
                 return True
         elif selection.is_action_selected() and 0 <= a < len(job.sub_actions):
             element = job.sub_actions[a]
             if element.enabled() != enabled:
-                txt = "Enable" if enabled else "Disable"
                 self.mark_as_modified(True, f"{txt} Action", "edit", (j, a, -1))
                 element.set_enabled(enabled)
                 return True
@@ -299,7 +289,6 @@ class ElementActionManager(ProjectHandler, QObject):
             if 0 <= s < len(action.sub_actions):
                 element = action.sub_actions[s]
                 if element.enabled() != enabled:
-                    txt = "Enable" if enabled else "Disable"
                     self.mark_as_modified(True, f"{txt} Sub-action", "edit", (j, a, s))
                     element.set_enabled(enabled)
                     return True
