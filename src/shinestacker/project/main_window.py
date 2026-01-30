@@ -427,7 +427,7 @@ class MainWindow(ProjectIOHandler, QMainWindow):
         deleted_element, new_selection = self.element_action.cut_element()
         if deleted_element and old_selection and old_selection.is_valid():
             for _view_name, view in self.views.items():
-                view.delete_element(deleted_element, new_selection, old_selection)
+                view.delete_element(new_selection, old_selection)
         if self.num_project_jobs() > 0:
             self.menu_manager.delete_element_action.setEnabled(True)
 
