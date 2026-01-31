@@ -9,6 +9,7 @@
 > **Focus stacking** for microscopy, macro photography, and computational imaging
 
 ## Key Features
+- 📸 **Image Formats**: JPEG, 8 and 16 bits TIFF and PNG and most of RAW formats are supported as input; output can be JPEG, 8 and 16 bits TIFF and PNG
 - 🚀 **Batch Processing**: Align, balance, and stack hundreds of images
 - 🧩 **Modular Architecture**: Mix-and-match processing modules
 - 🖌️ **Retouch Editing**: Final interactive retouch of stacked image from individual frames
@@ -101,9 +102,8 @@ pip install ipywidgets
 
 ## Known Issues
 
-* RAW format is not supported. Convert your images to TIFF or JPEG with your favourite software
-* EXIF data not supported for 16-bit PNG files
-* EXIF exposure data in TIFF files may not be visible in Adobe PhotoShop. Export as JPEG for full Photoshop EXIF compatibility, if needed
-* Windows with ARM64 architecture can't be supported due to limitation of the OpenCV python library
-* GUI tests are limited. Please, report any bugs as GitHub issuse
+* EXIF data not supported for 16-bit PNG files and 16-bit TIFF.
+* Not all EXIF exposure data in TIFF files may be correctly visible in Adobe PhotoShop. Export as JPEG for full Photoshop EXIF compatibility, if needed. Note that Shine Stacker allows to read a TIFF file, import EXIF from a JPEG, and save in JPEG format including the imported EXIF. This allows to preserve EXIF data in the final JPEG file.
+* Windows with ARM64 architecture is not supported in a straightforward way due to missing builds of some of the used libraries
+* GUI tests are limited. Please, report any bugs as [GitHub issuse](https://github.com/lucalista/shinestacker/issues/).
 
