@@ -80,7 +80,7 @@ job.run()
 
 ## Requirements
 
-* Python: 3.14
+* Python: >= 3.12
 * RAM: 16GB+ recommended for >15 images at 20Mpx resolution
 
 ## Dependencies
