@@ -80,14 +80,14 @@ job.run()
 
 ## Requirements
 
-* Python: 3.12
+* Python: 3.14
 * RAM: 16GB+ recommended for >15 images at 20Mpx resolution
 
 ## Dependencies
 
 ### Core processing
 ```bash
-pip install imagecodecs matplotlib numpy opencv-python pillow psdtags psutil scipy setuptools-scm tifffile tqdm
+pip install imagecodecs matplotlib numpy opencv-python pillow psdtags psutil rawpy scipy setuptools-scm tifffile tqdm
 ```
 ## GUI support
 ```bash
