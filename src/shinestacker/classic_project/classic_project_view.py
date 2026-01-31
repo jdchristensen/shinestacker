@@ -142,7 +142,7 @@ class ClassicProjectView(ProjectView, ListContainer):
             self.add_list_item(self.job_list(), job, False)
         if restore_state is not None:
             self.selection_state.copy_from(restore_state)
-        elif self.project_jobs():
+        if self.project_jobs():
             if 0 <= job_row < self.num_project_jobs():
                 self.set_current_job(job_row)
                 if action_row >= 0:
@@ -456,19 +456,17 @@ class ClassicProjectView(ProjectView, ListContainer):
     def perform_undo(self, entry, old_selection):
         if entry:
             position = entry.get('affected_position')
-            action_type = entry.get('action_type', '')
-            if action_type == 'clone' and len(position) >= 6:
+            if len(position) >= 6:
                 restore_state = SelectionState(*position[:3])
             else:
                 restore_state = SelectionState(*position[:3])
-            self.refresh_ui(restore_state=restore_state)
+            self.refresh_ui(restore_state)
 
     def perform_redo(self, entry, old_selection):
         if entry:
             position = entry.get('affected_position')
-            action_type = entry.get('action_type', '')
-            if action_type == 'clone' and len(position) >= 6:
+            if len(position) >= 6:
                 restore_state = SelectionState(*position[3:6])
             else:
                 restore_state = SelectionState(*position[:3])
-            self.refresh_ui(restore_state=restore_state)
+            self.refresh_ui(restore_state)

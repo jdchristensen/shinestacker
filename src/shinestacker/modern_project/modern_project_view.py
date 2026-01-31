@@ -759,8 +759,10 @@ class ModernProjectView(ProjectView):
     def perform_redo(self, entry, old_selection):
         if entry:
             success = self.targeted_redo(entry)
-            self.selection_nav.restore_selection(
-                SelectionState(*entry.get('affected_position', old_selection)[:3]))
+            position = entry.get('affected_position', old_selection)
+            if len(position) > 3:
+                position = position[3:6]
+            self.selection_nav.restore_selection(SelectionState(*position))
             if success:
                 self.refresh_existing_widget_references()
         else:
@@ -811,27 +813,70 @@ class ModernProjectView(ProjectView):
         if action_type == 'add':
             return self._undo_add_action(state, entry)
         if action_type == 'delete':
-            return self._undo_delete_action(state, entry.get('modern_widget_state'))
+            return self._insert_widget_for_undo(state, entry)
         if action_type == 'edit':
             return self._undo_edit_action(state)
         self.refresh_ui()
         return False
 
-    def _undo_add_action(self, selection, entry):
+    def targeted_redo(self, entry):
+        action_type = entry.get('action_type', '')
+        position = entry.get('affected_position', (-1, -1, -1))
+        if action_type == 'clone':
+            clone_position = SelectionState(*position[3:6])
+            return self._redo_insert_common(clone_position, entry)
+        if action_type == 'move':
+            if len(position) < 6:
+                self.refresh_ui()
+                return False
+            from_position = SelectionState(*position[3:])
+            to_position = SelectionState(*position[:3])
+            self._move_widgets(from_position, to_position)
+            return True
+        if action_type == 'paste':
+            if len(position) >= 6:
+                pasted_position = SelectionState(*position[3:6])
+            else:
+                pasted_position = SelectionState(*position)
+            return self._insert_widget_for_undo(pasted_position, entry)
+        if action_type == 'edit_all':
+            return self._undo_edit_all_action()
+        if action_type in ['run', 'run_all', 'clear_run_info']:
+            self.refresh_ui()
+            return False
+        state = SelectionState(*position)
+        if action_type == 'add':
+            return self._insert_widget_for_undo(state, entry)
+        if action_type == 'delete':
+            return self._redo_delete_action(state)
+        if action_type == 'edit':
+            return self._undo_edit_action(state)
+        self.refresh_ui()
+        return False
+
+    def _redo_paste_action(self, original_position, pasted_position, entry):
+        return self._insert_widget_for_undo(pasted_position, entry)
+
+    def _remove_widget_for_undo(self, selection, entry=None):
         try:
             widget = self._find_widget(selection)
             widget_state = None
             if widget and hasattr(widget, 'save_widget_state'):
                 widget_state = widget.save_widget_state()
-            if widget_state:
+            if widget_state and entry is not None:
                 entry['modern_widget_state'] = widget_state
             self._remove_widget(selection)
+            self._refresh_job_widget_signals()
+            self.update_delete_action_state_requested.emit()
             return True
         except Exception:
             self.refresh_ui()
             return False
 
-    def _undo_delete_action(self, selection, widget_state):
+    def _undo_add_action(self, selection, entry):
+        return self._remove_widget_for_undo(selection, entry)
+
+    def _insert_widget_for_undo(self, selection, entry):
         if not selection.is_valid():
             return True
         position = selection.to_tuple()
@@ -844,6 +889,7 @@ class ModernProjectView(ProjectView):
             self._insert_widget(selection, element)
             widget = self._find_widget(selection)
             if widget:
+                widget_state = entry.get('modern_widget_state')
                 if widget_state:
                     widget.restore_widget_state(widget_state)
                 if self.selected_widget:
@@ -853,6 +899,7 @@ class ModernProjectView(ProjectView):
                 self.selection_state.copy_from(selection)
             self._refresh_job_widget_signals()
             self.update_delete_action_state_requested.emit()
+            self._select_widget(self.selection_state)
             return True
         except Exception:
             self.refresh_ui()
@@ -895,157 +942,13 @@ class ModernProjectView(ProjectView):
         return True
 
     def _undo_clone_action(self, selection, entry):
-        try:
-            widget = self._find_widget(selection)
-            widget_state = None
-            if widget and hasattr(widget, 'save_widget_state'):
-                widget_state = widget.save_widget_state()
-            if widget_state:
-                entry['modern_widget_state'] = widget_state
-            self._remove_widget(selection)
-            self._refresh_job_widget_signals()
-            self.update_delete_action_state_requested.emit()
-            return True
-        except Exception:
-            self.refresh_ui()
-            return False
+        return self._remove_widget_for_undo(selection, entry)
 
     def _undo_paste_action(self, original_position, pasted_position, entry):
-        try:
-            if pasted_position.is_valid():
-                widget = self._find_widget(pasted_position)
-                widget_state = None
-                if widget and hasattr(widget, 'save_widget_state'):
-                    widget_state = widget.save_widget_state()
-                if widget_state:
-                    entry['modern_widget_state'] = widget_state
-                self._remove_widget(pasted_position)
-                self._refresh_job_widget_signals()
-                self.update_delete_action_state_requested.emit()
-            return True
-        except Exception:
-            self.refresh_ui()
-            return False
-
-    def targeted_redo(self, entry):
-        action_type = entry.get('action_type', '')
-        position = entry.get('affected_position', (-1, -1, -1))
-        if action_type == 'clone':
-            clone_position = SelectionState(*position[3:6])
-            return self._redo_clone_action(clone_position, entry)
-        if action_type == 'move':
-            if len(position) < 6:
-                self.refresh_ui()
-                return False
-            from_position = SelectionState(*position[3:])
-            to_position = SelectionState(*position[:3])
-            self._move_widgets(from_position, to_position)
-            return True
-        if action_type == 'paste':
-            if len(position) >= 6:
-                original_position = SelectionState(*position[:3])
-                pasted_position = SelectionState(*position[3:])
-                return self._redo_paste_action(original_position, pasted_position, entry)
-            state = SelectionState(*position)
-            return self._redo_paste_action(state, state, entry)
-        if action_type == 'edit_all':
-            return self._undo_edit_all_action()
-        if action_type in ['run', 'run_all', 'clear_run_info']:
-            self.refresh_ui()
-            return False
-        state = SelectionState(*position)
-        if action_type == 'add':
-            return self._redo_add_action(state, entry)
-        if action_type == 'delete':
-            return self._redo_delete_action(state)
-        if action_type == 'edit':
-            return self._undo_edit_action(state)
-        self.refresh_ui()
-        return False
-
-    def _redo_add_action(self, selection, entry):
-        position = selection.to_tuple()
-        try:
-            if not self.valid_indices(*position):
-                return True
-            element = self.project_element(*position)
-            if not element:
-                return True
-            self._insert_widget(selection, element)
-            widget = self._find_widget(selection)
-            if widget:
-                widget_state = entry.get('modern_widget_state')
-                if widget_state:
-                    widget.restore_widget_state(widget_state)
-                if self.selected_widget:
-                    self.selected_widget.set_selected(False)
-                widget.set_selected(True)
-                self.selected_widget = widget
-                self.selection_state.copy_from(selection)
-            self._refresh_job_widget_signals()
-            self.update_delete_action_state_requested.emit()
-            return True
-        except Exception:
-            self.refresh_ui()
-            return False
+        return self._remove_widget_for_undo(pasted_position, entry)
 
     def _redo_delete_action(self, selection):
-        try:
-            self._remove_widget(selection)
-            return True
-        except Exception:
-            self.refresh_ui()
-            return False
+        return self._remove_widget_for_undo(selection, None)
 
-    def _redo_clone_action(self, selection, entry):
-        try:
-            position = selection.to_tuple()
-            if not self.valid_indices(*position):
-                return True
-            element = self.project_element(*position)
-            if not element:
-                return True
-            self._insert_widget(selection, element)
-            widget = self._find_widget(selection)
-            if widget:
-                widget_state = entry.get('modern_widget_state')
-                if widget_state:
-                    widget.restore_widget_state(widget_state)
-                if self.selected_widget:
-                    self.selected_widget.set_selected(False)
-                widget.set_selected(True)
-                self.selected_widget = widget
-                self.selection_state.copy_from(selection)
-            self._refresh_job_widget_signals()
-            self.update_delete_action_state_requested.emit()
-            return True
-        except Exception:
-            self.refresh_ui()
-            return False
-
-    def _redo_paste_action(self, original_position, pasted_position, entry):
-        try:
-            if pasted_position.is_valid():
-                position = pasted_position.to_tuple()
-                if not self.valid_indices(*position):
-                    return True
-                element = self.project_element(*position)
-                if not element:
-                    return True
-                self._insert_widget(pasted_position, element)
-                widget = self._find_widget(pasted_position)
-                if widget:
-                    widget_state = entry.get('modern_widget_state')
-                    if widget_state:
-                        widget.restore_widget_state(widget_state)
-                    if self.selected_widget:
-                        self.selected_widget.set_selected(False)
-                    widget.set_selected(True)
-                    self.selected_widget = widget
-                    self.selection_state.copy_from(pasted_position)
-                self._refresh_job_widget_signals()
-                self.update_delete_action_state_requested.emit()
-            return True
-        except Exception:
-            self.refresh_ui()
-            return False
+    def _redo_insert_common(self, selection, entry):
+        return self._insert_widget_for_undo(selection, entry)
