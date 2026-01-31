@@ -410,11 +410,6 @@ class MainWindow(ProjectIOHandler, QMainWindow):
             for view in self.views.values():
                 view.update_added_element(new_selection.to_tuple())
 
-    def handle_widget_added(self, indices_tuple):
-        for view in self.views.values():
-            if view != self.current_view:
-                view.update_added_element(indices_tuple)
-
     def delete_element(self):
         if not self.current_view.enforce_stop_run():
             return

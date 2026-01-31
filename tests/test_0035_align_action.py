@@ -458,12 +458,6 @@ def test_align_frames_base_homography_initialization():
     assert align_base.min_matches == 4
 
 
-def test_align_frames_base_relative_transformation():
-    align_base = AlignFramesBase()
-    result = align_base.relative_transformation()
-    assert result is None
-
-
 def test_align_frames_base_get_transform_thresholds():
     align_base = AlignFramesBase()
     affine_thresholds, homography_thresholds = align_base.get_transform_thresholds()
@@ -513,7 +507,6 @@ def test_align_frames_base_save_transform_result_none():
 
 def test_align_frames_initialization():
     align_frames = AlignFrames()
-    assert not align_frames.relative_transformation()
     assert align_frames.sequential_processing()
 
 
@@ -773,7 +766,6 @@ if __name__ == "__main__":
     test_align_frames_base_initialization()
     test_align_frames_base_custom_initialization()
     test_align_frames_base_homography_initialization()
-    test_align_frames_base_relative_transformation()
     test_align_frames_base_get_transform_thresholds()
     test_align_frames_base_save_transform_result_rigid()
     test_align_frames_base_save_transform_result_homography()

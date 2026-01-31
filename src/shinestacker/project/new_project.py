@@ -47,10 +47,6 @@ class NewProjectDialog(BaseFormDialog):
         label.setStyleSheet("font-weight: bold")
         self.form_layout.addRow(label)
 
-    def add_label(self, label):
-        label = QLabel(label)
-        self.form_layout.addRow(label)
-
     def create_form(self):
         name_row = QHBoxLayout()
         name_row.setContentsMargins(0, 0, 0, 0)

@@ -22,7 +22,6 @@ class BaseStackAlgo:
         self.max_pixel_value = None
         self.do_step_callback = False
         self.output_filename = 'undefined'
-        self.instance_id = id(self)
         if float_type == constants.FLOAT_32:
             self.float_type = np.float32
         elif float_type == constants.FLOAT_64:

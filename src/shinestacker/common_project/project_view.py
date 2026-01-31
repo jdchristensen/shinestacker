@@ -358,9 +358,6 @@ class ProjectView(QWidget, LogManager, ProjectHandler):
     def shift_element(self, old_selection, new_selection):
         raise NotImplementedError
 
-    def refresh_and_select_job(self, job_idx):
-        raise NotImplementedError
-
     def enforce_stop_run(self):
         if self.is_running():
             reply = QMessageBox.warning(

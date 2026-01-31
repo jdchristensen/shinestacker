@@ -4,7 +4,6 @@ import os
 import math
 import logging
 import numpy as np
-import cv2
 import matplotlib.pyplot as plt
 from .. config.constants import constants
 from .. config.defaults import DEFAULTS
@@ -16,15 +15,15 @@ from .feature_match import (
     SubsamplingFeatureMatcher,
     DEFAULT_FEATURE_CONFIG, DEFAULT_MATCHING_CONFIG, DEFAULT_ALIGNMENT_CONFIG)
 from .transform_estimate import (
-    TransformationExtractor, find_transform_phase_correlation,
+    TransformationExtractor,  # find_transform_phase_correlation,
     AFFINE_THRESHOLDS, HOMOGRAPHY_THRESHOLDS, AFFINE_THRESHOLDS_LARGE,
     HOMOGRAPHY_THRESHOLDS_LARGE)
 
 
-def align_images_phase_correlation(img_ref, img_0):
-    m = find_transform_phase_correlation(img_ref, img_0)
-    img_warp = cv2.warpAffine(img_0, m, img_ref.shape[:2])
-    return m, img_warp
+# def align_images_phase_correlation(img_ref, img_0):
+#    m = find_transform_phase_correlation(img_ref, img_0)
+#    img_warp = cv2.warpAffine(img_0, m, img_ref.shape[:2])
+#    return m, img_warp
 
 
 def get_subsample_factor(h0, w0, target_res):
@@ -111,9 +110,6 @@ class AlignFramesBase(SubAction):
             self.feature_config, self.matching_config, self.alignment_config)
         self.transformation_extractor = TransformationExtractor(
             self.alignment_config, affine_thresholds, homography_thresholds)
-
-    def relative_transformation(self):
-        return None
 
     def align_images(self, _idx, _img_ref, _img_0):
         pass
@@ -531,9 +527,6 @@ class AlignFrames(AlignFramesBase):
 
     def get_img_ref(self, ref_idx):
         return self.process.saved_img_ref(ref_idx)
-
-    def relative_transformation(self):
-        return False
 
     def sequential_processing(self):
         return True

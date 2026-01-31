@@ -54,9 +54,6 @@ class AlignFramesParallel(AlignFramesBase):
         self._kp = None
         self._des = None
 
-    def relative_transformation(self):
-        return True
-
     def get_img_ref(self, ref_idx):
         return self.process.img_ref(ref_idx)
 
@@ -116,13 +113,10 @@ class AlignFramesParallel(AlignFramesBase):
                         color_str(f"failed processing {self.image_str(idx)}: {str(e)}",
                                   constants.LOG_COLOR_WARNING),
                         level=logging.WARNING)
-            cached_images = 0
             for i in range(self.process.num_input_filepaths()):
                 if self._img_locks[i] >= 2:
                     self._img_cache[i] = None
                     self._img_locks[i] = 0
-                elif self._img_cache[i] is not None:
-                    cached_images += 1
         gc.collect()
 
     def begin(self, process):

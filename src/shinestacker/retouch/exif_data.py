@@ -128,9 +128,6 @@ class ExifData(ConfigDialog):
         except Exception:
             return xml_string
 
-    def get_display_name(self, tag_name):
-        return self.DISPLAY_NAMES.get(tag_name, tag_name)
-
     def format_value(self, tag_name, value):
         if tag_name in ['FNumber', 'ApertureValue', 'MaxApertureValue']:
             return self.format_aperture(value)

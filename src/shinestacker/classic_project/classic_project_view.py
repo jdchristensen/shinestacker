@@ -122,9 +122,6 @@ class ClassicProjectView(ProjectView, ListContainer):
         self.clear_job_list()
         self.clear_action_list()
 
-    def refresh_and_select_job(self, job_idx):
-        self.refresh_ui(rows_to_state(self.project(), job_idx, -1))
-
     def refresh_ui(self, restore_state=None):
         selection = self.selection_state.copy()
         job_row = -1

@@ -27,12 +27,6 @@ class LayerCollection:
     def has_no_master_layer(self):
         return self.master_layer is None
 
-    def has_master_layer_copy(self):
-        return self.master_layer_copy is not None
-
-    def has_no_master_layer_copy(self):
-        return self.master_layer_copy is None
-
     def number_of_layers(self):
         if self.layer_stack is None:
             return 0

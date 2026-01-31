@@ -50,7 +50,6 @@ class BaseWidget(QFrame):
                  horizontal_layout=False, color_level=0, parent=None):
         super().__init__(parent)
         self.data_object = data_object
-        self._selected = False
         self._enabled = True
         self._dark_theme = dark_theme
         self.horizontal_layout = horizontal_layout
@@ -255,9 +254,6 @@ class BaseWidget(QFrame):
             return ".../" + os.path.basename(path)
         return path
 
-    def num_child_widgets(self):
-        return len(self.child_widgets)
-
     def _update_stylesheet(self):
         if self._dark_theme:
             border_color = ColorPalette.LIGHT_BLUE.hex()
@@ -324,11 +320,6 @@ class BaseWidget(QFrame):
         for child in self.child_widgets:
             child.clear_all()
 
-    def set_enabled_and_update(self, enabled):
-        self._enabled = enabled
-        self._update_enabled_icon()
-        self._update_stylesheet()
-
     # pylint: disable=C0103
     def resizeEvent(self, event):
         super().resizeEvent(event)
@@ -364,7 +355,6 @@ class BaseWidget(QFrame):
     # pylint: enable=C0103
 
     def set_selected(self, selected):
-        self._selected = selected
         self.setProperty("selected", "true" if selected else "false")
         self._update_stylesheet()
 

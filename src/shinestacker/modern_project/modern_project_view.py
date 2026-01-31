@@ -216,14 +216,6 @@ class ModernProjectView(ProjectView):
         self._reset_selection()
         self.update_delete_action_state_requested.emit()
 
-    def _safe_disconnect(self, signal, slot):
-        try:
-            with warnings.catch_warnings():
-                warnings.simplefilter("ignore")
-                signal.disconnect(slot)
-        except TypeError:
-            pass
-
     # pylint: disable=W0212
     def _refresh_job_widget_signals(self):
         signal_types = ["clicked", "double_clicked", "enabled_toggled"]
@@ -261,7 +253,6 @@ class ModernProjectView(ProjectView):
             widget._slots["enabled_toggled"] = self._on_widget_enabled_toggled
             for signal in signal_types:
                 getattr(widget, signal).connect(widget._slots[signal])
-            widget._signals_connected = True
 
         for job_index, job_widget in enumerate(self.job_widgets):
             disconnect_signals(job_widget)
@@ -279,9 +270,6 @@ class ModernProjectView(ProjectView):
 
     def select_current(self):
         self._select_widget(self.selection_state)
-
-    def _refresh_after_structure_change(self):
-        self._refresh_job_widget_signals()
 
     def _on_widget_clicked(self, widget, job_index, action_index=-1, subaction_index=-1):
         if self.selected_widget:
@@ -439,9 +427,6 @@ class ModernProjectView(ProjectView):
                 self.refresh_ui()
         except Exception:
             self.refresh_ui()
-
-    def _before_shift_element(self):
-        return self.enforce_stop_run()
 
     def shift_element(self, old_selection, new_selection):
         self._move_widgets(old_selection, new_selection)
@@ -742,19 +727,6 @@ class ModernProjectView(ProjectView):
         for child in widget.child_widgets:
             self._clear_widget_metadata(child)
 
-    @Slot(str, int, str, int)
-    def handle_status_signal(self, message, _status, _error_message, timeout):
-        self.show_status_message_requested.emit(message, timeout)
-
-    @Slot(str, int, str, int)
-    def handle_status_update(self, message, _status, _error_message, _progress):
-        self.console_area.handle_html_message(f"<b>{message}</b>")
-
-    @Slot(int, str, str)
-    def handle_worker_end(self, _status, _id_str, _message):
-        self.console_area.handle_html_message("-" * 80)
-        self._worker = None
-
     @Slot(int, str)
     def handle_run_completed(self, _run_id, _name):
         self.run_finished_signal.emit()
@@ -769,31 +741,6 @@ class ModernProjectView(ProjectView):
         self.dark_theme = dark_theme
         for job_widget in self.job_widgets:
             job_widget.set_dark_theme(dark_theme)
-
-    def refresh_and_select_job(self, job_idx):
-        if job_idx < 0 or job_idx >= self.num_project_jobs():
-            self.refresh_ui()
-            return
-        old_job_count = len(self.job_widgets)
-        new_job_count = self.num_project_jobs()
-        if new_job_count == old_job_count + 1:
-            job = self.project_job(job_idx)
-            if job:
-                self._insert_widget(SelectionState(job_idx), job)
-                if 0 <= job_idx < len(self.job_widgets):
-                    job_widget = self.job_widgets[job_idx]
-                    if self.selected_widget:
-                        self.selected_widget.set_selected(False)
-                    job_widget.set_selected(True)
-                    self.selected_widget = job_widget
-                    self.selection_state.set_job(job_idx)
-                self._refresh_job_widget_signals()
-                self._ensure_selected_visible()
-                self.update_delete_action_state_requested.emit()
-                return
-        self.refresh_ui()
-        if 0 <= job_idx < len(self.job_widgets):
-            self._select_widget(SelectionState(job_idx))
 
     def select_first_job(self):
         if self.job_widgets:

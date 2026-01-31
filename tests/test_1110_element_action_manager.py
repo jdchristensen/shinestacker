@@ -316,7 +316,7 @@ class TestElementActionManager(unittest.TestCase):
         job = MockElement('Job1', constants.ACTION_JOB, enabled=True)
         self.project_holder.project().jobs.append(job)
         self.selection_state.set_job(0)
-        result = self.manager.set_enabled(False, self.selection_state)
+        result = self.manager.set_enabled(self.selection_state, False)
         self.assertTrue(result)
         self.assertFalse(job.enabled())
 
@@ -326,7 +326,7 @@ class TestElementActionManager(unittest.TestCase):
         job.sub_actions.append(action)
         self.project_holder.project().jobs.append(job)
         self.selection_state.set_action(0, 0)
-        result = self.manager.set_enabled(False, self.selection_state)
+        result = self.manager.set_enabled(self.selection_state, False)
         self.assertTrue(result)
         self.assertFalse(action.enabled())
 
