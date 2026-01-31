@@ -5,12 +5,12 @@ from functools import partial
 from PySide6.QtCore import Qt, QTimer, Signal, Slot
 from PySide6.QtGui import QCursor
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QSplitter, QScrollArea
-from .. gui.gui_logging import QTextEditLogger
-from .. config.constants import constants
-from .. common_project.run_worker import JobLogWorker, ProjectLogWorker
-from .. common_project.project_view import ProjectView
-from .. common_project.selection_state import SelectionState
-from .. common_project.element_action_manager import CLONE_POSTFIX
+from ..gui.gui_logging import QTextEditLogger
+from ..config.constants import constants
+from ..common_project.run_worker import JobLogWorker, ProjectLogWorker
+from ..common_project.project_view import ProjectView
+from ..common_project.selection_state import SelectionState
+from ..common_project.element_action_manager import CLONE_POSTFIX
 from .job_widget import JobWidget
 from .progress_mapper import ProgressMapper
 from .progress_signal_handler import ProgressSignalHandler, SignalConnector
@@ -321,7 +321,8 @@ class ModernProjectView(ProjectView):
         self.selection_state.from_tuple((job_index, action_index, subaction_index))
         self.update_delete_action_state_requested.emit()
         element = self.project_element(job_index, action_index, subaction_index)
-        self.enable_sub_actions_requested.emit(element.type_name == constants.ACTION_COMBO)
+        self.enable_sub_actions_requested.emit(
+            subaction_index >= 0 or element.type_name == constants.ACTION_COMBO)
         self.setFocus()
 
     def _update_widget(self, selection, element):
@@ -544,45 +545,13 @@ class ModernProjectView(ProjectView):
     def current_job_index(self):
         return self.selection_state.job_index
 
-    def _before_add_sub_action(self):
-        return self.enforce_stop_run()
-
-    def _update_ui_after_add_sub_action(self, sub_action, position):
-        job_index, action_index, insert_index = position
-        new_state = SelectionState(job_index, action_index, insert_index)
-        subaction_widget = self._insert_widget(new_state, sub_action)
-        if subaction_widget:
-            self.selection_state.copy_from(new_state)
-            if self.selected_widget:
-                self.selected_widget.set_selected(False)
-            subaction_widget.set_selected(True)
-            self.selected_widget = subaction_widget
-            self._ensure_selected_visible()
-            self._refresh_job_widget_signals()
-
-    def update_added_element(self, indices_tuple):
-        job_idx, action_idx, subaction_idx = indices_tuple
+    def update_added_element(self, new_position):
+        element = self.project_element(*new_position)
+        if element is None:
+            return False
         try:
-            if not 0 <= job_idx < self.num_project_jobs():
-                return False
-            job = self.project().jobs[job_idx]
-            if subaction_idx != -1:
-                if not 0 <= action_idx < len(job.sub_actions):
-                    return False
-                action = job.sub_actions[action_idx]
-                if not 0 <= subaction_idx < len(action.sub_actions):
-                    return False
-                subaction = action.sub_actions[subaction_idx]
-                self._insert_widget(SelectionState(
-                    job_idx, action_idx, subaction_idx), subaction)
-            elif action_idx != -1:
-                if not 0 <= action_idx < len(job.sub_actions):
-                    return False
-                action = job.sub_actions[action_idx]
-                self._insert_widget(SelectionState(job_idx, action_idx), action)
-            else:
-                self._insert_widget(SelectionState(job_idx), job)
-            self.selection_state.copy_from(SelectionState(*indices_tuple))
+            self._insert_widget(SelectionState(*new_position), element)
+            self.selection_state.copy_from(SelectionState(*new_position))
             self._select_widget(self.selection_state)
             return True
         except Exception:
@@ -698,6 +667,7 @@ class ModernProjectView(ProjectView):
                 job_widget.double_clicked.connect(self.edit_element_signal.emit)
                 self.job_widgets.insert(state.job_index, job_widget)
                 self.project_layout.insertWidget(state.job_index, job_widget)
+                self._refresh_job_widget_signals()
                 return job_widget
         elif state.is_action_selected():
             if 0 <= state.job_index < len(self.job_widgets) and \
@@ -711,6 +681,7 @@ class ModernProjectView(ProjectView):
                 action_widget.double_clicked.connect(self.edit_element_signal.emit)
                 job_widget.child_widgets.insert(state.action_index, action_widget)
                 job_widget.child_container_layout.insertWidget(state.action_index, action_widget)
+                self._refresh_job_widget_signals()
                 return action_widget
         elif state.is_subaction_selected():
             if 0 <= state.job_index < len(self.job_widgets) and \
@@ -724,10 +695,11 @@ class ModernProjectView(ProjectView):
                     subaction_widget.clicked.connect(lambda: self._on_widget_clicked(
                         subaction_widget, state.job_index, state.action_index,
                         state.subaction_index))
-                    subaction_widget.double_clicked.connect(self.edit_element_signal.emit())
+                    subaction_widget.double_clicked.connect(self.edit_element_signal.emit)
                     action_widget.child_widgets.insert(state.subaction_index, subaction_widget)
                     action_widget.child_container_layout.insertWidget(
                         state.subaction_index, subaction_widget)
+                    self._refresh_job_widget_signals()
                     return subaction_widget
         return None
 

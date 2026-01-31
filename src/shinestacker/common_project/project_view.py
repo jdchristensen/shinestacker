@@ -9,7 +9,6 @@ from .. core.core_utils import running_under_windows, running_under_macos
 from .. config.constants import constants
 from .. gui.gui_logging import LogManager
 from .. gui.action_config_dialog import ActionConfigDialog
-from .. gui.project_model import ActionConfig
 from .. gui.project_model import (
     get_action_working_path, get_action_input_path, get_action_output_path)
 from .project_handler import ProjectHandler
@@ -264,43 +263,6 @@ class ProjectView(QWidget, LogManager, ProjectHandler):
     def _after_set_enabled(self, selection, enabled):
         raise NotImplementedError
 
-    def add_sub_action(self, type_name):
-        if not self._before_add_sub_action():
-            return False, None
-        job_index = self.selection_state.job_index
-        action_index = self.selection_state.action_index
-        if job_index < 0 or action_index < 0:
-            return False, None
-        is_valid, error_title, error_msg = self.validate_add_subaction(job_index, action_index)
-        if not is_valid:
-            self.show_warning(error_title, error_msg)
-            return False, None
-        job = self.project_job(job_index)
-        action = job.sub_actions[action_index]
-        sub_action = ActionConfig(type_name)
-        if not self._show_action_config_dialog(sub_action):
-            return False, None
-        insert_index = self.calculate_subaction_insertion_index(self.selection_state, action)
-        self.mark_as_modified(
-            True, "Add Sub-action", "add", (job_index, action_index, insert_index))
-        action.sub_actions.insert(insert_index, sub_action)
-        position = (job_index, action_index, insert_index)
-        self._update_ui_after_add_sub_action(sub_action, position)
-        return True, position
-
-    def validate_add_subaction(self, job_index, action_index):
-        if job_index < 0 or action_index < 0:
-            return False, "Invalid Selection", "Please select an action first."
-        if job_index >= self.num_project_jobs():
-            return False, "Invalid Job", "Selected job does not exist."
-        job = self.project_job(job_index)
-        if action_index >= len(job.sub_actions):
-            return False, "Invalid Action", "Selected action does not exist."
-        action = job.sub_actions[action_index]
-        if action.type_name != constants.ACTION_COMBO:
-            return False, "Invalid Action Type", "Sub-actions can only be added to Combo actions."
-        return True, "", ""
-
     def delete_element(self, old_selection, new_selection):
         raise NotImplementedError
 
@@ -320,9 +282,6 @@ class ProjectView(QWidget, LogManager, ProjectHandler):
         self.action_dialog = ActionConfigDialog(
             action, self.current_file_directory(), self.parent())
         return self.action_dialog.exec() == QDialog.Accepted
-
-    def _update_ui_after_add_action(self, action, position):
-        raise NotImplementedError
 
     def current_job_index(self):
         raise NotImplementedError
@@ -459,15 +418,6 @@ class ProjectView(QWidget, LogManager, ProjectHandler):
 
     def _start_project_worker(self):
         raise NotImplementedError
-
-    def calculate_subaction_insertion_index(self, selection_state, action):
-        if not selection_state or not action:
-            return len(action.sub_actions)
-        insert_index = len(action.sub_actions)
-        if selection_state.is_subaction_selected():
-            if 0 <= selection_state.subaction_index < len(action.sub_actions):
-                insert_index = selection_state.subaction_index + 1
-        return min(max(0, insert_index), len(action.sub_actions))
 
     def show_warning(self, title, message):
         QMessageBox.warning(self.parent() if self.parent() else self, title, message)

@@ -76,14 +76,14 @@ class MainWindow(ProjectIOHandler, QMainWindow):
             "Clear Run Information": self.clear_run_metadata
         }
         self.menu_manager = MenuManager(
-            self.menuBar(), actions, self.add_action, self.add_sub_action, dark_theme, self)
+            self.menuBar(), actions, self.add_action, self.add_subaction, dark_theme, self)
         self.classic_view.connect_signals(
             self.update_delete_action_state,
-            self.menu_manager.set_enabled_sub_actions_gui)
+            self.menu_manager.set_enabled_subactions_gui)
         self.modern_view.connect_signals(
             self.update_delete_action_state,
             self.show_status_message,
-            self.menu_manager.set_enabled_sub_actions_gui)
+            self.menu_manager.set_enabled_subactions_gui)
 
         signal_map = [
             ('widget_enable_signal', self.set_enabled),
@@ -401,14 +401,13 @@ class MainWindow(ProjectIOHandler, QMainWindow):
             for view in self.views.values():
                 view.update_added_element(new_selection.to_tuple())
 
-    def add_sub_action(self, type_name):
+    def add_subaction(self, type_name):
         if not self.current_view.enforce_stop_run():
             return
-        success, new_position = self.current_view.add_sub_action(type_name)
-        if success and new_position is not None:
+        success, new_selection = self.element_action.add_subaction(type_name)
+        if success:
             for view in self.views.values():
-                if view != self.current_view:
-                    self.handle_widget_added(new_position)
+                view.update_added_element(new_selection.to_tuple())
 
     def handle_widget_added(self, indices_tuple):
         for view in self.views.values():
@@ -557,7 +556,7 @@ class MainWindow(ProjectIOHandler, QMainWindow):
     def update_delete_action_state(self):
         self.menu_manager.delete_element_action.setEnabled(
             self.selection_state.is_valid())
-        self.menu_manager.set_enabled_sub_actions_gui(
+        self.menu_manager.set_enabled_subactions_gui(
             self.selection_state.is_subaction_selected())
 
     def set_enabled_file_open_close_actions(self, enabled):

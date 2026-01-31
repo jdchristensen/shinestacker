@@ -10,6 +10,16 @@ from .project_handler import ProjectHandler
 CLONE_POSTFIX = ' (clone)'
 
 
+def get_position_stack(position):
+    if position[2] >= 0:
+        return [position[0], position[1]], position[2]
+    if position[1] >= 0:
+        return [position[0]], position[1]
+    if position[0] >= 0:
+        return [-1], position[0]
+    return [], -1
+
+
 class ElementActionManager(ProjectHandler, QObject):
     project_modified_signal = Signal(bool)
 
@@ -123,7 +133,7 @@ class ElementActionManager(ProjectHandler, QObject):
         if not self.selection_state.is_valid():
             return False
         position = self.selection_state.to_tuple()
-        idx, current_index = self._get_position_stack(position)
+        idx, current_index = get_position_stack(position)
         if len(idx) == 0:
             return False
         container = self.project_container(*idx)
@@ -147,15 +157,6 @@ class ElementActionManager(ProjectHandler, QObject):
             if element:
                 self.set_copy_buffer(element.clone())
 
-    def _get_position_stack(self, position):
-        if position[2] >= 0:
-            return [position[0], position[1]], position[2]
-        if position[1] >= 0:
-            return [position[0]], position[1]
-        if position[0] >= 0:
-            return [-1], position[0]
-        return [], -1
-
     def clone_element(self):
         position = self.selection_state.to_tuple()
         if not self.valid_indices(*position):
@@ -165,7 +166,7 @@ class ElementActionManager(ProjectHandler, QObject):
         element = self.project_element(*position)
         new_selection = self.new_state_after_insert(self.selection_state)
         position = self.selection_state.to_tuple()
-        idx, s = self._get_position_stack(position)
+        idx, s = get_position_stack(position)
         if len(idx) == 0:
             return False, None
         container = self.project_container(*idx)
@@ -186,7 +187,7 @@ class ElementActionManager(ProjectHandler, QObject):
         self.mark_as_modified(
             True, f"Delete {element_type.title()}", "delete", position)
         deleted_element = None
-        idx, s = self._get_position_stack(position)
+        idx, s = get_position_stack(position)
         if len(idx) == 0:
             return None, None
         container = self.project_container(*idx)
@@ -259,11 +260,10 @@ class ElementActionManager(ProjectHandler, QObject):
         self.action_dialog = self.action_config_dialog(action)
         if self.action_dialog.exec() != QDialog.Accepted:
             return False, None
-        insert_index = self.calculate_action_insertion_index(self.selection_state, job)
+        new_selection = self.new_state_after_insert(self.selection_state)
         self.mark_as_modified(
-            True, "Add Action", "add", (job_index, insert_index, -1))
-        job.sub_actions.insert(insert_index, action)
-        new_selection = SelectionState(job_index, insert_index, -1)
+            True, "Add Action", "add", new_selection.to_tuple())
+        job.sub_actions.insert(new_selection.action_index, action)
         return True, new_selection
 
     def validate_add_action(self, job_index):
@@ -273,14 +273,36 @@ class ElementActionManager(ProjectHandler, QObject):
             return False, "No Job Added", "Please add a job first."
         return True, "", ""
 
-    def calculate_action_insertion_index(self, selection_state, job):
-        if not selection_state or not job:
-            return len(job.sub_actions)
-        insert_index = len(job.sub_actions)
-        if selection_state.is_action_selected():
-            if 0 <= selection_state.action_index < len(job.sub_actions):
-                insert_index = selection_state.action_index + 1
-        elif selection_state.is_subaction_selected():
-            if 0 <= selection_state.action_index < len(job.sub_actions):
-                insert_index = selection_state.action_index + 1
-        return min(max(0, insert_index), len(job.sub_actions))
+    def add_subaction(self, type_name):
+        job_index = self.selection_state.job_index
+        action_index = self.selection_state.action_index
+        if job_index < 0 or action_index < 0:
+            return False, None
+        is_valid, error_title, error_msg = self.validate_add_subaction(job_index, action_index)
+        if not is_valid:
+            self.show_warning(error_title, error_msg)
+            return False, None
+        job = self.project_job(job_index)
+        action = job.sub_actions[action_index]
+        sub_action = ActionConfig(type_name)
+        self.action_dialog = self.action_config_dialog(sub_action)
+        if self.action_dialog.exec() != QDialog.Accepted:
+            return False, None
+        new_selection = self.new_state_after_insert(self.selection_state)
+        self.mark_as_modified(
+            True, "Add Sub-action", "add", new_selection.to_tuple())
+        action.sub_actions.insert(new_selection.subaction_index, sub_action)
+        return True, new_selection
+
+    def validate_add_subaction(self, job_index, action_index):
+        if job_index < 0 or action_index < 0:
+            return False, "Invalid Selection", "Please select an action first."
+        if job_index >= self.num_project_jobs():
+            return False, "Invalid Job", "Selected job does not exist."
+        job = self.project_job(job_index)
+        if action_index >= len(job.sub_actions):
+            return False, "Invalid Action", "Selected action does not exist."
+        action = job.sub_actions[action_index]
+        if action.type_name != constants.ACTION_COMBO:
+            return False, "Invalid Action Type", "Sub-actions can only be added to Combo actions."
+        return True, "", ""

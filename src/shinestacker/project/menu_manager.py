@@ -12,18 +12,18 @@ from .. gui.recent_file_manager import RecentFileManager
 class MenuManager(QObject):
     open_file_requested = Signal(str)
 
-    def __init__(self, menubar, actions, add_action, add_sub_action, dark_theme, parent):
+    def __init__(self, menubar, actions, add_action, add_subaction, dark_theme, parent):
         super().__init__(parent)
         self.script_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "gui")
         self._recent_file_manager = RecentFileManager("shinestacker-recent-project-files.txt")
         self.add_action = add_action
-        self.add_sub_action = add_sub_action
+        self.add_subaction = add_subaction
         self.dark_theme = dark_theme
         self.parent = parent
         self.menubar = menubar
         self.actions = actions
         self.action_selector = None
-        self.sub_action_selector = None
+        self.subaction_selector = None
         self.shortcuts = {
             "&New...": "Ctrl+N",
             "&Open...": "Ctrl+O",
@@ -253,21 +253,21 @@ class MenuManager(QObject):
             }[action])
             add_action_menu.addAction(entry_action)
         menu.addMenu(add_action_menu)
-        add_sub_action_menu = QMenu("Add Sub Action", self.parent)
-        self.sub_action_menu_entries = []
+        add_subaction_menu = QMenu("Add Sub Action", self.parent)
+        self.subaction_menu_entries = []
         for action in constants.SUB_ACTION_TYPES:
             entry_action = QAction(action, self.parent)
             entry_action.setProperty("requires_file", True)
             entry_action.triggered.connect({
-                constants.ACTION_MASKNOISE: self.add_sub_action_make_noise,
-                constants.ACTION_VIGNETTING: self.add_sub_action_vignetting,
-                constants.ACTION_ALIGNFRAMES: self.add_sub_action_align_frames,
-                constants.ACTION_BALANCEFRAMES: self.add_sub_action_balance_frames
+                constants.ACTION_MASKNOISE: self.add_subaction_make_noise,
+                constants.ACTION_VIGNETTING: self.add_subaction_vignetting,
+                constants.ACTION_ALIGNFRAMES: self.add_subaction_align_frames,
+                constants.ACTION_BALANCEFRAMES: self.add_subaction_balance_frames
             }[action])
             entry_action.setEnabled(False)
-            self.sub_action_menu_entries.append(entry_action)
-            add_sub_action_menu.addAction(entry_action)
-        menu.addMenu(add_sub_action_menu)
+            self.subaction_menu_entries.append(entry_action)
+            add_subaction_menu.addAction(entry_action)
+        menu.addMenu(add_subaction_menu)
 
     def add_help_menu(self):
         menu = self.menubar.addMenu("&Help")
@@ -301,9 +301,9 @@ class MenuManager(QObject):
         if self.add_action(type_name):
             self.delete_element_action.setEnabled(False)
 
-    def perform_add_sub_action(self):
-        type_name = self.sub_action_selector.currentText()
-        self.add_sub_action(type_name)
+    def perform_add_subaction(self):
+        type_name = self.subaction_selector.currentText()
+        self.add_subaction(type_name)
 
     def save_actions_set_enabled(self, enabled):
         self.save_action.setEnabled(enabled)
@@ -324,17 +324,17 @@ class MenuManager(QObject):
     def add_action_multilayer(self):
         self.add_action(constants.ACTION_MULTILAYER)
 
-    def add_sub_action_make_noise(self):
-        self.add_sub_action(constants.ACTION_MASKNOISE)
+    def add_subaction_make_noise(self):
+        self.add_subaction(constants.ACTION_MASKNOISE)
 
-    def add_sub_action_vignetting(self):
-        self.add_sub_action(constants.ACTION_VIGNETTING)
+    def add_subaction_vignetting(self):
+        self.add_subaction(constants.ACTION_VIGNETTING)
 
-    def add_sub_action_align_frames(self):
-        self.add_sub_action(constants.ACTION_ALIGNFRAMES)
+    def add_subaction_align_frames(self):
+        self.add_subaction(constants.ACTION_ALIGNFRAMES)
 
-    def add_sub_action_balance_frames(self):
-        self.add_sub_action(constants.ACTION_BALANCEFRAMES)
+    def add_subaction_balance_frames(self):
+        self.add_subaction(constants.ACTION_BALANCEFRAMES)
 
     def fill_toolbar(self, toolbar):
         toolbar.addAction(self.add_job_action)
@@ -350,17 +350,17 @@ class MenuManager(QObject):
         self.add_action_entry_action.triggered.connect(self.perform_add_action)
         self.add_action_entry_action.setEnabled(False)
         toolbar.addAction(self.add_action_entry_action)
-        self.sub_action_selector = QComboBox()
-        self.sub_action_selector.addItems(constants.SUB_ACTION_TYPES)
-        self.sub_action_selector.setEnabled(False)
-        toolbar.addWidget(self.sub_action_selector)
-        self.add_sub_action_entry_action = QAction("Add Sub Action", self.parent)
-        self.add_sub_action_entry_action.setIcon(
+        self.subaction_selector = QComboBox()
+        self.subaction_selector.addItems(constants.SUB_ACTION_TYPES)
+        self.subaction_selector.setEnabled(False)
+        toolbar.addWidget(self.subaction_selector)
+        self.add_subaction_entry_action = QAction("Add Sub Action", self.parent)
+        self.add_subaction_entry_action.setIcon(
             self.get_icon("plus-round-line-icon"))
-        self.add_sub_action_entry_action.setToolTip("Add sub action")
-        self.add_sub_action_entry_action.triggered.connect(self.perform_add_sub_action)
-        self.add_sub_action_entry_action.setEnabled(False)
-        toolbar.addAction(self.add_sub_action_entry_action)
+        self.add_subaction_entry_action.setToolTip("Add sub action")
+        self.add_subaction_entry_action.triggered.connect(self.perform_add_subaction)
+        self.add_subaction_entry_action.setEnabled(False)
+        toolbar.addAction(self.add_subaction_entry_action)
         toolbar.addSeparator()
         toolbar.addAction(self.delete_element_action)
         toolbar.addSeparator()
@@ -368,10 +368,10 @@ class MenuManager(QObject):
         toolbar.addAction(self.run_all_jobs_action)
         toolbar.addAction(self.stop_action)
 
-    def set_enabled_sub_actions_gui(self, enabled):
-        self.add_sub_action_entry_action.setEnabled(enabled)
-        self.sub_action_selector.setEnabled(enabled)
-        for a in self.sub_action_menu_entries:
+    def set_enabled_subactions_gui(self, enabled):
+        self.add_subaction_entry_action.setEnabled(enabled)
+        self.subaction_selector.setEnabled(enabled)
+        for a in self.subaction_menu_entries:
             a.setEnabled(enabled)
 
     def set_enabled_run_all_jobs(self, enabled):
