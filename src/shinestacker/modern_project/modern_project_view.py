@@ -1,6 +1,7 @@
 # pylint: disable=C0114, C0115, C0116, E0611, R0902, R0904, R0913, R0914, R0917, R0912, R0915, E1101
 # pylint: disable=R1716, C0302, R0911, R0903, W0718, W0613, R0801, R1702
 import os
+import warnings
 from functools import partial
 from PySide6.QtCore import Qt, QTimer, Signal, Slot
 from PySide6.QtGui import QCursor
@@ -149,13 +150,11 @@ class ModernProjectView(ProjectView):
         current_action = None
         if widget:
             while widget and widget != self:
-                if hasattr(widget, 'data_object'):
-                    current_action = widget.data_object
-                    break
-                widget = widget.parentWidget()
+                current_action = widget.data_object
+                break
+            widget = widget.parentWidget()
         if not current_action and self.selected_widget:
-            if hasattr(self.selected_widget, 'data_object'):
-                current_action = self.selected_widget.data_object
+            current_action = self.selected_widget.data_object
         if current_action:
             menu = self.create_common_context_menu(current_action)
             menu.exec(event.globalPos())
@@ -164,22 +163,22 @@ class ModernProjectView(ProjectView):
     def _build_progress_mapping(self, job_indices=None):
         self.progress_mapper.build_mapping(self.project(), job_indices)
 
-    def _find_widget(self, state):
-        if not state or not state.is_valid():
+    def _find_widget(self, selection):
+        if not selection or not selection.is_valid():
             return None
-        if not 0 <= state.job_index < len(self.job_widgets):
+        if not 0 <= selection.job_index < len(self.job_widgets):
             return None
-        job_widget = self.job_widgets[state.job_index]
-        if state.is_job_selected():
+        job_widget = self.job_widgets[selection.job_index]
+        if selection.is_job_selected():
             return job_widget
-        if not 0 <= state.action_index < len(job_widget.child_widgets):
+        if not 0 <= selection.action_index < len(job_widget.child_widgets):
             return None
-        action_widget = job_widget.child_widgets[state.action_index]
-        if state.is_action_selected():
+        action_widget = job_widget.child_widgets[selection.action_index]
+        if selection.is_action_selected():
             return action_widget
-        if not 0 <= state.subaction_index < len(action_widget.child_widgets):
+        if not 0 <= selection.subaction_index < len(action_widget.child_widgets):
             return None
-        return action_widget.child_widgets[state.subaction_index]
+        return action_widget.child_widgets[selection.subaction_index]
 
     def _scroll_to_widget(self, widget):
         if not widget or not self.scroll_area:
@@ -209,7 +208,7 @@ class ModernProjectView(ProjectView):
                 item = self.project_layout.takeAt(0)
                 if item.widget():
                     item.widget().deleteLater()
-        self.selection_state.job_index = 0
+        self.selection_state.set_indices()
         self.selected_widget = None
 
     def clear_project(self):
@@ -217,46 +216,11 @@ class ModernProjectView(ProjectView):
         self._reset_selection()
         self.update_delete_action_state_requested.emit()
 
-    def add_job_widget(self, job):
-        job_widget = JobWidget(job, self.dark_theme,
-                               self.actions_layout_horizontal,
-                               self.subactions_layout_vertical)
-        job_widget.setFocusPolicy(Qt.NoFocus)
-        job_index = len(self.job_widgets)
-        job_widget.clicked.connect(
-            lambda checked=False, w=job_widget, idx=job_index:
-                self._on_widget_clicked(w, idx)
-        )
-        job_widget.double_clicked.connect(self.edit_element_signal.emit)
-        job_widget.enabled_toggled.connect(self._on_widget_enabled_toggled)
-        self.job_widgets.append(job_widget)
-        self.project_layout.addWidget(job_widget)
-        for action_idx, action_widget in enumerate(job_widget.child_widgets):
-            def make_action_click_handler(j_idx, a_idx, widget):
-                def handler():
-                    self._on_widget_clicked(widget, j_idx, a_idx)
-                return handler
-            action_widget.clicked.connect(
-                make_action_click_handler(job_index, action_idx, action_widget))
-            action_widget.double_clicked.connect(self.edit_element_signal.emit)
-            action_widget.enabled_toggled.connect(self._on_widget_enabled_toggled)
-            for subaction_idx, subaction_widget in enumerate(action_widget.child_widgets):
-                def make_subaction_click_handler(j_idx, a_idx, s_idx, widget):
-                    def handler():
-                        self._on_widget_clicked(widget, j_idx, a_idx, s_idx)
-                    return handler
-                subaction_widget.clicked.connect(
-                    make_subaction_click_handler(
-                        job_index, action_idx, subaction_idx, subaction_widget)
-                )
-                subaction_widget.double_clicked.connect(self.edit_element_signal.emit)
-                subaction_widget.enabled_toggled.connect(self._on_widget_enabled_toggled)
-        if len(self.job_widgets) == 1:
-            self._on_widget_clicked(job_widget, 0)
-
     def _safe_disconnect(self, signal, slot):
         try:
-            signal.disconnect(slot)
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore")
+                signal.disconnect(slot)
         except TypeError:
             pass
 
@@ -270,45 +234,51 @@ class ModernProjectView(ProjectView):
                     signal_obj = getattr(widget, signal)
                     if signal_obj:
                         try:
-                            signal_obj.disconnect()
+                            with warnings.catch_warnings():
+                                warnings.simplefilter("ignore")
+                                signal_obj.disconnect()
                         except TypeError:
                             pass
                 except AttributeError:
                     pass
 
-        def connect_widget_signals(widget, widget_type, indices):
+        def connect_widget_signals(widget, widget_type, position):
             widget._slots = {}
             if widget_type == "job":
-                j_idx = indices[0]
-                widget._slots["clicked"] = partial(self._on_widget_clicked, widget, j_idx)
+                job_index = position[0]
+                widget._slots["clicked"] = partial(self._on_widget_clicked, widget, job_index)
                 widget._slots["double_clicked"] = self.edit_element_signal.emit
             elif widget_type == "action":
-                j_idx, a_idx = indices
+                job_index, action_index = position
                 widget._slots["clicked"] = partial(
-                    self._on_widget_clicked, widget, j_idx, a_idx)
+                    self._on_widget_clicked, widget, job_index, action_index)
                 widget._slots["double_clicked"] = self.edit_element_signal.emit
             else:
-                j_idx, a_idx, s_idx = indices
+                job_index, action_index, subaction_index = position
                 widget._slots["clicked"] = partial(
-                    self._on_widget_clicked, widget, j_idx, a_idx, s_idx)
+                    self._on_widget_clicked, widget, job_index, action_index, subaction_index)
                 widget._slots["double_clicked"] = self.edit_element_signal.emit
             widget._slots["enabled_toggled"] = self._on_widget_enabled_toggled
             for signal in signal_types:
                 getattr(widget, signal).connect(widget._slots[signal])
             widget._signals_connected = True
 
-        for j_idx, job_widget in enumerate(self.job_widgets):
+        for job_index, job_widget in enumerate(self.job_widgets):
             disconnect_signals(job_widget)
             for action_widget in job_widget.child_widgets:
                 disconnect_signals(action_widget)
                 for subaction_widget in action_widget.child_widgets:
                     disconnect_signals(subaction_widget)
-            connect_widget_signals(job_widget, "job", (j_idx,))
-            for a_idx, action_widget in enumerate(job_widget.child_widgets):
-                connect_widget_signals(action_widget, "action", (j_idx, a_idx))
-                for s_idx, subaction_widget in enumerate(action_widget.child_widgets):
-                    connect_widget_signals(subaction_widget, "subaction", (j_idx, a_idx, s_idx))
+            connect_widget_signals(job_widget, "job", (job_index,))
+            for action_index, action_widget in enumerate(job_widget.child_widgets):
+                connect_widget_signals(action_widget, "action", (job_index, action_index))
+                for subaction_index, subaction_widget in enumerate(action_widget.child_widgets):
+                    connect_widget_signals(
+                        subaction_widget, "subaction", (job_index, action_index, subaction_index))
     # pylint: enable=W0212
+
+    def select_current(self):
+        self._select_widget(self.selection_state)
 
     def _refresh_after_structure_change(self):
         self._refresh_job_widget_signals()
@@ -330,14 +300,6 @@ class ModernProjectView(ProjectView):
             return
         widget = self._find_widget(selection)
         widget.update(element)
-
-    def _select_job_widget(self, widget):
-        for i, job_widget in enumerate(self.job_widgets):
-            if job_widget == widget:
-                job_widget.set_selected(True)
-                self.selection_state.job_index = i
-            else:
-                job_widget.set_selected(False)
 
     def delete_element(self, old_selection, new_selection):
         widget_state = None
@@ -381,27 +343,8 @@ class ModernProjectView(ProjectView):
         if not old_selection or not old_selection.is_valid():
             return
         try:
-            job_idx = old_selection.job_index
-            if not 0 <= job_idx < self.num_project_jobs():
-                return
-            job = self.project().jobs[job_idx]
-            if old_selection.is_job_selected():
-                element = self.project_job(job_idx)
-            elif old_selection.is_action_selected():
-                action_idx = old_selection.action_index
-                if not 0 <= action_idx < len(job.sub_actions):
-                    return
-                element = job.sub_actions[action_idx]
-            elif old_selection.is_subaction_selected():
-                action_idx = old_selection.action_index
-                subaction_idx = old_selection.subaction_index
-                if not 0 <= action_idx < len(job.sub_actions):
-                    return
-                action = job.sub_actions[action_idx]
-                if not 0 <= subaction_idx < len(action.sub_actions):
-                    return
-                element = action.sub_actions[subaction_idx]
-            else:
+            element = self.project_element(*old_selection.to_tuple())
+            if element is None:
                 return
             new_widget = self._insert_widget(
                 new_selection, element.clone(name_postfix=CLONE_POSTFIX))
@@ -416,21 +359,13 @@ class ModernProjectView(ProjectView):
         except Exception:
             self.refresh_ui()
 
-    def _after_set_enabled(self, selection, enabled):
-        self.refresh_ui(selection)
-
-    def _update_widget_enable_state(self, selection, enabled):
-        widget = self._find_widget(selection)
-        if widget:
-            widget.set_enabled_and_update(enabled)
-
-    def set_enabled_all(self, enabled):
+    def set_enabled_all(self):
         for job_widget in self.job_widgets:
-            job_widget.set_enabled_and_update(enabled)
+            job_widget.update_enabled()
             for action_widget in job_widget.child_widgets:
-                action_widget.set_enabled_and_update(enabled)
+                action_widget.update_enabled()
                 for subaction_widget in action_widget.child_widgets:
-                    subaction_widget.set_enabled_and_update(enabled)
+                    subaction_widget.update_enabled()
 
     def _move_widgets(self, from_state, to_state):
         try:
@@ -523,10 +458,10 @@ class ModernProjectView(ProjectView):
             return
         self.widget_enable_signal.emit(enabled)
 
-    def set_enabled(self, enabled, selection):
+    def set_enabled(self, selection):
         widget = self._find_widget(selection)
         if widget:
-            widget.set_enabled_and_update(enabled)
+            widget.update_enabled()
 
     def _ensure_selected_visible(self):
         if not self.selected_widget or not self.scroll_area:
@@ -594,11 +529,48 @@ class ModernProjectView(ProjectView):
         old_state = restore_state if restore_state else self.selection_state.copy()
         self.clear_job_list()
         for job in self.project_jobs():
-            self.add_job_widget(job)
+            self._add_job_widget(job)
         ProjectView.refresh_ui(self)
         if old_state:
             self.selection_nav.restore_selection(old_state)
             self._ensure_selected_visible()
+
+    def _add_job_widget(self, job):
+        job_widget = JobWidget(job, self.dark_theme,
+                               self.actions_layout_horizontal,
+                               self.subactions_layout_vertical)
+        job_widget.setFocusPolicy(Qt.NoFocus)
+        job_index = len(self.job_widgets)
+        job_widget.clicked.connect(
+            lambda checked=False, w=job_widget, idx=job_index:
+                self._on_widget_clicked(w, idx)
+        )
+        job_widget.double_clicked.connect(self.edit_element_signal.emit)
+        job_widget.enabled_toggled.connect(self._on_widget_enabled_toggled)
+        self.job_widgets.append(job_widget)
+        self.project_layout.addWidget(job_widget)
+        for action_idx, action_widget in enumerate(job_widget.child_widgets):
+            def make_action_click_handler(job_index, action_index, widget):
+                def handler():
+                    self._on_widget_clicked(widget, job_index, action_index)
+                return handler
+            action_widget.clicked.connect(
+                make_action_click_handler(job_index, action_idx, action_widget))
+            action_widget.double_clicked.connect(self.edit_element_signal.emit)
+            action_widget.enabled_toggled.connect(self._on_widget_enabled_toggled)
+            for subaction_idx, subaction_widget in enumerate(action_widget.child_widgets):
+                def make_subaction_click_handler(job_index, action_index, subaction_index, widget):
+                    def handler():
+                        self._on_widget_clicked(widget, job_index, action_index, subaction_index)
+                    return handler
+                subaction_widget.clicked.connect(
+                    make_subaction_click_handler(
+                        job_index, action_idx, subaction_idx, subaction_widget)
+                )
+                subaction_widget.double_clicked.connect(self.edit_element_signal.emit)
+                subaction_widget.enabled_toggled.connect(self._on_widget_enabled_toggled)
+        if len(self.job_widgets) == 1:
+            self._on_widget_clicked(job_widget, 0)
 
     def _safe_disconnect_all(self, widget):
         try:
@@ -652,56 +624,59 @@ class ModernProjectView(ProjectView):
             pass
         return False
 
-    def _insert_widget(self, state, element):
-        if not state.is_valid():
+    def _insert_widget(self, selection, element):
+        if not selection.is_valid():
             return None
-        if state.is_job_selected():
-            if 0 <= state.job_index <= len(self.job_widgets):
-                job_widget = JobWidget(
-                    element, self.dark_theme,
-                    self.actions_layout_horizontal,
-                    self.subactions_layout_vertical)
-                job_widget.setFocusPolicy(Qt.NoFocus)
-                job_widget.clicked.connect(
-                    lambda: self._on_widget_clicked(job_widget, state.job_index))
-                job_widget.double_clicked.connect(self.edit_element_signal.emit)
-                self.job_widgets.insert(state.job_index, job_widget)
-                self.project_layout.insertWidget(state.job_index, job_widget)
-                self._refresh_job_widget_signals()
-                return job_widget
-        elif state.is_action_selected():
-            if 0 <= state.job_index < len(self.job_widgets) and \
-                    0 <= state.action_index <= len(self.job_widgets[state.job_index].child_widgets):
-                job_widget = self.job_widgets[state.job_index]
-                action_widget = ActionWidget(
-                    element, self.dark_theme, self.subactions_layout_vertical)
-                action_widget.clicked.connect(
-                    lambda: self._on_widget_clicked(
-                        action_widget, state.job_index, state.action_index))
-                action_widget.double_clicked.connect(self.edit_element_signal.emit)
-                job_widget.child_widgets.insert(state.action_index, action_widget)
-                job_widget.child_container_layout.insertWidget(state.action_index, action_widget)
-                self._refresh_job_widget_signals()
-                return action_widget
-        elif state.is_subaction_selected():
-            if 0 <= state.job_index < len(self.job_widgets) and \
-                    0 <= state.action_index < len(self.job_widgets[state.job_index].child_widgets):
-                job_widget = self.job_widgets[state.job_index]
-                action_widget = job_widget.child_widgets[state.action_index]
-                if 0 <= state.subaction_index <= len(action_widget.child_widgets):
-                    subaction_widget = SubActionWidget(
-                        element, self.dark_theme,
-                        horizontal_images=not self.subactions_layout_vertical)
-                    subaction_widget.clicked.connect(lambda: self._on_widget_clicked(
-                        subaction_widget, state.job_index, state.action_index,
-                        state.subaction_index))
-                    subaction_widget.double_clicked.connect(self.edit_element_signal.emit)
-                    action_widget.child_widgets.insert(state.subaction_index, subaction_widget)
-                    action_widget.child_container_layout.insertWidget(
-                        state.subaction_index, subaction_widget)
-                    self._refresh_job_widget_signals()
-                    return subaction_widget
-        return None
+        inserted_widget = None
+        job_index, action_index, subaction_index = selection.to_tuple()
+        insert_index, container = -1, None
+        if selection.is_job_selected():
+            if not 0 <= job_index <= len(self.job_widgets):
+                return None
+            inserted_widget = JobWidget(
+                element, self.dark_theme, self.actions_layout_horizontal,
+                self.subactions_layout_vertical)
+            inserted_widget.setFocusPolicy(Qt.NoFocus)
+            inserted_widget.clicked.connect(
+                lambda: self._on_widget_clicked(inserted_widget, job_index))
+            inserted_widget.double_clicked.connect(self.edit_element_signal.emit)
+            self.job_widgets.insert(job_index, inserted_widget)
+            insert_index, container = job_index, self.project_layout
+        elif selection.is_action_selected():
+            if not 0 <= job_index < len(self.job_widgets):
+                return None
+            job_widget = self.job_widgets[job_index]
+            if not 0 <= action_index <= len(self.job_widgets[job_index].child_widgets):
+                return None
+            inserted_widget = ActionWidget(
+                element, self.dark_theme, self.subactions_layout_vertical)
+            inserted_widget.clicked.connect(
+                lambda: self._on_widget_clicked(inserted_widget, job_index, action_index))
+            inserted_widget.double_clicked.connect(self.edit_element_signal.emit)
+            job_widget.child_widgets.insert(action_index, inserted_widget)
+            insert_index, container = action_index, job_widget.child_container_layout
+        elif selection.is_subaction_selected():
+            if not 0 <= job_index < len(self.job_widgets):
+                return None
+            job_widget = self.job_widgets[job_index]
+            if not 0 <= action_index < len(self.job_widgets[job_index].child_widgets):
+                return None
+            action_widget = job_widget.child_widgets[action_index]
+            if not 0 <= subaction_index <= len(action_widget.child_widgets):
+                return None
+            inserted_widget = SubActionWidget(
+                element, self.dark_theme,
+                horizontal_images=not self.subactions_layout_vertical)
+            inserted_widget.clicked.connect(lambda: self._on_widget_clicked(
+                inserted_widget, job_index, action_index,
+                subaction_index))
+            inserted_widget.double_clicked.connect(self.edit_element_signal.emit)
+            action_widget.child_widgets.insert(subaction_index, inserted_widget)
+            insert_index, container = subaction_index, action_widget.child_container_layout
+        if inserted_widget:
+            container.insertWidget(insert_index, inserted_widget)
+            self._refresh_job_widget_signals()
+        return inserted_widget
 
     def run_job(self):
         if self.selection_state.is_job_selected():
@@ -822,7 +797,7 @@ class ModernProjectView(ProjectView):
 
     def select_first_job(self):
         if self.job_widgets:
-            self._select_job_widget(self.job_widgets[0])
+            self._select_widget(SelectionState(0, -1, -1))
 
     def perform_undo(self, entry, old_selection):
         if entry:
@@ -861,9 +836,9 @@ class ModernProjectView(ProjectView):
             else:
                 self.refresh_ui()
 
-    def _undo_add_action(self, state):
+    def _undo_add_action(self, selection):
         try:
-            self._remove_widget(state)
+            self._remove_widget(selection)
         except Exception:
             self.refresh_ui()
 
@@ -907,60 +882,46 @@ class ModernProjectView(ProjectView):
         self._move_widgets(from_position, to_position)
 
     def _undo_edit_all_action(self):
-        entry = self.undo_manager().last_entry()
-        if not entry or 'item' not in entry:
-            self.refresh_ui()
-            return
-        saved_project = entry['item']
-        if not saved_project or not saved_project.jobs:
-            self.refresh_ui()
-            return
         for job_idx, job_widget in enumerate(self.job_widgets):
-            if job_idx < len(saved_project.jobs):
-                saved_job = saved_project.jobs[job_idx]
-                job_enabled = saved_job.params.get('enabled', True)
-                job_widget.data_object.params['enabled'] = job_enabled
-                job_widget.update(job_widget.data_object)
-                job_widget.set_enabled_and_update(job_enabled)
+            if job_idx < len(self.project_jobs()):
+                job = self.project_job(job_idx)
+                job_widget.data_object = job
+                job_widget.update()
                 for action_idx, action_widget in enumerate(job_widget.child_widgets):
-                    if action_idx < len(saved_job.sub_actions):
-                        saved_action = saved_job.sub_actions[action_idx]
-                        action_enabled = saved_action.params.get('enabled', True)
-                        action_widget.data_object.params['enabled'] = action_enabled
-                        action_widget.update(action_widget.data_object)
-                        action_widget.set_enabled_and_update(action_enabled)
+                    if action_idx < len(job.sub_actions):
+                        action = job.sub_actions[action_idx]
+                        action_widget.data_object = action
+                        action_widget.update()
                         for subaction_idx, subaction_widget \
                                 in enumerate(action_widget.child_widgets):
-                            if subaction_idx < len(saved_action.sub_actions):
-                                saved_subaction = saved_action.sub_actions[subaction_idx]
-                                subaction_enabled = saved_subaction.params.get('enabled', True)
-                                subaction_widget.data_object.params['enabled'] = subaction_enabled
-                                subaction_widget.update(subaction_widget.data_object)
-                                subaction_widget.set_enabled_and_update(subaction_enabled)
+                            if subaction_idx < len(action.sub_actions):
+                                subaction = action.sub_actions[subaction_idx]
+                                subaction_widget.data_object = subaction
+                                subaction_widget.update()
 
-    def _undo_clone_action(self, state):
+    def _undo_clone_action(self, selection):
         try:
-            if state.is_subaction_selected():
-                cloned_state = SelectionState(
-                    state.job_index, state.action_index, state.subaction_index + 1)
-            elif state.is_action_selected():
-                cloned_state = SelectionState(
-                    state.job_index, state.action_index + 1, -1)
-            elif state.is_job_selected():
-                cloned_state = SelectionState(state.job_index + 1, -1, -1)
+            if selection.is_subaction_selected():
+                new_selection = SelectionState(
+                    selection.job_index, selection.action_index, selection.subaction_index + 1)
+            elif selection.is_action_selected():
+                new_selection = SelectionState(
+                    selection.job_index, selection.action_index + 1, -1)
+            elif selection.is_job_selected():
+                new_selection = SelectionState(selection.job_index + 1, -1, -1)
             else:
                 self.refresh_ui()
                 return
-            self._remove_widget(cloned_state)
+            self._remove_widget(new_selection)
             self._refresh_job_widget_signals()
             self.update_delete_action_state_requested.emit()
         except Exception:
             self.refresh_ui()
 
-    def _undo_paste_action(self, state):
+    def _undo_paste_action(self, selection):
         try:
-            if state.is_valid():
-                self._remove_widget(state)
+            if selection.is_valid():
+                self._remove_widget(selection)
                 self._refresh_job_widget_signals()
                 self.update_delete_action_state_requested.emit()
         except Exception:

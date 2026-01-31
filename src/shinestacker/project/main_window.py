@@ -202,6 +202,7 @@ class MainWindow(ProjectIOHandler, QMainWindow):
         self.view_stack.currentWidget().stop()
         self.view_stack.setCurrentIndex(idx)
         self.current_view = self.view_stack.currentWidget()
+        self.current_view.select_current()
         self.menu_manager.set_view(mode, do_switch=False)
 
     def horizontal_actions_layout(self):
@@ -376,7 +377,7 @@ class MainWindow(ProjectIOHandler, QMainWindow):
         if not self.current_view.enforce_stop_run():
             return
         old_selection = self.selection_state.copy()
-        entry = self.undo()
+        entry = self.element_action.perform_undo()
         if entry:
             for view in self.views.values():
                 view.perform_undo(entry, old_selection)
@@ -487,7 +488,7 @@ class MainWindow(ProjectIOHandler, QMainWindow):
         success = self.element_action.set_enabled(selection, enabled)
         if success:
             for view in self.views.values():
-                view.set_enabled(enabled, selection)
+                view.set_enabled(selection)
 
     def enable(self):
         self.set_enabled(True)
@@ -500,7 +501,7 @@ class MainWindow(ProjectIOHandler, QMainWindow):
             return
         self.element_action.set_enabled_all(enabled)
         for view in self.views.values():
-            view.set_enabled_all(enabled)
+            view.set_enabled_all()
 
     def enable_all(self):
         self.set_enabled_all(True)

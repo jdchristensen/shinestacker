@@ -378,14 +378,19 @@ class BaseWidget(QFrame):
     def set_name(self, name):
         self.name_label.setText(name)
 
+    def update_enabled(self, data_object=None):
+        if data_object is None:
+            data_object = self.data_object
+        self._enabled = data_object.enabled()
+        self._update_enabled_icon()
+
     def update(self, data_object=None):
         if data_object is None:
             data_object = self.data_object
         self.data_object = data_object
         name = f"<b>{data_object.params['name']}</b> [{data_object.type_name}]"
         self.set_name(name)
-        self._enabled = data_object.params.get('enabled', True)
-        self._update_enabled_icon()
+        self.update_enabled(data_object)
         self._update_conditional_icons()
         self._update_stylesheet()
         self.update_path_recursive()

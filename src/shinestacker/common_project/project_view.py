@@ -177,12 +177,10 @@ class ProjectView(QWidget, LogManager, ProjectHandler):
     def mark_as_modified(self, modified=True, description='', action_type='',
                          affected_position=(-1, -1, -1)):
         ProjectHandler.mark_as_modified(self, modified, description, action_type, affected_position)
-        # self.project_modified_signal.emit(modified)
 
     def save_undo_state(self, pre_state, description='', action_type='',
                         affected_position=(-1, -1, -1)):
         ProjectHandler.save_undo_state(self, pre_state, description, action_type, affected_position)
-        # self.project_modified_signal.emit(True)
 
     def _add_path_browsing_actions(self, menu, current_action):
         self.current_action_working_path, name = get_action_working_path(current_action)
@@ -254,13 +252,10 @@ class ProjectView(QWidget, LogManager, ProjectHandler):
     def clear_project(self):
         raise NotImplementedError
 
-    def set_enabled_all(self, enabled):
+    def set_enabled_all(self):
         raise NotImplementedError
 
-    def set_enabled(self, enabled, selection):
-        raise NotImplementedError
-
-    def _after_set_enabled(self, selection, enabled):
+    def set_enabled(self, selection):
         raise NotImplementedError
 
     def delete_element(self, old_selection, new_selection):
@@ -272,11 +267,11 @@ class ProjectView(QWidget, LogManager, ProjectHandler):
     def clone_element(self, old_selection, new_selection):
         raise NotImplementedError
 
+    def select_current(self):
+        raise NotImplementedError
+
     def _before_add_sub_action(self):
         return True
-
-    def _update_ui_after_add_sub_action(self, sub_action, position):
-        raise NotImplementedError
 
     def _show_action_config_dialog(self, action):
         self.action_dialog = ActionConfigDialog(

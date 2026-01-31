@@ -206,7 +206,7 @@ class ElementActionManager(ProjectHandler, QObject):
 
     def set_enabled_all(self, enabled):
         action = "Enable" if enabled else "Disable"
-        self.mark_as_modified(True, f"{action} All")
+        self.mark_as_modified(True, f"{action} All", "edit_all", (-1, -1, -1))
         for job in self.project().jobs:
             job.set_enabled_all(enabled)
 
@@ -306,3 +306,6 @@ class ElementActionManager(ProjectHandler, QObject):
         if action.type_name != constants.ACTION_COMBO:
             return False, "Invalid Action Type", "Sub-actions can only be added to Combo actions."
         return True, "", ""
+
+    def perform_undo(self):
+        return self.undo()

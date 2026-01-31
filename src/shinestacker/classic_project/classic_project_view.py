@@ -155,6 +155,15 @@ class ClassicProjectView(ProjectView, ListContainer):
     def select_first_job(self):
         self.set_current_job(0)
 
+    def select_current(self):
+        if self.selection_state.job_index < 0:
+            return
+        if self.selection_state.action_index >= 0:
+            self._action_list.setFocus()
+        else:
+            self._job_list.setFocus()
+        self.update_focus_styles()
+
     def get_current_action_at(self, job, action_index):
         action_counter = -1
         current_action = None
@@ -287,16 +296,10 @@ class ClassicProjectView(ProjectView, ListContainer):
     def clone_element(self, old_selection, new_selection):
         self.refresh_ui(new_selection)
 
-    def _after_set_enabled(self, selection, enabled):
-        self.refresh_ui(selection)
-
-    def _update_widget_enable_state(self, selection, enabled):
-        self.refresh_ui(selection)
-
-    def set_enabled_all(self, enabled):
+    def set_enabled_all(self):
         self.refresh_ui(self.selection_state)
 
-    def set_enabled(self, enabled, selection):
+    def set_enabled(self, selection):
         self.refresh_ui(selection)
 
     def _position_to_action_row(self, position):
@@ -327,18 +330,6 @@ class ClassicProjectView(ProjectView, ListContainer):
 
     def current_job_index(self):
         return ListContainer.current_job_index(self)
-
-    def _before_add_sub_action(self):
-        self._update_selection_state()
-        return True
-
-    def _update_ui_after_add_sub_action(self, sub_action, position):
-        job_index, action_index, insert_index = position
-        gui_insert_pos = self._calculate_gui_sub_action_position(
-            job_index, action_index, insert_index)
-        self.add_list_item(self.action_list(), sub_action, True, gui_insert_pos)
-        self.set_current_action(gui_insert_pos)
-        self.action_list_item(gui_insert_pos).setSelected(True)
 
     def _calculate_gui_sub_action_position(self, job_index, action_index, subaction_index):
         job = self.project_job(job_index)
