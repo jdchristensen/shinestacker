@@ -1,9 +1,9 @@
 # pylint: disable=C0114, C0115, C0116, E0611, R0903
 import os
 from PySide6.QtCore import Qt, QObject, Slot
-from .. algorithms.utils import extension_supported_output, extension_pdf
-from .. algorithms.plot_manager import DirectPlotManager
-from .. gui.gui_images import GuiPdfView, GuiImageView, GuiOpenApp
+from ..algorithms.utils import extension_supported_output, extension_pdf, get_output_filename
+from ..algorithms.plot_manager import DirectPlotManager
+from ..gui.gui_images import GuiPdfView, GuiImageView, GuiOpenApp
 
 
 class SignalConnector(QObject):
@@ -93,7 +93,7 @@ class ProgressSignalHandler(QObject):
     def handle_add_frame(self, module_name, filename, total_actions):
         def add_frame_func(widget):
             if hasattr(widget, 'add_frame'):
-                widget.add_frame(module_name, filename, total_actions)
+                widget.add_frame(module_name, get_output_filename(filename), total_actions)
                 self.scroll_to_widget(widget)
         self._call_on_widget(module_name, add_frame_func)
 
@@ -101,7 +101,7 @@ class ProgressSignalHandler(QObject):
     def handle_update_frame_status(self, module_name, filename, status_id):
         def update_frame_func(widget):
             if hasattr(widget, 'update_frame_status'):
-                widget.update_frame_status(module_name, filename, status_id)
+                widget.update_frame_status(module_name, get_output_filename(filename), status_id)
                 self.scroll_to_widget(widget)
         self._call_on_widget(module_name, update_frame_func)
 
@@ -109,7 +109,8 @@ class ProgressSignalHandler(QObject):
     def handle_set_total_actions(self, module_name, filename, total_actions):
         def set_total_func(widget):
             if hasattr(widget, 'set_frame_total_actions'):
-                widget.set_frame_total_actions(module_name, filename, total_actions)
+                widget.set_frame_total_actions(
+                    module_name, get_output_filename(filename), total_actions)
         self._call_on_widget(module_name, set_total_func)
 
     @Slot(int, str, str, str)

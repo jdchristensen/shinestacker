@@ -1,7 +1,10 @@
 # Changelog
 
-## [v1.13.x] - 2026-01-31
-**GUI fixes and refactoring**
+## [v1.xx.x] - 2026-01-31
+**RAW formats support, GUI fixes and code refactoring**
+
+### Added
+- raw data formats supported with rawpy
 
 ### Fixed
 - various GUI issues

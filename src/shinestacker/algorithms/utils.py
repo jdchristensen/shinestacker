@@ -3,6 +3,7 @@ import os
 import sys
 import numpy as np
 import cv2
+import rawpy
 from .. core.exceptions import ShapeError, BitDepthError, PathTooLong, InvalidWinPath
 
 
@@ -94,12 +95,12 @@ def extension_supported_output(path):
 
 
 def get_output_extension(ext):
-    return "tif" if ext in EXTENSIONS_RAW else ext
+    return "tif" if ext.lower() in EXTENSIONS_RAW else ext.lower()
 
 
 def get_output_filename(input_filename):
     pre, ext = os.path.splitext(input_filename)
-    return pre + "." + get_output_extension(ext)[1:]
+    return pre + "." + get_output_extension(ext[1:])
 
 
 def read_img(file_path):
@@ -108,7 +109,9 @@ def read_img(file_path):
         raise RuntimeError("File does not exist: " + file_path)
     img = None
     if extension_raw(file_path):
-        raise RuntimeError("RAW image formats not yet supported.")
+        with rawpy.imread(file_path) as raw:
+            rgb = raw.postprocess()
+            img = cv2.cvtColor(rgb, cv2.COLOR_RGB2BGR)
     if extension_jpg(file_path):
         img = cv2.imread(file_path)
     elif extension_tif_png(file_path):
@@ -129,6 +132,8 @@ def write_img(file_path, img):
             int(cv2.IMWRITE_PNG_COMPRESSION), 9,
             int(cv2.IMWRITE_PNG_STRATEGY), cv2.IMWRITE_PNG_STRATEGY_HUFFMAN_ONLY
         ])
+    else:
+        raise RuntimeError(f"Invalid extension for file: {file_path}")
 
 
 def img_8bit(img):

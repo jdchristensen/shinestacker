@@ -300,8 +300,10 @@ class CombinedActions(ReferenceFrameTask):
         filenames = self.input_filepaths()
         if len(filenames) == 0:
             raise ValueError("No image files found in the selected path")
-        for filename in filenames:
-            self.callback(constants.CALLBACK_ADD_FRAME, self.output_path, filename, n_actions)
+        for input_filename in filenames:
+            output_filename = get_output_filename(input_filename)
+            self.callback(
+                constants.CALLBACK_ADD_FRAME, self.output_path, output_filename, n_actions)
         ReferenceFrameTask.begin(self)
         for a in self._actions:
             if a.enabled:
@@ -389,8 +391,7 @@ class CombinedActions(ReferenceFrameTask):
                                   constants.LOG_COLOR_ALERT),
                         level=logging.ERROR)
         if img is not None:
-
-            output_path = os.path.join(self.output_full_path(), os.path.basename(input_path))
+            output_path = os.path.join(self.output_full_path(), os.path.basename(output_filename))
             self.print_message(
                 color_str(f'write output {self.frame_str(idx)}, '
                           f'{os.path.basename(output_path)}', constants.LOG_COLOR_LEVEL_3))

@@ -52,6 +52,11 @@ or commercial license from The Qt Company
 https://doc.qt.io/qtforpython/
 
 -------------------------------------------------------------------------------
+rawpy
+License: GNU Lesser Genera Public License v2.1 (LGPL-2.1)
+https://github.com/letmaik/rawpy/
+
+-------------------------------------------------------------------------------
 scipy
 License: BSD-3-Clause
 https://scipy.org/

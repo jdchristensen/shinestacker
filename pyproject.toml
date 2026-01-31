@@ -27,6 +27,7 @@ dependencies = [
     "psdtags",
     "psutil",
     "PySide6",
+    "rawpy",
     "scipy",
     "tifffile",
     "tqdm",

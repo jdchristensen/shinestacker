@@ -8,7 +8,7 @@ from .. config.defaults import DEFAULTS
 from .. core.framework import TaskBase
 from .. core.colors import color_str
 from .. core.exceptions import InvalidOptionError
-from .utils import read_img, write_img, extension_supported_output, get_output_filename
+from .utils import read_img, write_img, extension_supported_input, get_output_filename
 from .stack_framework import ImageSequenceManager, SequentialTask
 from .exif import copy_exif_from_file_to_file
 from .denoise import denoise
@@ -76,7 +76,7 @@ class FocusStackBase(TaskBase, ImageSequenceManager):
                     raise RuntimeError(f"path {self.exif_path} does not exist.")
                 try:
                     _dirpath, _, fnames = next(os.walk(self.exif_path))
-                    fnames = [name for name in fnames if extension_supported_output(name)]
+                    fnames = [name for name in fnames if extension_supported_input(name)]
                     if len(fnames) == 0:
                         raise RuntimeError(f"path {self.exif_path} does not contain image files.")
                     exif_filename = os.path.join(self.exif_path, fnames[0])
