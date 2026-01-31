@@ -854,9 +854,6 @@ class ModernProjectView(ProjectView):
         self.refresh_ui()
         return False
 
-    def _redo_paste_action(self, original_position, pasted_position, entry):
-        return self._insert_widget_for_undo(pasted_position, entry)
-
     def _remove_widget_for_undo(self, selection, entry=None):
         try:
             widget = self._find_widget(selection)
@@ -872,9 +869,6 @@ class ModernProjectView(ProjectView):
         except Exception:
             self.refresh_ui()
             return False
-
-    def _undo_add_action(self, selection, entry):
-        return self._remove_widget_for_undo(selection, entry)
 
     def _insert_widget_for_undo(self, selection, entry):
         if not selection.is_valid():
@@ -940,6 +934,13 @@ class ModernProjectView(ProjectView):
                                 subaction_widget.data_object = subaction
                                 subaction_widget.update()
         return True
+
+
+    def _redo_paste_action(self, original_position, pasted_position, entry):
+        return self._insert_widget_for_undo(pasted_position, entry)
+
+    def _undo_add_action(self, selection, entry):
+        return self._remove_widget_for_undo(selection, entry)
 
     def _undo_clone_action(self, selection, entry):
         return self._remove_widget_for_undo(selection, entry)
