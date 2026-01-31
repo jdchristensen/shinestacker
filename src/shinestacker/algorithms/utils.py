@@ -110,7 +110,8 @@ def read_img(file_path):
     img = None
     if extension_raw(file_path):
         with rawpy.imread(file_path) as raw:
-            rgb = raw.postprocess()
+            rgb = raw.postprocess(
+                output_bps=16, output_color=rawpy.ColorSpace.sRGB, use_camera_wb=True)
             img = cv2.cvtColor(rgb, cv2.COLOR_RGB2BGR)
     if extension_jpg(file_path):
         img = cv2.imread(file_path)

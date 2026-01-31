@@ -301,9 +301,10 @@ class CombinedActions(ReferenceFrameTask):
         if len(filenames) == 0:
             raise ValueError("No image files found in the selected path")
         for input_filename in filenames:
-            output_filename = get_output_filename(input_filename)
+            output_path = os.path.join(
+                self.output_full_path(), os.path.basename(get_output_filename(input_filename)))
             self.callback(
-                constants.CALLBACK_ADD_FRAME, self.output_path, output_filename, n_actions)
+                    constants.CALLBACK_ADD_FRAME, self.output_path, output_path, n_actions)
         ReferenceFrameTask.begin(self)
         for a in self._actions:
             if a.enabled:
@@ -354,7 +355,8 @@ class CombinedActions(ReferenceFrameTask):
     def run_frame(self, idx, ref_idx):
         input_path = self.input_filepath(idx)
         input_filename = os.path.basename(input_path)
-        output_filename = get_output_filename(input_filename)
+        output_path = os.path.join(
+            self.output_full_path(), os.path.basename(get_output_filename(input_filename)))
         self.print_message(
             color_str(color_str(f'read input {self.frame_str(idx)}, '
                       f'{os.path.basename(input_path)}'), constants.LOG_COLOR_LEVEL_3))
@@ -382,7 +384,7 @@ class CombinedActions(ReferenceFrameTask):
                 if self.callback(constants.CALLBACK_CHECK_RUNNING, self.id, self.name) is False:
                     raise RunStopException(self.name)
                 self.callback(constants.CALLBACK_UPDATE_FRAME_STATUS, self.output_path,
-                              output_filename, a_idx + 1)
+                              output_path, a_idx + 1)
                 if img is not None:
                     img = a.run_frame(idx, ref_idx, img)
                 else:
@@ -391,19 +393,18 @@ class CombinedActions(ReferenceFrameTask):
                                   constants.LOG_COLOR_ALERT),
                         level=logging.ERROR)
         if img is not None:
-            output_path = os.path.join(self.output_full_path(), os.path.basename(output_filename))
             self.print_message(
                 color_str(f'write output {self.frame_str(idx)}, '
                           f'{os.path.basename(output_path)}', constants.LOG_COLOR_LEVEL_3))
             write_img(output_path, img)
             self.callback(
-                constants.CALLBACK_UPDATE_FRAME_STATUS, self.output_path, output_filename, 1000)
+                constants.CALLBACK_UPDATE_FRAME_STATUS, self.output_path, output_path, 1000)
             return img
         self.print_message(color_str(
             f"no output resulted from processing input file: {os.path.basename(input_path)}",
             constants.LOG_COLOR_ALERT), level=logging.ERROR)
         self.callback(
-            constants.CALLBACK_UPDATE_FRAME_STATUS, self.output_path, output_filename, 1001)
+            constants.CALLBACK_UPDATE_FRAME_STATUS, self.output_path, output_path, 1001)
         return None
 
     def end(self):

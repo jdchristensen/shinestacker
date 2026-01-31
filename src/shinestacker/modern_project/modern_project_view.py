@@ -150,9 +150,10 @@ class ModernProjectView(ProjectView):
         current_action = None
         if widget:
             while widget and widget != self:
-                current_action = widget.data_object
+                if hasattr(widget, 'data_object'):
+                    current_action = widget.data_object
                 break
-            widget = widget.parentWidget()
+                widget = widget.parentWidget()
         if not current_action and self.selected_widget:
             current_action = self.selected_widget.data_object
         if current_action:
