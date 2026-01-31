@@ -100,9 +100,6 @@ class ClassicProjectView(ProjectView, ListContainer):
     def update_focus_styles(self):
         ListContainer.update_focus_styles(self)
 
-    def get_tab_widget(self):
-        return self.tab_widget
-
     def get_tab_and_position(self, id_str):
         for i in range(self.tab_widget.count()):
             w = self.tab_widget.widget(i)
@@ -301,24 +298,6 @@ class ClassicProjectView(ProjectView, ListContainer):
     def set_enabled(self, selection):
         self.refresh_ui(selection)
 
-    def _position_to_action_row(self, position):
-        job_idx, action_idx, sub_idx = position
-        if job_idx < 0:
-            return -1
-        job = self.project_job(job_idx)
-        row = 0
-        for i in range(action_idx):
-            if i < len(job.sub_actions):
-                row += 1
-                action = job.sub_actions[i]
-                row += len(action.sub_actions)
-        if sub_idx >= 0:
-            row += sub_idx + 1
-        return row
-
-    def _before_shift_element(self):
-        return True
-
     def shift_element(self, old_selection, new_selection):
         self.refresh_ui(self.selection_state)
 
@@ -329,17 +308,6 @@ class ClassicProjectView(ProjectView, ListContainer):
 
     def current_job_index(self):
         return ListContainer.current_job_index(self)
-
-    def _calculate_gui_sub_action_position(self, job_index, action_index, subaction_index):
-        job = self.project_job(job_index)
-        row = 0
-        for i in range(action_index):
-            if i < len(job.sub_actions):
-                row += 1
-                action = job.sub_actions[i]
-                row += len(action.sub_actions)
-        row += subaction_index + 1
-        return row
 
     def update_added_element(self, new_selection):
         self.refresh_ui(SelectionState(*new_selection))

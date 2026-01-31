@@ -518,35 +518,6 @@ def get_enhanced_exif_from_png(image):
     return {k: v for k, v in enhanced_exif.items() if isinstance(k, int)}
 
 
-def get_tiff_dtype_count(value):
-    if isinstance(value, str):
-        return 2, len(value) + 1  # ASCII string, (dtype=2), length + null terminator
-    if isinstance(value, (bytes, bytearray)):
-        return 1, len(value)  # Binary data (dtype=1)
-    if isinstance(value, (list, tuple, np.ndarray)):
-        if isinstance(value, np.ndarray):
-            dtype = value.dtype  # Array or sequence
-        else:
-            dtype = np.array(value).dtype  # Map numpy dtype to TIFF dtype
-        if dtype == np.uint8:
-            return 1, len(value)
-        if dtype == np.uint16:
-            return 3, len(value)
-        if dtype == np.uint32:
-            return 4, len(value)
-        if dtype == np.float32:
-            return 11, len(value)
-        if dtype == np.float64:
-            return 12, len(value)
-    if isinstance(value, int):
-        if 0 <= value <= 65535:
-            return 3, 1  # uint16
-        return 4, 1  # uint32
-    if isinstance(value, float):
-        return 11, 1  # float64
-    return 2, len(str(value)) + 1  # Default for other cases (ASCII string)
-
-
 def add_exif_data_to_jpg_file(exif, in_filename, out_filename, verbose=False):
     if exif is None:
         raise RuntimeError('No exif data provided.')

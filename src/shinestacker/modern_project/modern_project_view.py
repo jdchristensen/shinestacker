@@ -935,7 +935,6 @@ class ModernProjectView(ProjectView):
                                 subaction_widget.update()
         return True
 
-
     def _redo_paste_action(self, original_position, pasted_position, entry):
         return self._insert_widget_for_undo(pasted_position, entry)
 

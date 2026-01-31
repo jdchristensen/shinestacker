@@ -13,7 +13,6 @@ from .colors import (
 
 
 class TimerProgressBar(QProgressBar):
-    light_background_color = ColorPalette.LIGHT_BLUE
     border_color = ColorPalette.DARK_BLUE
     text_color = ColorPalette.DARK_BLUE
 

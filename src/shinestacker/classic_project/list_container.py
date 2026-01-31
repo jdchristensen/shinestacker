@@ -141,9 +141,6 @@ class ListContainer:
     def edit_current_action(self):
         pass
 
-    def get_lists(self):
-        return self._job_list, self._action_list
-
     def set_lists(self, job_list, action_list):
         self._job_list = job_list
         self._action_list = action_list

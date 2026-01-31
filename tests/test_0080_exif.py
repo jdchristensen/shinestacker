@@ -9,7 +9,7 @@ from shinestacker.core.logging import setup_logging
 from shinestacker.algorithms.utils import read_img
 from shinestacker.algorithms.exif import (
     get_exif, copy_exif_from_file_to_file, print_exif, write_image_with_exif_data,
-    get_tiff_dtype_count, save_exif_data, exif_dict, exif_extra_tags_for_tif,
+    save_exif_data, exif_dict, exif_extra_tags_for_tif,
     get_exif_from_png, get_enhanced_exif_from_png, add_exif_data_to_jpg_file,
     write_image_with_exif_data_png, _insert_xmp_into_jpeg, parse_typed_png_text,
     _parse_xmp_value, parse_xmp_to_exif, write_image_with_exif_data_tif,
@@ -397,34 +397,6 @@ def test_write_image_with_exif_data_png():
         logger.error(f"PNG write test failed: {str(e)}")
         import traceback
         logger.error(traceback.format_exc())
-        assert False
-
-
-def test_get_tiff_dtype_count():
-    try:
-        setup_logging()
-        logger = logging.getLogger(__name__)
-        logger.info("======== Testing get_tiff_dtype_count ========")
-        test_cases = [
-            ("string", (2, 7)),
-            (b"bytes", (1, 5)),
-            ([1, 2, 3], (2, 10)),
-            (np.array([1, 2, 3], dtype=np.uint16), (3, 3)),
-            (np.array([1, 2, 3], dtype=np.uint32), (4, 3)),
-            (np.array([1.0, 2.0], dtype=np.float32), (11, 2)),
-            (np.array([1.0, 2.0], dtype=np.float64), (12, 2)),
-            (12345, (3, 1)),
-            (123456, (4, 1)),
-            (3.14, (11, 1)),
-            (None, (2, 5)),
-        ]
-        for value, expected in test_cases:
-            result = get_tiff_dtype_count(value)
-            logger.info(f"Testing {value!r:20} => Expected: {expected}, Got: {result}")
-            assert result == expected, f"Failed for {value!r}: expected {expected}, got {result}"
-        logger.info("All get_tiff_dtype_count tests passed")
-    except Exception as e:
-        logger.error(f"Test failed: {str(e)}")
         assert False
 
 
@@ -1957,26 +1929,6 @@ def test_safe_decode_bytes_edge_cases():
         assert False
 
 
-def test_get_tiff_dtype_count_bytes():
-    try:
-        setup_logging()
-        logger = logging.getLogger(__name__)
-        logger.info("======== Testing get_tiff_dtype_count with Bytes ========")
-        test_cases = [
-            (b"test bytes", (1, 10)),
-            (b"", (1, 0)),
-            (bytearray(b"bytearray"), (1, 9)),
-        ]
-        for value, expected in test_cases:
-            result = get_tiff_dtype_count(value)
-            logger.info(f"Bytes dtype count {value!r} -> {result}")
-            assert result == expected, f"Failed for {value!r}"
-        logger.info("✓ get_tiff_dtype_count bytes test passed")
-    except Exception as e:
-        logger.error(f"get_tiff_dtype_count bytes test failed: {str(e)}")
-        assert False
-
-
 def test_add_exif_data_to_jpg_file_none_exif():
     try:
         setup_logging()
@@ -2633,7 +2585,6 @@ if __name__ == '__main__':
     test_write_image_with_exif_data_jpg()
     test_write_image_with_exif_data_tiff()
     test_write_image_with_exif_data_png()
-    test_get_tiff_dtype_count()
     test_get_exif_from_png_with_metadata()
     test_extract_enclosed_data_for_jpg()
     test_exif_extra_tags_for_tif()
@@ -2668,7 +2619,6 @@ if __name__ == '__main__':
     test_typed_png_text_parsing()
     test_enhanced_exif_xmp_from_basic()
     test_safe_decode_bytes_edge_cases()
-    test_get_tiff_dtype_count_bytes()
     test_add_exif_data_to_jpg_file_none_exif()
     test_add_exif_data_to_jpg_file_same_file()
     test_add_exif_data_to_jpg_file_invalid_tags()

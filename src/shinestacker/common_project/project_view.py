@@ -37,7 +37,6 @@ class ProjectView(QWidget, LogManager, ProjectHandler):
         LogManager.__init__(self)
         self.dark_theme = dark_theme
         self.selection_state = selection_state
-        self._saved_selection = None
         self._setup_common_menu_actions()
 
     def _setup_common_menu_actions(self):
@@ -269,14 +268,6 @@ class ProjectView(QWidget, LogManager, ProjectHandler):
 
     def select_current(self):
         raise NotImplementedError
-
-    def _before_add_sub_action(self):
-        return True
-
-    def _show_action_config_dialog(self, action):
-        self.action_dialog = ActionConfigDialog(
-            action, self.current_file_directory(), self.parent())
-        return self.action_dialog.exec() == QDialog.Accepted
 
     def current_job_index(self):
         raise NotImplementedError

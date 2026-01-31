@@ -171,7 +171,6 @@ class SubsamplingFeatureMatcher:
         self.alignment_config = alignment_config
         self.callbacks = callbacks or {}
         self._last_subsampled_images = (None, None)
-        self._last_subsample_factor = 1
 
     def match_images_with_fallback(self, img_ref, img_0, subsample=1, warning_callback=None):
         final_subsample = subsample
@@ -184,7 +183,6 @@ class SubsamplingFeatureMatcher:
             else:
                 img_0_sub, img_ref_sub = img_0, img_ref
             self._last_subsampled_images = (img_ref_sub, img_0_sub)
-            self._last_subsample_factor = final_subsample
             match_result = self.feature_matcher.match_images(img_ref_sub, img_0_sub)
             n_good_matches = match_result.n_good_matches()
             if n_good_matches >= min_good_matches or final_subsample == 1:

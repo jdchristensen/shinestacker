@@ -57,24 +57,5 @@ class SelectionState:
     def get_indices(self):
         return (self.job_index, self.action_index, self.subaction_index)
 
-    def are_action_indices_valid(self):
-        return self.job_index >= 0 and self.action_index >= 0
-
-    def are_subaction_indices_valid(self):
-        return self.job_index >= 0 and self.action_index >= 0 and self.subaction_index >= 0
-
-    def set_job_indices(self, job_index):
-        self.set_indices(job_index, -1, -1)
-
-    def set_action_indices(self, job_index, action_index):
-        self.set_indices(job_index, action_index, -1)
-
-    def set_subaction_indices(self, job_index, action_index, subaction_index):
-        self.set_indices(job_index, action_index, subaction_index)
-
-    def equals(self, job_index, action_index, subaction_index):
-        return self.job_index == job_index and \
-            self.action_index == action_index and self.subaction_index == subaction_index
-
     def copy(self):
         return SelectionState(self.job_index, self.action_index, self.subaction_index)

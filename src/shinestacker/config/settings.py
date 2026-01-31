@@ -103,17 +103,6 @@ class Settings(StdPathFile):
             return diff
         return diff_dict(self.settings, self.defaults)
 
-    def _apply_diff_to_defaults(self, diff_settings):
-        def apply_diff(current, diff):
-            for key, value in diff.items():
-                if key in current:
-                    if isinstance(value, dict) and isinstance(current[key], dict):
-                        apply_diff(current[key], value)
-                    else:
-                        current[key] = value
-        self.settings = self._deep_copy_defaults()
-        apply_diff(self.settings, diff_settings)
-
     @classmethod
     def instance(cls, filename="shinestacker-settings.txt"):
         if cls._instance is None:
