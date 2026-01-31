@@ -63,7 +63,40 @@ class ProjectHolder:
 
     def undo(self):
         if self.filled_undo():
+            current_state = self.project.clone()
             entry = self.pop_undo()
+            new_entry = {
+                'item': current_state,
+                'description': entry['description'],
+                'action_type': entry.get('action_type', ''),
+                'affected_position': entry.get('affected_position', (-1, -1, -1))
+            }
+            if 'modern_widget_state' in entry:
+                new_entry['modern_widget_state'] = entry['modern_widget_state']
+            self.undo_manager.add_to_redo(new_entry)
+            self.set_project(entry['item'])
+            return entry
+        return None
+
+    def pop_redo(self):
+        return self.undo_manager.pop_redo()
+
+    def filled_redo(self):
+        return self.undo_manager.filled_redo()
+
+    def redo(self):
+        if self.filled_redo():
+            current_state = self.project.clone()
+            entry = self.pop_redo()
+            new_entry = {
+                'item': current_state,
+                'description': entry['description'],
+                'action_type': entry.get('action_type', ''),
+                'affected_position': entry.get('affected_position', (-1, -1, -1))
+            }
+            if 'modern_widget_state' in entry:
+                new_entry['modern_widget_state'] = entry['modern_widget_state']
+            self.undo_manager.add_to_undo(new_entry)
             self.set_project(entry['item'])
             return entry
         return None
@@ -193,6 +226,15 @@ class ProjectHandler:
 
     def undo(self):
         return self.project_holder.undo()
+
+    def pop_redo(self):
+        return self.project_holder.pop_redo()
+
+    def filled_redo(self):
+        return self.project_holder.filled_redo()
+
+    def redo(self):
+        return self.project_holder.redo()
 
     def reset_project(self):
         self.project_holder.reset_project()

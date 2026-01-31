@@ -51,6 +51,7 @@ class MainWindow(ProjectIOHandler, QMainWindow):
             "&Save": self.save_project,
             "Save &As...": self.save_project_as,
             "&Undo": self.perform_undo,
+            "&Redo": self.perform_redo,
             "&Cut": self.cut_element,
             "Cop&y": self.copy_element,
             "&Paste": self.paste_element,
@@ -130,6 +131,8 @@ class MainWindow(ProjectIOHandler, QMainWindow):
         QApplication.instance().paletteChanged.connect(self.on_theme_changed)
         self._undo_manager.set_enabled_undo_action_requested.connect(
             self.menu_manager.set_enabled_undo_action)
+        self._undo_manager.set_enabled_redo_action_requested.connect(
+            self.menu_manager.set_enabled_redo_action)
         self.menu_manager.open_file_requested.connect(self.open_project)
         self.set_enabled_file_open_close_actions(False)
         self.show_status_message("Shine Stacker ready.", 4000)
@@ -385,6 +388,19 @@ class MainWindow(ProjectIOHandler, QMainWindow):
                 self.menu_manager.clear_run_info_action.setEnabled(True)
             self.update_title()
             self.show_status_message("Undo performed")
+
+    def perform_redo(self):
+        if not self.current_view.enforce_stop_run():
+            return
+        old_selection = self.selection_state.copy()
+        entry = self.element_action.perform_redo()
+        if entry:
+            for view in self.views.values():
+                view.perform_redo(entry, old_selection)
+            if entry.get('action_type') == 'clear_run_info':
+                self.menu_manager.clear_run_info_action.setEnabled(True)
+            self.update_title()
+            self.show_status_message("Redo performed")
 
     def add_job(self):
         if not self.current_view.enforce_stop_run():

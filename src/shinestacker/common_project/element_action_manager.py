@@ -123,9 +123,10 @@ class ElementActionManager(ProjectHandler, QObject):
         pos = position[level] if len(position) > level else -1
         insert_index = min(max(pos + 1 if pos >= 0 else len(container), 0), len(container))
         element_type = ["Job", "Action", "Subaction"][level]
-        self.mark_as_modified(True, f"Paste {element_type}", "paste", position)
-        container.insert(insert_index, copy_buffer.clone())
         new_position = list(position[:level]) + [insert_index] + [-1] * (2 - level)
+        paste_positions = position + tuple(new_position)
+        self.mark_as_modified(True, f"Paste {element_type}", "paste", paste_positions)
+        container.insert(insert_index, copy_buffer.clone())
         self.selection_state.from_tuple(new_position)
         return True
 
@@ -161,14 +162,22 @@ class ElementActionManager(ProjectHandler, QObject):
         position = self.selection_state.to_tuple()
         if not self.valid_indices(*position):
             return False, None
-        self.mark_as_modified(
-            True, f"Duplicate {self.selection_state.type().title()}", "clone", position)
         element = self.project_element(*position)
         new_selection = self.new_state_after_insert(self.selection_state)
-        position = self.selection_state.to_tuple()
         idx, s = get_position_stack(position)
         if len(idx) == 0:
             return False, None
+        clone_position = list(position)
+        if position[2] >= 0:
+            clone_position[2] = position[2] + 1
+        elif position[1] >= 0:
+            clone_position[1] = position[1] + 1
+        else:
+            clone_position[0] = position[0] + 1
+        affected_position = tuple(position) + tuple(clone_position)
+        self.mark_as_modified(
+            True, f"Duplicate {self.selection_state.type().title()}",
+            "clone", tuple(affected_position))
         container = self.project_container(*idx)
         container.insert(s + 1, element.clone(name_postfix=CLONE_POSTFIX))
         return True, new_selection
@@ -309,3 +318,6 @@ class ElementActionManager(ProjectHandler, QObject):
 
     def perform_undo(self):
         return self.undo()
+
+    def perform_redo(self):
+        return self.redo()

@@ -77,6 +77,4 @@ class SelectionState:
             self.action_index == action_index and self.subaction_index == subaction_index
 
     def copy(self):
-        new_state = SelectionState()
-        new_state.copy_from(self)
-        return new_state
+        return SelectionState(self.job_index, self.action_index, self.subaction_index)

@@ -123,10 +123,10 @@ class ClassicProjectView(ProjectView, ListContainer):
         self.clear_action_list()
 
     def refresh_ui(self, restore_state=None):
-        selection = self.selection_state.copy()
         job_row = -1
         action_row = -1
         if restore_state is not None:
+            restore_state = restore_state.copy()
             if restore_state.is_job_selected():
                 job_row = restore_state.job_index
                 action_row = -1
@@ -140,13 +140,15 @@ class ClassicProjectView(ProjectView, ListContainer):
         self.clear_job_list()
         for job in self.project_jobs():
             self.add_list_item(self.job_list(), job, False)
-        if self.project_jobs():
-            self.set_current_job(0)
-        if job_row >= 0:
-            self.set_current_job(job_row)
-        if action_row >= 0:
-            self.set_current_action(action_row)
-        self.selection_state.copy_from(selection)
+        if restore_state is not None:
+            self.selection_state.copy_from(restore_state)
+        elif self.project_jobs():
+            if 0 <= job_row < self.num_project_jobs():
+                self.set_current_job(job_row)
+                if action_row >= 0:
+                    self.set_current_action(action_row)
+            else:
+                self.set_current_job(0)
         ProjectView.refresh_ui(self)
 
     def select_first_job(self):
@@ -342,8 +344,8 @@ class ClassicProjectView(ProjectView, ListContainer):
     def update_added_element(self, new_selection):
         self.refresh_ui(SelectionState(*new_selection))
 
-    def update_widget(self, selection=None, update_project=True):
-        self.refresh_ui()
+    def update_widget(self, selection):
+        self.refresh_ui(selection)
 
     # pylint: disable=C0103
     def contextMenuEvent(self, event):
@@ -453,5 +455,20 @@ class ClassicProjectView(ProjectView, ListContainer):
 
     def perform_undo(self, entry, old_selection):
         if entry:
-            self.refresh_ui(
-                restore_state=SelectionState(*(entry.get('affected_position', old_selection)[:3])))
+            position = entry.get('affected_position')
+            action_type = entry.get('action_type', '')
+            if action_type == 'clone' and len(position) >= 6:
+                restore_state = SelectionState(*position[:3])
+            else:
+                restore_state = SelectionState(*position[:3])
+            self.refresh_ui(restore_state=restore_state)
+
+    def perform_redo(self, entry, old_selection):
+        if entry:
+            position = entry.get('affected_position')
+            action_type = entry.get('action_type', '')
+            if action_type == 'clone' and len(position) >= 6:
+                restore_state = SelectionState(*position[3:6])
+            else:
+                restore_state = SelectionState(*position[:3])
+            self.refresh_ui(restore_state=restore_state)

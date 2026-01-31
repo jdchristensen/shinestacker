@@ -31,6 +31,7 @@ class MenuManager(QObject):
             "&Save": "Ctrl+S",
             "Save &As...": "Ctrl+Shift+S",
             "&Undo": "Ctrl+Z",
+            "&Redo": "Ctrl+Y",
             "&Cut": "Ctrl+X",
             "Cop&y": "Ctrl+C",
             "&Paste": "Ctrl+V",
@@ -131,6 +132,9 @@ class MenuManager(QObject):
         self.undo_action = self.action("&Undo")
         self.undo_action.setEnabled(False)
         menu.addAction(self.undo_action)
+        self.redo_action = self.action("&Redo")
+        self.redo_action.setEnabled(False)
+        menu.addAction(self.redo_action)
         self.cut_action = self.action("&Cut", requires_file=True)
         menu.addAction(self.cut_action)
         self.copy_action = self.action("Cop&y", requires_file=True)
@@ -386,3 +390,7 @@ class MenuManager(QObject):
     def set_enabled_undo_action(self, enabled, description):
         self.undo_action.setEnabled(enabled)
         self.undo_action.setText(f"&Undo {description}")
+
+    def set_enabled_redo_action(self, enabled, description):
+        self.redo_action.setEnabled(enabled)
+        self.redo_action.setText(f"&Redo {description}")

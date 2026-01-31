@@ -4,10 +4,12 @@ from PySide6.QtCore import QObject, Signal
 
 class ProjectUndoManager(QObject):
     set_enabled_undo_action_requested = Signal(bool, str)
+    set_enabled_redo_action_requested = Signal(bool, str)
 
     def __init__(self, parent=None):
         super().__init__(parent)
         self._undo_buffer = []
+        self._redo_buffer = []
 
     def add(self, item, description, action_type=None, affected_position=None):
         entry = {
@@ -17,6 +19,7 @@ class ProjectUndoManager(QObject):
             'affected_position': affected_position if affected_position else (-1, -1, -1)
         }
         self._undo_buffer.append(entry)
+        self.clear_redo()
         self.set_enabled_undo_action_requested.emit(True, description)
 
     def pop(self):
@@ -40,8 +43,38 @@ class ProjectUndoManager(QObject):
 
     def reset(self):
         self._undo_buffer = []
+        self._redo_buffer = []
         self.set_enabled_undo_action_requested.emit(False, '')
+        self.set_enabled_redo_action_requested.emit(False, '')
 
     def add_extra_data_to_last_entry(self, label, data):
         if len(self._undo_buffer) > 0:
             self._undo_buffer[-1][label] = data
+
+    def clear_redo(self):
+        self._redo_buffer = []
+        self.set_enabled_redo_action_requested.emit(False, '')
+
+    def add_to_undo(self, entry):
+        self._undo_buffer.append(entry)
+        self.set_enabled_undo_action_requested.emit(True, entry['description'])
+
+    def add_to_redo(self, entry):
+        self._redo_buffer.append(entry)
+        self.set_enabled_redo_action_requested.emit(True, entry['description'])
+
+    def pop_redo(self):
+        entry = self._redo_buffer.pop()
+        if len(self._redo_buffer) == 0:
+            self.set_enabled_redo_action_requested.emit(False, '')
+        else:
+            self.set_enabled_redo_action_requested.emit(True, self._redo_buffer[-1]['description'])
+        return entry
+
+    def peek_redo(self):
+        if self._redo_buffer:
+            return self._redo_buffer[-1]
+        return None
+
+    def filled_redo(self):
+        return len(self._redo_buffer) != 0

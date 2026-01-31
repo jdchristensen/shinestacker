@@ -1,16 +1,17 @@
 # Changelog
 
-## [v1.xx.x] - 2026-01-31
-**RAW formats support, GUI fixes and code refactoring**
+## [v1.14.0] - 2026-01-31
+**Native RAW formats support, GUI improvements and internal refactoring**
 
 ### Added
-- raw data formats supported with rawpy
+- native RAW image formats support via rawpy
+- support redo operation in project GUI
 
 ### Fixed
-- various GUI issues
+- various GUI issues and minor usability glitches
 
 ### Changes
-- code refactoring
+- internal code refactoring with significant architectural improvements
 
 ---
 
