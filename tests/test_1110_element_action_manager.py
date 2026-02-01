@@ -282,7 +282,7 @@ class TestElementActionManager(unittest.TestCase):
         job2 = MockElement('Job2', constants.ACTION_JOB)
         self.project_holder.project().jobs = [job1, job2]
         self.selection_state.set_job(0)
-        result = self.manager.shift_element(1)
+        result = self.manager.shift_element(1, "Down")
         self.assertTrue(result)
         self.assertEqual(self.project_holder.project().jobs[0], job2)
         self.assertEqual(self.project_holder.project().jobs[1], job1)
@@ -293,7 +293,7 @@ class TestElementActionManager(unittest.TestCase):
         job2 = MockElement('Job2', constants.ACTION_JOB)
         self.project_holder.project().jobs = [job1, job2]
         self.selection_state.set_job(1)
-        result = self.manager.shift_element(-1)
+        result = self.manager.shift_element(-1, "Up")
         self.assertTrue(result)
         self.assertEqual(self.project_holder.project().jobs[0], job2)
         self.assertEqual(self.project_holder.project().jobs[1], job1)
@@ -306,7 +306,7 @@ class TestElementActionManager(unittest.TestCase):
         job.sub_actions = [action1, action2]
         self.project_holder.project().jobs.append(job)
         self.selection_state.set_action(0, 0)
-        result = self.manager.shift_element(1)
+        result = self.manager.shift_element(1, "Down")
         self.assertTrue(result)
         self.assertEqual(job.sub_actions[0], action2)
         self.assertEqual(job.sub_actions[1], action1)

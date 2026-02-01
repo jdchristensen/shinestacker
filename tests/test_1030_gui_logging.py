@@ -104,7 +104,7 @@ def test_log_manager_start_thread(qtbot, log_manager, text_edit_logger):
     assert isinstance(logger.handlers[0], SimpleHtmlHandler)
 
 
-def test_log_manager_handle_end_message():  # Remove log_manager parameter
+def test_log_manager_handle_end_message():
     class TestLogManager(LogManager):
         def do_handle_end_message(self, status, id_str, message):
             self.end_status = status

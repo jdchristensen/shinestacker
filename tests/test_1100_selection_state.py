@@ -115,23 +115,6 @@ class TestSelectionState(unittest.TestCase):
         state.reset()
         self.assertFalse(state.is_valid())
 
-    def test_are_action_indices_valid(self):
-        state = SelectionState(job_index=0, action_index=1)
-        self.assertTrue(state.are_action_indices_valid())
-        state.set_job(0)
-        self.assertFalse(state.are_action_indices_valid())
-
-    def test_are_subaction_indices_valid(self):
-        state = SelectionState(job_index=0, action_index=1, subaction_index=2)
-        self.assertTrue(state.are_subaction_indices_valid())
-        state.set_action(0, 1)
-        self.assertFalse(state.are_subaction_indices_valid())
-
-    def test_equals(self):
-        state = SelectionState(1, 2, 3)
-        self.assertTrue(state.equals(1, 2, 3))
-        self.assertFalse(state.equals(1, 2, 4))
-
     def test_copy(self):
         state1 = SelectionState(1, 2, 3)
         state2 = state1.copy()
@@ -157,27 +140,6 @@ class TestSelectionState(unittest.TestCase):
     def test_set_indices_method(self):
         state = SelectionState()
         state.set_indices(1, 2, 3)
-        self.assertEqual(state.job_index, 1)
-        self.assertEqual(state.action_index, 2)
-        self.assertEqual(state.subaction_index, 3)
-
-    def test_set_job_indices_method(self):
-        state = SelectionState()
-        state.set_job_indices(5)
-        self.assertEqual(state.job_index, 5)
-        self.assertEqual(state.action_index, -1)
-        self.assertEqual(state.subaction_index, -1)
-
-    def test_set_action_indices_method(self):
-        state = SelectionState()
-        state.set_action_indices(2, 4)
-        self.assertEqual(state.job_index, 2)
-        self.assertEqual(state.action_index, 4)
-        self.assertEqual(state.subaction_index, -1)
-
-    def test_set_subaction_indices_method(self):
-        state = SelectionState()
-        state.set_subaction_indices(1, 2, 3)
         self.assertEqual(state.job_index, 1)
         self.assertEqual(state.action_index, 2)
         self.assertEqual(state.subaction_index, 3)

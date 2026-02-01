@@ -333,38 +333,12 @@ class ClassicProjectView(ProjectView, ListContainer):
             element.type_name == constants.ACTION_COMBO)
 
     def on_job_edit(self, item):
-        index = self.job_list().row(item)
-        if 0 <= index < self.num_project_jobs():
-            job = self.project_job(index)
-            if self.execute_edit_dialog(job, "Job", (index, -1, -1)):
-                current_row = self.current_job_index()
-                if current_row >= 0:
-                    self.job_list_item(current_row).setText(job.params['name'])
-                self.refresh_ui()
-                self.widget_updated_signal.emit(rows_to_state(self.project(), index, -1))
+        self.edit_element_signal.emit()
+        return
 
     def on_action_edit(self, item):
-        job_index = self.current_job_index()
-        if 0 <= job_index < self.num_project_jobs():
-            job = self.project_job(job_index)
-            action_index = self.action_list().row(item)
-            current_action, is_sub_action = self.get_current_action_at(job, action_index)
-            if current_action:
-                if not is_sub_action:
-                    self.enable_sub_actions_requested.emit(
-                        current_action.type_name == constants.ACTION_COMBO)
-                widget_type = 'subaction' if is_sub_action else 'action'
-                subaction_index = -1
-                if is_sub_action:
-                    subaction_index = self._get_current_subaction_index()
-                if self.execute_edit_dialog(
-                        current_action, widget_type, (job_index, action_index, subaction_index)):
-                    self.on_job_selected(job_index)
-                    self.refresh_ui()
-                    self.set_current_job(job_index)
-                    self.set_current_action(action_index)
-                    self.widget_updated_signal.emit(
-                        rows_to_state(self.project(), job_index, action_index))
+        self.edit_element_signal.emit()
+        return
 
     def on_job_selected(self, index):
         self.clear_action_list()
@@ -379,8 +353,6 @@ class ClassicProjectView(ProjectView, ListContainer):
         self._update_selection_state()
 
     def _update_selection_state(self):
-        # This is now managed internally by the view for UI interactions
-        # ElementActionManager will update selection_state for operations
         if self.action_list_has_focus() and self.num_selected_actions() > 0:
             _job_row, _action_row, pos = self.get_current_action()
             if pos is not None:

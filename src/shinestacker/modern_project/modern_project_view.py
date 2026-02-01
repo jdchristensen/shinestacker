@@ -182,20 +182,6 @@ class ModernProjectView(ProjectView):
             return None
         return action_widget.child_widgets[selection.subaction_index]
 
-    def _scroll_to_widget(self, widget):
-        if not widget or not self.scroll_area:
-            return
-        if not widget.isVisible() or widget.height() == 0:
-            QTimer.singleShot(10, lambda: self._scroll_to_widget(widget))
-            return
-        viewport_height = self.scroll_area.viewport().height()
-        widget_height = widget.height()
-        if widget_height <= viewport_height:
-            y_margin = (viewport_height - widget_height) // 2
-        else:
-            y_margin = 0
-        self.scroll_area.ensureWidgetVisible(widget, 0, y_margin)
-
     def _reset_selection(self):
         self.selected_widget = None
         self.selection_state.reset()
@@ -323,7 +309,6 @@ class ModernProjectView(ProjectView):
                 new_widget.set_selected(True)
                 self.selected_widget = new_widget
                 self._ensure_selected_visible()
-                # selection_state already updated by ElementActionManager
                 self.update_delete_action_state_requested.emit()
         except Exception:
             self.refresh_ui()
@@ -448,19 +433,22 @@ class ModernProjectView(ProjectView):
         if widget:
             widget.update_enabled()
 
-    def _ensure_selected_visible(self):
-        if not self.selected_widget or not self.scroll_area:
+    def _scroll_to_widget(self, widget):
+        if not widget:
             return
-        if not self.selected_widget.isVisible() or self.selected_widget.height() == 0:
-            QTimer.singleShot(10, self._ensure_selected_visible)
+        if not widget.isVisible() or widget.height() == 0:
+            QTimer.singleShot(10, lambda: self._scroll_to_widget(widget))
             return
         viewport_height = self.scroll_area.viewport().height()
-        widget_height = self.selected_widget.height()
+        widget_height = widget.height()
         if widget_height <= viewport_height:
             y_margin = (viewport_height - widget_height) // 2
         else:
             y_margin = 0
-        self.scroll_area.ensureWidgetVisible(self.selected_widget, 0, y_margin)
+        self.scroll_area.ensureWidgetVisible(widget, 0, y_margin)
+
+    def _ensure_selected_visible(self):
+        self._scroll_to_widget(self.selected_widget)
 
     def current_job_index(self):
         return self.selection_state.job_index
@@ -516,7 +504,6 @@ class ModernProjectView(ProjectView):
             self._add_job_widget(job)
         ProjectView.refresh_ui(self)
         if old_state:
-            # Exceptional case: clear_job_list() resets selection_state, so restore it
             self.selection_state.copy_from(old_state)
             self.selection_nav.restore_selection(old_state)
             self._ensure_selected_visible()
@@ -666,13 +653,13 @@ class ModernProjectView(ProjectView):
 
     def run_job(self):
         if self.selection_state.is_job_selected():
-            self.save_undo_state(self.project().clone(), "Run Job", "run",
-                                 (self.selection_state.job_index, -1, -1),
-                                 (self.selection_state.job_index, -1, -1))
+            position = (self.selection_state.job_index, -1, -1)
+            self.save_undo_state(self.project().clone(), "Run Job", "run", position, position)
         return self.execute_run_job()
 
     def run_all_jobs(self):
-        self.save_undo_state(self.project().clone(), "Run All Jobs", "run_all")
+        position = (0, -1, -1)
+        self.save_undo_state(self.project().clone(), "Run All Jobs", "run_all", position, position)
         return self.execute_run_all_jobs()
 
     def _start_job_worker(self, job_index, job):
