@@ -210,7 +210,7 @@ class ClassicProjectView(ProjectView, ListContainer):
         return False
 
     def is_running(self):
-        return len(self._workers) > 0 and any(w.is_running() for w in self._workers)
+        return len(self._workers) > 0 and any(w.isRunning() for w in self._workers)
 
     def _start_job_worker(self, job_index, job):
         self._prepare_job_run_ui(job_index, job)
