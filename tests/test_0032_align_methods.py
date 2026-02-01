@@ -1,7 +1,7 @@
 from time import perf_counter
 from shinestacker.config.constants import constants
 from shinestacker.algorithms.utils import read_img
-from shinestacker.algorithms.align import align_images#, align_images_phase_correlation
+from shinestacker.algorithms.align import align_images  # , align_images_phase_correlation
 
 trap_exceptions = {
     ('AKAZE', 'AKAZE', 'KNN'):
