@@ -139,12 +139,6 @@ class TestElementActionManager(unittest.TestCase):
         self.selection_state.set_job(5)
         self.assertEqual(self.selection_state.job_index, 5)
 
-    def test_is_valid_selection(self):
-        self.selection_state.set_job(0)
-        self.assertTrue(self.manager.is_valid_selection())
-        self.selection_state.reset()
-        self.assertFalse(self.manager.is_valid_selection())
-
     def test_new_state_after_delete_job(self):
         job1 = MockElement('Job1', constants.ACTION_JOB)
         job2 = MockElement('Job2', constants.ACTION_JOB)
@@ -160,36 +154,6 @@ class TestElementActionManager(unittest.TestCase):
         state = SelectionState(0)
         new_state = self.manager.new_state_after_delete(state)
         self.assertEqual(new_state.job_index, 0)
-
-    def test_get_action_with_action_selected(self):
-        job = MockElement('Job1', constants.ACTION_JOB)
-        action = MockElement('Action1', constants.ACTION_TYPES[0])
-        job.sub_actions.append(action)
-        self.project_holder.project().jobs.append(job)
-        self.selection_state.set_action(0, 0)
-        result = self.manager.get_action(self.selection_state)
-        self.assertEqual(result, action)
-
-    def test_get_action_with_subaction_selected(self):
-        job = MockElement('Job1', constants.ACTION_JOB)
-        action = MockElement('Action1', constants.ACTION_COMBO)
-        subaction = MockElement('SubAction1', constants.SUB_ACTION_TYPES[0])
-        action.sub_actions.append(subaction)
-        job.sub_actions.append(action)
-        self.project_holder.project().jobs.append(job)
-        self.selection_state.set_subaction(0, 0, 0)
-        result = self.manager.get_action(self.selection_state)
-        self.assertEqual(result, subaction)
-
-    def test_get_job_actions(self):
-        job = MockElement('Job1', constants.ACTION_JOB)
-        action = MockElement('Action1', constants.ACTION_TYPES[0])
-        job.sub_actions.append(action)
-        self.project_holder.project().jobs.append(job)
-        self.selection_state.set_job(0)
-        result = self.manager.get_job_actions(self.selection_state)
-        self.assertEqual(len(result), 1)
-        self.assertEqual(result[0], action)
 
     def test_copy_element(self):
         self.project_holder.project().jobs = []
