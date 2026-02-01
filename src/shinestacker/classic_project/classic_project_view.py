@@ -212,17 +212,6 @@ class ClassicProjectView(ProjectView, ListContainer):
     def is_running(self):
         return len(self._workers) > 0 and any(w.isRunning() for w in self._workers)
 
-    def _start_job_worker(self, job_index, job):
-        self._prepare_job_run_ui(job_index, job)
-        id_str = f"job-{job_index}"
-        labels = [[(self.action_text(a), a.enabled()) for a in job.sub_actions]]
-        new_window, id_str = self.create_new_window(job.params['name'], labels, [])
-        worker = JobLogWorker(job, id_str)
-        self.connect_worker_signals(worker, new_window)
-        self.start_thread(worker)
-        self._workers.append(worker)
-        return True
-
     def connect_worker_signals(self, worker, window):
         worker.before_action_signal.connect(window.handle_before_action)
         worker.after_action_signal.connect(window.handle_after_action)
@@ -242,8 +231,19 @@ class ClassicProjectView(ProjectView, ListContainer):
         worker.update_frame_status_signal.connect(window.handle_update_frame_status)
         worker.plot_manager.save_plot_signal.connect(window.handle_save_plot_via_manager)
 
-    def start_thread(self, worker):
-        worker.start()
+    def _start_job_worker(self, job_index, job):
+        self._prepare_job_run_ui(job_index, job)
+        labels = [[(self.action_text(a), a.enabled()) for a in job.sub_actions]]
+        job_name = job.params["name"]
+        r = self.get_retouch_path(job)
+        retouch_paths = [] if len(r) == 0 else [(job_name, r)]
+        new_window, id_str = self.create_new_window(f"{job_name} [Job]",
+                                                    labels, retouch_paths)
+        worker = JobLogWorker(job, id_str)
+        self.connect_worker_signals(worker, new_window)
+        self.start_thread(worker)
+        self._workers.append(worker)
+        return True
 
     def _start_project_worker(self):
         self._prepare_project_run_ui()
