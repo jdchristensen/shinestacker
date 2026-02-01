@@ -448,6 +448,15 @@ class ImgBaseWidget(BaseWidget):
         self.image_scroll_area = QScrollArea()
         self.image_scroll_area.setWidgetResizable(True)
         self.image_scroll_area.setFrameShape(QFrame.NoFrame)
+        self.image_scroll_area.setStyleSheet("""
+            QScrollArea {
+                background-color: transparent;
+                border: none;
+            }
+            QScrollArea > QWidget > QWidget {
+                background-color: transparent;
+            }
+        """)
         self._setup_image_area()
         self.child_container_layout.addWidget(self.image_scroll_area)
 
