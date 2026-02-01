@@ -54,8 +54,6 @@ class ClassicProjectView(ProjectView, ListContainer):
         QApplication.instance().setStyleSheet(
             self.style_dark if dark_theme else self.style_light)
         self.set_style_sheet(dark_theme)
-        self.job_list().enter_key_pressed.connect(self.edit_current_action)
-        self.action_list().enter_key_pressed.connect(self.edit_current_action)
         self._setup_ui()
 
     def _setup_ui(self):
@@ -92,10 +90,13 @@ class ClassicProjectView(ProjectView, ListContainer):
         self.action_list().itemClicked.connect(self.check_enable_subactions)
 
     def connect_signals(
-            self, update_delete_action_state, set_enabled_sub_actions_gui):
+            self, update_delete_action_state, set_enabled_sub_actions_gui,
+            edit_selected_element):
         self.job_list().itemSelectionChanged.connect(update_delete_action_state)
         self.action_list().itemSelectionChanged.connect(update_delete_action_state)
         self.enable_sub_actions_requested.connect(set_enabled_sub_actions_gui)
+        self.job_list().enter_key_pressed.connect(edit_selected_element)
+        self.action_list().enter_key_pressed.connect(edit_selected_element)
 
     def update_focus_styles(self):
         ListContainer.update_focus_styles(self)
@@ -214,8 +215,7 @@ class ClassicProjectView(ProjectView, ListContainer):
     def _start_job_worker(self, job_index, job):
         self._prepare_job_run_ui(job_index, job)
         id_str = f"job-{job_index}"
-        labels = [((job.params['name'], action.params['name']), action.enabled() and
-                   job.enabled()) for action in job.sub_actions]
+        labels = [[(self.action_text(a), a.enabled()) for a in job.sub_actions]]
         new_window, id_str = self.create_new_window(job.params['name'], labels, [])
         worker = JobLogWorker(job, id_str)
         self.connect_worker_signals(worker, new_window)
@@ -224,18 +224,31 @@ class ClassicProjectView(ProjectView, ListContainer):
         return True
 
     def connect_worker_signals(self, worker, window):
-        worker.progress_signal.connect(window.on_progress_update)
-        worker.message_signal.connect(window.on_message)
-        worker.html_message_signal.connect(window.on_html_message)
-        worker.end_message_signal.connect(self.handle_end_message)
+        worker.before_action_signal.connect(window.handle_before_action)
+        worker.after_action_signal.connect(window.handle_after_action)
+        worker.step_counts_signal.connect(window.handle_step_counts)
+        worker.begin_steps_signal.connect(window.handle_begin_steps)
+        worker.end_steps_signal.connect(window.handle_end_steps)
+        worker.after_step_signal.connect(window.handle_after_step)
+        worker.save_plot_signal.connect(window.handle_save_plot)
+        worker.open_app_signal.connect(window.handle_open_app)
+        worker.run_completed_signal.connect(
+            lambda run_id: self.handle_run_completed())
+        worker.run_stopped_signal.connect(window.handle_run_stopped)
+        worker.run_failed_signal.connect(window.handle_run_failed)
+        worker.add_status_box_signal.connect(window.handle_add_status_box)
+        worker.add_frame_signal.connect(window.handle_add_frame)
+        worker.set_total_actions_signal.connect(window.handle_set_total_actions)
+        worker.update_frame_status_signal.connect(window.handle_update_frame_status)
+        worker.plot_manager.save_plot_signal.connect(window.handle_save_plot_via_manager)
 
     def start_thread(self, worker):
         worker.start()
 
     def _start_project_worker(self):
         self._prepare_project_run_ui()
-        labels = [((job.params['name'], a.params['name']), a.enabled() and
-                   job.enabled()) for job in self.project_jobs() for a in job.sub_actions]
+        labels = [[(self.action_text(a), a.enabled() and
+                    job.enabled()) for a in job.sub_actions] for job in self.project_jobs()]
         project_name = ".".join(self.current_file_name().split(".")[:-1])
         if project_name == '':
             project_name = '[new]'

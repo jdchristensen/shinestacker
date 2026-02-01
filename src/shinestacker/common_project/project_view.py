@@ -4,7 +4,7 @@ import subprocess
 import traceback
 from PySide6.QtCore import Signal
 from PySide6.QtGui import QAction
-from PySide6.QtWidgets import QWidget, QDialog, QMenu, QMessageBox
+from PySide6.QtWidgets import QWidget, QMenu, QMessageBox
 from .. core.core_utils import running_under_windows, running_under_macos
 from .. config.constants import constants
 from .. gui.gui_logging import LogManager
@@ -44,11 +44,6 @@ class ProjectView(QWidget, LogManager, ProjectHandler):
 
     def update_focus_styles(self):
         pass
-
-    def edit_current_action(self):
-        current_action = self.get_current_selected_action()
-        if current_action is not None:
-            self.edit_action(current_action)
 
     def get_current_selected_action(self):
         if not self.selection_state.is_valid():
@@ -128,6 +123,9 @@ class ProjectView(QWidget, LogManager, ProjectHandler):
         self.run_retouch_job(job)
         return True
 
+    def has_run_metadata(self):
+        return False
+
     def clear_run_metadata(self):
         pass
 
@@ -157,9 +155,6 @@ class ProjectView(QWidget, LogManager, ProjectHandler):
 
     def create_common_context_menu(self, current_action):
         menu = QMenu(self)
-        edit_config_action = QAction("Edit configuration", self)
-        edit_config_action.triggered.connect(self.edit_current_action)
-        menu.addAction(edit_config_action)
         self.fill_context_menu_signal.emit(menu, current_action.enabled())
         try:
             self._add_path_browsing_actions(menu, current_action)
@@ -223,14 +218,6 @@ class ProjectView(QWidget, LogManager, ProjectHandler):
 
     def action_config_dialog(self, action):
         return ActionConfigDialog(action, self.current_file_directory(), self.parent())
-
-    def edit_action(self, action):
-        self.action_dialog = ActionConfigDialog(
-            action, self.current_file_directory(), self.parent())
-        if self.action_dialog.exec() == QDialog.Accepted:
-            self.save_undo_state("Edit Action", 'edit', self.selection_state.to_tuple())
-            return True
-        return False
 
     def clear_project(self):
         raise NotImplementedError
@@ -352,7 +339,7 @@ class ProjectView(QWidget, LogManager, ProjectHandler):
     def stop(self):
         raise NotImplementedError
 
-    def execute_run_job(self):
+    def run_job(self):
         current_index = self.current_job_index()
         if current_index < 0:
             msg = "No Job Selected" if self.num_project_jobs() > 0 else "No Job Added"
@@ -372,7 +359,7 @@ class ProjectView(QWidget, LogManager, ProjectHandler):
             return False
         return self._start_job_worker(current_index, job)
 
-    def execute_run_all_jobs(self):
+    def run_all_jobs(self):
         validation_result = self.validate_output_paths_for_project()
         if not validation_result['valid']:
             proceed = self.show_validation_warning(validation_result, is_single_job=False)

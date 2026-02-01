@@ -138,9 +138,6 @@ class ListContainer:
             self._job_list.setFocus()
             self.update_focus_styles()
 
-    def edit_current_action(self):
-        pass
-
     def set_lists(self, job_list, action_list):
         self._job_list = job_list
         self._action_list = action_list

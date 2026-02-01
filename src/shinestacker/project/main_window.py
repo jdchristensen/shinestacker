@@ -80,12 +80,12 @@ class MainWindow(ProjectIOHandler, QMainWindow):
             self.menuBar(), actions, self.add_action, self.add_subaction, dark_theme, self)
         self.classic_view.connect_signals(
             self.update_delete_action_state,
-            self.menu_manager.set_enabled_subactions_gui)
+            self.menu_manager.set_enabled_subactions_gui,
+            self.edit_element)
         self.modern_view.connect_signals(
             self.update_delete_action_state,
             self.show_status_message,
             self.menu_manager.set_enabled_subactions_gui)
-
         signal_map = [
             ('widget_enable_signal', self.set_enabled),
             ('widget_updated_signal', self.handle_widget_updated),
@@ -514,6 +514,11 @@ class MainWindow(ProjectIOHandler, QMainWindow):
                 view.update_widget(self.selection_state)
 
     def run_job(self):
+        if self.current_view.has_run_metadata():
+            position = (
+                self.selection_state.job_index if self.selection_state.is_job_selected() else -1,
+                -1, -1)
+            self.save_prev_undo_state("Run Job", "run", position, position)
         self.menu_manager.clear_run_info_action.setEnabled(True)
         success = self.current_view.run_job()
         if success:
@@ -522,6 +527,8 @@ class MainWindow(ProjectIOHandler, QMainWindow):
             self.menu_manager.stop_action.setEnabled(True)
 
     def run_all_jobs(self):
+        if self.current_view.has_run_metadata():
+            self.save_prev_undo_state("Run All Jobs", "run_all")
         self.menu_manager.clear_run_info_action.setEnabled(True)
         success = self.current_view.run_all_jobs()
         if success:
@@ -533,7 +540,9 @@ class MainWindow(ProjectIOHandler, QMainWindow):
         self.current_view.run_retouch_selected_job()
 
     def clear_run_metadata(self):
-        self.current_view.clear_run_metadata()
+        self.element_action.clear_run_metadata()
+        for view in self.views.values():
+            view.clear_run_metadata()
         self.menu_manager.clear_run_info_action.setEnabled(False)
 
     def stop(self):

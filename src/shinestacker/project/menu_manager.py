@@ -236,7 +236,6 @@ class MenuManager(QObject):
         menu.addAction(self.stop_action)
         menu.addSeparator()
         self.clear_run_info_action = self.action("Clear Run Information", requires_file=False)
-        self.clear_run_info_action.setEnabled(False)
         menu.addAction(self.clear_run_info_action)
         menu.addSeparator()
         self.run_retouch_selected_job_action = self.action("Retouch Job Output")
@@ -286,6 +285,8 @@ class MenuManager(QObject):
         self.add_help_menu()
 
     def handle_fill_context_menu(self, menu, enabled):
+        menu.addAction(self.edit_element_action)
+        menu.addSeparator()
         if enabled:
             menu.addAction(self.disable_action)
         else:

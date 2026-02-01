@@ -329,3 +329,6 @@ class ElementActionManager(ProjectHandler, QObject):
             new_position = entry.get('new_position', (-1, -1, -1))
             self.selection_state.from_tuple(new_position)
         return entry
+
+    def clear_run_metadata(self):
+        self.save_undo_state("Clear Run Information", "clear_run_info")
