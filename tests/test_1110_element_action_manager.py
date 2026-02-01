@@ -74,7 +74,7 @@ class TestElementActionManager(unittest.TestCase):
         self.project_holder = MockProjectHolder()
         self.selection_state = SelectionState()
         self.manager = ElementActionManager(self.project_holder, self.selection_state)
-        self.manager.mark_as_modified = Mock()
+        self.manager.save_undo_state = Mock()
         self.manager.parent = Mock(return_value=None)
         self.manager.project = lambda: self.project_holder.project()
         self.manager.project_job = lambda idx: self.project_holder.project_job(idx)

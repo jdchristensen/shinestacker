@@ -86,12 +86,6 @@ class ElementActionManager(ProjectHandler, QObject):
             QMessageBox.Yes | QMessageBox.No
         ) == QMessageBox.Yes
 
-    def mark_as_modified(self, modified=True, description='', action_type=None,
-                         old_position=None, new_position=None):
-        ProjectHandler.mark_as_modified(self, modified, description, action_type,
-                                        old_position, new_position)
-        self.project_modified_signal.emit(modified)
-
     def save_undo_state(self, pre_state, description='', action_type='',
                         old_position=None, new_position=None):
         ProjectHandler.save_undo_state(self, pre_state, description, action_type,
@@ -126,8 +120,8 @@ class ElementActionManager(ProjectHandler, QObject):
         insert_index = min(max(pos + 1 if pos >= 0 else len(container), 0), len(container))
         element_type = ["Job", "Action", "Subaction"][level]
         new_position = tuple(list(old_position[:level]) + [insert_index] + [-1] * (2 - level))
-        self.mark_as_modified(True, f"Paste {element_type}", "paste",
-                              old_position, tuple(new_position))
+        self.save_undo_state(f"Paste {element_type}", "paste",
+                             old_position, tuple(new_position))
         container.insert(insert_index, copy_buffer.clone())
         self.selection_state.from_tuple(new_position)
         return True
@@ -151,8 +145,8 @@ class ElementActionManager(ProjectHandler, QObject):
                 new_position[1] = new_index
             else:
                 new_position[0] = new_index
-            self.mark_as_modified(True, f"Move {self.selection_state.type().title()} {direction}",
-                                  "move", old_position, tuple(new_position))
+            self.save_undo_state(f"Move {self.selection_state.type().title()} {direction}",
+                                 "move", old_position, tuple(new_position))
             container.insert(new_index, container.pop(current_index))
             self.selection_state.from_tuple(new_position)
             return True
@@ -180,8 +174,8 @@ class ElementActionManager(ProjectHandler, QObject):
         else:
             clone_position[0] = old_position[0] + 1
         new_position = tuple(clone_position)
-        self.mark_as_modified(
-            True, f"Duplicate {self.selection_state.type().title()}",
+        self.save_undo_state(
+            f"Duplicate {self.selection_state.type().title()}",
             "clone", old_position, new_position)
         container = self.project_container(*idx)
         container.insert(s + 1, element.clone(name_postfix=CLONE_POSTFIX))
@@ -201,8 +195,8 @@ class ElementActionManager(ProjectHandler, QObject):
             return None, None
         new_selection = self.new_state_after_delete(self.selection_state)
         new_position = new_selection.to_tuple()
-        self.mark_as_modified(
-            True, f"Delete {element_type.title()}", "delete", old_position, new_position)
+        self.save_undo_state(
+            f"Delete {element_type.title()}", "delete", old_position, new_position)
         deleted_element = None
         idx, s = get_position_stack(old_position)
         if len(idx) == 0:
@@ -225,7 +219,7 @@ class ElementActionManager(ProjectHandler, QObject):
     def set_enabled_all(self, enabled):
         action = "Enable" if enabled else "Disable"
         old_position = self.selection_state.to_tuple()
-        self.mark_as_modified(True, f"{action} All", "edit_all", old_position, old_position)
+        self.save_undo_state(f"{action} All", "edit_all", old_position, old_position)
         for job in self.project().jobs:
             job.set_enabled_all(enabled)
 
@@ -237,7 +231,7 @@ class ElementActionManager(ProjectHandler, QObject):
         if not element or element.enabled() == enabled:
             return False
         txt = "Enable" if enabled else "Disable"
-        self.mark_as_modified(True, f"{txt} {selection.type().title()}", "edit", position, position)
+        self.save_undo_state(f"{txt} {selection.type().title()}", "edit", position, position)
         element.set_enabled(enabled)
         return True
 
@@ -264,7 +258,7 @@ class ElementActionManager(ProjectHandler, QObject):
             else self.selection_state.job_index + 1
         old_position = self.selection_state.to_tuple()
         new_position = (new_job_index, -1, -1)
-        self.mark_as_modified(True, "Add Job", "add", old_position, new_position)
+        self.save_undo_state("Add Job", "add", old_position, new_position)
         self.project_jobs().insert(new_job_index, job_action)
         self.selection_state.from_tuple(new_position)
         return True, SelectionState(new_job_index)
@@ -286,8 +280,7 @@ class ElementActionManager(ProjectHandler, QObject):
         new_selection = self.new_state_after_insert(self.selection_state)
         old_position = self.selection_state.to_tuple()
         new_position = new_selection.to_tuple()
-        self.mark_as_modified(
-            True, "Add Action", "add", old_position, new_position)
+        self.save_undo_state("Add Action", "add", old_position, new_position)
         job.sub_actions.insert(new_selection.action_index, action)
         self.selection_state.from_tuple(new_position)
         return True, new_selection
@@ -317,8 +310,8 @@ class ElementActionManager(ProjectHandler, QObject):
         new_selection = self.new_state_after_insert(self.selection_state)
         old_position = self.selection_state.to_tuple()
         new_position = new_selection.to_tuple()
-        self.mark_as_modified(
-            True, "Add Sub-action", "add", old_position, new_position)
+        self.save_undo_state(
+            "Add Sub-action", "add", old_position, new_position)
         action.sub_actions.insert(new_selection.subaction_index, sub_action)
         self.selection_state.from_tuple(new_position)
         return True, new_selection

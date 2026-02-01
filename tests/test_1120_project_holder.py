@@ -59,13 +59,9 @@ class TestProjectHolder(unittest.TestCase):
         self.holder.set_modified(True)
         self.assertTrue(self.holder.modified)
 
-    def test_mark_as_modified(self):
-        self.holder.project = Mock()
-        self.holder.project.clone.return_value = Mock()
-        self.holder.add_undo = Mock()
-        self.holder.mark_as_modified(True, 'test', 'add', (0,), (1,))
-        self.assertTrue(self.holder.modified)
-        self.holder.add_undo.assert_called_once()
+    def test_mark_as_not_modified(self):
+        self.holder.mark_as_not_modified()
+        self.assertFalse(self.holder.modified)
 
     def test_save_undo_state(self):
         pre_state = Mock()
@@ -251,10 +247,9 @@ class TestProjectHandler(unittest.TestCase):
         self.handler.set_modified(True)
         self.holder.set_modified.assert_called_with(True)
 
-    def test_mark_as_modified(self):
-        self.holder.mark_as_modified = Mock()
-        self.handler.mark_as_modified(True, 'test', 'add', (0,), (1,))
-        self.holder.mark_as_modified.assert_called_once_with(True, 'test', 'add', (0,), (1,))
+    def test_mark_as_not_modified(self):
+        self.handler.mark_as_not_modified()
+        self.holder.mark_as_not_modified.assert_called_once()
 
     def test_save_undo_state(self):
         pre_state = Mock()
@@ -349,7 +344,7 @@ class TestProjectIOHandler(unittest.TestCase):
                 mock_from.assert_called_once()
                 self.holder.set_project.assert_called_with(self.test_project)
                 self.holder.set_current_file_path.assert_called_with(tmp.name)
-                self.holder.mark_as_modified.assert_called_with(False, '', None, None, None)
+                self.holder.mark_as_not_modified.assert_called_once()
                 self.holder.reset_undo.assert_called_once()
             os.unlink(tmp.name)
 
@@ -369,7 +364,7 @@ class TestProjectIOHandler(unittest.TestCase):
         with tempfile.NamedTemporaryFile(mode='w', delete=False) as tmp:
             with patch('jsonpickle.encode', return_value='{"project": {}, "version": 1}'):
                 self.io_handler.do_save(tmp.name)
-                self.holder.mark_as_modified.assert_called_with(False, '', None, None, None)
+                self.holder.mark_as_not_modified.assert_called_once()
             os.unlink(tmp.name)
 
 

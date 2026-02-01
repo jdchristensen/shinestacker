@@ -334,11 +334,9 @@ class ClassicProjectView(ProjectView, ListContainer):
 
     def on_job_edit(self, item):
         self.edit_element_signal.emit()
-        return
 
     def on_action_edit(self, item):
         self.edit_element_signal.emit()
-        return
 
     def on_job_selected(self, index):
         self.clear_action_list()

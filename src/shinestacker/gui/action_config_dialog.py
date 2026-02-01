@@ -45,8 +45,6 @@ class ActionConfigDialog(ConfigDialog):
 
     def accept(self):
         if self.configurator.update_params(self.action.params):
-            if hasattr(self.parent(), 'mark_as_modified'):
-                self.parent().mark_as_modified(True, "Modify Configuration")
             super().accept()
 
     def reset_to_defaults(self):

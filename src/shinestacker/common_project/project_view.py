@@ -236,7 +236,7 @@ class ProjectView(QWidget, LogManager, ProjectHandler):
         self.action_dialog = ActionConfigDialog(
             action, self.current_file_directory(), self.parent())
         if self.action_dialog.exec() == QDialog.Accepted:
-            self.mark_as_modified(True, "Edit Action", 'edit', self.selection_state.to_tuple())
+            self.save_undo_state("Edit Action", 'edit', self.selection_state.to_tuple())
             return True
         return False
 

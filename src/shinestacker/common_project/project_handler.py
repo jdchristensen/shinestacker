@@ -38,12 +38,8 @@ class ProjectHolder:
     def set_modified(self, modified):
         self.modified = modified
 
-    def mark_as_modified(self, modified=True, description='', action_type=None,
-                         old_position=None, new_position=None):
-        self.modified = modified
-        if modified:
-            self.add_undo(self.project.clone(), description, action_type,
-                          old_position, new_position)
+    def mark_as_not_modified(self):
+        self.modified = False
 
     def save_undo_state(self, pre_state, description='', action_type='',
                         old_position=None, new_position=None):
@@ -219,10 +215,8 @@ class ProjectHandler:
     def set_modified(self, modified):
         self.project_holder.set_modified(modified)
 
-    def mark_as_modified(self, modified=True, description='', action_type=None,
-                         old_position=None, new_position=None):
-        self.project_holder.mark_as_modified(modified, description, action_type,
-                                             old_position, new_position)
+    def mark_as_not_modified(self):
+        self.project_holder.mark_as_not_modified()
 
     def save_undo_state(self, pre_state, description='', action_type='',
                         old_position=None, new_position=None):
@@ -295,7 +289,7 @@ class ProjectIOHandler(ProjectHandler):
             raise InvalidProjectError(file_path)
         self.set_project(project)
         self.set_current_file_path(file_path)
-        self.mark_as_modified(False)
+        self.mark_as_not_modified()
         self.reset_undo()
         return abs_file_path
 
@@ -306,4 +300,4 @@ class ProjectIOHandler(ProjectHandler):
         })
         with open(file_path, 'w', encoding="utf-8") as f:
             f.write(json_obj)
-        self.mark_as_modified(False)
+        self.mark_as_not_modified()
