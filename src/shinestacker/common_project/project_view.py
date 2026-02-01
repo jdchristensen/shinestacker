@@ -224,14 +224,6 @@ class ProjectView(QWidget, LogManager, ProjectHandler):
     def action_config_dialog(self, action):
         return ActionConfigDialog(action, self.current_file_directory(), self.parent())
 
-    def execute_edit_dialog(self, element, element_type, position):
-        pre_edit_project = self.project().clone()
-        dialog = self.action_config_dialog(element)
-        if dialog.exec() == QDialog.Accepted:
-            self.save_prev_undo_state(pre_edit_project, f"Edit {element_type}", "edit", position)
-            return True
-        return False
-
     def edit_action(self, action):
         self.action_dialog = ActionConfigDialog(
             action, self.current_file_directory(), self.parent())

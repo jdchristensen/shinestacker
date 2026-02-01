@@ -63,22 +63,6 @@ class ElementActionManager(ProjectHandler, QObject):
     def is_subaction_selected(self):
         return self.selection_state.is_subaction_selected()
 
-    def is_valid_selection(self):
-        return self.selection_state.is_valid()
-
-    def get_action(self, selection):
-        if not selection.is_action_selected() and not selection.is_subaction_selected():
-            return None
-        return self.project_element(*selection.to_tuple())
-
-    def get_job_actions(self, selection):
-        job = self.project_job(selection.job_index)
-        return job.sub_actions if job is not None else None
-
-    def get_subactions(self, selection):
-        action = self.project_action(selection.job_index, selection.action_index)
-        return action.sub_actions if action is not None else None
-
     def confirm_delete_message(self, type_name, element_name):
         return QMessageBox.question(
             self.parent(), "Confirm Delete",
@@ -218,9 +202,6 @@ class ElementActionManager(ProjectHandler, QObject):
         if deleted_element:
             self.set_copy_buffer(deleted_element)
         return deleted_element, new_state
-
-    def _set_element_enabled(self, element, enabled, element_type):
-        element.set_enabled(enabled)
 
     def set_enabled_all(self, enabled):
         action = "Enable" if enabled else "Disable"

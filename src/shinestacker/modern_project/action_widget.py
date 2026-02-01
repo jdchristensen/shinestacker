@@ -164,26 +164,6 @@ class ActionWidget(ImgBaseWidget):
         super().clear_all()
         self.update_metadata()
 
-    def restore_from_metadata_immediate(self):
-        if self.data_object and 'widget_state' in self.data_object.metadata:
-            state = self.data_object.metadata['widget_state']
-            if 'progress_bar' in state:
-                self.progress_bar.restore_widget_state(state['progress_bar'])
-
-    def _adjust_image_area_height(self):
-        if not self.image_views:
-            return
-        max_height = max(view.sizeHint().height() for view in self.image_views)
-        total_width = 0
-        for view in self.image_views:
-            total_width += view.sizeHint().width()
-        total_width += self.image_layout.spacing() * (len(self.image_views) - 1)
-        self.image_area_widget.setFixedWidth(total_width)
-        self.image_area_widget.setFixedHeight(max_height)
-        scrollbar = self.image_scroll_area.horizontalScrollBar()
-        scrollbar_height = scrollbar.sizeHint().height() if scrollbar.maximum() > 0 else 0
-        self.image_scroll_area.setMinimumHeight(max_height + scrollbar_height)
-
     def _capture_widget_state(self):
         state = super()._capture_widget_state()
         if self._has_frames_content:
