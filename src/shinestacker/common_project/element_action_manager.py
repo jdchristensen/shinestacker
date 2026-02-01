@@ -1,4 +1,4 @@
-# pylint: disable=C0114, C0115, C0116, W0246, E0611, R0917, R0913, W0613, R0911, R0912, R0904
+# pylint: disable=C0114, C0115, C0116, W0246, E0611, R0917, R0913, W0613, R0911, R0912, R0904, E1121
 from PySide6.QtCore import QObject, Signal
 from PySide6.QtWidgets import QMessageBox, QDialog
 from .. config.constants import constants
@@ -86,9 +86,15 @@ class ElementActionManager(ProjectHandler, QObject):
             QMessageBox.Yes | QMessageBox.No
         ) == QMessageBox.Yes
 
-    def save_undo_state(self, pre_state, description='', action_type='',
+    def save_prev_undo_state(self, pre_state, description='', action_type='',
+                             old_position=None, new_position=None):
+        ProjectHandler.save_prev_undo_state(self, pre_state, description, action_type,
+                                            old_position, new_position)
+        self.project_modified_signal.emit(True)
+
+    def save_undo_state(self, description='', action_type='',
                         old_position=None, new_position=None):
-        ProjectHandler.save_undo_state(self, pre_state, description, action_type,
+        ProjectHandler.save_undo_state(self, description, action_type,
                                        old_position, new_position)
         self.project_modified_signal.emit(True)
 
@@ -244,7 +250,7 @@ class ElementActionManager(ProjectHandler, QObject):
         dialog = self.action_config_dialog(element)
         if dialog.exec() == QDialog.Accepted:
             position = selection.to_tuple()
-            self.save_undo_state(
+            self.save_prev_undo_state(
                 pre_edit_project, f"Edit {selection.type().title()}", "edit", position, position)
             return True
         return False

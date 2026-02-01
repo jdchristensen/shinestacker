@@ -654,12 +654,12 @@ class ModernProjectView(ProjectView):
     def run_job(self):
         if self.selection_state.is_job_selected():
             position = (self.selection_state.job_index, -1, -1)
-            self.save_undo_state(self.project().clone(), "Run Job", "run", position, position)
+            self.save_prev_undo_state("Run Job", "run", position, position)
         return self.execute_run_job()
 
     def run_all_jobs(self):
         position = (0, -1, -1)
-        self.save_undo_state(self.project().clone(), "Run All Jobs", "run_all", position, position)
+        self.save_prev_undo_state("Run All Jobs", "run_all", position, position)
         return self.execute_run_all_jobs()
 
     def _start_job_worker(self, job_index, job):
@@ -698,7 +698,7 @@ class ModernProjectView(ProjectView):
         SignalConnector.connect_worker_signals(worker, self, self.progress_handler)
 
     def clear_run_metadata(self):
-        self.save_undo_state(self.project().clone(), "Clear Run Information", "clear_run_info")
+        self.save_undo_state("Clear Run Information", "clear_run_info")
         for job_widget in self.job_widgets:
             self._clear_widget_metadata(job_widget)
 

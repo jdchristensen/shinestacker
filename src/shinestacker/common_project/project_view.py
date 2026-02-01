@@ -228,7 +228,7 @@ class ProjectView(QWidget, LogManager, ProjectHandler):
         pre_edit_project = self.project().clone()
         dialog = self.action_config_dialog(element)
         if dialog.exec() == QDialog.Accepted:
-            self.save_undo_state(pre_edit_project, f"Edit {element_type}", "edit", position)
+            self.save_prev_undo_state(pre_edit_project, f"Edit {element_type}", "edit", position)
             return True
         return False
 
