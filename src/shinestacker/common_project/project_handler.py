@@ -48,7 +48,7 @@ class ProjectHolder:
 
     def save_undo_state(self, description='', action_type='',
                         old_position=None, new_position=None):
-        self.save_prev_undo_state(self.project().clone(), description, action_type,
+        self.save_prev_undo_state(self.project.clone(), description, action_type,
                                   old_position, new_position)
 
     def reset_undo(self):
