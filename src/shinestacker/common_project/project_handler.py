@@ -1,4 +1,4 @@
-# pylint: disable=C0114, C0115, C0116, R0904
+# pylint: disable=C0114, C0115, C0116, R0904, R0917, R0913
 import os
 import json
 import jsonpickle
@@ -39,21 +39,23 @@ class ProjectHolder:
         self.modified = modified
 
     def mark_as_modified(self, modified=True, description='', action_type=None,
-                         affected_position=(-1, -1, -1)):
+                         old_position=None, new_position=None):
         self.modified = modified
         if modified:
-            self.add_undo(self.project.clone(), description, action_type, affected_position)
+            self.add_undo(self.project.clone(), description, action_type,
+                          old_position, new_position)
 
     def save_undo_state(self, pre_state, description='', action_type='',
-                        affected_position=(-1, -1, -1)):
+                        old_position=None, new_position=None):
         self.modified = True
-        self.add_undo(pre_state, description, action_type, affected_position)
+        self.add_undo(pre_state, description, action_type, old_position, new_position)
 
     def reset_undo(self):
         self.undo_manager.reset()
 
-    def add_undo(self, item, description='', action_type=None, affected_position=(-1, -1, -1)):
-        self.undo_manager.add(item, description, action_type, affected_position)
+    def add_undo(self, item, description='', action_type=None,
+                 old_position=None, new_position=None):
+        self.undo_manager.add(item, description, action_type, old_position, new_position)
 
     def pop_undo(self):
         return self.undo_manager.pop()
@@ -69,7 +71,8 @@ class ProjectHolder:
                 'item': current_state,
                 'description': entry['description'],
                 'action_type': entry.get('action_type', ''),
-                'affected_position': entry.get('affected_position', (-1, -1, -1))
+                'old_position': entry.get('new_position', (-1, -1, -1)),
+                'new_position': entry.get('old_position', (-1, -1, -1))
             }
             if 'modern_widget_state' in entry:
                 new_entry['modern_widget_state'] = entry['modern_widget_state']
@@ -88,17 +91,32 @@ class ProjectHolder:
         if self.filled_redo():
             current_state = self.project.clone()
             entry = self.pop_redo()
+            # Entry from redo buffer has swapped positions from when it was created during undo
+            # Swap them back to create the correct entry for undo buffer
             new_entry = {
                 'item': current_state,
                 'description': entry['description'],
                 'action_type': entry.get('action_type', ''),
-                'affected_position': entry.get('affected_position', (-1, -1, -1))
+                # Swap back: entry has old=new, new=old, so we swap to get old=old, new=new
+                'old_position': entry.get('new_position', (-1, -1, -1)),
+                'new_position': entry.get('old_position', (-1, -1, -1))
             }
             if 'modern_widget_state' in entry:
                 new_entry['modern_widget_state'] = entry['modern_widget_state']
             self.undo_manager.add_to_undo(new_entry)
             self.set_project(entry['item'])
-            return entry
+            # Return entry with positions swapped back for the view
+            # View expects: old_position = before redo, new_position = after redo
+            return_entry = {
+                'item': entry['item'],
+                'description': entry['description'],
+                'action_type': entry.get('action_type', ''),
+                'old_position': entry.get('new_position', (-1, -1, -1)),  # Swap back
+                'new_position': entry.get('old_position', (-1, -1, -1))   # Swap back
+            }
+            if 'modern_widget_state' in entry:
+                return_entry['modern_widget_state'] = entry['modern_widget_state']
+            return return_entry
         return None
 
     def set_copy_buffer(self, item):
@@ -202,12 +220,14 @@ class ProjectHandler:
         self.project_holder.set_modified(modified)
 
     def mark_as_modified(self, modified=True, description='', action_type=None,
-                         affected_position=(-1, -1, -1)):
-        self.project_holder.mark_as_modified(modified, description, action_type, affected_position)
+                         old_position=None, new_position=None):
+        self.project_holder.mark_as_modified(modified, description, action_type,
+                                             old_position, new_position)
 
     def save_undo_state(self, pre_state, description='', action_type='',
-                        affected_position=(-1, -1, -1)):
-        self.project_holder.save_undo_state(pre_state, description, action_type, affected_position)
+                        old_position=None, new_position=None):
+        self.project_holder.save_undo_state(pre_state, description, action_type,
+                                            old_position, new_position)
 
     def undo_manager(self):
         return self.project_holder.undo_manager
@@ -215,8 +235,9 @@ class ProjectHandler:
     def reset_undo(self):
         self.project_holder.reset_undo()
 
-    def add_undo(self, item, description='', action_type=None, affected_position=(-1, -1, -1)):
-        self.project_holder.add_undo(item, description, action_type, affected_position)
+    def add_undo(self, item, description='', action_type=None,
+                 old_position=None, new_position=None):
+        self.project_holder.add_undo(item, description, action_type, old_position, new_position)
 
     def pop_undo(self):
         return self.project_holder.pop_undo()

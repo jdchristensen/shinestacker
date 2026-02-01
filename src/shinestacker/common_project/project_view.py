@@ -173,14 +173,6 @@ class ProjectView(QWidget, LogManager, ProjectHandler):
             )
         return menu
 
-    def mark_as_modified(self, modified=True, description='', action_type='',
-                         affected_position=(-1, -1, -1)):
-        ProjectHandler.mark_as_modified(self, modified, description, action_type, affected_position)
-
-    def save_undo_state(self, pre_state, description='', action_type='',
-                        affected_position=(-1, -1, -1)):
-        ProjectHandler.save_undo_state(self, pre_state, description, action_type, affected_position)
-
     def _add_path_browsing_actions(self, menu, current_action):
         self.current_action_working_path, name = get_action_working_path(current_action)
         if self.current_action_working_path != '' and \

@@ -1,6 +1,6 @@
 # Changelog
 
-## [v1.14.0] - 2026-01-31
+## [v1.14.0] - 2026-02-01
 **Native RAW formats support, GUI improvements and internal refactoring**
 
 ### Added

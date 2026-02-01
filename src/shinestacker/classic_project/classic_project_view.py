@@ -137,8 +137,6 @@ class ClassicProjectView(ProjectView, ListContainer):
         self.clear_job_list()
         for job in self.project_jobs():
             self.add_list_item(self.job_list(), job, False)
-        if restore_state is not None:
-            self.selection_state.copy_from(restore_state)
         if self.project_jobs():
             if 0 <= job_row < self.num_project_jobs():
                 self.set_current_job(job_row)
@@ -147,6 +145,8 @@ class ClassicProjectView(ProjectView, ListContainer):
             else:
                 self.set_current_job(0)
         ProjectView.refresh_ui(self)
+        if restore_state is not None:
+            self.selection_state.copy_from(restore_state)
 
     def select_first_job(self):
         self.set_current_job(0)
@@ -191,62 +191,51 @@ class ClassicProjectView(ProjectView, ListContainer):
         new_window.show()
         self.add_gui_logger(new_window)
         self._windows.append(new_window)
-        return new_window, self.last_id_str()
+        return new_window, new_window.id_str()
 
-    def close_window(self, tab_position):
-        self._windows.pop(tab_position)
-        self._workers.pop(tab_position)
-        self.tab_widget.removeTab(tab_position)
+    def close_window(self, index):
+        if 0 <= index < self.tab_widget.count():
+            widget = self.tab_widget.widget(index)
+            self.tab_widget.removeTab(index)
+            if widget in self._windows:
+                self._windows.remove(widget)
+            widget.deleteLater()
 
-    def stop_worker(self, tab_position):
-        worker = self._workers[tab_position]
-        worker.stop()
+    def stop_worker(self, index):
+        if 0 <= index < len(self._workers):
+            worker = self._workers[index]
+            worker.stop()
+            return True
+        return False
 
     def is_running(self):
-        return any(worker.isRunning() for worker in self._workers if worker is not None)
-
-    def connect_worker_signals(self, worker, window):
-        worker.before_action_signal.connect(window.handle_before_action)
-        worker.after_action_signal.connect(window.handle_after_action)
-        worker.step_counts_signal.connect(window.handle_step_counts)
-        worker.begin_steps_signal.connect(window.handle_begin_steps)
-        worker.end_steps_signal.connect(window.handle_end_steps)
-        worker.after_step_signal.connect(window.handle_after_step)
-        worker.save_plot_signal.connect(window.handle_save_plot)
-        worker.open_app_signal.connect(window.handle_open_app)
-        worker.run_completed_signal.connect(self.handle_run_completed)
-        worker.run_stopped_signal.connect(window.handle_run_stopped)
-        worker.run_failed_signal.connect(window.handle_run_failed)
-        worker.add_status_box_signal.connect(window.handle_add_status_box)
-        worker.add_frame_signal.connect(window.handle_add_frame)
-        worker.set_total_actions_signal.connect(window.handle_set_total_actions)
-        worker.update_frame_status_signal.connect(window.handle_update_frame_status)
-        worker.plot_manager.save_plot_signal.connect(window.handle_save_plot_via_manager)
-
-    def run_job(self):
-        return self.execute_run_job()
-
-    def run_all_jobs(self):
-        return self.execute_run_all_jobs()
+        return len(self._workers) > 0 and any(w.is_running() for w in self._workers)
 
     def _start_job_worker(self, job_index, job):
         self._prepare_job_run_ui(job_index, job)
-        job_name = job.params["name"]
-        labels = [[(self.action_text(a), a.enabled()) for a in job.sub_actions]]
-        r = self.get_retouch_path(job)
-        retouch_paths = [] if len(r) == 0 else [(job_name, r)]
-        new_window, id_str = self.create_new_window(f"{job_name} [Job]",
-                                                    labels, retouch_paths)
+        id_str = f"job-{job_index}"
+        labels = [((job.params['name'], action.params['name']), action.enabled() and
+                   job.enabled()) for action in job.sub_actions]
+        new_window, id_str = self.create_new_window(job.params['name'], labels, [])
         worker = JobLogWorker(job, id_str)
         self.connect_worker_signals(worker, new_window)
         self.start_thread(worker)
         self._workers.append(worker)
         return True
 
+    def connect_worker_signals(self, worker, window):
+        worker.progress_signal.connect(window.on_progress_update)
+        worker.message_signal.connect(window.on_message)
+        worker.html_message_signal.connect(window.on_html_message)
+        worker.end_message_signal.connect(self.handle_end_message)
+
+    def start_thread(self, worker):
+        worker.start()
+
     def _start_project_worker(self):
         self._prepare_project_run_ui()
-        labels = [[(self.action_text(a), a.enabled() and
-                    job.enabled()) for a in job.sub_actions] for job in self.project_jobs()]
+        labels = [((job.params['name'], a.params['name']), a.enabled() and
+                   job.enabled()) for job in self.project_jobs() for a in job.sub_actions]
         project_name = ".".join(self.current_file_name().split(".")[:-1])
         if project_name == '':
             project_name = '[new]'
@@ -287,7 +276,7 @@ class ClassicProjectView(ProjectView, ListContainer):
         self.refresh_ui(new_selection)
 
     def paste_element(self, old_selection, new_selection):
-        self.refresh_ui(old_selection)
+        self.refresh_ui(new_selection)
 
     def clone_element(self, old_selection, new_selection):
         self.refresh_ui(new_selection)
@@ -299,7 +288,7 @@ class ClassicProjectView(ProjectView, ListContainer):
         self.refresh_ui(selection)
 
     def shift_element(self, old_selection, new_selection):
-        self.refresh_ui(self.selection_state)
+        self.refresh_ui(new_selection)
 
     def _get_current_subaction_index(self):
         if not self.selection_state.is_subaction_selected():
@@ -310,7 +299,7 @@ class ClassicProjectView(ProjectView, ListContainer):
         return ListContainer.current_job_index(self)
 
     def update_added_element(self, new_selection):
-        self.refresh_ui(SelectionState(*new_selection))
+        self.refresh_ui(new_selection)
 
     def update_widget(self, selection):
         self.refresh_ui(selection)
@@ -390,6 +379,8 @@ class ClassicProjectView(ProjectView, ListContainer):
         self._update_selection_state()
 
     def _update_selection_state(self):
+        # This is now managed internally by the view for UI interactions
+        # ElementActionManager will update selection_state for operations
         if self.action_list_has_focus() and self.num_selected_actions() > 0:
             _job_row, _action_row, pos = self.get_current_action()
             if pos is not None:
@@ -423,18 +414,12 @@ class ClassicProjectView(ProjectView, ListContainer):
 
     def perform_undo(self, entry, old_selection):
         if entry:
-            position = entry.get('affected_position')
-            if len(position) >= 6:
-                restore_state = SelectionState(*position[:3])
-            else:
-                restore_state = SelectionState(*position[:3])
+            old_position = entry.get('old_position', (-1, -1, -1))
+            restore_state = SelectionState(*old_position)
             self.refresh_ui(restore_state)
 
     def perform_redo(self, entry, old_selection):
         if entry:
-            position = entry.get('affected_position')
-            if len(position) >= 6:
-                restore_state = SelectionState(*position[3:6])
-            else:
-                restore_state = SelectionState(*position[:3])
+            new_position = entry.get('new_position', (-1, -1, -1))
+            restore_state = SelectionState(*new_position)
             self.refresh_ui(restore_state)

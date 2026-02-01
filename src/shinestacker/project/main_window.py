@@ -149,13 +149,6 @@ class MainWindow(ProjectIOHandler, QMainWindow):
     def show_status_message(self, message, timeout=4000):
         self.statusBar().showMessage(message, timeout)
 
-    def mark_as_modified(self, modified=True, description='', action_type='',
-                         affected_position=(-1, -1, -1)):
-        ProjectIOHandler.mark_as_modified(
-            self, modified, description, action_type, affected_position)
-        self.menu_manager.save_actions_set_enabled(modified)
-        self.update_title()
-
     def set_retouch_callback(self, callback):
         self.retouch_callback = callback
 
@@ -474,15 +467,9 @@ class MainWindow(ProjectIOHandler, QMainWindow):
         if not self.current_view.enforce_stop_run():
             return
         old_selection = self.selection_state.copy()
-        pre_move_project = self.project().clone()
-        from_position = self.selection_state.to_tuple()
-        success = self.element_action.shift_element(delta)
+        success = self.element_action.shift_element(delta, direction)
         if success:
             new_selection = self.selection_state.copy()
-            to_position = new_selection.to_tuple()
-            affected_position = from_position + to_position
-            self.save_undo_state(
-                pre_move_project, f"Move {direction}", "move", affected_position)
             for view in self.views.values():
                 view.shift_element(old_selection, new_selection)
 

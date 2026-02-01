@@ -1,4 +1,4 @@
-# pylint: disable=C0114, C0115, C0116, E0611
+# pylint: disable=C0114, C0115, C0116, E0611, R0917, R0913
 from PySide6.QtCore import QObject, Signal
 
 
@@ -11,12 +11,14 @@ class ProjectUndoManager(QObject):
         self._undo_buffer = []
         self._redo_buffer = []
 
-    def add(self, item, description, action_type=None, affected_position=None):
+    def add(self, item, description, action_type=None, old_position=None, new_position=None):
         entry = {
             'item': item,
             'description': description,
             'action_type': action_type if action_type else '',
-            'affected_position': affected_position if affected_position else (-1, -1, -1)
+            'old_position': old_position if old_position else (-1, -1, -1),
+            'new_position': new_position if new_position else (
+                old_position if old_position else (-1, -1, -1))
         }
         self._undo_buffer.append(entry)
         self.clear_redo()
