@@ -45,8 +45,8 @@ class MenuManager(QObject):
             "Disable All": "Ctrl+Shift+B",
             "Expert Options": "Ctrl+Shift+X",
             "Edit Element": "Ctrl+Enter",
-            "Classic": "Ctrl+1",
-            "Modern": "Ctrl+2",
+            "Modern": "Ctrl+1",
+            "Classic": "Ctrl+2",
             "Add Job": "Ctrl+P",
             "Run Job": "Ctrl+J",
             "Run All Jobs": "Ctrl+Shift+J",
@@ -168,17 +168,17 @@ class MenuManager(QObject):
         menu.addAction(self.expert_options_action)
         self.view_strategy_menu = QMenu("View &Mode", menu)
         self.view_mode_actions = {
-            'Classic': self.action("Classic"),
             'Modern': self.action("Modern"),
+            'Classic': self.action("Classic"),
         }
-        self.classic_view_action = self.view_mode_actions['Classic']
         self.modern_view_action = self.view_mode_actions['Modern']
-        self.view_strategy_menu.addAction(self.classic_view_action)
+        self.classic_view_action = self.view_mode_actions['Classic']
         self.view_strategy_menu.addAction(self.modern_view_action)
+        self.view_strategy_menu.addAction(self.classic_view_action)
         self.classic_view_action.setCheckable(True)
         self.modern_view_action.setCheckable(True)
-        self.classic_view_action.triggered.connect(lambda: self.parent.set_view('classic'))
         self.modern_view_action.triggered.connect(lambda: self.parent.set_view('modern'))
+        self.classic_view_action.triggered.connect(lambda: self.parent.set_view('classic'))
         self.set_view(AppConfig.get('project_view_strategy').title(), False)
         menu.addMenu(self.view_strategy_menu)
         modern_view_menu = QMenu("Modern View Layout", menu)
