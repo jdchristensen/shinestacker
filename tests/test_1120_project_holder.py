@@ -63,13 +63,6 @@ class TestProjectHolder(unittest.TestCase):
         self.holder.mark_as_not_modified()
         self.assertFalse(self.holder.modified)
 
-    def test_save_prev_undo_state(self):
-        pre_state = Mock()
-        self.holder.add_undo = Mock()
-        self.holder.save_prev_undo_state(pre_state, 'test', 'move', (0,), (1,))
-        self.assertTrue(self.holder.modified)
-        self.holder.add_undo.assert_called_once()
-
     def test_reset_undo(self):
         self.holder.reset_undo()
         self.undo_manager.reset.assert_called_once()
@@ -243,18 +236,13 @@ class TestProjectHandler(unittest.TestCase):
         self.holder.modified = True
         self.assertTrue(self.handler.modified())
 
-    def test_set_modified(self):
-        self.handler.set_modified(True)
-        self.holder.set_modified.assert_called_with(True)
+    def test_mark_as_modified(self):
+        self.handler.mark_as_modified()
+        self.holder.mark_as_modified.assert_called_once()
 
     def test_mark_as_not_modified(self):
         self.handler.mark_as_not_modified()
         self.holder.mark_as_not_modified.assert_called_once()
-
-    def test_save_prev_undo_state(self):
-        pre_state = Mock()
-        self.handler.save_prev_undo_state(pre_state, 'test', 'move', (0,), (1,))
-        self.holder.save_prev_undo_state.assert_called_once()
 
     def test_undo_manager(self):
         self.assertEqual(self.handler.undo_manager(), self.holder.undo_manager)

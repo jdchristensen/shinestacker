@@ -100,7 +100,6 @@ class MainWindow(ProjectIOHandler, QMainWindow):
                     getattr(view, signal_name).connect(handler)
         self.element_action.project_modified_signal.connect(
             self.menu_manager.save_actions_set_enabled)
-
         self.script_dir = os.path.dirname(__file__)
         self.retouch_callback = None
         for _k, v in self.views.items():
@@ -157,7 +156,7 @@ class MainWindow(ProjectIOHandler, QMainWindow):
         file_name = self.current_file_name()
         if file_name:
             title += f" - {file_name}"
-            if self.element_action_manager.modified():
+            if self.element_action.modified():
                 title += " *"
         self.window().setWindowTitle(title)
 
@@ -225,7 +224,7 @@ class MainWindow(ProjectIOHandler, QMainWindow):
             v.select_first_job()
 
     def check_unsaved_changes(self):
-        if self.element_action_manager.modified():
+        if self.element_action.modified():
             reply = QMessageBox.question(
                 self, "Unsaved Changes",
                 "The project has unsaved changes. Do you want to continue?",
@@ -305,7 +304,7 @@ class MainWindow(ProjectIOHandler, QMainWindow):
             self.reset_project()
             self.update_title()
             if fill_new_project(self.project(), self):
-                self.element_action_manager.mark_as_modified()
+                self.element_action.mark_as_modified()
                 for view in self.views.values():
                     view.clear_project()
             self.refresh_ui_and_select_first_job()
@@ -427,9 +426,11 @@ class MainWindow(ProjectIOHandler, QMainWindow):
         deleted_element, new_selection = self.element_action.delete_element(True)
         if deleted_element and old_selection and old_selection.is_valid():
             for view in self.views.values():
-                view.delete_element(old_selection, new_selection)
-        if self.num_project_jobs() > 0:
-            self.menu_manager.delete_element_action.setEnabled(True)
+                k, v = view.delete_element(old_selection, new_selection)
+                if v is not None:
+                    self._undo_manager.add_extra_data_to_last_entry(k, v)
+            if self.num_project_jobs() > 0:
+                self.menu_manager.delete_element_action.setEnabled(True)
 
     def cut_element(self):
         if not self.current_view.enforce_stop_run():
@@ -438,7 +439,9 @@ class MainWindow(ProjectIOHandler, QMainWindow):
         deleted_element, new_selection = self.element_action.cut_element()
         if deleted_element and old_selection and old_selection.is_valid():
             for view in self.views.values():
-                view.delete_element(old_selection, new_selection)
+                k, v = view.delete_element(old_selection, new_selection)
+                if v is not None:
+                    self._undo_manager.add_extra_data_to_last_entry(k, v)
         if self.num_project_jobs() > 0:
             self.menu_manager.delete_element_action.setEnabled(True)
 
@@ -519,7 +522,7 @@ class MainWindow(ProjectIOHandler, QMainWindow):
             position = (
                 self.selection_state.job_index if self.selection_state.is_job_selected() else -1,
                 -1, -1)
-            self.save_undo_state("Run Job", "run", position, position)
+            self.element_action.save_undo_state("Run Job", "run", position, position)
         self.menu_manager.clear_run_info_action.setEnabled(True)
         success = self.current_view.run_job()
         if success:
@@ -529,7 +532,7 @@ class MainWindow(ProjectIOHandler, QMainWindow):
 
     def run_all_jobs(self):
         if self.current_view.has_run_metadata():
-            self.save_undo_state("Run All Jobs", "run_all")
+            self.element_action.save_undo_state("Run All Jobs", "run_all")
         self.menu_manager.clear_run_info_action.setEnabled(True)
         success = self.current_view.run_all_jobs()
         if success:

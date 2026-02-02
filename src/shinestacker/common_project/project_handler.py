@@ -41,16 +41,6 @@ class ProjectHolder:
     def mark_as_not_modified(self):
         self.modified = False
 
-    def save_prev_undo_state(self, pre_state, description='', action_type='',
-                             old_position=None, new_position=None):
-        self.mark_as_modified()
-        self.add_undo(pre_state, description, action_type, old_position, new_position)
-
-    def save_undo_state(self, description='', action_type='',
-                        old_position=None, new_position=None):
-        self.save_prev_undo_state(self.project.clone(), description, action_type,
-                                  old_position, new_position)
-
     def reset_undo(self):
         self.undo_manager.reset()
 
@@ -217,21 +207,11 @@ class ProjectHandler:
     def modified(self):
         return self.project_holder.modified
 
-    def set_modified(self, modified):
-        self.project_holder.set_modified(modified)
+    def mark_as_modified(self):
+        self.project_holder.mark_as_modified()
 
     def mark_as_not_modified(self):
         self.project_holder.mark_as_not_modified()
-
-    def save_undo_state(self, description='', action_type='',
-                        old_position=None, new_position=None):
-        self.project_holder.save_undo_state(description, action_type,
-                                            old_position, new_position)
-
-    def save_prev_undo_state(self, pre_state, description='', action_type='',
-                             old_position=None, new_position=None):
-        self.project_holder.save_prev_undo_state(pre_state, description, action_type,
-                                                 old_position, new_position)
 
     def undo_manager(self):
         return self.project_holder.undo_manager

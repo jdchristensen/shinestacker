@@ -27,8 +27,17 @@ class ElementActionManager(ProjectHandler, QObject):
         self.action_dialog = None
         QObject.__init__(self, parent)
 
-    def modified(self):
-        return ProjectHandler.modified(self)
+    def save_undo_state(self, description='', action_type='',
+                        old_position=None, new_position=None):
+        self.save_prev_undo_state(self.project().clone(), description, action_type,
+                                  old_position, new_position)
+
+    def save_prev_undo_state(self, pre_state, description='', action_type='',
+                             old_position=None, new_position=None):
+        self.mark_as_modified()
+        self.project_holder.add_undo(
+            pre_state, description, action_type, old_position, new_position)
+        self.project_modified_signal.emit(True)
 
     def new_state_after_op(self, state, delta):
         job_idx, act_idx, sub_idx = state.to_tuple()
@@ -70,18 +79,6 @@ class ElementActionManager(ProjectHandler, QObject):
             f"Are you sure you want to delete {type_name} '{element_name}'?",
             QMessageBox.Yes | QMessageBox.No
         ) == QMessageBox.Yes
-
-    def save_prev_undo_state(self, pre_state, description='', action_type='',
-                             old_position=None, new_position=None):
-        ProjectHandler.save_prev_undo_state(self, pre_state, description, action_type,
-                                            old_position, new_position)
-        self.project_modified_signal.emit(True)
-
-    def save_undo_state(self, description='', action_type='',
-                        old_position=None, new_position=None):
-        ProjectHandler.save_undo_state(self, description, action_type,
-                                       old_position, new_position)
-        self.project_modified_signal.emit(True)
 
     def paste_element(self):
         if not self.has_copy_buffer():

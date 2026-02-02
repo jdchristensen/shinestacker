@@ -287,6 +287,7 @@ class ClassicProjectView(ProjectView, ListContainer):
 
     def delete_element(self, old_selection, new_selection):
         self.refresh_ui(new_selection)
+        return '', None
 
     def paste_element(self, old_selection, new_selection):
         self.refresh_ui(new_selection)

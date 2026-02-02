@@ -289,9 +289,9 @@ class ModernProjectView(ProjectView):
             self._ensure_selected_visible()
         else:
             self._reset_selection()
-        if widget_state and self.undo_manager():
-            self.undo_manager().add_extra_data_to_last_entry(
-                'modern_widget_state', widget_state)
+        if widget_state:
+            return 'modern_widget_state', widget_state
+        return '', None
 
     def paste_element(self, old_selection, new_selection):
         try:
