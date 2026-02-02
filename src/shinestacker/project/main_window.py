@@ -157,7 +157,7 @@ class MainWindow(ProjectIOHandler, QMainWindow):
         file_name = self.current_file_name()
         if file_name:
             title += f" - {file_name}"
-            if self.modified():
+            if self.element_action_manager.modified():
                 title += " *"
         self.window().setWindowTitle(title)
 
@@ -198,6 +198,7 @@ class MainWindow(ProjectIOHandler, QMainWindow):
         self.view_stack.currentWidget().stop()
         self.view_stack.setCurrentIndex(idx)
         self.current_view = self.view_stack.currentWidget()
+        self.menu_manager.clear_run_info_action.setEnabled(self.current_view.has_run_metadata())
         self.current_view.select_current()
         self.menu_manager.set_view(mode, do_switch=False)
 
@@ -224,7 +225,7 @@ class MainWindow(ProjectIOHandler, QMainWindow):
             v.select_first_job()
 
     def check_unsaved_changes(self):
-        if self.modified():
+        if self.element_action_manager.modified():
             reply = QMessageBox.question(
                 self, "Unsaved Changes",
                 "The project has unsaved changes. Do you want to continue?",
@@ -304,7 +305,7 @@ class MainWindow(ProjectIOHandler, QMainWindow):
             self.reset_project()
             self.update_title()
             if fill_new_project(self.project(), self):
-                self.set_modified(True)
+                self.element_action_manager.mark_as_modified()
                 for view in self.views.values():
                     view.clear_project()
             self.refresh_ui_and_select_first_job()
@@ -518,7 +519,7 @@ class MainWindow(ProjectIOHandler, QMainWindow):
             position = (
                 self.selection_state.job_index if self.selection_state.is_job_selected() else -1,
                 -1, -1)
-            self.save_prev_undo_state("Run Job", "run", position, position)
+            self.save_undo_state("Run Job", "run", position, position)
         self.menu_manager.clear_run_info_action.setEnabled(True)
         success = self.current_view.run_job()
         if success:
@@ -528,7 +529,7 @@ class MainWindow(ProjectIOHandler, QMainWindow):
 
     def run_all_jobs(self):
         if self.current_view.has_run_metadata():
-            self.save_prev_undo_state("Run All Jobs", "run_all")
+            self.save_undo_state("Run All Jobs", "run_all")
         self.menu_manager.clear_run_info_action.setEnabled(True)
         success = self.current_view.run_all_jobs()
         if success:

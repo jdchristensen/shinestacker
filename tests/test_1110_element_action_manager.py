@@ -1,6 +1,6 @@
 import unittest
 from unittest.mock import Mock, patch
-from shinestacker.common_project.element_action_manager import ElementActionManager
+from shinestacker.project.element_action_manager import ElementActionManager
 from shinestacker.common_project.selection_state import SelectionState
 from shinestacker.config.constants import constants
 
@@ -302,7 +302,7 @@ class TestElementActionManager(unittest.TestCase):
         self.assertFalse(job1.enabled())
         self.assertFalse(job2.enabled())
 
-    @patch('shinestacker.common_project.element_action_manager.QMessageBox')
+    @patch('shinestacker.project.element_action_manager.QMessageBox')
     def test_delete_element_job_with_confirm(self, mock_msgbox):
         mock_msgbox.question.return_value = mock_msgbox.Yes
         job = MockElement('Job1', constants.ACTION_JOB)
@@ -313,7 +313,7 @@ class TestElementActionManager(unittest.TestCase):
         self.assertEqual(deleted.params['name'], 'Job1')
         self.assertEqual(len(self.project_holder.project().jobs), 0)
 
-    @patch('shinestacker.common_project.element_action_manager.QMessageBox')
+    @patch('shinestacker.project.element_action_manager.QMessageBox')
     def test_delete_element_cancelled(self, mock_msgbox):
         mock_msgbox.question.return_value = mock_msgbox.No
         job = MockElement('Job1', constants.ACTION_JOB)

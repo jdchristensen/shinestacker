@@ -35,7 +35,7 @@ class ProjectHolder:
     def add_job_to_project(self, job):
         self.project.jobs.append(job)
 
-    def set_modified(self, modified):
+    def mark_as_modified(self, modified=True):
         self.modified = modified
 
     def mark_as_not_modified(self):
@@ -43,7 +43,7 @@ class ProjectHolder:
 
     def save_prev_undo_state(self, pre_state, description='', action_type='',
                              old_position=None, new_position=None):
-        self.modified = True
+        self.mark_as_modified()
         self.add_undo(pre_state, description, action_type, old_position, new_position)
 
     def save_undo_state(self, description='', action_type='',

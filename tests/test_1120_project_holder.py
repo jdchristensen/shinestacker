@@ -55,8 +55,8 @@ class TestProjectHolder(unittest.TestCase):
         self.holder.add_job_to_project(job)
         self.assertEqual(self.holder.project.jobs, [job])
 
-    def test_set_modified(self):
-        self.holder.set_modified(True)
+    def test_mark_as_modified(self):
+        self.holder.mark_as_modified()
         self.assertTrue(self.holder.modified)
 
     def test_mark_as_not_modified(self):

@@ -27,6 +27,9 @@ class ElementActionManager(ProjectHandler, QObject):
         self.action_dialog = None
         QObject.__init__(self, parent)
 
+    def modified(self):
+        return ProjectHandler.modified(self)
+
     def new_state_after_op(self, state, delta):
         job_idx, act_idx, sub_idx = state.to_tuple()
         job = self.project_job(job_idx)
