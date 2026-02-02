@@ -1,4 +1,5 @@
 # pylint: disable=C0114, C0115, C0116, W0246, E0611, R0917, R0913, W0613, R0911, R0912, R0904, E1121
+import os
 from PySide6.QtCore import QObject, Signal
 from PySide6.QtWidgets import QMessageBox, QDialog
 from ..config.constants import constants
@@ -21,11 +22,98 @@ def get_position_stack(position):
 class ElementActionManager(ProjectHandler, QObject):
     project_modified_signal = Signal(bool)
 
-    def __init__(self, project_holder, selection_state, parent=None):
+    def __init__(self, project_holder, undo_manager, selection_state, parent=None):
         ProjectHandler.__init__(self, project_holder)
+        self._undo_manager = undo_manager
         self.selection_state = selection_state
         self.action_dialog = None
         QObject.__init__(self, parent)
+        self.current_file_path = ''
+        self.modified = False
+
+    def mark_as_modified(self, modified=True):
+        self.modified = modified
+
+    def mark_as_not_modified(self):
+        self.modified = False
+
+    def current_file_directory(self):
+        if os.path.isdir(self.current_file_path):
+            return self.current_file_path
+        return os.path.dirname(self.current_file_path)
+
+    def current_file_name(self):
+        if os.path.isfile(self.current_file_path):
+            return os.path.basename(self.current_file_path)
+        return ''
+
+    def set_current_file_path(self, path):
+        if path and not os.path.exists(path):
+            raise RuntimeError(f"Path: {path} does not exist.")
+        self.current_file_path = os.path.abspath(path)
+        os.chdir(self.current_file_directory())
+
+
+    def add_undo(self, item, description='', action_type=None,
+                 old_position=None, new_position=None):
+        self._undo_manager.add(item, description, action_type, old_position, new_position)
+
+    def pop_undo(self):
+        return self._undo_manager.pop()
+
+    def filled_undo(self):
+        return self._undo_manager.filled()
+
+    def undo(self):
+        if self.filled_undo():
+            current_state = self.project().clone()
+            entry = self.pop_undo()
+            new_entry = {
+                'item': current_state,
+                'description': entry['description'],
+                'action_type': entry.get('action_type', ''),
+                'old_position': entry.get('new_position', (-1, -1, -1)),
+                'new_position': entry.get('old_position', (-1, -1, -1))
+            }
+            if 'modern_widget_state' in entry:
+                new_entry['modern_widget_state'] = entry['modern_widget_state']
+            self._undo_manager.add_to_redo(new_entry)
+            self.set_project(entry['item'])
+            return entry
+        return None
+
+    def pop_redo(self):
+        return self._undo_manager.pop_redo()
+
+    def filled_redo(self):
+        return self._undo_manager.filled_redo()
+
+    def redo(self):
+        if self.filled_redo():
+            current_state = self.project().clone()
+            entry = self.pop_redo()
+            new_entry = {
+                'item': current_state,
+                'description': entry['description'],
+                'action_type': entry.get('action_type', ''),
+                'old_position': entry.get('new_position', (-1, -1, -1)),
+                'new_position': entry.get('old_position', (-1, -1, -1))
+            }
+            if 'modern_widget_state' in entry:
+                new_entry['modern_widget_state'] = entry['modern_widget_state']
+            self._undo_manager.add_to_undo(new_entry)
+            self.set_project(entry['item'])
+            return_entry = {
+                'item': entry['item'],
+                'description': entry['description'],
+                'action_type': entry.get('action_type', ''),
+                'old_position': entry.get('new_position', (-1, -1, -1)),
+                'new_position': entry.get('old_position', (-1, -1, -1))
+            }
+            if 'modern_widget_state' in entry:
+                return_entry['modern_widget_state'] = entry['modern_widget_state']
+            return return_entry
+        return None
 
     def save_undo_state(self, description='', action_type='',
                         old_position=None, new_position=None):
@@ -35,8 +123,7 @@ class ElementActionManager(ProjectHandler, QObject):
     def save_prev_undo_state(self, pre_state, description='', action_type='',
                              old_position=None, new_position=None):
         self.mark_as_modified()
-        self.project_holder.add_undo(
-            pre_state, description, action_type, old_position, new_position)
+        self.add_undo(pre_state, description, action_type, old_position, new_position)
         self.project_modified_signal.emit(True)
 
     def new_state_after_op(self, state, delta):

@@ -1,6 +1,6 @@
 import unittest
 from PySide6.QtCore import QCoreApplication
-from shinestacker.common_project.project_undo_manager import ProjectUndoManager
+from shinestacker.project.project_undo_manager import ProjectUndoManager
 
 
 class TestProjectUndoManager(unittest.TestCase):

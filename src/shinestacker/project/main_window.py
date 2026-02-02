@@ -2,6 +2,8 @@
 # pylint: disable=R0912, E1101, W0201, E1121, R0913, R0917, W0718
 import os
 import traceback
+import json
+import jsonpickle
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QGuiApplication, QAction, QPalette
 from PySide6.QtWidgets import (
@@ -14,26 +16,29 @@ from ..core.core_utils import get_app_base_path
 from ..gui.project_model import Project
 from ..gui.sys_mon import StatusBarSystemMonitor
 from ..gui.action_config_dialog import ActionConfigDialog
-from ..common_project.project_undo_manager import ProjectUndoManager
-from ..common_project.project_handler import ProjectHolder, ProjectIOHandler
+from ..common_project.project_handler import ProjectHolder, ProjectHandler
 from ..common_project.selection_state import SelectionState
 from ..classic_project.classic_project_view import ClassicProjectView
 from ..modern_project.modern_project_view import ModernProjectView
 from .menu_manager import MenuManager
+from .project_undo_manager import ProjectUndoManager
 from .element_action_manager import ElementActionManager
 from .new_project import fill_new_project
 
 
-class MainWindow(ProjectIOHandler, QMainWindow):
+CURRENT_PROJECT_FILE_VERSION = 1
+
+
+class MainWindow(ProjectHandler, QMainWindow):
     def __init__(self):
         QMainWindow.__init__(self)
         self._undo_manager = ProjectUndoManager()
-        ProjectIOHandler.__init__(self, ProjectHolder(self._undo_manager))
+        ProjectHandler.__init__(self, ProjectHolder())
         self.setObjectName("mainWindow")
         dark_theme = self.is_dark_theme()
         self.selection_state = SelectionState()
         self.element_action = ElementActionManager(
-            self.project_holder, self.selection_state, self)
+            self.project_holder, self._undo_manager, self.selection_state, self)
         self.classic_view = ClassicProjectView(
             self.project_holder, self.selection_state, dark_theme, self)
         self.modern_view = ModernProjectView(
@@ -138,6 +143,21 @@ class MainWindow(ProjectIOHandler, QMainWindow):
         self.set_view(AppConfig.get('project_view_strategy'))
         self.action_dialog = None
 
+    def current_file_directory(self):
+        return self.element_action.current_file_directory()
+
+    def current_file_name(self):
+        return self.element_action.current_file_name()
+
+    def set_current_file_path(self, path):
+        self.element_action.set_current_file_path(path)
+
+    def reset_project(self):
+        self.set_project(Project())
+        self.element_action.mark_as_not_modified()
+        self.element_action.current_file_path = ''
+        self._undo_manager.reset()
+
     def on_view_changed(self, index):
         current_widget = self.view_stack.widget(index)
         if current_widget == self.classic_view:
@@ -156,7 +176,7 @@ class MainWindow(ProjectIOHandler, QMainWindow):
         file_name = self.current_file_name()
         if file_name:
             title += f" - {file_name}"
-            if self.element_action.modified():
+            if self.element_action.modified:
                 title += " *"
         self.window().setWindowTitle(title)
 
@@ -224,7 +244,7 @@ class MainWindow(ProjectIOHandler, QMainWindow):
             v.select_first_job()
 
     def check_unsaved_changes(self):
-        if self.element_action.modified():
+        if self.element_action.modified:
             reply = QMessageBox.question(
                 self, "Unsaved Changes",
                 "The project has unsaved changes. Do you want to continue?",
@@ -236,6 +256,19 @@ class MainWindow(ProjectIOHandler, QMainWindow):
             return reply == QMessageBox.Discard
         return True
 
+    def open_project_core(self, file_path):
+        abs_file_path = os.path.abspath(file_path)
+        with open(abs_file_path, 'r', encoding="utf-8") as file:
+            json_obj = json.load(file)
+        project = Project.from_dict(json_obj['project'], json_obj['version'])
+        if project is None:
+            raise InvalidProjectError(file_path)
+        self.set_project(project)
+        self.set_current_file_path(file_path)
+        self.element_action.mark_as_not_modified()
+        self._undo_manager.reset()
+        return abs_file_path
+
     def open_project_base(self, file_path):
         if not self.check_unsaved_changes():
             return False, '', ''
@@ -244,7 +277,7 @@ class MainWindow(ProjectIOHandler, QMainWindow):
                 self, "Open Project", "", "Project Files (*.fsp);;All Files (*)")
         if file_path:
             try:
-                ProjectIOHandler.open_project(self, file_path)
+                self.open_project_core(file_path)
                 return True, file_path, ''
             except InvalidProjectError as e:
                 QMessageBox.critical(self, "Error", str(e))
@@ -322,9 +355,18 @@ class MainWindow(ProjectIOHandler, QMainWindow):
             self.refresh_ui()
             self.show_status_message("Project closed.")
 
+    def do_save_core(self, file_path):
+        json_obj = jsonpickle.encode({
+            'project': self.project().to_dict(),
+            'version': CURRENT_PROJECT_FILE_VERSION
+        })
+        with open(file_path, 'w', encoding="utf-8") as f:
+            f.write(json_obj)
+        self.element_action.mark_as_not_modified()
+
     def do_save(self, file_path):
         try:
-            ProjectIOHandler.do_save(self, file_path)
+            self.do_save_core(file_path)
             self.update_title()
             self.show_status_message(f"Project file {os.path.basename(file_path)} saved.")
             self.menu_manager.add_recent_file(file_path)
@@ -424,19 +466,16 @@ class MainWindow(ProjectIOHandler, QMainWindow):
             return
         old_selection = self.selection_state.copy()
         deleted_element, new_selection = self.element_action.delete_element(True)
-        if deleted_element and old_selection and old_selection.is_valid():
-            for view in self.views.values():
-                k, v = view.delete_element(old_selection, new_selection)
-                if v is not None:
-                    self._undo_manager.add_extra_data_to_last_entry(k, v)
-            if self.num_project_jobs() > 0:
-                self.menu_manager.delete_element_action.setEnabled(True)
+        self.post_delete(deleted_element, old_selection, new_selection)
 
     def cut_element(self):
         if not self.current_view.enforce_stop_run():
             return
         old_selection = self.selection_state.copy()
         deleted_element, new_selection = self.element_action.cut_element()
+        self.post_delete(deleted_element, old_selection, new_selection)
+
+    def post_delete(self, deleted_element, old_selection, new_selection):
         if deleted_element and old_selection and old_selection.is_valid():
             for view in self.views.values():
                 k, v = view.delete_element(old_selection, new_selection)

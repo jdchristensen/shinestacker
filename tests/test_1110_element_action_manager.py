@@ -2,6 +2,7 @@ import unittest
 from unittest.mock import Mock, patch
 from shinestacker.project.element_action_manager import ElementActionManager
 from shinestacker.common_project.selection_state import SelectionState
+from shinestacker.project.project_undo_manager import ProjectUndoManager
 from shinestacker.config.constants import constants
 
 
@@ -43,7 +44,6 @@ class MockProject:
 class MockProjectHolder:
     def __init__(self):
         self._project = MockProject()
-        self._copy_buffer = None
 
     def project(self):
         return self._project
@@ -56,15 +56,6 @@ class MockProjectHolder:
             return self._project.jobs[index]
         return None
 
-    def copy_buffer(self):
-        return self._copy_buffer
-
-    def set_copy_buffer(self, element):
-        self._copy_buffer = element
-
-    def has_copy_buffer(self):
-        return self._copy_buffer is not None
-
     def project_jobs(self):
         return self._project.jobs
 
@@ -73,7 +64,8 @@ class TestElementActionManager(unittest.TestCase):
     def setUp(self):
         self.project_holder = MockProjectHolder()
         self.selection_state = SelectionState()
-        self.manager = ElementActionManager(self.project_holder, self.selection_state)
+        self.undo_manager = ProjectUndoManager()
+        self.manager = ElementActionManager(self.project_holder, self.undo_manager, self.selection_state)
         self.manager.save_undo_state = Mock()
         self.manager.parent = Mock(return_value=None)
         self.manager.project = lambda: self.project_holder.project()
@@ -161,8 +153,9 @@ class TestElementActionManager(unittest.TestCase):
         self.project_holder.project().jobs.append(job)
         self.selection_state.set_job(0)
         self.manager.copy_element()
-        self.assertIsNotNone(self.project_holder.copy_buffer())
-        self.assertEqual(self.project_holder.copy_buffer().params['name'], 'Job1')
+        self.assertIsNotNone(self.manager.copy_buffer())
+        self.assertEqual(self.manager.copy_buffer().params['name'], 'Job1')
+        
         self.project_holder.project().jobs = []
         job = MockElement('Job1', constants.ACTION_JOB)
         action = MockElement('Action1', constants.ACTION_TYPES[0])
@@ -170,7 +163,8 @@ class TestElementActionManager(unittest.TestCase):
         self.project_holder.project().jobs.append(job)
         self.selection_state.set_action(0, 0)
         self.manager.copy_element()
-        self.assertEqual(self.project_holder.copy_buffer().params['name'], 'Action1')
+        self.assertEqual(self.manager.copy_buffer().params['name'], 'Action1')
+        
         self.project_holder.project().jobs = []
         job = MockElement('Job1', constants.ACTION_JOB)
         action = MockElement('Action1', constants.ACTION_COMBO)
@@ -180,7 +174,7 @@ class TestElementActionManager(unittest.TestCase):
         self.project_holder.project().jobs.append(job)
         self.selection_state.set_subaction(0, 0, 0)
         self.manager.copy_element()
-        self.assertEqual(self.project_holder.copy_buffer().params['name'], 'SubAction1')
+        self.assertEqual(self.manager.copy_buffer().params['name'], 'SubAction1')
 
     def test_clone_job(self):
         job = MockElement('Job1', constants.ACTION_JOB)
@@ -330,7 +324,7 @@ class TestElementActionManager(unittest.TestCase):
         deleted, new_state = self.manager.cut_element()
         self.assertIsNotNone(deleted)
         self.assertEqual(len(self.project_holder.project().jobs), 0)
-        self.assertIsNotNone(self.project_holder.copy_buffer())
+        self.assertIsNotNone(self.manager.copy_buffer())
 
 
 if __name__ == '__main__':
