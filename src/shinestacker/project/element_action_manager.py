@@ -53,7 +53,6 @@ class ElementActionManager(ProjectHandler, QObject):
         self.current_file_path = os.path.abspath(path)
         os.chdir(self.current_file_directory())
 
-
     def add_undo(self, item, description='', action_type=None,
                  old_position=None, new_position=None):
         self._undo_manager.add(item, description, action_type, old_position, new_position)
@@ -167,13 +166,19 @@ class ElementActionManager(ProjectHandler, QObject):
             QMessageBox.Yes | QMessageBox.No
         ) == QMessageBox.Yes
 
+    def copy_element(self):
+        if self.selection_state and self.selection_state.is_valid():
+            element = self.project_element(*self.selection_state.to_tuple())
+            if element:
+                self.set_copy_buffer(element.clone())
+
     def paste_element(self):
         if not self.has_copy_buffer():
             return False
         old_position = self.selection_state.to_tuple()
         if not self.valid_indices(*old_position):
             return False
-        copy_buffer = self.copy_buffer()
+        copy_buffer = self.copy_buffer().clone()
         if copy_buffer.type_name == constants.ACTION_JOB:
             level = 0
             idx = (-1, -1)
@@ -195,43 +200,10 @@ class ElementActionManager(ProjectHandler, QObject):
         insert_index = min(max(pos + 1 if pos >= 0 else len(container), 0), len(container))
         element_type = ["Job", "Action", "Subaction"][level]
         new_position = tuple(list(old_position[:level]) + [insert_index] + [-1] * (2 - level))
-        self.save_undo_state(f"Paste {element_type}", "paste",
-                             old_position, tuple(new_position))
-        container.insert(insert_index, copy_buffer.clone())
+        self.save_undo_state(f"Paste {element_type}", "paste", old_position, tuple(new_position))
+        container.insert(insert_index, copy_buffer)
         self.selection_state.from_tuple(new_position)
         return True
-
-    def shift_element(self, delta, direction):
-        if not self.selection_state.is_valid():
-            return False
-        old_position = self.selection_state.to_tuple()
-        idx, current_index = get_position_stack(old_position)
-        if len(idx) == 0:
-            return False
-        container = self.project_container(*idx)
-        if not container:
-            return False
-        new_index = current_index + delta
-        if 0 <= new_index < len(container):
-            new_position = list(old_position)
-            if old_position[2] >= 0:
-                new_position[2] = new_index
-            elif old_position[1] >= 0:
-                new_position[1] = new_index
-            else:
-                new_position[0] = new_index
-            self.save_undo_state(f"Move {self.selection_state.type().title()} {direction}",
-                                 "move", old_position, tuple(new_position))
-            container.insert(new_index, container.pop(current_index))
-            self.selection_state.from_tuple(new_position)
-            return True
-        return False
-
-    def copy_element(self):
-        if self.selection_state and self.selection_state.is_valid():
-            element = self.project_element(*self.selection_state.to_tuple())
-            if element:
-                self.set_copy_buffer(element.clone())
 
     def clone_element(self):
         old_position = self.selection_state.to_tuple()
@@ -287,6 +259,32 @@ class ElementActionManager(ProjectHandler, QObject):
         if deleted_element:
             self.set_copy_buffer(deleted_element)
         return deleted_element, new_state
+
+    def shift_element(self, delta, direction):
+        if not self.selection_state.is_valid():
+            return False
+        old_position = self.selection_state.to_tuple()
+        idx, current_index = get_position_stack(old_position)
+        if len(idx) == 0:
+            return False
+        container = self.project_container(*idx)
+        if not container:
+            return False
+        new_index = current_index + delta
+        if 0 <= new_index < len(container):
+            new_position = list(old_position)
+            if old_position[2] >= 0:
+                new_position[2] = new_index
+            elif old_position[1] >= 0:
+                new_position[1] = new_index
+            else:
+                new_position[0] = new_index
+            self.save_undo_state(f"Move {self.selection_state.type().title()} {direction}",
+                                 "move", old_position, tuple(new_position))
+            container.insert(new_index, container.pop(current_index))
+            self.selection_state.from_tuple(new_position)
+            return True
+        return False
 
     def set_enabled_all(self, enabled):
         action = "Enable" if enabled else "Disable"

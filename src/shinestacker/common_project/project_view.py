@@ -231,7 +231,7 @@ class ProjectView(QWidget, LogManager, ProjectHandler):
     def delete_element(self, old_selection, new_selection):
         raise NotImplementedError
 
-    def paste_element(self, old_selection, new_selection):
+    def paste_element(self, copy_buffer, old_selection, new_selection):
         raise NotImplementedError
 
     def clone_element(self, old_selection, new_selection):

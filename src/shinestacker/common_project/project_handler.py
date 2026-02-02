@@ -1,12 +1,13 @@
-# pylint: disable=C0114, C0115, C0116, R0904, R0917, R0913
+# pylint: disable=C0114, C0115, C0116, R0904, R0917, R0913, R0903, W0212
 class ProjectHolder:
     def __init__(self):
         self.project = None
+        self._copy_buffer = None
+
 
 class ProjectHandler:
     def __init__(self, project_holder):
         self.project_holder = project_holder
-        self._copy_buffer = None
 
     def project(self):
         return self.project_holder.project
@@ -79,10 +80,10 @@ class ProjectHandler:
         self.project_holder.reset_project()
 
     def copy_buffer(self):
-        return self._copy_buffer
+        return self.project_holder._copy_buffer
 
     def set_copy_buffer(self, item):
-        self._copy_buffer = item.clone()
+        self.project_holder._copy_buffer = item.clone()
 
     def has_copy_buffer(self):
-        return self._copy_buffer is not None
+        return self.project_holder._copy_buffer is not None

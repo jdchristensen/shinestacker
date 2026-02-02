@@ -293,14 +293,16 @@ class ModernProjectView(ProjectView):
             return 'modern_widget_state', widget_state
         return '', None
 
-    def paste_element(self, old_selection, new_selection):
+    def paste_element(self, copy_buffer, old_selection, new_selection):
         try:
             job_idx = old_selection.job_index
             if not 0 <= job_idx < self.num_project_jobs():
                 return
-            if not self.copy_buffer():
+            print("MV copy buffer address: ", self._copy_buffer)
+            print("MV copy buffer: ", self.copy_buffer())
+            if not copy_buffer:
                 return
-            element = self.copy_buffer().clone()
+            element = copy_buffer.clone()
             new_widget = self._insert_widget(new_selection, element)
             if new_widget:
                 if self.selected_widget:
