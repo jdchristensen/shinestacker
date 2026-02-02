@@ -2,7 +2,6 @@
 class ProjectHolder:
     def __init__(self):
         self.project = None
-        self._copy_buffer = None
 
 
 class ProjectHandler:
@@ -78,12 +77,3 @@ class ProjectHandler:
 
     def reset_project(self):
         self.project_holder.reset_project()
-
-    def copy_buffer(self):
-        return self.project_holder._copy_buffer
-
-    def set_copy_buffer(self, item):
-        self.project_holder._copy_buffer = item.clone()
-
-    def has_copy_buffer(self):
-        return self.project_holder._copy_buffer is not None

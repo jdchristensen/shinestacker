@@ -30,6 +30,16 @@ class ElementActionManager(ProjectHandler, QObject):
         QObject.__init__(self, parent)
         self.current_file_path = ''
         self.modified = False
+        self._copy_buffer = None
+
+    def copy_buffer(self):
+        return self._copy_buffer
+
+    def set_copy_buffer(self, item):
+        self._copy_buffer = item.clone()
+
+    def has_copy_buffer(self):
+        return self._copy_buffer is not None
 
     def mark_as_modified(self, modified=True):
         self.modified = modified

@@ -130,25 +130,6 @@ class TestProjectHandler(unittest.TestCase):
         self.handler.reset_project()
         self.holder.reset_project.assert_called_once()
 
-    def test_copy_buffer(self):
-        self.assertIsNone(self.handler.copy_buffer())
-        buffer_item = Mock()
-        self.handler.project_holder._copy_buffer = buffer_item
-        self.assertEqual(self.handler.copy_buffer(), buffer_item)
-
-    def test_set_copy_buffer(self):
-        item = Mock()
-        cloned_item = Mock()
-        item.clone.return_value = cloned_item
-        self.handler.set_copy_buffer(item)
-        self.assertEqual(self.handler.project_holder._copy_buffer, cloned_item)
-        item.clone.assert_called_once()
-
-    def test_has_copy_buffer(self):
-        self.assertFalse(self.handler.has_copy_buffer())
-        self.handler.project_holder._copy_buffer = Mock()
-        self.assertTrue(self.handler.has_copy_buffer())
-
 
 if __name__ == '__main__':
     unittest.main()

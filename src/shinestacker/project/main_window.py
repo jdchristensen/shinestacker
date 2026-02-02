@@ -495,7 +495,7 @@ class MainWindow(ProjectHandler, QMainWindow):
         new_selection = self.selection_state.copy()
         if success:
             for view in self.views.values():
-                view.paste_element(self.copy_buffer(), old_selection, new_selection)
+                view.paste_element(self.element_action.copy_buffer(), old_selection, new_selection)
 
     def clone_element(self):
         if not self.current_view.enforce_stop_run():

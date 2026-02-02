@@ -298,8 +298,6 @@ class ModernProjectView(ProjectView):
             job_idx = old_selection.job_index
             if not 0 <= job_idx < self.num_project_jobs():
                 return
-            print("MV copy buffer address: ", self._copy_buffer)
-            print("MV copy buffer: ", self.copy_buffer())
             if not copy_buffer:
                 return
             element = copy_buffer.clone()
