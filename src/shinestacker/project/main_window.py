@@ -7,20 +7,20 @@ from PySide6.QtGui import QGuiApplication, QAction, QPalette
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QToolBar, QMainWindow, QApplication, QStackedWidget, QMessageBox,
     QFileDialog)
-from .. config.constants import constants
-from .. config.app_config import AppConfig
-from .. core.exceptions import InvalidProjectError
-from .. core.core_utils import get_app_base_path
-from .. gui.project_model import Project
-from .. gui.sys_mon import StatusBarSystemMonitor
-from .. gui.action_config_dialog import ActionConfigDialog
-from .. common_project.project_undo_manager import ProjectUndoManager
-from .. common_project.project_handler import ProjectHolder, ProjectIOHandler
-from .. common_project.selection_state import SelectionState
-from .. common_project.element_action_manager import ElementActionManager
-from .. classic_project.classic_project_view import ClassicProjectView
-from .. modern_project.modern_project_view import ModernProjectView
+from ..config.constants import constants
+from ..config.app_config import AppConfig
+from ..core.exceptions import InvalidProjectError
+from ..core.core_utils import get_app_base_path
+from ..gui.project_model import Project
+from ..gui.sys_mon import StatusBarSystemMonitor
+from ..gui.action_config_dialog import ActionConfigDialog
+from ..common_project.project_undo_manager import ProjectUndoManager
+from ..common_project.project_handler import ProjectHolder, ProjectIOHandler
+from ..common_project.selection_state import SelectionState
+from ..classic_project.classic_project_view import ClassicProjectView
+from ..modern_project.modern_project_view import ModernProjectView
 from .menu_manager import MenuManager
+from .element_action_manager import ElementActionManager
 from .new_project import fill_new_project
 
 

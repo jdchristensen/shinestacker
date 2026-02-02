@@ -1,13 +1,11 @@
 # pylint: disable=C0114, C0115, C0116, W0246, E0611, R0917, R0913, W0613, R0911, R0912, R0904, E1121
 from PySide6.QtCore import QObject, Signal
 from PySide6.QtWidgets import QMessageBox, QDialog
-from .. config.constants import constants
-from .. gui.action_config_dialog import ActionConfigDialog
-from .. gui.project_model import ActionConfig
-from .. common_project.selection_state import SelectionState
-from .project_handler import ProjectHandler
-
-CLONE_POSTFIX = ' (clone)'
+from ..config.constants import constants
+from ..gui.action_config_dialog import ActionConfigDialog
+from ..gui.project_model import ActionConfig
+from ..common_project.selection_state import SelectionState
+from ..common_project.project_handler import ProjectHandler
 
 
 def get_position_stack(position):
@@ -168,7 +166,7 @@ class ElementActionManager(ProjectHandler, QObject):
             f"Duplicate {self.selection_state.type().title()}",
             "clone", old_position, new_position)
         container = self.project_container(*idx)
-        container.insert(s + 1, element.clone(name_postfix=CLONE_POSTFIX))
+        container.insert(s + 1, element.clone(name_postfix=constants.CLONE_POSTFIX))
         self.selection_state.from_tuple(new_position)
         return True, SelectionState(*new_position)
 

@@ -56,6 +56,8 @@ class _Constants:
 
     PATH_SEPARATOR = ';'
 
+    CLONE_POSTFIX = ' (clone)'
+
     LOG_COLOR_ALERT = 'red'
     LOG_COLOR_WARNING = 'yellow'
     LOG_COLOR_LEVEL_JOB = 'green'

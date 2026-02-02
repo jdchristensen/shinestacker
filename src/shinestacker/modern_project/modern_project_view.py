@@ -12,7 +12,6 @@ from ..config.constants import constants
 from ..common_project.run_worker import JobLogWorker, ProjectLogWorker
 from ..common_project.project_view import ProjectView
 from ..common_project.selection_state import SelectionState
-from ..common_project.element_action_manager import CLONE_POSTFIX
 from .job_widget import JobWidget
 from .progress_mapper import ProgressMapper
 from .progress_signal_handler import ProgressSignalHandler, SignalConnector
@@ -321,7 +320,7 @@ class ModernProjectView(ProjectView):
             if element is None:
                 return
             new_widget = self._insert_widget(
-                new_selection, element.clone(name_postfix=CLONE_POSTFIX))
+                new_selection, element.clone(name_postfix=constants.CLONE_POSTFIX))
             if new_widget:
                 if self.selected_widget:
                     self.selected_widget.set_selected(False)
