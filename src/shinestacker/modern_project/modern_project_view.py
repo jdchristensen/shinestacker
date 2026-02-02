@@ -825,10 +825,10 @@ class ModernProjectView(ProjectView):
 
     def _remove_widget_for_undo(self, selection, entry=None):
         try:
-            widget = self._find_widget(selection)
-            widget_state = None
-            if widget and hasattr(widget, 'save_widget_state'):
-                widget_state = widget.save_widget_state()
+            # widget = self._find_widget(selection)
+            # widget_state = None
+            # if widget and hasattr(widget, 'save_widget_state'):
+            #     widget_state = widget.save_widget_state()
             # if widget_state and entry is not None:
             #    entry['modern_widget_state'] = widget_state
             self._remove_widget(selection)

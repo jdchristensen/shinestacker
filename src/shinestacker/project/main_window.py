@@ -16,7 +16,6 @@ from ..core.core_utils import get_app_base_path
 from ..gui.project_model import Project
 from ..gui.sys_mon import StatusBarSystemMonitor
 from ..gui.action_config_dialog import ActionConfigDialog
-from ..gui.project_model import Project
 from ..common_project.project_handler import ProjectHandler
 from ..common_project.selection_state import SelectionState
 from ..classic_project.classic_project_view import ClassicProjectView
@@ -145,15 +144,6 @@ class MainWindow(ProjectHandler, QMainWindow):
         self.set_view(AppConfig.get('project_view_strategy'))
         self.action_dialog = None
 
-    def current_file_directory(self):
-        return self.element_action.current_file_directory()
-
-    def current_file_name(self):
-        return self.element_action.current_file_name()
-
-    def set_current_file_path(self, path):
-        self.element_action.set_current_file_path(path)
-
     def reset_project(self):
         self.set_project(Project())
         self.element_action.mark_as_not_modified()
@@ -175,7 +165,7 @@ class MainWindow(ProjectHandler, QMainWindow):
 
     def update_title(self):
         title = constants.APP_TITLE
-        file_name = self.current_file_name()
+        file_name = self.element_action.current_file_name()
         if file_name:
             title += f" - {file_name}"
             if self.element_action.modified:
@@ -266,7 +256,7 @@ class MainWindow(ProjectHandler, QMainWindow):
         if project is None:
             raise InvalidProjectError(file_path)
         self.set_project(project)
-        self.set_current_file_path(file_path)
+        self.element_action.set_current_file_path(file_path)
         self.element_action.mark_as_not_modified()
         self._undo_manager.reset()
         return abs_file_path
@@ -314,7 +304,7 @@ class MainWindow(ProjectHandler, QMainWindow):
                                 was not found.\n
                                 Please, select a valid working path.''')
                         self.action_dialog = ActionConfigDialog(
-                            job, self.current_file_directory(), self)
+                            job, self.element_action.current_file_directory(), self)
                         self.action_dialog.exec()
                 for action in job.sub_actions:
                     if 'working_path' in job.params.keys():
@@ -328,7 +318,7 @@ class MainWindow(ProjectHandler, QMainWindow):
                                 was not found.\n
                                 Please, select a valid working path.''')
                             self.action_dialog = ActionConfigDialog(
-                                action, self.current_file_directory(), self)
+                                action, self.element_action.current_file_directory(), self)
                             self.action_dialog.exec()
         elif msg != '':
             self.show_status_message(msg)
@@ -378,7 +368,7 @@ class MainWindow(ProjectHandler, QMainWindow):
             QMessageBox.critical(self, "Error", msg)
 
     def save_project(self):
-        path = self.current_file_path()
+        path = self.element_action.current_file_path
         if path:
             self.do_save(path)
         else:
@@ -391,7 +381,7 @@ class MainWindow(ProjectHandler, QMainWindow):
             if not file_path.endswith('.fsp'):
                 file_path += '.fsp'
             self.do_save(file_path)
-            self.set_current_file_path(file_path)
+            self.element_action.set_current_file_path(file_path)
             self.update_title()
             os.chdir(os.path.dirname(file_path))
 
