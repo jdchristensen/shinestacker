@@ -187,3 +187,8 @@ class ActionWidget(ImgBaseWidget):
                 self.progress_bar.restore_widget_state(state['progress_bar'])
                 self.progress_bar.update()
                 QTimer.singleShot(0, self.progress_bar.update)
+
+    def clear_metadata(self):
+        self.clear_frames_status()
+        self.hide_progress()
+        super().clear_metadata()

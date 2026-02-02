@@ -501,11 +501,11 @@ class ModernProjectView(ProjectView):
         self.clear_job_list()
         for job in self.project_jobs():
             self._add_job_widget(job)
-        ProjectView.refresh_ui(self)
         if old_state:
             self.selection_state.copy_from(old_state)
             self.selection_nav.restore_selection(old_state)
             self._ensure_selected_visible()
+        ProjectView.refresh_ui(self)
 
     def _add_job_widget(self, job):
         job_widget = JobWidget(job, self.dark_theme,
@@ -693,16 +693,7 @@ class ModernProjectView(ProjectView):
         SignalConnector.connect_worker_signals(worker, self, self.progress_handler)
 
     def _clear_widget_metadata(self, widget):
-        if widget.data_object and 'widget_state' in widget.data_object.metadata:
-            widget.data_object.metadata.pop('widget_state', None)
-        if hasattr(widget, 'clear_all'):
-            widget.clear_all()
-        if hasattr(widget, 'clear_images'):
-            widget.clear_images()
-        if hasattr(widget, 'clear_frames_status'):
-            widget.clear_frames_status()
-        if hasattr(widget, 'hide_progress'):
-            widget.hide_progress()
+        widget.clear_metadata()
         for child in widget.child_widgets:
             self._clear_widget_metadata(child)
 

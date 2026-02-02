@@ -436,6 +436,9 @@ class BaseWidget(QFrame):
                 if i < len(self.child_widgets):
                     self.child_widgets[i].restore_widget_state(child_state)
 
+    def clear_metadata(self):
+        pass
+
 
 class ImgBaseWidget(BaseWidget):
     def __init__(self, data_object, min_height=40, dark_theme=False,
@@ -589,3 +592,6 @@ class ImgBaseWidget(BaseWidget):
         super()._restore_widget_state(state)
         if 'image_views' in state:
             self._pending_image_views_state = state['image_views']
+
+    def clear_metadata(self):
+        self.clear_images()

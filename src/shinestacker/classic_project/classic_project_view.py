@@ -145,9 +145,9 @@ class ClassicProjectView(ProjectView, ListContainer):
                     self.set_current_action(action_row)
             else:
                 self.set_current_job(0)
-        ProjectView.refresh_ui(self)
         if restore_state is not None:
             self.selection_state.copy_from(restore_state)
+        ProjectView.refresh_ui(self)
 
     def select_first_job(self):
         self.set_current_job(0)
