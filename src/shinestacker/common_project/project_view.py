@@ -31,8 +31,8 @@ class ProjectView(QWidget, LogManager, ProjectHandler):
     job_retouch_path_action = None
     action_dialog = None
 
-    def __init__(self, project_holder, selection_state, dark_theme, parent=None):
-        ProjectHandler.__init__(self, project_holder)
+    def __init__(self, project, selection_state, dark_theme, parent=None):
+        ProjectHandler.__init__(self, project)
         QWidget.__init__(self, parent)
         LogManager.__init__(self)
         self.dark_theme = dark_theme

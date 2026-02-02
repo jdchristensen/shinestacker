@@ -1,21 +1,16 @@
 # pylint: disable=C0114, C0115, C0116, R0904, R0917, R0913, R0903, W0212
-class ProjectHolder:
-    def __init__(self):
-        self.project = None
-
-
 class ProjectHandler:
-    def __init__(self, project_holder):
-        self.project_holder = project_holder
+    def __init__(self, project):
+        self._project = project
 
     def project(self):
-        return self.project_holder.project
+        return self._project
 
     def set_project(self, project):
-        self.project_holder.project = project
+        self._project.copy_from(project)
 
     def project_jobs(self):
-        return self.project_holder.project.jobs
+        return self._project.jobs
 
     def num_project_jobs(self):
         return len(self.project_jobs())
@@ -23,8 +18,11 @@ class ProjectHandler:
     def is_valid_job_index(self, index):
         return 0 <= index < self.num_project_jobs()
 
+    def add_job_to_project(self, job):
+        self._project.jobs.append(job)
+
     def project_job(self, index):
-        return self.project_holder.project.jobs[index] if self.is_valid_job_index(index) else None
+        return self._project.jobs[index] if self.is_valid_job_index(index) else None
 
     def is_valid_index_in(self, a, index):
         return False if a is None else 0 <= index < len(a.sub_actions)
@@ -71,9 +69,3 @@ class ProjectHandler:
             return True
         action = job.sub_actions[action_index]
         return self.is_valid_index_in(action, subaction_index)
-
-    def add_job_to_project(self, job):
-        self.project_holder.project.jobs.append(job)
-
-    def reset_project(self):
-        self.project_holder.reset_project()

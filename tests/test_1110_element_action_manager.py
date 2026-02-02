@@ -39,48 +39,37 @@ class MockElement:
 class MockProject:
     def __init__(self):
         self.jobs = []
-
-
-class MockProjectHolder:
-    def __init__(self):
-        self._project = MockProject()
-
-    def project(self):
-        return self._project
-
-    def num_project_jobs(self):
-        return len(self._project.jobs)
-
-    def project_job(self, index):
-        if 0 <= index < len(self._project.jobs):
-            return self._project.jobs[index]
-        return None
-
-    def project_jobs(self):
-        return self._project.jobs
+    
+    def clone(self):
+        new_project = MockProject()
+        new_project.jobs = [job.clone() for job in self.jobs]
+        return new_project
+    
+    def copy_from(self, other):
+        self.jobs = [job.clone() for job in other.jobs]
 
 
 class TestElementActionManager(unittest.TestCase):
     def setUp(self):
-        self.project_holder = MockProjectHolder()
+        self.project = MockProject()
         self.selection_state = SelectionState()
         self.undo_manager = ProjectUndoManager()
-        self.manager = ElementActionManager(self.project_holder, self.undo_manager, self.selection_state)
+        self.manager = ElementActionManager(
+            self.project, self.undo_manager, self.selection_state)
         self.manager.save_undo_state = Mock()
         self.manager.parent = Mock(return_value=None)
-        self.manager.project = lambda: self.project_holder.project()
-        self.manager.project_job = lambda idx: self.project_holder.project_job(idx)
-        self.manager.num_project_jobs = lambda: self.project_holder.num_project_jobs()
-        self.manager.valid_indices = lambda *args: True
-        self.manager.project_element = self._mock_project_element
-        self.manager.project_container = self._mock_project_container
+        
+        # Mock the parent methods to return the project directly
+        self.manager.project = Mock(return_value=self.project)
+        self.manager.set_project = Mock()
 
     def _mock_project_element(self, job_idx, act_idx=-1, sub_idx=-1):
+        # Use the actual ProjectHandler methods that are inherited
         if job_idx < 0:
             return None
         if act_idx < 0:
-            return self.project_holder.project_job(job_idx)
-        job = self.project_holder.project_job(job_idx)
+            return self.manager.project_job(job_idx)
+        job = self.manager.project_job(job_idx)
         if not job or act_idx >= len(job.sub_actions):
             return None
         if sub_idx < 0:
@@ -91,9 +80,10 @@ class TestElementActionManager(unittest.TestCase):
         return action.sub_actions[sub_idx]
 
     def _mock_project_container(self, job_idx=-1, act_idx=-1):
+        # Use the actual ProjectHandler methods that are inherited
         if job_idx < 0:
-            return self.project_holder.project().jobs
-        job = self.project_holder.project_job(job_idx)
+            return self.manager.project().jobs
+        job = self.manager.project_job(job_idx)
         if not job:
             return None
         if act_idx < 0:
@@ -135,61 +125,61 @@ class TestElementActionManager(unittest.TestCase):
         job1 = MockElement('Job1', constants.ACTION_JOB)
         job2 = MockElement('Job2', constants.ACTION_JOB)
         job3 = MockElement('Job3', constants.ACTION_JOB)
-        self.project_holder.project().jobs = [job1, job2, job3]
+        self.project.jobs = [job1, job2, job3]
         state = SelectionState(2)
         new_state = self.manager.new_state_after_delete(state)
         self.assertEqual(new_state.job_index, 2)
 
     def test_new_state_after_delete_first_job(self):
         job1 = MockElement('Job1', constants.ACTION_JOB)
-        self.project_holder.project().jobs = [job1]
+        self.project.jobs = [job1]
         state = SelectionState(0)
         new_state = self.manager.new_state_after_delete(state)
         self.assertEqual(new_state.job_index, 0)
 
     def test_copy_element(self):
-        self.project_holder.project().jobs = []
+        self.project.jobs = []
         job = MockElement('Job1', constants.ACTION_JOB)
-        self.project_holder.project().jobs.append(job)
+        self.project.jobs.append(job)
         self.selection_state.set_job(0)
         self.manager.copy_element()
         self.assertIsNotNone(self.manager.copy_buffer())
         self.assertEqual(self.manager.copy_buffer().params['name'], 'Job1')
         
-        self.project_holder.project().jobs = []
+        self.project.jobs = []
         job = MockElement('Job1', constants.ACTION_JOB)
         action = MockElement('Action1', constants.ACTION_TYPES[0])
         job.sub_actions.append(action)
-        self.project_holder.project().jobs.append(job)
+        self.project.jobs.append(job)
         self.selection_state.set_action(0, 0)
         self.manager.copy_element()
         self.assertEqual(self.manager.copy_buffer().params['name'], 'Action1')
         
-        self.project_holder.project().jobs = []
+        self.project.jobs = []
         job = MockElement('Job1', constants.ACTION_JOB)
         action = MockElement('Action1', constants.ACTION_COMBO)
         subaction = MockElement('SubAction1', constants.SUB_ACTION_TYPES[0])
         action.sub_actions.append(subaction)
         job.sub_actions.append(action)
-        self.project_holder.project().jobs.append(job)
+        self.project.jobs.append(job)
         self.selection_state.set_subaction(0, 0, 0)
         self.manager.copy_element()
         self.assertEqual(self.manager.copy_buffer().params['name'], 'SubAction1')
 
     def test_clone_job(self):
         job = MockElement('Job1', constants.ACTION_JOB)
-        self.project_holder.project().jobs.append(job)
+        self.project.jobs.append(job)
         self.selection_state.set_job(0)
         success, new_state = self.manager.clone_element()
         self.assertTrue(success)
-        self.assertEqual(len(self.project_holder.project().jobs), 2)
-        self.assertIn('(clone)', self.project_holder.project().jobs[1].params['name'])
+        self.assertEqual(len(self.project.jobs), 2)
+        self.assertIn('(clone)', self.project.jobs[1].params['name'])
 
     def test_clone_action(self):
         job = MockElement('Job1', constants.ACTION_JOB)
         action = MockElement('Action1', constants.ACTION_TYPES[0])
         job.sub_actions.append(action)
-        self.project_holder.project().jobs.append(job)
+        self.project.jobs.append(job)
         self.selection_state.set_action(0, 0)
         success, new_state = self.manager.clone_element()
         self.assertTrue(success)
@@ -199,20 +189,20 @@ class TestElementActionManager(unittest.TestCase):
     def test_delete_job(self):
         job1 = MockElement('Job1', constants.ACTION_JOB)
         job2 = MockElement('Job2', constants.ACTION_JOB)
-        self.project_holder.project().jobs = [job1, job2]
+        self.project.jobs = [job1, job2]
         self.selection_state.set_job(0)
         with patch.object(self.manager, 'confirm_delete_message', return_value=True):
             deleted, new_state = self.manager.delete_element()
         self.assertEqual(deleted, job1)
-        self.assertEqual(len(self.project_holder.project().jobs), 1)
-        self.assertEqual(self.project_holder.project().jobs[0], job2)
+        self.assertEqual(len(self.project.jobs), 1)
+        self.assertEqual(self.project.jobs[0], job2)
 
     def test_delete_action(self):
         job = MockElement('Job1', constants.ACTION_JOB)
         action1 = MockElement('Action1', constants.ACTION_TYPES[0])
         action2 = MockElement('Action2', constants.ACTION_TYPES[0])
         job.sub_actions = [action1, action2]
-        self.project_holder.project().jobs.append(job)
+        self.project.jobs.append(job)
         self.selection_state.set_action(0, 0)
         with patch.object(self.manager, 'confirm_delete_message', return_value=True):
             deleted, new_state = self.manager.delete_element()
@@ -227,7 +217,7 @@ class TestElementActionManager(unittest.TestCase):
         sub2 = MockElement('Sub2', constants.SUB_ACTION_TYPES[0])
         action.sub_actions = [sub1, sub2]
         job.sub_actions.append(action)
-        self.project_holder.project().jobs.append(job)
+        self.project.jobs.append(job)
         self.selection_state.set_subaction(0, 0, 0)
         with patch.object(self.manager, 'confirm_delete_message', return_value=True):
             deleted, new_state = self.manager.delete_element()
@@ -238,23 +228,23 @@ class TestElementActionManager(unittest.TestCase):
     def test_shift_element_job_down(self):
         job1 = MockElement('Job1', constants.ACTION_JOB)
         job2 = MockElement('Job2', constants.ACTION_JOB)
-        self.project_holder.project().jobs = [job1, job2]
+        self.project.jobs = [job1, job2]
         self.selection_state.set_job(0)
         result = self.manager.shift_element(1, "Down")
         self.assertTrue(result)
-        self.assertEqual(self.project_holder.project().jobs[0], job2)
-        self.assertEqual(self.project_holder.project().jobs[1], job1)
+        self.assertEqual(self.project.jobs[0], job2)
+        self.assertEqual(self.project.jobs[1], job1)
         self.assertEqual(self.selection_state.job_index, 1)
 
     def test_shift_element_job_up(self):
         job1 = MockElement('Job1', constants.ACTION_JOB)
         job2 = MockElement('Job2', constants.ACTION_JOB)
-        self.project_holder.project().jobs = [job1, job2]
+        self.project.jobs = [job1, job2]
         self.selection_state.set_job(1)
         result = self.manager.shift_element(-1, "Up")
         self.assertTrue(result)
-        self.assertEqual(self.project_holder.project().jobs[0], job2)
-        self.assertEqual(self.project_holder.project().jobs[1], job1)
+        self.assertEqual(self.project.jobs[0], job2)
+        self.assertEqual(self.project.jobs[1], job1)
         self.assertEqual(self.selection_state.job_index, 0)
 
     def test_shift_element_action(self):
@@ -262,7 +252,7 @@ class TestElementActionManager(unittest.TestCase):
         action1 = MockElement('Action1', constants.ACTION_TYPES[0])
         action2 = MockElement('Action2', constants.ACTION_TYPES[0])
         job.sub_actions = [action1, action2]
-        self.project_holder.project().jobs.append(job)
+        self.project.jobs.append(job)
         self.selection_state.set_action(0, 0)
         result = self.manager.shift_element(1, "Down")
         self.assertTrue(result)
@@ -272,7 +262,7 @@ class TestElementActionManager(unittest.TestCase):
 
     def test_set_enabled_job(self):
         job = MockElement('Job1', constants.ACTION_JOB, enabled=True)
-        self.project_holder.project().jobs.append(job)
+        self.project.jobs.append(job)
         self.selection_state.set_job(0)
         result = self.manager.set_enabled(self.selection_state, False)
         self.assertTrue(result)
@@ -282,7 +272,7 @@ class TestElementActionManager(unittest.TestCase):
         job = MockElement('Job1', constants.ACTION_JOB)
         action = MockElement('Action1', constants.ACTION_TYPES[0], enabled=True)
         job.sub_actions.append(action)
-        self.project_holder.project().jobs.append(job)
+        self.project.jobs.append(job)
         self.selection_state.set_action(0, 0)
         result = self.manager.set_enabled(self.selection_state, False)
         self.assertTrue(result)
@@ -291,7 +281,7 @@ class TestElementActionManager(unittest.TestCase):
     def test_set_enabled_all(self):
         job1 = MockElement('Job1', constants.ACTION_JOB, enabled=True)
         job2 = MockElement('Job2', constants.ACTION_JOB, enabled=True)
-        self.project_holder.project().jobs = [job1, job2]
+        self.project.jobs = [job1, job2]
         self.manager.set_enabled_all(False)
         self.assertFalse(job1.enabled())
         self.assertFalse(job2.enabled())
@@ -300,30 +290,30 @@ class TestElementActionManager(unittest.TestCase):
     def test_delete_element_job_with_confirm(self, mock_msgbox):
         mock_msgbox.question.return_value = mock_msgbox.Yes
         job = MockElement('Job1', constants.ACTION_JOB)
-        self.project_holder.project().jobs.append(job)
+        self.project.jobs.append(job)
         self.selection_state.set_job(0)
         deleted, new_state = self.manager.delete_element(confirm=True)
         self.assertIsNotNone(deleted)
         self.assertEqual(deleted.params['name'], 'Job1')
-        self.assertEqual(len(self.project_holder.project().jobs), 0)
+        self.assertEqual(len(self.project.jobs), 0)
 
     @patch('shinestacker.project.element_action_manager.QMessageBox')
     def test_delete_element_cancelled(self, mock_msgbox):
         mock_msgbox.question.return_value = mock_msgbox.No
         job = MockElement('Job1', constants.ACTION_JOB)
-        self.project_holder.project().jobs.append(job)
+        self.project.jobs.append(job)
         self.selection_state.set_job(0)
         deleted, new_state = self.manager.delete_element(confirm=True)
         self.assertIsNone(deleted)
-        self.assertEqual(len(self.project_holder.project().jobs), 1)
+        self.assertEqual(len(self.project.jobs), 1)
 
     def test_cut_element(self):
         job = MockElement('Job1', constants.ACTION_JOB)
-        self.project_holder.project().jobs.append(job)
+        self.project.jobs.append(job)
         self.selection_state.set_job(0)
         deleted, new_state = self.manager.cut_element()
         self.assertIsNotNone(deleted)
-        self.assertEqual(len(self.project_holder.project().jobs), 0)
+        self.assertEqual(len(self.project.jobs), 0)
         self.assertIsNotNone(self.manager.copy_buffer())
 
 

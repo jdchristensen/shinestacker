@@ -16,7 +16,8 @@ from ..core.core_utils import get_app_base_path
 from ..gui.project_model import Project
 from ..gui.sys_mon import StatusBarSystemMonitor
 from ..gui.action_config_dialog import ActionConfigDialog
-from ..common_project.project_handler import ProjectHolder, ProjectHandler
+from ..gui.project_model import Project
+from ..common_project.project_handler import ProjectHandler
 from ..common_project.selection_state import SelectionState
 from ..classic_project.classic_project_view import ClassicProjectView
 from ..modern_project.modern_project_view import ModernProjectView
@@ -33,16 +34,17 @@ class MainWindow(ProjectHandler, QMainWindow):
     def __init__(self):
         QMainWindow.__init__(self)
         self._undo_manager = ProjectUndoManager()
-        ProjectHandler.__init__(self, ProjectHolder())
+        self._project = Project()
+        ProjectHandler.__init__(self, self._project)
         self.setObjectName("mainWindow")
         dark_theme = self.is_dark_theme()
         self.selection_state = SelectionState()
         self.element_action = ElementActionManager(
-            self.project_holder, self._undo_manager, self.selection_state, self)
+            self._project, self._undo_manager, self.selection_state, self)
         self.classic_view = ClassicProjectView(
-            self.project_holder, self.selection_state, dark_theme, self)
+            self._project, self.selection_state, dark_theme, self)
         self.modern_view = ModernProjectView(
-            self.project_holder, self.selection_state, dark_theme, self)
+            self._project, self.selection_state, dark_theme, self)
         self.views = {
             'classic': self.classic_view,
             'modern': self.modern_view

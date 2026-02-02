@@ -36,8 +36,8 @@ def rows_to_state(project, job_row, action_row):
 
 
 class ClassicProjectView(ProjectView, ListContainer):
-    def __init__(self, project_holder, selection_state, dark_theme, parent=None):
-        ProjectView.__init__(self, project_holder, selection_state, dark_theme, parent)
+    def __init__(self, project, selection_state, dark_theme, parent=None):
+        ProjectView.__init__(self, project, selection_state, dark_theme, parent)
         ListContainer.__init__(self, dark_theme)
         self.tab_widget = TabWidgetWithPlaceholder(dark_theme)
         self.tab_widget.resize(1000, 500)

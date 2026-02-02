@@ -1,20 +1,14 @@
 import unittest
-import json
-import tempfile
-import os
-from unittest.mock import Mock, patch
-from shinestacker.core.exceptions import InvalidProjectError
+from unittest.mock import Mock
 from shinestacker.gui.project_model import Project
-from shinestacker.common_project.project_handler import ProjectHandler, ProjectHolder
+from shinestacker.common_project.project_handler import ProjectHandler
 
 
 class TestProjectHandler(unittest.TestCase):
     def setUp(self):
-        self.holder = ProjectHolder()
-        self.handler = ProjectHandler(self.holder)
         self.test_project = Project()
+        self.handler = ProjectHandler(self.test_project)
         self.test_project.jobs = [Mock(), Mock()]
-        self.holder.project = self.test_project
 
     def test_project(self):
         self.assertEqual(self.handler.project(), self.test_project)
@@ -23,7 +17,7 @@ class TestProjectHandler(unittest.TestCase):
         new_project = Project()
         new_project.jobs = [Mock()]
         self.handler.set_project(new_project)
-        self.assertEqual(self.holder.project, new_project)
+        self.assertEqual(len(self.handler.project().jobs), 1)
 
     def test_project_jobs(self):
         self.assertEqual(self.handler.project_jobs(), self.test_project.jobs)
@@ -110,7 +104,6 @@ class TestProjectHandler(unittest.TestCase):
         job.sub_actions = [action]
         action.sub_actions = [Mock()]
         self.test_project.jobs = [job]
-        
         self.assertTrue(self.handler.valid_indices(0))
         self.assertTrue(self.handler.valid_indices(0, 0))
         self.assertTrue(self.handler.valid_indices(0, 0, 0))
@@ -124,11 +117,6 @@ class TestProjectHandler(unittest.TestCase):
         self.handler.add_job_to_project(new_job)
         self.assertEqual(len(self.test_project.jobs), initial_count + 1)
         self.assertEqual(self.test_project.jobs[-1], new_job)
-
-    def test_reset_project(self):
-        self.holder.reset_project = Mock()
-        self.handler.reset_project()
-        self.holder.reset_project.assert_called_once()
 
 
 if __name__ == '__main__':

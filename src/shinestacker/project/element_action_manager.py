@@ -22,8 +22,8 @@ def get_position_stack(position):
 class ElementActionManager(ProjectHandler, QObject):
     project_modified_signal = Signal(bool)
 
-    def __init__(self, project_holder, undo_manager, selection_state, parent=None):
-        ProjectHandler.__init__(self, project_holder)
+    def __init__(self, project, undo_manager, selection_state, parent=None):
+        ProjectHandler.__init__(self, project)
         self._undo_manager = undo_manager
         self.selection_state = selection_state
         self.action_dialog = None

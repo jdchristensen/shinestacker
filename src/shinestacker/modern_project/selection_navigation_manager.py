@@ -4,8 +4,8 @@ from .. common_project.project_handler import ProjectHandler
 
 
 class SelectionNavigationManager(ProjectHandler, QObject):
-    def __init__(self, project_holder, selection_state, select_callback):
-        ProjectHandler.__init__(self, project_holder)
+    def __init__(self, project, selection_state, select_callback):
+        ProjectHandler.__init__(self, project)
         QObject.__init__(self)
         self.selection_state = selection_state
         self.select = select_callback

@@ -91,6 +91,9 @@ class Project:
         c.jobs = [j.clone() for j in self.jobs]
         return c
 
+    def copy_from(self, other_project):
+        self.jobs = [job.clone() for job in other_project.jobs]
+
     def to_dict(self):
         return [j.to_dict() for j in self.jobs]
 
