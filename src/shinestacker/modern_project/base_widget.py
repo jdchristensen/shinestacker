@@ -444,19 +444,11 @@ class ImgBaseWidget(BaseWidget):
         self._pending_image_views_state = None
         super().__init__(
             data_object, min_height, dark_theme, horizontal_layout, color_level, parent)
-        self.horizontal_images = horizontal_images
+        self.horizontal_images = None
         self.image_scroll_area = QScrollArea()
         self.image_scroll_area.setWidgetResizable(True)
         self.image_scroll_area.setFrameShape(QFrame.NoFrame)
-        self.image_scroll_area.setStyleSheet("""
-            QScrollArea {
-                background-color: transparent;
-                border: none;
-            }
-            QScrollArea > QWidget > QWidget {
-                background-color: transparent;
-            }
-        """)
+        self.set_image_orientation(horizontal_images)
         self._setup_image_area()
         self.child_container_layout.addWidget(self.image_scroll_area)
 

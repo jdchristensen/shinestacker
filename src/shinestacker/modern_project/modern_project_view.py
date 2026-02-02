@@ -829,8 +829,8 @@ class ModernProjectView(ProjectView):
             widget_state = None
             if widget and hasattr(widget, 'save_widget_state'):
                 widget_state = widget.save_widget_state()
-            if widget_state and entry is not None:
-                entry['modern_widget_state'] = widget_state
+            # if widget_state and entry is not None:
+            #    entry['modern_widget_state'] = widget_state
             self._remove_widget(selection)
             self._refresh_job_widget_signals()
             self.update_delete_action_state_requested.emit()
