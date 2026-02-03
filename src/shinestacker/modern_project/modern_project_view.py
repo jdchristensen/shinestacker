@@ -4,7 +4,7 @@ import os
 import traceback
 import warnings
 from functools import partial
-from PySide6.QtCore import Qt, QTimer, Signal, Slot
+from PySide6.QtCore import Qt, QTimer, Signal, Slot, QEvent
 from PySide6.QtGui import QCursor
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QSplitter, QScrollArea
 from ..gui.gui_logging import QTextEditLogger
@@ -261,7 +261,6 @@ class ModernProjectView(ProjectView):
     def _clear_hover_on_widget(self, widget):
         if widget is None:
             return
-        from PySide6.QtCore import QEvent
         widget.event(QEvent(QEvent.Type.Leave))
 
     def _on_widget_clicked(self, widget, job_index, action_index=-1, subaction_index=-1):
@@ -768,8 +767,7 @@ class ModernProjectView(ProjectView):
         if action_type == 'edit_all':
             return self._undo_edit_all_action()
         if action_type in ['run', 'run_all', 'clear_run_info']:
-            self.refresh_ui()
-            return False
+            return self._refresh_all_widgets_from_metadata()
         if action_type == 'add':
             state = SelectionState(*new_position)
             return self._undo_add_action(state, entry)
@@ -800,8 +798,7 @@ class ModernProjectView(ProjectView):
         if action_type == 'edit_all':
             return self._undo_edit_all_action()
         if action_type in ['run', 'run_all', 'clear_run_info']:
-            self.refresh_ui()
-            return False
+            return self._refresh_all_widgets_from_metadata()
         if action_type == 'add':
             state = SelectionState(*new_position)
             return self._insert_widget_for_undo(state, entry)
@@ -813,6 +810,25 @@ class ModernProjectView(ProjectView):
             return self._undo_edit_action(state)
         self.refresh_ui()
         return False
+
+    def _refresh_all_widgets_from_metadata(self):
+        for job_idx, job_widget in enumerate(self.job_widgets):
+            if job_idx < len(self.project_jobs()):
+                job = self.project_job(job_idx)
+                job_widget.data_object = job
+                job_widget.refresh_from_metadata()
+                for action_idx, action_widget in enumerate(job_widget.child_widgets):
+                    if action_idx < len(job.sub_actions):
+                        action = job.sub_actions[action_idx]
+                        action_widget.data_object = action
+                        action_widget.refresh_from_metadata()
+                        for subaction_idx, subaction_widget \
+                                in enumerate(action_widget.child_widgets):
+                            if subaction_idx < len(action.sub_actions):
+                                subaction = action.sub_actions[subaction_idx]
+                                subaction_widget.data_object = subaction
+                                subaction_widget.refresh_from_metadata()
+        return True
 
     def _remove_widget_for_undo(self, selection, entry=None):
         try:

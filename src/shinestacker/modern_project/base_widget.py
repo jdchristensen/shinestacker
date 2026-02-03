@@ -435,6 +435,9 @@ class BaseWidget(QFrame):
     def clear_metadata(self):
         pass
 
+    def refresh_from_metadata(self):
+        pass
+
 
 class ImgBaseWidget(BaseWidget):
     def __init__(self, data_object, min_height=40, dark_theme=False,
@@ -591,3 +594,19 @@ class ImgBaseWidget(BaseWidget):
 
     def clear_metadata(self):
         self.clear_images()
+
+    def refresh_from_metadata(self):
+        widget_state = None
+        if self.data_object is not None:
+            widget_state = self.data_object.metadata.get('widget_state')
+        for view in self.image_views:
+            if self.image_layout:
+                self.image_layout.removeWidget(view)
+            view.deleteLater()
+        self.image_views.clear()
+        self.image_scroll_area.setVisible(False)
+        self.image_scroll_area.setMinimumHeight(0)
+        if widget_state:
+            self._restore_widget_state(widget_state)
+            self._process_pending_image_views()
+        self.update_metadata()

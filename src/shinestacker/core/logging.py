@@ -77,7 +77,6 @@ def setup_logging(console_level=logging.INFO, file_level=logging.DEBUG, log_file
     logging.getLogger("PIL").setLevel(logging.INFO)
 
 
-
 def set_console_logging_terminator(terminator, name=None):
     logging.getLogger(name).handlers[0].terminator = terminator
 

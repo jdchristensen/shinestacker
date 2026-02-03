@@ -173,3 +173,11 @@ class ActionWidget(ImgBaseWidget):
         self.clear_frames_status()
         self.hide_progress()
         super().clear_metadata()
+
+    def refresh_from_metadata(self):
+        self.frames_status_box.clear()
+        self.frames_status_box.setVisible(False)
+        self._has_frames_content = False
+        self.progress_bar.clear()
+        self.progress_bar.setVisible(False)
+        super().refresh_from_metadata()
