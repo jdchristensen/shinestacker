@@ -77,6 +77,7 @@ class ElementActionManager(ProjectHandler, QObject):
         if self.filled_undo():
             current_state = self.project().clone()
             entry = self.pop_undo()
+            print("\n\nundo entry: ", entry['item'].to_dict())
             new_entry = {
                 'item': current_state,
                 'description': entry['description'],
@@ -84,8 +85,6 @@ class ElementActionManager(ProjectHandler, QObject):
                 'old_position': entry.get('new_position', (-1, -1, -1)),
                 'new_position': entry.get('old_position', (-1, -1, -1))
             }
-            # if 'modern_widget_state' in entry:
-            #    new_entry['modern_widget_state'] = entry['modern_widget_state']
             self._undo_manager.add_to_redo(new_entry)
             self.set_project(entry['item'])
             return entry
@@ -101,27 +100,16 @@ class ElementActionManager(ProjectHandler, QObject):
         if self.filled_redo():
             current_state = self.project().clone()
             entry = self.pop_redo()
-            new_entry = {
+            print("\n\nredo entry: ", entry['item'].to_dict())
+            self._undo_manager.add_to_undo({
                 'item': current_state,
                 'description': entry['description'],
                 'action_type': entry.get('action_type', ''),
                 'old_position': entry.get('new_position', (-1, -1, -1)),
                 'new_position': entry.get('old_position', (-1, -1, -1))
-            }
-            # if 'modern_widget_state' in entry:
-            #    new_entry['modern_widget_state'] = entry['modern_widget_state']
-            self._undo_manager.add_to_undo(new_entry)
+            })
             self.set_project(entry['item'])
-            return_entry = {
-                'item': entry['item'],
-                'description': entry['description'],
-                'action_type': entry.get('action_type', ''),
-                'old_position': entry.get('new_position', (-1, -1, -1)),
-                'new_position': entry.get('old_position', (-1, -1, -1))
-            }
-            # if 'modern_widget_state' in entry:
-            #    return_entry['modern_widget_state'] = entry['modern_widget_state']
-            return return_entry
+            return entry
         return None
 
     def save_undo_state(self, description='', action_type='',
@@ -244,7 +232,6 @@ class ElementActionManager(ProjectHandler, QObject):
             return None, None
         old_position = self.selection_state.to_tuple()
         element = self.project_element(*old_position)
-        print("deleting element: ", element.params['name'], element.metadata)
         if not element:
             return None, None
         element_type = self.selection_state.type()

@@ -289,9 +289,6 @@ class ModernProjectView(ProjectView):
             self._ensure_selected_visible()
         else:
             self._reset_selection()
-        # if widget_state:
-        #     return '', None  # 'modern_widget_state', widget_state
-        # return '', None
 
     def paste_element(self, copy_buffer, old_selection, new_selection):
         try:
@@ -816,12 +813,6 @@ class ModernProjectView(ProjectView):
 
     def _remove_widget_for_undo(self, selection, entry=None):
         try:
-            # widget = self._find_widget(selection)
-            # widget_state = None
-            # if widget and hasattr(widget, 'save_widget_state'):
-            #     widget_state = widget.save_widget_state()
-            # if widget_state and entry is not None:
-            #    entry['modern_widget_state'] = widget_state
             self._remove_widget(selection)
             self._refresh_job_widget_signals()
             self.update_delete_action_state_requested.emit()
@@ -843,9 +834,6 @@ class ModernProjectView(ProjectView):
             self._insert_widget(selection, element)
             widget = self._find_widget(selection)
             if widget:
-                # widget_state = entry.get('modern_widget_state')
-                # if widget_state:
-                #     widget.restore_widget_state(widget_state)
                 if self.selected_widget:
                     self.selected_widget.set_selected(False)
                 widget.set_selected(True)
