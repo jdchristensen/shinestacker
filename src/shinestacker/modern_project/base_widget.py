@@ -70,9 +70,10 @@ class BaseWidget(QFrame):
         self.name_label = None
         self.enabled_icon = None
         self.path_label_in_top_row = True
-        self._metadata_restored = False
-        self._initializing = True
-        self._complete_initialization()
+        if self.data_object:
+            widget_state = self.data_object.metadata.get('widget_state')
+            if widget_state is not None:
+                self._restore_widget_state(widget_state)
         self.image_layout = None
         self.image_area_widget = None
         self._init_widget(data_object)
@@ -132,25 +133,8 @@ class BaseWidget(QFrame):
         self._enabled = data_object.params.get('enabled', True)
         self._update_enabled_icon()
 
-    def _complete_initialization(self):
-        if not self._metadata_restored:
-            self.restore_from_metadata()
-            self._metadata_restored = True
-        self._initializing = False
-
-    def restore_from_metadata(self):
-        if self._metadata_restored:
-            return
-        if self.data_object is None:
-            return
-        widget_state = self.data_object.metadata.get('widget_state')
-        if widget_state is None:
-            return
-        self._restore_widget_state(widget_state)
-        self._metadata_restored = True
-
     def update_metadata(self):
-        if self.data_object is None or self._initializing or not self._metadata_restored:
+        if self.data_object is None:
             return
         widget_state = self._capture_widget_state()
         if widget_state:
@@ -185,11 +169,11 @@ class BaseWidget(QFrame):
         self._remove_conditional_icons()
         self._create_conditional_icons()
 
-    def add_child_widget(self, child_widget, add_to_layout=True):
+    def add_child_widget(self, child_widget, add_to_layout=True, can_update=True):
         self.child_widgets.append(child_widget)
         if add_to_layout:
             self.child_container_layout.addWidget(child_widget)
-        if self._metadata_restored:
+        if can_update:
             self.update_metadata()
 
     def set_horizontal_layout(self, horizontal):
@@ -538,13 +522,13 @@ class ImgBaseWidget(BaseWidget):
         self.image_scroll_area.setMinimumHeight(0)
         self.update_metadata()
 
-    def add_image_view(self, image_view, from_restoration=False):
+    def add_image_view(self, image_view, can_update=True):
         self.image_views.append(image_view)
         self.image_layout.addWidget(image_view)
         self.image_scroll_area.setVisible(True)
         self._adjust_image_area()
         QTimer.singleShot(0, self.image_area_widget.adjustSize)
-        if not from_restoration and self._metadata_restored:
+        if can_update:
             self.update_metadata()
 
     def _adjust_image_area(self):

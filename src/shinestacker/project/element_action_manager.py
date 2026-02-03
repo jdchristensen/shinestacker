@@ -77,7 +77,6 @@ class ElementActionManager(ProjectHandler, QObject):
         if self.filled_undo():
             current_state = self.project().clone()
             entry = self.pop_undo()
-            print("\n\nundo entry: ", entry['item'].to_dict())
             new_entry = {
                 'item': current_state,
                 'description': entry['description'],
@@ -100,7 +99,6 @@ class ElementActionManager(ProjectHandler, QObject):
         if self.filled_redo():
             current_state = self.project().clone()
             entry = self.pop_redo()
-            print("\n\nredo entry: ", entry['item'].to_dict())
             self._undo_manager.add_to_undo({
                 'item': current_state,
                 'description': entry['description'],

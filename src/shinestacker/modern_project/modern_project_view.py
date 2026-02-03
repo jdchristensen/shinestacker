@@ -277,11 +277,6 @@ class ModernProjectView(ProjectView):
         widget.update(element)
 
     def delete_element(self, old_selection, new_selection):
-        widget_state = None
-        if old_selection and old_selection.is_valid():
-            widget = self._find_widget(old_selection)
-            if widget:
-                widget_state = widget.capture_widget_state()
         if old_selection:
             self._remove_widget(old_selection)
         if new_selection:
