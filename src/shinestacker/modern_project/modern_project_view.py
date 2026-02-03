@@ -258,6 +258,12 @@ class ModernProjectView(ProjectView):
     def select_current(self):
         self._select_widget(self.selection_state)
 
+    def _clear_hover_on_widget(self, widget):
+        if widget is None:
+            return
+        from PySide6.QtCore import QEvent
+        widget.event(QEvent(QEvent.Type.Leave))
+
     def _on_widget_clicked(self, widget, job_index, action_index=-1, subaction_index=-1):
         if self.selected_widget:
             self.selected_widget.set_selected(False)
@@ -296,6 +302,7 @@ class ModernProjectView(ProjectView):
             new_widget = self._insert_widget(new_selection, element)
             if new_widget:
                 if self.selected_widget:
+                    self._clear_hover_on_widget(self.selected_widget)
                     self.selected_widget.set_selected(False)
                 new_widget.set_selected(True)
                 self.selected_widget = new_widget
@@ -315,6 +322,7 @@ class ModernProjectView(ProjectView):
                 new_selection, element.clone(name_postfix=constants.CLONE_POSTFIX))
             if new_widget:
                 if self.selected_widget:
+                    self._clear_hover_on_widget(self.selected_widget)
                     self.selected_widget.set_selected(False)
                 new_widget.set_selected(True)
                 self.selected_widget = new_widget
@@ -830,6 +838,7 @@ class ModernProjectView(ProjectView):
             widget = self._find_widget(selection)
             if widget:
                 if self.selected_widget:
+                    self._clear_hover_on_widget(self.selected_widget)
                     self.selected_widget.set_selected(False)
                 widget.set_selected(True)
                 self.selected_widget = widget

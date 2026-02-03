@@ -51,6 +51,7 @@ class BaseWidget(QFrame):
         super().__init__(parent)
         self.data_object = data_object
         self._enabled = True
+        self._hovered = False
         self._dark_theme = dark_theme
         self.horizontal_layout = horizontal_layout
         self.min_height = min_height
@@ -264,11 +265,14 @@ class BaseWidget(QFrame):
                 margin: 2px;
                 background-color: palette(window);
             }}
+            {widget_type}[hovered="true"] {{
+                background-color: #{hover_color};
+            }}
             {widget_type}[selected="true"] {{
                 background-color: #{selected};
             }}
-            {widget_type}:hover {{
-                background-color: #{hover_color};
+            {widget_type}[selected="true"][hovered="true"] {{
+                background-color: #{selected};
             }}
         """
         self.setStyleSheet(stylesheet)
@@ -329,11 +333,19 @@ class BaseWidget(QFrame):
 
     def enterEvent(self, event):
         super().enterEvent(event)
+        self._hovered = True
+        self.setProperty("hovered", "true")
+        self.style().unpolish(self)
+        self.style().polish(self)
         self.setCursor(Qt.PointingHandCursor)
         event.accept()
 
     def leaveEvent(self, event):
         super().leaveEvent(event)
+        self._hovered = False
+        self.setProperty("hovered", "false")
+        self.style().unpolish(self)
+        self.style().polish(self)
         self.setCursor(Qt.ArrowCursor)
         event.accept()
     # pylint: enable=C0103
