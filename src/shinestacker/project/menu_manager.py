@@ -2,7 +2,7 @@
 import os
 from functools import partial
 from PySide6.QtCore import Signal, QObject
-from PySide6.QtGui import QAction, QIcon
+from PySide6.QtGui import QAction, QIcon, QKeySequence
 from PySide6.QtWidgets import QMenu, QComboBox
 from .. config.constants import constants
 from .. config.app_config import AppConfig
@@ -31,14 +31,14 @@ class MenuManager(QObject):
             "&Save": "Ctrl+S",
             "Save &As...": "Ctrl+Shift+S",
             "&Undo": "Ctrl+Z",
-            "&Redo": "Ctrl+Y",
+            "&Redo": [QKeySequence("Ctrl+Shift+Z"), QKeySequence("Ctrl+Y")],
             "&Cut": "Ctrl+X",
             "Cop&y": "Ctrl+C",
             "&Paste": "Ctrl+V",
             "Duplicate": "Ctrl+D",
             "Delete": "Backspace",
-            "Move &Up": "Ctrl+Up",
-            "Move &Down": "Ctrl+Down",
+            "Move &Up": [QKeySequence("Ctrl+Up"), QKeySequence("Ctrl+Left")],
+            "Move &Down": [QKeySequence("Ctrl+Down"), QKeySequence("Ctrl+Right")],
             "E&nable": "Ctrl+E",
             "Di&sable": "Ctrl+B",
             "Enable All": "Ctrl+Shift+E",
@@ -78,7 +78,10 @@ class MenuManager(QObject):
             action.setProperty("requires_file", True)
         shortcut = self.shortcuts.get(name, '')
         if shortcut:
-            action.setShortcut(shortcut)
+            if isinstance(shortcut, str):
+                action.setShortcut(shortcut)
+            elif isinstance(shortcut, list):
+                action.setShortcuts(shortcut)
         icon_name = self.icons.get(name, '')
         if icon_name:
             action.setIcon(self.get_icon(icon_name))

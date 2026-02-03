@@ -317,7 +317,7 @@ class ImageEditorUI(QMainWindow, LayerCollectionHandler):
         edit_menu.addAction(self.undo_action)
         self.redo_action = QAction("Redo", self)
         self.redo_action.setEnabled(False)
-        self.redo_action.setShortcut("Ctrl+Y")
+        self.redo_action.setShortcuts([QKeySequence("Ctrl+Shift+Z"), QKeySequence("Ctrl+Y")])
         self.redo_action.triggered.connect(self.redo)
         edit_menu.addAction(self.redo_action)
         edit_menu.addSeparator()
