@@ -73,18 +73,25 @@ class ElementActionManager(ProjectHandler, QObject):
     def filled_undo(self):
         return self._undo_manager.filled()
 
+    @staticmethod
+    def _swap_positions(entry):
+        swapped = {
+            'item': entry['item'],
+            'description': entry['description'],
+            'action_type': entry.get('action_type', ''),
+            'old_position': entry.get('new_position', (-1, -1, -1)),
+            'new_position': entry.get('old_position', (-1, -1, -1))
+        }
+        if 'modern_widget_state' in entry:
+            swapped['modern_widget_state'] = entry['modern_widget_state']
+        return swapped
+
     def undo(self):
         if self.filled_undo():
             current_state = self.project().clone()
             entry = self.pop_undo()
-            new_entry = {
-                'item': current_state,
-                'description': entry['description'],
-                'action_type': entry.get('action_type', ''),
-                'old_position': entry.get('new_position', (-1, -1, -1)),
-                'new_position': entry.get('old_position', (-1, -1, -1))
-            }
-            self._undo_manager.add_to_redo(new_entry)
+            counter_entry = self._swap_positions({**entry, 'item': current_state})
+            self._undo_manager.add_to_redo(counter_entry)
             self.set_project(entry['item'])
             return entry
         return None
@@ -99,15 +106,10 @@ class ElementActionManager(ProjectHandler, QObject):
         if self.filled_redo():
             current_state = self.project().clone()
             entry = self.pop_redo()
-            self._undo_manager.add_to_undo({
-                'item': current_state,
-                'description': entry['description'],
-                'action_type': entry.get('action_type', ''),
-                'old_position': entry.get('new_position', (-1, -1, -1)),
-                'new_position': entry.get('old_position', (-1, -1, -1))
-            })
+            counter_entry = self._swap_positions({**entry, 'item': current_state})
+            self._undo_manager.add_to_undo(counter_entry)
             self.set_project(entry['item'])
-            return entry
+            return self._swap_positions(entry)
         return None
 
     def save_undo_state(self, description='', action_type='',
