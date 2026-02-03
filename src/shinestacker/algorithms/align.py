@@ -188,8 +188,7 @@ class AlignFramesBase(SubAction):
                         f"{self.process.name}-matches.{plots_ext}"
             self.process.plot_manager.save_plot(plot_path, fig)
             self.process.callback(constants.CALLBACK_SAVE_PLOT, self.process.id,
-                                  save_plot_name,
-                                  f"{self.process.name}: matches", plot_path)
+                                  save_plot_name, f"{self.process.name}: matches", plot_path)
             transform = self.alignment_config['transform']
             title = "Transformation parameters rel. to reference frame"
             if transform == constants.ALIGN_RIGID:
@@ -211,8 +210,7 @@ class AlignFramesBase(SubAction):
                             f"{self.process.name}-rotation.{plots_ext}"
                 self.process.plot_manager.save_plot(plot_path, fig)
                 self.process.callback(constants.CALLBACK_SAVE_PLOT, self.process.id,
-                                      save_plot_name,
-                                      f"{self.process.name}: rotation", plot_path)
+                                      save_plot_name, f"{self.process.name}: rotation", plot_path)
                 fig = plt.figure(figsize=constants.PLT_FIG_SIZE)
                 x, y_x, y_x_ref = get_coordinates(self._translation_x)
                 x, y_y, y_y_ref = get_coordinates(self._translation_y)
@@ -222,7 +220,8 @@ class AlignFramesBase(SubAction):
                 plt.plot([x[0], x[-1]], [0, 0], color='cornflowerblue', linestyle='--')
                 plt.plot(x, y_x, color='blue', label='translation, x (px)')
                 plt.plot(x, y_y, color='red', label='translation, y (px)')
-                y_lim = max(abs(y_x.min()), abs(y_x.max()), abs(y_y.min()), abs(y_y.max())) * 1.1
+                y_lim = max(
+                    1, max(abs(y_x.min()), abs(y_x.max()), abs(y_y.min()), abs(y_y.max())) * 1.1)
                 plt.ylim(-y_lim, y_lim)
                 plt.title(title)
                 plt.xlabel('frame')
@@ -234,9 +233,8 @@ class AlignFramesBase(SubAction):
                             f"{self.process.name}-translation.{plots_ext}"
                 self.process.plot_manager.save_plot(plot_path, fig)
                 self.process.callback(constants.CALLBACK_SAVE_PLOT, self.process.id,
-                                      save_plot_name,
-                                      f"{self.process.name}: translation", plot_path)
-
+                                      save_plot_name, f"{self.process.name}: translation",
+                                      plot_path)
                 fig = plt.figure(figsize=constants.PLT_FIG_SIZE)
                 x, y, y_ref = get_coordinates(self._scale_x)
                 plt.plot([self.process.ref_idx + 1, self.process.ref_idx + 1],
@@ -255,8 +253,7 @@ class AlignFramesBase(SubAction):
                             f"{self.process.name}-scale.{plots_ext}"
                 self.process.plot_manager.save_plot(plot_path, fig)
                 self.process.callback(constants.CALLBACK_SAVE_PLOT, self.process.id,
-                                      save_plot_name,
-                                      f"{self.process.name}: scale", plot_path)
+                                      save_plot_name, f"{self.process.name}: scale", plot_path)
             elif transform == constants.ALIGN_HOMOGRAPHY:
                 fig = plt.figure(figsize=constants.PLT_FIG_SIZE)
                 x, y, y_ref = get_coordinates(self._area_ratio)
@@ -276,8 +273,7 @@ class AlignFramesBase(SubAction):
                             f"{self.process.name}-area-ratio.{plots_ext}"
                 self.process.plot_manager.save_plot(plot_path, fig)
                 self.process.callback(constants.CALLBACK_SAVE_PLOT, self.process.id,
-                                      save_plot_name,
-                                      f"{self.process.name}: area ratio", plot_path)
+                                      save_plot_name, f"{self.process.name}: area ratio", plot_path)
                 fig = plt.figure(figsize=constants.PLT_FIG_SIZE)
                 x, y, y_ref = get_coordinates(self._aspect_ratio)
                 plt.plot([self.process.ref_idx + 1, self.process.ref_idx + 1],
@@ -297,8 +293,8 @@ class AlignFramesBase(SubAction):
                             f"{self.process.name}-aspect-ratio.{plots_ext}"
                 self.process.plot_manager.save_plot(plot_path, fig)
                 self.process.callback(constants.CALLBACK_SAVE_PLOT, self.process.id,
-                                      save_plot_name,
-                                      f"{self.process.name}: aspect ratio", plot_path)
+                                      save_plot_name, f"{self.process.name}: aspect ratio",
+                                      plot_path)
                 fig = plt.figure(figsize=constants.PLT_FIG_SIZE)
                 x, y, y_ref = get_coordinates(self._max_angle_dev)
                 plt.plot([self.process.ref_idx + 1, self.process.ref_idx + 1],
@@ -317,8 +313,7 @@ class AlignFramesBase(SubAction):
                             f"{self.process.name}-rotation.{plots_ext}"
                 self.process.plot_manager.save_plot(plot_path, fig)
                 self.process.callback(constants.CALLBACK_SAVE_PLOT, self.process.id,
-                                      save_plot_name,
-                                      f"{self.process.name}: rotation", plot_path)
+                                      save_plot_name, f"{self.process.name}: rotation", plot_path)
             fig = plt.figure(figsize=constants.PLT_FIG_SIZE)
             x, y, y_ref = get_coordinates(self._subsamples)
             plt.plot([self.process.ref_idx + 1, self.process.ref_idx + 1],
@@ -337,8 +332,7 @@ class AlignFramesBase(SubAction):
                         f"{self.process.name}-subsample.{plots_ext}"
             self.process.plot_manager.save_plot(plot_path, fig)
             self.process.callback(constants.CALLBACK_SAVE_PLOT, self.process.id,
-                                  save_plot_name,
-                                  f"{self.process.name}: inlier ratio", plot_path)
+                                  save_plot_name, f"{self.process.name}: inlier ratio", plot_path)
             if self.alignment_config['compute_rans_quality']:
                 rans_inlier_fraction_threshold = self.alignment_config.get(
                     'rans_inlier_fraction_threshold')
@@ -363,8 +357,8 @@ class AlignFramesBase(SubAction):
                             f"{self.process.name}-inlier-ratio.{plots_ext}"
                 self.process.plot_manager.save_plot(plot_path, fig)
                 self.process.callback(constants.CALLBACK_SAVE_PLOT, self.process.id,
-                                      save_plot_name,
-                                      f"{self.process.name}: inlier ratio", plot_path)
+                                      save_plot_name, f"{self.process.name}: inlier ratio",
+                                      plot_path)
                 fig = plt.figure(figsize=constants.PLT_FIG_SIZE)
                 x, y, y_ref = get_coordinates(self._avg_errors)
                 plt.plot([self.process.ref_idx + 1, self.process.ref_idx + 1],
@@ -383,8 +377,7 @@ class AlignFramesBase(SubAction):
                             f"{self.process.name}-avg-error.{plots_ext}"
                 self.process.plot_manager.save_plot(plot_path, fig)
                 self.process.callback(constants.CALLBACK_SAVE_PLOT, self.process.id,
-                                      save_plot_name,
-                                      f"{self.process.name}: avg error", plot_path)
+                                      save_plot_name, f"{self.process.name}: avg error", plot_path)
                 fig = plt.figure(figsize=constants.PLT_FIG_SIZE)
                 x, y, y_ref = get_coordinates(self._max_errors)
                 rans_max_error_threshold = self.alignment_config.get(
@@ -405,8 +398,7 @@ class AlignFramesBase(SubAction):
                             f"{self.process.name}-max-error.{plots_ext}"
                 self.process.plot_manager.save_plot(plot_path, fig)
                 self.process.callback(constants.CALLBACK_SAVE_PLOT, self.process.id,
-                                      save_plot_name,
-                                      f"{self.process.name}: max error", plot_path)
+                                      save_plot_name, f"{self.process.name}: max error", plot_path)
 
     def save_transform_result(self, idx, result):
         if result is None:
@@ -488,6 +480,7 @@ class AlignFrames(AlignFramesBase):
     def align_images(self, idx, img_ref, img_0):
         idx_str = f"{idx:04d}"
         idx_tot_str = self.process.frame_str(idx)
+        save_plot_name = self.process.output_path if self.name == '' else self.name
         callbacks = {
             'message': lambda: self.print_message(
                 f'{idx_tot_str}: estimate transform using feature matching'),
@@ -500,7 +493,7 @@ class AlignFrames(AlignFramesBase):
                 f'{msg}', constants.LOG_COLOR_WARNING), level=logging.WARNING),
             'save_plot': lambda plot_path: self.process.callback(
                 constants.CALLBACK_SAVE_PLOT, self.process.id,
-                self.process.output_path if self.name == '' else self.name,
+                save_plot_name,
                 f"{self.process.name}: matches\nframe {idx_str}", plot_path),
             'save_transform_result': lambda result: self.save_transform_result(idx, result)
         }

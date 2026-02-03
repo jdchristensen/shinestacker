@@ -254,9 +254,10 @@ class AlignFramesParallel(AlignFramesBase):
                 f"{self.process.name}-matches-{idx_str}.{plots_ext}")
         else:
             plot_path = None
+        save_plot_name = self.process.output_path if self.name == '' else self.name
         callbacks = {
             'save_plot': lambda plot_path: self.process.callback(
-                constants.CALLBACK_SAVE_PLOT, self.process.id, self.process.output_path,
+                constants.CALLBACK_SAVE_PLOT, self.process.id, save_plot_name,
                 f"{self.process.name}: matches\nframe {idx_str}", plot_path),
         }
         m, phase_corr_called, _quality, n_good_matches = self.compute_transformation(
