@@ -84,8 +84,8 @@ class ElementActionManager(ProjectHandler, QObject):
                 'old_position': entry.get('new_position', (-1, -1, -1)),
                 'new_position': entry.get('old_position', (-1, -1, -1))
             }
-            if 'modern_widget_state' in entry:
-                new_entry['modern_widget_state'] = entry['modern_widget_state']
+            # if 'modern_widget_state' in entry:
+            #    new_entry['modern_widget_state'] = entry['modern_widget_state']
             self._undo_manager.add_to_redo(new_entry)
             self.set_project(entry['item'])
             return entry
@@ -108,8 +108,8 @@ class ElementActionManager(ProjectHandler, QObject):
                 'old_position': entry.get('new_position', (-1, -1, -1)),
                 'new_position': entry.get('old_position', (-1, -1, -1))
             }
-            if 'modern_widget_state' in entry:
-                new_entry['modern_widget_state'] = entry['modern_widget_state']
+            # if 'modern_widget_state' in entry:
+            #    new_entry['modern_widget_state'] = entry['modern_widget_state']
             self._undo_manager.add_to_undo(new_entry)
             self.set_project(entry['item'])
             return_entry = {
@@ -119,8 +119,8 @@ class ElementActionManager(ProjectHandler, QObject):
                 'old_position': entry.get('new_position', (-1, -1, -1)),
                 'new_position': entry.get('old_position', (-1, -1, -1))
             }
-            if 'modern_widget_state' in entry:
-                return_entry['modern_widget_state'] = entry['modern_widget_state']
+            # if 'modern_widget_state' in entry:
+            #    return_entry['modern_widget_state'] = entry['modern_widget_state']
             return return_entry
         return None
 

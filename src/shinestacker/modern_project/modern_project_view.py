@@ -289,9 +289,9 @@ class ModernProjectView(ProjectView):
             self._ensure_selected_visible()
         else:
             self._reset_selection()
-        if widget_state:
-            return 'modern_widget_state', widget_state
-        return '', None
+        # if widget_state:
+        #     return '', None  # 'modern_widget_state', widget_state
+        # return '', None
 
     def paste_element(self, copy_buffer, old_selection, new_selection):
         try:
@@ -843,9 +843,9 @@ class ModernProjectView(ProjectView):
             self._insert_widget(selection, element)
             widget = self._find_widget(selection)
             if widget:
-                widget_state = entry.get('modern_widget_state')
-                if widget_state:
-                    widget.restore_widget_state(widget_state)
+                # widget_state = entry.get('modern_widget_state')
+                # if widget_state:
+                #     widget.restore_widget_state(widget_state)
                 if self.selected_widget:
                     self.selected_widget.set_selected(False)
                 widget.set_selected(True)

@@ -470,9 +470,10 @@ class MainWindow(ProjectHandler, QMainWindow):
     def post_delete(self, deleted_element, old_selection, new_selection):
         if deleted_element and old_selection and old_selection.is_valid():
             for view in self.views.values():
-                k, v = view.delete_element(old_selection, new_selection)
-                if v is not None:
-                    self._undo_manager.add_extra_data_to_last_entry(k, v)
+                view.delete_element(old_selection, new_selection)
+            #    k, v = view.delete_element(old_selection, new_selection)
+            #     if v is not None:
+            #        self._undo_manager.add_extra_data_to_last_entry(k, v)
         if self.num_project_jobs() > 0:
             self.menu_manager.delete_element_action.setEnabled(True)
 
