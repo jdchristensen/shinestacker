@@ -244,6 +244,7 @@ class ElementActionManager(ProjectHandler, QObject):
             return None, None
         old_position = self.selection_state.to_tuple()
         element = self.project_element(*old_position)
+        print("deleting element: ", element.params['name'], element.metadata)
         if not element:
             return None, None
         element_type = self.selection_state.type()
