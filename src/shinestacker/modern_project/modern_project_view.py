@@ -261,7 +261,10 @@ class ModernProjectView(ProjectView):
     def _clear_hover_on_widget(self, widget):
         if widget is None:
             return
-        widget.event(QEvent(QEvent.Type.Leave))
+        try:
+            widget.event(QEvent(QEvent.Type.Leave))
+        except RuntimeError:
+            pass
 
     def _on_widget_clicked(self, widget, job_index, action_index=-1, subaction_index=-1):
         if self.selected_widget:
@@ -301,8 +304,11 @@ class ModernProjectView(ProjectView):
             new_widget = self._insert_widget(new_selection, element)
             if new_widget:
                 if self.selected_widget:
-                    self._clear_hover_on_widget(self.selected_widget)
-                    self.selected_widget.set_selected(False)
+                    try:
+                        self._clear_hover_on_widget(self.selected_widget)
+                        self.selected_widget.set_selected(False)
+                    except RuntimeError:
+                        self.selected_widget = None
                 new_widget.set_selected(True)
                 self.selected_widget = new_widget
                 self._ensure_selected_visible()
@@ -563,6 +569,8 @@ class ModernProjectView(ProjectView):
                 if 0 <= state.job_index < len(self.job_widgets):
                     job_widget = self.job_widgets.pop(state.job_index)
                     self.project_layout.removeWidget(job_widget)
+                    if self.selected_widget is job_widget:
+                        self.selected_widget = None
                     self._safe_disconnect_all(job_widget)
                     job_widget.deleteLater()
                     self._refresh_job_widget_signals()
@@ -574,6 +582,8 @@ class ModernProjectView(ProjectView):
                     job_widget = self.job_widgets[state.job_index]
                     action_widget = job_widget.child_widgets.pop(state.action_index)
                     job_widget.child_container_layout.removeWidget(action_widget)
+                    if self.selected_widget is action_widget:
+                        self.selected_widget = None
                     self._safe_disconnect_all(action_widget)
                     action_widget.deleteLater()
                     self._refresh_job_widget_signals()
@@ -587,6 +597,8 @@ class ModernProjectView(ProjectView):
                     if 0 <= state.subaction_index < len(action_widget.child_widgets):
                         subaction_widget = action_widget.child_widgets.pop(state.subaction_index)
                         action_widget.child_container_layout.removeWidget(subaction_widget)
+                        if self.selected_widget is subaction_widget:
+                            self.selected_widget = None
                         self._safe_disconnect_all(subaction_widget)
                         subaction_widget.deleteLater()
                         self._refresh_job_widget_signals()
