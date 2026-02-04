@@ -390,7 +390,7 @@ class BaseWidget(QFrame):
         pass
 
     def scroll_area_css(self, orientation):
-        size = 'width' if orientation == 'vertical' else 'height'
+        size = 'height' if orientation == 'vertical' else 'width'
         return f"""
             QScrollArea {{
                 background: transparent;
@@ -407,7 +407,7 @@ class BaseWidget(QFrame):
             QScrollBar::handle:{orientation} {{
                 background: #808080;
                 border-radius: 3px;
-                min-{size}: 20px;
+                min-{size}: 25px;
             }}
             QScrollBar::handle:{orientation}:hover {{
                 background: #404040;
@@ -494,17 +494,18 @@ class ImgBaseWidget(BaseWidget):
         scroll_area = QScrollArea()
         scroll_area.setWidgetResizable(True)
         scroll_area.setFrameShape(QFrame.NoFrame)
+        scroll_area.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
         self._apply_scroll_area_style(scroll_area, self.horizontal_images)
         if self.horizontal_images:
             scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
             scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
             layout = QHBoxLayout()
-            layout.setContentsMargins(0, 0, 0, 8)
+            layout.setContentsMargins(0, 0, 0, 0)
         else:
             scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
             scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
             layout = QVBoxLayout()
-            layout.setContentsMargins(0, 0, 8, 0)
+            layout.setContentsMargins(0, 0, 0, 0)
         area_widget = QWidget()
         layout.setSpacing(5)
         layout.setAlignment(Qt.AlignTop)
@@ -555,10 +556,10 @@ class ImgBaseWidget(BaseWidget):
             area_widget = QWidget()
             if horizontal:
                 layout = QHBoxLayout()
-                layout.setContentsMargins(0, 0, 0, 8)
+                layout.setContentsMargins(0, 0, 0, 0)
             else:
                 layout = QVBoxLayout()
-                layout.setContentsMargins(0, 0, 8, 0)
+                layout.setContentsMargins(0, 0, 0, 0)
             layout.setSpacing(5)
             layout.setAlignment(Qt.AlignTop)
             for view in current_views:
@@ -635,11 +636,12 @@ class ImgBaseWidget(BaseWidget):
         max_height = max(view.sizeHint().height() for view in views)
         total_width = sum(view.sizeHint().width() for view in views)
         total_width += layout.spacing() * (len(views) - 1)
+        extra_scrollbar_space = 6
         area_widget.setFixedWidth(total_width)
-        area_widget.setFixedHeight(max_height)
+        area_widget.setFixedHeight(max_height + extra_scrollbar_space)
         scrollbar = scroll_area.horizontalScrollBar()
         scrollbar_height = scrollbar.sizeHint().height() if scrollbar.maximum() > 0 else 0
-        scroll_area.setMinimumHeight(max_height + scrollbar_height)
+        scroll_area.setMinimumHeight(max_height + scrollbar_height + extra_scrollbar_space + 6)
 
     def _adjust_vertical_area(self, tag):
         views = self.image_views_by_tag[tag]

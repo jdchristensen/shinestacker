@@ -192,11 +192,10 @@ class Vignetting(SubAction):
                 f"{self.process.plot_path}/{self.process.name}-" \
                 f"radial-intensity-{idx_str}.{plots_ext}"
             self.process.plot_manager.save_plot(plot_path, fig)
-            plt.close('all')
             save_plot_name = self.process.output_path if self.name == '' else self.name
             self.process.callback(
                 constants.CALLBACK_SAVE_PLOT, self.process.id, save_plot_name,
-                f"{self.process.name}: intensity\nframe {idx_str}", plot_path)
+                f"{self.process.name}: intensity\nframe {idx_str}", plot_path, "vignette")
 
         for i, p in enumerate(self.percentiles):
             s1 = sigmoid_model(0, *params) / self.v0

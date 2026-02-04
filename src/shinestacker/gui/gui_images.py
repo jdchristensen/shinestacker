@@ -138,7 +138,7 @@ class GuiImageView(QWidget):
             border: 2px solid #0000a0;
         }
         QWidget:hover {
-            border: 2px solid #a0a0ff;
+            border: 2px solid #d8d8ff;
         }
         ''')
 
@@ -186,7 +186,7 @@ class GuiOpenApp(QWidget):
             border: 2px solid #a00000;
         }
         QWidget:hover {
-            border: 2px solid #ffa0a0;
+            border: 2px solid #ffd8d8;
         }
         ''')
 

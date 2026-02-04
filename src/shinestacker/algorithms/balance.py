@@ -55,8 +55,7 @@ class BaseHistogrammer:
         self.process.callback(
             'save_plot', self.process.id, save_plot_name,
             f"{self.process.name}: balance\nframe {idx_str}",
-            plot_path
-        )
+            plot_path, "balance")
 
     def save_summary_plot(self, fig, name='balance'):
         plots_ext = AppConfig.get('plots_format')
@@ -66,8 +65,7 @@ class BaseHistogrammer:
         save_plot_name = self.process.output_path if self.name == '' else self.name
         self.process.callback(
             'save_plot', self.process.id, save_plot_name,
-            f"{self.process.name}: {name}", plot_path
-        )
+            f"{self.process.name}: {name}", plot_path)
 
 
 class LumiHistogrammer(BaseHistogrammer):
