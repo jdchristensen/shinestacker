@@ -31,6 +31,11 @@ class ModernProjectView(ProjectView):
         self.scroll_content = None
         self.project_layout = None
         self.selected_widget = None
+        self._user_scrolling = False
+        self._scrolling_timer = QTimer()
+        self._scrolling_timer.setSingleShot(True)
+        self._scrolling_timer.timeout.connect(self._reset_user_scrolling)
+        self._scrolling_cooldown = 4000  # 4 seconds
         self.show_status_message = None
         self._worker = None
         self.progress_mapper = ProgressMapper()
@@ -56,6 +61,7 @@ class ModernProjectView(ProjectView):
         self.scroll_area = QScrollArea()
         self.scroll_area.setWidgetResizable(True)
         self.scroll_area.setFocusPolicy(Qt.NoFocus)
+        self.scroll_area.verticalScrollBar().valueChanged.connect(self._on_user_scroll)
         self.scroll_content = QWidget()
         self.scroll_content.setFocusPolicy(Qt.NoFocus)
         self.scroll_content.setContentsMargins(2, 2, 2, 2)
@@ -81,6 +87,13 @@ class ModernProjectView(ProjectView):
                                 "gui", "ico", "shinestacker.png")
         self.console_area.handle_html_message(
             f"<img width=100 src='{ico_path}'><hr><br>")
+
+    def _on_user_scroll(self, value):
+        self._user_scrolling = True
+        self._scrolling_timer.start(self._scrolling_cooldown)
+
+    def _reset_user_scrolling(self):
+        self._user_scrolling = False
 
     def _select_widget(self, state):
         if not state or not state.is_valid():
@@ -438,7 +451,7 @@ class ModernProjectView(ProjectView):
             widget.update_enabled()
 
     def _scroll_to_widget(self, widget):
-        if not widget:
+        if not widget or self._user_scrolling:
             return
         if not widget.isVisible() or widget.height() == 0:
             QTimer.singleShot(10, lambda: self._scroll_to_widget(widget))

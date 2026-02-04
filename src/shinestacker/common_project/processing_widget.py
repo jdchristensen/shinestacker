@@ -19,12 +19,19 @@ class MultiModuleStatusContainer(QWidget):
         main_layout = QVBoxLayout(self)
         main_layout.setContentsMargins(0, 0, 0, 0)
         main_layout.setSpacing(0)
+        self._programmatic_scroll = False
+        self._user_scrolling = False
+        self._scrolling_timer = QTimer()
+        self._scrolling_timer.setSingleShot(True)
+        self._scrolling_timer.timeout.connect(self._reset_user_scrolling)
+        self._scrolling_cooldown = 4000  # 4 seconds
         if self.classic_view:
             self.scroll_area = QScrollArea()
             self.scroll_area.setWidgetResizable(True)
             self.scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
             self.scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
             self.scroll_area.setFrameShape(QScrollArea.NoFrame)
+            self.scroll_area.verticalScrollBar().valueChanged.connect(self._on_user_scroll)
             self.container_widget = QWidget()
             self.layout = QVBoxLayout(self.container_widget)
             self.layout.setContentsMargins(0, 0, 0, 0)
@@ -49,17 +56,28 @@ class MultiModuleStatusContainer(QWidget):
 
     def resizeEvent(self, event):
         super().resizeEvent(event)
-        self._resize_timer.start(100)
+        self._resize_timer.start(500)
         try:
             QTimer.singleShot(
-                10,
+                500,
                 lambda: [self.content_size_changed.emit(), self._scroll_to_bottom()])
         except RuntimeError:
             pass
 
+    def _on_user_scroll(self, _value):
+        if self._programmatic_scroll:
+            self._programmatic_scroll = False
+            return
+        self._user_scrolling = True
+        self._scrolling_timer.start(self._scrolling_cooldown)
+
+    def _reset_user_scrolling(self):
+        self._user_scrolling = False
+
     def _scroll_to_bottom(self):
-        if self.classic_view:
+        if self.classic_view and not self._user_scrolling:
             scrollbar = self.scroll_area.verticalScrollBar()
+            self._programmatic_scroll = True
             scrollbar.setValue(scrollbar.maximum())
 
     def add_module(self, module_name):
