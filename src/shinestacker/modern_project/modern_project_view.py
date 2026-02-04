@@ -493,7 +493,7 @@ class ModernProjectView(ProjectView):
             for job_widget in self.job_widgets:
                 for action_widget in job_widget.child_widgets:
                     action_widget.set_horizontal_layout(not vertical)
-                    image_horizontal = vertical
+                    image_horizontal = True  # Always horizontal images
                     for subaction_widget in action_widget.child_widgets:
                         subaction_widget.set_image_orientation(image_horizontal)
                     if vertical:

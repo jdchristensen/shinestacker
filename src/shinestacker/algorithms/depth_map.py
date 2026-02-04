@@ -342,4 +342,4 @@ class DepthMapStack(BaseStackAlgo, TempDirBase):
         write_img(filepath, img)
         self.process.callback(
             constants.CALLBACK_SAVE_PLOT, self.process.id, self.process.output_path,
-            "Depth map", filepath)
+            "Depth map", filepath, "depthmap")

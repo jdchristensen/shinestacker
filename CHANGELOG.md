@@ -1,16 +1,18 @@
 # Changelog
 
-## [v1.14.0] - 2026-02-03
+## [v1.14.0] - 2026-02-04
 **Native RAW formats support, GUI improvements and internal refactoring**
 
 ### Added
 - native RAW image formats support via rawpy
 - support redo operation in project GUI
+- multiple shortcuts key supported: redo, Ctrl + Shift + Z, Ctrl + Y; shift Ctrl + vertical or horizontal arrows
 
 ### Fixed
 - various GUI issues and minor usability glitches
 
 ### Changes
+- better image arrangement in modern project view
 - internal code refactoring with significant architectural improvements in the GUI area
 
 ---

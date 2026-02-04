@@ -406,7 +406,7 @@ class BaseWidget(QFrame):
             }}
             QScrollBar::handle:{orientation} {{
                 background: #808080;
-                border-radius: 6px;
+                border-radius: 3px;
                 min-{size}: 20px;
             }}
             QScrollBar::handle:{orientation}:hover {{
@@ -441,7 +441,7 @@ class BaseWidget(QFrame):
 
 class ImgBaseWidget(BaseWidget):
     def __init__(self, data_object, min_height=40, dark_theme=False,
-                 horizontal_layout=False, color_level=0, parent=None, horizontal_images=True):
+                 horizontal_layout=False, color_level=0, parent=None, horizontal_images=False):
         self._pending_image_views_state = None
         self.image_views_by_tag = {}
         self.scroll_areas_by_tag = {}
@@ -463,6 +463,16 @@ class ImgBaseWidget(BaseWidget):
         self.image_area_widget = self.image_area_widgets_by_tag["_default"]
         if self._pending_image_views_state is not None:
             self._process_pending_image_views()
+        if self._pending_image_views_state is not None:
+            self._process_pending_image_views()
+            QTimer.singleShot(100, self._delayed_size_adjustment)
+
+    def _delayed_size_adjustment(self):
+        for tag, val in self.image_views_by_tag.items():
+            if val:
+                self._adjust_image_area(tag)
+                if tag in self.image_area_widgets_by_tag:
+                    self.image_area_widgets_by_tag[tag].adjustSize()
 
     def _get_sorted_tags(self):
         tags = list(self.scroll_areas_by_tag.keys())
@@ -489,13 +499,14 @@ class ImgBaseWidget(BaseWidget):
             scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
             scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
             layout = QHBoxLayout()
+            layout.setContentsMargins(0, 0, 0, 8)
         else:
             scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
             scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
             layout = QVBoxLayout()
+            layout.setContentsMargins(0, 0, 8, 0)
         area_widget = QWidget()
         layout.setSpacing(5)
-        layout.setContentsMargins(0, 0, 0, 0)
         layout.setAlignment(Qt.AlignTop)
         area_widget.setLayout(layout)
         scroll_area.setWidget(area_widget)
@@ -537,17 +548,18 @@ class ImgBaseWidget(BaseWidget):
         if self.horizontal_images == horizontal:
             return
         self.horizontal_images = horizontal
-        for tag in self.scroll_areas_by_tag.keys():
-            scroll_area = self.scroll_areas_by_tag[tag]
-            current_views = list(self.image_views_by_tag[tag])
+        for tag, scroll_area in self.scroll_areas_by_tag.items():
+            self._apply_scroll_area_style(scroll_area, horizontal)
+            current_views = list(scroll_area)
             self.image_views_by_tag[tag].clear()
             area_widget = QWidget()
             if horizontal:
                 layout = QHBoxLayout()
+                layout.setContentsMargins(0, 0, 0, 8)
             else:
                 layout = QVBoxLayout()
+                layout.setContentsMargins(0, 0, 8, 0)
             layout.setSpacing(5)
-            layout.setContentsMargins(0, 0, 0, 0)
             layout.setAlignment(Qt.AlignTop)
             for view in current_views:
                 self.image_views_by_tag[tag].append(view)
@@ -555,8 +567,11 @@ class ImgBaseWidget(BaseWidget):
             area_widget.setLayout(layout)
             self.image_layouts_by_tag[tag] = layout
             self.image_area_widgets_by_tag[tag] = area_widget
-            self._apply_scroll_area_style(scroll_area, self.horizontal_images)
             scroll_area.setWidget(area_widget)
+            if tag == "_default":
+                self.image_area_widget = area_widget
+                self.image_layout = layout
+                self.image_views = self.image_views_by_tag["_default"]
             if current_views:
                 scroll_area.setVisible(True)
                 self._adjust_image_area(tag)
@@ -564,8 +579,7 @@ class ImgBaseWidget(BaseWidget):
                 scroll_area.setVisible(False)
                 scroll_area.setMinimumHeight(0)
         if "_default" in self.scroll_areas_by_tag:
-            self.image_layout = self.image_layouts_by_tag["_default"]
-            self.image_area_widget = self.image_area_widgets_by_tag["_default"]
+            self.image_scroll_area = self.scroll_areas_by_tag["_default"]
 
     def clear_all(self):
         self.clear_images()
