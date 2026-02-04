@@ -11,7 +11,7 @@ from .. config.config import config
 
 class PlotManager(ABC):
     @abstractmethod
-    def save_plot(self, filename: str, fig):
+    def save_plot(self, filename, fig, tag="_default"):
         pass
 
 
@@ -19,7 +19,7 @@ class DirectPlotManager(PlotManager):
     def __init__(self):
         self.lock = threading.Lock()
 
-    def save_plot(self, filename, fig):
+    def save_plot(self, filename, fig, tag="_default"):
         logger = logging.getLogger(__name__)
         logger.debug(msg=f"Saving plot to: {filename}")
         dir_path = os.path.dirname(filename)

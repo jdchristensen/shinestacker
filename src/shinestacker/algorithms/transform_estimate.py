@@ -356,7 +356,7 @@ class TransformationExtractor:
                 plot_matches(msk, img_ref_sub, img_0_sub, match_result.kp_ref, match_result.kp_0,
                              match_result.good_matches, plot_path, plot_manager)
                 if callbacks and 'save_plot' in callbacks:
-                    callbacks['save_plot'](plot_path)
+                    callbacks['save_plot'](plot_path, tag="matches")
         if m is None or not match_result.has_sufficient_matches(min_matches):
             if phase_corr_fallback:
                 if callbacks and 'warning' in callbacks:

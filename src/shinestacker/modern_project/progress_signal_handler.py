@@ -113,8 +113,8 @@ class ProgressSignalHandler(QObject):
                     module_name, get_output_filename(filename), total_actions)
         self._call_on_widget(module_name, set_total_func)
 
-    @Slot(int, str, str, str)
-    def handle_save_plot(self, _run_id, module_name, _caption, path):
+    @Slot(int, str, str, str, str)
+    def handle_save_plot(self, _run_id, module_name, _caption, path, tag="_default"):
         state = self.progress_mapper.get_state(module_name)
         if not state:
             return
@@ -128,7 +128,7 @@ class ProgressSignalHandler(QObject):
             image_view = GuiImageView(path, widget, fixed_height=fixed_height)
         else:
             raise RuntimeError(f"Can't visualize file type {os.path.splitext(path)[1]}.")
-        widget.add_image_view(image_view)
+        widget.add_image_view(image_view, tag)
 
     @Slot(int, str, str, str)
     def handle_open_app(self, _run_id, name, app, path):

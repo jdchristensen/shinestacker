@@ -442,155 +442,226 @@ class BaseWidget(QFrame):
 class ImgBaseWidget(BaseWidget):
     def __init__(self, data_object, min_height=40, dark_theme=False,
                  horizontal_layout=False, color_level=0, parent=None, horizontal_images=True):
-        self.image_views = []
         self._pending_image_views_state = None
+        self.image_views_by_tag = {}
+        self.scroll_areas_by_tag = {}
+        self.image_layouts_by_tag = {}
+        self.image_area_widgets_by_tag = {}
         super().__init__(
             data_object, min_height, dark_theme, horizontal_layout, color_level, parent)
-        self.horizontal_images = None
-        self.image_scroll_area = QScrollArea()
-        self.image_scroll_area.setWidgetResizable(True)
-        self.image_scroll_area.setFrameShape(QFrame.NoFrame)
-        self.set_image_orientation(horizontal_images)
-        self._setup_image_area()
-        self.child_container_layout.addWidget(self.image_scroll_area)
+        self.horizontal_images = horizontal_images
+        self.scroll_areas_container = QWidget()
+        self.scroll_areas_container_layout = QVBoxLayout(self.scroll_areas_container)
+        self.scroll_areas_container_layout.setContentsMargins(0, 0, 0, 0)
+        self.scroll_areas_container_layout.setSpacing(5)
+        self.scroll_areas_container.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Maximum)
+        self.child_container_layout.addWidget(self.scroll_areas_container)
+        self._create_scroll_area_for_tag("_default")
+        self.image_views = self.image_views_by_tag["_default"]
+        self.image_scroll_area = self.scroll_areas_by_tag["_default"]
+        self.image_layout = self.image_layouts_by_tag["_default"]
+        self.image_area_widget = self.image_area_widgets_by_tag["_default"]
+        if self._pending_image_views_state is not None:
+            self._process_pending_image_views()
 
-    def _setup_image_area(self):
-        if self.horizontal_images:
-            self.image_scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
-            self.image_scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-            self.image_layout = QHBoxLayout()
+    def _get_sorted_tags(self):
+        tags = list(self.scroll_areas_by_tag.keys())
+        return sorted(tags, key=lambda x: (x != "_default", x))
+
+    def _apply_scroll_area_style(self, scroll_area, horizontal):
+        if horizontal:
+            scroll_area.setStyleSheet(self.scroll_area_css('horizontal'))
+            scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+            scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         else:
-            self.image_scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-            self.image_scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
-            self.image_layout = QVBoxLayout()
-        self.image_area_widget = QWidget()
-        self.image_layout.setSpacing(5)
-        self.image_layout.setContentsMargins(0, 0, 0, 0)
-        self.image_layout.setAlignment(Qt.AlignTop)
-        self.image_area_widget.setLayout(self.image_layout)
-        self.image_scroll_area.setWidget(self.image_area_widget)
-        self.image_scroll_area.setVisible(False)
+            scroll_area.setStyleSheet(self.scroll_area_css('vertical'))
+            scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+            scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+
+    def _create_scroll_area_for_tag(self, tag):
+        if tag in self.scroll_areas_by_tag:
+            return
+        scroll_area = QScrollArea()
+        scroll_area.setWidgetResizable(True)
+        scroll_area.setFrameShape(QFrame.NoFrame)
+        self._apply_scroll_area_style(scroll_area, self.horizontal_images)
+        if self.horizontal_images:
+            scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+            scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+            layout = QHBoxLayout()
+        else:
+            scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+            scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+            layout = QVBoxLayout()
+        area_widget = QWidget()
+        layout.setSpacing(5)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setAlignment(Qt.AlignTop)
+        area_widget.setLayout(layout)
+        scroll_area.setWidget(area_widget)
+        scroll_area.setVisible(False)
+        self.scroll_areas_by_tag[tag] = scroll_area
+        self.image_layouts_by_tag[tag] = layout
+        self.image_area_widgets_by_tag[tag] = area_widget
+        self.image_views_by_tag[tag] = []
+        self._reorder_scroll_areas()
+
+    def _reorder_scroll_areas(self):
+        for scroll_area in self.scroll_areas_by_tag.values():
+            self.scroll_areas_container_layout.removeWidget(scroll_area)
+        for tag in self._get_sorted_tags():
+            self.scroll_areas_container_layout.addWidget(self.scroll_areas_by_tag[tag])
 
     def _process_pending_image_views(self):
         if self._pending_image_views_state is not None:
-            for view_state in self._pending_image_views_state:
-                file_path = view_state.get('file_path')
-                view_type = view_state.get('type', 'GuiImageView')
-                if file_path and os.path.exists(file_path):
-                    if view_type == 'GuiPdfView':
-                        image_view = GuiPdfView(file_path, self)
-                    elif view_type == 'GuiOpenApp':
-                        image_view = GuiOpenApp(view_state.get('app', ''), file_path, self)
-                    else:
-                        image_view = GuiImageView(file_path, self)
-                    self.image_views.append(image_view)
-                    self.image_layout.addWidget(image_view)
-                    self.image_scroll_area.setVisible(True)
-                    self._adjust_image_area()
+            for tag, views_state in self._pending_image_views_state.items():
+                for view_state in views_state:
+                    file_path = view_state.get('file_path')
+                    view_type = view_state.get('type', 'GuiImageView')
+                    if file_path and os.path.exists(file_path):
+                        if view_type == 'GuiPdfView':
+                            image_view = GuiPdfView(file_path, self)
+                        elif view_type == 'GuiOpenApp':
+                            image_view = GuiOpenApp(view_state.get('app', ''), file_path, self)
+                        else:
+                            image_view = GuiImageView(file_path, self)
+                        if tag not in self.scroll_areas_by_tag:
+                            self._create_scroll_area_for_tag(tag)
+                        self.image_views_by_tag[tag].append(image_view)
+                        self.image_layouts_by_tag[tag].addWidget(image_view)
+                        self.scroll_areas_by_tag[tag].setVisible(True)
+                        self._adjust_image_area(tag)
             self._pending_image_views_state = None
 
     def set_image_orientation(self, horizontal):
         if self.horizontal_images == horizontal:
             return
         self.horizontal_images = horizontal
-        current_views = list(self.image_views)
-        self.image_views.clear()
-        self.image_area_widget = QWidget()
-        if horizontal:
-            self.image_layout = QHBoxLayout()
-        else:
-            self.image_layout = QVBoxLayout()
-        self.image_layout.setSpacing(5)
-        self.image_layout.setContentsMargins(0, 0, 0, 0)
-        self.image_layout.setAlignment(Qt.AlignTop)
-        for view in current_views:
-            self.image_views.append(view)
-            self.image_layout.addWidget(view)
-        self.image_area_widget.setLayout(self.image_layout)
-        if horizontal:
-            self.image_scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
-            self.image_scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-            self.image_scroll_area.setStyleSheet(self.scroll_area_css('horizontal'))
-        else:
-            self.image_scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-            self.image_scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
-            self.image_scroll_area.setStyleSheet(self.scroll_area_css('vertical'))
-        self.image_scroll_area.setWidget(self.image_area_widget)
-        if current_views:
-            self.image_scroll_area.setVisible(True)
-            self._adjust_image_area()
-        else:
-            self.image_scroll_area.setVisible(False)
-            self.image_scroll_area.setMinimumHeight(0)
+        for tag in self.scroll_areas_by_tag.keys():
+            scroll_area = self.scroll_areas_by_tag[tag]
+            current_views = list(self.image_views_by_tag[tag])
+            self.image_views_by_tag[tag].clear()
+            area_widget = QWidget()
+            if horizontal:
+                layout = QHBoxLayout()
+            else:
+                layout = QVBoxLayout()
+            layout.setSpacing(5)
+            layout.setContentsMargins(0, 0, 0, 0)
+            layout.setAlignment(Qt.AlignTop)
+            for view in current_views:
+                self.image_views_by_tag[tag].append(view)
+                layout.addWidget(view)
+            area_widget.setLayout(layout)
+            self.image_layouts_by_tag[tag] = layout
+            self.image_area_widgets_by_tag[tag] = area_widget
+            self._apply_scroll_area_style(scroll_area, self.horizontal_images)
+            scroll_area.setWidget(area_widget)
+            if current_views:
+                scroll_area.setVisible(True)
+                self._adjust_image_area(tag)
+            else:
+                scroll_area.setVisible(False)
+                scroll_area.setMinimumHeight(0)
+        if "_default" in self.scroll_areas_by_tag:
+            self.image_layout = self.image_layouts_by_tag["_default"]
+            self.image_area_widget = self.image_area_widgets_by_tag["_default"]
 
     def clear_all(self):
         self.clear_images()
         super().clear_all()
 
-    def clear_images(self):
-        for view in self.image_views:
-            if self.image_layout:
-                self.image_layout.removeWidget(view)
-            view.deleteLater()
-        self.image_views.clear()
-        self.image_scroll_area.setVisible(False)
-        self.image_scroll_area.setMinimumHeight(0)
+    def clear_images(self, tag=None):
+        if tag is not None:
+            if tag in self.image_views_by_tag:
+                for view in self.image_views_by_tag[tag]:
+                    if tag in self.image_layouts_by_tag:
+                        self.image_layouts_by_tag[tag].removeWidget(view)
+                    view.deleteLater()
+                self.image_views_by_tag[tag].clear()
+                self.scroll_areas_by_tag[tag].setVisible(False)
+                self.scroll_areas_by_tag[tag].setMinimumHeight(0)
+        else:
+            for tag_key in list(self.image_views_by_tag.keys()):
+                for view in self.image_views_by_tag[tag_key]:
+                    if tag_key in self.image_layouts_by_tag:
+                        self.image_layouts_by_tag[tag_key].removeWidget(view)
+                    view.deleteLater()
+                self.image_views_by_tag[tag_key].clear()
+                self.scroll_areas_by_tag[tag_key].setVisible(False)
+                self.scroll_areas_by_tag[tag_key].setMinimumHeight(0)
         self.update_metadata()
 
-    def add_image_view(self, image_view, can_update=True):
-        self.image_views.append(image_view)
-        self.image_layout.addWidget(image_view)
-        self.image_scroll_area.setVisible(True)
-        self._adjust_image_area()
-        QTimer.singleShot(0, self.image_area_widget.adjustSize)
+    def add_image_view(self, image_view, tag="_default", can_update=True):
+        if tag not in self.scroll_areas_by_tag:
+            self._create_scroll_area_for_tag(tag)
+        self.image_views_by_tag[tag].append(image_view)
+        self.image_layouts_by_tag[tag].addWidget(image_view)
+        self.scroll_areas_by_tag[tag].setVisible(True)
+        self._adjust_image_area(tag)
+        QTimer.singleShot(0, self.image_area_widgets_by_tag[tag].adjustSize)
+        if tag == "_default":
+            self.image_views = self.image_views_by_tag["_default"]
         if can_update:
             self.update_metadata()
 
-    def _adjust_image_area(self):
-        if not self.image_views:
+    def _adjust_image_area(self, tag):
+        if tag not in self.image_views_by_tag or not self.image_views_by_tag[tag]:
             return
         if self.horizontal_images:
-            self._adjust_horizontal_area()
+            self._adjust_horizontal_area(tag)
         else:
-            self._adjust_vertical_area()
+            self._adjust_vertical_area(tag)
 
-    def _adjust_horizontal_area(self):
-        max_height = max(view.sizeHint().height() for view in self.image_views)
-        total_width = 0
-        for view in self.image_views:
-            total_width += view.sizeHint().width()
-        total_width += self.image_layout.spacing() * (len(self.image_views) - 1)
-        self.image_area_widget.setFixedWidth(total_width)
-        self.image_area_widget.setFixedHeight(max_height)
-        scrollbar = self.image_scroll_area.horizontalScrollBar()
+    def _adjust_horizontal_area(self, tag):
+        views = self.image_views_by_tag[tag]
+        layout = self.image_layouts_by_tag[tag]
+        area_widget = self.image_area_widgets_by_tag[tag]
+        scroll_area = self.scroll_areas_by_tag[tag]
+        max_height = max(view.sizeHint().height() for view in views)
+        total_width = sum(view.sizeHint().width() for view in views)
+        total_width += layout.spacing() * (len(views) - 1)
+        area_widget.setFixedWidth(total_width)
+        area_widget.setFixedHeight(max_height)
+        scrollbar = scroll_area.horizontalScrollBar()
         scrollbar_height = scrollbar.sizeHint().height() if scrollbar.maximum() > 0 else 0
-        self.image_scroll_area.setMinimumHeight(max_height + scrollbar_height)
+        scroll_area.setMinimumHeight(max_height + scrollbar_height)
 
-    def _adjust_vertical_area(self):
-        total_height = sum(view.sizeHint().height() for view in self.image_views)
-        total_height += self.image_layout.spacing() * (len(self.image_views) - 1)
+    def _adjust_vertical_area(self, tag):
+        views = self.image_views_by_tag[tag]
+        layout = self.image_layouts_by_tag[tag]
+        area_widget = self.image_area_widgets_by_tag[tag]
+        scroll_area = self.scroll_areas_by_tag[tag]
+        total_height = sum(view.sizeHint().height() for view in views)
+        total_height += layout.spacing() * (len(views) - 1)
         total_height += 10
-        max_width = max(view.sizeHint().width() for view in self.image_views)
-        self.image_area_widget.setFixedHeight(total_height)
-        self.image_area_widget.setFixedWidth(max_width)
-        self.image_scroll_area.setMinimumHeight(min(total_height, 200))
+        max_width = max(view.sizeHint().width() for view in views)
+        area_widget.setFixedHeight(total_height)
+        area_widget.setFixedWidth(max_width)
+        scroll_area.setMinimumHeight(min(total_height, 200))
 
     def _capture_widget_state(self):
         state = super()._capture_widget_state()
-        image_views_state = []
-        for view in self.image_views:
-            if hasattr(view, 'file_path'):
-                view_state = {'file_path': view.file_path, 'type': type(view).__name__}
-                if hasattr(view, 'app'):
-                    view_state['app'] = view.app
-                image_views_state.append(view_state)
-        state['image_views'] = image_views_state
+        image_views_state_by_tag = {}
+        for tag, views in self.image_views_by_tag.items():
+            tag_views_state = []
+            for view in views:
+                if hasattr(view, 'file_path'):
+                    view_state = {'file_path': view.file_path, 'type': type(view).__name__}
+                    if hasattr(view, 'app'):
+                        view_state['app'] = view.app
+                    tag_views_state.append(view_state)
+            if tag_views_state:
+                image_views_state_by_tag[tag] = tag_views_state
+        state['image_views_by_tag'] = image_views_state_by_tag
         return state
 
     def _restore_widget_state(self, state):
         super()._restore_widget_state(state)
-        if 'image_views' in state:
-            self._pending_image_views_state = state['image_views']
+        if 'image_views_by_tag' in state:
+            self._pending_image_views_state = state['image_views_by_tag']
+        elif 'image_views' in state:
+            self._pending_image_views_state = {"_default": state['image_views']}
 
     def clear_metadata(self):
         self.clear_images()
@@ -599,13 +670,14 @@ class ImgBaseWidget(BaseWidget):
         widget_state = None
         if self.data_object is not None:
             widget_state = self.data_object.metadata.get('widget_state')
-        for view in self.image_views:
-            if self.image_layout:
-                self.image_layout.removeWidget(view)
-            view.deleteLater()
-        self.image_views.clear()
-        self.image_scroll_area.setVisible(False)
-        self.image_scroll_area.setMinimumHeight(0)
+        for tag in list(self.image_views_by_tag.keys()):
+            for view in self.image_views_by_tag[tag]:
+                if tag in self.image_layouts_by_tag:
+                    self.image_layouts_by_tag[tag].removeWidget(view)
+                view.deleteLater()
+            self.image_views_by_tag[tag].clear()
+            self.scroll_areas_by_tag[tag].setVisible(False)
+            self.scroll_areas_by_tag[tag].setMinimumHeight(0)
         if widget_state:
             self._restore_widget_state(widget_state)
             self._process_pending_image_views()

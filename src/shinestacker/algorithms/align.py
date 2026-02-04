@@ -199,7 +199,7 @@ class AlignFramesBase(SubAction):
                          linestyle='--', label='reference frame')
                 plt.plot([x[0], x[-1]], [0, 0], color='cornflowerblue', linestyle='--')
                 plt.plot(x, y, color='navy', label='rotation (°)')
-                y_lim = max(abs(y.min()), abs(y.max())) * 1.1
+                y_lim = max(1, max(abs(y.min()), abs(y.max())) * 1.1)
                 plt.ylim(-y_lim, y_lim)
                 plt.title(title)
                 plt.xlabel('frame')
@@ -242,7 +242,7 @@ class AlignFramesBase(SubAction):
                          linestyle='--', label='reference frame')
                 plt.plot([x[0], x[-1]], [1, 1], color='cornflowerblue', linestyle='--')
                 plt.plot(x, y, color='blue', label='scale factor')
-                d_max = max(abs(y.min() - 1), abs(y.max() - 1)) * 1.1
+                d_max = max(0.01, max(abs(y.min() - 1), abs(y.max() - 1)) * 1.1)
                 plt.ylim(1.0 - d_max, 1.0 + d_max)
                 plt.title(title)
                 plt.xlabel('frame')
@@ -443,7 +443,6 @@ class AlignFramesBase(SubAction):
                     match_result, img_ref_sub, img_0_sub, final_subsample, img_0.shape, callbacks,
                     plot_path, self.process.plot_manager)
             return m, phase_corr_called, quality, n_good_matches
-
         h0, w0 = img_0.shape[:2]
         subsample = self.alignment_config['subsample']
         if subsample == 0:
@@ -491,10 +490,10 @@ class AlignFrames(AlignFramesBase):
             'blur_message': lambda: self.print_message(f'{idx_tot_str}: blur borders'),
             'warning': lambda msg: self.print_message(color_str(
                 f'{msg}', constants.LOG_COLOR_WARNING), level=logging.WARNING),
-            'save_plot': lambda plot_path: self.process.callback(
+            'save_plot': lambda plot_path, tag="_default": self.process.callback(
                 constants.CALLBACK_SAVE_PLOT, self.process.id,
-                save_plot_name,
-                f"{self.process.name}: matches\nframe {idx_str}", plot_path),
+                save_plot_name, f"{self.process.name}: matches\nframe {idx_str}", plot_path,
+                tag),
             'save_transform_result': lambda result: self.save_transform_result(idx, result)
         }
         if self.plot_matches:

@@ -1,4 +1,4 @@
-# pylint: disable=C0114, C0115, C0116, E0611
+# pylint: disable=C0114, C0115, C0116, E0611, R0913, R0917
 from PySide6.QtCore import Signal
 from .. config.constants import constants
 from .. gui.qt_plot_manager import QtPlotManager
@@ -16,7 +16,7 @@ class RunWorker(LogWorker):
     begin_steps_signal = Signal(int, str)
     end_steps_signal = Signal(int, str)
     after_step_signal = Signal(int, str, int)
-    save_plot_signal = Signal(int, str, str, str)
+    save_plot_signal = Signal(int, str, str, str, str)
     open_app_signal = Signal(int, str, str, str)
     run_completed_signal = Signal(int, str)
     run_stopped_signal = Signal(int, str)
@@ -68,8 +68,8 @@ class RunWorker(LogWorker):
     def after_step(self, run_id, name, step):
         self.after_step_signal.emit(run_id, name, step)
 
-    def save_plot(self, run_id, module_name, caption, path):
-        self.save_plot_signal.emit(run_id, module_name, caption, path)
+    def save_plot(self, run_id, module_name, caption, path, tag="_default"):
+        self.save_plot_signal.emit(run_id, module_name, caption, path, tag)
 
     def open_app(self, run_id, name, app, path):
         self.open_app_signal.emit(run_id, name, app, path)

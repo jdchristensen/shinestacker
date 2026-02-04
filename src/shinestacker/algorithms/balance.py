@@ -45,12 +45,12 @@ class BaseHistogrammer:
         x_values = np.linspace(0, self.max_pixel_value, len(hist))
         ax.plot(x_values, hist, color=color, alpha=alpha)
 
-    def save_plot(self, fig, idx):
+    def save_plot(self, fig, idx, tag="_default"):
         idx_str = f"{idx:04d}"
         plots_ext = AppConfig.get('plots_format')
         plot_path = f"{self.process.working_path}/{self.process.plot_path}/" \
                     f"{self.process.name}-hist-{idx_str}.{plots_ext}"
-        self.process.plot_manager.save_plot(plot_path, fig)
+        self.process.plot_manager.save_plot(plot_path, fig, tag)
         save_plot_name = self.process.output_path if self.name == '' else self.name
         self.process.callback(
             'save_plot', self.process.id, save_plot_name,

@@ -25,9 +25,9 @@ class ActionWidget(ImgBaseWidget):
         self.frames_status_box.setVisible(False)
         self.frames_status_box.content_size_changed.connect(self._update_container_size)
         self.progress_layout.addWidget(self.frames_status_box)
-        self.image_scroll_area.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
+        self.scroll_areas_container.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
         self.image_scroll_area.verticalScrollBar().setEnabled(False)
-        self.progress_layout.addWidget(self.image_scroll_area)
+        self.progress_layout.addWidget(self.scroll_areas_container)
         while self.child_container_layout.count():
             self.child_container_layout.takeAt(0)
         self.main_layout.addWidget(self.progress_container)
@@ -38,7 +38,6 @@ class ActionWidget(ImgBaseWidget):
         self.progress_bar_layout.setContentsMargins(0, 0, 0, 0)
         self.progress_bar_layout.addWidget(self.progress_bar)
         self.main_layout.addWidget(self.progress_bar_container)
-        self._process_pending_image_views()
         in_path = get_action_input_path(action)[0]
         out_path = get_action_output_path(action)[0]
         path_text = f"📁 <i>{self._format_path(in_path)}</i> → " \
@@ -62,8 +61,8 @@ class ActionWidget(ImgBaseWidget):
         if scrollbar.maximum() > 0:
             scrollbar.setValue(scrollbar.maximum())
 
-    def add_image_view(self, image_view, can_update=True):
-        super().add_image_view(image_view, can_update)
+    def add_image_view(self, image_view, tag="_default", can_update=True):
+        super().add_image_view(image_view, tag, can_update)
         QTimer.singleShot(0, self._adjust_scroll_after_layout)
 
     def _update_container_size(self):

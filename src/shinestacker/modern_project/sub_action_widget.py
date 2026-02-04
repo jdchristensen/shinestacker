@@ -21,7 +21,7 @@ class SubActionWidget(ImgBaseWidget):
     def widget_type(self):
         return 'SubActionWidget'
 
-    def _adjust_vertical_area(self):
-        super()._adjust_vertical_area()
+    def _adjust_vertical_area(self, tag):
+        super()._adjust_vertical_area(tag)
         current_height = self.image_area_widget.height()
         self.image_scroll_area.setMinimumHeight(min(current_height, self.MAX_SCROLL_HEIGHT))

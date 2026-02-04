@@ -227,8 +227,8 @@ class RunWindow(QTextEditLogger):
     def handle_after_step(self, _run_id, _name, step):
         self.progress_bar.setValue(step)
 
-    @Slot(int, str, str, str)
-    def handle_save_plot(self, _run_id, _module_name, caption, path):
+    @Slot(int, str, str, str, str)
+    def handle_save_plot(self, _run_id, _module_name, caption, path, _tag="_dfault"):
         label = QLabel(caption, self)
         label.setStyleSheet("QLabel {margin-top: 5px; font-weight: bold;}")
         self.image_layout.addWidget(label)
@@ -311,6 +311,6 @@ class RunWindow(QTextEditLogger):
     def handle_set_total_actions(self, module_name, filename, status_id):
         self.frames_status_box.set_frame_total_actions(module_name, filename, status_id)
 
-    @Slot(str, object)
-    def handle_save_plot_via_manager(self, filename, fig):
-        self.plot_manager.save_plot(filename, fig)
+    @Slot(str, object, str)
+    def handle_save_plot_via_manager(self, filename, fig, tag="_default"):
+        self.plot_manager.save_plot(filename, fig, tag)
