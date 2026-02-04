@@ -273,7 +273,7 @@ def test_extract_transformation_with_plot_path():
                     match_result, img_ref_sub, img_0_sub, 1, (100, 100),
                     callbacks, "test_plot.png", plot_manager)
                 mock_plot.assert_called_once()
-                callbacks['save_plot'].assert_called_once_with("test_plot.png")
+                callbacks['save_plot'].assert_called_once_with("test_plot.png", tag="matches")
 
 
 def test_find_transform_phase_correlation_identical_images():
