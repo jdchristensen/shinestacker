@@ -5,15 +5,15 @@
 
 ### Added
 - native RAW image formats support via rawpy
-- support redo operation in project GUI
-- multiple shortcuts key supported: redo, Ctrl + Shift + Z, Ctrl + Y; shift Ctrl + vertical or horizontal arrows
+- redo operation support in project GUI
+- support for multiple shortcuts key: redo, Ctrl + Shift + Z, Ctrl + Y; shift Ctrl + vertical or horizontal arrows
 
 ### Fixed
-- various GUI issues and minor usability glitches
+- various GUI issues and usability glitches
 
 ### Changes
 - better image arrangement in modern project view
-- internal code refactoring with significant architectural improvements in the GUI area
+- internal code refactoring with significant architectural improvements in the GUI area, important for possible future developments
 
 ---
 
