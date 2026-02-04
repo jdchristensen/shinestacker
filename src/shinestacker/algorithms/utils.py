@@ -3,6 +3,7 @@ import os
 import sys
 import numpy as np
 import cv2
+import tifffile
 import rawpy
 from .. core.exceptions import ShapeError, BitDepthError, PathTooLong, InvalidWinPath
 
@@ -113,9 +114,25 @@ def read_img(file_path):
             rgb = raw.postprocess(
                 output_bps=16, output_color=rawpy.ColorSpace.sRGB, use_camera_wb=True)
             img = cv2.cvtColor(rgb, cv2.COLOR_RGB2BGR)
-    if extension_jpg(file_path):
+    elif extension_jpg(file_path):
         img = cv2.imread(file_path)
-    elif extension_tif_png(file_path):
+    elif extension_tif(file_path):
+        try:
+            img = cv2.imread(file_path, cv2.IMREAD_UNCHANGED)
+            if img is None:
+                raise RuntimeError("OpenCV imgread returned empty file")
+        except Exception:
+            img = tifffile.imread(file_path)
+            if img.ndim == 4:  # Multi-page color image
+                img = img[0]
+            elif img.ndim == 3 and img.shape[0] > 1 and img.shape[2] not in [3, 4]:
+                img = img[0]
+            if img.ndim == 3 and img.shape[2] in [3, 4]:
+                if img.shape[2] == 3:
+                    img = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
+                elif img.shape[2] == 4:
+                    img = cv2.cvtColor(img, cv2.COLOR_RGBA2BGRA)
+    elif extension_png(file_path):
         img = cv2.imread(file_path, cv2.IMREAD_UNCHANGED)
     return img
 

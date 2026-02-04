@@ -1,4 +1,5 @@
 # pylint: disable=C0114, C0115, C0116, E0611, W0718, E1101, C0103, R0914, R0915
+import traceback
 import webbrowser
 import subprocess
 import os
@@ -132,6 +133,7 @@ class GuiImageView(QWidget):
             self.image_label.setPixmap(pixmap)
             self.setFixedSize(pixmap.size())
         except Exception as e:
+            traceback.print_exc()
             raise RuntimeError(f"Can't load file: {file_path}. Error: {str(e)}") from e
         self.setStyleSheet('''
         QWidget {
@@ -199,6 +201,7 @@ class GuiOpenApp(QWidget):
                 try:
                     os.system(f"{self.app} -f {self.file_path} &")
                 except Exception as e:
+                    traceback.print_exc()
                     raise RuntimeError(
                         f"Can't open file {self.file_path} with app: {self.app}.\n{str(e)}") from e
             else:

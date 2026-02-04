@@ -329,7 +329,7 @@ class CombinedActions(ReferenceFrameTask):
         return img
 
     def saved_img_ref(self, idx):
-        input_filename = os.path.basename(self.input_filepath(idx))
+        input_filename = os.path.basename(get_output_filename(self.input_filepath(idx)))
         saved_filename = os.path.join(self.output_full_path(), input_filename)
         try:
             img = read_img(saved_filename)

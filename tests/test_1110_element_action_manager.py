@@ -39,12 +39,12 @@ class MockElement:
 class MockProject:
     def __init__(self):
         self.jobs = []
-    
+
     def clone(self):
         new_project = MockProject()
         new_project.jobs = [job.clone() for job in self.jobs]
         return new_project
-    
+
     def copy_from(self, other):
         self.jobs = [job.clone() for job in other.jobs]
 
@@ -58,13 +58,10 @@ class TestElementActionManager(unittest.TestCase):
             self.project, self.undo_manager, self.selection_state)
         self.manager.save_undo_state = Mock()
         self.manager.parent = Mock(return_value=None)
-        
-        # Mock the parent methods to return the project directly
         self.manager.project = Mock(return_value=self.project)
         self.manager.set_project = Mock()
 
     def _mock_project_element(self, job_idx, act_idx=-1, sub_idx=-1):
-        # Use the actual ProjectHandler methods that are inherited
         if job_idx < 0:
             return None
         if act_idx < 0:
@@ -145,7 +142,6 @@ class TestElementActionManager(unittest.TestCase):
         self.manager.copy_element()
         self.assertIsNotNone(self.manager.copy_buffer())
         self.assertEqual(self.manager.copy_buffer().params['name'], 'Job1')
-        
         self.project.jobs = []
         job = MockElement('Job1', constants.ACTION_JOB)
         action = MockElement('Action1', constants.ACTION_TYPES[0])
@@ -154,7 +150,6 @@ class TestElementActionManager(unittest.TestCase):
         self.selection_state.set_action(0, 0)
         self.manager.copy_element()
         self.assertEqual(self.manager.copy_buffer().params['name'], 'Action1')
-        
         self.project.jobs = []
         job = MockElement('Job1', constants.ACTION_JOB)
         action = MockElement('Action1', constants.ACTION_COMBO)

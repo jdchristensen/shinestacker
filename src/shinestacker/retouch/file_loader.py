@@ -92,7 +92,8 @@ class FileLoader(QThread):
             except ValueError as val_err:
                 if str(val_err) == "TIFF file contains no ImageSourceData tag":
                     try:
-                        stack = np.array([cv2.cvtColor(read_img(path), cv2.COLOR_BGR2RGB)])
+                        img = read_img(path)
+                        stack = np.array([cv2.cvtColor(img, cv2.COLOR_BGR2RGB)])
                         return stack, [path.split('/')[-1].split('.')[0]]
                     except Exception:
                         traceback.print_exc()

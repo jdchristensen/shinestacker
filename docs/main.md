@@ -103,6 +103,7 @@ pip install ipywidgets
 ## Known Issues
 
 * EXIF data not supported for 16-bit PNG files and 16-bit TIFF.
+* EXIF data from RAW image may be incomplete, depending on the camera manifacturer
 * Not all EXIF exposure data in TIFF files may be correctly visible in Adobe PhotoShop. Export as JPEG for full Photoshop EXIF compatibility, if needed. Note that Shine Stacker allows to read a TIFF file, import EXIF from a JPEG, and save in JPEG format including the imported EXIF. This allows to preserve EXIF data in the final JPEG file.
 * Windows with ARM64 architecture is not supported in a straightforward way due to missing builds of some of the used libraries
 * GUI tests are limited. Please, report any bugs as [GitHub issuse](https://github.com/lucalista/shinestacker/issues/).
