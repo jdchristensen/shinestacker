@@ -5,7 +5,7 @@ import numpy as np
 import cv2
 from psdtags import PsdChannelId
 from PySide6.QtCore import QThread, Signal
-from .. algorithms.utils import read_img, extension_tif, extension_jpg, extension_png
+from .. algorithms.utils import read_img, extension_tif, extension_jpg, extension_png, extension_raw
 from .. algorithms.multilayer import read_multilayer_tiff
 
 
@@ -42,7 +42,7 @@ class FileLoader(QThread):
                 current_labels = [f"Layer {i + 1}" for i in range(len(current_stack))]
             self.finished.emit(current_stack, current_labels, master_layer)
         except Exception as e:
-            # traceback.print_exc()
+            traceback.print_exc()
             self.error.emit(f"Error loading file:\n{str(e)}")
 
     def load_stack(self, path):
@@ -50,7 +50,7 @@ class FileLoader(QThread):
             raise RuntimeError(f"Path {path} does not exist.")
         if not os.path.isfile(path):
             raise RuntimeError(f"Path {path} is not a file.")
-        if extension_jpg(path) or extension_png(path):
+        if extension_jpg(path) or extension_png(path) or extension_raw(path):
             try:
                 stack = np.array([cv2.cvtColor(read_img(path), cv2.COLOR_BGR2RGB)])
                 return stack, [os.path.splitext(os.path.basename(path))[0]]

@@ -6,7 +6,7 @@ import logging
 import traceback
 import cv2
 import numpy as np
-from PIL import Image
+from PIL import Image, UnidentifiedImageError
 from PIL.TiffImagePlugin import IFDRational
 from PIL.PngImagePlugin import PngInfo
 from PIL.ExifTags import TAGS
@@ -285,7 +285,12 @@ def extract_enclosed_data_for_jpg(data, head, foot):
 def get_exif(exif_filename, enhanced_png_parsing=True):
     if not os.path.isfile(exif_filename):
         raise RuntimeError(f"File does not exist: {exif_filename}")
-    image = Image.open(exif_filename)
+    try:
+        image = Image.open(exif_filename)
+    except UnidentifiedImageError as e:
+        traceback.print_stack()
+        raise RuntimeError(
+            f"PIL.Image.open UnidentifiedImageError exception: {str(e)}") from e
     if extension_tif(exif_filename):
         return get_exif_from_tiff(image, exif_filename)
     if extension_jpg(exif_filename):

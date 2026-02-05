@@ -178,7 +178,15 @@ class IOGuiHandler(QObject, LayerCollectionHandler):
         self.loader_thread.error.connect(self.on_file_error)
         self.loader_thread.start()
         self.exif_path = self.current_file_path_master
-        self.exif_data = get_exif(self.exif_path)
+        try:
+            self.exif_data = get_exif(self.exif_path)
+        except Exception as e:
+            traceback.print_stack()
+            traceback.print_exc()
+            QMessageBox.critical(
+                self.parent(), "Warning", "Can't read EXIF data from selected file:\n"
+                f"{str(e)}.\nEXIF data ignored.")
+            self.exif_data = None
 
     def import_frames(self):
         file_paths, _ = QFileDialog.getOpenFileNames(

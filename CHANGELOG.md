@@ -1,19 +1,29 @@
 # Changelog
 
+## [v1.14.x] - 2026-02-05
+
+### Fixed
+- fixes related to RAW formats support
+
+### Changes
+- trap UnidentifiedImageError from PIL.Image.open when loading EXIF data
+
+---
+
 ## [v1.14.0] - 2026-02-04
-**Native RAW formats support, GUI improvements and internal refactoring**
+**Native RAW formats support, GUI improvements, and internal refactoring**
 
 ### Added
-- native RAW image formats support via rawpy
+- native RAW image formats support via rawpy (#12)
 - redo operation support in project GUI
-- support for multiple shortcuts key: redo, Ctrl + Shift + Z, Ctrl + Y; shift Ctrl + vertical or horizontal arrows
+- support for multiple shortcuts key: redo, Ctrl + Shift + Z, Ctrl + Y; shift Ctrl + vertical or horizontal arrows for element shift
 
 ### Fixed
 - various GUI issues and usability glitches
 
 ### Changes
 - better image arrangement in modern project view
-- internal code refactoring with significant architectural improvements in the GUI area, important for possible future developments
+- internal code refactoring with significant architectural improvements in the GUI area, enabling future developments
 
 ---
 
