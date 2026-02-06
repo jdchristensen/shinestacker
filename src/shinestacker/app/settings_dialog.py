@@ -1,4 +1,5 @@
 # pylint: disable=C0114, C0115, C0116, E0611, R0913, R0917, E1121
+import os
 from abc import ABC, abstractmethod
 from PySide6.QtCore import Signal
 from PySide6.QtWidgets import (
@@ -205,7 +206,7 @@ class FolderParameter(BaseParameter):
         folder = QFileDialog.getExistingDirectory(
             self.widget,
             f"Select {self.label}",
-            self.line_edit.text() or ""
+            self.line_edit.text() or os.path.expanduser("~")
         )
         if folder:
             self.line_edit.setText(folder)
