@@ -267,6 +267,11 @@ class SettingsDialog(ConfigDialog, AlignFramesConfigBase):
                         ]
                     ),
                     FolderParameter(
+                        'input_folder_path', 'Input folder path:',
+                        DEFAULTS['input_folder_path'],
+                        'Path of the folder that is opened by default '
+                        'when a new project is created.'),
+                    FolderParameter(
                         'temp_folder_path', 'Scratch disk folder:',
                         DEFAULTS['temp_folder_path'],
                         'Temporary folder for processing files.\n'
