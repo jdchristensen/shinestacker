@@ -1,4 +1,5 @@
-# pylint: disable=C0114, C0115, C0116, E0611, R0902, R0914, R0915, R0904, W0108, R0911, R0903
+# pylint: disable=C0114, C0115, C0116, E0611, R0902, R0914, R0915, R0904, W0108, R0911, R0903, W0718
+import traceback
 from functools import partial
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QShortcut, QKeySequence, QAction, QActionGroup, QGuiApplication
@@ -827,15 +828,24 @@ class ImageEditorUI(QMainWindow, LayerCollectionHandler):
     def select_exif_path(self):
         path, _ = QFileDialog.getOpenFileName(None, "Select file with exif data")
         if path:
-            temp_exif_data = get_exif(path)
-            self.exif_dialog = ExifData(temp_exif_data, "Import Selected EXIF Data",
-                                        self.parent(), show_buttons=True)
-            result = self.exif_dialog.exec()
-            if result == QDialog.Accepted:
-                self.io_gui_handler.set_exif_data(temp_exif_data, path)
-                self.show_status_message(f"EXIF data loaded from {path}.")
-            else:
-                self.show_status_message("EXIF data loading cancelled.")
+            try:
+                temp_exif_data = get_exif(path)
+                self.exif_dialog = ExifData(temp_exif_data, "Import Selected EXIF Data",
+                                            self.parent(), show_buttons=True)
+                result = self.exif_dialog.exec()
+                if result == QDialog.Accepted:
+                    self.io_gui_handler.set_exif_data(temp_exif_data, path)
+                    self.show_status_message(f"EXIF data loaded from {path}.")
+                else:
+                    self.show_status_message("EXIF data loading cancelled.")
+                self.io_gui_handler.exif_err_msg = ''
+            except Exception as e:
+                traceback.print_stack()
+                traceback.print_exc()
+                self.io_gui_handler.exif_err_msg = "Can't read EXIF data from selected file " \
+                    "due to the following error:\n\n" \
+                    f"{str(e)}.\n\nEXIF data not loaded."
+                QMessageBox.warning(self.parent(), "Warning", self.io_gui_handler.exif_err_msg)
 
     def show_exif_data(self):
         self.exif_dialog = ExifData(self.io_gui_handler.exif_data, "EXIF Data",

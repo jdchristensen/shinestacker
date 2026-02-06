@@ -45,6 +45,7 @@ class IOGuiHandler(QObject, LayerCollectionHandler):
         self.progress_bar = None
         self.exif_data = None
         self.exif_path = ''
+        self.exif_err_msg = ''
         self.save_master_only = None
         self.selected_format = None
         self.selected_bit_depth = None
@@ -81,6 +82,9 @@ class IOGuiHandler(QObject, LayerCollectionHandler):
         self.undo_manager.reset()
         self.finish_loading_setup(f"Loaded file: {os.path.basename(self.current_file_path())}.")
         self.image_viewer.reset_zoom()
+        if self.exif_err_msg != '':
+            QMessageBox.warning(self.parent(), "Save Error", self.exif_err_msg)
+            self.exif_err_msg = ''
 
     def on_file_error(self, error_msg):
         QApplication.restoreOverrideCursor()
@@ -180,12 +184,13 @@ class IOGuiHandler(QObject, LayerCollectionHandler):
         self.exif_path = self.current_file_path_master
         try:
             self.exif_data = get_exif(self.exif_path)
+            self.exif_err_msg = ''
         except Exception as e:
             traceback.print_stack()
             traceback.print_exc()
-            QMessageBox.critical(
-                self.parent(), "Warning", "Can't read EXIF data from selected file:\n"
-                f"{str(e)}.\nEXIF data ignored.")
+            self.exif_err_msg = "Can't read EXIF data from selected file " \
+                "due to the following error:\n\n" \
+                f"{str(e)}.\n\nEXIF data not loaded."
             self.exif_data = None
 
     def import_frames(self):
