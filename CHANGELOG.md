@@ -1,6 +1,9 @@
 # Changelog
 
-## [v1.14.x] - 2026-02-05
+## [v1.14.x] - 2026-02-06
+
+### Added
+- input folder path in the default settings
 
 ### Fixed
 - fixes related to RAW formats support
