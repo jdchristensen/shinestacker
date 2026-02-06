@@ -7,6 +7,7 @@
 
 ### Fixed
 - fixes related to RAW formats support
+- opening multiple files via -f option, filenames separated by a ";"
 
 ### Changes
 - trap UnidentifiedImageError from PIL.Image.open when loading EXIF data
