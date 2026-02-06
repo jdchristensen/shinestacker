@@ -7,6 +7,13 @@ from .. config.app_config import AppConfig
 from .. algorithms.utils import EXTENSIONS_GUI_STR_IN
 
 
+def get_input_folder_path():
+    input_folder_path = AppConfig.get('input_folder_path')
+    if input_folder_path:
+        return input_folder_path
+    return os.path.expanduser("~")
+
+
 class FolderFileSelectionWidget(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -70,22 +77,19 @@ class FolderFileSelectionWidget(QWidget):
         current_path = self.path_edit.text()
         if current_path != '' and os.path.isdir(current_path):
             return current_path
-        input_folder_path = AppConfig.get('input_folder_path')
-        if input_folder_path:
-            return input_folder_path
-        return os.path.expanduser("~")
+        return get_input_folder_path()
 
     def browse_folder(self):
-        start_dir = self._get_input_folder_path()
-        path = QFileDialog.getExistingDirectory(self, "Select Input Folder", start_dir)
+        input_folder_path = self._get_input_folder_path()
+        path = QFileDialog.getExistingDirectory(self, "Select Input Folder", input_folder_path)
         if path:
             self.selected_files = []
             self.path_edit.setText(path)
 
     def browse_files(self):
-        start_dir = self._get_input_folder_path()
+        input_folder_path = self._get_input_folder_path()
         files, _ = QFileDialog.getOpenFileNames(
-            self, "Select Input Files", start_dir,
+            self, "Select Input Files", input_folder_path,
             f"Image files ({EXTENSIONS_GUI_STR_IN})"
         )
         if files:

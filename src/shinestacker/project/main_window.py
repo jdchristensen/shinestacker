@@ -13,6 +13,7 @@ from ..config.constants import constants
 from ..config.app_config import AppConfig
 from ..core.exceptions import InvalidProjectError
 from ..core.core_utils import get_app_base_path
+from ..gui.folder_file_selection import get_input_folder_path
 from ..gui.project_model import Project
 from ..gui.sys_mon import StatusBarSystemMonitor
 from ..gui.action_config_dialog import ActionConfigDialog
@@ -265,8 +266,10 @@ class MainWindow(ProjectHandler, QMainWindow):
         if not self.check_unsaved_changes():
             return False, '', ''
         if file_path is False:
+            input_folder_path = get_input_folder_path()
             file_path, _ = QFileDialog.getOpenFileName(
-                self, "Open Project", "", "Project Files (*.fsp);;All Files (*)")
+                self, "Open Project", input_folder_path,
+                "Project Files (*.fsp);;All Files (*)")
         if file_path:
             try:
                 self.open_project_core(file_path)
@@ -375,8 +378,10 @@ class MainWindow(ProjectHandler, QMainWindow):
             self.save_project_as()
 
     def save_project_as(self):
+        input_folder_path = get_input_folder_path()
         file_path, _ = QFileDialog.getSaveFileName(
-            self, "Save Project As", "", "Project Files (*.fsp);;All Files (*)")
+            self, "Save Project As", input_folder_path,
+            "Project Files (*.fsp);;All Files (*)")
         if file_path:
             if not file_path.endswith('.fsp'):
                 file_path += '.fsp'
