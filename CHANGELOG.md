@@ -1,9 +1,9 @@
 # Changelog
 
-## [v1.14.x] - 2026-02-06
+## [v1.14.x] - 2026-02-07
 
 ### Added
-- input folder path in the default settings
+- input folder path in the default settings (#15)
 
 ### Fixed
 - fixes related to RAW formats support
@@ -11,6 +11,7 @@
 
 ### Changes
 - trap UnidentifiedImageError from PIL.Image.open when loading EXIF data
+- open and save file dialog remember the last path visited during the current session
 
 ---
 
