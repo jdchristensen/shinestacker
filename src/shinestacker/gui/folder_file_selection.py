@@ -9,9 +9,38 @@ from .. algorithms.utils import EXTENSIONS_GUI_STR_IN
 
 def get_input_folder_path():
     input_folder_path = AppConfig.get('input_folder_path')
-    if input_folder_path:
-        return input_folder_path
-    return os.path.expanduser("~")
+    return input_folder_path if input_folder_path else os.path.expanduser("~")
+
+
+class SessionFileDialog:
+    def __init__(self, parent=None):
+        self.parent = parent
+        self._last_path = get_input_folder_path()
+
+    def update_last_path(self, path):
+        if path:
+            self._last_path = path
+
+    def open_file(self, caption="", file_filter=""):
+        directory = get_input_folder_path()
+        file_name, selected_filter = QFileDialog.getOpenFileName(
+            self.parent, caption, directory, file_filter)
+        self.update_last_path(os.path.dirname(file_name))
+        return file_name, selected_filter
+
+    def open_files(self, caption="", file_filter=""):
+        directory = get_input_folder_path()
+        file_paths, selected_filter = QFileDialog.getOpenFileNames(
+            self.parent, caption, directory, file_filter)
+        self.update_last_path(os.path.dirname(file_paths[0]))
+        return file_paths, selected_filter
+
+    def save_file(self, caption="", file_filter="", default_path=""):
+        directory = default_path if default_path else get_input_folder_path()
+        file_name, selected_filter = QFileDialog.getSaveFileName(
+            self.parent, caption, directory, file_filter)
+        self.update_last_path(os.path.dirname(file_name))
+        return file_name, selected_filter
 
 
 class FolderFileSelectionWidget(QWidget):

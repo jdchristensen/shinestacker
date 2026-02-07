@@ -3,14 +3,14 @@ import os
 import traceback
 import numpy as np
 import cv2
-from PySide6.QtWidgets import (QFileDialog, QMessageBox, QVBoxLayout, QLabel, QDialog,
-                               QRadioButton, QApplication, QProgressBar, QPushButton,
-                               QButtonGroup, QHBoxLayout)
+from PySide6.QtWidgets import (
+    QMessageBox, QVBoxLayout, QLabel, QDialog, QRadioButton, QApplication, QProgressBar,
+    QPushButton, QButtonGroup, QHBoxLayout)
 from PySide6.QtGui import QGuiApplication, QCursor
 from PySide6.QtCore import Qt, QObject, QTimer, Signal
 from .. algorithms.utils import EXTENSIONS_GUI_STR_IN, extension_tif, write_img
 from .. algorithms.exif import get_exif, write_image_with_exif_data
-from ..gui.folder_file_selection import get_input_folder_path
+from ..gui.folder_file_selection import SessionFileDialog
 from .file_loader import FileLoader
 from .io_threads import FileMultilayerSaver, FrameImporter
 from .layer_collection import LayerCollectionHandler
@@ -50,6 +50,7 @@ class IOGuiHandler(QObject, LayerCollectionHandler):
         self.save_master_only = None
         self.selected_format = None
         self.selected_bit_depth = None
+        self.file_dialog = SessionFileDialog(self.parent())
 
     def reset_save_config(self):
         self.save_master_only = None
@@ -152,10 +153,8 @@ class IOGuiHandler(QObject, LayerCollectionHandler):
     def open_file(self, file_paths=None):
         self.cleanup_old_threads()
         if file_paths is None:
-            input_folder_path = get_input_folder_path()
-            file_paths, _ = QFileDialog.getOpenFileNames(
-                self.parent(), "Open Image", input_folder_path,
-                F"Images ({EXTENSIONS_GUI_STR_IN});;All Files (*)")
+            file_paths, _ = self.file_dialog.open_files(
+                "Open Project", f"Images ({EXTENSIONS_GUI_STR_IN});;All Files (*)")
         if not file_paths:
             return
         if self.loader_thread and self.loader_thread.isRunning():
@@ -196,9 +195,8 @@ class IOGuiHandler(QObject, LayerCollectionHandler):
             self.exif_data = None
 
     def import_frames(self):
-        input_folder_path = get_input_folder_path()
-        file_paths, _ = QFileDialog.getOpenFileNames(
-            self.parent(), "Select frames", input_folder_path,
+        file_paths, _ = self.file_dialog.open_files(
+            "Select frames",
             f"Images Images ({EXTENSIONS_GUI_STR_IN});;All Files (*)")
         if file_paths:
             self.import_frames_from_files(file_paths)
@@ -371,10 +369,19 @@ class IOGuiHandler(QObject, LayerCollectionHandler):
             "tiff": "TIFF Files (*.tif *.tiff);;All Files (*)",
             "jpeg": "JPEG Files (*.jpg *.jpeg);;All Files (*)"
         }
-        input_folder_path = get_input_folder_path()
-        path, _selected_filter = QFileDialog.getSaveFileName(
-            self.parent(), "Save Master Image",
-            input_folder_path, filters[self.selected_format])
+        extensions = {
+            "png": [".png"],
+            "tiff": [".tif", ".tiff"],
+            "jpeg": [".jpg", ".jpeg"]
+        }
+        root, ext = os.path.splitext(self.current_file_path_master)
+        if ext.lower() in extensions[self.selected_format]:
+            current_file_path = self.current_file_path_master
+        else:
+            current_file_path = root + "." + self.selected_format
+        path, _selected_filter = self.file_dialog.save_file(
+            "Save Master Image", filters[self.selected_format],
+            current_file_path)
         if not path:
             return
         self.save_master_to_path(path)
@@ -423,10 +430,14 @@ class IOGuiHandler(QObject, LayerCollectionHandler):
     def save_multilayer_as(self):
         if self.layer_stack() is None:
             return
-        input_folder_path = get_input_folder_path()
-        path, _ = QFileDialog.getSaveFileName(
-            self.parent(), "Save Image", input_folder_path,
-            "TIFF Files (*.tif *.tiff);;All Files (*)")
+        root, ext = os.path.splitext(self.current_file_path_multi)
+        if ext.lower() in ['.tif', '.tiff']:
+            current_file_path = self.current_file_path_multi
+        else:
+            current_file_path = root + ".tif"
+        path, _ = self.file_dialog.save_file(
+            "Save Image", "TIFF Files (*.tif *.tiff);;All Files (*)",
+            current_file_path)
         if path:
             if not extension_tif(path):
                 path += '.tif'
