@@ -309,8 +309,8 @@ class ClassicProjectView(ProjectView, ListContainer):
     def current_job_index(self):
         return ListContainer.current_job_index(self)
 
-    def update_added_element(self, new_selection):
-        self.refresh_ui(new_selection)
+    def update_added_element(self):
+        self.refresh_ui(self.selection_state)
 
     def update_widget(self, selection):
         self.refresh_ui(selection)

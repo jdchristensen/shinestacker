@@ -321,7 +321,7 @@ class ElementActionManager(ProjectHandler, QObject):
         job_action = ActionConfig("Job")
         self.action_dialog = self.action_config_dialog(job_action)
         if self.action_dialog.exec() != QDialog.Accepted:
-            return False, SelectionState()
+            return False
         new_job_index = 0 if self.num_project_jobs() == 0 \
             else self.selection_state.job_index + 1
         old_position = self.selection_state.to_tuple()
@@ -329,29 +329,29 @@ class ElementActionManager(ProjectHandler, QObject):
         self.save_undo_state("Add Job", "add", old_position, new_position)
         self.project_jobs().insert(new_job_index, job_action)
         self.selection_state.from_tuple(new_position)
-        return True, SelectionState(new_job_index)
+        return True
 
     def add_action(self, type_name):
         job_index = self.selection_state.job_index
         if job_index < 0:
-            return False, None
+            return False
         is_valid, error_title, error_msg = self.validate_add_action(job_index)
         if not is_valid:
             self.show_warning(error_title, error_msg)
-            return False, None
+            return False
         job = self.project_job(job_index)
         action = ActionConfig(type_name)
         action.parent = job
         self.action_dialog = self.action_config_dialog(action)
         if self.action_dialog.exec() != QDialog.Accepted:
-            return False, None
+            return False
         new_selection = self.new_state_after_insert(self.selection_state)
         old_position = self.selection_state.to_tuple()
         new_position = new_selection.to_tuple()
         self.save_undo_state("Add Action", "add", old_position, new_position)
         job.sub_actions.insert(new_selection.action_index, action)
         self.selection_state.from_tuple(new_position)
-        return True, new_selection
+        return True
 
     def validate_add_action(self, job_index):
         if job_index < 0:
@@ -364,17 +364,17 @@ class ElementActionManager(ProjectHandler, QObject):
         job_index = self.selection_state.job_index
         action_index = self.selection_state.action_index
         if job_index < 0 or action_index < 0:
-            return False, None
+            return False
         is_valid, error_title, error_msg = self.validate_add_subaction(job_index, action_index)
         if not is_valid:
             self.show_warning(error_title, error_msg)
-            return False, None
+            return False
         job = self.project_job(job_index)
         action = job.sub_actions[action_index]
         sub_action = ActionConfig(type_name)
         self.action_dialog = self.action_config_dialog(sub_action)
         if self.action_dialog.exec() != QDialog.Accepted:
-            return False, None
+            return False
         new_selection = self.new_state_after_insert(self.selection_state)
         old_position = self.selection_state.to_tuple()
         new_position = new_selection.to_tuple()
@@ -382,7 +382,7 @@ class ElementActionManager(ProjectHandler, QObject):
             "Add Sub-action", "add", old_position, new_position)
         action.sub_actions.insert(new_selection.subaction_index, sub_action)
         self.selection_state.from_tuple(new_position)
-        return True, new_selection
+        return True
 
     def validate_add_subaction(self, job_index, action_index):
         if job_index < 0 or action_index < 0:

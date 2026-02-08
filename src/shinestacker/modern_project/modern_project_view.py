@@ -444,12 +444,12 @@ class ModernProjectView(ProjectView):
     def current_job_index(self):
         return self.selection_state.job_index
 
-    def update_added_element(self, new_selection):
-        element = self.project_element(*new_selection.to_tuple())
+    def update_added_element(self):
+        element = self.project_element(*self.selection_state.to_tuple())
         if element is None:
             return False
         try:
-            self._insert_widget(new_selection, element)
+            self._insert_widget(self.selection_state, element)
             self._select_widget(self.selection_state)
             return True
         except Exception:

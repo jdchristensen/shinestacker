@@ -436,26 +436,26 @@ class MainWindow(ProjectHandler, QMainWindow):
     def add_job(self):
         if not self.current_view.enforce_stop_run():
             return
-        success, new_selection = self.element_action.add_job()
+        success = self.element_action.add_job()
         if success:
             for view in self.views.values():
-                view.update_added_element(new_selection.to_tuple())
+                view.update_added_element()
 
     def add_action(self, type_name):
         if not self.current_view.enforce_stop_run():
             return
-        success, new_selection = self.element_action.add_action(type_name)
+        success = self.element_action.add_action(type_name)
         if success:
             for view in self.views.values():
-                view.update_added_element(new_selection.to_tuple())
+                view.update_added_element()
 
     def add_subaction(self, type_name):
         if not self.current_view.enforce_stop_run():
             return
-        success, new_selection = self.element_action.add_subaction(type_name)
+        success = self.element_action.add_subaction(type_name)
         if success:
             for view in self.views.values():
-                view.update_added_element(new_selection.to_tuple())
+                view.update_added_element()
 
     def delete_element(self):
         if not self.current_view.enforce_stop_run():
