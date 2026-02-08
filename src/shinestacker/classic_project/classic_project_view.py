@@ -289,10 +289,7 @@ class ClassicProjectView(ProjectView, ListContainer):
         self.refresh_ui(new_selection)
         return '', None
 
-    def paste_element(self, _copy_buffer, old_selection, new_selection):
-        self.refresh_ui(new_selection)
-
-    def clone_element(self, old_selection, new_selection):
+    def insert_element(self, old_selection, new_selection):
         self.refresh_ui(new_selection)
 
     def set_enabled_all(self):

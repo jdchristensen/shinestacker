@@ -306,43 +306,17 @@ class ModernProjectView(ProjectView):
         else:
             self._reset_selection()
 
-    def paste_element(self, copy_buffer, old_selection, new_selection):
-        try:
-            job_idx = old_selection.job_index
-            if not 0 <= job_idx < self.num_project_jobs():
-                return
-            if not copy_buffer:
-                return
-            element = copy_buffer.clone()
-            new_widget = self._insert_widget(new_selection, element)
-            if new_widget:
-                element = self.project_element(*new_selection.to_tuple())
-                new_widget.data_object = element
-                if self.selected_widget:
-                    try:
-                        self._clear_hover_on_widget(self.selected_widget)
-                        self.selected_widget.set_selected(False)
-                    except RuntimeError:
-                        self.selected_widget = None
-                new_widget.set_selected(True)
-                self.selected_widget = new_widget
-                self._ensure_selected_visible()
-                self.update_delete_action_state_requested.emit()
-        except Exception:
-            self.refresh_ui()
-
-    def clone_element(self, old_selection, new_selection):
+    def insert_element(self, old_selection, new_selection):
         if not old_selection or not old_selection.is_valid():
             return
         try:
             element = self.project_element(*old_selection.to_tuple())
-            if element is None:
-                return
-            new_widget = self._insert_widget(
-                new_selection, element.clone(name_postfix=constants.CLONE_POSTFIX))
+            new_widget = self._insert_widget(new_selection, element)
             if new_widget:
-                element = self.project_element(*new_selection.to_tuple())
-                new_widget.data_object = element
+                new_element = self.project_element(*new_selection.to_tuple())
+                for child_id in element.children:
+                    if child_id in self.elements:
+                        self._create_element_copy(self.elements[child_id], new_element.id)
                 if self.selected_widget:
                     self._clear_hover_on_widget(self.selected_widget)
                     self.selected_widget.set_selected(False)
@@ -352,6 +326,17 @@ class ModernProjectView(ProjectView):
                 self.update_delete_action_state_requested.emit()
         except Exception:
             self.refresh_ui()
+
+    def _create_element_copy(self, element, new_parent_id):
+        new_element = element.copy()
+        new_element.id = self.id_generator.generate()
+        new_element.parent_id = new_parent_id
+        self.elements[new_element.id] = new_element
+        self._add_to_parent(new_element)
+        for child_id in element.children:
+            if child_id in self.elements:
+                self._create_element_copy(self.elements[child_id], new_element.id)
+        return new_element
 
     def set_enabled_all(self):
         for job_widget in self.job_widgets:

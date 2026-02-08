@@ -475,9 +475,6 @@ class MainWindow(ProjectHandler, QMainWindow):
         if deleted_element and old_selection and old_selection.is_valid():
             for view in self.views.values():
                 view.delete_element(old_selection, new_selection)
-            #    k, v = view.delete_element(old_selection, new_selection)
-            #     if v is not None:
-            #        self._undo_manager.add_extra_data_to_last_entry(k, v)
         if self.num_project_jobs() > 0:
             self.menu_manager.delete_element_action.setEnabled(True)
 
@@ -492,7 +489,7 @@ class MainWindow(ProjectHandler, QMainWindow):
         new_selection = self.selection_state.copy()
         if success:
             for view in self.views.values():
-                view.paste_element(self.element_action.copy_buffer(), old_selection, new_selection)
+                view.insert_element(old_selection, new_selection)
 
     def clone_element(self):
         if not self.current_view.enforce_stop_run():
@@ -501,7 +498,7 @@ class MainWindow(ProjectHandler, QMainWindow):
         success, new_selection = self.element_action.clone_element()
         if success:
             for view in self.views.values():
-                view.clone_element(old_selection, new_selection)
+                view.insert_element(old_selection, new_selection)
 
     def shift_element(self, delta, direction):
         if not self.current_view.enforce_stop_run():
