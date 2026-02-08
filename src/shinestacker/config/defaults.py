@@ -98,17 +98,17 @@ DEFAULTS = {
     'depth_map_params': {
         'mode': 'auto',
         'float_type': 'float-32',
-        'map_type': 'average',
+        'map_type': 'max',
         'energy': 'laplacian',
         'kernel_size': 5,
         'blur_size': 3,
         'weight_power': 2.0,
-        'pyramid_smooth_size': 7,
         'pyramid_levels': 5,
-        'energy_smooth_size': 7,
+        'energy_smooth_size': 1,
         'energy_sigma_color': 0.8,
-        'energy_sigma_space': 8,
-        'temperature': 0.15,
+        'energy_sigma_space': 2,
+        'pyramid_smooth_size': 1,
+        'temperature': 0.01,
         'plot_depth_map': False
     },
     'pyramid_params': {

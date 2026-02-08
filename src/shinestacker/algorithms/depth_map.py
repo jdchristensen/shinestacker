@@ -26,7 +26,13 @@ class DepthMapStack(BaseStackAlgo, TempDirBase):
         self.pyramid_levels = kwargs.get('pyramid_levels', default_params['pyramid_levels'])
         self.energy = kwargs.get('energy', default_params['energy'])
         self.kernel_size = kwargs.get('kernel_size', default_params['kernel_size'])
+        if self.kernel_size <= 0 or self.kernel_size % 2 == 0:
+            raise InvalidOptionError(
+                'blur_size', self.kernel_size, "kernel_size must be a positive odd integer.")
         self.blur_size = kwargs.get('blur_size', default_params['blur_size'])
+        if self.blur_size <= 0 or self.blur_size % 2 == 0:
+            raise InvalidOptionError(
+                'blur_size', self.blur_size, "blur_size must be a positive odd integer.")
         self.energy_sigma_color = kwargs.get(
             'energy_sigma_color', default_params['energy_sigma_color'])
         self.energy_sigma_space = kwargs.get(
@@ -74,15 +80,18 @@ class DepthMapStack(BaseStackAlgo, TempDirBase):
 
     def get_focus_map(self, energies):
         if self.map_type == constants.DM_MAP_AVERAGE:
+            self.print_message(": compute weight")
             sum_energies = np.sum(energies, axis=0)
             sum_energies = np.where(sum_energies == 0, np.finfo(energies.dtype).eps, sum_energies)
             weights = np.divide(energies, sum_energies)
         elif self.map_type == constants.DM_MAP_MAX:
+            self.print_message(": apply temperature")
             max_energy = np.max(energies, axis=0)
             temperature_safe = max(self.temperature, np.finfo(energies.dtype).eps)
             relative = np.exp((energies - max_energy) / temperature_safe)
             sum_relative = np.sum(relative, axis=0)
             sum_relative = np.where(sum_relative == 0, np.finfo(energies.dtype).eps, sum_relative)
+            self.print_message(": compute weight")
             weights = relative / sum_relative
         else:
             raise InvalidOptionError("map_type", self.map_type, details=f" valid values are "

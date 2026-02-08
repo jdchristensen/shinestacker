@@ -417,7 +417,7 @@ class FocusStackBaseConfigurator(DefaultActionConfigurator):
             q_depthmap.layout(), 'depthmap_kernel_size', FIELD_INT, 'Laplacian kernel size (px)',
             expert=True,
             required=False, default=AppConfig.get('depth_map_params')['kernel_size'],
-            min_val=3, max_val=256)
+            min_val=1, max_val=256)
         self.depthmap_blur_size = self.add_field_to_layout(
             q_depthmap.layout(), 'depthmap_blur_size', FIELD_INT, 'Laplacian blur size (px)',
             expert=True,
@@ -432,7 +432,7 @@ class FocusStackBaseConfigurator(DefaultActionConfigurator):
         self.depthmap_energy.currentIndexChanged.connect(change_depthmap_energy)
         change_depthmap_energy()
 
-        self.add_field_to_layout(
+        self.depthmap_map_type = self.add_field_to_layout(
             q_depthmap.layout(), 'depthmap_map_type', FIELD_COMBO, 'Map type', required=False,
             options=self.MAP_TYPE_OPTIONS, values=constants.VALID_DM_MAP,
             default=dict(zip(constants.VALID_DM_MAP,
@@ -482,11 +482,20 @@ class FocusStackBaseConfigurator(DefaultActionConfigurator):
             expert=True,
             required=False, default=AppConfig.get('depth_map_params')['pyramid_smooth_size'],
             min_val=0, max_val=256)
-        self.add_field_to_layout(
+        self.depthmap_temperature = self.add_field_to_layout(
             q_depthmap.layout(), 'depthmap_temperature', FIELD_FLOAT, 'Temperature',
             expert=True,
             required=False, default=AppConfig.get('depth_map_params')['temperature'],
-            min_val=0, max_val=1, step=0.05)
+            min_val=0, max_val=1000, decimals=3, step=0.001)
+
+        def change_depthmap_map_type():
+            enabled = self.depthmap_map_type.currentText() == self.MAP_TYPE_OPTIONS[1]
+            self.depthmap_temperature.setEnabled(enabled)
+
+        self.depthmap_map_type.currentIndexChanged.connect(
+            change_depthmap_map_type)
+        change_depthmap_map_type()
+
         self.add_field_to_layout(
             q_depthmap.layout(), 'depthmap_float_type', FIELD_COMBO,
             'Precision', required=False,
