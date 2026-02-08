@@ -310,13 +310,9 @@ class ModernProjectView(ProjectView):
         if not old_selection or not old_selection.is_valid():
             return
         try:
-            element = self.project_element(*old_selection.to_tuple())
-            new_widget = self._insert_widget(new_selection, element)
+            new_widget = self._insert_widget(
+                new_selection, self.project_element(*new_selection.to_tuple()))
             if new_widget:
-                new_element = self.project_element(*new_selection.to_tuple())
-                for child_id in element.children:
-                    if child_id in self.elements:
-                        self._create_element_copy(self.elements[child_id], new_element.id)
                 if self.selected_widget:
                     self._clear_hover_on_widget(self.selected_widget)
                     self.selected_widget.set_selected(False)
@@ -326,17 +322,6 @@ class ModernProjectView(ProjectView):
                 self.update_delete_action_state_requested.emit()
         except Exception:
             self.refresh_ui()
-
-    def _create_element_copy(self, element, new_parent_id):
-        new_element = element.copy()
-        new_element.id = self.id_generator.generate()
-        new_element.parent_id = new_parent_id
-        self.elements[new_element.id] = new_element
-        self._add_to_parent(new_element)
-        for child_id in element.children:
-            if child_id in self.elements:
-                self._create_element_copy(self.elements[child_id], new_element.id)
-        return new_element
 
     def set_enabled_all(self):
         for job_widget in self.job_widgets:
