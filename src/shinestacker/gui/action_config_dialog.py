@@ -285,6 +285,8 @@ class FocusStackBaseConfigurator(DefaultActionConfigurator):
         self.depthmap_weights_smooth_size = None
         self.depthmap_weights_sigma_color = None
         self.depthmap_weights_sigma_space = None
+        self.depthmap_temperature = None
+        self.depthmap_map_type = None
 
     def create_form(self, layout, action):
         super().create_form(layout, action)

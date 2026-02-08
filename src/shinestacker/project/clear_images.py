@@ -97,7 +97,7 @@ class ClearImagesDialog(BaseFormDialog):
     def delete_folders(self):
         errors = []
         deleted = []
-        for job_name, actions in self.options.items():
+        for _job_name, actions in self.options.items():
             for _action_name, paths in actions.items():
                 for _key, data in paths.items():
                     if data['checkbox'].isChecked():

@@ -5,7 +5,8 @@ import subprocess
 import os
 import numpy as np
 import cv2
-from PySide6.QtWidgets import QSizePolicy, QVBoxLayout, QWidget, QLabel, QStackedWidget
+from PySide6.QtWidgets import (
+    QSizePolicy, QVBoxLayout, QWidget, QLabel, QStackedWidget, QMessageBox, QApplication)
 from PySide6.QtPdf import QPdfDocument
 from PySide6.QtPdfWidgets import QPdfView
 from PySide6.QtCore import Qt, QMargins
@@ -15,7 +16,19 @@ from .. core.core_utils import running_under_windows, running_under_macos
 from .. algorithms.utils import read_img
 
 
-def open_file(file_path):
+def open_file(file_path, parent_widget=None):
+    if not os.path.exists(file_path):
+        if parent_widget is None:
+            app = QApplication.instance()
+            if app:
+                parent_widget = app.activeWindow()
+        QMessageBox.warning(
+            parent_widget,
+            "File Not Found",
+            f"The file could not be found:\n{file_path}",
+            QMessageBox.StandardButton.Ok
+        )
+        return
     try:
         if running_under_macos():
             subprocess.call(('open', file_path))
@@ -68,7 +81,7 @@ class GuiPdfView(QPdfView):
 
     def mouseDoubleClickEvent(self, event):
         if event.button() == Qt.LeftButton:
-            open_file(self.file_path)
+            open_file(self.file_path, self.parent())
             return
         super().mouseDoubleClickEvent(event)
 
@@ -149,7 +162,7 @@ class GuiImageView(QWidget):
 
     def mouseDoubleClickEvent(self, event):
         if event.button() == Qt.LeftButton:
-            open_file(self.file_path)
+            open_file(self.file_path, self.parent())
             return
         super().mouseDoubleClickEvent(event)
 

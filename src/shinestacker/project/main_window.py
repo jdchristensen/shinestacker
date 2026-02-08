@@ -586,7 +586,7 @@ class MainWindow(ProjectHandler, QMainWindow):
         self.menu_manager.clear_run_info_action.setEnabled(False)
 
     def clear_project_images(self):
-        success, msg = clear_project_images(self.project(), self)
+        _success, msg = clear_project_images(self.project(), self)
         self.show_status_message(msg)
 
     def stop(self):
