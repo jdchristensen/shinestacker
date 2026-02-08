@@ -10,6 +10,7 @@
 - fixes related to RAW formats support (#12)
 - better depth map default options improve fused image sharpness (#8)
 - opening multiple files via -f option, filenames separated by a ";"
+- some GUI problems
 
 ### Changes
 - trap UnidentifiedImageError from PIL.Image.open when loading EXIF data

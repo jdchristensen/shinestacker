@@ -53,7 +53,7 @@ class ActionConfig:
         raise RuntimeError(f"can't pop sub-action {index}, lenght is {len(self.sub_actions)}")
 
     def clone(self, name_postfix=''):
-        c = ActionConfig(self.type_name, deepcopy(self.params))
+        c = ActionConfig(self.type_name, deepcopy(self.params), self.parent)
         if len(self.metadata) > 0:
             c.metadata = deepcopy(self.metadata)
         c.sub_actions = [s.clone() for s in self.sub_actions]

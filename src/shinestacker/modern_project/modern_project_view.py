@@ -339,6 +339,8 @@ class ModernProjectView(ProjectView):
             new_widget = self._insert_widget(
                 new_selection, element.clone(name_postfix=constants.CLONE_POSTFIX))
             if new_widget:
+                element = self.project_element(*new_selection.to_tuple())
+                new_widget.data_object = element
                 if self.selected_widget:
                     self._clear_hover_on_widget(self.selected_widget)
                     self.selected_widget.set_selected(False)

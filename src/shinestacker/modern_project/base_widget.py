@@ -373,7 +373,8 @@ class BaseWidget(QFrame):
     def update(self, data_object=None):
         if data_object is None:
             data_object = self.data_object
-        self.data_object = data_object
+        else:
+            self.data_object = data_object
         name = f"<b>{data_object.params['name']}</b> [{data_object.type_name}]"
         self.set_name(name)
         self.update_enabled(data_object)
