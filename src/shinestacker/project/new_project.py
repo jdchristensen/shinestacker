@@ -1,7 +1,7 @@
 # pylint: disable=C0114, C0115, C0116, E0611, R0915, R0902, R0914, R0911, R0912, R0904, W0718
 import os
 import numpy as np
-from PySide6.QtWidgets import (QHBoxLayout, QPushButton, QLabel, QCheckBox, QSpinBox, QDialog,
+from PySide6.QtWidgets import (QHBoxLayout, QLabel, QCheckBox, QSpinBox, QDialog,
                                QMessageBox, QGroupBox, QVBoxLayout, QFormLayout, QSizePolicy)
 from PySide6.QtGui import QIcon
 from PySide6.QtCore import Qt, QTimer
@@ -27,14 +27,7 @@ class NewProjectDialog(BaseFormDialog):
         self.expert_labels = []
         self.expert_init = AppConfig.get('expert_options')
         self.create_form()
-        button_box = QHBoxLayout()
-        self.ok_button = QPushButton("OK")
-        cancel_button = QPushButton("Cancel")
-        button_box.addWidget(self.ok_button)
-        button_box.addWidget(cancel_button)
-        self.add_row_to_layout(button_box)
-        self.ok_button.clicked.connect(self.accept)
-        cancel_button.clicked.connect(self.reject)
+        self.create_ok_cancel()
         self.n_image_files = 0
         self.selected_filenames = []
         self.update_expert_visibility()
@@ -101,7 +94,6 @@ class NewProjectDialog(BaseFormDialog):
             QCheckBox(), "multi_layer",
             checked=gui_constants.NEW_PROJECT_MULTI_LAYER
         )
-
         step1_group = QGroupBox("1) Select Input")
         step1_layout = QVBoxLayout()
         step1_layout.setContentsMargins(15, 0, 15, 15)
@@ -203,22 +195,8 @@ class NewProjectDialog(BaseFormDialog):
         step4_layout.addWidget(icon_label)
         step4_group.setLayout(step4_layout)
         self.form_layout.addRow(step4_group)
-        group_style = """
-            QGroupBox {
-                font-weight: bold;
-                border: 2px solid #cccccc;
-                border-radius: 5px;
-                margin-top: 10px;
-                padding-top: 15px;
-            }
-            QGroupBox::title {
-                subcontrol-origin: margin;
-                left: 10px;
-                padding: 0 5px 0 5px;
-            }
-        """
         for group in [step1_group, step2_group, step3_group, step4_group]:
-            group.setStyleSheet(group_style)
+            group.setStyleSheet(self.group_style)
             group.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
         self.form_layout.setFieldGrowthPolicy(QFormLayout.AllNonFixedFieldsGrow)
         self.form_layout.setFormAlignment(Qt.AlignLeft)

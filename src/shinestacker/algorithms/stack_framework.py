@@ -170,8 +170,7 @@ class ImageSequenceManager:
                             "files may be overwritten or merged with existing ones.", 'yellow'
                         ), level=logging.WARNING)
         if self.plot_path == '':
-            self.plot_path = self.working_path + \
-                ('' if self.working_path[-1] == '/' else '/') + self.plot_path
+            self.plot_path = os.path.join(self.working_path, self.plot_path)
             if not os.path.exists(self.plot_path):
                 os.makedirs(self.plot_path)
         if self.input_path in ['', []]:

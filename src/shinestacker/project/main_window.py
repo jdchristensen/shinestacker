@@ -24,6 +24,7 @@ from .menu_manager import MenuManager
 from .project_undo_manager import ProjectUndoManager
 from .element_action_manager import ElementActionManager
 from .new_project import fill_new_project
+from .clear_images import clear_project_images
 
 
 CURRENT_PROJECT_FILE_VERSION = 1
@@ -80,7 +81,8 @@ class MainWindow(ProjectHandler, QMainWindow):
             "Modern View": lambda: self.set_view('modern'),
             "Horizontal Layout": self.horizontal_actions_layout,
             "Vertical Layout": self.vertical_actions_layout,
-            "Clear Run Information": self.clear_run_metadata
+            "Clear Run Information": self.clear_run_metadata,
+            "Clear Project Images": self.clear_project_images,
         }
         self.menu_manager = MenuManager(
             self.menuBar(), actions, self.add_action, self.add_subaction, dark_theme, self)
@@ -224,12 +226,11 @@ class MainWindow(ProjectHandler, QMainWindow):
         return self.current_view.get_retouch_path(job)
 
     def quit(self):
-        if self.check_unsaved_changes():
-            q = True
-            for _k, v in self.views.items():
-                q = q and v.quit()
-            return q
-        return False
+        self.close_project()
+        q = True
+        for _k, v in self.views.items():
+            q = q and v.quit()
+        return q
 
     def refresh_ui_and_select_first_job(self):
         for _k, v in self.views.items():
@@ -340,6 +341,7 @@ class MainWindow(ProjectHandler, QMainWindow):
 
     def close_project(self):
         if self.check_unsaved_changes():
+            self.clear_project_images()
             self.reset_project()
             self.update_title()
             for _k, v in self.views.items():
@@ -582,6 +584,10 @@ class MainWindow(ProjectHandler, QMainWindow):
         for view in self.views.values():
             view.clear_run_metadata()
         self.menu_manager.clear_run_info_action.setEnabled(False)
+
+    def clear_project_images(self):
+        success, msg = clear_project_images(self.project(), self)
+        self.show_status_message(msg)
 
     def stop(self):
         success = self.current_view.stop()

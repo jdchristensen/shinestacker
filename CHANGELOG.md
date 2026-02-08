@@ -1,12 +1,13 @@
 # Changelog
 
-## [v1.14.x] - 2026-02-07
+## [v1.14.x] - 2026-02-08
 
 ### Added
 - input folder path in the default settings (#15)
+- menu action to delete intermediate-steps image folders. This action also gets called before closing a project and reminds a user to clean up disk space (#17)
 
 ### Fixed
-- fixes related to RAW formats support
+- fixes related to RAW formats support (#12)
 - opening multiple files via -f option, filenames separated by a ";"
 
 ### Changes
