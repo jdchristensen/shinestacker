@@ -28,7 +28,6 @@ class SelectionNavigationManager(ProjectHandler, QObject):
         return False
 
     def select_next_widget(self):
-        print("sel next", self.selection_state.to_tuple())
         if self.selection_state.is_job_selected():
             if self._get_action_count(self.selection_state.job_index) > 0:
                 self.select('action', self.selection_state.job_index, 0)
