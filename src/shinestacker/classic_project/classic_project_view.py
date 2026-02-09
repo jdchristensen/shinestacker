@@ -285,12 +285,12 @@ class ClassicProjectView(ProjectView, ListContainer):
             tab.retouch_widget.setEnabled(True)
         self.run_finished_signal.emit()
 
-    def delete_element(self, old_selection, new_selection):
-        self.refresh_ui(new_selection)
+    def delete_element(self, old_selection):
+        self.refresh_ui(self.selection_state)
         return '', None
 
-    def insert_element(self, old_selection, new_selection):
-        self.refresh_ui(new_selection)
+    def insert_element(self, old_selection):
+        self.refresh_ui(self.selection_state)
 
     def set_enabled_all(self):
         self.refresh_ui(self.selection_state)
@@ -298,8 +298,8 @@ class ClassicProjectView(ProjectView, ListContainer):
     def set_enabled(self, selection):
         self.refresh_ui(selection)
 
-    def shift_element(self, old_selection, new_selection):
-        self.refresh_ui(new_selection)
+    def shift_element(self, old_selection):
+        self.refresh_ui(self.selection_state)
 
     def _get_current_subaction_index(self):
         if not self.selection_state.is_subaction_selected():

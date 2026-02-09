@@ -206,11 +206,11 @@ class ElementActionManager(ProjectHandler, QObject):
     def clone_element(self):
         old_position = self.selection_state.to_tuple()
         if not self.valid_indices(*old_position):
-            return False, None
+            return False
         element = self.project_element(*old_position)
         idx, s = get_position_stack(old_position)
         if len(idx) == 0:
-            return False, None
+            return False
         clone_position = list(old_position)
         if old_position[2] >= 0:
             clone_position[2] = old_position[2] + 1
@@ -225,19 +225,19 @@ class ElementActionManager(ProjectHandler, QObject):
         container = self.project_container(*idx)
         container.insert(s + 1, element.clone(name_postfix=constants.CLONE_POSTFIX))
         self.selection_state.from_tuple(new_position)
-        return True, SelectionState(*new_position)
+        return True
 
     def delete_element(self, confirm=True):
         if not self.selection_state.is_valid():
-            return None, None
+            return None
         old_position = self.selection_state.to_tuple()
         element = self.project_element(*old_position)
         if not element:
-            return None, None
+            return None
         element_type = self.selection_state.type()
         if confirm and not self.confirm_delete_message(
                 element_type, element.params.get('name', '')):
-            return None, None
+            return None
         new_selection = self.new_state_after_delete(self.selection_state)
         new_position = new_selection.to_tuple()
         self.save_undo_state(
@@ -245,18 +245,18 @@ class ElementActionManager(ProjectHandler, QObject):
         deleted_element = None
         idx, s = get_position_stack(old_position)
         if len(idx) == 0:
-            return None, None
+            return None
         container = self.project_container(*idx)
         if container and 0 <= s < len(container):
             deleted_element = container.pop(s)
         self.selection_state.from_tuple(new_position)
-        return deleted_element, new_selection
+        return deleted_element
 
     def cut_element(self):
-        deleted_element, new_state = self.delete_element(False)
+        deleted_element = self.delete_element(False)
         if deleted_element:
             self.set_copy_buffer(deleted_element)
-        return deleted_element, new_state
+        return deleted_element
 
     def shift_element(self, delta, direction):
         if not self.selection_state.is_valid():

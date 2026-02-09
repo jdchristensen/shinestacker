@@ -36,7 +36,7 @@ class MenuManager(QObject):
             "Cop&y": "Ctrl+C",
             "&Paste": "Ctrl+V",
             "Duplicate": "Ctrl+D",
-            "Delete": "Backspace",
+            "Delete": [QKeySequence("Backspace"), QKeySequence("Del")],
             "Move &Up": [QKeySequence("Ctrl+Up"), QKeySequence("Ctrl+Left")],
             "Move &Down": [QKeySequence("Ctrl+Down"), QKeySequence("Ctrl+Right")],
             "E&nable": "Ctrl+E",

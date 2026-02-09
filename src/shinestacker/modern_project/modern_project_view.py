@@ -126,7 +126,7 @@ class ModernProjectView(ProjectView):
     def eventFilter(self, obj, event):
         if obj == self.console_area.text_edit and event.type() == event.Type.KeyPress:
             key = event.key()
-            if key in (Qt.Key_Up, Qt.Key_Down, Qt.Key_Home, Qt.Key_End):
+            if key in (Qt.Key_Up, Qt.Key_Down, Qt.Key_Left, Qt.Key_Right, Qt.Key_Home, Qt.Key_End):
                 self.keyPressEvent(event)
                 return True
         return super().eventFilter(obj, event)
@@ -297,21 +297,21 @@ class ModernProjectView(ProjectView):
         widget = self._find_widget(selection)
         widget.update(element)
 
-    def delete_element(self, old_selection, new_selection):
+    def delete_element(self, old_selection):
         if old_selection:
             self._remove_widget(old_selection)
-        if new_selection:
-            self.selection_nav.restore_selection(new_selection)
+        if self.selection_state:
+            self.selection_nav.restore_selection(self.selection_state)
             self._ensure_selected_visible()
         else:
             self._reset_selection()
 
-    def insert_element(self, old_selection, new_selection):
+    def insert_element(self, old_selection):
         if not old_selection or not old_selection.is_valid():
             return
         try:
             new_widget = self._insert_widget(
-                new_selection, self.project_element(*new_selection.to_tuple()))
+                self.selection_state, self.project_element(*self.selection_state.to_tuple()))
             if new_widget:
                 if self.selected_widget:
                     self._clear_hover_on_widget(self.selected_widget)
@@ -404,9 +404,9 @@ class ModernProjectView(ProjectView):
         except Exception:
             self.refresh_ui()
 
-    def shift_element(self, old_selection, new_selection):
-        self._move_widgets(old_selection, new_selection)
-        self.selection_nav.restore_selection(new_selection)
+    def shift_element(self, old_selection):
+        self._move_widgets(old_selection, self.selection_state)
+        self.selection_nav.restore_selection(self.selection_state)
         self._ensure_selected_visible()
         self._refresh_job_widget_signals()
 

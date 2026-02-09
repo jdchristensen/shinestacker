@@ -461,20 +461,20 @@ class MainWindow(ProjectHandler, QMainWindow):
         if not self.current_view.enforce_stop_run():
             return
         old_selection = self.selection_state.copy()
-        deleted_element, new_selection = self.element_action.delete_element(True)
-        self.post_delete(deleted_element, old_selection, new_selection)
+        deleted_element = self.element_action.delete_element(True)
+        self.post_delete(deleted_element, old_selection)
 
     def cut_element(self):
         if not self.current_view.enforce_stop_run():
             return
         old_selection = self.selection_state.copy()
-        deleted_element, new_selection = self.element_action.cut_element()
-        self.post_delete(deleted_element, old_selection, new_selection)
+        deleted_element = self.element_action.cut_element()
+        self.post_delete(deleted_element, old_selection)
 
-    def post_delete(self, deleted_element, old_selection, new_selection):
+    def post_delete(self, deleted_element, old_selection):
         if deleted_element and old_selection and old_selection.is_valid():
             for view in self.views.values():
-                view.delete_element(old_selection, new_selection)
+                view.delete_element(old_selection)
         if self.num_project_jobs() > 0:
             self.menu_manager.delete_element_action.setEnabled(True)
 
@@ -486,19 +486,18 @@ class MainWindow(ProjectHandler, QMainWindow):
             return
         old_selection = self.selection_state.copy()
         success = self.element_action.paste_element()
-        new_selection = self.selection_state.copy()
         if success:
             for view in self.views.values():
-                view.insert_element(old_selection, new_selection)
+                view.insert_element(old_selection)
 
     def clone_element(self):
         if not self.current_view.enforce_stop_run():
             return
         old_selection = self.selection_state.copy()
-        success, new_selection = self.element_action.clone_element()
+        success = self.element_action.clone_element()
         if success:
             for view in self.views.values():
-                view.insert_element(old_selection, new_selection)
+                view.insert_element(old_selection)
 
     def shift_element(self, delta, direction):
         if not self.current_view.enforce_stop_run():
@@ -506,9 +505,8 @@ class MainWindow(ProjectHandler, QMainWindow):
         old_selection = self.selection_state.copy()
         success = self.element_action.shift_element(delta, direction)
         if success:
-            new_selection = self.selection_state.copy()
             for view in self.views.values():
-                view.shift_element(old_selection, new_selection)
+                view.shift_element(old_selection)
 
     def move_element_up(self):
         self.shift_element(-1, "Up")

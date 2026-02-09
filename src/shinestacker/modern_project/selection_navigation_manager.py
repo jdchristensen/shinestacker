@@ -28,21 +28,47 @@ class SelectionNavigationManager(ProjectHandler, QObject):
         return False
 
     def select_next_widget(self):
+        print("sel next", self.selection_state.to_tuple())
         if self.selection_state.is_job_selected():
-            if self._has_actions_in_job(self.selection_state.job_index):
-                self._select_first_action_in_job(self.selection_state.job_index)
+            if self._get_action_count(self.selection_state.job_index) > 0:
+                self.select('action', self.selection_state.job_index, 0)
         elif self.selection_state.is_action_selected():
-            if self._has_subactions_in_action(
-                    self.selection_state.job_index, self.selection_state.action_index):
-                self._select_first_subaction_in_action(
-                    self.selection_state.job_index, self.selection_state.action_index)
+            if self._get_subaction_count(self.selection_state.job_index,
+                                         self.selection_state.action_index) > 0:
+                self.select('subaction', self.selection_state.job_index,
+                            self.selection_state.action_index, 0)
             else:
-                self._select_next_action_or_job()
+                if self.selection_state.action_index + 1 < self._get_action_count(
+                        self.selection_state.job_index):
+                    self.select('action', self.selection_state.job_index,
+                                self.selection_state.action_index + 1)
+                else:
+                    if self.selection_state.job_index + 1 < self.num_project_jobs():
+                        next_job_index = self.selection_state.job_index + 1
+                        self.select('job', next_job_index)
         elif self.selection_state.is_subaction_selected():
-            self._select_next_subaction_or_action_or_job()
+            if self.selection_state.subaction_index + 1 < self._get_subaction_count(
+                    self.selection_state.job_index, self.selection_state.action_index):
+                self.select('subaction', self.selection_state.job_index,
+                            self.selection_state.action_index,
+                            self.selection_state.subaction_index + 1)
+            else:
+                if self.selection_state.action_index + 1 < self._get_action_count(
+                        self.selection_state.job_index):
+                    next_action_index = self.selection_state.action_index + 1
+                    if self._get_subaction_count(self.selection_state.job_index,
+                                                 next_action_index) > 0:
+                        self.select('subaction', self.selection_state.job_index,
+                                    next_action_index, 0)
+                    else:
+                        self.select('action', self.selection_state.job_index, next_action_index)
+                else:
+                    if self.selection_state.job_index + 1 < self.num_project_jobs():
+                        next_job_index = self.selection_state.job_index + 1
+                        self.select('job', next_job_index)
 
     def select_previous_widget(self):
-        if self.selection_state.is_action_selected():
+        if self.selection_state.is_subaction_selected():
             if self.selection_state.subaction_index > 0:
                 self.select('subaction',
                             self.selection_state.job_index,
@@ -71,34 +97,22 @@ class SelectionNavigationManager(ProjectHandler, QObject):
                 self.select('job', self.selection_state.job_index)
         elif self.selection_state.is_job_selected():
             if self.selection_state.job_index > 0:
-                self.select('job', self.selection_state.job_index - 1)
-
-    def _select_next_action_or_job(self):
-        job_index = self.selection_state.job_index
-        action_index = self.selection_state.action_index
-        if self._is_valid_job_index(job_index):
-            next_action_index = action_index + 1
-            if next_action_index < self._get_action_count(job_index):
-                self.select('action', job_index, next_action_index)
-            else:
-                self._select_next_job()
-
-    def _select_next_subaction_or_action_or_job(self):
-        job_index = self.selection_state.job_index
-        action_index = self.selection_state.action_index
-        subaction_index = self.selection_state.subaction_index
-        if self._is_valid_job_index(job_index):
-            if 0 <= action_index < self._get_action_count(job_index):
-                next_subaction_index = subaction_index + 1
-                if next_subaction_index < self._get_subaction_count(job_index, action_index):
-                    self.select('subaction', job_index, action_index, next_subaction_index)
+                prev_job_index = self.selection_state.job_index - 1
+                if self._has_actions_in_job(prev_job_index):
+                    last_action_index = self._get_action_count(prev_job_index) - 1
+                    if self._has_subactions_in_action(prev_job_index, last_action_index):
+                        last_subaction_index = self._get_subaction_count(
+                            prev_job_index, last_action_index) - 1
+                        self.select('subaction',
+                                    prev_job_index,
+                                    last_action_index,
+                                    last_subaction_index)
+                    else:
+                        self.select('action',
+                                    prev_job_index,
+                                    last_action_index)
                 else:
-                    self._select_next_action_or_job()
-
-    def _select_next_job(self):
-        new_index = self.selection_state.job_index + 1
-        if new_index < self.num_project_jobs():
-            self.select('job', new_index)
+                    self.select('job', prev_job_index)
 
     def _select_first_job(self):
         if self.num_project_jobs() > 0:

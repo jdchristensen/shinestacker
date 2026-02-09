@@ -228,10 +228,10 @@ class ProjectView(QWidget, LogManager, ProjectHandler):
     def set_enabled(self, selection):
         raise NotImplementedError
 
-    def delete_element(self, old_selection, new_selection):
+    def delete_element(self, old_selection):
         raise NotImplementedError
 
-    def insert_element(self, old_selection, new_selection):
+    def insert_element(self, old_selection):
         raise NotImplementedError
 
     def select_current(self):
@@ -314,7 +314,7 @@ class ProjectView(QWidget, LogManager, ProjectHandler):
     def perform_undo(self, entry, old_selection):
         raise NotImplementedError
 
-    def shift_element(self, old_selection, new_selection):
+    def shift_element(self, old_selection):
         raise NotImplementedError
 
     def enforce_stop_run(self):
