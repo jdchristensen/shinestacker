@@ -145,9 +145,12 @@ class PyramidBase(BaseStackAlgo):
                      for lap in laplacians]
         energies = self._compute_energies(gray_laps)
         best = np.argmax(energies, axis=0)
-        fused = np.zeros_like(laplacians[0])
-        for i, lap in enumerate(laplacians):
-            fused += np.where(best[:, :, np.newaxis] == i, lap, 0)
+        laplacians_array = np.array(laplacians)
+        h, w = laplacians_array.shape[1:3]
+        fused = np.zeros_like(laplacians_array[0])
+        for i in range(3):
+            channel_data = laplacians_array[:, :, :, i]
+            fused[:, :, i] = channel_data[best, np.arange(h)[:, None], np.arange(w)]
         return fused
 
 
