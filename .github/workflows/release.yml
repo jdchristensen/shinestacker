@@ -21,7 +21,7 @@ jobs:
       - name: Detect available macOS runners
         id: detect
         run: |
-          echo "intel-runner=macos-15" >> $GITHUB_OUTPUT
+          echo "intel-runner=macos-15-large" >> $GITHUB_OUTPUT
           echo "silicon-runner=macos-15" >> $GITHUB_OUTPUT
 
   publish-release:
