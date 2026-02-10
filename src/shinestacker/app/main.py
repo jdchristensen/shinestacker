@@ -192,22 +192,20 @@ class MainApp(QMainWindow):
                                 "No Jobs In Project", "The current project has no job. "
                                 "Create and run a job first.")
             return
-        if len(project.jobs) > 1:
-            job_names = [job.params['name'] for job in project.jobs]
+        job_paths = {}
+        for job in project.jobs:
+            retouch_path = self.project_window.get_retouch_path(job)
+            if retouch_path:
+                job_paths[job.params['name']] = retouch_path
+        if len(job_paths) > 1:
             job_name = SelectionDialog.get_selection(
                 "Job Selection",
                 "Please select one of the active jobs:",
-                job_names
+                job_paths.keys()
             )
-            job = None
-            for job in project.jobs:
-                if job.params['name'] == job_name:
-                    break
-            if job is None:
-                return
         else:
-            job = project.jobs[0]
-        retouch_path = self.project_window.get_retouch_path(job)
+            job_name = list(job_paths.keys())[0]
+        retouch_path = job_paths[job_name]
         if isinstance(retouch_path, list):
             open_frames(self.retouch_window, None, ";".join(retouch_path))
         else:
