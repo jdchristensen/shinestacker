@@ -139,12 +139,13 @@ class PyramidBase(BaseStackAlgo):
     def fuse_laplacian(self, laplacians_list):
         laplacians = np.stack(laplacians_list, axis=0)
         n_layers, h, w, _ = laplacians.shape
+        if laplacians.dtype != np.float32:
+            laplacians_32 = laplacians.astype(np.float32)
+        else:
+            laplacians_32 = laplacians
         energies = np.empty((n_layers, h, w), dtype=np.float32)
         for i in range(n_layers):
-            lap = laplacians[i]
-            if lap.dtype != np.float32:
-                lap = lap.astype(np.float32)
-            gray = cv2.cvtColor(lap, cv2.COLOR_BGR2GRAY)
+            gray = cv2.cvtColor(laplacians_32[i], cv2.COLOR_BGR2GRAY)
             energies[i] = self.convolve(gray * gray)
         best = np.argmax(energies, axis=0)
         rows = np.arange(h)[:, None]
