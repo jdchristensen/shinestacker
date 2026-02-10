@@ -51,7 +51,7 @@ def open_frames(editor, filename, path_list):
             if app:
                 parent_widget = app.activeWindow()
                 QMessageBox.warning(parent_widget, "File Not Found",
-                                    f"Can't find processed images, invalid path: {path}",
+                                    "Can't find processed images",
                                     QMessageBox.StandardButton.Ok)
                 return False
     return open_files(editor, filenames)
