@@ -436,24 +436,21 @@ class MainWindow(ProjectHandler, QMainWindow):
     def add_job(self):
         if not self.current_view.enforce_stop_run():
             return
-        success = self.element_action.add_job()
-        if success:
+        if self.element_action.add_job():
             for view in self.views.values():
                 view.update_added_element()
 
     def add_action(self, type_name):
         if not self.current_view.enforce_stop_run():
             return
-        success = self.element_action.add_action(type_name)
-        if success:
+        if self.element_action.add_action(type_name):
             for view in self.views.values():
                 view.update_added_element()
 
     def add_subaction(self, type_name):
         if not self.current_view.enforce_stop_run():
             return
-        success = self.element_action.add_subaction(type_name)
-        if success:
+        if self.element_action.add_subaction(type_name):
             for view in self.views.values():
                 view.update_added_element()
 
@@ -461,18 +458,18 @@ class MainWindow(ProjectHandler, QMainWindow):
         if not self.current_view.enforce_stop_run():
             return
         old_selection = self.selection_state.copy()
-        deleted_element = self.element_action.delete_element(True)
-        self.post_delete(deleted_element, old_selection)
+        if self.element_action.delete_element(True):
+            self.post_delete(old_selection)
 
     def cut_element(self):
         if not self.current_view.enforce_stop_run():
             return
         old_selection = self.selection_state.copy()
-        deleted_element = self.element_action.cut_element()
-        self.post_delete(deleted_element, old_selection)
+        if self.element_action.cut_element():
+            self.post_delete(old_selection)
 
-    def post_delete(self, deleted_element, old_selection):
-        if deleted_element and old_selection and old_selection.is_valid():
+    def post_delete(self, old_selection):
+        if old_selection and old_selection.is_valid():
             for view in self.views.values():
                 view.delete_element(old_selection)
         if self.num_project_jobs() > 0:
@@ -485,8 +482,7 @@ class MainWindow(ProjectHandler, QMainWindow):
         if not self.current_view.enforce_stop_run():
             return
         old_selection = self.selection_state.copy()
-        success = self.element_action.paste_element()
-        if success:
+        if self.element_action.paste_element():
             for view in self.views.values():
                 view.insert_element(old_selection)
 
@@ -494,8 +490,7 @@ class MainWindow(ProjectHandler, QMainWindow):
         if not self.current_view.enforce_stop_run():
             return
         old_selection = self.selection_state.copy()
-        success = self.element_action.clone_element()
-        if success:
+        if self.element_action.clone_element():
             for view in self.views.values():
                 view.insert_element(old_selection)
 
@@ -503,8 +498,7 @@ class MainWindow(ProjectHandler, QMainWindow):
         if not self.current_view.enforce_stop_run():
             return
         old_selection = self.selection_state.copy()
-        success = self.element_action.shift_element(delta, direction)
-        if success:
+        if self.element_action.shift_element(delta, direction):
             for view in self.views.values():
                 view.shift_element(old_selection)
 
@@ -518,8 +512,7 @@ class MainWindow(ProjectHandler, QMainWindow):
         if not self.current_view.enforce_stop_run():
             return
         selection = self.selection_state.copy()
-        success = self.element_action.set_enabled(selection, enabled)
-        if success:
+        if self.element_action.set_enabled(selection, enabled):
             for view in self.views.values():
                 view.set_enabled(selection)
 
@@ -543,8 +536,7 @@ class MainWindow(ProjectHandler, QMainWindow):
         self.set_enabled_all(False)
 
     def edit_element(self):
-        success = self.element_action.edit_element(self.selection_state)
-        if success:
+        if self.element_action.edit_element(self.selection_state):
             for view in self.views.values():
                 view.update_widget(self.selection_state)
 
@@ -555,8 +547,7 @@ class MainWindow(ProjectHandler, QMainWindow):
                 -1, -1)
             self.element_action.save_undo_state("Run Job", "run", position, position)
         self.menu_manager.clear_run_info_action.setEnabled(True)
-        success = self.current_view.run_job()
-        if success:
+        if self.current_view.run_job():
             self.menu_manager.run_job_action.setEnabled(False)
             self.menu_manager.run_all_jobs_action.setEnabled(False)
             self.menu_manager.stop_action.setEnabled(True)
@@ -565,8 +556,7 @@ class MainWindow(ProjectHandler, QMainWindow):
         if self.current_view.has_run_metadata():
             self.element_action.save_undo_state("Run All Jobs", "run_all")
         self.menu_manager.clear_run_info_action.setEnabled(True)
-        success = self.current_view.run_all_jobs()
-        if success:
+        if self.current_view.run_all_jobs():
             self.menu_manager.run_job_action.setEnabled(False)
             self.menu_manager.run_all_jobs_action.setEnabled(False)
             self.menu_manager.stop_action.setEnabled(True)
@@ -585,8 +575,7 @@ class MainWindow(ProjectHandler, QMainWindow):
         self.show_status_message(msg)
 
     def stop(self):
-        success = self.current_view.stop()
-        if success:
+        if self.current_view.stop():
             self.handle_run_finished()
 
     def handle_widget_updated(self, selection):

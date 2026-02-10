@@ -227,17 +227,17 @@ class ElementActionManager(ProjectHandler, QObject):
         self.selection_state.from_tuple(new_position)
         return True
 
-    def delete_element(self, confirm=True):
+    def delete_element(self, confirm=True, save_copy=False):
         if not self.selection_state.is_valid():
-            return None
+            return False
         old_position = self.selection_state.to_tuple()
         element = self.project_element(*old_position)
         if not element:
-            return None
+            return False
         element_type = self.selection_state.type()
         if confirm and not self.confirm_delete_message(
                 element_type, element.params.get('name', '')):
-            return None
+            return False
         new_selection = self.new_state_after_delete(self.selection_state)
         new_position = new_selection.to_tuple()
         self.save_undo_state(
@@ -245,18 +245,18 @@ class ElementActionManager(ProjectHandler, QObject):
         deleted_element = None
         idx, s = get_position_stack(old_position)
         if len(idx) == 0:
-            return None
+            return False
         container = self.project_container(*idx)
         if container and 0 <= s < len(container):
             deleted_element = container.pop(s)
         self.selection_state.from_tuple(new_position)
-        return deleted_element
+        success = deleted_element is not None
+        if save_copy and success:
+            self.set_copy_buffer(deleted_element)
+        return success
 
     def cut_element(self):
-        deleted_element = self.delete_element(False)
-        if deleted_element:
-            self.set_copy_buffer(deleted_element)
-        return deleted_element
+        return self.delete_element(False, True)
 
     def shift_element(self, delta, direction):
         if not self.selection_state.is_valid():

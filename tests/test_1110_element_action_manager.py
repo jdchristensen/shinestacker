@@ -187,8 +187,8 @@ class TestElementActionManager(unittest.TestCase):
         self.project.jobs = [job1, job2]
         self.selection_state.set_job(0)
         with patch.object(self.manager, 'confirm_delete_message', return_value=True):
-            deleted = self.manager.delete_element()
-        self.assertEqual(deleted, job1)
+            success = self.manager.delete_element()
+        self.assertEqual(success, True)
         self.assertEqual(len(self.project.jobs), 1)
         self.assertEqual(self.project.jobs[0], job2)
 
@@ -200,8 +200,8 @@ class TestElementActionManager(unittest.TestCase):
         self.project.jobs.append(job)
         self.selection_state.set_action(0, 0)
         with patch.object(self.manager, 'confirm_delete_message', return_value=True):
-            deleted = self.manager.delete_element()
-        self.assertEqual(deleted, action1)
+            success = self.manager.delete_element()
+        self.assertEqual(success, True)
         self.assertEqual(len(job.sub_actions), 1)
         self.assertEqual(job.sub_actions[0], action2)
 
@@ -215,8 +215,8 @@ class TestElementActionManager(unittest.TestCase):
         self.project.jobs.append(job)
         self.selection_state.set_subaction(0, 0, 0)
         with patch.object(self.manager, 'confirm_delete_message', return_value=True):
-            deleted = self.manager.delete_element()
-        self.assertEqual(deleted, sub1)
+            success = self.manager.delete_element()
+        self.assertEqual(success, True)
         self.assertEqual(len(action.sub_actions), 1)
         self.assertEqual(action.sub_actions[0], sub2)
 
@@ -287,9 +287,8 @@ class TestElementActionManager(unittest.TestCase):
         job = MockElement('Job1', constants.ACTION_JOB)
         self.project.jobs.append(job)
         self.selection_state.set_job(0)
-        deleted = self.manager.delete_element(confirm=True)
-        self.assertIsNotNone(deleted)
-        self.assertEqual(deleted.params['name'], 'Job1')
+        success = self.manager.delete_element(confirm=True)
+        self.assertEqual(success, True)
         self.assertEqual(len(self.project.jobs), 0)
 
     @patch('shinestacker.project.element_action_manager.QMessageBox')
@@ -298,8 +297,8 @@ class TestElementActionManager(unittest.TestCase):
         job = MockElement('Job1', constants.ACTION_JOB)
         self.project.jobs.append(job)
         self.selection_state.set_job(0)
-        deleted = self.manager.delete_element(confirm=True)
-        self.assertIsNone(deleted)
+        success = self.manager.delete_element(confirm=True)
+        self.assertEqual(success, False)
         self.assertEqual(len(self.project.jobs), 1)
 
     def test_cut_element(self):
