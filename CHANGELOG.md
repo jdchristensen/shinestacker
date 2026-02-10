@@ -1,6 +1,6 @@
 # Changelog
 
-## [v1.14.x] - 2026-02-08
+## [v1.14.x] - 2026-02-10
 
 ### Added
 - input folder path in the default settings (#15)
@@ -13,7 +13,7 @@
 - several GUI issues
 
 ### Changes
-- trap UnidentifiedImageError from PIL.Image.open when loading EXIF data
+- trap UnidentifiedImageError from PIL.Image.open when loading images to retrieve EXIF data
 - open and save file dialog remember the last path visited during the current session
 
 ---
