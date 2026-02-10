@@ -130,8 +130,7 @@ class PyramidTilesStack(PyramidBase, TempDirBase):
                         except FileNotFoundError:
                             continue
                 if laplacians:
-                    stacked = np.stack(laplacians, axis=0)
-                    fused_tile = self.fuse_laplacian(stacked)
+                    fused_tile = self.fuse_laplacian(laplacians)
                     fused_level[y:y_end, x:x_end] = fused_tile
                 self.after_step(count)
                 self.check_running(self.cleanup_temp_files)
@@ -186,8 +185,7 @@ class PyramidTilesStack(PyramidBase, TempDirBase):
                         traceback.print_exc()
                         continue
             if laplacians:
-                stacked = np.stack(laplacians, axis=0)
-                result = self.fuse_laplacian(stacked)
+                result = self.fuse_laplacian(laplacians)
                 for img_index, tile_y, tile_x in tiles_loaded:
                     self._delete_single_tile(img_index, level, tile_y, tile_x)
                 return result
@@ -249,11 +247,9 @@ class PyramidTilesStack(PyramidBase, TempDirBase):
                         laplacian = self.load_level(img_index, level)
                         laplacians.append(laplacian)
                 if level == max_levels - 1:
-                    stacked = np.stack(laplacians, axis=0)
-                    fused_level = self.get_fused_base(stacked)
+                    fused_level = self.get_fused_base(laplacians)
                 else:
-                    stacked = np.stack(laplacians, axis=0)
-                    fused_level = self.fuse_laplacian(stacked)
+                    fused_level = self.fuse_laplacian(laplacians)
                 self._delete_level_files(level, num_images, all_level_counts)
                 self.check_running(lambda: None)
             fused.append(fused_level)

@@ -99,11 +99,13 @@ class PyramidBase(BaseStackAlgo):
                          self.area_deviation(self.get_pad(padded_image, row, column))),
             image.shape[:2], dtype=int)
 
-    def get_fused_base(self, images):
+    def get_fused_base(self, laplacians):
+        images = np.stack(laplacians, axis=0)
         layers = images.shape[0]
         entropies = np.zeros(images.shape[:3], dtype=self.float_type)
         deviations = np.copy(entropies)
         gray_images = np.array([cv2.cvtColor(
+            images[layer] if self.float_type == np.float32 else
             images[layer].astype(np.float32),
             cv2.COLOR_BGR2GRAY).astype(self.dtype) for layer in range(layers)])
         entropies = np.array([self.entropy(img) for img in gray_images])
@@ -136,7 +138,8 @@ class PyramidBase(BaseStackAlgo):
     def _compute_energies(self, gray_laps):
         return [self.convolve(np.square(gray_lap)) for gray_lap in gray_laps]
 
-    def fuse_laplacian(self, laplacians):
+    def fuse_laplacian(self, laplacians_list):
+        laplacians = np.stack(laplacians_list, axis=0)
         gray_laps = [cv2.cvtColor(lap if self.float_type == np.float32
                                   else lap.astype(np.float32),
                                   cv2.COLOR_BGR2GRAY)
@@ -160,7 +163,7 @@ class PyramidStack(PyramidBase):
         return laplacian[::-1]
 
     def fuse_pyramids(self, all_laplacians):
-        fused = [self.get_fused_base(np.stack([p[-1] for p in all_laplacians], axis=0))]
+        fused = [self.get_fused_base([p[-1] for p in all_laplacians])]
         count = 0
         n_layers = len(all_laplacians[0]) - 2
         self.process.callback(constants.CALLBACKS_SET_TOTAL_ACTIONS,
@@ -168,8 +171,7 @@ class PyramidStack(PyramidBase):
         action_count = 0
         for layer in range(n_layers, -1, -1):
             self.print_message(f': fusing pyramids, layer: {layer + 1}')
-            laplacians = np.stack([p[layer] for p in all_laplacians], axis=0)
-            fused.append(self.fuse_laplacian(laplacians))
+            fused.append(self.fuse_laplacian([p[layer] for p in all_laplacians]))
             count += 1
             self.after_step(self._steps_per_frame * self.n_frames + count)
             self.process.callback(constants.CALLBACK_UPDATE_FRAME_STATUS,
