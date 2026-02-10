@@ -22,7 +22,7 @@ class PyramidBase(BaseStackAlgo):
         gen_kernel = kwargs.get('gen_kernel', default_params['gen_kernel'])
         kernel = np.array([0.25 - gen_kernel / 2.0, 0.25,
                            gen_kernel, 0.25, 0.25 - gen_kernel / 2.0])
-        self.gen_kernel = np.outer(kernel, kernel)
+        self.gen_kernel_1d = kernel
         self.dtype = None
         self.num_pixel_values = None
         self.max_pixel_value = None
@@ -38,7 +38,8 @@ class PyramidBase(BaseStackAlgo):
         return super().total_steps(n_frames) + self.n_levels
 
     def convolve(self, image):
-        return cv2.filter2D(image, -1, self.gen_kernel, borderType=cv2.BORDER_REFLECT101)
+        return cv2.sepFilter2D(image, -1, self.gen_kernel_1d, self.gen_kernel_1d,
+                               borderType=cv2.BORDER_REFLECT101)
 
     def reduce_layer(self, layer):
         if len(layer.shape) == 2:
