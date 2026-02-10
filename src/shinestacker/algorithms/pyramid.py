@@ -55,12 +55,10 @@ class PyramidBase(BaseStackAlgo):
             expand[1::2, :] = 0
             expand[:, 1::2] = 0
             return 4. * self.convolve(expand)
-        ch_layer = self.expand_layer(layer[:, :, 0])
-        next_layer = np.zeros(list(ch_layer.shape) + [layer.shape[2]], dtype=layer.dtype)
-        next_layer[:, :, 0] = ch_layer
-        for channel in range(1, layer.shape[2]):
-            next_layer[:, :, channel] = self.expand_layer(layer[:, :, channel])
-        return next_layer
+        h, w, c = layer.shape
+        expand = np.zeros((2 * h, 2 * w, c), dtype=layer.dtype)
+        expand[::2, ::2, :] = layer
+        return 4. * self.convolve(expand)
 
     def collapse(self, pyramid):
         self.print_message(': collapsing pyramid')

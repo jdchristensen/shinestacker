@@ -15,6 +15,7 @@
 ### Changes
 - trap UnidentifiedImageError from PIL.Image.open when loading images to retrieve EXIF data
 - open and save file dialog remember the last path visited during the current session
+- improved speed of the pyramid algorithm
 
 ---
 
