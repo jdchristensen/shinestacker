@@ -44,16 +44,14 @@ class PyramidBase(BaseStackAlgo):
     def reduce_layer(self, layer):
         if len(layer.shape) == 2:
             return self.convolve(layer)[::2, ::2]
-        reduced_channels = [self.reduce_layer(layer[:, :, channel])
-                            for channel in range(layer.shape[2])]
-        return np.stack(reduced_channels, axis=-1)
+        convolved = self.convolve(layer)
+        return convolved[::2, ::2, :]
 
     def expand_layer(self, layer):
         if len(layer.shape) == 2:
-            expand = np.empty((2 * layer.shape[0], 2 * layer.shape[1]), dtype=layer.dtype)
+            h, w = layer.shape
+            expand = np.zeros((2 * h, 2 * w), dtype=layer.dtype)
             expand[::2, ::2] = layer
-            expand[1::2, :] = 0
-            expand[:, 1::2] = 0
             return 4. * self.convolve(expand)
         h, w, c = layer.shape
         expand = np.zeros((2 * h, 2 * w, c), dtype=layer.dtype)
