@@ -11,6 +11,7 @@
 - better depth map default options improve fused image sharpness (#8)
 - opening multiple files via -f option, filenames separated by a ";"
 - several GUI issues
+- release build script for macos intel x64 architecture (#18)
 
 ### Changes
 - trap UnidentifiedImageError from PIL.Image.open when loading images to retrieve EXIF data
