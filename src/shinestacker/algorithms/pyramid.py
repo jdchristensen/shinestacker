@@ -138,7 +138,9 @@ class PyramidBase(BaseStackAlgo):
         return [self.convolve(np.square(gray_lap)) for gray_lap in gray_laps]
 
     def fuse_laplacian(self, laplacians):
-        gray_laps = [cv2.cvtColor(lap.astype(np.float32), cv2.COLOR_BGR2GRAY)
+        gray_laps = [cv2.cvtColor(lap if self.float_type == np.float32
+                                  else lap.astype(np.float32),
+                                  cv2.COLOR_BGR2GRAY)
                      for lap in laplacians]
         energies = self._compute_energies(gray_laps)
         best = np.argmax(energies, axis=0)
