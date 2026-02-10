@@ -174,10 +174,11 @@ class MainApp(QMainWindow):
         self.stacked_widget.setCurrentIndex(index)
 
     def retouch_callback(self, filename):
-        self.switch_to_retouch()
         if isinstance(filename, list):
-            open_frames(self.retouch_window, None, ";".join(filename))
+            if open_frames(self.retouch_window, None, ";".join(filename)):
+                self.switch_to_retouch()
         else:
+            self.switch_to_retouch()
             self.retouch_window.io_gui_handler.open_file(filename)
 
     def import_from_project(self):
