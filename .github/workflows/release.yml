@@ -12,21 +12,8 @@ on:
   workflow_dispatch:
 
 jobs:
-  detect-macos-architectures:
-    runs-on: ubuntu-latest
-    outputs:
-      intel-runner: ${{ steps.detect.outputs.intel-runner }}
-      silicon-runner: ${{ steps.detect.outputs.silicon-runner }}
-    steps:
-      - name: Detect available macOS runners
-        id: detect
-        run: |
-          echo "intel-runner=macos-15-large" >> $GITHUB_OUTPUT
-          echo "silicon-runner=macos-15" >> $GITHUB_OUTPUT
-
   publish-release:
     runs-on: ${{ matrix.os }}
-    needs: detect-macos-architectures
     strategy:
       matrix:
         include:
@@ -36,10 +23,7 @@ jobs:
           - os: windows-latest
             label: windows  
             python-version: "3.14"
-          - os: ${{ needs.detect-macos-architectures.outputs.intel-runner }}
-            label: macos-intel
-            python-version: "3.14"
-          - os: ${{ needs.detect-macos-architectures.outputs.silicon-runner }}
+          - os: macos-15
             label: macos-apple-silicon
             python-version: "3.14"
 
@@ -78,7 +62,7 @@ jobs:
           if-no-files-found: ignore
 
   create-release:
-    needs: [detect-macos-architectures, publish-release]
+    needs: publish-release
     runs-on: ubuntu-latest
     steps:
       - name: Download all artifacts
@@ -89,21 +73,17 @@ jobs:
       - name: Prepare release assets
         run: |
           mkdir -p release_assets
-          # Check and copy each artifact if it exists
           if [ -f "artifacts/shinestacker-linux/shinestacker-release.tar.gz" ]; then
             cp artifacts/shinestacker-linux/shinestacker-release.tar.gz release_assets/shinestacker-ubuntu.tar.gz
-          fi
-          if [ -f "artifacts/shinestacker-macos-intel/shinestacker-release.dmg" ]; then
-            cp artifacts/shinestacker-macos-intel/shinestacker-release.dmg release_assets/shinestacker-macos-intel.dmg
-          fi
-          if [ -f "artifacts/shinestacker-macos-apple-silicon/shinestacker-release.dmg" ]; then
-            cp artifacts/shinestacker-macos-apple-silicon/shinestacker-release.dmg release_assets/shinestacker-macos-apple-silicon.dmg
           fi
           if [ -f "artifacts/shinestacker-windows/shinestacker-release.zip" ]; then
             cp artifacts/shinestacker-windows/shinestacker-release.zip release_assets/shinestacker-windows.zip
           fi
           if ls artifacts/shinestacker-windows/shinestacker-setup.exe 1> /dev/null 2>&1; then
             cp artifacts/shinestacker-windows/shinestacker-setup.exe release_assets/
+          fi
+          if [ -f "artifacts/shinestacker-macos-apple-silicon/shinestacker-release.dmg" ]; then
+            cp artifacts/shinestacker-macos-apple-silicon/shinestacker-release.dmg release_assets/shinestacker-macos-apple-silicon.dmg
           fi
           echo "Available release assets:"
           ls -la release_assets/
