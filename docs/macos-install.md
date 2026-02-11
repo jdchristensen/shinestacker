@@ -17,3 +17,6 @@ xattr -cr /Applications/shinestacker.app
 
 > 💡 Tip: macOS might still show a security warning the first time you open the app.
 > If that happens, right-click the app and choose Open, then confirm.
+
+
+*Note that only macOS apple silicon (ARM processor) is supported. x65 intel platform is not supported due to missing o missing free build machines on GitHub.*

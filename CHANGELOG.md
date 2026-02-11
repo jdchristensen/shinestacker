@@ -1,6 +1,7 @@
 # Changelog
 
 ## [v1.14.1] - 2026-02-11
+**improved DepthMap and user requests supported**
 
 ### Added
 - input folder path in the default settings (#15)
@@ -16,7 +17,7 @@
 - trap `UnidentifiedImageError` from `PIL.Image.open` when loading images to retrieve EXIF data
 - file open/save dialogs now remember the last visited path during the current session
 - improved performance of the pyramid stacking algorithm
-- dropped support for macOS intel x64 architecture due to missing free build machine
+- dropped support for macOS intel x64 architecture due to missing free build machines
 
 ---
 
