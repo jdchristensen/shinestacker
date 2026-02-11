@@ -1,22 +1,22 @@
 # Changelog
 
-## [v1.14.x] - 2026-02-10
+## [v1.14.1] - 2026-02-11
 
 ### Added
 - input folder path in the default settings (#15)
-- menu action to delete intermediate-steps image folders. This action also gets called before closing a project and reminds a user to clean up disk space (#17)
+- menu action to delete intermediate image folders; this action is also triggered when closing a project and prompts the user to free disk space (#17)
 
 ### Fixed
-- fixes related to RAW formats support (#12)
-- better depth map default options improve fused image sharpness (#8)
-- opening multiple files via -f option, filenames separated by a ";"
-- several GUI issues
-- release build script for macos intel x64 architecture (#18)
+- fixes and improvements related to RAW format support (#12)
+- improved default depth map settings for sharper fused images (#8)
+- support for opening multiple input files via the `-f` option (filenames separated by `;`)
+- several GUI issues and minor usability glitches
+- release build script for macOS Intel x64 architecture (#18)
 
 ### Changes
-- trap UnidentifiedImageError from PIL.Image.open when loading images to retrieve EXIF data
-- open and save file dialog remember the last path visited during the current session
-- improved speed of the pyramid algorithm
+- trap `UnidentifiedImageError` from `PIL.Image.open` when loading images to retrieve EXIF data
+- file open/save dialogs now remember the last visited path during the current session
+- improved performance of the pyramid stacking algorithm
 
 ---
 
