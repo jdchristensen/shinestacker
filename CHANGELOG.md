@@ -6,6 +6,7 @@
 ### Added
 - input folder path in the default settings (#15)
 - menu action to delete intermediate image folders; this action is also triggered when closing a project and prompts the user to free disk space (#17)
+- icon in the top bar to more easily start a retouch session
 
 ### Fixed
 - fixes and improvements related to RAW format support (#12)
@@ -17,7 +18,7 @@
 - trap `UnidentifiedImageError` from `PIL.Image.open` when loading images to retrieve EXIF data
 - file open/save dialogs now remember the last visited path during the current session
 - improved performance of the pyramid stacking algorithm
-- dropped support for macOS intel x64 architecture due to missing free build machines
+- dropped support for macOS intel x64 architecture due to missing free build machines (#18)
 
 ---
 
