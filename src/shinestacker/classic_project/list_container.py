@@ -66,8 +66,6 @@ def get_action_row(selection_state, actions):
 class ListContainer:
     INDENT_SPACE = "&nbsp;&nbsp;&nbsp;↪&nbsp;&nbsp;&nbsp;"
 
-    select_signal = Signal()
-
     def __init__(self, dark_theme, job_list=False, action_list=False):
         self._job_list = HandCursorListWidget() if job_list is False else job_list
         self._action_list = HandCursorListWidget() if action_list is False else action_list
@@ -291,7 +289,6 @@ class ListContainer:
                     for sub_action in action.sub_actions:
                         self.add_list_item(self.action_list(), sub_action, True, position)
                         position += 1
-            self.select_signal.emit()
 
     def get_action_at(self, action_row):
         job_row = self.current_job_index()

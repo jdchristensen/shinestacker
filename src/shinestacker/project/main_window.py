@@ -13,7 +13,7 @@ from ..config.app_config import AppConfig
 from ..core.exceptions import InvalidProjectError
 from ..core.core_utils import get_app_base_path
 from ..gui.folder_file_selection import SessionFileDialog
-from ..gui.project_model import Project
+from ..gui.project_model import Project, get_retouch_path
 from ..gui.sys_mon import StatusBarSystemMonitor
 from ..gui.action_config_dialog import ActionConfigDialog
 from ..common_project.project_handler import ProjectHandler
@@ -87,11 +87,11 @@ class MainWindow(ProjectHandler, QMainWindow):
         self.menu_manager = MenuManager(
             self.menuBar(), actions, self.add_action, self.add_subaction, dark_theme, self)
         self.classic_view.connect_signals(
-            self.update_delete_action_state,
+            self.update_gui_actions_enable,
             self.menu_manager.set_enabled_subactions_gui,
             self.edit_element)
         self.modern_view.connect_signals(
-            self.update_delete_action_state,
+            self.update_gui_actions_enable,
             self.show_status_message,
             self.menu_manager.set_enabled_subactions_gui)
         signal_map = [
@@ -222,9 +222,6 @@ class MainWindow(ProjectHandler, QMainWindow):
     def vertical_actions_layout(self):
         self.modern_view.horizontal_actions_layout(False)
 
-    def get_retouch_path(self, job):
-        return self.current_view.get_retouch_path(job)
-
     def quit(self):
         self.close_project()
         q = True
@@ -347,6 +344,7 @@ class MainWindow(ProjectHandler, QMainWindow):
             for _k, v in self.views.items():
                 v.clear_project()
             self.set_enabled_file_open_close_actions(False)
+            self.menu_manager.run_retouch_selected_job_action.setEnabled(False)
             self.refresh_ui()
             self.show_status_message("Project closed.")
 
@@ -589,11 +587,19 @@ class MainWindow(ProjectHandler, QMainWindow):
         if self.num_project_jobs() > 1:
             self.menu_manager.run_all_jobs_action.setEnabled(True)
 
-    def update_delete_action_state(self):
+    def update_gui_actions_enable(self):
         self.menu_manager.delete_element_action.setEnabled(
             self.selection_state.is_valid())
         self.menu_manager.set_enabled_subactions_gui(
             self.selection_state.is_subaction_selected())
+        if self.selection_state.is_valid():
+            job = self.project_job(self.selection_state.job_index)
+            if job:
+                retouch_path = get_retouch_path(job)
+                total_files = sum(
+                    len([f for f in os.listdir(p) if os.path.isfile(os.path.join(p, f))])
+                    for p in retouch_path if os.path.exists(p))
+                self.menu_manager.run_retouch_selected_job_action.setEnabled(total_files > 0)
 
     def set_enabled_file_open_close_actions(self, enabled):
         should_enable = enabled or self.num_project_jobs() > 0

@@ -10,7 +10,7 @@ from .. config.constants import constants
 from .. gui.gui_logging import LogManager
 from .. gui.action_config_dialog import ActionConfigDialog
 from .. gui.project_model import (
-    get_action_working_path, get_action_input_path, get_action_output_path)
+    get_retouch_path, get_action_working_path, get_action_input_path, get_action_output_path)
 from .project_handler import ProjectHandler
 
 
@@ -108,7 +108,7 @@ class ProjectView(QWidget, LogManager, ProjectHandler):
                 "Ensure MainWindow has objectName='mainWindow'")
 
     def run_retouch_job(self, job):
-        retouch_paths = self.get_retouch_path(job)
+        retouch_paths = get_retouch_path(job)
         if retouch_paths:
             self.run_retouch_path(retouch_paths)
 
@@ -132,26 +132,6 @@ class ProjectView(QWidget, LogManager, ProjectHandler):
     def _show_retouch_error(self, message):
         QMessageBox.warning(self, "Retouch Error",
                             f"{message}\n\nRetouch functionality may not be available.")
-
-    def get_retouch_path(self, job):
-        frames_path = [get_action_output_path(action)[0]
-                       for action in job.sub_actions
-                       if action.type_name == constants.ACTION_COMBO]
-        bunches_path = [get_action_output_path(action)[0]
-                        for action in job.sub_actions
-                        if action.type_name == constants.ACTION_FOCUSSTACKBUNCH]
-        stack_path = [get_action_output_path(action)[0]
-                      for action in job.sub_actions
-                      if action.type_name == constants.ACTION_FOCUSSTACK]
-        if len(bunches_path) > 0:
-            stack_path += [bunches_path[0]]
-        elif len(frames_path) > 0:
-            stack_path += [frames_path[0]]
-        wp = get_action_working_path(job)[0]
-        if wp == '':
-            raise ValueError("Job has no working path specified.")
-        stack_path = [f"{wp}/{s}" for s in stack_path]
-        return stack_path
 
     def create_common_context_menu(self, current_action):
         menu = QMenu(self)
@@ -208,7 +188,7 @@ class ProjectView(QWidget, LogManager, ProjectHandler):
                 self.browse_output_path_action.triggered.connect(self.browse_output_path)
                 menu.addAction(self.browse_output_path_action)
         if current_action.type_name == constants.ACTION_JOB:
-            retouch_path = self.get_retouch_path(current_action)
+            retouch_path = get_retouch_path(current_action)
             if len(retouch_path) > 0:
                 menu.addSeparator()
                 self.job_retouch_path_action = QAction("Retouch Job Output")

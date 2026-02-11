@@ -118,6 +118,27 @@ def get_action_working_path(action, get_name=False):
     return get_action_working_path(action.parent, True)
 
 
+def get_retouch_path(job):
+    frames_path = [get_action_output_path(action)[0]
+                   for action in job.sub_actions
+                   if action.type_name == constants.ACTION_COMBO]
+    bunches_path = [get_action_output_path(action)[0]
+                    for action in job.sub_actions
+                    if action.type_name == constants.ACTION_FOCUSSTACKBUNCH]
+    stack_path = [get_action_output_path(action)[0]
+                  for action in job.sub_actions
+                  if action.type_name == constants.ACTION_FOCUSSTACK]
+    if len(bunches_path) > 0:
+        stack_path += [bunches_path[0]]
+    elif len(frames_path) > 0:
+        stack_path += [frames_path[0]]
+    wp = get_action_working_path(job)[0]
+    if wp == '':
+        raise ValueError("Job has no working path specified.")
+    stack_path = [f"{wp}/{s}" for s in stack_path]
+    return stack_path
+
+
 def get_action_output_path(action, get_name=False):
     if action is None:
         return '', ''

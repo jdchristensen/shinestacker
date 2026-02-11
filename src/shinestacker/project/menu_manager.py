@@ -59,7 +59,8 @@ class MenuManager(QObject):
             "Add Job": "plus-round-line-icon",
             "Run Job": "play-button-round-icon",
             "Run All Jobs": "forward-button-icon",
-            "Stop": "stop-button-round-icon"
+            "Stop": "stop-button-round-icon",
+            "Retouch Job Output": "paint-round-icon"
         }
         self.tooltips = {
             "Delete": "Delete selected element",
@@ -245,7 +246,7 @@ class MenuManager(QObject):
         self.clear_project_images = self.action("Clear Project Images", requires_file=True)
         menu.addAction(self.clear_project_images)
         menu.addSeparator()
-        self.run_retouch_selected_job_action = self.action("Retouch Job Output")
+        self.run_retouch_selected_job_action = self.action("Retouch Job Output", requires_file=True)
         menu.addAction(self.run_retouch_selected_job_action)
 
     def add_actions_menu(self):
@@ -379,6 +380,7 @@ class MenuManager(QObject):
         toolbar.addAction(self.run_job_action)
         toolbar.addAction(self.run_all_jobs_action)
         toolbar.addAction(self.stop_action)
+        toolbar.addAction(self.run_retouch_selected_job_action)
 
     def set_enabled_subactions_gui(self, enabled):
         self.add_subaction_entry_action.setEnabled(enabled)

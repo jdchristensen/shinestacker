@@ -4,6 +4,7 @@ from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QLabel, QSplitter, QApplication
 from .. config.constants import constants
 from .. gui.colors import ColorPalette
+from .. gui.project_model import get_retouch_path
 from .. common_project.run_worker import JobLogWorker, ProjectLogWorker
 from .. common_project.project_view import ProjectView
 from .. common_project.selection_state import SelectionState
@@ -90,10 +91,10 @@ class ClassicProjectView(ProjectView, ListContainer):
         self.action_list().itemClicked.connect(self.check_enable_subactions)
 
     def connect_signals(
-            self, update_delete_action_state, set_enabled_sub_actions_gui,
+            self, update_gui_actions_enable, set_enabled_sub_actions_gui,
             edit_selected_element):
-        self.job_list().itemSelectionChanged.connect(update_delete_action_state)
-        self.action_list().itemSelectionChanged.connect(update_delete_action_state)
+        self.job_list().itemSelectionChanged.connect(update_gui_actions_enable)
+        self.action_list().itemSelectionChanged.connect(update_gui_actions_enable)
         self.enable_sub_actions_requested.connect(set_enabled_sub_actions_gui)
         self.job_list().enter_key_pressed.connect(edit_selected_element)
         self.action_list().enter_key_pressed.connect(edit_selected_element)
@@ -235,7 +236,7 @@ class ClassicProjectView(ProjectView, ListContainer):
         self._prepare_job_run_ui(job_index, job)
         labels = [[(self.action_text(a), a.enabled()) for a in job.sub_actions]]
         job_name = job.params["name"]
-        r = self.get_retouch_path(job)
+        r = get_retouch_path(job)
         retouch_paths = [] if len(r) == 0 else [(job_name, r)]
         new_window, id_str = self.create_new_window(f"{job_name} [Job]",
                                                     labels, retouch_paths)
@@ -254,7 +255,7 @@ class ClassicProjectView(ProjectView, ListContainer):
             project_name = '[new]'
         retouch_paths = []
         for job in self.project_jobs():
-            r = self.get_retouch_path(job)
+            r = get_retouch_path(job)
             if len(r) > 0:
                 retouch_paths.append((job.params["name"], r))
         new_window, id_str = self.create_new_window(f"{project_name} [Project]",
@@ -358,7 +359,6 @@ class ClassicProjectView(ProjectView, ListContainer):
                 if len(action.sub_actions) > 0:
                     for sub_action in action.sub_actions:
                         self.add_list_item(self.action_list(), sub_action, True)
-            self.select_signal.emit()
         self._update_selection_state()
 
     def _update_selection_state(self):

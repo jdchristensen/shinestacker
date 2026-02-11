@@ -21,7 +21,7 @@ from .sub_action_widget import SubActionWidget
 
 
 class ModernProjectView(ProjectView):
-    update_delete_action_state_requested = Signal()
+    update_gui_actions_enable_requested = Signal()
     show_status_message_requested = Signal(str, int)
 
     def __init__(self, project, selection_state, dark_theme, parent=None):
@@ -106,15 +106,15 @@ class ModernProjectView(ProjectView):
         widget.set_selected(True)
         self.selected_widget = widget
         self.selection_state.copy_from(state)
-        self.update_delete_action_state_requested.emit()
+        self.update_gui_actions_enable_requested.emit()
         self._ensure_selected_visible()
 
     def _selection_callback(self, widget_type, job_index, action_index=-1, subaction_index=-1):
         state = SelectionState(job_index, action_index, subaction_index)
         self._select_widget(state)
 
-    def connect_signals(self, update_delete_action_state, show_status_message, enable_sub_actions):
-        self.update_delete_action_state_requested.connect(update_delete_action_state)
+    def connect_signals(self, update_gui_actions_enable, show_status_message, enable_sub_actions):
+        self.update_gui_actions_enable_requested.connect(update_gui_actions_enable)
         self.show_status_message_requested.connect(show_status_message)
         self.enable_sub_actions_requested.connect(enable_sub_actions)
 
@@ -214,7 +214,7 @@ class ModernProjectView(ProjectView):
     def clear_project(self):
         self.clear_job_list()
         self._reset_selection()
-        self.update_delete_action_state_requested.emit()
+        self.update_gui_actions_enable_requested.emit()
 
     # pylint: disable=W0212
     def _refresh_job_widget_signals(self):
@@ -285,7 +285,7 @@ class ModernProjectView(ProjectView):
         widget.set_selected(True)
         self.selected_widget = widget
         self.selection_state.from_tuple((job_index, action_index, subaction_index))
-        self.update_delete_action_state_requested.emit()
+        self.update_gui_actions_enable_requested.emit()
         element = self.project_element(job_index, action_index, subaction_index)
         self.enable_sub_actions_requested.emit(
             subaction_index >= 0 or element.type_name == constants.ACTION_COMBO)
@@ -319,7 +319,7 @@ class ModernProjectView(ProjectView):
                 new_widget.set_selected(True)
                 self.selected_widget = new_widget
                 self._ensure_selected_visible()
-                self.update_delete_action_state_requested.emit()
+                self.update_gui_actions_enable_requested.emit()
         except Exception:
             self.refresh_ui()
 
@@ -833,7 +833,7 @@ class ModernProjectView(ProjectView):
         try:
             self._remove_widget(selection)
             self._refresh_job_widget_signals()
-            self.update_delete_action_state_requested.emit()
+            self.update_gui_actions_enable_requested.emit()
             return True
         except Exception:
             self.refresh_ui()
@@ -859,7 +859,7 @@ class ModernProjectView(ProjectView):
                 self.selected_widget = widget
                 self.selection_state.copy_from(selection)
             self._refresh_job_widget_signals()
-            self.update_delete_action_state_requested.emit()
+            self.update_gui_actions_enable_requested.emit()
             self._select_widget(selection)
             return True
         except Exception:
