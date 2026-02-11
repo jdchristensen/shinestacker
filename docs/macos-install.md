@@ -19,4 +19,4 @@ xattr -cr /Applications/shinestacker.app
 > If that happens, right-click the app and choose Open, then confirm.
 
 
-*Note that only macOS apple silicon (ARM processor) is supported. x65 intel platform is not supported due to missing o missing free build machines on GitHub.*
+*Note that only macOS apple silicon (ARM processor) is supported. x64 intel platform is not supported due to missing o missing free build machines on GitHub.*
