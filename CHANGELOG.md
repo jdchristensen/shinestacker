@@ -11,12 +11,12 @@
 - improved default depth map settings for sharper fused images (#8)
 - support for opening multiple input files via the `-f` option (filenames separated by `;`)
 - several GUI issues and minor usability glitches
-- release build script for macOS Intel x64 architecture (#18)
 
 ### Changes
 - trap `UnidentifiedImageError` from `PIL.Image.open` when loading images to retrieve EXIF data
 - file open/save dialogs now remember the last visited path during the current session
 - improved performance of the pyramid stacking algorithm
+- dropped support for macOS intel x64 architecture due to missing free build machine
 
 ---
 

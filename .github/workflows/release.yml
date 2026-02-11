@@ -23,7 +23,7 @@ jobs:
           - os: windows-latest
             label: windows  
             python-version: "3.14"
-          - os: macos-15
+          - os: macos-latest
             label: macos-apple-silicon
             python-version: "3.14"
 
