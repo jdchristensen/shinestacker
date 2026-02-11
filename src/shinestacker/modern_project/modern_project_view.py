@@ -689,6 +689,7 @@ class ModernProjectView(ProjectView):
 
     def _connect_worker_signals(self, worker):
         SignalConnector.connect_worker_signals(worker, self, self.progress_handler)
+        worker.run_failed_signal.connect(lambda: self.run_finished_signal.emit)
 
     def _clear_widget_metadata(self, widget):
         widget.clear_metadata()

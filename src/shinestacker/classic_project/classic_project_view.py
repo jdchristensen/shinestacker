@@ -222,8 +222,7 @@ class ClassicProjectView(ProjectView, ListContainer):
         worker.after_step_signal.connect(window.handle_after_step)
         worker.save_plot_signal.connect(window.handle_save_plot)
         worker.open_app_signal.connect(window.handle_open_app)
-        worker.run_completed_signal.connect(
-            lambda run_id: self.handle_run_completed())
+        worker.run_completed_signal.connect(lambda run_id: self.handle_run_completed())
         worker.run_stopped_signal.connect(window.handle_run_stopped)
         worker.run_failed_signal.connect(window.handle_run_failed)
         worker.add_status_box_signal.connect(window.handle_add_status_box)

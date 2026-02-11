@@ -82,7 +82,7 @@ class MainWindow(ProjectHandler, QMainWindow):
             "Horizontal Layout": self.horizontal_actions_layout,
             "Vertical Layout": self.vertical_actions_layout,
             "Clear Run Information": self.clear_run_metadata,
-            "Clear Project Images": self.clear_project_images,
+            "Clear Project Outputs": self.clear_project_images,
         }
         self.menu_manager = MenuManager(
             self.menuBar(), actions, self.add_action, self.add_subaction, dark_theme, self)

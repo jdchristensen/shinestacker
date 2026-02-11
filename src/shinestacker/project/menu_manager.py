@@ -52,7 +52,7 @@ class MenuManager(QObject):
             "Run All Jobs": "Ctrl+Shift+J",
             "Stop": "Ctrl+Shift+X",
             "Clear Run Information": "Ctrl+Shift+M",
-            "Clear Project Images": "Ctrl+Shift+T"
+            "Clear Project Outputs": "Ctrl+Shift+T"
         }
         self.icons = {
             "Delete": "close-round-line-icon",
@@ -68,7 +68,7 @@ class MenuManager(QObject):
             "Run Job": "Run selected job",
             "Run All Jobs": "Run all jobs",
             "Stop": "Stop run",
-            "Clear Project Images": "Select temporary images to be deleted"
+            "Clear Project Outputs": "Select temporary images to be deleted"
         }
 
     def get_icon(self, icon_name):
@@ -243,7 +243,7 @@ class MenuManager(QObject):
         menu.addSeparator()
         self.clear_run_info_action = self.action("Clear Run Information", requires_file=True)
         menu.addAction(self.clear_run_info_action)
-        self.clear_project_images = self.action("Clear Project Images", requires_file=True)
+        self.clear_project_images = self.action("Clear Project Outputs", requires_file=True)
         menu.addAction(self.clear_project_images)
         menu.addSeparator()
         self.run_retouch_selected_job_action = self.action("Retouch Job Output", requires_file=True)
