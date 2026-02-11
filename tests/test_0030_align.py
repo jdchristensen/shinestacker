@@ -107,6 +107,28 @@ def test_parallel():
         assert False
 
 
+def test_parallel_sift():
+    try:
+        job = StackJob("job", "examples", input_path="input/img-jpg", callbacks='tqdm')
+        job.add_action(
+            CombinedActions(
+                "align-jpg",
+                [AlignFramesParallel(
+                    feature_config = {
+                        'detector': constants.DETECTOR_SIFT,
+                        'descriptor': constants.DESCRIPTOR_SIFT
+                    },
+                    matching_config= {
+                        'match_method': constants.MATCHING_KNN,
+                    },
+                    plot_summary=False)],
+                output_path="output/img-jpg-align",
+                delete_output_at_end=True))
+        job.run()
+    except Exception:
+        assert False
+
+
 def test_auto():
     try:
         job = StackJob("job", "examples", input_path="input/img-jpg", callbacks='tqdm')
@@ -124,5 +146,7 @@ if __name__ == '__main__':
     test_align_rescale()
     test_jpg()
     test_tif()
+    test_parallel()
+    test_parallel_sift()
     test_auto()
     test_jpg_quality_plots()
