@@ -14,7 +14,7 @@ from ..common_project.project_view import ProjectView
 from ..common_project.selection_state import SelectionState
 from .job_widget import JobWidget
 from .progress_mapper import ProgressMapper
-from .progress_signal_handler import ProgressSignalHandler, SignalConnector
+from .progress_signal_handler import ProgressSignalHandler
 from .selection_navigation_manager import SelectionNavigationManager
 from .action_widget import ActionWidget
 from .sub_action_widget import SubActionWidget
@@ -212,6 +212,7 @@ class ModernProjectView(ProjectView):
         self.selected_widget = None
 
     def clear_project(self):
+        super().clear_project()
         self.clear_job_list()
         self._reset_selection()
         self.update_gui_actions_enable_requested.emit()
@@ -688,8 +689,10 @@ class ModernProjectView(ProjectView):
         return self._worker is not None and self._worker.isRunning()
 
     def _connect_worker_signals(self, worker):
-        SignalConnector.connect_worker_signals(worker, self, self.progress_handler)
-        worker.run_failed_signal.connect(lambda: self.run_finished_signal.emit)
+        self.connect_worker_signals(worker, self.progress_handler)
+        worker.run_completed_signal.connect(
+            self.handle_run_completed, Qt.ConnectionType.UniqueConnection)
+        worker.plot_manager.save_plot_signal.connect(self.progress_handler.plot_manager.save_plot)
 
     def _clear_widget_metadata(self, widget):
         widget.clear_metadata()

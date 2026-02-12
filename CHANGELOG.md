@@ -1,5 +1,15 @@
 # Changelog
 
+## [v1.14.x] - 2026-02-12
+
+### Fixed
+- issue in file name propagation to classc view when running all jobs
+
+### Changes
+- cleaned up signal handling
+
+---
+
 ## [v1.14.1] - 2026-02-11
 **improved DepthMap and user requests supported**
 

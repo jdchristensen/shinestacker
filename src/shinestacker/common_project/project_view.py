@@ -2,7 +2,7 @@
 import os
 import subprocess
 import traceback
-from PySide6.QtCore import Signal
+from PySide6.QtCore import Signal, Qt
 from PySide6.QtGui import QAction
 from PySide6.QtWidgets import QWidget, QMenu, QMessageBox
 from .. core.core_utils import running_under_windows, running_under_macos
@@ -37,7 +37,31 @@ class ProjectView(QWidget, LogManager, ProjectHandler):
         LogManager.__init__(self)
         self.dark_theme = dark_theme
         self.selection_state = selection_state
+        self._current_file_name = ''
         self._setup_common_menu_actions()
+
+    def set_current_file_name(self, file_name):
+        self._current_file_name = file_name
+
+    def current_file_name(self):
+        return self._current_file_name
+
+    def connect_worker_signals(self, worker, signal_target):
+        unique = Qt.ConnectionType.UniqueConnection
+        worker.before_action_signal.connect(signal_target.handle_before_action, unique)
+        worker.after_action_signal.connect(signal_target.handle_after_action, unique)
+        worker.step_counts_signal.connect(signal_target.handle_step_counts, unique)
+        worker.begin_steps_signal.connect(signal_target.handle_begin_steps, unique)
+        worker.end_steps_signal.connect(signal_target.handle_end_steps, unique)
+        worker.after_step_signal.connect(signal_target.handle_after_step, unique)
+        worker.run_stopped_signal.connect(signal_target.handle_run_stopped, unique)
+        worker.run_failed_signal.connect(signal_target.handle_run_failed, unique)
+        worker.add_status_box_signal.connect(signal_target.handle_add_status_box, unique)
+        worker.add_frame_signal.connect(signal_target.handle_add_frame, unique)
+        worker.update_frame_status_signal.connect(signal_target.handle_update_frame_status, unique)
+        worker.set_total_actions_signal.connect(signal_target.handle_set_total_actions, unique)
+        worker.save_plot_signal.connect(signal_target.handle_save_plot, unique)
+        worker.open_app_signal.connect(signal_target.handle_open_app, unique)
 
     def _setup_common_menu_actions(self):
         pass
@@ -200,7 +224,7 @@ class ProjectView(QWidget, LogManager, ProjectHandler):
         return ActionConfigDialog(action, self.current_file_directory(), self.parent())
 
     def clear_project(self):
-        raise NotImplementedError
+        self.set_current_file_name('')
 
     def set_enabled_all(self):
         raise NotImplementedError

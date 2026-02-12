@@ -1,26 +1,9 @@
 # pylint: disable=C0114, C0115, C0116, E0611, R0903
 import os
-from PySide6.QtCore import Qt, QObject, Slot
+from PySide6.QtCore import QObject, Slot
 from ..algorithms.utils import extension_supported_output, extension_pdf, get_output_filename
 from ..algorithms.plot_manager import DirectPlotManager
 from ..gui.gui_images import GuiPdfView, GuiImageView, GuiOpenApp
-
-
-class SignalConnector(QObject):
-    @staticmethod
-    def connect_worker_signals(worker, view, progress_handler):
-        for attr_name in dir(worker):
-            if attr_name.endswith('_signal'):
-                signal = getattr(worker, attr_name)
-                handler_name = f'handle_{attr_name[:-7]}'
-                handler = None
-                if hasattr(progress_handler, handler_name):
-                    handler = getattr(progress_handler, handler_name)
-                elif hasattr(view, handler_name):
-                    handler = getattr(view, handler_name)
-                if handler and callable(handler):
-                    signal.connect(handler, Qt.ConnectionType.UniqueConnection)
-        worker.plot_manager.save_plot_signal.connect(progress_handler.plot_manager.save_plot)
 
 
 class ProgressSignalHandler(QObject):

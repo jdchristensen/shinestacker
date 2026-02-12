@@ -283,6 +283,8 @@ class MainWindow(ProjectHandler, QMainWindow):
     def open_project(self, file_path=False):
         opened, file_path, msg = self.open_project_base(file_path)
         if opened:
+            for view in self.views.values():
+                view.set_current_file_name(os.path.basename(file_path))
             self.refresh_ui_and_select_first_job()
             self.menu_manager.save_actions_set_enabled(True)
             self.show_status_message(f"Project file {os.path.basename(file_path)} loaded.")

@@ -118,6 +118,7 @@ class ClassicProjectView(ProjectView, ListContainer):
         return i
 
     def clear_project(self):
+        super().clear_project()
         self.clear_job_list()
         self.clear_action_list()
 
@@ -214,21 +215,8 @@ class ClassicProjectView(ProjectView, ListContainer):
         return len(self._workers) > 0 and any(w.isRunning() for w in self._workers)
 
     def connect_worker_signals(self, worker, window):
-        worker.before_action_signal.connect(window.handle_before_action)
-        worker.after_action_signal.connect(window.handle_after_action)
-        worker.step_counts_signal.connect(window.handle_step_counts)
-        worker.begin_steps_signal.connect(window.handle_begin_steps)
-        worker.end_steps_signal.connect(window.handle_end_steps)
-        worker.after_step_signal.connect(window.handle_after_step)
-        worker.save_plot_signal.connect(window.handle_save_plot)
-        worker.open_app_signal.connect(window.handle_open_app)
+        super().connect_worker_signals(worker, window)
         worker.run_completed_signal.connect(lambda run_id: self.handle_run_completed())
-        worker.run_stopped_signal.connect(window.handle_run_stopped)
-        worker.run_failed_signal.connect(window.handle_run_failed)
-        worker.add_status_box_signal.connect(window.handle_add_status_box)
-        worker.add_frame_signal.connect(window.handle_add_frame)
-        worker.set_total_actions_signal.connect(window.handle_set_total_actions)
-        worker.update_frame_status_signal.connect(window.handle_update_frame_status)
         worker.plot_manager.save_plot_signal.connect(window.handle_save_plot_via_manager)
 
     def _start_job_worker(self, job_index, job):
@@ -249,9 +237,8 @@ class ClassicProjectView(ProjectView, ListContainer):
         self._prepare_project_run_ui()
         labels = [[(self.action_text(a), a.enabled() and
                     job.enabled()) for a in job.sub_actions] for job in self.project_jobs()]
-        project_name = ".".join(self.current_file_name().split(".")[:-1])
-        if project_name == '':
-            project_name = '[new]'
+        project_name = ".".join(
+            self.current_file_name().split(".")[:-1]) if self.current_file_name() else '[new]'
         retouch_paths = []
         for job in self.project_jobs():
             r = get_retouch_path(job)
