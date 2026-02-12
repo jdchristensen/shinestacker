@@ -114,11 +114,11 @@ def test_parallel_sift():
             CombinedActions(
                 "align-jpg",
                 [AlignFramesParallel(
-                    feature_config = {
+                    feature_config={
                         'detector': constants.DETECTOR_SIFT,
                         'descriptor': constants.DESCRIPTOR_SIFT
                     },
-                    matching_config= {
+                    matching_config={
                         'match_method': constants.MATCHING_KNN,
                     },
                     plot_summary=False)],

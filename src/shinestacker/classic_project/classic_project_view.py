@@ -214,10 +214,10 @@ class ClassicProjectView(ProjectView, ListContainer):
     def is_running(self):
         return len(self._workers) > 0 and any(w.isRunning() for w in self._workers)
 
-    def connect_worker_signals(self, worker, window):
-        super().connect_worker_signals(worker, window)
+    def connect_worker_signals(self, worker, signal_target):
+        super().connect_worker_signals(worker, signal_target)
         worker.run_completed_signal.connect(lambda run_id: self.handle_run_completed())
-        worker.plot_manager.save_plot_signal.connect(window.handle_save_plot_via_manager)
+        worker.plot_manager.save_plot_signal.connect(signal_target.handle_save_plot_via_manager)
 
     def _start_job_worker(self, job_index, job):
         self._prepare_job_run_ui(job_index, job)
