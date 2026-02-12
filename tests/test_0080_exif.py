@@ -13,13 +13,13 @@ from shinestacker.algorithms.exif import (
 from shinestacker.algorithms.exif_common import _parse_xmp_value, parse_xmp_to_exif
 from shinestacker.algorithms.exif_tiff import (
     clean_data_for_tiff, _process_tiff_data_safe, write_image_with_exif_data_tif,
-    exif_extra_tags_for_tif)
+    exif_extra_tags_for_tif, NO_COPY_TIFF_TAGS_ID)
 from shinestacker.algorithms.exif_jpeg import (
     add_exif_data_to_jpg_file, _insert_xmp_into_jpeg, extract_enclosed_data_for_jpg)
 from shinestacker.algorithms.exif_png import (
     write_image_with_exif_data_png, get_enhanced_exif_from_png, get_exif_from_png,
     parse_typed_png_text)
-from shinestacker.algorithms.exif_constants import NO_COPY_TIFF_TAGS_ID, safe_decode_bytes
+from shinestacker.algorithms.exif_constants import safe_decode_bytes
 
 NO_TEST_TIFF_TAGS = [
     "XMLPacket", "Compression", "StripOffsets", "RowsPerStrip", "StripByteCounts",
@@ -1874,13 +1874,13 @@ def test_typed_png_text_parsing():
         logger.info("======== Testing Typed PNG Text Parsing ========")
         test_cases = [
             ("INT:123", 123),
-            ("INT:not_a_number", "not_a_number"),  # Error case
+            ("INT:not_a_number", "not_a_number"),
             ("FLOAT:3.14", 3.14),
-            ("FLOAT:not_a_float", "not_a_float"),  # Error case
+            ("FLOAT:not_a_float", "not_a_float"),
             ("STRING:test string", "test string"),
             ("BYTES:test bytes", b"test bytes"),
             ("ARRAY:item1,item2,item3", ["item1", "item2", "item3"]),
-            ("UNKNOWN:format", "UNKNOWN:format"),  # Fallthrough case
+            ("UNKNOWN:format", "UNKNOWN:format"),
         ]
         for input_val, expected_type in test_cases:
             result = parse_typed_png_text(input_val)

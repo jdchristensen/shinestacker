@@ -9,6 +9,20 @@ from PIL.TiffImagePlugin import IFDRational
 from .utils import read_img, write_img
 from . import exif_constants as ec
 
+COMPATIBLE_TAGS = [
+    ec.MAKE, ec.MODEL, ec.SOFTWARE, ec.DATETIME, ec.ARTIST, ec.COPYRIGHT,
+    ec.EXPOSURETIME, ec.FNUMBER, ec.ISOSPEEDRATINGS, ec.EXPOSUREPROGRAM,
+    ec.SHUTTERSPEEDVALUE, ec.APERTUREVALUE, ec.BRIGHTNESSVALUE, ec.EXPOSUREBIASVALUE,
+    ec.MAXAPERTUREVALUE, ec.SUBJECTDISTANCE, ec.METERINGMODE, ec.LIGHTSOURCE, ec.FLASH,
+    ec.FOCALLENGTH, ec.EXPOSUREMODE, ec.WHITEBALANCE, ec.EXPOSUREINDEX,
+    ec.SCENECAPTURETYPE, ec.DATETIMEORIGINAL, ec.LENSMODEL, ec.LENSMAKE,
+    ec.FOCALLENGTHIN35MMFILM, ec.GAINCONTROL, ec.CONTRAST, ec.SATURATION, ec.SHARPNESS,
+    ec.CUSTOMRENDERED, ec.DIGITALZOOMRATIO, ec.SUBJECTDISTANCERANGE,
+    ec.EXIFVERSION, ec.FLASHPIXVERSION,
+    ec.COLORSPACE, ec.PIXELXDIMENSION, ec.PIXELYDIMENSION, ec.IMAGEWIDTH, ec.IMAGELENGTH,
+    ec.BITSPERSAMPLE, ec.ORIENTATION, ec.XRESOLUTION, ec.YRESOLUTION, ec.RESOLUTIONUNIT
+]
+
 
 def extract_enclosed_data_for_jpg(data, head, foot):
     xmp_start = data.find(head)
@@ -118,7 +132,7 @@ def add_exif_data_to_jpg_file(exif, in_filename, out_filename, verbose=False):
                 icc_profile = image.info['icc_profile']
                 if verbose:
                     print(f"Using ICC profile from source image: {len(icc_profile)} bytes")
-            for tag_id in ec.COMPATIBLE_TAGS:
+            for tag_id in COMPATIBLE_TAGS:
                 if tag_id in exif:
                     value = exif[tag_id]
                     if tag_id in [ec.ORIENTATION, ec.FLASH] and isinstance(value, float):

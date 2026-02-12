@@ -7,6 +7,15 @@ from . import exif_constants as ec
 from .. config.constants import constants
 from .exif_common import parse_xmp_to_exif, safe_write_with_temp
 
+NO_COPY_TIFF_TAGS_ID = [
+    ec.IMAGEWIDTH, ec.IMAGELENGTH, ec.XRESOLUTION, ec.YRESOLUTION, ec.BITSPERSAMPLE,
+    ec.PHOTOMETRICINTERPRETATION, ec.SAMPLESPERPIXEL, ec.PLANARCONFIGURATION, ec.SOFTWARE,
+    ec.RESOLUTIONUNIT, ec.EXIFIFD, ec.INTERCOLORPROFILE, ec.IMAGERESOURCES,
+    ec.STRIPOFFSETS, ec.STRIPBYTECOUNTS, ec.TILEOFFSETS, ec.TILEBYTECOUNTS
+]
+
+NO_COPY_TIFF_TAGS = ["Compression", "StripOffsets", "RowsPerStrip", "StripByteCounts"]
+
 
 def get_exif_from_tiff(image, exif_filename):
     exif_data = image.tag_v2 if hasattr(image, 'tag_v2') else image.getexif()
@@ -99,12 +108,12 @@ def exif_extra_tags_for_tif(exif):
                 dtype, count, data_value = processed_data
                 extra.append((tag_id, dtype, count, data_value, False))
     for tag_id in exif:
-        if tag_id in ec.NO_COPY_TIFF_TAGS_ID:
+        if tag_id in NO_COPY_TIFF_TAGS_ID:
             continue
         if tag_id in safe_tags or tag_id in special_handling_tags:
             continue
         tag_name = TAGS.get(tag_id, tag_id)
-        if tag_name in ec.NO_COPY_TIFF_TAGS:
+        if tag_name in NO_COPY_TIFF_TAGS:
             continue
         data = exif.get(tag_id)
         if _is_safe_to_write(data):

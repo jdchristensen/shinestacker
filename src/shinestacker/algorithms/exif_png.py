@@ -10,6 +10,31 @@ from . import exif_constants as ec
 from .exif_common import parse_xmp_to_exif, safe_write_with_temp
 
 
+PNG_TAG_MAP = {
+    'EXIF_CameraMake': ec.MAKE,
+    'EXIF_CameraModel': ec.MODEL,
+    'EXIF_Software': ec.SOFTWARE,
+    'EXIF_DateTime': ec.DATETIME,
+    'EXIF_Artist': ec.ARTIST,
+    'EXIF_Copyright': ec.COPYRIGHT,
+    'EXIF_ExposureTime': ec.EXPOSURETIME,
+    'EXIF_FNumber': ec.FNUMBER,
+    'EXIF_ISOSpeedRatings': ec.ISOSPEEDRATINGS,
+    'EXIF_ShutterSpeedValue': ec.SHUTTERSPEEDVALUE,
+    'EXIF_ApertureValue': ec.APERTUREVALUE,
+    'EXIF_FocalLength': ec.FOCALLENGTH,
+    'EXIF_LensModel': ec.LENSMODEL,
+    'EXIF_ExposureBiasValue': ec.EXPOSUREBIASVALUE,
+    'EXIF_MaxApertureValue': ec.MAXAPERTUREVALUE,
+    'EXIF_MeteringMode': ec.METERINGMODE,
+    'EXIF_Flash': ec.FLASH,
+    'EXIF_WhiteBalance': ec.WHITEBALANCE,
+    'EXIF_ExposureMode': ec.EXPOSUREMODE,
+    'EXIF_SceneCaptureType': ec.SCENECAPTURETYPE,
+    'EXIF_DateTimeOriginal': ec.DATETIMEORIGINAL
+}
+
+
 def get_exif_from_png(image):
     exif_data = {}
     exif_from_image = image.getexif()
@@ -67,7 +92,7 @@ def get_enhanced_exif_from_png(image):
         for key, value in image.text.items():
             if key.startswith('EXIF_'):
                 parsed_value = parse_typed_png_text(value)
-                tag_id = ec.PNG_TAG_MAP.get(key)
+                tag_id = PNG_TAG_MAP.get(key)
                 if tag_id:
                     enhanced_exif[tag_id] = parsed_value
     if ec.MAKERNOTE in enhanced_exif:
