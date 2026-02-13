@@ -185,11 +185,6 @@ def get_first_image_file(filenames):
     return first_img_file
 
 
-def get_img_file_shape(file_path):
-    img = read_img(file_path)
-    return img.shape[:2]
-
-
 def get_img_metadata(img):
     if img is None:
         return None, None

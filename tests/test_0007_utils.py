@@ -7,7 +7,7 @@ from shinestacker.algorithms.utils import (
     get_path_extension, extension_tif, extension_jpg, extension_png,
     extension_tif_jpg, extension_tif_png, extension_jpg_png, extension_jpg_tif_png,
     read_img, write_img, img_8bit, img_bw_8bit, img_bw,
-    get_first_image_file, get_img_file_shape, get_img_metadata,
+    get_first_image_file, get_img_metadata,
     validate_image, read_and_validate_img, img_subsample,
     bgr_to_hsv, hsv_to_bgr, bgr_to_hls, hls_to_bgr, bgr_to_lab, lab_to_bgr
 )
@@ -109,14 +109,6 @@ class TestUtils(unittest.TestCase):
     def test_get_first_image_file_no_valid(self):
         with self.assertRaises(ValueError):
             get_first_image_file(['file1.txt', 'file2.xml'])
-
-    def test_get_img_file_shape(self):
-        for img_type, file_path in self.test_files.items():
-            if os.path.exists(file_path):
-                shape = get_img_file_shape(file_path)
-                self.assertEqual(len(shape), 2)
-                self.assertIsInstance(shape[0], int)
-                self.assertIsInstance(shape[1], int)
 
     def test_get_img_metadata(self):
         test_img = np.random.randint(0, 255, (30, 40, 3), dtype=np.uint8)

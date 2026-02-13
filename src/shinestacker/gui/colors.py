@@ -13,8 +13,6 @@ class ColorEntry:
 
 
 class ColorPalette:
-    BLACK = ColorEntry(0, 0, 0)
-    WHITE = ColorEntry(255, 255, 255)
     LIGHT_BLUE = ColorEntry(210, 210, 240)
     LIGHT_GREEN = ColorEntry(210, 240, 210)
     LIGHT_RED = ColorEntry(240, 210, 210)

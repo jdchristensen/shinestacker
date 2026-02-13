@@ -13,15 +13,6 @@ class SelectionState:
     def reset(self):
         self.set_indices(-1, -1, -1)
 
-    def set_job(self, job_index):
-        self.set_indices(job_index, -1, -1)
-
-    def set_action(self, job_index, action_index):
-        self.set_indices(job_index, action_index, -1)
-
-    def set_subaction(self, job_index, action_index, subaction_index):
-        self.set_indices(job_index, action_index, subaction_index)
-
     def is_job_selected(self):
         return self.job_index >= 0 and self.action_index < 0
 

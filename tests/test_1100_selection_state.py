@@ -37,46 +37,22 @@ class TestSelectionState(unittest.TestCase):
         self.assertEqual(state.subaction_index, -1)
         self.assertEqual(state.type(), '')
 
-    def test_set_job(self):
-        state = SelectionState()
-        state.set_job(5)
-        self.assertEqual(state.job_index, 5)
-        self.assertEqual(state.action_index, -1)
-        self.assertEqual(state.subaction_index, -1)
-        self.assertEqual(state.type(), 'job')
-
-    def test_set_action(self):
-        state = SelectionState()
-        state.set_action(2, 4)
-        self.assertEqual(state.job_index, 2)
-        self.assertEqual(state.action_index, 4)
-        self.assertEqual(state.subaction_index, -1)
-        self.assertEqual(state.type(), 'action')
-
-    def test_set_subaction(self):
-        state = SelectionState()
-        state.set_subaction(1, 2, 3)
-        self.assertEqual(state.job_index, 1)
-        self.assertEqual(state.action_index, 2)
-        self.assertEqual(state.subaction_index, 3)
-        self.assertEqual(state.type(), 'subaction')
-
     def test_is_job_selected(self):
         state = SelectionState(job_index=0)
         self.assertTrue(state.is_job_selected())
-        state.set_action(0, 1)
+        state.set_indices(0, 1)
         self.assertFalse(state.is_job_selected())
 
     def test_is_action_selected(self):
         state = SelectionState(job_index=0, action_index=1)
         self.assertTrue(state.is_action_selected())
-        state.set_job(0)
+        state.set_indices(0)
         self.assertFalse(state.is_action_selected())
 
     def test_is_subaction_selected(self):
         state = SelectionState(job_index=0, action_index=1, subaction_index=2)
         self.assertTrue(state.is_subaction_selected())
-        state.set_action(0, 1)
+        state.set_indices(0, 1)
         self.assertFalse(state.is_subaction_selected())
 
     def test_is_valid(self):
@@ -128,11 +104,11 @@ class TestSelectionState(unittest.TestCase):
     def test_type_method(self):
         state = SelectionState()
         self.assertEqual(state.type(), '')
-        state.set_job(0)
+        state.set_indices(0)
         self.assertEqual(state.type(), 'job')
-        state.set_action(0, 1)
+        state.set_indices(0, 1)
         self.assertEqual(state.type(), 'action')
-        state.set_subaction(0, 1, 2)
+        state.set_indices(0, 1, 2)
         self.assertEqual(state.type(), 'subaction')
         state.reset()
         self.assertEqual(state.type(), '')

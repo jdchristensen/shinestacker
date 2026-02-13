@@ -136,10 +136,6 @@ class ListContainer:
             self._job_list.setFocus()
             self.update_focus_styles()
 
-    def set_lists(self, job_list, action_list):
-        self._job_list = job_list
-        self._action_list = action_list
-
     def job_list(self):
         return self._job_list
 
@@ -158,20 +154,11 @@ class ListContainer:
     def set_current_action(self, index):
         self._action_list.setCurrentRow(index)
 
-    def action_list_count(self):
-        return self._action_list.count()
-
-    def action_list_item(self, index):
-        return self._action_list.item(index)
-
     def job_list_has_focus(self):
         return self._job_list.hasFocus()
 
     def action_list_has_focus(self):
         return self._action_list.hasFocus()
-
-    def take_job(self, index):
-        return self._job_list.takeItem(index)
 
     def clear_job_list(self):
         self._job_list.clear()
@@ -184,12 +171,6 @@ class ListContainer:
 
     def num_selected_actions(self):
         return len(self._action_list.selectedItems())
-
-    def get_current_job(self):
-        return self.project_job(self.current_job_index())
-
-    def get_current_status(self):
-        return self.get_current_action()
 
     def get_current_action(self):
         return self.get_action_at(self.current_action_index())
@@ -222,27 +203,6 @@ class ListContainer:
         return f"{txt} [{ico}{action.type_name}]" + \
                (f" - 📁 <i>{in_path}</i> → 📂 <i>{out_path}</i>"
                 if long_name and not is_sub_action else "")
-
-    def get_insertion_position(self, selection_state):
-        if not selection_state or not selection_state.is_valid():
-            return self.action_list_count(), False
-        if selection_state.is_job_selected():
-            return 0, False
-        current_row = get_action_row(selection_state, self.action_list())
-        if current_row < 0:
-            return self.action_list_count(), False
-        if selection_state.is_action_selected():
-            selected_action = selection_state.action
-            if selected_action and selected_action.sub_actions:
-                return current_row + len(selected_action.sub_actions) + 1, False
-            return current_row + 1, False
-        if selection_state.is_subaction_selected():
-            parent_action = selection_state.action
-            sub_action_idx = selection_state.subaction_index
-            if sub_action_idx == len(parent_action.sub_actions) - 1:
-                return current_row + 1, False
-            return current_row + 1, True
-        return self.action_list_count(), False
 
     def add_list_item(self, widget_list, action, is_sub_action, position=None):
         if action.type_name == constants.ACTION_JOB:

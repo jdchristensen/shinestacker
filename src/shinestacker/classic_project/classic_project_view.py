@@ -13,29 +13,6 @@ from .gui_run import RunWindow
 from .list_container import ListContainer, get_action_row
 
 
-def rows_to_state(project, job_row, action_row):
-    if job_row < 0:
-        return None
-    if action_row < 0:
-        state = SelectionState(job_row, -1, -1)
-        return state
-    job = project.jobs[job_row]
-    current_row = -1
-    for i, action in enumerate(job.sub_actions):
-        current_row += 1
-        if current_row == action_row:
-            state = SelectionState(job_row, i, -1)
-            return state
-        if action.sub_actions:
-            for sub_idx, _ in enumerate(action.sub_actions):
-                current_row += 1
-                if current_row == action_row:
-                    state = SelectionState(job_row, i, sub_idx)
-                    return state
-    state = SelectionState(job_row, -1, -1)
-    return state
-
-
 class ClassicProjectView(ProjectView, ListContainer):
     def __init__(self, project, selection_state, dark_theme, parent=None):
         ProjectView.__init__(self, project, selection_state, dark_theme, parent)
@@ -267,11 +244,6 @@ class ClassicProjectView(ProjectView, ListContainer):
 
     def shift_element(self, old_selection):
         self.refresh_ui(self.selection_state)
-
-    def _get_current_subaction_index(self):
-        if not self.selection_state.is_subaction_selected():
-            return -1
-        return self.selection_state.subaction_index
 
     def current_job_index(self):
         return ListContainer.current_job_index(self)

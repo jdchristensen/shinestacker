@@ -15,11 +15,11 @@ class ProjectHandler:
     def num_project_jobs(self):
         return len(self.project_jobs())
 
-    def is_valid_job_index(self, index):
-        return 0 <= index < self.num_project_jobs()
-
     def add_job_to_project(self, job):
         self._project.jobs.append(job)
+
+    def is_valid_job_index(self, index):
+        return 0 <= index < self.num_project_jobs()
 
     def project_job(self, index):
         return self._project.jobs[index] if self.is_valid_job_index(index) else None

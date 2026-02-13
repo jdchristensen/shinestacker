@@ -47,12 +47,6 @@ class ImageViewStatus(QObject):
             'v_scroll': self.v_scroll
         }
 
-    def set_state(self, state):
-        if state:
-            self.zoom_factor = state['zoom']
-            self.h_scroll = state['h_scroll']
-            self.v_scroll = state['v_scroll']
-
     def set_zoom_factor(self, zoom_factor):
         self.zoom_factor = zoom_factor
         self.set_zoom_factor_requested.emit(zoom_factor)

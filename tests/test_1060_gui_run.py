@@ -26,8 +26,6 @@ class TestColorEntry:
 
 class TestColorPalette:
     def test_color_palette(self):
-        assert ColorPalette.BLACK.tuple() == (0, 0, 0)
-        assert ColorPalette.WHITE.tuple() == (255, 255, 255)
         assert ColorPalette.LIGHT_BLUE.tuple() == (210, 210, 240)
 
 

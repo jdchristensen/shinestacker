@@ -32,9 +32,6 @@ class ProgressMapper:
                         self.mapping[sub_name] = (job_idx, action_idx, subaction_idx)
         return self.mapping
 
-    def has_module(self, module_name):
-        return module_name in self.mapping
-
     def get_state(self, module_name):
         indices = self.mapping.get(module_name)
         if indices:

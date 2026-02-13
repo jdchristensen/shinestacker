@@ -34,9 +34,9 @@ class SessionFileDialog:
         return file_paths, selected_filter
 
     def save_file(self, caption="", file_filter="", default_path=""):
-        directory = default_path if default_path else get_input_folder_path()
+        directory = default_path if default_path else self._last_path
         file_name, selected_filter = QFileDialog.getSaveFileName(
-            self.parent, caption, self._last_path, file_filter)
+            self.parent, caption, directory, file_filter)
         self.update_last_path(os.path.dirname(file_name))
         return file_name, selected_filter
 

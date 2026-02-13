@@ -97,25 +97,25 @@ class TestElementActionManager(unittest.TestCase):
         self.assertEqual(self.manager.selection_state, self.selection_state)
 
     def test_is_job_selected(self):
-        self.selection_state.set_job(0)
+        self.selection_state.set_indices(0)
         self.assertTrue(self.manager.is_job_selected())
         self.selection_state.reset()
         self.assertFalse(self.manager.is_job_selected())
 
     def test_is_action_selected(self):
-        self.selection_state.set_action(0, 1)
+        self.selection_state.set_indices(0, 1)
         self.assertTrue(self.manager.is_action_selected())
         self.selection_state.reset()
         self.assertFalse(self.manager.is_action_selected())
 
     def test_is_subaction_selected(self):
-        self.selection_state.set_subaction(0, 1, 2)
+        self.selection_state.set_indices(0, 1, 2)
         self.assertTrue(self.manager.is_subaction_selected())
         self.selection_state.reset()
         self.assertFalse(self.manager.is_subaction_selected())
 
     def test_get_selected_job_index(self):
-        self.selection_state.set_job(5)
+        self.selection_state.set_indices(5)
         self.assertEqual(self.selection_state.job_index, 5)
 
     def test_new_state_after_delete_job(self):
@@ -138,7 +138,7 @@ class TestElementActionManager(unittest.TestCase):
         self.project.jobs = []
         job = MockElement('Job1', constants.ACTION_JOB)
         self.project.jobs.append(job)
-        self.selection_state.set_job(0)
+        self.selection_state.set_indices(0)
         self.manager.copy_element()
         self.assertIsNotNone(self.manager.copy_buffer())
         self.assertEqual(self.manager.copy_buffer().params['name'], 'Job1')
@@ -147,7 +147,7 @@ class TestElementActionManager(unittest.TestCase):
         action = MockElement('Action1', constants.ACTION_TYPES[0])
         job.sub_actions.append(action)
         self.project.jobs.append(job)
-        self.selection_state.set_action(0, 0)
+        self.selection_state.set_indices(0, 0)
         self.manager.copy_element()
         self.assertEqual(self.manager.copy_buffer().params['name'], 'Action1')
         self.project.jobs = []
@@ -157,14 +157,14 @@ class TestElementActionManager(unittest.TestCase):
         action.sub_actions.append(subaction)
         job.sub_actions.append(action)
         self.project.jobs.append(job)
-        self.selection_state.set_subaction(0, 0, 0)
+        self.selection_state.set_indices(0, 0, 0)
         self.manager.copy_element()
         self.assertEqual(self.manager.copy_buffer().params['name'], 'SubAction1')
 
     def test_clone_job(self):
         job = MockElement('Job1', constants.ACTION_JOB)
         self.project.jobs.append(job)
-        self.selection_state.set_job(0)
+        self.selection_state.set_indices(0)
         success = self.manager.clone_element()
         self.assertTrue(success)
         self.assertEqual(len(self.project.jobs), 2)
@@ -175,7 +175,7 @@ class TestElementActionManager(unittest.TestCase):
         action = MockElement('Action1', constants.ACTION_TYPES[0])
         job.sub_actions.append(action)
         self.project.jobs.append(job)
-        self.selection_state.set_action(0, 0)
+        self.selection_state.set_indices(0, 0)
         success = self.manager.clone_element()
         self.assertTrue(success)
         self.assertEqual(len(job.sub_actions), 2)
@@ -185,7 +185,7 @@ class TestElementActionManager(unittest.TestCase):
         job1 = MockElement('Job1', constants.ACTION_JOB)
         job2 = MockElement('Job2', constants.ACTION_JOB)
         self.project.jobs = [job1, job2]
-        self.selection_state.set_job(0)
+        self.selection_state.set_indices(0)
         with patch.object(self.manager, 'confirm_delete_message', return_value=True):
             success = self.manager.delete_element()
         self.assertEqual(success, True)
@@ -198,7 +198,7 @@ class TestElementActionManager(unittest.TestCase):
         action2 = MockElement('Action2', constants.ACTION_TYPES[0])
         job.sub_actions = [action1, action2]
         self.project.jobs.append(job)
-        self.selection_state.set_action(0, 0)
+        self.selection_state.set_indices(0, 0)
         with patch.object(self.manager, 'confirm_delete_message', return_value=True):
             success = self.manager.delete_element()
         self.assertEqual(success, True)
@@ -213,7 +213,7 @@ class TestElementActionManager(unittest.TestCase):
         action.sub_actions = [sub1, sub2]
         job.sub_actions.append(action)
         self.project.jobs.append(job)
-        self.selection_state.set_subaction(0, 0, 0)
+        self.selection_state.set_indices(0, 0, 0)
         with patch.object(self.manager, 'confirm_delete_message', return_value=True):
             success = self.manager.delete_element()
         self.assertEqual(success, True)
@@ -224,7 +224,7 @@ class TestElementActionManager(unittest.TestCase):
         job1 = MockElement('Job1', constants.ACTION_JOB)
         job2 = MockElement('Job2', constants.ACTION_JOB)
         self.project.jobs = [job1, job2]
-        self.selection_state.set_job(0)
+        self.selection_state.set_indices(0)
         result = self.manager.shift_element(1, "Down")
         self.assertTrue(result)
         self.assertEqual(self.project.jobs[0], job2)
@@ -235,7 +235,7 @@ class TestElementActionManager(unittest.TestCase):
         job1 = MockElement('Job1', constants.ACTION_JOB)
         job2 = MockElement('Job2', constants.ACTION_JOB)
         self.project.jobs = [job1, job2]
-        self.selection_state.set_job(1)
+        self.selection_state.set_indices(1)
         result = self.manager.shift_element(-1, "Up")
         self.assertTrue(result)
         self.assertEqual(self.project.jobs[0], job2)
@@ -248,7 +248,7 @@ class TestElementActionManager(unittest.TestCase):
         action2 = MockElement('Action2', constants.ACTION_TYPES[0])
         job.sub_actions = [action1, action2]
         self.project.jobs.append(job)
-        self.selection_state.set_action(0, 0)
+        self.selection_state.set_indices(0, 0)
         result = self.manager.shift_element(1, "Down")
         self.assertTrue(result)
         self.assertEqual(job.sub_actions[0], action2)
@@ -258,7 +258,7 @@ class TestElementActionManager(unittest.TestCase):
     def test_set_enabled_job(self):
         job = MockElement('Job1', constants.ACTION_JOB, enabled=True)
         self.project.jobs.append(job)
-        self.selection_state.set_job(0)
+        self.selection_state.set_indices(0)
         result = self.manager.set_enabled(self.selection_state, False)
         self.assertTrue(result)
         self.assertFalse(job.enabled())
@@ -268,7 +268,7 @@ class TestElementActionManager(unittest.TestCase):
         action = MockElement('Action1', constants.ACTION_TYPES[0], enabled=True)
         job.sub_actions.append(action)
         self.project.jobs.append(job)
-        self.selection_state.set_action(0, 0)
+        self.selection_state.set_indices(0, 0)
         result = self.manager.set_enabled(self.selection_state, False)
         self.assertTrue(result)
         self.assertFalse(action.enabled())
@@ -286,7 +286,7 @@ class TestElementActionManager(unittest.TestCase):
         mock_msgbox.question.return_value = mock_msgbox.Yes
         job = MockElement('Job1', constants.ACTION_JOB)
         self.project.jobs.append(job)
-        self.selection_state.set_job(0)
+        self.selection_state.set_indices(0)
         success = self.manager.delete_element(confirm=True)
         self.assertEqual(success, True)
         self.assertEqual(len(self.project.jobs), 0)
@@ -296,7 +296,7 @@ class TestElementActionManager(unittest.TestCase):
         mock_msgbox.question.return_value = mock_msgbox.No
         job = MockElement('Job1', constants.ACTION_JOB)
         self.project.jobs.append(job)
-        self.selection_state.set_job(0)
+        self.selection_state.set_indices(0)
         success = self.manager.delete_element(confirm=True)
         self.assertEqual(success, False)
         self.assertEqual(len(self.project.jobs), 1)
@@ -304,7 +304,7 @@ class TestElementActionManager(unittest.TestCase):
     def test_cut_element(self):
         job = MockElement('Job1', constants.ACTION_JOB)
         self.project.jobs.append(job)
-        self.selection_state.set_job(0)
+        self.selection_state.set_indices(0)
         deleted = self.manager.cut_element()
         self.assertIsNotNone(deleted)
         self.assertEqual(len(self.project.jobs), 0)

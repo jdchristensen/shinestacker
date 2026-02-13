@@ -46,11 +46,6 @@ class TestProjectUndoManager(unittest.TestCase):
         self.assertEqual(len(self.manager._undo_buffer), 0)
         self.assertEqual(len(self.manager._redo_buffer), 0)
 
-    def test_add_extra_data_to_last_entry(self):
-        self.manager.add(item="test", description="Action")
-        self.manager.add_extra_data_to_last_entry("extra", "data")
-        self.assertEqual(self.manager.peek()['extra'], "data")
-
     def test_clear_redo(self):
         self.manager.add_to_redo({'item': 'redo', 'description': 'RedoAction'})
         self.manager.clear_redo()

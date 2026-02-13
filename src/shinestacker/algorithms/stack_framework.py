@@ -20,7 +20,6 @@ class StackJob(Job):
             **kwargs):
         check_path_exists(working_path)
         self.working_path = working_path
-        self._input_path = input_path
         self._action_paths = [] if input_path == '' else [input_path]
         self._input_full_path = None
         self._input_filepaths = input_filepaths
@@ -37,9 +36,6 @@ class StackJob(Job):
 
     def num_input_filepaths(self):
         return len(self._input_filepaths)
-
-    def action_paths(self):
-        return self._action_paths
 
     def add_action_path(self, path):
         self._action_paths.append(path)

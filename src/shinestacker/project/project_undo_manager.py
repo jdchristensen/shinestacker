@@ -49,10 +49,6 @@ class ProjectUndoManager(QObject):
         self.set_enabled_undo_action_requested.emit(False, '')
         self.set_enabled_redo_action_requested.emit(False, '')
 
-    def add_extra_data_to_last_entry(self, label, data):
-        if len(self._undo_buffer) > 0:
-            self._undo_buffer[-1][label] = data
-
     def clear_redo(self):
         self._redo_buffer = []
         self.set_enabled_redo_action_requested.emit(False, '')
