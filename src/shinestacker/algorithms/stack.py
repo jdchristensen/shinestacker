@@ -16,10 +16,11 @@ from .sharpen import unsharp_mask
 
 
 class FocusStackBase(TaskBase, ImageSequenceManager):
-    def __init__(self, name, stack_algo, enabled=True, **kwargs):
+    def __init__(self, name, stack_algo, enabled=True, apply_postifx=False, **kwargs):
         ImageSequenceManager.__init__(self, name, **kwargs)
         TaskBase.__init__(self, name, enabled)
         default_params = DEFAULTS['focus_stack_params']
+        self.apply_postifx = apply_postifx
         self.stack_algo = stack_algo
         self.exif_path = kwargs.pop('exif_path', '')
         self.prefix = kwargs.pop('prefix', default_params['prefix'])
@@ -38,11 +39,23 @@ class FocusStackBase(TaskBase, ImageSequenceManager):
             'plot_path', DEFAULTS['image_sequence_manager']['plots_path'])
         self.frame_count = -1
 
+    def add_postfix(self, filename):
+        if self.apply_postifx:
+            algo_class = self.stack_algo.__class__.__name__
+            postfix = ''
+            if algo_class.startswith('Pyramid'):
+                postfix = "_pyram"
+            elif algo_class.startswith('DepthMap'):
+                postfix = "_depmp"
+            root, ext = os.path.splitext(filename)
+            return root + postfix + ext
+        return filename
+
     def focus_stack(self, filenames):
         self.sub_message_r(color_str(': reading input files', constants.LOG_COLOR_LEVEL_3))
         input_filename = os.path.basename(filenames[0])
-        output_filename = os.path.join(
-            self.output_full_path(), self.prefix + get_output_filename(input_filename))
+        output_filename = self.add_postfix(os.path.join(
+            self.output_full_path(), self.prefix + get_output_filename(input_filename)))
         filename = os.path.basename(output_filename)
         self.callback(constants.CALLBACK_UPDATE_FRAME_STATUS, self.name, filename, 0)
         n_frames = len(filenames)
@@ -124,7 +137,7 @@ def get_bunches(collection, n_frames, n_overlap):
 class FocusStackBunch(SequentialTask, FocusStackBase):
     def __init__(self, name, stack_algo, enabled=True, **kwargs):
         SequentialTask.__init__(self, name, enabled)
-        FocusStackBase.__init__(self, name, stack_algo, enabled, **kwargs)
+        FocusStackBase.__init__(self, name, stack_algo, enabled, False, **kwargs)
         self._chunks = None
         self.frame_count = 0
         self.frames = kwargs.get('frames', DEFAULTS['focus_stack_bunch_params']['frames'])
@@ -148,7 +161,8 @@ class FocusStackBunch(SequentialTask, FocusStackBase):
         for chunk in self._chunks:
             filename = chunk[0]
             file_path = self.output_full_path()
-            filename = os.path.join(file_path, self.prefix + os.path.basename(filename))
+            filename = self.add_postfix(
+                os.path.join(file_path, self.prefix + os.path.basename(filename)))
             self.callback(constants.CALLBACK_ADD_FRAME, self.output_path, filename, 1)
         self.set_counts(len(self._chunks))
 
@@ -173,7 +187,7 @@ class FocusStackBunch(SequentialTask, FocusStackBase):
 
 class FocusStack(FocusStackBase):
     def __init__(self, name, stack_algo, enabled=True, **kwargs):
-        super().__init__(name, stack_algo, enabled, **kwargs)
+        super().__init__(name, stack_algo, enabled, True, **kwargs)
         self.stack_algo.set_do_step_callback(True)
         self.shape = None
 
@@ -186,7 +200,8 @@ class FocusStack(FocusStackBase):
         self.callback(constants.CALLBACK_ADD_STATUS_BOX, self.output_path)
         filename = img_files[0]
         file_path = self.output_full_path()
-        filename = os.path.join(file_path, self.prefix + os.path.basename(filename))
+        filename = self.add_postfix(
+            os.path.join(file_path, self.prefix + os.path.basename(filename)))
         self.callback(constants.CALLBACK_ADD_FRAME, self.output_path, filename, 1)
         self.focus_stack(img_files)
         return True
