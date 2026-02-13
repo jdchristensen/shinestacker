@@ -178,7 +178,7 @@ class ElementActionManager(ProjectHandler, QObject):
         old_position = self.selection_state.to_tuple()
         if not self.valid_indices(*old_position):
             return False
-        copy_buffer = self.copy_buffer().clone()
+        copy_buffer = self.copy_buffer().clone(name_postfix=constants.COPY_POSTFIX)
         if copy_buffer.type_name == constants.ACTION_JOB:
             level = 0
             idx = (-1, -1)

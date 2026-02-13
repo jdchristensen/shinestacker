@@ -10,6 +10,7 @@
 
 ### Changes
 - cleaned up signal handling
+- copied elements now have a suffix " (copy)" after their name
 
 ---
 

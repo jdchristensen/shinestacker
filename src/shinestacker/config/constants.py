@@ -56,6 +56,7 @@ class _Constants:
 
     PATH_SEPARATOR = ';'
 
+    COPY_POSTFIX = ' (copy)'
     CLONE_POSTFIX = ' (clone)'
 
     LOG_COLOR_ALERT = 'red'
