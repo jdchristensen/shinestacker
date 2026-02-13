@@ -777,7 +777,7 @@ class ModernProjectView(ProjectView):
         if action_type == 'delete':
             state = SelectionState(*old_position)
             return self._insert_widget_for_undo(state, entry)
-        if action_type == 'edit':
+        if action_type in ['edit', 'rename']:
             state = SelectionState(*old_position)
             return self._undo_edit_action(state)
         self.refresh_ui()
@@ -808,7 +808,7 @@ class ModernProjectView(ProjectView):
         if action_type == 'delete':
             state = SelectionState(*old_position)
             return self._redo_delete_action(state)
-        if action_type == 'edit':
+        if action_type in ['edit', 'rename']:
             state = SelectionState(*new_position)
             return self._undo_edit_action(state)
         self.refresh_ui()

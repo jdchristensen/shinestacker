@@ -87,11 +87,9 @@ class ExifData(ConfigDialog):
             return value
 
     def format_iso_speed(self, value):
-        """Format ISO speed value"""
         if isinstance(value, (int, float)):
             return f"ISO {int(value)}"
         if isinstance(value, str):
-            # Handle string ISO values
             try:
                 return f"ISO {int(value)}"
             except ValueError:

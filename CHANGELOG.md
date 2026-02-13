@@ -2,6 +2,9 @@
 
 ## [v1.14.x] - 2026-02-12
 
+### Added
+- rename element menu action
+
 ### Fixed
 - issue in file name propagation to classc view when running all jobs
 

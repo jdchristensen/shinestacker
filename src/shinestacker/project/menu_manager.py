@@ -44,7 +44,8 @@ class MenuManager(QObject):
             "Enable All": "Ctrl+Shift+E",
             "Disable All": "Ctrl+Shift+B",
             "Expert Options": "Ctrl+Shift+X",
-            "Edit Element": "Ctrl+Enter",
+            "Edit Parameters": "Ctrl+Enter",
+            "Rename": "Ctrl+R",
             "Modern": "Ctrl+1",
             "Classic": "Ctrl+2",
             "Add Job": "Ctrl+P",
@@ -156,8 +157,10 @@ class MenuManager(QObject):
         for name in ["Move &Up", "Move &Down"]:
             menu.addAction(self.action(name, requires_file=True))
         menu.addSeparator()
-        self.edit_element_action = self.action("Edit Element", requires_file=True)
+        self.edit_element_action = self.action("Edit Parameters", requires_file=True)
         menu.addAction(self.edit_element_action)
+        self.rename_action = self.action("Rename", requires_file=True)
+        menu.addAction(self.rename_action)
         menu.addSeparator()
         self.enable_action = self.action("E&nable", requires_file=True)
         menu.addAction(self.enable_action)
@@ -294,6 +297,7 @@ class MenuManager(QObject):
 
     def handle_fill_context_menu(self, menu, enabled):
         menu.addAction(self.edit_element_action)
+        menu.addAction(self.rename_action)
         menu.addSeparator()
         if enabled:
             menu.addAction(self.disable_action)

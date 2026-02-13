@@ -70,7 +70,8 @@ class MainWindow(ProjectHandler, QMainWindow):
             "Di&sable": self.disable,
             "Enable All": self.enable_all,
             "Disable All": self.disable_all,
-            "Edit Element": self.edit_element,
+            "Edit Parameters": self.edit_element,
+            "Rename": self.rename,
             "Expert Options": self.toggle_expert_options,
             "Add Job": self.add_job,
             "Run Job": self.run_job,
@@ -537,6 +538,11 @@ class MainWindow(ProjectHandler, QMainWindow):
 
     def edit_element(self):
         if self.element_action.edit_element(self.selection_state):
+            for view in self.views.values():
+                view.update_widget(self.selection_state)
+
+    def rename(self):
+        if self.element_action.rename(self.selection_state):
             for view in self.views.values():
                 view.update_widget(self.selection_state)
 

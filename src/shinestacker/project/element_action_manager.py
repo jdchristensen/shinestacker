@@ -7,6 +7,7 @@ from ..gui.action_config_dialog import ActionConfigDialog
 from ..gui.project_model import ActionConfig
 from ..common_project.selection_state import SelectionState
 from ..common_project.project_handler import ProjectHandler
+from .rename_dialog import RenameDialog
 
 
 def get_position_stack(position):
@@ -314,6 +315,19 @@ class ElementActionManager(ProjectHandler, QObject):
             position = selection.to_tuple()
             self.save_prev_undo_state(
                 pre_edit_project, f"Edit {selection.type().title()}", "edit", position, position)
+            return True
+        return False
+
+    def rename(self, selection):
+        element = self.project_element(*selection.to_tuple())
+        pre_edit_project = self.project().clone()
+        dialog = RenameDialog(element, self.parent())
+        if dialog.exec() == QDialog.Accepted:
+            element.params['name'] = dialog.options['name']
+            position = selection.to_tuple()
+            self.save_prev_undo_state(
+                pre_edit_project,
+                f"Rename {selection.type().title()}", "rename", position, position)
             return True
         return False
 
