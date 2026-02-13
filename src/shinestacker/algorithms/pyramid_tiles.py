@@ -211,9 +211,6 @@ class PyramidTilesStack(PyramidBase, TempDirBase):
             except Exception:
                 traceback.print_exc()
 
-    def _compute_energies(self, gray_laps):
-        return np.array([self.convolve(np.square(gray_lap)) for gray_lap in gray_laps])
-
     def fuse_pyramids(self, all_level_counts):
         num_images = self.num_images()
         max_levels = max(all_level_counts)

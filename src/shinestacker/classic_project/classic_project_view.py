@@ -163,26 +163,6 @@ class ClassicProjectView(ProjectView, ListContainer):
             self._job_list.setFocus()
         self.update_focus_styles()
 
-    def get_current_action_at(self, job, action_index):
-        action_counter = -1
-        current_action = None
-        is_sub_action = False
-        for action in job.sub_actions:
-            action_counter += 1
-            if action_counter == action_index:
-                current_action = action
-                break
-            if len(action.sub_actions) > 0:
-                for sub_action in action.sub_actions:
-                    action_counter += 1
-                    if action_counter == action_index:
-                        current_action = sub_action
-                        is_sub_action = True
-                        break
-                if current_action:
-                    break
-        return current_action, is_sub_action
-
     def create_new_window(self, title, labels, retouch_paths):
         new_window = RunWindow(labels,
                                lambda id_str: self.close_window(self.get_tab_position(id_str)),

@@ -7,6 +7,7 @@
 
 ### Fixed
 - issue in file name propagation to classc view when running all jobs
+- keep memory of last path when opening or saving files
 
 ### Changes
 - cleaned up signal handling

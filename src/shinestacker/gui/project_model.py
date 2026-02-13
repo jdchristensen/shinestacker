@@ -26,12 +26,6 @@ class ActionConfig:
         self.parent = parent
         self.sub_actions: list[ActionConfig] = []
 
-    def add_metadata(self, key, value):
-        self.metadata[key] = value
-
-    def get_metadata(self, key, default=None):
-        self.metadata.get(key, default)
-
     def enabled(self):
         return self.params.get('enabled', True)
 
@@ -46,11 +40,6 @@ class ActionConfig:
     def add_sub_action(self, action):
         self.sub_actions.append(action)
         action.parent = self
-
-    def pop_sub_action(self, index):
-        if index < len(self.sub_actions):
-            return self.sub_actions.pop(index)
-        raise RuntimeError(f"can't pop sub-action {index}, lenght is {len(self.sub_actions)}")
 
     def clone(self, name_postfix=''):
         c = ActionConfig(self.type_name, deepcopy(self.params), self.parent)

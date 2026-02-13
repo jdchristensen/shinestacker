@@ -158,14 +158,8 @@ class ListContainer:
     def set_current_action(self, index):
         self._action_list.setCurrentRow(index)
 
-    def job_list_count(self):
-        return self._job_list.count()
-
     def action_list_count(self):
         return self._action_list.count()
-
-    def job_list_item(self, index):
-        return self._job_list.item(index)
 
     def action_list_item(self, index):
         return self._action_list.item(index)

@@ -22,23 +22,21 @@ class SessionFileDialog:
             self._last_path = path
 
     def open_file(self, caption="", file_filter=""):
-        directory = get_input_folder_path()
         file_name, selected_filter = QFileDialog.getOpenFileName(
-            self.parent, caption, directory, file_filter)
+            self.parent, caption, self._last_path, file_filter)
         self.update_last_path(os.path.dirname(file_name))
         return file_name, selected_filter
 
     def open_files(self, caption="", file_filter=""):
-        directory = get_input_folder_path()
         file_paths, selected_filter = QFileDialog.getOpenFileNames(
-            self.parent, caption, directory, file_filter)
+            self.parent, caption, self._last_path, file_filter)
         self.update_last_path(os.path.dirname(file_paths[0]))
         return file_paths, selected_filter
 
     def save_file(self, caption="", file_filter="", default_path=""):
         directory = default_path if default_path else get_input_folder_path()
         file_name, selected_filter = QFileDialog.getSaveFileName(
-            self.parent, caption, directory, file_filter)
+            self.parent, caption, self._last_path, file_filter)
         self.update_last_path(os.path.dirname(file_name))
         return file_name, selected_filter
 

@@ -133,9 +133,6 @@ class PyramidBase(BaseStackAlgo):
             laplacian.append(pyr - expanded)
         return laplacian
 
-    def _compute_energies(self, gray_laps):
-        return [self.convolve(np.square(gray_lap)) for gray_lap in gray_laps]
-
     def fuse_laplacian(self, laplacians_list):
         laplacians = np.stack(laplacians_list, axis=0)
         n_layers, h, w, _ = laplacians.shape

@@ -14,7 +14,6 @@ from .colors import (
 
 class TimerProgressBar(QProgressBar):
     border_color = ColorPalette.DARK_BLUE
-    text_color = ColorPalette.DARK_BLUE
 
     def __init__(self):
         super().__init__()

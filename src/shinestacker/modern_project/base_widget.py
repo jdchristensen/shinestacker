@@ -51,7 +51,6 @@ class BaseWidget(QFrame):
         super().__init__(parent)
         self.data_object = data_object
         self._enabled = True
-        self._hovered = False
         self._dark_theme = dark_theme
         self.horizontal_layout = horizontal_layout
         self.min_height = min_height
@@ -335,7 +334,6 @@ class BaseWidget(QFrame):
 
     def enterEvent(self, event):
         super().enterEvent(event)
-        self._hovered = True
         self.setProperty("hovered", "true")
         self.style().unpolish(self)
         self.style().polish(self)
@@ -344,7 +342,6 @@ class BaseWidget(QFrame):
 
     def leaveEvent(self, event):
         super().leaveEvent(event)
-        self._hovered = False
         self.setProperty("hovered", "false")
         self.style().unpolish(self)
         self.style().polish(self)
