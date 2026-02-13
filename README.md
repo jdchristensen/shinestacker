@@ -19,7 +19,7 @@ ShineStacker is a focus stacking tool with an interactive GUI and a Python API, 
 - 🧩 **Modular Architecture**: Combine configurable modules for alignment, normalization, and blending to build custom workflows.
 - 🖌️ **Retouch Editor**: Interactively refine your stacked image by painting in details from individual frames.
 - 📊 **Jupyter & Python Integration**: Use Shine Stacker as a library inside your Python or Jupyter workflows.
-- 🎞️ **Supported formats**: TIFF 8-16 bits, PNG 8-16 bits, most RAW formats via [```rawpy```](https://github.com/letmaik/rawpy).
+- 🎞️ **Supported formats**: TIFF 8-16 bits, PNG 8-16 bits, JPEG, most RAW formats via [```rawpy```](https://github.com/letmaik/rawpy).
 
 <img src='https://raw.githubusercontent.com/lucalista/shinestacker/main/img/flies.gif' width="400" referrerpolicy="no-referrer">  <img src='https://raw.githubusercontent.com/lucalista/shinestacker/main/img/flies_stack.jpg' width="400" referrerpolicy="no-referrer">
 
