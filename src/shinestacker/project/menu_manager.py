@@ -70,7 +70,7 @@ class MenuManager(QObject):
             "Run Job": "Run selected job",
             "Run All Jobs": "Run all jobs",
             "Stop": "Stop run",
-            "Clear Project Outputs": "Select temporary images to be deleted"
+            "Retouch Job Output": "Retouch job output"
         }
 
     def get_icon(self, icon_name):
@@ -393,9 +393,9 @@ class MenuManager(QObject):
         tooltip = self.tooltips["Run All Jobs"]
         self.run_all_jobs_action.setEnabled(enabled)
         if not enabled:
-            tooltip = "Run All Jobs (requires more than one job)"
+            tooltip = "Run all jobs (requires more than one job)"
         else:
-            tooltip = "Run All Jobs"
+            tooltip = "Run all jobs"
         self.run_all_jobs_action.setToolTip(tooltip)
 
     def set_enabled_undo_action(self, enabled, description):
