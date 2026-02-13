@@ -700,6 +700,10 @@ class ModernProjectView(ProjectView):
         self.connect_worker_signals(worker, self.progress_handler)
         worker.run_completed_signal.connect(
             self.handle_run_completed, Qt.ConnectionType.UniqueConnection)
+        worker.run_stopped_signal.connect(
+            self.handle_run_completed, Qt.ConnectionType.UniqueConnection)
+        worker.run_failed_signal.connect(
+            self.handle_run_completed, Qt.ConnectionType.UniqueConnection)
         worker.plot_manager.save_plot_signal.connect(self.progress_handler.plot_manager.save_plot)
 
     def _clear_widget_metadata(self, widget):
