@@ -252,7 +252,8 @@ class SettingsDialog(ConfigDialog, AlignFramesConfigBase):
                         'project_view_strategy', 'View strategy:',
                         DEFAULTS['project_view_strategy'],
                         [
-                            ("Modern", "modern"),
+                            ("Modern Horizontal", "modern_horizontal"),
+                            ("Modern Vertical", "modern_vertical"),
                             ("Classic", "classic"),
                         ]),
                     CheckBoxParameter(

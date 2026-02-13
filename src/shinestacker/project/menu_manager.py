@@ -2,7 +2,7 @@
 import os
 from functools import partial
 from PySide6.QtCore import Signal, QObject
-from PySide6.QtGui import QAction, QIcon, QKeySequence
+from PySide6.QtGui import QAction, QIcon, QKeySequence, QActionGroup
 from PySide6.QtWidgets import QMenu, QComboBox
 from .. config.constants import constants
 from .. config.app_config import AppConfig
@@ -35,25 +35,26 @@ class MenuManager(QObject):
             "&Cut": "Ctrl+X",
             "Cop&y": "Ctrl+C",
             "&Paste": "Ctrl+V",
-            "Duplicate": "Ctrl+D",
+            "Duplicate": "Ctrl+K",
             "Delete": [QKeySequence("Backspace"), QKeySequence("Del")],
-            "Move &Up": [QKeySequence("Ctrl+Up"), QKeySequence("Ctrl+Left")],
-            "Move &Down": [QKeySequence("Ctrl+Down"), QKeySequence("Ctrl+Right")],
+            "Move &Up": [QKeySequence("Ctrl+Shift+Up"), QKeySequence("Ctrl+Shift+Left")],
+            "Move &Down": [QKeySequence("Ctrl+Shift+Down"), QKeySequence("Ctrl+Shift+Right")],
             "E&nable": "Ctrl+E",
-            "Di&sable": "Ctrl+B",
+            "Di&sable": "Ctrl+D",
             "Enable All": "Ctrl+Shift+E",
-            "Disable All": "Ctrl+Shift+B",
+            "Disable All": "Ctrl+Shift+D",
             "Expert Options": "Ctrl+Shift+X",
             "Edit Parameters": "Ctrl+Enter",
-            "Rename": "Ctrl+R",
-            "Modern": "Ctrl+1",
-            "Classic": "Ctrl+2",
-            "Add Job": "Ctrl+P",
-            "Run Job": "Ctrl+J",
-            "Run All Jobs": "Ctrl+Shift+J",
-            "Stop": "Ctrl+Shift+X",
-            "Clear Run Information": "Ctrl+Shift+M",
-            "Clear Project Outputs": "Ctrl+Shift+T"
+            "Rename": "Ctrl+M",
+            "Modern Horizontal": "Ctrl+1",
+            "Modern Vertical": "Ctrl+2",
+            "Classic View": "Ctrl+3",
+            "Add Job": "Ctrl+J",
+            "Run Job": "Ctrl+R",
+            "Run All Jobs": "Ctrl+Shift+R",
+            "Stop": "Ctrl+.",
+            "Clear Run Information": "Ctrl+Shift+L",
+            "Clear Project Outputs": "Ctrl+Shift+O"
         }
         self.icons = {
             "Delete": "close-round-line-icon",
@@ -175,35 +176,29 @@ class MenuManager(QObject):
         self.expert_options_action.setCheckable(True)
         self.expert_options_action.setChecked(AppConfig.get('expert_options'))
         menu.addAction(self.expert_options_action)
-        self.view_strategy_menu = QMenu("View &Mode", menu)
-        self.view_mode_actions = {
-            'Modern': self.action("Modern"),
-            'Classic': self.action("Classic"),
-        }
-        self.modern_view_action = self.view_mode_actions['Modern']
-        self.classic_view_action = self.view_mode_actions['Classic']
-        self.view_strategy_menu.addAction(self.modern_view_action)
-        self.view_strategy_menu.addAction(self.classic_view_action)
+        menu.addSeparator()
+        view_group = QActionGroup(self.parent)
+        view_group.setExclusive(True)
+        self.modern_horizontal_action = QAction("Modern Horizontal", self.parent)
+        self.modern_horizontal_action.setCheckable(True)
+        self.modern_horizontal_action.setShortcut("Ctrl+1")
+        self.modern_horizontal_action.triggered.connect(
+            lambda: self.parent.set_view('modern_horizontal'))
+        view_group.addAction(self.modern_horizontal_action)
+        menu.addAction(self.modern_horizontal_action)
+        self.modern_vertical_action = QAction("Modern Vertical", self.parent)
+        self.modern_vertical_action.setCheckable(True)
+        self.modern_vertical_action.setShortcut("Ctrl+2")
+        self.modern_vertical_action.triggered.connect(
+            lambda: self.parent.set_view('modern_vertical'))
+        view_group.addAction(self.modern_vertical_action)
+        menu.addAction(self.modern_vertical_action)
+        self.classic_view_action = QAction("Classic View", self.parent)
         self.classic_view_action.setCheckable(True)
-        self.modern_view_action.setCheckable(True)
-        self.modern_view_action.triggered.connect(lambda: self.parent.set_view('modern'))
+        self.classic_view_action.setShortcut("Ctrl+3")
         self.classic_view_action.triggered.connect(lambda: self.parent.set_view('classic'))
-        self.set_view(AppConfig.get('project_view_strategy').title(), False)
-        menu.addMenu(self.view_strategy_menu)
-        modern_view_menu = QMenu("Modern View Layout", menu)
-        self.horizontal_layout_action = self.action("Horizontal Layout")
-        self.horizontal_layout_action.setCheckable(True)
-        self.vertical_layout_action = self.action("Vertical Layout")
-        self.vertical_layout_action.setCheckable(True)
-        self.horizontal_layout_action.triggered.connect(
-            lambda: self.set_modern_layout('Horizontal Layout'))
-        self.vertical_layout_action.triggered.connect(
-            lambda: self.set_modern_layout('Vertical Layout'))
-
-        modern_view_menu.addAction(self.horizontal_layout_action)
-        modern_view_menu.addAction(self.vertical_layout_action)
-        menu.addMenu(modern_view_menu)
-        self.set_modern_layout('Horizontal Layout')
+        view_group.addAction(self.classic_view_action)
+        menu.addAction(self.classic_view_action)
 
     def set_modern_layout(self, action_name):
         if action_name == 'Horizontal Layout':
@@ -220,14 +215,16 @@ class MenuManager(QObject):
         if action_func:
             action_func()
 
-    def set_view(self, view, do_switch=True):
-        view_title = view.title()
-        view_title = view.title()
-        for label, mode in self.view_mode_actions.items():
-            mode.setEnabled(label != view_title)
-            mode.setChecked(label == view_title)
-        if do_switch:
-            self.actions.get(view_title + " View")()
+    def set_view(self, mode):
+        actions = {
+            'classic': self.classic_view_action,
+            'modern_horizontal': self.modern_horizontal_action,
+            'modern_vertical': self.modern_vertical_action
+        }
+        for key, action in actions.items():
+            is_current = key == mode
+            action.setChecked(is_current)
+            action.setEnabled(not is_current)
 
     def add_job_menu(self):
         menu = self.menubar.addMenu("&Jobs")

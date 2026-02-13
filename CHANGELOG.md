@@ -8,8 +8,10 @@
 ### Fixed
 - issue in file name propagation to classc view when running all jobs
 - keep memory of last path when opening or saving files
+- keyboard shortcut conflicts
 
 ### Changes
+- reviewed keyboard shortcuts and menu actions
 - cleaned up signal handling
 - copied elements now have a suffix " (copy)" after their name
 - final stack images have postfix according to algorith type: "pyram", or "depmp" (#24)

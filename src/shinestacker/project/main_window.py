@@ -51,6 +51,12 @@ class MainWindow(ProjectHandler, QMainWindow):
         }
         self.current_view = self.classic_view
         self.view_idx = {'classic': 0, 'modern': 1}
+        saved_mode = AppConfig.get('project_view_strategy')
+        if saved_mode == 'modern':
+            saved_mode = 'modern_horizontal'
+        if saved_mode not in ['classic', 'modern_horizontal', 'modern_vertical']:
+            saved_mode = 'modern_horizontal'
+        self.current_mode = saved_mode
         actions = {
             "&New...": self.new_project,
             "&Open...": self.open_project,
@@ -79,9 +85,8 @@ class MainWindow(ProjectHandler, QMainWindow):
             "Retouch Job Output": self.run_retouch_selected_job,
             "Stop": self.stop,
             "Classic View": lambda: self.set_view('classic'),
-            "Modern View": lambda: self.set_view('modern'),
-            "Horizontal Layout": self.horizontal_actions_layout,
-            "Vertical Layout": self.vertical_actions_layout,
+            "Modern Horizontal": lambda: self.set_view('modern_horizontal'),
+            "Modern Vertical": lambda: self.set_view('modern_vertical'),
             "Clear Run Information": self.clear_run_metadata,
             "Clear Project Outputs": self.clear_project_images,
         }
@@ -114,8 +119,6 @@ class MainWindow(ProjectHandler, QMainWindow):
         for _k, v in self.views.items():
             v.set_style_sheet(dark_theme)
         self.menu_manager.add_menus()
-        self.modern_view.progress_handler.set_horizontal_layout(
-            self.menu_manager.horizontal_layout_action.isChecked())
         toolbar = QToolBar(self)
         self.addToolBar(Qt.TopToolBarArea, toolbar)
         self.menu_manager.fill_toolbar(toolbar)
@@ -144,7 +147,7 @@ class MainWindow(ProjectHandler, QMainWindow):
         self.menu_manager.open_file_requested.connect(self.open_project)
         self.set_enabled_file_open_close_actions(False)
         self.show_status_message("Shine Stacker ready.", 4000)
-        self.set_view(AppConfig.get('project_view_strategy'))
+        self.set_view(self.current_mode)
         self.action_dialog = None
         self.file_dialog = SessionFileDialog(self)
 
@@ -190,32 +193,31 @@ class MainWindow(ProjectHandler, QMainWindow):
         self.menu_manager.set_enabled_run_all_jobs(self.num_project_jobs() > 1)
 
     def set_view(self, mode):
-        idx = self.view_idx[mode]
-        if self.view_stack.currentIndex() == idx:
-            return
-        current_mode = None
-        for view_name, view in self.views.items():
-            if view == self.current_view:
-                current_mode = view_name
-                break
-        if self.current_view.is_running():
-            reply = QMessageBox.warning(
-                self,
-                "Stop Run Warning",
-                "Switching view will stop the current run. Are you sure you want to stop the run?",
-                QMessageBox.Yes | QMessageBox.No,
-                QMessageBox.No
-            )
-            if reply == QMessageBox.No:
-                if current_mode:
-                    self.menu_manager.set_view(current_mode.title(), do_switch=False)
-                return
-        self.view_stack.currentWidget().stop()
-        self.view_stack.setCurrentIndex(idx)
-        self.current_view = self.view_stack.currentWidget()
+        base_mode = 'classic' if mode == 'classic' else 'modern'
+        target_idx = self.view_idx[base_mode]
+        if self.view_stack.currentIndex() != target_idx:
+            if self.current_view.is_running():
+                reply = QMessageBox.warning(
+                    self,
+                    "Stop Run Warning",
+                    "Switching view will stop the current run. Are you sure?",
+                    QMessageBox.Yes | QMessageBox.No,
+                    QMessageBox.No
+                )
+                if reply == QMessageBox.No:
+                    self.menu_manager.set_view(self.current_mode)
+                    return
+                self.current_view.stop()
+            self.view_stack.setCurrentIndex(target_idx)
+            self.current_view = self.view_stack.currentWidget()
+        if base_mode == 'modern':
+            horizontal = mode == 'modern_horizontal'
+            self.modern_view.horizontal_actions_layout(horizontal)
+        self.current_mode = mode
+        self.menu_manager.set_view(mode)
         self.menu_manager.clear_run_info_action.setEnabled(self.current_view.has_run_metadata())
         self.current_view.select_current()
-        self.menu_manager.set_view(mode, do_switch=False)
+        AppConfig.set('project_view_strategy', mode)
 
     def horizontal_actions_layout(self):
         self.modern_view.horizontal_actions_layout(True)
