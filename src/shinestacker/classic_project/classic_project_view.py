@@ -302,6 +302,9 @@ class ClassicProjectView(ProjectView, ListContainer):
     def update_widget(self, selection):
         self.refresh_ui(selection)
 
+    def update_widget_recursive(self, selection):
+        self.refresh_ui(selection)
+
     # pylint: disable=C0103
     def contextMenuEvent(self, event):
         item = self.job_list().itemAt(self.job_list().viewport().mapFrom(self, event.pos()))

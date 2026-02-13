@@ -28,6 +28,7 @@ class ElementActionManager(ProjectHandler, QObject):
         self._undo_manager = undo_manager
         self.selection_state = selection_state
         self.action_dialog = None
+        self.rename_dialog = None
         QObject.__init__(self, parent)
         self.current_file_path = ''
         self.modified = False
@@ -318,16 +319,21 @@ class ElementActionManager(ProjectHandler, QObject):
             return True
         return False
 
+    def _rename_element(self, element, options):
+        element.params['name'] = options['name']
+        sub_element = element.sub_actions
+        sub_options = options.get('sub')
+        if len(sub_element) > 0 and sub_options:
+            for e, o in zip(sub_element, sub_options):
+                self._rename_element(e, o)
+
     def rename(self, selection):
         element = self.project_element(*selection.to_tuple())
-        pre_edit_project = self.project().clone()
-        dialog = RenameDialog(element, self.parent())
-        if dialog.exec() == QDialog.Accepted:
-            element.params['name'] = dialog.options['name']
+        self.rename_dialog = RenameDialog(element, self.parent())
+        if self.rename_dialog.exec() == QDialog.Accepted:
             position = selection.to_tuple()
-            self.save_prev_undo_state(
-                pre_edit_project,
-                f"Rename {selection.type().title()}", "rename", position, position)
+            self.save_undo_state(f"Rename {selection.type().title()}", "rename", position, position)
+            self._rename_element(element, self.rename_dialog.options)
             return True
         return False
 

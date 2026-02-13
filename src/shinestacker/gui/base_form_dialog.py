@@ -47,3 +47,11 @@ class BaseFormDialog(QDialog):
         self.add_row_to_layout(button_box)
         self.ok_button.clicked.connect(self.accept)
         cancel_button.clicked.connect(self.reject)
+
+    def adjust_height_to_content(self):
+        ideal_height = self.sizeHint().height()
+        current_width = self.width()
+        screen_geo = self.screen().availableGeometry()
+        max_height = int(screen_geo.height() * 0.8)
+        new_height = min(ideal_height, max_height)
+        self.resize(current_width, new_height)

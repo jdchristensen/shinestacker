@@ -195,6 +195,8 @@ class BaseWidget(QFrame):
             old_container.deleteLater()
 
     def _add_path_label(self, text):
+        if self.path_label.text() == text:
+            return
         self.path_label.setText(text)
         QTimer.singleShot(0, self._check_and_adjust_layout)
 
@@ -297,12 +299,12 @@ class BaseWidget(QFrame):
         return colors[self._color_level].hex()
 
     def _update_enabled_icon(self):
-        if self._enabled:
-            self.enabled_icon.setText("✅")
-            self.enabled_icon.setToolTip("Disable")
-        else:
-            self.enabled_icon.setText("🚫")
-            self.enabled_icon.setToolTip("Enable")
+        new_text = "✅" if self._enabled else "🚫"
+        new_tooltip = "Disable" if self._enabled else "Enable"
+        if self.enabled_icon.text() != new_text:
+            self.enabled_icon.setText(new_text)
+        if self.enabled_icon.toolTip() != new_tooltip:
+            self.enabled_icon.setToolTip(new_tooltip)
 
     def clear_all(self):
         for child in self.child_widgets:
@@ -382,6 +384,11 @@ class BaseWidget(QFrame):
         self._update_stylesheet()
         self.update_path_recursive()
 
+    def update_recursive(self):
+        self.update()
+        for child in self.child_widgets:
+            child.update_recursive()
+
     def update_path_recursive(self):
         self.update_path_label()
         for child in self.child_widgets:
@@ -437,7 +444,7 @@ class BaseWidget(QFrame):
         pass
 
     def refresh_from_metadata(self):
-        pass
+        self.update()
 
 
 class ImgBaseWidget(BaseWidget):
@@ -699,3 +706,4 @@ class ImgBaseWidget(BaseWidget):
             self._restore_widget_state(widget_state)
             self._process_pending_image_views()
         self.update_metadata()
+        super().refresh_from_metadata()

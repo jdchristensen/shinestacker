@@ -465,6 +465,14 @@ class ModernProjectView(ProjectView):
             return
         widget.update()
 
+    def update_widget_recursive(self, selection):
+        if not selection.is_valid():
+            return
+        widget = self._find_widget(selection)
+        if widget is None:
+            return
+        widget.update_recursive()
+
     def horizontal_actions_layout(self, horizontal=True):
         if self.actions_layout_horizontal != horizontal:
             self.actions_layout_horizontal = horizontal
@@ -722,6 +730,8 @@ class ModernProjectView(ProjectView):
         if entry:
             self.targeted_undo(entry)
             self.refresh_existing_widget_references()
+            if entry.get('action_type', '') == 'rename':
+                self._refresh_widget_recursive(self._find_widget(old_selection))
             old_position = entry.get('old_position', (-1, -1, -1))
             self.selection_nav.restore_selection(SelectionState(*old_position))
         else:
@@ -731,6 +741,8 @@ class ModernProjectView(ProjectView):
         if entry:
             self.targeted_redo(entry)
             self.refresh_existing_widget_references()
+            if entry.get('action_type', '') == 'rename':
+                self._refresh_widget_recursive(self._find_widget(old_selection))
             new_position = entry.get('new_position', (-1, -1, -1))
             self.selection_nav.restore_selection(SelectionState(*new_position))
         else:
@@ -771,13 +783,15 @@ class ModernProjectView(ProjectView):
             return self._undo_edit_all_action()
         if action_type in ['run', 'run_all', 'clear_run_info']:
             return self._refresh_all_widgets_from_metadata()
+        if action_type == 'rename':
+            return True
         if action_type == 'add':
             state = SelectionState(*new_position)
             return self._undo_add_action(state, entry)
         if action_type == 'delete':
             state = SelectionState(*old_position)
             return self._insert_widget_for_undo(state, entry)
-        if action_type in ['edit', 'rename']:
+        if action_type == 'edit':
             state = SelectionState(*old_position)
             return self._undo_edit_action(state)
         self.refresh_ui()
@@ -802,17 +816,25 @@ class ModernProjectView(ProjectView):
             return self._undo_edit_all_action()
         if action_type in ['run', 'run_all', 'clear_run_info']:
             return self._refresh_all_widgets_from_metadata()
+        if action_type == 'rename':
+            return True
         if action_type == 'add':
             state = SelectionState(*new_position)
             return self._insert_widget_for_undo(state, entry)
         if action_type == 'delete':
             state = SelectionState(*old_position)
             return self._redo_delete_action(state)
-        if action_type in ['edit', 'rename']:
+        if action_type == 'edit':
             state = SelectionState(*new_position)
             return self._undo_edit_action(state)
         self.refresh_ui()
         return False
+
+    def _refresh_widget_recursive(self, widget):
+        widget.refresh_from_metadata()
+        for sub in widget.child_widgets:
+            self._refresh_widget_recursive(sub)
+        return True
 
     def _refresh_all_widgets_from_metadata(self):
         for job_idx, job_widget in enumerate(self.job_widgets):

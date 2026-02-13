@@ -544,7 +544,7 @@ class MainWindow(ProjectHandler, QMainWindow):
     def rename(self):
         if self.element_action.rename(self.selection_state):
             for view in self.views.values():
-                view.update_widget(self.selection_state)
+                view.update_widget_recursive(self.selection_state)
 
     def run_job(self):
         if self.current_view.has_run_metadata():

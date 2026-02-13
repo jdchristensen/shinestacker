@@ -20,14 +20,6 @@ class ClearImagesDialog(BaseFormDialog):
         self.create_ok_cancel()
         self.adjust_height_to_content()
 
-    def adjust_height_to_content(self):
-        ideal_height = self.sizeHint().height()
-        current_width = self.width()
-        screen_geo = self.screen().availableGeometry()
-        max_height = int(screen_geo.height() * 0.8)
-        new_height = min(ideal_height, max_height)
-        self.resize(current_width, new_height)
-
     def create_form(self):
         for job in self._project.jobs:
             self.make_group(job)
