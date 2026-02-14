@@ -1,6 +1,6 @@
 # pylint: disable=C0114, C0115, C0116, E0611, R0903, R0913, R0917, R0902, R0915, R0904
 import os
-from PySide6.QtCore import Qt, Signal, QTimer
+from PySide6.QtCore import Qt, Signal, QTimer, QSize
 from PySide6.QtWidgets import (
     QWidget, QFrame, QLabel, QVBoxLayout, QHBoxLayout, QSizePolicy, QLayout, QScrollArea)
 from ..config.constants import constants
@@ -51,6 +51,7 @@ class BaseWidget(QFrame, IconManager):
                  horizontal_layout=False, color_level=0, parent=None):
         QFrame.__init__(self, parent)
         IconManager.__init__(self, dark_theme)
+        self.icon_size = 16
         self.data_object = data_object
         self._enabled = True
         self.horizontal_layout = horizontal_layout
@@ -133,6 +134,11 @@ class BaseWidget(QFrame, IconManager):
         self.set_name(name)
         self._enabled = data_object.params.get('enabled', True)
         self._update_enabled_icon()
+
+    def set_button_icon(self, button, icon_name):
+        icon = self.get_icon(icon_name)
+        button.setIcon(icon)
+        button.setIconSize(QSize(self.icon_size, self.icon_size))
 
     def update_metadata(self):
         if self.data_object is None:
@@ -223,7 +229,6 @@ class BaseWidget(QFrame, IconManager):
             self.top_layout.setStretch(1, 1)
             self.top_layout.setStretch(2, 0)
             self.icons_container.setMaximumWidth(icons_width)
-        self.icons_container.setFixedWidth(icons_width)
 
     def _on_enabled_icon_clicked(self, event):
         self._enabled = not self._enabled
@@ -298,13 +303,19 @@ class BaseWidget(QFrame, IconManager):
                           ColorPalette.LIGHT_BLUE_2]
         return colors[self._color_level].hex()
 
+    def set_label_icon(self, label, icon_name):
+        pixmap = self.get_icon(icon_name).pixmap(self.icon_size, self.icon_size)
+        label.setPixmap(pixmap)
+        label.setFixedSize(QSize(self.icon_size, self.icon_size))
+
+    def _update_icons(self):
+        self._update_enabled_icon()
+        self._check_and_adjust_layout()
+
     def _update_enabled_icon(self):
-        new_text = "✅" if self._enabled else "🚫"
-        new_tooltip = "Disable" if self._enabled else "Enable"
-        if self.enabled_icon.text() != new_text:
-            self.enabled_icon.setText(new_text)
-        if self.enabled_icon.toolTip() != new_tooltip:
-            self.enabled_icon.setToolTip(new_tooltip)
+        icon_name = "enabled-small-icon" if self._enabled else "disabled-small-icon"
+        self.set_label_icon(self.enabled_icon, icon_name)
+        self.enabled_icon.setToolTip("Disable" if self._enabled else "Enable")
 
     def clear_all(self):
         for child in self.child_widgets:
