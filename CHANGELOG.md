@@ -16,6 +16,7 @@
 - cleaned up signal handling
 - copied elements now have a suffix " (copy)" after their name
 - final stack images have postfix according to algorith type: "pyram", or "depmp" (#24)
+- minor optimization of the DepthMap algorithm
 
 ---
 

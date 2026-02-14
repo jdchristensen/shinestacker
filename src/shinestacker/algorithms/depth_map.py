@@ -265,8 +265,18 @@ class DepthMapStack(BaseStackAlgo, TempDirBase):
         self.print_message(": begin pyramid blending")
         sum_weights = np.sum(weights, axis=0)
         sum_weights = np.where(sum_weights == 0, np.finfo(weights.dtype).eps, sum_weights)
-        blended_pyramid = None
-        weight_pyramid_accum = None
+        h, w = self.shape[:2]
+        pyramid_shapes_f2c = [(h, w)]
+        for _ in range(self.pyramid_levels - 1):
+            h = (h + 1) // 2
+            w = (w + 1) // 2
+            pyramid_shapes_f2c.append((h, w))
+        pyramid_shapes_c2f = list(reversed(pyramid_shapes_f2c))
+        blended_pyramid = [np.zeros((*shape, 3), dtype=self.float_type)
+                           for shape in pyramid_shapes_c2f]
+        weight_pyramid_accum = [np.zeros(shape, dtype=self.float_type)
+                                for shape in pyramid_shapes_c2f]
+        temp_laplacian = [np.zeros_like(level_arr) for level_arr in blended_pyramid]
         for i, img_path in enumerate(self.filenames):
             self.print_message(f": pyramid blending {self.image_str(i)}")
             filename = os.path.basename(img_path)
@@ -285,31 +295,13 @@ class DepthMapStack(BaseStackAlgo, TempDirBase):
                 img_float = img.astype(self.float_type)
                 if img_float.max() > 1.0:
                     img_float = img_float / self.num_pixel_values
-            gp_img = [img_float]
-            gp_weight = [weight]
-            for level in range(self.pyramid_levels - 1):
-                gp_img.append(cv2.pyrDown(gp_img[-1]))
-                gp_weight.append(cv2.pyrDown(gp_weight[-1]))
-            lp_img = [gp_img[-1]]
-            for level in range(self.pyramid_levels - 1, 0, -1):
-                size = (gp_img[level - 1].shape[1], gp_img[level - 1].shape[0])
-                expanded = cv2.pyrUp(gp_img[level], dstsize=size)
-                laplacian = gp_img[level - 1] - expanded
-                lp_img.append(laplacian)
-            current_blend = []
-            current_weights = []
+            _gp_img, gp_weight, lp_img = self._build_pyramids_for_image(img_float, weight)
             for level in range(self.pyramid_levels):
-                weighted_level = lp_img[level] * \
-                    gp_weight[self.pyramid_levels - 1 - level][..., np.newaxis]
-                current_blend.append(weighted_level)
-                current_weights.append(gp_weight[self.pyramid_levels - 1 - level])
-            if blended_pyramid is None:
-                blended_pyramid = current_blend
-                weight_pyramid_accum = current_weights
-            else:
-                blended_pyramid = [bp + cb for bp, cb in zip(blended_pyramid, current_blend)]
-                weight_pyramid_accum = [wp + cw for wp, cw
-                                        in zip(weight_pyramid_accum, current_weights)]
+                np.multiply(lp_img[level],
+                            gp_weight[self.pyramid_levels - 1 - level][..., np.newaxis],
+                            out=temp_laplacian[level])
+                blended_pyramid[level] += temp_laplacian[level]
+                weight_pyramid_accum[level] += gp_weight[self.pyramid_levels - 1 - level]
             step_count[0] += 1
             self.after_step(step_count[0])
             self.check_running()
@@ -338,6 +330,20 @@ class DepthMapStack(BaseStackAlgo, TempDirBase):
         step_count[0] += 1
         self.after_step(step_count[0])
         return result
+
+    def _build_pyramids_for_image(self, img, weight):
+        gp_img = [img]
+        gp_weight = [weight]
+        for level in range(self.pyramid_levels - 1):
+            gp_img.append(cv2.pyrDown(gp_img[-1]))
+            gp_weight.append(cv2.pyrDown(gp_weight[-1]))
+        lp_img = [gp_img[-1]]
+        for level in range(self.pyramid_levels - 1, 0, -1):
+            size = (gp_img[level - 1].shape[1], gp_img[level - 1].shape[0])
+            expanded = cv2.pyrUp(gp_img[level], dstsize=size)
+            laplacian = gp_img[level - 1] - expanded
+            lp_img.append(laplacian)
+        return gp_img, gp_weight, lp_img
 
     def cleanup_temp_files(self, energy_files):
         for energy_file in energy_files:
