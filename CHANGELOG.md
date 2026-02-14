@@ -3,19 +3,19 @@
 ## [v1.14.x] - 2026-02-14
 
 ### Added
-- rename element menu action
+- element rename menu action
 
 ### Fixed
-- issue in file name propagation to classc view when running all jobs
-- keep memory of last path when opening or saving files
+- keep memory of the last path when opening or saving files
 - keyboard shortcut conflicts
-- safe DepthMap implementation also for termperature=0
+- safe DepthMap implementation also when termperature = 0
+- several GUI issues and minor usability glitches
 
 ### Changes
-- reviewed keyboard shortcuts and menu actions
-- cleaned up signal handling
+- rationalized keyboard shortcuts and menu actions
 - copied elements now have a suffix " (copy)" after their name
 - final stack images have postfix according to algorith type: "pyram", or "depmp" (#24)
+- cleaned up signal handling
 - DepthMap: minor algorithm optimization and improved defaults for sharper images
 
 ---

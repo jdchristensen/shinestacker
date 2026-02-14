@@ -144,6 +144,7 @@ class JobConfigurator(DefaultActionConfigurator):
                 "Please select a working directory. "
                 "The working directory is the parent folder of your input selection."
             )
+            self.input_widget.browse_button.setFocus()
             return False
         if not os.path.exists(working_path):
             QMessageBox.warning(
@@ -151,6 +152,7 @@ class JobConfigurator(DefaultActionConfigurator):
                 f"Working directory '{working_path}' does not exist. "
                 "Please select a valid directory."
             )
+            self.input_widget.browse_button.setFocus()
             return False
         if selection_mode == 'folder':
             full_input_path = os.path.join(working_path, input_path)
@@ -160,6 +162,7 @@ class JobConfigurator(DefaultActionConfigurator):
                     f"Input directory '{full_input_path}' does not exist. "
                     "Please select a valid directory."
                 )
+                self.input_widget.browse_button.setFocus()
                 return False
         params['input_path'] = input_path
         params['working_path'] = working_path
