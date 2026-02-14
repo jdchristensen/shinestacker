@@ -11,6 +11,7 @@
 - keyboard shortcut conflicts
 - safe DepthMap implementation also when termperature = 0
 - several GUI issues and minor usability glitches
+- prevent failure of bunches algorithm in case of a single frame
 
 ### Changes
 - rationalized keyboard shortcuts and menu actions

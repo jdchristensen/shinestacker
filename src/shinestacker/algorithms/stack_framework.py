@@ -88,10 +88,11 @@ class ImageSequenceManager:
 
     def input_filepaths(self):
         if self._input_filepaths is None:
-            if isinstance(self.input_full_path(), str):
-                dirs = [self.input_full_path()]
-            elif hasattr(self.input_full_path(), "__len__"):
-                dirs = self.input_full_path()
+            input_full_path = self.input_full_path()
+            if isinstance(input_full_path, str):
+                dirs = [input_full_path]
+            elif hasattr(input_full_path, "__len__"):
+                dirs = input_full_path
             else:
                 raise RuntimeError("input_full_path option must contain "
                                    "a path or an array of paths")

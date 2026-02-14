@@ -129,6 +129,8 @@ def get_bunches(collection, n_frames, n_overlap):
         raise RuntimeError(
             f"Can't get bunch collection, total number of frames ({n_frames}) "
             "is equal to the number of overlapping grames")
+    if len(collection) < n_frames:
+        return [collection]
     bunches = [collection[x:x + n_frames]
                for x in range(0, len(collection) - n_overlap, n_frames - n_overlap)]
     return bunches
