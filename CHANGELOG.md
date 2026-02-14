@@ -4,6 +4,7 @@
 
 ### Added
 - element rename menu action
+- run icon to job widget in modern view
 
 ### Fixed
 - keep memory of the last path when opening or saving files

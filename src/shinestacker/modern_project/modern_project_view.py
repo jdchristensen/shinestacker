@@ -23,6 +23,7 @@ from .sub_action_widget import SubActionWidget
 class ModernProjectView(ProjectView):
     update_gui_actions_enable_requested = Signal()
     show_status_message_requested = Signal(str, int)
+    run_job_requested = Signal(int)
     run_retouch_job_requested = Signal(int)
 
     def __init__(self, project, selection_state, dark_theme, parent=None):
@@ -115,11 +116,20 @@ class ModernProjectView(ProjectView):
         self._select_widget(state)
 
     def connect_signals(self, update_gui_actions_enable, show_status_message,
-                        enable_sub_actions, on_run_retouch_job_requested):
+                        enable_sub_actions, on_run_job_requested,
+                        on_run_retouch_job_requested):
         self.update_gui_actions_enable_requested.connect(update_gui_actions_enable)
         self.show_status_message_requested.connect(show_status_message)
         self.enable_sub_actions_requested.connect(enable_sub_actions)
+        self.run_job_requested.connect(on_run_job_requested)
         self.run_retouch_job_requested.connect(on_run_retouch_job_requested)
+
+    def _on_job_run_clicked(self, job_widget):
+        try:
+            job_index = self.job_widgets.index(job_widget)
+        except ValueError:
+            return
+        self.run_job_requested.emit(job_index)
 
     def _on_job_retouch_clicked(self, job_widget):
         try:
@@ -519,7 +529,8 @@ class ModernProjectView(ProjectView):
     def _add_job_widget(self, job):
         job_widget = JobWidget(
             job, self.dark_theme, self.actions_layout_horizontal,
-            self.subactions_layout_vertical, self._on_job_retouch_clicked)
+            self.subactions_layout_vertical, self._on_job_run_clicked,
+            self._on_job_retouch_clicked)
         job_widget.setFocusPolicy(Qt.NoFocus)
         job_index = len(self.job_widgets)
         job_widget.clicked.connect(
@@ -622,7 +633,8 @@ class ModernProjectView(ProjectView):
                 return None
             inserted_widget = JobWidget(
                 element, self.dark_theme, self.actions_layout_horizontal,
-                self.subactions_layout_vertical, self._on_job_retouch_clicked)
+                self.subactions_layout_vertical, self._on_job_run_clicked,
+                self._on_job_retouch_clicked)
             inserted_widget.setFocusPolicy(Qt.NoFocus)
             inserted_widget.clicked.connect(
                 lambda: self._on_widget_clicked(inserted_widget, job_index))

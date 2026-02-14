@@ -10,10 +10,14 @@ from .action_widget import ActionWidget
 
 class JobWidget(BaseWidget):
     retouch_clicked_signal = Signal(object)
+    run_clicked_signal = Signal(object)
 
     def __init__(self, job, dark_theme=False, horizontal_layout=False,
-                 vertical_subactions=False, handle_retouch_clicked=None,
-                 parent=None):
+                 vertical_subactions=False, handle_run_clicked=None,
+                 handle_retouch_clicked=None, parent=None):
+        self.run_button = QPushButton("▶️")
+        self.run_button.setToolTip("Run this job")
+        self.run_button.clicked.connect(lambda: self.run_clicked_signal.emit(self))
         self.retouch_button = QPushButton("🖌️")
         self.retouch_button.setToolTip("Retouch outputs")
         self.retouch_button.clicked.connect(lambda: self.retouch_clicked_signal.emit(self))
@@ -24,11 +28,13 @@ class JobWidget(BaseWidget):
             for action in job.sub_actions:
                 action_widget = ActionWidget(action, dark_theme, vertical_subactions)
                 self.add_child_widget(action_widget, add_to_layout=True)
-        self.icons_layout.insertWidget(0, self.retouch_button)
+        self.icons_layout.insertWidget(0, self.run_button)
+        self.icons_layout.insertWidget(1, self.retouch_button)
         self._update_button_style()
         self.retouch_button.setVisible(self._should_show_retouch_button())
         if handle_retouch_clicked:
             self.retouch_clicked_signal.connect(handle_retouch_clicked)
+        self.run_clicked_signal.connect(handle_run_clicked)
 
     def update(self, data_object=None):
         super().update(data_object)
@@ -66,6 +72,7 @@ class JobWidget(BaseWidget):
                 color: #{ColorPalette.MEDIUM_BLUE.hex()};
             }}
         """
+        self.run_button.setStyleSheet(style)
         self.retouch_button.setStyleSheet(style)
 
     def _should_show_retouch_button(self):

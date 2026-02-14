@@ -100,6 +100,7 @@ class MainWindow(ProjectHandler, QMainWindow):
             self.update_gui_actions_enable,
             self.show_status_message,
             self.menu_manager.set_enabled_subactions_gui,
+            self.on_run_job_requested,
             self.on_run_retouch_job_requested)
         signal_map = [
             ('widget_enable_signal', self.set_enabled),
@@ -573,9 +574,12 @@ class MainWindow(ProjectHandler, QMainWindow):
     def run_retouch_selected_job(self):
         self.current_view.run_retouch_selected_job()
 
+    def on_run_job_requested(self, job_index):
+        self.selection_state.set_indices(job_index)
+        self.run_job()
+
     def on_run_retouch_job_requested(self, job_index):
-        self.selection_state.set_indices(job_index, -1, -1)
-        # self.current_view.select_current()
+        self.selection_state.set_indices(job_index)
         self.run_retouch_selected_job()
 
     def clear_run_metadata(self):
