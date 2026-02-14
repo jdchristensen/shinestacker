@@ -295,7 +295,7 @@ class DepthMapStack(BaseStackAlgo, TempDirBase):
                 img_float = img.astype(self.float_type)
                 if img_float.max() > 1.0:
                     img_float = img_float / self.num_pixel_values
-            _gp_img, gp_weight, lp_img = self._build_pyramids_for_image(img_float, weight)
+            gp_weight, lp_img = self._build_pyramids_for_image(img_float, weight)
             for level in range(self.pyramid_levels):
                 np.multiply(lp_img[level],
                             gp_weight[self.pyramid_levels - 1 - level][..., np.newaxis],
@@ -343,7 +343,7 @@ class DepthMapStack(BaseStackAlgo, TempDirBase):
             expanded = cv2.pyrUp(gp_img[level], dstsize=size)
             laplacian = gp_img[level - 1] - expanded
             lp_img.append(laplacian)
-        return gp_img, gp_weight, lp_img
+        return gp_weight, lp_img
 
     def cleanup_temp_files(self, energy_files):
         for energy_file in energy_files:
