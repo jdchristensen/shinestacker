@@ -23,6 +23,7 @@ from .sub_action_widget import SubActionWidget
 class ModernProjectView(ProjectView):
     update_gui_actions_enable_requested = Signal()
     show_status_message_requested = Signal(str, int)
+    run_retouch_job_requested = Signal(int)
 
     def __init__(self, project, selection_state, dark_theme, parent=None):
         ProjectView.__init__(self, project, selection_state, dark_theme, parent)
@@ -113,10 +114,19 @@ class ModernProjectView(ProjectView):
         state = SelectionState(job_index, action_index, subaction_index)
         self._select_widget(state)
 
-    def connect_signals(self, update_gui_actions_enable, show_status_message, enable_sub_actions):
+    def connect_signals(self, update_gui_actions_enable, show_status_message,
+                        enable_sub_actions, on_run_retouch_job_requested):
         self.update_gui_actions_enable_requested.connect(update_gui_actions_enable)
         self.show_status_message_requested.connect(show_status_message)
         self.enable_sub_actions_requested.connect(enable_sub_actions)
+        self.run_retouch_job_requested.connect(on_run_retouch_job_requested)
+
+    def _on_job_retouch_clicked(self, job_widget):
+        try:
+            job_index = self.job_widgets.index(job_widget)
+        except ValueError:
+            return
+        self.run_retouch_job_requested.emit(job_index)
 
     # pylint: disable=C0103
     def showEvent(self, event):
@@ -132,8 +142,6 @@ class ModernProjectView(ProjectView):
         return super().eventFilter(obj, event)
 
     def keyPressEvent(self, event):
-        if not self.job_widgets:
-            return
         key = event.key()
         key_map = {
             Qt.Key_Up: "up",
@@ -509,9 +517,9 @@ class ModernProjectView(ProjectView):
         ProjectView.refresh_ui(self)
 
     def _add_job_widget(self, job):
-        job_widget = JobWidget(job, self.dark_theme,
-                               self.actions_layout_horizontal,
-                               self.subactions_layout_vertical)
+        job_widget = JobWidget(
+            job, self.dark_theme, self.actions_layout_horizontal,
+            self.subactions_layout_vertical, self._on_job_retouch_clicked)
         job_widget.setFocusPolicy(Qt.NoFocus)
         job_index = len(self.job_widgets)
         job_widget.clicked.connect(
@@ -614,7 +622,7 @@ class ModernProjectView(ProjectView):
                 return None
             inserted_widget = JobWidget(
                 element, self.dark_theme, self.actions_layout_horizontal,
-                self.subactions_layout_vertical)
+                self.subactions_layout_vertical, self._on_job_retouch_clicked)
             inserted_widget.setFocusPolicy(Qt.NoFocus)
             inserted_widget.clicked.connect(
                 lambda: self._on_widget_clicked(inserted_widget, job_index))
@@ -727,8 +735,7 @@ class ModernProjectView(ProjectView):
             job_widget.set_dark_theme(dark_theme)
 
     def select_first_job(self):
-        if self.job_widgets:
-            self._select_widget(SelectionState(0, -1, -1))
+        self._select_widget(SelectionState(0, -1, -1))
 
     def perform_undo(self, entry, old_selection):
         if entry:

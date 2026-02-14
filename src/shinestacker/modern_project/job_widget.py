@@ -1,4 +1,5 @@
 # pylint: disable=C0114, C0115, C0116, E0611, R0903, R0913, R0917
+from PySide6.QtCore import Signal
 from PySide6.QtWidgets import QPushButton
 from ..gui.project_model import get_action_input_path
 from ..config.constants import constants
@@ -8,11 +9,14 @@ from .action_widget import ActionWidget
 
 
 class JobWidget(BaseWidget):
+    retouch_clicked_signal = Signal(object)
+
     def __init__(self, job, dark_theme=False, horizontal_layout=False,
-                 vertical_subactions=False, parent=None):
+                 vertical_subactions=False, handle_retouch_clicked=None,
+                 parent=None):
         self.retouch_button = QPushButton("🖌️")
         self.retouch_button.setToolTip("Retouch outputs")
-        self.retouch_button.clicked.connect(self._on_retouch_clicked)
+        self.retouch_button.clicked.connect(lambda: self.retouch_clicked_signal.emit(self))
         super().__init__(job, 50, dark_theme, horizontal_layout, 2, parent)
         in_path = get_action_input_path(job)[0]
         self._add_path_label(f"📁 {self._format_path(in_path)}")
@@ -23,6 +27,8 @@ class JobWidget(BaseWidget):
         self.icons_layout.insertWidget(0, self.retouch_button)
         self._update_button_style()
         self.retouch_button.setVisible(self._should_show_retouch_button())
+        if handle_retouch_clicked:
+            self.retouch_clicked_signal.connect(handle_retouch_clicked)
 
     def update(self, data_object=None):
         super().update(data_object)
@@ -72,10 +78,3 @@ class JobWidget(BaseWidget):
                                     constants.ACTION_FOCUSSTACKBUNCH]:
                 return True
         return False
-
-    def _on_retouch_clicked(self):
-        parent = self.parent()
-        while parent and not hasattr(parent, 'run_retouch_path'):
-            parent = parent.parent()
-        if parent:
-            parent.run_retouch_job(self.data_object)
