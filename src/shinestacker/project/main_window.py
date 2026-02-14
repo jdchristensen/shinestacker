@@ -100,8 +100,8 @@ class MainWindow(ProjectHandler, QMainWindow):
             self.update_gui_actions_enable,
             self.show_status_message,
             self.menu_manager.set_enabled_subactions_gui,
-            self.on_run_job_requested,
-            self.on_run_retouch_job_requested)
+            self.run_job,
+            self.run_retouch_selected_job)
         signal_map = [
             ('widget_enable_signal', self.set_enabled),
             ('widget_updated_signal', self.handle_widget_updated),
@@ -551,6 +551,8 @@ class MainWindow(ProjectHandler, QMainWindow):
                 view.update_widget_recursive(self.selection_state)
 
     def run_job(self):
+        if not self.current_view.enforce_stop_run():
+            return
         if self.current_view.has_run_metadata():
             position = (
                 self.selection_state.job_index if self.selection_state.is_job_selected() else -1,

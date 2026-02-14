@@ -28,8 +28,8 @@ class JobWidget(BaseWidget):
             for action in job.sub_actions:
                 action_widget = ActionWidget(action, dark_theme, vertical_subactions)
                 self.add_child_widget(action_widget, add_to_layout=True)
-        self.icons_layout.insertWidget(0, self.run_button)
-        self.icons_layout.insertWidget(1, self.retouch_button)
+        self.icons_layout.insertWidget(0, self.retouch_button)
+        self.icons_layout.insertWidget(1, self.run_button)
         self._update_button_style()
         self.retouch_button.setVisible(self._should_show_retouch_button())
         if handle_retouch_clicked:

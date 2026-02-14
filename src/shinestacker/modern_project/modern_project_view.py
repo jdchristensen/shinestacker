@@ -125,17 +125,13 @@ class ModernProjectView(ProjectView):
         self.run_retouch_job_requested.connect(on_run_retouch_job_requested)
 
     def _on_job_run_clicked(self, job_widget):
-        try:
-            job_index = self.job_widgets.index(job_widget)
-        except ValueError:
-            return
+        job_index = self.job_widgets.index(job_widget)
+        self.selection_state.set_indices(job_index)
         self.run_job_requested.emit(job_index)
 
     def _on_job_retouch_clicked(self, job_widget):
-        try:
-            job_index = self.job_widgets.index(job_widget)
-        except ValueError:
-            return
+        job_index = self.job_widgets.index(job_widget)
+        self.selection_state.set_indices(job_index)
         self.run_retouch_job_requested.emit(job_index)
 
     # pylint: disable=C0103
