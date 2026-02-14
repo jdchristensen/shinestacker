@@ -488,7 +488,7 @@ class FocusStackBaseConfigurator(DefaultActionConfigurator):
             q_depthmap.layout(), 'depthmap_temperature', FIELD_FLOAT, 'Temperature',
             expert=True,
             required=False, default=AppConfig.get('depth_map_params')['temperature'],
-            min_val=0, max_val=1000, decimals=3, step=0.001)
+            min_val=0, max_val=1000, decimals=1, step=0.1)
 
         def change_depthmap_map_type():
             enabled = self.depthmap_map_type.currentText() == self.MAP_TYPE_OPTIONS[1]

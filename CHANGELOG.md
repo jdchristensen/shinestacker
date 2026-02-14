@@ -1,6 +1,6 @@
 # Changelog
 
-## [v1.14.x] - 2026-02-13
+## [v1.14.x] - 2026-02-14
 
 ### Added
 - rename element menu action
@@ -9,6 +9,7 @@
 - issue in file name propagation to classc view when running all jobs
 - keep memory of last path when opening or saving files
 - keyboard shortcut conflicts
+- safe DepthMap implementation also for termperature=0
 
 ### Changes
 - reviewed keyboard shortcuts and menu actions

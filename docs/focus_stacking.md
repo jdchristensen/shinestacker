@@ -83,7 +83,7 @@ Arguments for the constructor are:
    * ```energy_smooth_size``` (optional, default: 7): size of energy smoothing. Note: larger values require slower computation.
    * ```energy_sigma_color``` (optiona, default: 0.8): controls how much energy values can differ while still smoothing together for the energy map.
    * ```energy_sigma_space``` (optional, default: 8): controls the spatial distance for smoothing neighborhood. Larger values require slower computation.
-   * ```temperature``` (optional, default: 0.15): controls fusion transition. Lower value means sharper transitions.
+   * ```temperature``` (optional, default: 0.0): controls fusion transition. Lower value means sharper transitions.
    * ```plot_depth_map``` (optional, default: ```False```): produces a grayscale depth map and saves it in the ```plot_path``` folder.
 
 For more details about bilateral filters applied to energy and weights map, see [Bilateral Filtering](https://www.geeksforgeeks.org/python/python-bilateral-filtering/).

@@ -29,7 +29,7 @@ class BaseStackAlgo:
         else:
             raise InvalidOptionError(
                 "float_type", float_type,
-                details=" valid values are FLOAT_32 and FLOAT_64"
+                details=f" valid values are {constants.FLOAT_32} and {constants.FLOAT_64}"
             )
 
     def algo_name(self):

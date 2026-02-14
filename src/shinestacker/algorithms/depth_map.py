@@ -81,18 +81,22 @@ class DepthMapStack(BaseStackAlgo, TempDirBase):
     def get_focus_map(self, energies):
         if self.map_type == constants.DM_MAP_AVERAGE:
             self.print_message(": compute weight")
-            sum_energies = np.sum(energies, axis=0)
-            sum_energies = np.where(sum_energies == 0, np.finfo(energies.dtype).eps, sum_energies)
-            weights = np.divide(energies, sum_energies)
+            sum_energies = np.sum(energies, axis=0, dtype=energies.dtype)
+            mask = sum_energies != 0
+            weights = np.zeros_like(energies)
+            weights[:, mask] = energies[:, mask] / sum_energies[mask]
         elif self.map_type == constants.DM_MAP_MAX:
-            self.print_message(": apply temperature")
             max_energy = np.max(energies, axis=0)
-            temperature_safe = max(self.temperature, np.finfo(energies.dtype).eps)
-            relative = np.exp((energies - max_energy) / temperature_safe)
-            sum_relative = np.sum(relative, axis=0)
-            sum_relative = np.where(sum_relative == 0, np.finfo(energies.dtype).eps, sum_relative)
-            self.print_message(": compute weight")
-            weights = relative / sum_relative
+            if self.temperature < 1e-4:
+                self.print_message(": counting maxima")
+                mask = energies == max_energy
+                num_max = np.sum(mask, axis=0, dtype=energies.dtype)
+                weights = mask / np.where(num_max == 0, 1, num_max)
+            else:
+                self.print_message(": apply temperature")
+                relative = np.exp((energies - max_energy) / self.temperature)
+                sum_relative = np.sum(relative, axis=0)
+                weights = relative / np.where(sum_relative == 0, 1, sum_relative)
         else:
             raise InvalidOptionError("map_type", self.map_type, details=f" valid values are "
                                      f"{constants.DM_MAP_AVERAGE} and {constants.DM_MAP_MAX}.")
@@ -198,8 +202,8 @@ class DepthMapStack(BaseStackAlgo, TempDirBase):
             self.check_running()
             self.print_message(": normalize weights")
             sum_weights = np.sum(weights, axis=0)
-            sum_weights = np.where(sum_weights == 0, np.finfo(weights.dtype).eps, sum_weights)
-            weights = np.divide(weights, sum_weights)
+            mask = sum_weights != 0
+            weights[:, mask] /= sum_weights[mask]
             step_count[0] += 1
             self.after_step(step_count[0])
             self.check_running()
@@ -223,17 +227,32 @@ class DepthMapStack(BaseStackAlgo, TempDirBase):
         return weights
 
     def get_focus_map_from_disk_max(self, energy_files, max_energy, n_images):
-        temperature_safe = max(self.temperature, np.finfo(self.float_type).eps)
+        if self.temperature < 1e-4:
+            num_max = np.zeros(self.shape, dtype=self.float_type)
+            for i, energy_file in enumerate(energy_files):
+                self.print_message(f": counting maxima, {self.image_str(i)}")
+                energy_map = np.load(energy_file)
+                num_max += (energy_map == max_energy).astype(self.float_type)
+                self.check_running()
+            weights = np.empty((n_images, *self.shape), dtype=self.float_type)
+            for i, energy_file in enumerate(energy_files):
+                self.print_message(f": compute weight, {self.image_str(i)}")
+                energy_map = np.load(energy_file)
+                mask = energy_map == max_energy
+                weights[i] = mask / np.where(num_max == 0, self.float_type(1.0), num_max)
+                self.check_running()
+            self.cleanup_temp_files(energy_files)
+            return weights
         sum_relative = np.zeros(self.shape, dtype=self.float_type)
         relative_maps = []
         for i, energy_file in enumerate(energy_files):
             self.print_message(f": apply temperature, {self.image_str(i)}")
             energy_map = np.load(energy_file)
-            relative = np.exp((energy_map - max_energy) / temperature_safe)
+            relative = np.exp((energy_map - max_energy) / self.temperature)
             relative_maps.append(relative)
             sum_relative += relative
             self.check_running()
-        sum_relative = np.where(sum_relative == 0, np.finfo(self.float_type).eps, sum_relative)
+        sum_relative = np.where(sum_relative == 0, self.float_type(1.0), sum_relative)
         weights = np.empty((n_images, *self.shape), dtype=self.float_type)
         for i, relative in enumerate(relative_maps):
             self.print_message(f": compute weight, {self.image_str(i)}")
