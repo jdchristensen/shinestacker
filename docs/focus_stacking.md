@@ -75,15 +75,15 @@ Arguments for the constructor are the same ad for ```PyramidStack``` plus:
 Arguments for the constructor are:
    * ```map_type``` (optional)_ possible values are   ```DM_MAP_AVERAGE```  (default) and ```DM_MAP_MAX```. ```DM_MAP_MAX``` select for wach pixel the layer which has the best focus. ```DM_MAP_AVERAGE``` performs for each pixel an average of all layers weighted by the quality of focus.
    * ```energy``` (optional): possible values are ```DM_ENERGY_TENENGRAD``` (default), ```DM_ENERGY_LAPLACIAN```, ```DM_ENERGY_MOD_LAPLACIAN```, ```DM_ENERGY_SOBEL``` and ```DM_ENERGY_VARIANCE```. For more information, see [Sobel Derivatives](https://docs.opencv.org/4.x/d2/d2c/tutorial_sobel_derivatives.html), 
-   * ```kernel_size``` (optional, default: 3): size in pixels of Laplacian kernel. Used only with the ```DM_ENERGY_MOD_LAPLACIAN``` ```energy``` option.
-   * ```blur_size``` (optional, default: 3): size in pixels of the pre-Laplacian Gaussian blur. Used only with the ```DM_ENERGY_MOD_LAPLACIAN``` ```energy``` option.
-   * ```weight_power``` (optiona, default: 2.0): apply a power law correction to energy weights.
-   * ```pyramid_smooth_size``` (optional, default: 7): smoothing size for the pyramid algorithm used for frames blending.
+   * ```kernel_size``` (optional, default: 5): size in pixels of Laplacian kernel. Used only with the ```DM_ENERGY_MOD_LAPLACIAN``` ```energy``` option.
+   * ```blur_size``` (optional, default: 5): size in pixels of the pre-Laplacian Gaussian blur. Used only with the ```DM_ENERGY_MOD_LAPLACIAN``` ```energy``` option.
+   * ```weight_power``` (optiona, default: 1.0): apply a power law correction to energy weights. Note that this correction has only effect if ```map_type=DM_MAP_AVERAGE``` or if ```map_type=DM_MAP_MAX``` and ```temperature``` is greater than zero.
+   * ```pyramid_smooth_size``` (optional, default: 1): smoothing size for the pyramid algorithm used for frames blending.
    * ```pyramid_levels``` (optional, default: 5): number of levels for the pyramid algorithm used for frames blending.
-   * ```energy_smooth_size``` (optional, default: 7): size of energy smoothing. Note: larger values require slower computation.
+   * ```energy_smooth_size``` (optional, default: 1): size of energy smoothing. Note: larger values require slower computation.
    * ```energy_sigma_color``` (optiona, default: 0.8): controls how much energy values can differ while still smoothing together for the energy map.
-   * ```energy_sigma_space``` (optional, default: 8): controls the spatial distance for smoothing neighborhood. Larger values require slower computation.
-   * ```temperature``` (optional, default: 0.0): controls fusion transition. Lower value means sharper transitions.
+   * ```energy_sigma_space``` (optional, default: 2): controls the spatial distance for smoothing neighborhood. Larger values require slower computation.
+   * ```temperature``` (optional, default: 0): controls fusion transition. Lower value means sharper transitions. This correction is only applied if ```map_type=DM_MAP_MAX```.
    * ```plot_depth_map``` (optional, default: ```False```): produces a grayscale depth map and saves it in the ```plot_path``` folder.
 
 For more details about bilateral filters applied to energy and weights map, see [Bilateral Filtering](https://www.geeksforgeeks.org/python/python-bilateral-filtering/).
