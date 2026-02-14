@@ -263,8 +263,6 @@ class DepthMapStack(BaseStackAlgo, TempDirBase):
 
     def weighted_pyramid_blend(self, weights, step_count):
         self.print_message(": begin pyramid blending")
-        sum_weights = np.sum(weights, axis=0)
-        sum_weights = np.where(sum_weights == 0, np.finfo(weights.dtype).eps, sum_weights)
         h, w = self.shape[:2]
         pyramid_shapes_f2c = [(h, w)]
         for _ in range(self.pyramid_levels - 1):
@@ -280,7 +278,7 @@ class DepthMapStack(BaseStackAlgo, TempDirBase):
         for i, img_path in enumerate(self.filenames):
             self.print_message(f": pyramid blending {self.image_str(i)}")
             filename = os.path.basename(img_path)
-            weight = weights[i] / sum_weights
+            weight = weights[i]
             if self.pyramid_smooth_size > 0:
                 ksize = self.pyramid_smooth_size
                 if ksize % 2 == 0:
