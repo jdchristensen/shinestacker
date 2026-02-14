@@ -1,20 +1,20 @@
 # pylint: disable=C0114, C0115, C0116, R0904, E0611, R0902, W0201, R0913, R0917
-import os
 from functools import partial
 from PySide6.QtCore import Signal, QObject
-from PySide6.QtGui import QAction, QIcon, QKeySequence, QActionGroup
+from PySide6.QtGui import QAction, QKeySequence, QActionGroup
 from PySide6.QtWidgets import QMenu, QComboBox
-from .. config.constants import constants
-from .. config.app_config import AppConfig
-from .. gui.recent_file_manager import RecentFileManager
+from ..config.constants import constants
+from ..config.app_config import AppConfig
+from ..gui.recent_file_manager import RecentFileManager
+from ..gui.icon_manager import IconManager
 
 
-class MenuManager(QObject):
+class MenuManager(QObject, IconManager):
     open_file_requested = Signal(str)
 
     def __init__(self, menubar, actions, add_action, add_subaction, dark_theme, parent):
-        super().__init__(parent)
-        self.script_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "gui")
+        IconManager.__init__(self, dark_theme)
+        QObject.__init__(self, parent)
         self._recent_file_manager = RecentFileManager("shinestacker-recent-project-files.txt")
         self.add_action = add_action
         self.add_subaction = add_subaction
@@ -73,10 +73,6 @@ class MenuManager(QObject):
             "Retouch Job Output": "Retouch job output"
         }
 
-    def get_icon(self, icon_name):
-        icon_dir = 'dark' if self.dark_theme else 'light'
-        return QIcon(os.path.join(self.script_dir, f"img/{icon_dir}/{icon_name}.png"))
-
     def action(self, name, requires_file=False):
         action = QAction(name, self.parent)
         if requires_file:
@@ -99,13 +95,6 @@ class MenuManager(QObject):
         if action_fun is not None:
             action.triggered.connect(action_fun)
         return action
-
-    def change_theme(self, dark_theme):
-        self.dark_theme = dark_theme
-        for action in self.parent.findChildren(QAction):
-            if action.property("theme_dependent"):
-                base_name = action.property("base_icon_name")
-                action.setIcon(self.get_icon(base_name))
 
     def update_recent_files(self):
         self.recent_files_menu.clear()

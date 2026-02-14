@@ -642,5 +642,5 @@ class MainWindow(ProjectHandler, QMainWindow):
     def on_theme_changed(self):
         dark_theme = self.is_dark_theme()
         for _k, v in self.views.items():
-            v.change_theme(dark_theme)
-        self.menu_manager.change_theme(dark_theme)
+            v.set_dark_theme(dark_theme)
+        self.menu_manager.set_dark_theme(dark_theme)

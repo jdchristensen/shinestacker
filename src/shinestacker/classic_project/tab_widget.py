@@ -38,7 +38,7 @@ class TabWidgetWithPlaceholder(QWidget):
         else:
             self.placeholder.setText("Run logs will appear here.")
 
-    def change_theme(self, dark_theme):
+    def set_dark_theme(self, dark_theme):
         self.dark_theme = dark_theme
         self.set_bkg_icon()
 

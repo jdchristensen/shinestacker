@@ -54,7 +54,7 @@ class ModernProjectView(ProjectView):
             self._selection_callback
         )
         self._setup_ui()
-        self.change_theme(dark_theme)
+        self.set_dark_theme(dark_theme)
         self.setFocusPolicy(Qt.StrongFocus)
         self.setFocus()
 
@@ -737,7 +737,7 @@ class ModernProjectView(ProjectView):
         self.close()
         return True
 
-    def change_theme(self, dark_theme):
+    def set_dark_theme(self, dark_theme):
         self.dark_theme = dark_theme
         for job_widget in self.job_widgets:
             job_widget.set_dark_theme(dark_theme)

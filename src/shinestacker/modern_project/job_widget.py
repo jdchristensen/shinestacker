@@ -48,14 +48,13 @@ class JobWidget(BaseWidget):
 
     def set_dark_theme(self, dark_theme):
         super().set_dark_theme(dark_theme)
-        if hasattr(self, 'retouch_button'):
-            self._update_button_style()
+        self._update_button_style()
 
     def widget_type(self):
         return 'JobWidget'
 
     def _update_button_style(self):
-        if self._dark_theme:
+        if self.dark_theme:
             color = ColorPalette.LIGHT_BLUE.hex()
         else:
             color = ColorPalette.DARK_BLUE.hex()

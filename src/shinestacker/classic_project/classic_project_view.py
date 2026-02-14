@@ -327,9 +327,9 @@ class ClassicProjectView(ProjectView, ListContainer):
         self.close()
         return True
 
-    def change_theme(self, dark_theme):
+    def set_dark_theme(self, dark_theme):
         self.dark_theme = dark_theme
-        self.tab_widget.change_theme(dark_theme)
+        self.tab_widget.set_dark_theme(dark_theme)
         QApplication.instance().setStyleSheet(
             self.style_dark if dark_theme else self.style_light)
         self.set_style_sheet(dark_theme)

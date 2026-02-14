@@ -6,6 +6,7 @@ from PySide6.QtWidgets import (
 from ..config.constants import constants
 from ..gui.gui_images import GuiPdfView, GuiOpenApp, GuiImageView
 from ..gui.colors import ColorPalette
+from ..gui.icon_manager import IconManager
 
 
 CONDITIONAL_ICONS = {
@@ -41,17 +42,17 @@ def check_icon_condition(data_object, icon_config):
     return data_object.type_name in icon_config.get('default_for_types_names', [])
 
 
-class BaseWidget(QFrame):
+class BaseWidget(QFrame, IconManager):
     clicked = Signal()
     double_clicked = Signal()
     enabled_toggled = Signal(bool)
 
     def __init__(self, data_object, min_height=40, dark_theme=False,
                  horizontal_layout=False, color_level=0, parent=None):
-        super().__init__(parent)
+        QFrame.__init__(self, parent)
+        IconManager.__init__(self, dark_theme)
         self.data_object = data_object
         self._enabled = True
-        self._dark_theme = dark_theme
         self.horizontal_layout = horizontal_layout
         self.min_height = min_height
         self._color_level = color_level
@@ -241,7 +242,7 @@ class BaseWidget(QFrame):
         return path
 
     def _update_stylesheet(self):
-        if self._dark_theme:
+        if self.dark_theme:
             border_color = ColorPalette.LIGHT_BLUE.hex()
             selected_bg = ColorPalette.DARK_BLUE.hex()
             disabled_border_color = ColorPalette.LIGHT_RED.hex()
@@ -282,14 +283,14 @@ class BaseWidget(QFrame):
 
     def _get_hover_color(self):
         if not self._enabled:
-            if self._dark_theme:
+            if self.dark_theme:
                 colors = [ColorPalette.DARK_RED_0, ColorPalette.DARK_RED_1,
                           ColorPalette.DARK_RED_2]
             else:
                 colors = [ColorPalette.LIGHT_RED_0, ColorPalette.LIGHT_RED_1,
                           ColorPalette.LIGHT_RED_2]
         else:
-            if self._dark_theme:
+            if self.dark_theme:
                 colors = [ColorPalette.DARK_BLUE_0, ColorPalette.DARK_BLUE_1,
                           ColorPalette.DARK_BLUE_2]
             else:
@@ -354,7 +355,7 @@ class BaseWidget(QFrame):
         self._update_stylesheet()
 
     def set_dark_theme(self, dark_theme):
-        self._dark_theme = dark_theme
+        super().set_dark_theme(dark_theme)
         self.setProperty("dark_theme", dark_theme)
         self._update_stylesheet()
         for child in self.child_widgets:
