@@ -1,6 +1,6 @@
 # Changelog
 
-## [v1.14.x] - 2026-02-14
+## [v1.14.x] - 2026-02-15
 
 ### Added
 - element rename menu action
@@ -19,6 +19,7 @@
 - final stack images have postfix according to algorith type: "pyram", or "depmp" (#24)
 - cleaned up signal handling
 - DepthMap: minor algorithm optimization and improved defaults for sharper images
+- improved GUI icons
 
 ---
 

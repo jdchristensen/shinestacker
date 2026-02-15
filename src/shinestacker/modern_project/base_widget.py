@@ -17,7 +17,7 @@ CONDITIONAL_ICONS = {
             constants.ACTION_FOCUSSTACK, constants.ACTION_FOCUSSTACKBUNCH],
         'default_for_types_names': [
             constants.ACTION_FOCUSSTACK, constants.ACTION_FOCUSSTACKBUNCH],
-        'icon': '▲',
+        'icon': 'pyramid-small-icon',
         'tooltip': 'Pyramid stack algorithm'
     },
     'depth_map': {
@@ -26,7 +26,7 @@ CONDITIONAL_ICONS = {
         'types_names': [
             constants.ACTION_FOCUSSTACK, constants.ACTION_FOCUSSTACKBUNCH],
         'default_for_types_names': [],
-        'icon': '■',
+        'icon': 'depth-map-small-icon',
         'tooltip': 'Depth Map stack algorithm'
     },
 }
@@ -67,6 +67,7 @@ class BaseWidget(QFrame, IconManager):
         self.child_container = None
         self.child_container_layout = None
         self.conditional_icons = {}
+        self.conditional_icon_names = {}
         self.setFocusPolicy(Qt.NoFocus)
         self.setAttribute(Qt.WA_Hover, True)
         self.name_label = None
@@ -158,19 +159,22 @@ class BaseWidget(QFrame, IconManager):
             if check_icon_condition(self.data_object, icon_data):
                 self._add_conditional_icon(icon_name, icon_data['icon'], icon_data['tooltip'])
 
-    def _add_conditional_icon(self, name, icon_text, tooltip):
+    def _add_conditional_icon(self, name, icon_name, tooltip):
         if name in self.conditional_icons:
             return
-        label = QLabel(icon_text)
+        label = QLabel()
+        self.set_label_icon(label, icon_name)
         label.setToolTip(tooltip)
         self.icons_layout.insertWidget(len(self.conditional_icons), label)
         self.conditional_icons[name] = label
+        self.conditional_icon_names[name] = icon_name
 
     def _remove_conditional_icons(self):
         for label in self.conditional_icons.values():
             self.icons_layout.removeWidget(label)
             label.deleteLater()
         self.conditional_icons.clear()
+        self.conditional_icon_names.clear()
 
     def _update_conditional_icons(self):
         self._remove_conditional_icons()
@@ -310,6 +314,10 @@ class BaseWidget(QFrame, IconManager):
 
     def _update_icons(self):
         self._update_enabled_icon()
+        for name, label in self.conditional_icons.items():
+            icon_name = self.conditional_icon_names.get(name)
+            if icon_name:
+                self.set_label_icon(label, icon_name)
         self._check_and_adjust_layout()
 
     def _update_enabled_icon(self):
@@ -390,6 +398,7 @@ class BaseWidget(QFrame, IconManager):
         self.set_name(name)
         self.update_enabled(data_object)
         self._update_conditional_icons()
+        self._update_icons()
         self._update_stylesheet()
         self.update_path_recursive()
 
