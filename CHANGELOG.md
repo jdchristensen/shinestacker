@@ -1,25 +1,26 @@
 # Changelog
 
-## [v1.14.x] - 2026-02-15
+## [v1.14.2] - 2026-02-18
+**fixes and GUI improvements**
 
 ### Added
-- element rename menu action
-- run icon to job widget in modern view
+- element rename in menu actions
+- a "Run Job" icon in job GUI widgets
 
 ### Fixed
-- keep memory of the last path when opening or saving files
-- keyboard shortcut conflicts
-- safe DepthMap implementation also when termperature = 0
+- keep memory of the last opened path when opening or saving files
+- no more keyboard shortcut conflicts
+- safe DepthMap implementation also when termperature exactly zero
+- failure of bunches algorithm in case a single frame is selected
 - several GUI issues and minor usability glitches
-- prevent failure of bunches algorithm in case of a single frame
 
 ### Changes
 - rationalized keyboard shortcuts and menu actions
-- copied elements now have a suffix " (copy)" after their name
-- final stack images have postfix according to algorith type: "pyram", or "depmp" (#24)
+- elements copies now have a suffix " (copy)" after their name
+- final stack images have postfix according to algorith type: "_pyram", or "_depmp" (#24)
 - cleaned up signal handling
-- DepthMap: minor algorithm optimization and improved defaults for sharper images
-- improved GUI icons
+- DepthMap: minor algorithm optimization and improved defaults parameter values for sharper images
+- visually improved GUI icons
 
 ---
 
