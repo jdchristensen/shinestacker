@@ -270,7 +270,7 @@ class MainWindow(ProjectHandler, QMainWindow):
             return False, '', ''
         if file_path is False:
             file_path, _ = self.file_dialog.open_file(
-                "Open Project", "Project Files (*.fsp);;All Files (*)")
+                "Open Project", "Project Files (*.fsp *.FSP);;All Files (*)")
         if file_path:
             try:
                 self.open_project_core(file_path)
@@ -384,7 +384,7 @@ class MainWindow(ProjectHandler, QMainWindow):
 
     def save_project_as(self):
         file_path, _ = self.file_dialog.save_file(
-            "Save Project As", "Project Files (*.fsp);;All Files (*)",
+            "Save Project As", "Project Files (*.fsp *.FSP);;All Files (*)",
             self.element_action.current_file_path)
         if file_path:
             if not file_path.endswith('.fsp'):

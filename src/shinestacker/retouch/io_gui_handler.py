@@ -365,9 +365,9 @@ class IOGuiHandler(QObject, LayerCollectionHandler):
         if self.layer_stack() is None:
             return
         filters = {
-            "png": "PNG Files (*.png);;All Files (*)",
-            "tiff": "TIFF Files (*.tif *.tiff);;All Files (*)",
-            "jpeg": "JPEG Files (*.jpg *.jpeg);;All Files (*)"
+            "png": "PNG Files (*.png *.PNG);;All Files (*)",
+            "tiff": "TIFF Files (*.tif *.tiff *.TIF *.TIFF);;All Files (*)",
+            "jpeg": "JPEG Files (*.jpg *.jpeg *.JPG *.JPEG);;All Files (*)"
         }
         extensions = {
             "png": [".png"],
@@ -436,7 +436,7 @@ class IOGuiHandler(QObject, LayerCollectionHandler):
         else:
             current_file_path = root + ".tif"
         path, _ = self.file_dialog.save_file(
-            "Save Image", "TIFF Files (*.tif *.tiff);;All Files (*)",
+            "Save Image", "TIFF Files (*.tif *.tiff *.TIF *.TIFF);;All Files (*)",
             current_file_path)
         if path:
             if not extension_tif(path):
