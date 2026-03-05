@@ -17,7 +17,10 @@ sandbox/img-test/*
 build/
 dist/
 .eggs/
-src/focusstack/_version.py
+src/shinestacker/_version.py
 *~
 *.spec
 logs
+.vscode/
+output/
+examples/
