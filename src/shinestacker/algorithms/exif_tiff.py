@@ -4,21 +4,39 @@ import tifffile
 from PIL.ExifTags import TAGS
 from PIL.TiffImagePlugin import IFDRational
 from . import exif_constants as ec
-from .. config.constants import constants
+from ..config.constants import constants
 from .exif_common import parse_xmp_to_exif, safe_write_with_temp
 
 NO_COPY_TIFF_TAGS_ID = [
-    ec.IMAGEWIDTH, ec.IMAGELENGTH, ec.XRESOLUTION, ec.YRESOLUTION, ec.BITSPERSAMPLE,
-    ec.PHOTOMETRICINTERPRETATION, ec.SAMPLESPERPIXEL, ec.PLANARCONFIGURATION, ec.SOFTWARE,
-    ec.RESOLUTIONUNIT, ec.EXIFIFD, ec.INTERCOLORPROFILE, ec.IMAGERESOURCES,
-    ec.STRIPOFFSETS, ec.STRIPBYTECOUNTS, ec.TILEOFFSETS, ec.TILEBYTECOUNTS
+    ec.IMAGEWIDTH,
+    ec.IMAGELENGTH,
+    ec.XRESOLUTION,
+    ec.YRESOLUTION,
+    ec.BITSPERSAMPLE,
+    ec.PHOTOMETRICINTERPRETATION,
+    ec.SAMPLESPERPIXEL,
+    ec.PLANARCONFIGURATION,
+    ec.SOFTWARE,
+    ec.RESOLUTIONUNIT,
+    ec.EXIFIFD,
+    ec.INTERCOLORPROFILE,
+    ec.IMAGERESOURCES,
+    ec.STRIPOFFSETS,
+    ec.STRIPBYTECOUNTS,
+    ec.TILEOFFSETS,
+    ec.TILEBYTECOUNTS,
 ]
 
 NO_COPY_TIFF_TAGS = ["Compression", "StripOffsets", "RowsPerStrip", "StripByteCounts"]
 
 
 def get_exif_from_tiff(image, exif_filename):
-    exif_data = image.tag_v2 if hasattr(image, 'tag_v2') else image.getexif()
+    if image is not None:
+        exif_data = image.tag_v2 if hasattr(image, "tag_v2") else image.getexif()
+    else:
+        from PIL import Image
+
+        exif_data = Image.Exif()
     try:
         with tifffile.TiffFile(exif_filename) as tif:
             for page in tif.pages:
@@ -40,12 +58,17 @@ def get_exif_from_tiff(image, exif_filename):
         if ec.XMLPACKET in exif_data:
             xmp_data = exif_data[ec.XMLPACKET]
             if isinstance(xmp_data, bytes):
-                xmp_string = xmp_data.decode('utf-8', errors='ignore')
+                xmp_string = xmp_data.decode("utf-8", errors="ignore")
             else:
                 xmp_string = str(xmp_data)
             xmp_exif = parse_xmp_to_exif(xmp_string)
             for tag_id in [
-                    ec.EXPOSURETIME, ec.FNUMBER, ec.ISOSPEEDRATINGS, ec.FOCALLENGTH, ec.LENSMODEL]:
+                ec.EXPOSURETIME,
+                ec.FNUMBER,
+                ec.ISOSPEEDRATINGS,
+                ec.FOCALLENGTH,
+                ec.LENSMODEL,
+            ]:
                 if tag_id in xmp_exif and tag_id not in exif_data:
                     exif_data[tag_id] = xmp_exif[tag_id]
     except Exception:
@@ -55,10 +78,10 @@ def get_exif_from_tiff(image, exif_filename):
 
 def clean_data_for_tiff(data):
     if isinstance(data, str):
-        return data.encode('ascii', 'ignore').decode('ascii')
+        return data.encode("ascii", "ignore").decode("ascii")
     if isinstance(data, bytes):
-        decoded = data.decode('utf-8', 'ignore')
-        return decoded.encode('ascii', 'ignore').decode('ascii')
+        decoded = data.decode("utf-8", "ignore")
+        return decoded.encode("ascii", "ignore").decode("ascii")
     if isinstance(data, IFDRational):
         return (data.numerator, data.denominator)
     return data
@@ -67,25 +90,37 @@ def clean_data_for_tiff(data):
 def exif_extra_tags_for_tif(exif):
     res_x, res_y = exif.get(ec.XRESOLUTION), exif.get(ec.YRESOLUTION)
     resolution = (
-        (res_x.numerator, res_x.denominator),
-        (res_y.numerator, res_y.denominator)
-    ) if res_x and res_y else (
-        (720000, 10000), (720000, 10000)
+        ((res_x.numerator, res_x.denominator), (res_y.numerator, res_y.denominator))
+        if res_x and res_y
+        else ((720000, 10000), (720000, 10000))
     )
     exif_tags = {
-        'resolution': resolution,
-        'resolutionunit': exif.get(ec.RESOLUTIONUNIT, 2),
-        'software': clean_data_for_tiff(exif.get(ec.SOFTWARE)) or constants.APP_TITLE,
-        'photometric': exif.get(ec.PHOTOMETRICINTERPRETATION, 2)
+        "resolution": resolution,
+        "resolutionunit": exif.get(ec.RESOLUTIONUNIT, 2),
+        "software": clean_data_for_tiff(exif.get(ec.SOFTWARE)) or constants.APP_TITLE,
+        "photometric": exif.get(ec.PHOTOMETRICINTERPRETATION, 2),
     }
     extra = []
     safe_tags = [
-        ec.MAKE, ec.MODEL, ec.SOFTWARE, ec.DATETIME, ec.ARTIST, ec.COPYRIGHT,
-        ec.ISOSPEEDRATINGS, ec.ORIENTATION, ec.IMAGEWIDTH, ec.IMAGELENGTH
+        ec.MAKE,
+        ec.MODEL,
+        ec.SOFTWARE,
+        ec.DATETIME,
+        ec.ARTIST,
+        ec.COPYRIGHT,
+        ec.ISOSPEEDRATINGS,
+        ec.ORIENTATION,
+        ec.IMAGEWIDTH,
+        ec.IMAGELENGTH,
     ]
     special_handling_tags = [
-        ec.EXPOSURETIME, ec.FNUMBER, ec.FOCALLENGTH, ec.EXPOSUREBIASVALUE,
-        ec.SHUTTERSPEEDVALUE, ec.APERTUREVALUE, ec.MAXAPERTUREVALUE
+        ec.EXPOSURETIME,
+        ec.FNUMBER,
+        ec.FOCALLENGTH,
+        ec.EXPOSUREBIASVALUE,
+        ec.SHUTTERSPEEDVALUE,
+        ec.APERTUREVALUE,
+        ec.MAXAPERTUREVALUE,
     ]
     for tag_id in safe_tags:
         if tag_id in exif:
@@ -98,7 +133,9 @@ def exif_extra_tags_for_tif(exif):
     if ec.INTERCOLORPROFILE in exif:
         icc_profile = exif[ec.INTERCOLORPROFILE]
         if isinstance(icc_profile, bytes):
-            extra.append((ec.INTERCOLORPROFILE, 7, len(icc_profile), icc_profile, False))
+            extra.append(
+                (ec.INTERCOLORPROFILE, 7, len(icc_profile), icc_profile, False)
+            )
 
     for tag_id in special_handling_tags:
         if tag_id in exif:
@@ -138,7 +175,7 @@ def _process_tiff_data_safe(data):
         return 4, 1, data
     if isinstance(data, float):
         return 11, 1, float(data)  # Use FLOAT only for actual floats
-    if hasattr(data, '__iter__') and not isinstance(data, (str, bytes)):
+    if hasattr(data, "__iter__") and not isinstance(data, (str, bytes)):
         try:
             if all(isinstance(x, int) for x in data):
                 return 3, len(data), tuple(data)  # Use SHORT array for integers
@@ -153,13 +190,21 @@ def write_image_with_exif_data_tif(exif, image, out_filename):
     image_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
 
     def _write_tiff(temp_filename):
-        metadata = {"description": f"image generated with {constants.APP_STRING} package"}
+        metadata = {
+            "description": f"image generated with {constants.APP_STRING} package"
+        }
         extra_tags, exif_tags = exif_extra_tags_for_tif(exif)
-        tifffile.imwrite(temp_filename, image_rgb, metadata=metadata,
-                         compression='adobe_deflate', extratags=extra_tags, **exif_tags)
+        tifffile.imwrite(
+            temp_filename,
+            image_rgb,
+            metadata=metadata,
+            compression="adobe_deflate",
+            extratags=extra_tags,
+            **exif_tags,
+        )
 
     def _fallback_tiff(out_filename):
-        tifffile.imwrite(out_filename, image_rgb, compression='adobe_deflate')
+        tifffile.imwrite(out_filename, image_rgb, compression="adobe_deflate")
 
     safe_write_with_temp(out_filename, _write_tiff, _fallback_tiff)
 
@@ -176,7 +221,7 @@ def _process_rational_tag(data):
             return 11, 1, float(data)  # Use FLOAT for very large values
         if numerator < 0:
             return 10, 1, (numerator, denominator)  # SRATIONAL
-        return 5, 1, (numerator, denominator)   # RATIONAL
+        return 5, 1, (numerator, denominator)  # RATIONAL
     return None
 
 
@@ -185,6 +230,6 @@ def _is_safe_to_write(data):
         return False
     if isinstance(data, bytes) and len(data) > 10000:
         return False
-    if hasattr(data, '__iter__') and not isinstance(data, (str, bytes, tuple, list)):
+    if hasattr(data, "__iter__") and not isinstance(data, (str, bytes, tuple, list)):
         return False
     return True

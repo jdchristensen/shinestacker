@@ -8,23 +8,43 @@ from PIL import Image, UnidentifiedImageError
 from PIL.TiffImagePlugin import IFDRational
 from PIL.ExifTags import TAGS
 import tifffile
-from .. config.constants import constants
+from ..config.constants import constants
 from .utils import read_img, write_img, extension_jpg, extension_tif, extension_png
-from .exif_tiff import get_exif_from_tiff, exif_extra_tags_for_tif, write_image_with_exif_data_tif
-from .exif_jpeg import add_exif_data_to_jpg_file, write_image_with_exif_data_jpg, get_exif_from_jpg
-from .exif_png import get_exif_from_png, write_image_with_exif_data_png, get_enhanced_exif_from_png
+from .exif_tiff import (
+    get_exif_from_tiff,
+    exif_extra_tags_for_tif,
+    write_image_with_exif_data_tif,
+)
+from .exif_jpeg import (
+    add_exif_data_to_jpg_file,
+    write_image_with_exif_data_jpg,
+    get_exif_from_jpg,
+)
+from .exif_png import (
+    get_exif_from_png,
+    write_image_with_exif_data_png,
+    get_enhanced_exif_from_png,
+)
 
 
 def get_exif(exif_filename, enhanced_png_parsing=True):
     if not os.path.isfile(exif_filename):
         raise RuntimeError(f"File does not exist: {exif_filename}")
+
+    from .utils import extension_raw
+
+    is_raw = extension_raw(exif_filename)
     try:
         image = Image.open(exif_filename)
     except UnidentifiedImageError as e:
-        traceback.print_stack()
-        raise RuntimeError(
-            f"PIL.Image.open UnidentifiedImageError exception: {str(e)}") from e
-    if extension_tif(exif_filename):
+        if not is_raw:
+            traceback.print_stack()
+            raise RuntimeError(
+                f"PIL.Image.open UnidentifiedImageError exception: {str(e)}"
+            ) from e
+        image = None
+
+    if extension_tif(exif_filename) or is_raw:
         return get_exif_from_tiff(image, exif_filename)
     if extension_jpg(exif_filename):
         return get_exif_from_jpg(image, exif_filename)
@@ -36,7 +56,9 @@ def get_exif(exif_filename, enhanced_png_parsing=True):
     return image.getexif()
 
 
-def write_image_with_exif_data(exif, image, out_filename, verbose=False, color_order='auto'):
+def write_image_with_exif_data(
+    exif, image, out_filename, verbose=False, color_order="auto"
+):
     if exif is None:
         write_img(out_filename, image)
         return None
@@ -47,7 +69,9 @@ def write_image_with_exif_data(exif, image, out_filename, verbose=False, color_o
     elif extension_tif(out_filename):
         write_image_with_exif_data_tif(exif, image, out_filename)
     elif extension_png(out_filename):
-        write_image_with_exif_data_png(exif, image, out_filename, color_order=color_order)
+        write_image_with_exif_data_png(
+            exif, image, out_filename, color_order=color_order
+        )
     return exif
 
 
@@ -55,7 +79,7 @@ def save_exif_data(exif, in_filename, out_filename=None, verbose=False):
     if out_filename is None:
         out_filename = in_filename
     if exif is None:
-        raise RuntimeError('No exif data provided.')
+        raise RuntimeError("No exif data provided.")
     use_temp = in_filename == out_filename
     temp_filename = out_filename + ".tmp" if use_temp else out_filename
     try:
@@ -65,11 +89,18 @@ def save_exif_data(exif, in_filename, out_filename=None, verbose=False):
             elif extension_png(in_filename):
                 image_new = cv2.imread(in_filename, cv2.IMREAD_UNCHANGED)
             if extension_tif(in_filename):
-                metadata = {"description": f"image generated with {constants.APP_STRING} package"}
+                metadata = {
+                    "description": f"image generated with {constants.APP_STRING} package"
+                }
                 extra_tags, exif_tags = exif_extra_tags_for_tif(exif)
-                tifffile.imwrite(temp_filename, image_new, metadata=metadata,
-                                 compression='adobe_deflate',
-                                 extratags=extra_tags, **exif_tags)
+                tifffile.imwrite(
+                    temp_filename,
+                    image_new,
+                    metadata=metadata,
+                    compression="adobe_deflate",
+                    extratags=extra_tags,
+                    **exif_tags,
+                )
             elif extension_png(in_filename):
                 write_image_with_exif_data_png(exif, image_new, temp_filename)
         else:
@@ -87,7 +118,7 @@ def save_exif_data(exif, in_filename, out_filename=None, verbose=False):
                 pass
         if extension_tif(in_filename):
             image_new = tifffile.imread(in_filename)
-            tifffile.imwrite(out_filename, image_new, compression='adobe_deflate')
+            tifffile.imwrite(out_filename, image_new, compression="adobe_deflate")
         elif extension_png(in_filename):
             image_new = cv2.imread(in_filename, cv2.IMREAD_UNCHANGED)
             write_img(out_filename, image_new)
@@ -96,7 +127,9 @@ def save_exif_data(exif, in_filename, out_filename=None, verbose=False):
         raise
 
 
-def copy_exif_from_file_to_file(exif_filename, in_filename, out_filename=None, verbose=False):
+def copy_exif_from_file_to_file(
+    exif_filename, in_filename, out_filename=None, verbose=False
+):
     if not os.path.isfile(exif_filename):
         raise RuntimeError(f"File does not exist: {exif_filename}")
     if not os.path.isfile(in_filename):
@@ -114,11 +147,11 @@ def exif_dict(exif_data):
             tag_name = TAGS.get(tag, str(tag))
         else:
             tag_name = str(tag)
-        if tag_name.startswith('PNG_EXIF_'):
+        if tag_name.startswith("PNG_EXIF_"):
             standard_tag = tag_name[9:]
-        elif tag_name.startswith('EXIF_'):
+        elif tag_name.startswith("EXIF_"):
             standard_tag = tag_name[5:]
-        elif tag_name.startswith('PNG_'):
+        elif tag_name.startswith("PNG_"):
             continue
         else:
             standard_tag = tag_name
@@ -129,7 +162,7 @@ def exif_dict(exif_data):
 def print_exif(exif):
     exif_data = exif_dict(exif)
     if exif_data is None:
-        raise RuntimeError('Image has no exif data.')
+        raise RuntimeError("Image has no exif data.")
     logger = logging.getLogger(__name__)
     for tag, (tag_id, data) in exif_data.items():
         if isinstance(data, IFDRational):
