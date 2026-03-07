@@ -1,10 +1,16 @@
 # Changelog
 
-## [v1.14.3] - Unreleased
-**GUI improvements**
+## [v1.14.3] - 2026-03-07
+**GUI improvements and fixes from pull requests**
 
 ### Fixed
-- support for uppercase file extensions (e.g., .JPG, .TIFF) in file loading and saving dialogues on case-sensitive systems (Linux).
+- support for uppercase file extensions (e.g., .JPG, .TIFF) in file loading and saving dialogues on case-sensitive systems on Linux (PR #26)
+- EXIF Metadata Handling and Resolve Qt Conflict (PR #27)
+- .gitignore ignores suto-generated files (PR #27)
+
+### Changes
+- Robust EXIF Metadata Handling (PR #27)
+- Resolution of Qt/xcb Conflict (PR #27)
 
 ## [v1.14.2] - 2026-02-18
 **fixes and GUI improvements**
