@@ -1,5 +1,11 @@
 # Changelog
 
+## [v1.14.3] - Unreleased
+**GUI improvements**
+
+### Fixed
+- support for uppercase file extensions (e.g., .JPG, .TIFF) in file loading and saving dialogues on case-sensitive systems (Linux).
+
 ## [v1.14.2] - 2026-02-18
 **fixes and GUI improvements**
 

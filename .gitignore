@@ -22,5 +22,3 @@ src/shinestacker/_version.py
 *.spec
 logs
 .vscode/
-output/
-examples/
