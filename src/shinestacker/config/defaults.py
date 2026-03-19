@@ -30,11 +30,11 @@ DEFAULTS = {
         'step_process': True
     },
     'combined_actions_params': {
-        'max_threads': int(min(os.cpu_count() or 4, 8)),
+        'max_threads': int(min(os.cpu_count() or 4, 256)),
     },
     'align_frames_params': {
         'memory_limit': 8,  # GB
-        'max_threads': int(min(os.cpu_count() or 4, 8)),
+        'max_threads': int(min(os.cpu_count() or 4, 256)),
         'detector': 'ORB',
         'descriptor': 'ORB',
         'match_method': 'NORM_HAMMING',
@@ -78,7 +78,7 @@ DEFAULTS = {
     'stacker': 'Pyramid',
     'focus_stack_params': {
         'memory_limit': 8,  # GB
-        'max_threads': int(min(os.cpu_count() or 4, 8)),
+        'max_threads': int(min(os.cpu_count() or 4, 256)),
         'prefix': "stack_",
         'plot_stack': True,
         'denoise_amount': 0.0,
@@ -89,7 +89,7 @@ DEFAULTS = {
     },
     'focus_stack_bunch_params': {
         'memory_limit': 8,  # GB
-        'max_threads': int(min(os.cpu_count() or 4, 8)),
+        'max_threads': int(min(os.cpu_count() or 4, 256)),
         'frames': 10,
         'overlap': 2,
         'prefix': "bunch_",

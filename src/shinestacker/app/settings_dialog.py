@@ -284,7 +284,7 @@ class SettingsDialog(ConfigDialog, AlignFramesConfigBase):
                     NestedSpinBoxParameter(
                         'combined_actions_params', 'max_threads',
                         'Max num. of cores:',
-                        DEFAULTS['combined_actions_params']['max_threads'], 0, 64)
+                        DEFAULTS['combined_actions_params']['max_threads'], 0, 256)
                 ]),
                 ("Align Frames", [
                     NestedDoubleSpinBoxParameter(
@@ -294,7 +294,7 @@ class SettingsDialog(ConfigDialog, AlignFramesConfigBase):
                     NestedSpinBoxParameter(
                         'align_frames_params', 'max_threads',
                         'Max num. of cores:',
-                        DEFAULTS['align_frames_params']['max_threads'], 0, 64),
+                        DEFAULTS['align_frames_params']['max_threads'], 0, 256),
                     NestedCallbackComboBoxParameter(
                         'align_frames_params', 'detector', 'Detector:',
                         DEFAULTS['align_frames_params']['detector'],
@@ -325,7 +325,7 @@ class SettingsDialog(ConfigDialog, AlignFramesConfigBase):
                         DEFAULTS['focus_stack_params']['memory_limit'], 1.0, 1024.0, 1.0),
                     NestedSpinBoxParameter(
                         'focus_stack_params', 'max_threads', 'Max. num. of cores:',
-                        DEFAULTS['focus_stack_params']['max_threads'], 0, 64)
+                        DEFAULTS['focus_stack_params']['max_threads'], 0, 256)
                 ])
             ]
         if self.retouch_settings:

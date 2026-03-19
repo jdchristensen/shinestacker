@@ -9,7 +9,7 @@ from PIL.TiffImagePlugin import IFDRational
 from PIL.ExifTags import TAGS
 import tifffile
 from .utils import (
-    read_img, write_img, extension_jpg, extension_tif, extension_png,  extension_raw)
+    read_img, write_img, extension_jpg, extension_tif, extension_png, extension_raw)
 from .exif_tiff import (
     get_exif_from_tiff,
     exif_extra_tags_for_tif,

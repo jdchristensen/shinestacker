@@ -390,7 +390,7 @@ class FocusStackBaseConfigurator(DefaultActionConfigurator):
             q_pyramid.layout(), 'pyramid_max_threads', FIELD_INT, 'Max num. of cores',
             expert=True,
             required=False, default=AppConfig.get('focus_stack_params')['max_threads'],
-            min_val=1, max_val=64)
+            min_val=1, max_val=256)
         tile_size = self.add_field_to_layout(
             q_pyramid.layout(), 'pyramid_tile_size', FIELD_INT, 'Tile size (px)',
             expert=True,
@@ -645,7 +645,7 @@ class CombinedActionsConfigurator(DefaultActionConfigurator):
             'max_threads', FIELD_INT, 'Max num. of cores',
             required=False, default=AppConfig.get('combined_actions_params')['max_threads'],
             expert=True,
-            min_val=1, max_val=64)
+            min_val=1, max_val=256)
         self.add_field(
             'chunk_submit', FIELD_BOOL, 'Submit in chunks',
             expert=True,
@@ -948,7 +948,7 @@ class AlignFramesConfigurator(SubsampleActionConfigurator, AlignFramesConfigBase
         max_threads = self.add_field_to_layout(
             layout, 'max_threads', FIELD_INT, 'Max num. of cores',
             required=False, default=AppConfig.get('align_frames_params')['max_threads'],
-            min_val=1, max_val=64)
+            min_val=1, max_val=256)
         chunk_submit = self.add_field_to_layout(
             layout, 'chunk_submit', FIELD_BOOL, 'Submit in chunks',
             expert=True,

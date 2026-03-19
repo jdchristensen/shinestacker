@@ -5,6 +5,7 @@
 
 ### Fixed
 - upper bound to RAM settings increased from 64 to 1024 GBytes (#30)
+- upper bound to CPU number increased from 8 to 256 (#30)
 
 ### Changes
 - minor code cleanup

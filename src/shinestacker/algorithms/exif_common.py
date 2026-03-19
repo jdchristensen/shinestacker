@@ -76,6 +76,7 @@ def safe_write_with_temp(out_filename, write_func, fallback_func=None):
             fallback_func(out_filename)
         raise
 
+
 def write_tiff_with_metadata(filename, image, exif, exif_extra_tags):
     metadata = {
         "description": f"image generated with {constants.APP_STRING} package"
