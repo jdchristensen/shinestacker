@@ -201,7 +201,7 @@ def get_bunches(collection, n_frames, n_overlap):
     if len(collection) < n_frames:
         return [collection]
     bunches = [
-        collection[x : x + n_frames]
+        collection[x: x + n_frames]
         for x in range(0, len(collection) - n_overlap, n_frames - n_overlap)
     ]
     return bunches
