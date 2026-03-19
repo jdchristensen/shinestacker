@@ -40,6 +40,8 @@ EXTENSIONS_PDF = ['pdf']
 EXTENSIONS_RAW = ["arw", "cr2", "cr3", "dng", "nef", "orf", "pef", "raf", "raw", "rw2", "srw"]
 EXTENSIONS_SUPPORTED_OUT = EXTENSIONS_TIF + EXTENSIONS_JPG + EXTENSIONS_PNG
 EXTENSIONS_SUPPORTED_IN = EXTENSIONS_SUPPORTED_OUT + EXTENSIONS_RAW
+
+
 def _make_gui_filter(exts):
     return " ".join([f"*.{ext} *.{ext.upper()}" for ext in exts])
 
