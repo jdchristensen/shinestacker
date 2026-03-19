@@ -385,7 +385,7 @@ class FocusStackBaseConfigurator(DefaultActionConfigurator):
             'Memory limit (approx., GBytes)',
             expert=True,
             required=False, default=AppConfig.get('focus_stack_params')['memory_limit'],
-            min_val=1.0, max_val=64.0)
+            min_val=1.0, max_val=1024.0)
         max_threads = self.add_field_to_layout(
             q_pyramid.layout(), 'pyramid_max_threads', FIELD_INT, 'Max num. of cores',
             expert=True,
@@ -519,7 +519,7 @@ class FocusStackBaseConfigurator(DefaultActionConfigurator):
             'Memory limit (approx., GBytes)',
             expert=True,
             required=False, default=AppConfig.get('focus_stack_params')['memory_limit'],
-            min_val=1.0, max_val=64.0)
+            min_val=1.0, max_val=1024.0)
 
         def change_dm_mode():
             text = dm_mode.currentText()
@@ -944,7 +944,7 @@ class AlignFramesConfigurator(SubsampleActionConfigurator, AlignFramesConfigBase
         memory_limit = self.add_field_to_layout(
             layout, 'memory_limit', FIELD_FLOAT, 'Memory limit (approx., GBytes)',
             required=False, default=AppConfig.get('align_frames_params')['memory_limit'],
-            min_val=1.0, max_val=64.0)
+            min_val=1.0, max_val=1024.0)
         max_threads = self.add_field_to_layout(
             layout, 'max_threads', FIELD_INT, 'Max num. of cores',
             required=False, default=AppConfig.get('align_frames_params')['max_threads'],

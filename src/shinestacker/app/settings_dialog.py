@@ -290,7 +290,7 @@ class SettingsDialog(ConfigDialog, AlignFramesConfigBase):
                     NestedDoubleSpinBoxParameter(
                         'align_frames_params', 'memory_limit',
                         'Mem. limit (approx., GBytes):',
-                        DEFAULTS['align_frames_params']['memory_limit'], 1.0, 64.0, 1.0),
+                        DEFAULTS['align_frames_params']['memory_limit'], 1.0, 1024.0, 1.0),
                     NestedSpinBoxParameter(
                         'align_frames_params', 'max_threads',
                         'Max num. of cores:',
@@ -322,7 +322,7 @@ class SettingsDialog(ConfigDialog, AlignFramesConfigBase):
                     NestedDoubleSpinBoxParameter(
                         'focus_stack_params', 'memory_limit',
                         'Mem. limit (approx., GBytes):',
-                        DEFAULTS['focus_stack_params']['memory_limit'], 1.0, 64.0, 1.0),
+                        DEFAULTS['focus_stack_params']['memory_limit'], 1.0, 1024.0, 1.0),
                     NestedSpinBoxParameter(
                         'focus_stack_params', 'max_threads', 'Max. num. of cores:',
                         DEFAULTS['focus_stack_params']['max_threads'], 0, 64)
