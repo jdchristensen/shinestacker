@@ -9,7 +9,8 @@ from PIL.TiffImagePlugin import IFDRational
 from PIL.ExifTags import TAGS
 import tifffile
 from ..config.constants import constants
-from .utils import read_img, write_img, extension_jpg, extension_tif, extension_png
+from .utils import (
+    read_img, write_img, extension_jpg, extension_tif, extension_png,  extension_raw)
 from .exif_tiff import (
     get_exif_from_tiff,
     exif_extra_tags_for_tif,
@@ -30,9 +31,6 @@ from .exif_png import (
 def get_exif(exif_filename, enhanced_png_parsing=True):
     if not os.path.isfile(exif_filename):
         raise RuntimeError(f"File does not exist: {exif_filename}")
-
-    from .utils import extension_raw
-
     is_raw = extension_raw(exif_filename)
     try:
         image = Image.open(exif_filename)

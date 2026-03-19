@@ -1,4 +1,4 @@
-# pylint: disable=C0114, C0115, C0116, R0913, R0917, W0718, R0902, R0912
+# pylint: disable=C0114, C0115, C0116, R0913, R0917, W0718, R0902, R0912, R0914, R0915, R1702
 import os
 import traceback
 import logging
@@ -8,7 +8,8 @@ from ..config.defaults import DEFAULTS
 from ..core.framework import TaskBase
 from ..core.colors import color_str
 from ..core.exceptions import InvalidOptionError
-from .utils import read_img, write_img, extension_supported_input, get_output_filename
+from .utils import (
+    read_img, write_img, extension_supported_input, get_output_filename, extension_raw)
 from .stack_framework import ImageSequenceManager, SequentialTask
 from .exif import copy_exif_from_file_to_file
 from .denoise import denoise
@@ -144,8 +145,6 @@ class FocusStackBase(TaskBase, ImageSequenceManager):
                             break
                     else:
                         # Fallback: prefer non-RAW files (JPG/TIFF/PNG) over RAW
-                        from .utils import extension_raw
-
                         for name in fnames:
                             if not extension_raw(name):
                                 exif_filename_only = name

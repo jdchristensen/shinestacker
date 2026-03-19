@@ -1,6 +1,7 @@
 # pylint: disable=C0114, C0116, C0302, W0718, R0911, R0912, E1101, R0914
 import cv2
 import tifffile
+from PIL import Image
 from PIL.ExifTags import TAGS
 from PIL.TiffImagePlugin import IFDRational
 from . import exif_constants as ec
@@ -34,8 +35,6 @@ def get_exif_from_tiff(image, exif_filename):
     if image is not None:
         exif_data = image.tag_v2 if hasattr(image, "tag_v2") else image.getexif()
     else:
-        from PIL import Image
-
         exif_data = Image.Exif()
     try:
         with tifffile.TiffFile(exif_filename) as tif:
