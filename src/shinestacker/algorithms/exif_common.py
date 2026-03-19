@@ -1,7 +1,9 @@
 # pylint: disable=C0114, C0116, C0302, W0718, R0911, R0912, E1101
 import os
 import re
+import tifffile
 from PIL.TiffImagePlugin import IFDRational
+from ..config.constants import constants
 from . import exif_constants as ec
 
 
@@ -73,3 +75,17 @@ def safe_write_with_temp(out_filename, write_func, fallback_func=None):
         if fallback_func:
             fallback_func(out_filename)
         raise
+
+def write_tiff_with_metadata(filename, image, exif, exif_extra_tags):
+    metadata = {
+        "description": f"image generated with {constants.APP_STRING} package"
+    }
+    extra_tags, exif_tags = exif_extra_tags(exif)
+    tifffile.imwrite(
+        filename,
+        image,
+        metadata=metadata,
+        compression="adobe_deflate",
+        extratags=extra_tags,
+        **exif_tags,
+    )

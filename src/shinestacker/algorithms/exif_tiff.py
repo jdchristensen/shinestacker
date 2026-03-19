@@ -6,7 +6,7 @@ from PIL.ExifTags import TAGS
 from PIL.TiffImagePlugin import IFDRational
 from . import exif_constants as ec
 from ..config.constants import constants
-from .exif_common import parse_xmp_to_exif, safe_write_with_temp
+from .exif_common import parse_xmp_to_exif, safe_write_with_temp, write_tiff_with_metadata
 
 NO_COPY_TIFF_TAGS_ID = [
     ec.IMAGEWIDTH,
@@ -189,18 +189,7 @@ def write_image_with_exif_data_tif(exif, image, out_filename):
     image_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
 
     def _write_tiff(temp_filename):
-        metadata = {
-            "description": f"image generated with {constants.APP_STRING} package"
-        }
-        extra_tags, exif_tags = exif_extra_tags_for_tif(exif)
-        tifffile.imwrite(
-            temp_filename,
-            image_rgb,
-            metadata=metadata,
-            compression="adobe_deflate",
-            extratags=extra_tags,
-            **exif_tags,
-        )
+        write_tiff_with_metadata(temp_filename, image_rgb, exif, exif_extra_tags_for_tif)
 
     def _fallback_tiff(out_filename):
         tifffile.imwrite(out_filename, image_rgb, compression="adobe_deflate")

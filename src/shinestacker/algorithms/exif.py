@@ -8,7 +8,6 @@ from PIL import Image, UnidentifiedImageError
 from PIL.TiffImagePlugin import IFDRational
 from PIL.ExifTags import TAGS
 import tifffile
-from ..config.constants import constants
 from .utils import (
     read_img, write_img, extension_jpg, extension_tif, extension_png,  extension_raw)
 from .exif_tiff import (
@@ -26,6 +25,7 @@ from .exif_png import (
     write_image_with_exif_data_png,
     get_enhanced_exif_from_png,
 )
+from .exif_common import write_tiff_with_metadata
 
 
 def get_exif(exif_filename, enhanced_png_parsing=True):
@@ -87,18 +87,7 @@ def save_exif_data(exif, in_filename, out_filename=None, verbose=False):
             elif extension_png(in_filename):
                 image_new = cv2.imread(in_filename, cv2.IMREAD_UNCHANGED)
             if extension_tif(in_filename):
-                metadata = {
-                    "description": f"image generated with {constants.APP_STRING} package"
-                }
-                extra_tags, exif_tags = exif_extra_tags_for_tif(exif)
-                tifffile.imwrite(
-                    temp_filename,
-                    image_new,
-                    metadata=metadata,
-                    compression="adobe_deflate",
-                    extratags=extra_tags,
-                    **exif_tags,
-                )
+                write_tiff_with_metadata(temp_filename, image_new, exif, exif_extra_tags_for_tif)
             elif extension_png(in_filename):
                 write_image_with_exif_data_png(exif, image_new, temp_filename)
         else:

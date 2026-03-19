@@ -1,5 +1,17 @@
 # Changelog
 
+## [v1.14.3] - 2026-03-19
+**Minor GUI fixes and code cleanup**
+
+### Fixed
+- upper bound to RAM settings increased from 64 to 1024 GBytes (#30)
+
+### Changes
+- minor code cleanup
+- updated CI pylint script
+
+---
+
 ## [v1.14.3] - 2026-03-07
 **GUI improvements and fixes from pull requests**
 
@@ -11,6 +23,8 @@
 
 ### Changes
 - robust EXIF Metadata Handling (PR #27)
+
+---
 
 ## [v1.14.2] - 2026-02-18
 **fixes and GUI improvements**
