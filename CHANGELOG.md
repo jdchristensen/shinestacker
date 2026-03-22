@@ -1,6 +1,6 @@
 # Changelog
 
-## [v1.14.4] - 2026-03-19
+## [v1.14.4] - 2026-03-22
 **Minor GUI fixes and code cleanup**
 
 ### Fixed
