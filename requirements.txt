@@ -6,6 +6,7 @@ opencv-python-headless>=4.11
 pillow
 psdtags
 psutil
+Pygments>=2.20.0
 PySide6
 rawpy
 scipy
