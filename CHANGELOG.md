@@ -1,6 +1,6 @@
 # Changelog
 
-## [v1.14.5] - 2026-04-09
+## [v1.15.0] - 2026-04-09
 **Added project template, minor fixes and updates**
 
 ### Added
