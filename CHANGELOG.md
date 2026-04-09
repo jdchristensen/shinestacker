@@ -8,7 +8,7 @@
 
 ### Fixed
 - required package version Pygments>=2.20.0 to fix a security warning
-- updated release script with more recent action versions
+- updated release and test scripts with more recent action versions
 
 ---
 
