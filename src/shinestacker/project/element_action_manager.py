@@ -1,6 +1,6 @@
 # pylint: disable=C0114, C0115, C0116, W0246, E0611, R0917, R0913, W0613, R0911, R0912, R0904, E1121
 import os
-from PySide6.QtCore import QObject, Signal
+from PySide6.QtCore import QObject, Signal, QTimer
 from PySide6.QtWidgets import QMessageBox, QDialog
 from ..config.constants import constants
 from ..gui.action_config_dialog import ActionConfigDialog
@@ -318,6 +318,23 @@ class ElementActionManager(ProjectHandler, QObject):
                 pre_edit_project, f"Edit {selection.type().title()}", "edit", position, position)
             return True
         return False
+
+    def open_job_browse_folder_dialog(self):
+        if not self.is_job_selected():
+            self.show_warning("No Job Selected", "Please select a job first.")
+            return False
+        job = self.project_element(*self.selection_state.to_tuple())
+        if not job:
+            return False
+        dialog = self.action_config_dialog(job)
+
+        def trigger_browse():
+            input_widget = dialog.configurator.input_widget
+            if hasattr(input_widget, 'browse_button'):
+                input_widget.browse_button.click()
+
+        QTimer.singleShot(0, trigger_browse)
+        return dialog.exec() == QDialog.Accepted
 
     def _rename_element(self, element, options):
         element.params['name'] = options['name']

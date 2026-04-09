@@ -27,6 +27,7 @@ class MenuManager(QObject, IconManager):
         self.shortcuts = {
             "&New...": "Ctrl+N",
             "&Open...": "Ctrl+O",
+            "Open Project As Template": "Ctrl+T",
             "&Close": "Ctrl+W",
             "&Save": "Ctrl+S",
             "Save &As...": "Ctrl+Shift+S",
@@ -116,6 +117,7 @@ class MenuManager(QObject, IconManager):
         self.recent_files_menu = QMenu("Open &Recent", menu)
         menu.addMenu(self.recent_files_menu)
         self.update_recent_files()
+        menu.addAction(self.action("Open Project As Template"))
         menu.addAction(self.action("&Close"))
         menu.addSeparator()
         self.save_action = self.action("&Save")
