@@ -1,10 +1,10 @@
 # Changelog
 
 ## [v1.15.0] - 2026-04-09
-**Added project template, minor fixes and updates**
+**Project template support, minor fixes and updates**
 
 ### Added
-- menu entry "Open Project As Template": allow users to rename jobs and customize input selection (#31)
+- menu entry "Open Project As Template": allows users to rename jobs and customize input selection (#31)
 
 ### Fixed
 - required package version Pygments>=2.20.0 to fix a security warning
