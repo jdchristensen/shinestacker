@@ -4,7 +4,7 @@
 **Security update**
 
 ### Changes
-- required package version pillow>=12.2.0 to fix a security warning
+- required package versions pillow>=12.2.0 and pytest>=9.0.3 to fix security warnings 
 
 ---
 
