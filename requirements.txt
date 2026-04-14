@@ -3,7 +3,7 @@ imagecodecs
 jsonpickle
 numpy>=2.4.1
 opencv-python-headless>=4.11
-pillow
+pillow>=12.2.0
 psdtags
 psutil
 Pygments>=2.20.0

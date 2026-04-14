@@ -1,5 +1,13 @@
 # Changelog
 
+## [v1.15.1] - 2026-04-14
+**Security update**
+
+### Changes
+- required package version pillow>=12.2.0 to fix a security warning
+
+---
+
 ## [v1.15.0] - 2026-04-09
 **Project template support, minor fixes and updates**
 
