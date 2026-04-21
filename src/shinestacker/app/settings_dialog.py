@@ -280,6 +280,11 @@ class SettingsDialog(ConfigDialog, AlignFramesConfigBase):
                         'Using a fast drive (SSD recommended) \n'
                         'with ample free space will improve\nperformance.')
                 ]),
+                ("Raw Formats", [
+                    NestedCheckBoxParameter(
+                        'raw_formats', 'auto_bright', 'Automatic brightness:',
+                        DEFAULTS['raw_formats']['auto_bright'])
+                ]),
                 ("Combined Actions", [
                     NestedSpinBoxParameter(
                         'combined_actions_params', 'max_threads',

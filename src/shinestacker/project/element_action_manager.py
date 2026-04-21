@@ -336,8 +336,7 @@ class ElementActionManager(ProjectHandler, QObject):
         QTimer.singleShot(0, trigger_browse)
         if dialog.exec() == QDialog.Accepted:
             return os.path.basename(dialog.configurator.input_widget.path_edit.text())
-        else:
-            return ''
+        return ''
 
     def _rename_element(self, element, options):
         element.params['name'] = options['name']

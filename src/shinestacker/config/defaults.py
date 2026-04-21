@@ -18,6 +18,9 @@ DEFAULTS = {
     'brush_opacity': 100,
     'brush_flow': 100,
     'temp_folder_path': '',
+    'raw_formats': {
+        'auto_bright': True
+    },
     'sequential_task': {
         'max_threads': 8,
         'chunk_submit': True

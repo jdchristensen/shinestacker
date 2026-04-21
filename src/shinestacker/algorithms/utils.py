@@ -6,6 +6,7 @@ import cv2
 import tifffile
 import rawpy
 from .. core.exceptions import ShapeError, BitDepthError, PathTooLong, InvalidWinPath
+from .. config.app_config import AppConfig
 
 
 def get_path_extension(path):
@@ -118,7 +119,8 @@ def read_img(file_path):
     if extension_raw(file_path):
         with rawpy.imread(file_path) as raw:
             rgb = raw.postprocess(
-                output_bps=16, output_color=rawpy.ColorSpace.sRGB, use_camera_wb=True)
+                output_bps=16, output_color=rawpy.ColorSpace.sRGB,
+                use_camera_wb=True, no_auto_bright=not AppConfig.get('raw_formats')['auto_bright'])
             img = cv2.cvtColor(rgb, cv2.COLOR_RGB2BGR)
     elif extension_jpg(file_path):
         img = cv2.imread(file_path)
