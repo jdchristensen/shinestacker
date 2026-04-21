@@ -1,6 +1,6 @@
 # Changelog
 
-## [v1.15.2] - 2026-04-22
+## [v1.15.1] - 2026-04-22
 ***Bug fixes and user-requested improvements***
 
 ### Fixed
@@ -8,13 +8,6 @@
 
 ### Changed
 - added new setting: "Raw Formats" > "Automatic Brightness" to enable or disable automatic brightness correction (default: true) (#33)
-
----
-
-## [v1.15.1] - 2026-04-14
-**Security update**
-
-### Changes
 - required package versions pillow>=12.2.0 and pytest>=9.0.3 to fix security warnings 
 
 ---
