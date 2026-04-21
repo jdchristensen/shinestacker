@@ -1,7 +1,7 @@
 # Changelog
 
 ## [v1.15.2] - 2026-04-22
-### Bug fixes and user-requested improvements
+***Bug fixes and user-requested improvements***
 
 ### Fixed
 - fixed bugs and improved implementation of the "Open Template" action (#31)
