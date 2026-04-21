@@ -1,5 +1,12 @@
 # Changelog
 
+## [v1.15.1] - 2026-04-21
+***Bug fixes***
+### Fixed
+- bugs in "open template" action (#31)
+
+---
+
 ## [v1.15.1] - 2026-04-14
 **Security update**
 

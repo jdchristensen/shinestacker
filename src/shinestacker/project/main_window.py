@@ -331,13 +331,17 @@ class MainWindow(ProjectHandler, QMainWindow):
             self.show_status_message(msg)
 
     def open_template(self):
+        self.close_project()
         self.open_project()
         jobs = self.project_jobs()
         for job_index, job in enumerate(jobs):
             self.selection_state.set_indices(job_index)
-            self.rename()
             self.element_action.open_job_browse_folder_dialog()
+            self.rename()
+            for view in self.views.values():
+                view.update_widget_recursive(self.selection_state)
         self.selection_state.set_indices()
+        self.show_status_message("New project from template.")
 
     def new_project(self):
         if self.check_unsaved_changes():
