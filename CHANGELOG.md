@@ -1,13 +1,13 @@
 # Changelog
 
-## [v1.15.2] - 2026-04-21
-***Bug fixes and user regested improvements***
+## [v1.15.2] - 2026-04-22
+### Bug fixes and user-requested improvements
 
 ### Fixed
-- "open template" action: bugs fixed and improved implementation (#31)
+- fixed bugs and improved implementation of the "Open Template" action (#31)
 
-### Changes
-- new setting: "Raw formats" > "Automatic brightness" allows to enable and disable automatic brightness correction (default: true) (#33)
+### Changed
+- added new setting: "Raw Formats" > "Automatic Brightness" to enable or disable automatic brightness correction (default: true) (#33)
 
 ---
 
