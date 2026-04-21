@@ -322,10 +322,10 @@ class ElementActionManager(ProjectHandler, QObject):
     def open_job_browse_folder_dialog(self):
         if not self.is_job_selected():
             self.show_warning("No Job Selected", "Please select a job first.")
-            return False
+            return ''
         job = self.project_element(*self.selection_state.to_tuple())
         if not job:
-            return False
+            return ''
         dialog = self.action_config_dialog(job)
 
         def trigger_browse():
@@ -334,7 +334,10 @@ class ElementActionManager(ProjectHandler, QObject):
                 input_widget.browse_button.click()
 
         QTimer.singleShot(0, trigger_browse)
-        return dialog.exec() == QDialog.Accepted
+        if dialog.exec() == QDialog.Accepted:
+            return os.path.basename(dialog.configurator.input_widget.path_edit.text())
+        else:
+            return ''
 
     def _rename_element(self, element, options):
         element.params['name'] = options['name']

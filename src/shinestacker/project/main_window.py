@@ -336,8 +336,15 @@ class MainWindow(ProjectHandler, QMainWindow):
         jobs = self.project_jobs()
         for job_index, job in enumerate(jobs):
             self.selection_state.set_indices(job_index)
-            self.element_action.open_job_browse_folder_dialog()
-            self.rename()
+            old_input_path = job.params['input_path']
+            new_input_path = self.element_action.open_job_browse_folder_dialog()
+            for action in job.sub_actions:
+                name = action.params['name']
+                if old_input_path and name.startswith(old_input_path):
+                    name = new_input_path + name[len(old_input_path):]
+                else:
+                    name = f"{new_input_path}-{name}"
+                action.params['name'] = name
             for view in self.views.values():
                 view.update_widget_recursive(self.selection_state)
         self.selection_state.set_indices()
