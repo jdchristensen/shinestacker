@@ -1,6 +1,6 @@
 # Changelog
 
-## [v1.15.1] - 2026-04-21
+## [v1.15.2] - 2026-04-21
 ***Bug fixes and user regested improvements***
 
 ### Fixed
