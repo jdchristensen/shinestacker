@@ -1,5 +1,13 @@
 # Changelog
 
+## [v1.15.x] - 2026-04-22
+***Updates***
+
+### Fixed
+- updated release script with more recent external script versions to prevent warning
+
+---
+
 ## [v1.15.1] - 2026-04-22
 ***Bug fixes and user-requested improvements***
 
