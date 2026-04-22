@@ -119,8 +119,9 @@ def read_img(file_path):
     if extension_raw(file_path):
         with rawpy.imread(file_path) as raw:
             rgb = raw.postprocess(
-                output_bps=16, output_color=rawpy.ColorSpace.sRGB,
-                use_camera_wb=True, no_auto_bright=not AppConfig.get('raw_formats')['auto_bright'])
+                output_bps=16, output_color=rawpy.ColorSpace.sRGB, use_camera_wb=True,
+                no_auto_bright=not AppConfig.get('raw_formats')['auto_bright'],
+                auto_bright_thr=AppConfig.get('raw_formats')['auto_bright_thr'] / 100.0)
             img = cv2.cvtColor(rgb, cv2.COLOR_RGB2BGR)
     elif extension_jpg(file_path):
         img = cv2.imread(file_path)

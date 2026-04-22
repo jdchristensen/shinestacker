@@ -6,6 +6,9 @@
 ### Fixed
 - updated release script with more recent external script versions to prevent warning
 
+### Changed
+- added new setting: "Raw Formats" > "Auto-brightness threshold" parameter (default: 1%) (#33)
+
 ---
 
 ## [v1.15.1] - 2026-04-22

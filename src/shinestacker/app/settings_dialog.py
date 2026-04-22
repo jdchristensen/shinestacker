@@ -283,7 +283,10 @@ class SettingsDialog(ConfigDialog, AlignFramesConfigBase):
                 ("Raw Formats", [
                     NestedCheckBoxParameter(
                         'raw_formats', 'auto_bright', 'Automatic brightness:',
-                        DEFAULTS['raw_formats']['auto_bright'])
+                        DEFAULTS['raw_formats']['auto_bright']),
+                    NestedDoubleSpinBoxParameter(
+                        'raw_formats', 'auto_bright_thr', 'Auto-brightness threshold (%)',
+                        DEFAULTS['raw_formats']['auto_bright'], 0.0, 100.0, 0.1)
                 ]),
                 ("Combined Actions", [
                     NestedSpinBoxParameter(
