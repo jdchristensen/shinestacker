@@ -28,7 +28,6 @@ dependencies = [
     "psutil",
     "Pygments>=2.20.0",
     "PySide6",
-    "pytest>=9.0.3",
     "rawpy",
     "scipy",
     "tifffile",

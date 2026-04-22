@@ -8,7 +8,7 @@
 
 ### Changed
 - added new setting: "Raw Formats" > "Automatic Brightness" to enable or disable automatic brightness correction (default: true) (#33)
-- required package versions pillow>=12.2.0 and pytest>=9.0.3 to fix security warnings 
+- required package versions pillow>=12.2.0 (for release build) and pytest>=9.0.3 (for CI tests) to fix security warnings 
 
 ---
 
