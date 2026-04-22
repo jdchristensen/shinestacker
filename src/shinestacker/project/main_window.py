@@ -336,8 +336,8 @@ class MainWindow(ProjectHandler, QMainWindow):
         jobs = self.project_jobs()
         for job_index, job in enumerate(jobs):
             self.selection_state.set_indices(job_index)
-            old_input_path = job.params['input_path']
-            new_input_path = self.element_action.open_job_browse_folder_dialog()
+            old_input_path = os.path.basename(job.params['input_path'])
+            new_input_path = os.path.basename(self.element_action.open_job_browse_folder_dialog())
             for action in job.sub_actions:
                 name = action.params['name']
                 if old_input_path and name.startswith(old_input_path):
