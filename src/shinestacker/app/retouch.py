@@ -47,7 +47,7 @@ def main():
         epilog=f'This app is part of the {constants.APP_STRING} package.')
     setup_filename_argument(parser)
     add_retouch_arguments(parser)
-    args = vars(parser.parse_args(filtered_args))
+    args = parser.parse_args(filtered_args)
     filename = process_filename_argument(args, positional_filename)
     if filename and args.image_folder:
         print("can't specify both arguments --filename and --image-folder", file=sys.stderr)

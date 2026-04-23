@@ -59,7 +59,7 @@ Multiple file paths can be specified separated by ';'.
 
 
 def process_filename_argument(args, positional_filename):
-    filename = args.get('filename')
+    filename = getattr(args, 'filename', None)
     if positional_filename and not filename:
         filename = positional_filename
     if filename is True:
