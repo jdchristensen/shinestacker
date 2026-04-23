@@ -146,5 +146,8 @@ class FolderFileSelectionWidget(QWidget):
     def get_path(self):
         return self.path_edit.text()
 
+    def set_path(self, path):
+        self.path_edit.setText(path)
+
     def text_changed_connect(self, callback):
         self.path_edit.textChanged.connect(callback)

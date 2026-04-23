@@ -21,7 +21,7 @@ DEFAULT_NO_COUNT_LABEL = " - "
 class NewProjectDialog(BaseFormDialog):
     ram_threshold = 4
 
-    def __init__(self, parent=None):
+    def __init__(self, parent=None, initial_path=None):
         super().__init__("New Project", 600, parent)
         self.expert_widgets = []
         self.expert_labels = []
@@ -30,6 +30,8 @@ class NewProjectDialog(BaseFormDialog):
         self.create_ok_cancel()
         self.n_image_files = 0
         self.selected_filenames = []
+        if initial_path:
+            self.input_widget.set_path(initial_path)
         self.update_expert_visibility()
 
     def expert(self):
@@ -424,9 +426,9 @@ class NewProjectDialog(BaseFormDialog):
         return self.multi_layer.isChecked()
 
 
-def fill_new_project(project, parent):
+def fill_new_project(project, parent, initial_path=None):
     jobs = project.jobs
-    dialog = NewProjectDialog(parent)
+    dialog = NewProjectDialog(parent, initial_path=initial_path)
     if dialog.exec() == QDialog.Accepted:
         input_folder = dialog.get_input_folder()
         working_path = os.path.dirname(input_folder)

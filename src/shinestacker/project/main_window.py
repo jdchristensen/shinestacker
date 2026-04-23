@@ -350,12 +350,12 @@ class MainWindow(ProjectHandler, QMainWindow):
         self.selection_state.set_indices()
         self.show_status_message("New project from template.")
 
-    def new_project(self):
+    def new_project(self, path=None):
         if self.check_unsaved_changes():
             os.chdir(get_app_base_path())
             self.reset_project()
             self.update_title()
-            if fill_new_project(self.project(), self):
+            if fill_new_project(self.project(), self, initial_path=path):
                 self.element_action.mark_as_modified()
                 for view in self.views.values():
                     view.clear_project()
