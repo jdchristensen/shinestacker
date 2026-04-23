@@ -20,7 +20,7 @@ DEFAULTS = {
     'temp_folder_path': '',
     'raw_formats': {
         'auto_bright': True,
-        'auto_bright_thr': 1.0,   # %
+        'auto_bright_thr': 1.0,  # %
     },
     'sequential_task': {
         'max_threads': 8,
