@@ -32,8 +32,16 @@ set top-bottom view.
 def extract_positional_filename():
     positional_filename = None
     filtered_args = []
+    value_flags = {'-p', '--path', '-f', '--filename'}
+    consume_next = False
     for arg in sys.argv[1:]:
-        if not arg.startswith('-') and not positional_filename:
+        if consume_next:
+            filtered_args.append(arg)
+            consume_next = False
+        elif arg in value_flags:
+            filtered_args.append(arg)
+            consume_next = True
+        elif not arg.startswith('-') and not positional_filename:
             positional_filename = arg
         else:
             filtered_args.append(arg)
