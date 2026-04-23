@@ -4,7 +4,7 @@
 ***Updates***
 
 ### Fixed
-- updated release script with more recent external script versions to prevent warning
+- updated release and pylint scripts with more recent external script versions to prevent warning messages
 
 ### Changed
 - added new setting: "Raw Formats" > "Auto-brightness threshold" parameter (default: 1%) (#33)
