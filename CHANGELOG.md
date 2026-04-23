@@ -1,6 +1,6 @@
 # Changelog
 
-## [v1.15.x] - 2026-04-22
+## [v1.15.x] - 2026-04-23
 ***Updates***
 
 ### Fixed
@@ -8,6 +8,7 @@
 
 ### Changed
 - added new setting: "Raw Formats" > "Auto-brightness threshold" parameter (default: 1%) (#33)
+- improved command line options: --path (-p) selects the input path for a new project; --image-folder (-i) selects one or more image folders to be opened in retouch mode
 
 ---
 

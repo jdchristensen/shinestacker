@@ -10,12 +10,15 @@ expert options are visible by default.
                         action='store_false', default=True, help='''
 Do not open new project dialog at startup (default: open).
 ''')
+    parser.add_argument('-p', '--path', nargs='?', help='''
+input folder path for new project.
+''')
 
 
 def add_retouch_arguments(parser):
-    parser.add_argument('-p', '--path', nargs='?', help='''
-import frames from one or more directories.
-Multiple directories can be specified separated by ';'.
+    parser.add_argument('-i', '--image-folder', nargs='?', help='''
+open all images in the specified folder.
+Multiple folder paths can be specified separated by ';'.
 ''')
     view_group = parser.add_mutually_exclusive_group()
     view_group.add_argument('-v1', '--view-overlaid', action='store_true', help='''
@@ -32,7 +35,7 @@ set top-bottom view.
 def extract_positional_filename():
     positional_filename = None
     filtered_args = []
-    value_flags = {'-p', '--path', '-f', '--filename'}
+    value_flags = {'-p', '--path', '-i', '--image-folder', '-f', '--filename'}
     consume_next = False
     for arg in sys.argv[1:]:
         if consume_next:
@@ -48,16 +51,10 @@ def extract_positional_filename():
     return positional_filename, filtered_args
 
 
-def setup_filename_argument(parser, use_const=True):
-    if use_const:
-        parser.add_argument('-f', '--filename', nargs='?', const=True, help='''
+def setup_filename_argument(parser):
+    parser.add_argument('-f', '--filename', nargs='?', const=True, help='''
 filename to open. Can be a project file or image file.
-Multiple files can be specified separated by ';'.
-''')
-    else:
-        parser.add_argument('-f', '--filename', nargs='?', help='''
-filename to open. Can be a project file or image file.
-Multiple files can be specified separated by ';'.
+Multiple file paths can be specified separated by ';'.
 ''')
 
 

@@ -226,7 +226,7 @@ def main():
         prog=f'{constants.APP_STRING.lower()}',
         description='Focus stacking App.',
         epilog=f'This app is part of the {constants.APP_STRING} package.')
-    setup_filename_argument(parser, use_const=True)
+    setup_filename_argument(parser)
     app_group = parser.add_mutually_exclusive_group()
     app_group.add_argument('-j', '--project', action='store_true', help='''
 open project window at startup instead of project windows (default).
@@ -239,10 +239,16 @@ open retouch window at startup instead of project windows.
     args = vars(parser.parse_args(filtered_args))
     filename = process_filename_argument(args, positional_filename)
     path = args['path']
+    image_folder = args['image_folder']
     if filename and path:
         print("can't specify both arguments --filename and --path", file=sys.stderr)
         sys.exit(1)
-
+    if filename and image_folder:
+        print("can't specify both arguments --filename and --image-folder", file=sys.stderr)
+        sys.exit(1)
+    if path and image_folder:
+        print("can't specify both arguments --path and --image-folder", file=sys.stderr)
+        sys.exit(1)
     app = make_app(Application)
     main_app = MainApp()
     app.main_app = main_app
@@ -266,10 +272,13 @@ open retouch window at startup instead of project windows.
             main_app.project_window.setFocus()
         else:
             main_app.switch_to_retouch()
-            open_frames(main_app.retouch_window, filename, path)
+            open_frames(main_app.retouch_window, filename, image_folder)
     elif path:
         main_app.switch_to_project()
         QTimer.singleShot(100, lambda: main_app.project_window.new_project(path))
+    elif image_folder:
+        main_app.switch_to_retouch()
+        open_frames(main_app.retouch_window, filename, image_folder)
     else:
         retouch = args['retouch']
         if retouch:

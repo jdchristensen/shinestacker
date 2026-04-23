@@ -45,13 +45,13 @@ def main():
         prog=f'{constants.APP_STRING.lower()}-retouch',
         description='Final retouch focus stack image from individual frames.',
         epilog=f'This app is part of the {constants.APP_STRING} package.')
-    setup_filename_argument(parser, use_const=True)
+    setup_filename_argument(parser)
     add_retouch_arguments(parser)
     args = vars(parser.parse_args(filtered_args))
     filename = process_filename_argument(args, positional_filename)
-    path = args['path']
-    if filename and path:
-        print("can't specify both arguments --filename and --path", file=sys.stderr)
+    image_folder = args['image_folder']
+    if filename and image_folder:
+        print("can't specify both arguments --filename and --image-folder", file=sys.stderr)
         sys.exit(1)
     app = make_app(Application)
     editor = RetouchApp()
@@ -63,7 +63,8 @@ def main():
         editor.set_strategy('sidebyside')
     elif args['view_top_bottom']:
         editor.set_strategy('topbottom')
-    open_frames(editor, filename, path)
+    print("filename, img_folder: ", filename, image_folder)
+    open_frames(editor, filename, image_folder)
     sys.exit(app.exec())
 
 
