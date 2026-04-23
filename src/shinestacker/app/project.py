@@ -71,7 +71,7 @@ def main():
         QTimer.singleShot(100, lambda: window.open_project(filename))
     elif path:
         QTimer.singleShot(100, lambda: window.new_project(path))
-    elif args['new-project']:
+    elif args['new_project']:
         QTimer.singleShot(100, window.new_project)
     sys.exit(app.exec())
 
