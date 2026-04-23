@@ -1,4 +1,5 @@
 # pylint: disable=C0114, C0115, C0116, C0413, E0611, R0903, E1121, W0201, R0915, R0912
+import os
 import sys
 import argparse
 import matplotlib
@@ -237,6 +238,8 @@ open retouch window at startup instead of project windows.
     add_project_arguments(parser)
     add_retouch_arguments(parser)
     args = parser.parse_args(filtered_args)
+    if args.path:
+        args.path = os.path.abspath(args.path)
     filename = process_filename_argument(args, positional_filename)
     if filename and args.path:
         print("can't specify both arguments --filename and --path", file=sys.stderr)
