@@ -49,22 +49,21 @@ def main():
     add_retouch_arguments(parser)
     args = vars(parser.parse_args(filtered_args))
     filename = process_filename_argument(args, positional_filename)
-    image_folder = args['image_folder']
-    if filename and image_folder:
+    if filename and args.image_folder:
         print("can't specify both arguments --filename and --image-folder", file=sys.stderr)
         sys.exit(1)
     app = make_app(Application)
     editor = RetouchApp()
     app.editor = editor
     editor.show()
-    if args['view_overlaid']:
+    if args.view_overlaid:
         editor.set_strategy('overlaid')
-    elif args['view_side_by_side']:
+    elif args.view_side_by_side:
         editor.set_strategy('sidebyside')
-    elif args['view_top_bottom']:
+    elif args.view_top_bottom:
         editor.set_strategy('topbottom')
-    print("filename, img_folder: ", filename, image_folder)
-    open_frames(editor, filename, image_folder)
+    print("filename, img_folder: ", filename, args.image_folder)
+    open_frames(editor, filename, args.image_folder)
     sys.exit(app.exec())
 
 

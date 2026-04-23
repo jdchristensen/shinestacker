@@ -57,21 +57,20 @@ def main():
     add_project_arguments(parser)
     args = vars(parser.parse_args(filtered_args))
     filename = process_filename_argument(args, positional_filename)
-    path = args['path']
-    if filename and path:
+    if filename and args.path:
         print("can't specify both arguments --filename and --path", file=sys.stderr)
         sys.exit(1)
     app = make_app(Application)
     window = ProjectApp()
-    if args['expert']:
+    if args.expert:
         window.set_expert_options()
     app.window = window
     window.show()
     if filename:
         QTimer.singleShot(100, lambda: window.open_project(filename))
-    elif path:
-        QTimer.singleShot(100, lambda: window.new_project(path))
-    elif args['new_project']:
+    elif args.path:
+        QTimer.singleShot(100, lambda: window.new_project(args.path))
+    elif args.new_project:
         QTimer.singleShot(100, window.new_project)
     sys.exit(app.exec())
 

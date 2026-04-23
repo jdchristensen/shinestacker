@@ -238,15 +238,13 @@ open retouch window at startup instead of project windows.
     add_retouch_arguments(parser)
     args = vars(parser.parse_args(filtered_args))
     filename = process_filename_argument(args, positional_filename)
-    path = args['path']
-    image_folder = args['image_folder']
-    if filename and path:
+    if filename and args.path:
         print("can't specify both arguments --filename and --path", file=sys.stderr)
         sys.exit(1)
-    if filename and image_folder:
+    if filename and args.image_folder:
         print("can't specify both arguments --filename and --image-folder", file=sys.stderr)
         sys.exit(1)
-    if path and image_folder:
+    if args.path and args.image_folder:
         print("can't specify both arguments --path and --image-folder", file=sys.stderr)
         sys.exit(1)
     app = make_app(Application)
@@ -255,13 +253,13 @@ open retouch window at startup instead of project windows.
 
     main_app.show()
     main_app.activateWindow()
-    if args['expert']:
+    if args.expert:
         main_app.project_window.set_expert_options()
-    if args['view_overlaid']:
+    if args.view_overlaid:
         main_app.retouch_window.set_strategy('overlaid')
-    elif args['view_side_by_side']:
+    elif args.view_side_by_side:
         main_app.retouch_window.set_strategy('sidebyside')
-    elif args['view_top_bottom']:
+    elif args.view_top_bottom:
         main_app.retouch_window.set_strategy('topbottom')
     if filename:
         filenames = filename.split(';')
@@ -272,20 +270,20 @@ open retouch window at startup instead of project windows.
             main_app.project_window.setFocus()
         else:
             main_app.switch_to_retouch()
-            open_frames(main_app.retouch_window, filename, image_folder)
-    elif path:
+            open_frames(main_app.retouch_window, filename, args.image_folder)
+    elif args.path:
         main_app.switch_to_project()
-        QTimer.singleShot(100, lambda: main_app.project_window.new_project(path))
-    elif image_folder:
+        QTimer.singleShot(100, lambda: main_app.project_window.new_project(args.path))
+    elif args.image_folder:
         main_app.switch_to_retouch()
-        open_frames(main_app.retouch_window, filename, image_folder)
+        open_frames(main_app.retouch_window, filename, args.image_folder)
     else:
-        retouch = args['retouch']
+        retouch = args.retouch
         if retouch:
             main_app.switch_to_retouch()
         else:
             main_app.switch_to_project()
-            if args['new_project']:
+            if args.new_project:
                 QTimer.singleShot(100, main_app.project_window.new_project)
     QTimer.singleShot(100, main_app.setFocus)
     if AppConfig.get('check_for_updates'):
