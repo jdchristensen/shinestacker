@@ -4,11 +4,11 @@ import sys
 
 def add_project_arguments(parser):
     parser.add_argument('-x', '--expert', action='store_true', help='''
-expert options are visible by default.
+make expert options visible.
 ''')
     parser.add_argument('-n', '--no-new-project', dest='new_project',
                         action='store_false', default=True, help='''
-Do not open new project dialog at startup (default: open).
+do not open new project dialog at startup (default: open).
 ''')
     parser.add_argument('-p', '--path', nargs='?', help='''
 input folder path for new project.
@@ -17,7 +17,7 @@ input folder path for new project.
 
 def add_retouch_arguments(parser):
     parser.add_argument('-i', '--image-folder', nargs='?', help='''
-open all images in the specified folder.
+open all images in the specified folder in the retouch window.
 Multiple folder paths can be specified separated by ';'.
 ''')
     view_group = parser.add_mutually_exclusive_group()
@@ -53,7 +53,8 @@ def extract_positional_filename():
 
 def setup_filename_argument(parser):
     parser.add_argument('-f', '--filename', nargs='?', const=True, help='''
-filename to open. Can be a project file or image file.
+project file or image file(s) to open.
+Image files are opened in the retouch window.
 Multiple file paths can be specified separated by ';'.
 ''')
 

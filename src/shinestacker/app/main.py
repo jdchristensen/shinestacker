@@ -230,10 +230,10 @@ def main():
     setup_filename_argument(parser)
     app_group = parser.add_mutually_exclusive_group()
     app_group.add_argument('-j', '--project', action='store_true', help='''
-open project window at startup instead of project windows (default).
+open project window at startup instead of project window (default).
 ''')
     app_group.add_argument('-r', '--retouch', action='store_true', help='''
-open retouch window at startup instead of project windows.
+open retouch window at startup instead of project window.
 ''')
     add_project_arguments(parser)
     add_retouch_arguments(parser)
