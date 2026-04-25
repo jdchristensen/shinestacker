@@ -1,14 +1,16 @@
 # Changelog
 
-## [v1.15.x] - 2026-04-23
-***Updates***
+## [v1.15.x] - 2026-04-25
+***Fixes, updates and clean up***
 
 ### Fixed
 - updated release and pylint scripts with more recent external script versions to prevent warning messages
+- robustness fix to command line option -p/--path (#38)
 
 ### Changed
 - added new setting: "Raw Formats" > "Auto-brightness threshold" parameter (default: 1%) (#33)
-- improved command line options: --path (-p) selects the input path for a new project; --image-folder (-i) selects one or more image folders to be opened in retouch mode
+- improved command line options: -p/--path selects the input path for a new project; -i/--image-folder selects one or more image folders to be opened in retouch mode
+- improved help text for command line arguments (#35)
 - minor code cleanup
 
 ---
